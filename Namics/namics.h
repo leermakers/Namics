@@ -15,14 +15,14 @@ float CHI,alpha_seg,phib_s;
 float Theta_A, GNA, GNB;
 int i,j,k,k_diis,m=20,s,it,iv,Mx,My,Mz,M,jx,jy,MX,MY,MZ,JX,JY,MM,bx1,by1,bz1,bxm,bym,bzm,BX1,BY1,BZ1,BXM,BYM,BZM;
 float error = 1, tolerance = 1e-3, eta = 0.1;//because of float, tolerance can not set to very low values...
-float *Aij,*Ci,*Apij,*phi,*rho,*g1,*phitot,*G1,*alpha,*Gg_f,*Gg_b,*phi_side,*x,*x0,*g,*xR,*x_x0,*mask,*GN,*MASK,*KSAM;
+float *Aij,*Ci,*Apij,*phi,*rho,*g1,*phitot,*G1,*alpha,*Gg_f,*Gg_b,*phi_side,*x,*x0,*g,*xR,*x_x0,*mask,*GN_A,*GN_B,*MASK,*KSAM;
 float *GG_F;
 int *Px,*Py,*Pz,*Bx, *By, *Bz;
 float *u;
 float *phib;
 bool Full;
 bool charges = true;
-float *H_mask, *H_psi, *H_phi, *H_u, *H_MASK, *H_KSAM, *H_g1, *H_G1, *H_rho, *H_GN, *H_PHI;
+float *H_mask, *H_psi, *H_phi, *H_u, *H_MASK, *H_KSAM, *H_g1, *H_G1, *H_rho, *H_GN_A, *H_GN_B, *H_PHI;
 float *q, *psi, *psi_0, *psi_side, *phi_na, *phi_cl, *PHI;
 int *H_Px,*H_Py,*H_Pz, *H_Bx, *H_By, *H_Bz;
 

@@ -691,8 +691,8 @@ void ComputePhi(){ //compute all densities.
 		AddTimes(rho,Gg_f+s*M*n_box,Gg_b+(s%2)*M*n_box,M*n_box);
  	}
 	RemoveBoundaries(Gg_f+N*n_box*M,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
-	ComputeGN(GN,Gg_f+N*n_box*M,M,n_box);
-	CollectPhi(phi+2*MM,GN,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+	ComputeGN(GN_A,Gg_f+N*n_box*M,M,n_box);
+	CollectPhi(phi+2*MM,GN_A,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
 
 	Zero(rho,M*n_box);
 	DistributeG1(G1+MM,g1,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
@@ -706,8 +706,8 @@ void ComputePhi(){ //compute all densities.
 		AddTimes(rho,Gg_f+s*M*n_box,Gg_b+(s%2)*M*n_box,M*n_box);
  	}
 	RemoveBoundaries(Gg_f+N*n_box*M,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
-	ComputeGN(GN,Gg_f+N*n_box*M,M,n_box);
-	CollectPhi(phi+3*MM,GN,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+	ComputeGN(GN_B,Gg_f+N*n_box*M,M,n_box);
+	CollectPhi(phi+3*MM,GN_B,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
 
 	Div(phi+2*MM,G1,2*MM);
 	Cp(PHI,phi,2*MM); Add(PHI,phi+2*MM,2*MM);
@@ -808,6 +808,7 @@ float Helmholtz(){
 	RemoveBoundaries(u+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(PHI,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(PHI+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+
 //	if (charges) {
 //		float theta_solvent,theta_na, theta_cl;
 //		RemoveBoundaries(phi_na,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); theta_na = Sum(phi_na,MM);
@@ -823,7 +824,7 @@ float Helmholtz(){
 #ifdef CUDA
 TransferDataToHost(H_GN,GN,n_box);
 #endif
-	for (int p=0; p<n_box; p++) entropy +=log(H_GN[p]);
+	for (int p=0; p<n_box; p++) {entropy +=log(H_GN_A[p]); entropy +=log(H_GN_B[p]);}
 	F_Helmholtz = energy - entropy;
 	return F_Helmholtz;
 }
@@ -1221,19 +1222,22 @@ int main(int argc, char *argv[]) {
 	invert(H_KSAM,H_MASK,MM);
 	H_g1= new float[M*n_box]; H_Zero(H_g1,M*n_box);
 	H_rho = new float[M*n_box];
-	H_GN = new float[n_box];
+	H_GN_A = new float[n_box];
+	H_GN_B = new float[n_box];
 
 #ifdef CUDA
 	Gg_f=(float*)AllOnDev(M*N*n_box);
 	GG_F=(float*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
 	Gg_b=(float*)AllOnDev(M*2*n_box);
-	GN=(float*)AllOnDev(n_box);
+	GN_A=(float*)AllOnDev(n_box);
+	GN_B=(float*)AllOnDev(n_box);
 	rho =(float*)AllOnDev(M*n_box);
 	g1=(float*)AllOnDev(M*n_box);
 #else
 	Gg_f = new float[M*N*n_box]; Gg_b = new float[M*2*n_box];
 	GG_F = new float[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
-	GN= H_GN;
+	GN_A= H_GN_A;
+	GN_B= H_GN_B;
 	rho = H_rho;
 	g1 = H_g1;
 #endif

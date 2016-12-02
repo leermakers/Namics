@@ -1,0 +1,38 @@
+SHELL = /bin/sh
+# CXX= icpc -c 
+# We recommend using "make -D DEBUG" and "make -D LOCALFENK" instead of following options
+# Compile sfbox with additional debug code in "#if DEBUG" blocks
+# DEBUG = 1               
+# Use ~/lib and ~/include instead of normal fenklib locations
+# LOCALFENK = 1  
+
+#CXX= icpc -c # if this line is enabled the intel c++ compiler is used instead of Gcc.
+
+LAPACK = 1 
+
+NVCC := nvcc 
+
+DEBUG_STR =              
+ifdef DEBUG
+    DEBUG_STR = -DDEBUG
+endif
+
+	INC_DIR = /usr/local/include
+	LIB_DIR = /usr/local/lib
+	MATRIXLIB = -llapack -lblas -lf2c -lm -lpthread
+
+
+CPPFLAGS = -I$(INC_DIR) $(DEBUG_STR) -Wall
+CPPFLAGS+= -O3
+
+	CPPFLAGS = -I$(INC_DIR) $(DEBUG_STR)  -O3 -Wall -DHAS_LAPACK -DNO_BLAS_WRAP 
+#	CPPFLAGS = -I$(INC_DIR) $(DEBUG_STR) -g -O3 -Wall -DHAS_LAPACK -DNO_BLAS_WRAP
+CFLAGS = $(CPPFLAGS)
+
+     LIBS +=  $(MATRIXLIB)
+
+namics : namics.o
+	g++ -o namics namics.o -L$(LIB_DIR) $(LIBS)
+
+clean : 
+	rm *.o

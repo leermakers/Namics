@@ -808,23 +808,23 @@ float Helmholtz(){
 	RemoveBoundaries(u+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(PHI,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(PHI+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	entropy = Dot(PHI,u,MM); 
+	
 
-//	if (charges) {
-//		float theta_solvent,theta_na, theta_cl;
-//		RemoveBoundaries(phi_na,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); theta_na = Sum(phi_na,MM);
-//		RemoveBoundaries(phi_cl,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); theta_cl = Sum(phi_cl,MM);
-//		RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); theta_solvent = Sum(phi,MM);
-//		entropy = theta_solvent * log(1-2*phib_s) + (theta_na+theta_cl)*log(phib_s);
-//
-//		RemoveBoundaries(q,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-//		RemoveBoundaries(psi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-//		energy -= 0.5*Dot(q,psi,MM);
-//	}
-	entropy += Sum(u,MM);
+	//SetBoundaries(PHI,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	SetBoundaries(PHI+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	Side(phi_side,PHI,MM);
+	energy = CHI*Dot(PHI+MM,phi_side,MM);
+
 #ifdef CUDA
-TransferDataToHost(H_GN,GN,n_box);
+TransferDataToHost(H_GN_A,GN_A,n_box);
+TransferDataToHost(H_GN_B,GN_B,n_box);
 #endif
 	for (int p=0; p<n_box; p++) {entropy +=log(H_GN_A[p]); entropy +=log(H_GN_B[p]);}
+	RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	RemoveBoundaries(phi+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	entropy +=Sum(phi,MM)/N_A*log(phib[0]/N_A);
+	entropy +=Sum(phi+MM,MM)/N_B*log(phib[1]/N_B);
 	F_Helmholtz = energy - entropy;
 	return F_Helmholtz;
 }

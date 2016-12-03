@@ -799,6 +799,24 @@ void DIIS(float* x, float* x_x0, float* xR, float* Aij, float* Apij,float* Ci, i
 		YplusisCtimesX(x,xR+posi*iv,Ci[i],iv);
 	}
 }
+float GrandPotential(){
+	double GP=0;
+	double volume = 1.0*MX*MY*MZ;
+	RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	RemoveBoundaries(phi+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	RemoveBoundaries(phi+2*MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	RemoveBoundaries(phi+3*MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	GP -= (Sum(phi,MM)-volume*phib[0])/N_A;
+	GP -= (Sum(phi+MM,MM)-volume*phib[1])/N_B;
+	GP -= Sum(phi+2*MM,MM)/N;
+	GP -= Sum(phi+3*MM,MM)/N;
+	GP -= Dot(alpha,phi,MM);
+	GP -= Dot(alpha,phi+MM,MM);
+	GP -= Dot(alpha,phi+2*MM,MM);
+	GP -= Dot(alpha,phi+3*MM,MM);
+		
+	return GP;	
+}
 float Helmholtz(){
 	float F_Helmholtz, entropy, energy;
 	entropy = 0;
@@ -820,11 +838,11 @@ float Helmholtz(){
 TransferDataToHost(H_GN_A,GN_A,n_box);
 TransferDataToHost(H_GN_B,GN_B,n_box);
 #endif
-	for (int p=0; p<n_box; p++) {entropy +=log(H_GN_A[p]); entropy +=log(H_GN_B[p]);}
+	for (int p=0; p<n_box; p++) {entropy +=log(H_GN_A[p]/N); entropy +=log(H_GN_B[p]/N);}
 	RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(phi+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-	entropy +=Sum(phi,MM)/N_A*log(phib[0]/N_A);
-	entropy +=Sum(phi+MM,MM)/N_B*log(phib[1]/N_B);
+	entropy +=Sum(phi,MM)/N_A*log(phib[0]);
+	entropy +=Sum(phi+MM,MM)/N_B*log(phib[1]);
 	F_Helmholtz = energy - entropy;
 	return F_Helmholtz;
 }
@@ -1266,4 +1284,5 @@ int main(int argc, char *argv[]) {
 	out_file.close();
 
 	return 0;
-};
+}
+

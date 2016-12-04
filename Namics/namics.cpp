@@ -534,6 +534,35 @@ void Side(float *X_side, float *X, int M) {
 	Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
 	Norm(X_side,1.0/6.0,M);
 }
+
+void advanced_average(float *X_side, float *X, int M){
+        Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+
+	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
+	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
+	Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
+
+	Add(X_side+JX+JY,X,M-JX-JY); Add(X_side, X+JX+JY, M-JX-JY);
+	Add(X_side+JY+1,X,M-JY-1); Add(X_side, X+JY+1, M-JY-1);
+	Add(X_side+JX+1,X,M-JX-1); Add(X_side, X+JX+1, M-JX-1);
+        Add(X_side+JX-JY,X,M-JX+JY); Add(X_side, X+JX-JY, M-JX+JY);
+	Add(X_side+JY-1,X,M-JY+1); Add(X_side, X+JY-1, M-JY+1);
+	Add(X_side+JX-1,X,M-JX+1); Add(X_side, X+JX-1, M-JX+1);
+
+	Add(X_side+JX+JY+1,X,M-JX-JY-1); Add(X_side, X+JX+JY+1, M-JX-JY-1);
+	Add(X_side+JX+JY-1,X,M-JX-JY+1); Add(X_side, X+JX+JY-1, M-JX-JY+1);
+	Add(X_side+JX-JY+1,X,M-JX+JY-1); Add(X_side, X+JX-JY+1, M-JX+JY-1);
+	Add(X_side-JX+JY+1,X,M+JX-JY-1); Add(X_side, X-JX+JY+1, M+JX-JY-1);
+
+	Norm(X_side,1.0/26.0,M);
+}
+
+
+
+
+
+
+
 void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
 	float *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;

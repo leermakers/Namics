@@ -557,12 +557,6 @@ void advanced_average(float *X_side, float *X, int M){
 	Norm(X_side,1.0/26.0,M);
 }
 
-
-
-
-
-
-
 void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
 	float *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;

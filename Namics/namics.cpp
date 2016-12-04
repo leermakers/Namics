@@ -1260,9 +1260,29 @@ int main(int argc, char *argv[]) {
 	g1 = H_g1;
 #endif
 	float Free_energy;
-	Free_energy = SCF(); Free_energy=Helmholtz();
+	int variation = 0;
+	
+	if (variation == 1)
+	{		
+		ofstream varfile;
+		varfile.open ("variation.dat");
+		for (int var=0; var<10; var++)
+		{	
+			Theta_A = Theta_A + var*MZ/10.0;
+			Free_energy = SCF(); 
+			Free_energy=Helmholtz();
+			printf("Free energy : %1f \n", Free_energy);
+			varfile << Theta_A <<"\t" << PHI[25*JX+25*JY+ MZ]<< endl;
+		}
+		varfile.close();
+	}
+	else
+	{
+		Free_energy = SCF(); 
+		Free_energy=Helmholtz();
+		printf("Free energy : %1f \n", Free_energy);	
+	}
 
-	printf("Free energy : %1f \n", Free_energy);
 
 #ifdef CUDA
 	TransferDataToHost(H_u,u,MM);

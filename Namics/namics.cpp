@@ -1300,7 +1300,7 @@ int main(int argc, char *argv[]) {
 		varfile.close();
 	}
 	else
-	{
+	{ 
 		Free_energy = SCF(); 
 		Free_energy=Helmholtz();
 		printf("Free energy : %1f \n", Free_energy);	

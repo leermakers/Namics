@@ -963,6 +963,24 @@ bool GetString(std::vector<std::string> elems, const std::string &s, std::string
 	return success;
 }
 
+bool GetString(std::vector<std::string> elems, const std::string &s, std::string &ss,const std::string &error) {
+	bool success=false;
+	std::vector<std::string> pair;
+        int i=0;
+	int length = elems.size();
+	while (!success && i < length) {
+		if (elems[i].find(s)!=std::string::npos) {
+			success=true;
+	              split(elems[i],':',pair);
+			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
+ 			ss=pair[1];
+		}
+		i++;
+	}
+	if (!success) cout << error << endl; 
+	return success;
+}
+
 bool GetInt(std::vector<std::string> elems, const std::string &s, int &ss) {
 	bool success=false;
 	stringstream string_s;
@@ -979,6 +997,26 @@ bool GetInt(std::vector<std::string> elems, const std::string &s, int &ss) {
 		}
 		i++;
 	}
+	return success;
+}
+
+bool GetInt(std::vector<std::string> elems, const std::string &s, int &ss,const std::string &error) {
+	bool success=false;
+	stringstream string_s;
+	std::vector<std::string> pair;
+       int i=0;
+	int length = elems.size();
+	while (!success && i < length) {
+		if (elems[i].find(s)!=std::string::npos) {
+			success=true;
+	              split(elems[i],':',pair);
+			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
+			string_s << pair[1] ;
+			string_s >> ss;
+		}
+		i++;
+	}
+	if (!success) cout << error << endl; 
 	return success;
 }
 
@@ -999,6 +1037,26 @@ bool Getfloat(std::vector<std::string> elems, const std::string &s, float&ss) {
 		i++;
 	}
 
+	return success;
+}
+
+bool GetFloat(std::vector<std::string> elems, const std::string &s, float&ss,const std::string &error) {
+	bool success=false;
+	stringstream string_s;
+	std::vector<std::string> pair;
+       int i=0;
+	int length = elems.size();
+	while (!success && i < length) {
+		if (elems[i].find(s)!=std::string::npos) {
+			success=true;
+	              split(elems[i],':',pair);
+			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
+			string_s << pair[1] ;
+			string_s >> ss;
+		}
+		i++;
+	}
+	if (!success) cout << error << endl;
 	return success;
 }
 
@@ -1023,6 +1081,27 @@ bool GetBool(std::vector<std::string> elems, const std::string &s, bool &ss) {
 	return success;
 }
 
+bool GetBool(std::vector<std::string> elems, const std::string &s, bool &ss, string,const std::string &error) {
+	bool success=false;
+	std::string string_s;
+	std::vector<std::string> pair;
+       int i=0;
+	int length = elems.size();
+	while (!success && i < length) {
+		if (elems[i].find(s)!=std::string::npos) {
+			success=true;
+	              split(elems[i],':',pair);
+			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
+		       string_s=pair[1];
+		}
+		i++;
+	}
+	if (success) {
+		if (string_s =="true" ||  string_s =="True" || string_s =="TRUE") ss=true; else ss=false;
+	}
+	if (!success) cout << error << endl;
+	return success;
+}
 
 int main(int argc, char *argv[]) {
 	string fname;
@@ -1049,60 +1128,48 @@ int main(int argc, char *argv[]) {
 	std::vector<std::string> elems;
 	string string_value;
 
-//	charges=true;
-//	in_file.open(filename.c_str());
-//	if (in_file.is_open()) {
-//		std:: string In_line;
-//		while (in_file) {
-//			std::getline(in_file,In_line);
-//			In_buffer.append(In_line).append(";");
-//		}
-//		in_file.close();
-//	} else cout <<  "file " << filename << " is not available. " << endl;
-//	split(In_buffer,';',elems);
-//	if (GetString(elems,"calculation_type",string_value)) {
-//		if (string_value.find("FULL")!=std::string::npos) Full=true; else Full =false;
-//	} else cout << " No 'calculation_type' detected in .in file " << endl;
-//
-//	if (!Getfloat(elems,"phibulk", phib_s)) {
-//		cout << " No 'phibulk' detected in .in file " << endl;
-//		phib_s =0; cout << "charges rejected! " << endl;
-//		charges = false;
-//	}
+	in_file.open(filename.c_str());
+	if (in_file.is_open()) {
+		std:: string In_line;
+		while (in_file) {
+			std::getline(in_file,In_line);
+			In_buffer.append(In_line).append(";");
+		}
+		in_file.close();
+	} else cout <<  "file " << filename << " is not available. " << endl;
 
+	split(In_buffer,';',elems);
+	GetString(elems,"calculation_type",string_value,"No 'calculation_type' detected in .in file " );
+	if (string_value.find("micro-emulsion")!=std::string::npos) {MEmulsion=true;} else
+	if (string_value.find("membrane")!=std::string::npos){Membrane=true;} else
+	cout << "'calculation_type' should be 'micro-emulsion' or 'membrane' in .in file" << endl; 
 
-//	if (!Getfloat(elems,"alpha", alpha_seg)) {
-//		cout << " No 'alpha' detected in .in file " << endl;
-//		alpha_seg=0;
-//		cout << "charges rejected! " <<endl;
-//		charges=false;
-//	}
+	if (!GetInt(elems,"n_layers_x",MX,"No 'n_layers_x' detected in .in file.")) MX=0;
+	if (!GetInt(elems,"n_layers_y",MY,"No 'n_layers_y' detected in .in file.")) MY=0;
+	if (!GetInt(elems,"n_layers_z",MZ,"No 'n_layers_z' detected in .in file.")) MZ=0;
+	if (MX*MY*MX == 0) {cout << "n_layers_x, or n_layers_y or n_layers_z not well-defined in .in file. "<<endl;  return(0); }
 
-//	filename = fname + "_pot.vtk"; //box
-//	string line_;
-//	in_file.open(filename.c_str());
-//	if (in_file.is_open()) {
-//		getline(in_file,line_); getline(in_file,line_);
-//		getline(in_file,line_); getline(in_file,line_);
-//		in_file >> line_>> MX >> MY >> MZ;
-//		getline(in_file,line_); getline(in_file,line_);
-//		getline(in_file,line_); getline(in_file,line_);
-//		getline(in_file,line_); getline(in_file,line_);
-//	        JX = (MY+2)*(MZ+2); JY = MZ+2; MM=(MX+2)*(MY+2)*(MZ+2);
-//		BX1=MX; BXM=1; BY1=MY; BYM=1; BZ1=MZ; BZM=1; // periodic for big box
-//		if (charges) iv=2*MM; else iv = MM;
-
+	if (MEmulsion) { //Read info from 'in' file for micro-emulsion model. 
 // We will have 2 solvents (A)N_A and (B)N_B, N_A=N_B=4 and 1 copolymer (A)N-X-(B)N with length N=10 
 // there will be 1 chi-value set to 0.6;
-	charges = false;
-	MX = MY = MZ = 51;
+		GetInt(elems,"n_segments",n_seg,"No 'n_segments' detected in .in file "); 
+		if (!GetInt(elems,"n_cosolvents",n_cosol)) n_cosol = 0;
+		if (!GetInt(elems,"n_solvents",n_sol)) n_sol = 2; 
+		if (!GetInt(elems,"N",N,"no 'N' (length of the co-polymer-blocks) detected in .in file")) N = 10; 
+		if (!GetInt(elems,"NA",N_A,"no 'NA' (length of the solvent-A) detected in .in file")) N_A = 4;
+		if (!GetInt(elems,"NB",N_B,"no 'NB' (length of the solvent-B) detected in .in file")) N_B = 4;
+		if (!GetFloat(elems,"CHI",CHI,"no 'CHI' detected in .in file")) CHI = 0.6;
+
+		charges = false;
+
+	} else { //Read info forom 'in' file for 'membrane' model
+		charges = false;
+	}
+
+
 	JX = (MY+2)*(MZ+2); JY = MZ+2; MM=(MX+2)*(MY+2)*(MZ+2);
 	BX1=MX; BXM=1; BY1=MY; BYM=1; BZ1=1; BZM=MZ; // Large BOX periodic in X and Y, but reflecting in Z.
 	iv = MM*n_seg;
-	N_A = 4;
-	N_B = 4;
-	N=10;
-	CHI = 0.6;
 	Theta_A = 1.0*MX*MY*MZ/2.0;	//Fill half the Big box with solvent A.
 
 		phib = new float[2];
@@ -1283,7 +1350,7 @@ int main(int argc, char *argv[]) {
 	g1 = H_g1;
 #endif
 	float Free_energy;
-	int variation = 0;
+	int variation = 1;
 	
 	if (variation == 1)
 	{		
@@ -1295,7 +1362,7 @@ int main(int argc, char *argv[]) {
 			Free_energy = SCF(); 
 			Free_energy=Helmholtz();
 			printf("Free energy : %1f \n", Free_energy);
-			varfile << Theta_A <<"\t" << PHI[25*JX+25*JY+ MZ]<< endl;
+			varfile << Theta_A <<"\t" << PHI[25*JX+25*JY+ MZ]<<  " " << GrandPotential() << endl;
 		}
 		varfile.close();
 	}

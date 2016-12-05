@@ -1,0 +1,6 @@
+calculation_type : micro-emulsion
+n_layers_x : 51
+n_layers_y : 51
+n_layers_z : 51
+n_segments : 2
+variation : 1

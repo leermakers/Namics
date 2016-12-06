@@ -527,7 +527,21 @@ void H_Zero(float* H_P, int M){//this precedure should act on a host P.
 	for (int i=0; i<M; i++) H_P[i] = 0;
 }
 
-void Side(float *X_side, float *X, int M) {
+void Side(double *X_side, double *X, int M) {
+	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+
+	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
+	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
+	Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
+	Add(X_side+JX,X+JY,MM-JX-JY); Add(X_side+JY,X+JX,MM-JY-JX);
+	Add(X_side+1,X+JY,MM-JY-1); Add(X_side+JY,X+1,MM-JY-1);
+	Add(X_side+1,X+JX,MM-JX-1); Add(X_side+JX,X+1,MM-JX-1);
+	Norm(X_side,1.0/12.0,M);
+}
+
+
+
+void SideCUBIC(float *X_side, float *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
 	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
@@ -557,7 +571,37 @@ void advanced_average(float *X_side, float *X, int M){
 	Norm(X_side,1.0/26.0,M);
 }
 
-void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
+void Propagate(double* G, double* G1, int s_from, int s_to) { //on small boxes
+	int MMM=M*n_box;
+	double *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
+	Zero(gs,MMM);
+	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
+	
+	Add(gs+jx,gs_1,MMM-jx); Add(gs,gs_1+jx,MMM-jx);
+	Add(gs+jy,gs_1,MMM-jy); Add(gs,gs_1+jy,MMM-jy);
+	Add(gs+1,gs_1,MMM-1);  Add(gs,gs_1+1, MMM-1);	
+	Add(gs+jx,gs_1+jy,MMM-jx-jy); Add(gs+jy,gs_1+jx,MMM-jx-jy);
+	Add(gs+1,gs_1+jy,MMM-jy-1); Add(gs+jy,gs_1+1,MMM-jy-1);
+	Add(gs+1,gs_1+jx,MMM-jx-1); Add(gs+jx,gs_1+1,MMM-jx-1);
+	Norm(gs,1.0/12.0,MMM); Times(gs,gs,g,MMM);
+}
+
+void PROPAGATE(double *G, double *G1, int s_from, int s_to) { //on big box
+	double *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
+	Zero(gs,MM);
+	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
+	Add(gs+JY,gs_1,MM-JY); Add(gs,gs_1+JY,MM-JY);
+	Add(gs+1,gs_1,MM-1);  Add(gs,gs_1+1, MM-1);
+	Add(gs+JX,gs_1+JY,MM-JX-JY); Add(gs+JY,gs_1+JX,MM-JX-JY);
+	Add(gs+1,gs_1+JY,MM-JY-1); Add(gs+JY,gs_1+1,MM-JY-1);
+	Add(gs+1,gs_1+JX,MM-JX-1); Add(gs+JX,gs_1+1,MM-JX-1);
+	Norm(gs,1.0/12.0,MM); Times(gs,gs,g,MM);
+}
+
+
+
+void PropagateCubic(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
 	float *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
 	Zero(gs,MMM);
@@ -568,7 +612,7 @@ void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	Norm(gs,1.0/6.0,MMM); Times(gs,gs,g,MMM);
 }
 
-void PROPAGATE(float *G, float *G1, int s_from, int s_to) { //on big box
+void PROPAGATECUBIC(float *G, float *G1, int s_from, int s_to) { //on big box
 	float *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
 	Zero(gs,MM);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);

@@ -528,20 +528,20 @@ void H_Zero(float* H_P, int M){//this precedure should act on a host P.
 }
 
 
-void subdomain(int *fBx,int *fBy,int *fBz, int *fPx,int *fPy,int *fPz){
+void subdomain(int *fBx,int *fBy,int *fBz, int *fPx,int *fPy,int *fPz, int zloc){
     int loop = 0;
-    for (int xcord=0; xcord<11; xcord++){
-		for(int ycord=0; ycord<11; ycord++){
-	    loop = loop+1;	
-		fPx[loop-1] = xcord*5 ; fPy[loop-1] = ycord*5 ; fPz[loop-1] = 26 ;
-		fBx[loop-1] = xcord*5-20; fBy[loop-1] = ycord*5-20 ; fBz[loop-1] = 5 ;		
+    for (int xcord=1; xcord<=10; xcord++){
+		for(int ycord=1; ycord<=10; ycord++){	
+		fPx[loop] = (xcord)*5-2 ; fPy[loop] = (ycord)*5-2 ; fPz[loop] = zloc ;
+		fBx[loop] = (xcord*5-2)-10; fBy[loop] = (ycord*5-2)-10 ; fBz[loop] = zloc-10 ;	
+		loop = loop+1;
 		}
 	}
-	for (int p=0; p<n_box; p++){
-		if (fBx[p]<1) {fBx[p] +=MX; fPx[p] +=MX;}
-		if (fBy[p]<1) {fBy[p] +=MY; fPy[p] +=MY;}
-		if (fBz[p]<1) {fBz[p] +=MZ; fPz[p] +=MZ;}
-	}	
+	for (int diag=1; diag<=12; diag++){
+		fPx[loop] = diag*4 ; fPy[loop] = diag*4 ; fPz[loop] = 26 ;
+		fBx[loop] = (diag*4)-10; fBy[loop] = (diag*4)-10 ; fBz[loop] = 16 ;
+		loop = loop+1;
+	}
 }
 
 void Side(float *X_side, float *X, int M) {
@@ -740,25 +740,26 @@ void CollectPhi(float* phi, float* GN, float* rho, int* Bx, int* By, int* Bz, in
 void ComputePhi(){ //compute all densities.
 //both block are equally long! 
 	Boltzmann(G1,u,2*MM); 
-	SetBoundaries(G1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	SetBoundaries(G1,   JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	SetBoundaries(G1+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Times(G1,G1,KSAM,MM);Times(G1+MM,G1+MM,KSAM,MM);
-
 	Cp(GG_F,G1,MM);
+ 
 	for(int s=1; s<N_A; s++) PROPAGATE(GG_F,G1,s-1,s);
 	RemoveBoundaries(GG_F+(N_A-1)*MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); 
 	GNA=Sum(GG_F+(N_A-1)*MM,MM); phib[0]=Theta_A/GNA; phib[1]=1.0-phib[0];
 	for(int s=0; s<N_A/2; s++) AddTimes(phi,GG_F+s*MM,GG_F+(N_A-(s+1))*MM,MM); 
 	if (N_A>1) Norm(phi,2.0,MM);
-	if ((N_A%2)==1) AddTimes(phi,GG_F+(N_A/2+1)*MM,GG_F+(N_A/2+1)*MM,MM);
-	Div(phi,G1,MM); Norm(phi,Theta_A/GNA/N_A,MM);
+	if ((N_A%2)==1) AddTimes(phi,GG_F+(N_A/2)*MM,GG_F+(N_A/2)*MM,MM);
+	Div(phi,G1,MM); 
+	Norm(phi,Theta_A/GNA/N_A,MM);
 
 	Cp(GG_F,G1+MM,MM);
 	for(int s=1; s<N_B; s++) PROPAGATE(GG_F,G1+MM,s-1,s);
 	RemoveBoundaries(GG_F+(N_B-1)*MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); 
 	for(int s=0; s<N_B/2; s++) AddTimes(phi+MM,GG_F+s*MM,GG_F+(N_B-(s+1))*MM,MM); 
 	if (N_B>1) Norm(phi+MM,2.0,MM);
-	if ((N_B%2)==1) AddTimes(phi+MM,GG_F+(N_B/2+1)*MM,GG_F+(N_B/2+1)*MM,MM);
+	if ((N_B%2)==1) AddTimes(phi+MM,GG_F+(N_B/2)*MM,GG_F+(N_B/2)*MM,MM);
 	Div(phi+MM,G1+MM,MM); Norm(phi+MM,phib[1]/N_B,MM);
 
 	Cp(Gg_f,mask,M*n_box);
@@ -792,8 +793,14 @@ void ComputePhi(){ //compute all densities.
 	RemoveBoundaries(Gg_f+N*n_box*M,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
 	ComputeGN(GN_B,Gg_f+N*n_box*M,M,n_box);
 	CollectPhi(phi+3*MM,GN_B,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+	/*RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); 
+		RemoveBoundaries(phi+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			RemoveBoundaries(phi+2*MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+				RemoveBoundaries(phi+3*MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);*/
 
 	Div(phi+2*MM,G1,2*MM);
+		/*cout << Sum(phi+2*MM,MM)/N << " and " << Sum(phi+3*MM,MM)/N << endl; 
+		cout << Sum(phi+0*MM,MM)/N_A << " and " << Sum(phi+1*MM,MM)/N_B << endl; */
 	Cp(PHI,phi,2*MM); Add(PHI,phi+2*MM,2*MM);
 }
 
@@ -975,7 +982,9 @@ float SCF() {
 		Cp(xR+k*iv,x,iv); YisAminB(x_x0+k*iv,x,x0,iv);
 		DIIS(x,x_x0,xR,Aij,Apij,Ci,k,m,iv);
 		error = sqrt(Dot(g,g,iv));
-		printf("it = %i error = %1e \n",it,error);
+		if(it%10 == 0){
+			printf("it = %i error = %1e \n",it,error);
+		}
 	}
 	return Helmholtz();
 }
@@ -1101,7 +1110,7 @@ bool Getfloat(std::vector<std::string> elems, const std::string &s, float&ss) {
 	return success;
 }
 
-bool GetFloat(std::vector<std::string> elems, const std::string &s, float&ss,const std::string &error) {
+bool Getfloat(std::vector<std::string> elems, const std::string &s, float&ss,const std::string &error) {
 	bool success=false;
 	stringstream string_s;
 	std::vector<std::string> pair;
@@ -1219,7 +1228,7 @@ int main(int argc, char *argv[]) {
 		if (!GetInt(elems,"N",N,"no 'N' (length of the co-polymer-blocks) detected in .in file")) N = 20; 
 		if (!GetInt(elems,"NA",N_A,"no 'NA' (length of the solvent-A) detected in .in file")) N_A = 4;
 		if (!GetInt(elems,"NB",N_B,"no 'NB' (length of the solvent-B) detected in .in file")) N_B = 4;
-		if (!GetFloat(elems,"CHI",CHI,"no 'CHI' detected in .in file")) CHI = 0.6;
+		if (!Getfloat(elems,"CHI",CHI,"no 'CHI' detected in .in file")) CHI = 0.6;
 
 		charges = false;
 
@@ -1323,8 +1332,8 @@ int main(int argc, char *argv[]) {
 
 
 
-	n_box = 121;
-	Mx=My=Mz=40; 
+	n_box = 112;
+	Mx=My=Mz=20; 
 
 	jx = (My+2)*(Mz+2); jy = Mz+2; M=(Mx+2)*(My+2)*(Mz+2);
 	bx1=1; bxm=Mx; by1=1; bym=My; bz1=1; bzm=Mz; //reflecting for small boxes
@@ -1369,9 +1378,66 @@ int main(int argc, char *argv[]) {
 //		}
 //		in_file.close();
 //	} else cout << "file " << filename << " is not available." << endl;
+	float Free_energy;
+	int variation = 1;
+	
+	if (variation == 1)
+	{
+		
+		ofstream varfile;
+		varfile.open ("variation.dat");
+		
+		for (int var=0; var<6; var++){
+		printf("\n");
+		printf("Problem %d of 10 \n",var+1);
+		printf("\n");
+		int interface = 26+var;
+		//Theta_A = Theta_A + MZ*MZ/10.0;
+		subdomain(H_Bx,H_By,H_Bz,H_Px,H_Py,H_Pz, interface);
+		for (int p=0; p<n_box; p++){
+			H_mask[p*M + jx*(H_Px[p]-H_Bx[p])+jy*(H_Py[p]-H_By[p])+(H_Pz[p]-H_Bz[p])]=1;
+			H_MASK[((H_Px[p]-1)%MX+1)*JX + ((H_Py[p]-1)%MY+1)*JY + (H_Pz[p]-1)%MZ+1]=1;
+		}
 
+		invert(H_KSAM,H_MASK,MM);
+		H_g1= new float[M*n_box]; H_Zero(H_g1,M*n_box);
+		H_rho = new float[M*n_box];
+		H_GN_A = new float[n_box];
+		H_GN_B = new float[n_box];
 
-	subdomain(H_Bx,H_By,H_Bz,H_Px,H_Py,H_Pz);
+	#ifdef CUDA
+		Gg_f=(float*)AllOnDev(M*N*n_box);
+		GG_F=(float*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
+		Gg_b=(float*)AllOnDev(M*2*n_box);
+		GN_A=(float*)AllOnDev(n_box);
+		GN_B=(float*)AllOnDev(n_box);
+		rho =(float*)AllOnDev(M*n_box);
+		g1=(float*)AllOnDev(M*n_box);
+	#else
+		Gg_f = new float[M*(N+1)*n_box]; Gg_b = new float[M*2*n_box];
+		GG_F = new float[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
+		GN_A= H_GN_A;
+		GN_B= H_GN_B;
+		rho = H_rho;
+		g1 = H_g1;
+	#endif
+		Free_energy = SCF(); 
+		Free_energy=Helmholtz();
+		printf("Free energy : %1f \n", Free_energy);
+		int loc = 0;
+		for (int iw=1; iw<MZ; iw++){
+			if(H_PHI[25*JX+25*JY+ iw]>=0.5){
+				loc = iw;
+			}
+		}
+		varfile << Theta_A <<"     " << loc <<  "     " << interface << endl;
+		}
+		varfile.close();
+	}
+	else{
+
+		int interface = 26;
+		subdomain(H_Bx,H_By,H_Bz,H_Px,H_Py,H_Pz,interface);
 
 	/*H_Bx[0]=15;
 	H_By[0]=15;
@@ -1386,56 +1452,39 @@ int main(int argc, char *argv[]) {
 	H_Py[1]=20;
 	H_Pz[1]=26;*/
 
-	for (int p=0; p<n_box; p++){
-		H_mask[p*M + jx*(H_Px[p]-H_Bx[p])+jy*(H_Py[p]-H_By[p])+(H_Pz[p]-H_Bz[p])]=1;
-		H_MASK[((H_Px[p]-1)%MX+1)*JX + ((H_Py[p]-1)%MY+1)*JY + (H_Pz[p]-1)%MZ+1]=1;
-	}
-
-	invert(H_KSAM,H_MASK,MM);
-	H_g1= new float[M*n_box]; H_Zero(H_g1,M*n_box);
-	H_rho = new float[M*n_box];
-	H_GN_A = new float[n_box];
-	H_GN_B = new float[n_box];
-
-#ifdef CUDA
-	Gg_f=(float*)AllOnDev(M*N*n_box);
-	GG_F=(float*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
-	Gg_b=(float*)AllOnDev(M*2*n_box);
-	GN_A=(float*)AllOnDev(n_box);
-	GN_B=(float*)AllOnDev(n_box);
-	rho =(float*)AllOnDev(M*n_box);
-	g1=(float*)AllOnDev(M*n_box);
-#else
-	Gg_f = new float[M*N*n_box]; Gg_b = new float[M*2*n_box];
-	GG_F = new float[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
-	GN_A= H_GN_A;
-	GN_B= H_GN_B;
-	rho = H_rho;
-	g1 = H_g1;
-#endif
-	float Free_energy;
-	int variation = 1;
-	
-	if (variation == 1)
-	{		
-		ofstream varfile;
-		varfile.open ("variation.dat");
-		for (int var=0; var<10; var++)
-		{	
-			Theta_A = Theta_A + var*MZ/10.0;
-			Free_energy = SCF(); 
-			Free_energy=Helmholtz();
-			printf("Free energy : %1f \n", Free_energy);
-			varfile << Theta_A <<"\t" << PHI[25*JX+25*JY+ MZ]<<  " " << GrandPotential() << endl;
+		for (int p=0; p<n_box; p++){
+			H_mask[p*M + jx*(H_Px[p]-H_Bx[p])+jy*(H_Py[p]-H_By[p])+(H_Pz[p]-H_Bz[p])]=1;
+			H_MASK[((H_Px[p]-1)%MX+1)*JX + ((H_Py[p]-1)%MY+1)*JY + (H_Pz[p]-1)%MZ+1]=1;
 		}
-		varfile.close();
-	}
-	else
-	{ 
+
+		invert(H_KSAM,H_MASK,MM);
+		H_g1= new float[M*n_box]; H_Zero(H_g1,M*n_box);
+		H_rho = new float[M*n_box];
+		H_GN_A = new float[n_box];
+		H_GN_B = new float[n_box];
+
+	#ifdef CUDA
+		Gg_f=(float*)AllOnDev(M*N*n_box);
+		GG_F=(float*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
+		Gg_b=(float*)AllOnDev(M*2*n_box);
+		GN_A=(float*)AllOnDev(n_box);
+		GN_B=(float*)AllOnDev(n_box);
+		rho =(float*)AllOnDev(M*n_box);
+		g1=(float*)AllOnDev(M*n_box);
+	#else
+		Gg_f = new float[M*(N+1)*n_box]; Gg_b = new float[M*2*n_box];
+		GG_F = new float[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
+		GN_A= H_GN_A;
+		GN_B= H_GN_B;
+		rho = H_rho;
+		g1 = H_g1;
+	#endif	
+		
 		Free_energy = SCF(); 
 		Free_energy=Helmholtz();
 		printf("Free energy : %1f \n", Free_energy);	
 	}
+
 
 
 #ifdef CUDA
@@ -1445,11 +1494,45 @@ int main(int argc, char *argv[]) {
 #ifdef CUDA
 	TransferDataToHost(H_phi,phi,4*MM);
 #endif
+
 	Cp(PHI,H_phi+2*MM,MM); Add(PHI,phi+3*MM,MM); 
 	vtk_output(fname+"_phi.vtk",PHI);
 
+/*	ofstream varfile;
+	varfile.open ("surf_profile.dat");
+	for (int z=1; z<MZ; z++){	
+		varfile << z <<"\t" << PHI[10*JX+40*JY+ z] << endl;
+		}
+	varfile.close();
+	
+	ofstream varfile2;
+	varfile2.open ("surf_profile_part_1.dat");
+	for (int z=1; z<MZ; z++){	
+		varfile2 << z <<"\t" << PHI[15*JX+35*JY+ z] << endl;
+		}
+	varfile2.close();
+*/	
+	
+	
+	
 	Cp(PHI,H_phi,MM);
 	vtk_output(fname+"A_phi.vtk",PHI);
+	
+/*	ofstream varfile3;
+	varfile3.open ("mol_profile.dat");
+	for (int z=1; z<MZ; z++){	
+		varfile3 << z <<"\t" << PHI[10*JX+40*JY+ z] << endl;
+		}
+	varfile3.close();
+	
+	ofstream varfile4;
+	varfile4.open ("mol_profile_part_1.dat");
+	for (int z=1; z<MZ; z++){	
+		varfile4 << z <<"\t" << PHI[15*JX+35*JY+ z] << endl;
+		}
+	varfile4.close();
+*/	
+	
 	Cp(PHI,H_phi+MM,MM);
 	vtk_output(fname+"B_phi.vtk",PHI);
 	filename=fname+".out";

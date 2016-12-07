@@ -527,7 +527,7 @@ void H_Zero(float* H_P, int M){//this precedure should act on a host P.
 	for (int i=0; i<M; i++) H_P[i] = 0;
 }
 
-void Side(double *X_side, double *X, int M) {
+void Side(float *X_side, float *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
@@ -571,9 +571,9 @@ void advanced_average(float *X_side, float *X, int M){
 	Norm(X_side,1.0/26.0,M);
 }
 
-void Propagate(double* G, double* G1, int s_from, int s_to) { //on small boxes
+void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
-	double *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
+	float *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
 	Zero(gs,MMM);
 	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
 	
@@ -586,8 +586,8 @@ void Propagate(double* G, double* G1, int s_from, int s_to) { //on small boxes
 	Norm(gs,1.0/12.0,MMM); Times(gs,gs,g,MMM);
 }
 
-void PROPAGATE(double *G, double *G1, int s_from, int s_to) { //on big box
-	double *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
+void PROPAGATE(float *G, float *G1, int s_from, int s_to) { //on big box
+	float *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
 	Zero(gs,MM);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
@@ -867,8 +867,8 @@ void DIIS(float* x, float* x_x0, float* xR, float* Aij, float* Apij,float* Ci, i
 	}
 }
 float GrandPotential(){
-	double GP=0;
-	double volume = 1.0*MX*MY*MZ;
+	float GP=0;
+	float volume = 1.0*MX*MY*MZ;
 	RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(phi+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(phi+2*MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);

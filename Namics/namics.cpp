@@ -527,6 +527,23 @@ void H_Zero(float* H_P, int M){//this precedure should act on a host P.
 	for (int i=0; i<M; i++) H_P[i] = 0;
 }
 
+
+void subdomain(int *fBx,int *fBy,int *fBz, int *fPx,int *fPy,int *fPz){
+    int loop = 0;
+    for (int xcord=0; xcord<11; xcord++){
+		for(int ycord=0; ycord<11; ycord++){
+	    loop = loop+1;	
+		fPx[loop-1] = xcord*5 ; fPy[loop-1] = ycord*5 ; fPz[loop-1] = 26 ;
+		fBx[loop-1] = xcord*5-20; fBy[loop-1] = ycord*5-20 ; fBz[loop-1] = 5 ;		
+		}
+	}
+	for (int p=0; p<n_box; p++){
+		if (fBx[p]<1) {fBx[p] +=MX; fPx[p] +=MX;}
+		if (fBy[p]<1) {fBy[p] +=MY; fPy[p] +=MY;}
+		if (fBz[p]<1) {fBz[p] +=MZ; fPz[p] +=MZ;}
+	}	
+}
+
 void Side(float *X_side, float *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 
@@ -1199,7 +1216,7 @@ int main(int argc, char *argv[]) {
 		GetInt(elems,"n_segments",n_seg,"No 'n_segments' detected in .in file "); 
 		if (!GetInt(elems,"n_cosolvents",n_cosol)) n_cosol = 0;
 		if (!GetInt(elems,"n_solvents",n_sol)) n_sol = 2; 
-		if (!GetInt(elems,"N",N,"no 'N' (length of the co-polymer-blocks) detected in .in file")) N = 10; 
+		if (!GetInt(elems,"N",N,"no 'N' (length of the co-polymer-blocks) detected in .in file")) N = 20; 
 		if (!GetInt(elems,"NA",N_A,"no 'NA' (length of the solvent-A) detected in .in file")) N_A = 4;
 		if (!GetInt(elems,"NB",N_B,"no 'NB' (length of the solvent-B) detected in .in file")) N_B = 4;
 		if (!GetFloat(elems,"CHI",CHI,"no 'CHI' detected in .in file")) CHI = 0.6;
@@ -1306,8 +1323,8 @@ int main(int argc, char *argv[]) {
 
 
 
-	n_box = 2;
-	Mx=My=Mz=20; 
+	n_box = 121;
+	Mx=My=Mz=40; 
 
 	jx = (My+2)*(Mz+2); jy = Mz+2; M=(Mx+2)*(My+2)*(Mz+2);
 	bx1=1; bxm=Mx; by1=1; bym=My; bz1=1; bzm=Mz; //reflecting for small boxes
@@ -1353,7 +1370,10 @@ int main(int argc, char *argv[]) {
 //		in_file.close();
 //	} else cout << "file " << filename << " is not available." << endl;
 
-	H_Bx[0]=15;
+
+	subdomain(H_Bx,H_By,H_Bz,H_Px,H_Py,H_Pz);
+
+	/*H_Bx[0]=15;
 	H_By[0]=15;
 	H_Bz[0]=15;
 	H_Px[0]=26;
@@ -1364,7 +1384,7 @@ int main(int argc, char *argv[]) {
 	H_Bz[1]=15;
 	H_Px[1]=20;
 	H_Py[1]=20;
-	H_Pz[1]=26;
+	H_Pz[1]=26;*/
 
 	for (int p=0; p<n_box; p++){
 		H_mask[p*M + jx*(H_Px[p]-H_Bx[p])+jy*(H_Py[p]-H_By[p])+(H_Pz[p]-H_Bz[p])]=1;

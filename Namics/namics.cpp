@@ -1,21 +1,12 @@
 #include "namics.h" 
-#include <iostream> 
-#include <cstring> 
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <iterator>
-#include <algorithm>
-#include <f2c.h>
-#include <clapack.h>
-#include <iomanip> 
-using namespace std;
-#ifdef CUDA
-#include <cuda.h>
-#include <cublas_v2.h>
-#include <cuda_runtime.h>
-#endif
+#include "input.cpp"
+#include "segment.cpp"
+#include "molecule.cpp"
+#include "output.cpp"
+#include "lattice.cpp"
+#include "system.cpp"
+#include "engine.cpp"
+#include "newton.cpp"
 
 #ifdef CUDA
 
@@ -1002,181 +993,58 @@ void vtk_output(string filename, float* X) {
 	fprintf(fp," %f \n", X[i*JX+j*JY+k]);
 	fclose(fp);
 }
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string>&elems){
-	std::stringstream ss(s);
-	std::string item;
-	while (std::getline(ss,item,delim)) {
-		elems.push_back(item);
-	}
-	return elems;
-}
 
-std::vector<std::string> split(const std::string &s, char delim) {
-	std::vector<std::string> elems;
-	split(s,delim,elems);
-	return elems;
-}
-bool GetString(std::vector<std::string> elems, const std::string &s, std::string &ss) {
-	bool success=false;
-	std::vector<std::string> pair;
-        int i=0;
-	int length = elems.size();
-	while (!success && i < length) {
-		if (elems[i].find(s)!=std::string::npos) {
-			success=true;
-	              split(elems[i],':',pair);
-			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
- 			ss=pair[1];
-		}
-		i++;
-	}
-	return success;
-}
-
-bool GetString(std::vector<std::string> elems, const std::string &s, std::string &ss,const std::string &error) {
-	bool success=false;
-	std::vector<std::string> pair;
-        int i=0;
-	int length = elems.size();
-	while (!success && i < length) {
-		if (elems[i].find(s)!=std::string::npos) {
-			success=true;
-	              split(elems[i],':',pair);
-			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
- 			ss=pair[1];
-		}
-		i++;
-	}
-	if (!success) cout << error << endl; 
-	return success;
-}
-
-bool GetInt(std::vector<std::string> elems, const std::string &s, int &ss) {
-	bool success=false;
-	stringstream string_s;
-	std::vector<std::string> pair;
-       int i=0;
-	int length = elems.size();
-	while (!success && i < length) {
-		if (elems[i].find(s)!=std::string::npos) {
-			success=true;
-	              split(elems[i],':',pair);
-			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
-			string_s << pair[1] ;
-			string_s >> ss;
-		}
-		i++;
-	}
-	return success;
-}
-
-bool GetInt(std::vector<std::string> elems, const std::string &s, int &ss,const std::string &error) {
-	bool success=false;
-	stringstream string_s;
-	std::vector<std::string> pair;
-       int i=0;
-	int length = elems.size();
-	while (!success && i < length) {
-		if (elems[i].find(s)!=std::string::npos) {
-			success=true;
-	              split(elems[i],':',pair);
-			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
-			string_s << pair[1] ;
-			string_s >> ss;
-		}
-		i++;
-	}
-	if (!success) cout << error << endl; 
-	return success;
-}
-
-bool Getfloat(std::vector<std::string> elems, const std::string &s, float&ss) {
-	bool success=false;
-	stringstream string_s;
-	std::vector<std::string> pair;
-        int i=0;
-	int length = elems.size();
-	while (!success && i < length) {
-		if (elems[i].find(s)!=std::string::npos) {
-			success=true;
-	              split(elems[i],':',pair);
-			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
-			string_s << pair[1] ;
-			string_s >> ss;
-		}
-		i++;
-	}
-
-	return success;
-}
-
-bool Getfloat(std::vector<std::string> elems, const std::string &s, float&ss,const std::string &error) {
-	bool success=false;
-	stringstream string_s;
-	std::vector<std::string> pair;
-       int i=0;
-	int length = elems.size();
-	while (!success && i < length) {
-		if (elems[i].find(s)!=std::string::npos) {
-			success=true;
-	              split(elems[i],':',pair);
-			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
-			string_s << pair[1] ;
-			string_s >> ss;
-		}
-		i++;
-	}
-	if (!success) cout << error << endl;
-	return success;
-}
-
-bool GetBool(std::vector<std::string> elems, const std::string &s, bool &ss) {
-	bool success=false;
-	std::string string_s;
-	std::vector<std::string> pair;
-       int i=0;
-	int length = elems.size();
-	while (!success && i < length) {
-		if (elems[i].find(s)!=std::string::npos) {
-			success=true;
-	              split(elems[i],':',pair);
-			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
-		       string_s=pair[1];
-		}
-		i++;
-	}
-	if (success) {
-		if (string_s =="true" ||  string_s =="True" || string_s =="TRUE") ss=true; else ss=false;
-	}
-	return success;
-}
-
-bool GetBool(std::vector<std::string> elems, const std::string &s, bool &ss, string,const std::string &error) {
-	bool success=false;
-	std::string string_s;
-	std::vector<std::string> pair;
-       int i=0;
-	int length = elems.size();
-	while (!success && i < length) {
-		if (elems[i].find(s)!=std::string::npos) {
-			success=true;
-	              split(elems[i],':',pair);
-			pair[1].erase(std::remove(pair[1].begin(), pair[1].end(), ' '), pair[1].end());
-		       string_s=pair[1];
-		}
-		i++;
-	}
-	if (success) {
-		if (string_s =="true" ||  string_s =="True" || string_s =="TRUE") ss=true; else ss=false;
-	}
-	if (!success) cout << error << endl;
-	return success;
-}
 
 int main(int argc, char *argv[]) {
 	string fname;
 	string filename;
 	string line;
+	ofstream out_file;
+
+
+	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;}
+	filename = fname + ".in";
+	vector<Input*> In; In.push_back(new Input(filename)); if (In[0]->Input_error) {return 0;}
+	vector<Lattice*> Lat; Lat.push_back(new Lattice(In,In[0]->LatList[0])); if (!Lat[0]->CheckInput()) {return 0;}
+	
+	n_seg=In[0]->MonList.size();
+
+	vector<Segment*> Seg; 
+	for (int i=0; i<n_seg; i++) Seg.push_back(new Segment(In,In[0]->MonList[i],i,n_seg));
+	for (int i=0; i<n_seg; i++) {  
+		for (int k=0; k<n_seg; k++) Seg[i]->PutChiKEY(Seg[k]->name); if (!Seg[i]->CheckInput()) return 0;   
+	}
+
+	n_mol = In[0]->MolList.size(); 
+ 
+	vector<Molecule*> Mol; for (int i=0; i<n_mol; i++) Mol.push_back(new Molecule(In,Seg,In[0]->MolList[i],i,n_mol));
+	for (int i=0; i<n_mol; i++) {if (!Mol[i]->CheckInput()) return 0;}
+	vector<System*> Sys; Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0])); if (!Sys[0]->CheckInput()) {return 0;}
+	if (!Sys[0]->CheckChi_values(n_seg)) return 0;
+	if (In[0]->NewtonList.size()>0) {
+		vector<Newton*> New; New.push_back(new Newton(In,Sys,In[0]->NewtonList[0])); if (!New[0]->CheckInput()) {return 0;}
+	}
+	vector<Engine*> Eng; Eng.push_back(new Engine(In,Sys,In[0]->EngineList[0])); if (!Eng[0]->CheckInput()) {return 0;}
+	n_out = In[0]->OutputList.size(); 
+	vector<Output*> Out; for (int i=0; i<n_out; i++) Out.push_back(new Output(In,In[0]->OutputList[i],i,n_out));
+	for (int i=0; i<n_out; i++) {
+		if (!Out[i]->CheckOutInput()) {return 0;}
+		string template_ = Out[i]->GetValue("template");
+		if (!Out[i]->Load(template_)) return 0;  
+	}
+	cal_types.push_back("micro-emulsion"); 
+	cal_types.push_back("membrane"); 
+
+	if (!In[0]->Get_string(Sys[0]->GetValue("calculation_type"),cal_type,cal_types,"In 'sys' the parameter 'calculation_type' is required")) {return 0;} 
+bool MEmulsion=cal_type=="micro-emulsion"; if (MEmulsion) cout << "micro-emulsion" << endl; 
+bool Membrane=cal_type=="membrane"; if (Membrane) cout<< "micro-emulsion" << endl;
+
+	if (!In[0]->Get_int(Lat[0]->GetValue("n_layers_x"),Lat[0]->MX,1,1e6,"In 'lat' the parameter 'n_layers_x' is required")) {return 0;}
+	if (!In[0]->Get_int(Lat[0]->GetValue("n_layers_y"),Lat[0]->MY,1,1e6,"In 'lat' the parameter 'n_layers_y' is required")) {return 0;}
+	if (!In[0]->Get_int(Lat[0]->GetValue("n_layers_z"),Lat[0]->MZ,1,1e6,"In 'lat' the parameter 'n_layers_z' is required")) {return 0;}
+
+	MX=Lat[0]->MX; MY=Lat[0]->MY;MZ=Lat[0]->MZ;  
+
 
 	Aij = new float[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; //needed for SVD which is done on cpu.
 	Ci = new float[m]; for (int i=0; i<m; i++) Ci[i]=0;
@@ -1189,46 +1057,17 @@ int main(int argc, char *argv[]) {
 #endif
 	n_seg=2; //number of segment types.
 
-	if (argc == 2) fname = argv[1]; else {printf("Use: box filename \n"); return 1;}
-	filename = fname + ".in";
 
-	ifstream in_file;
-	ofstream out_file;
-	std::string In_buffer;
-	std::vector<std::string> elems;
-	string string_value;
 
-	in_file.open(filename.c_str());
-	if (in_file.is_open()) {
-		std:: string In_line;
-		while (in_file) {
-			std::getline(in_file,In_line);
-			In_buffer.append(In_line).append(";");
-		}
-		in_file.close();
-	} else cout <<  "file " << filename << " is not available. " << endl;
-
-	split(In_buffer,';',elems);
-	GetString(elems,"calculation_type",string_value,"No 'calculation_type' detected in .in file " );
-	if (string_value.find("micro-emulsion")!=std::string::npos) {MEmulsion=true;} else
-	if (string_value.find("membrane")!=std::string::npos){Membrane=true;} else
-	cout << "'calculation_type' should be 'micro-emulsion' or 'membrane' in .in file" << endl; 
-
-	if (!GetInt(elems,"n_layers_x",MX,"No 'n_layers_x' detected in .in file.")) MX=0;
-	if (!GetInt(elems,"n_layers_y",MY,"No 'n_layers_y' detected in .in file.")) MY=0;
-	if (!GetInt(elems,"n_layers_z",MZ,"No 'n_layers_z' detected in .in file.")) MZ=0;
-	if (MX*MY*MX == 0) {cout << "n_layers_x, or n_layers_y or n_layers_z not well-defined in .in file. "<<endl;  return(0); }
 
 	if (MEmulsion) { //Read info from 'in' file for micro-emulsion model. 
-// We will have 2 solvents (A)N_A and (B)N_B, N_A=N_B=4 and 1 copolymer (A)N-X-(B)N with length N=10 
-// there will be 1 chi-value set to 0.6;
-		GetInt(elems,"n_segments",n_seg,"No 'n_segments' detected in .in file "); 
-		if (!GetInt(elems,"n_cosolvents",n_cosol)) n_cosol = 0;
-		if (!GetInt(elems,"n_solvents",n_sol)) n_sol = 2; 
-		if (!GetInt(elems,"N",N,"no 'N' (length of the co-polymer-blocks) detected in .in file")) N = 20; 
-		if (!GetInt(elems,"NA",N_A,"no 'NA' (length of the solvent-A) detected in .in file")) N_A = 4;
-		if (!GetInt(elems,"NB",N_B,"no 'NB' (length of the solvent-B) detected in .in file")) N_B = 4;
-		if (!Getfloat(elems,"CHI",CHI,"no 'CHI' detected in .in file")) CHI = 0.6;
+
+	n_cosol = 0;
+	n_sol = 2; 
+	N = 20; 
+	N_A = 4;
+	N_B = 4;
+	CHI = 0.6;
 
 		charges = false;
 

@@ -815,8 +815,8 @@ void ComputeG(){
 	Cp(phitot,phi,MM); Add(phitot,phi+MM,MM); Add(phitot,phi+2*MM,MM);Add(phitot,phi+3*MM,MM);Add(phitot,MASK,MM);
 	Side(phi_side,PHI,MM);Side(phi_side+MM,PHI+MM,MM);
 	Cp(g,u,iv);
-	PutAlpha(g,phitot,phi_side+MM,CHI,phib[2],MM);
-	PutAlpha(g+MM,phitot,phi_side,CHI,phib[1],MM);
+	PutAlpha(g,phitot,phi_side+MM,CHI,phib[1],MM);
+	PutAlpha(g+MM,phitot,phi_side,CHI,phib[0],MM);
 	Cp(alpha,g,MM); Add(alpha,g+MM,MM); Norm(alpha,1.0/n_seg,MM);
 	for (int i=0; i<n_seg; i++) {
 		AddG(g+i*MM,phitot,alpha,MM);

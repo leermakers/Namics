@@ -6,10 +6,12 @@ public:
 
 	string name; 
 	ifstream in_file;
+
 	
 	std::string In_buffer;
 	string string_value;
 	bool Input_error; 
+	string filename; 
 
 	
 	std::vector<string> KEYS;
@@ -23,30 +25,39 @@ public:
 	std::vector<std::string>  elems;
 
 	 
-	void PrintList(std::vector<std::string> &);
-	std::vector<std::string>& split(const std::string &, char, std::vector<std::string>&); 
+	void PrintList(std::vector<std::string>);
+	std::vector<std::string>& split( std::string , char, std::vector<std::string>&); 
 	bool IsDigit(string &);
-	bool Get_int(string, int &);
-	bool Get_int(string, int &,const std::string &);
+	int Get_int(string, int );
+	bool Get_int(string, int &, const std::string &);
 	bool Get_int(string, int &, int, int, const std::string &);
-	bool Get_string(string, string &,  const std::string);
-	bool Get_string(string, string &, std::vector<std::string>&, const std::string);
-	bool Get_double(string, double &);
-	bool Get_double(string, double &, const std::string &);
-	bool Get_double(string, double &, double, double, const std::string &);
-	bool Get_bool(string, bool &,const std::string &);
+	string Get_string(string, const string &);
+	bool Get_string(string, string &, const  std::string & );
+	bool Get_string(string , string &, std::vector<std::string>&, const std::string &);
+	float Get_float(string, float );
+	bool Get_float(string, float &, const std::string &);
+	bool Get_float(string, float &, float, float, const std::string &);
+	bool Get_bool(string, bool );
+	bool Get_bool(string, bool &, const std::string &);
 	bool TestNum(std::vector<std::string> &, string ,int, int, int);
 	int GetNumStarts(void); 
 	bool CheckParameters(string, string name,std::vector<std::string> &, std::vector<std::string> &,std::vector<std::string> &);
 	bool LoadItems(string, std::vector<std::string> &, std::vector<std::string> &, std::vector<std::string> &);
 	bool CheckInput(void); 
+	bool InSet(std::vector<std::string> &, string);
+	bool ReadFile(string,string &); 
+	bool ArePair(char ,char ); 
+	bool EvenBrackets(string,vector<int> &, vector<int>&); 
 
 };
 Input::Input(string name_) {
 	name=name_;
-	KEYS.push_back("start"); KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); 	
+	//KEYS.push_back("start"); 
+	KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); 	
  	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("output");
+
 	in_file.open(name.c_str()); Input_error=false; 
+
 	if (in_file.is_open()) {
 		int line_nr=0;
 		bool add=true; 
@@ -68,13 +79,56 @@ Input::Input(string name_) {
 Input::~Input() {
 }
 
-void Input::PrintList(std::vector<std::string> &LIST) {
+bool Input::ArePair(char opening,char closing){
+	if (opening == '(' && closing == ')') return true;
+	//else if (opening == '[' && closing == ']') return true;
+	//else if (opening == '{' && closing == '}') return true;
+	return false; 
+}
+
+bool Input::EvenBrackets(string exp,vector<int> &open, vector<int> &close) {
+	vector <char> S;
+	int length = exp.size(); 
+	for (int i=0; i<length; i++) {
+		if (exp[i] == '(' ) {S.push_back(exp[i]); open.push_back(i);} 
+		else if (exp[i] == ')') { close.push_back(i);
+			if (S.size()==0 || !ArePair(S[S.size()-1],exp[i])) return false;
+			else
+			S.pop_back();
+		}
+	}
+	return S.size()==0 ? true:false; 
+}
+
+bool Input::ReadFile(string fname, string &In_buffer) {
+	ifstream this_file;
+	bool success=true; 
+	bool add;  
+	this_file.open(fname.c_str());
+	std:: string In_line; 
+	if (this_file.is_open()) {
+		while (this_file) {
+			add=true;
+			std::getline(this_file,In_line);
+			In_line.erase(std::remove(In_line.begin(), In_line.end(), ' '), In_line.end());
+			if (In_line.length()==0) add = false;
+			if (In_line.length()>2) {if (In_line.substr(0,2) == "//") {add = false;}}
+			if (add) {In_buffer.append(In_line).append("#");}; 
+		}	
+		this_file.close();
+		if (In_buffer.size()==0) {cout << "File " + fname + " is empty " << endl; success=false; }
+	} else {cout <<  "Inputfile " << fname << " is not found. " << endl; success=false; }
+	return success;
+}
+
+
+void Input::PrintList(std::vector<std::string> LIST) {
 	int length=LIST.size(); 
 	int i=0;
 	while (i<length) {cout << LIST[i] << " ; "; i++; } 
 }
 
-std::vector<std::string>& Input::split(const std::string &s, char delim, std::vector<std::string>&elems){
+std::vector<std::string>& Input::split(std::string s, char delim, std::vector<std::string>&elems){
 	bool add=true; 
 	std::stringstream ss(s);
 	std::string item;
@@ -91,19 +145,21 @@ bool Input:: IsDigit(string &s) {
 	return (s=="0" || s=="1" ||s=="2" || s=="3" || s=="4" || s=="5" ||s=="6" || s=="7" || s=="8" || s=="9"); 
 }
 
-bool Input:: Get_int(string s, int &ss) {
+int Input:: Get_int(string s, int ss) {
 	bool success = false;
+	int sss; 
 	stringstream string_s;
         string_s << s;
-	string_s >> ss; 	
+	string_s >> sss; 	
 	string sub; if (s.length()>0) sub = s.substr(0,1);
 	string sub2; if (s.length()>1) sub2= s.substr(1,1); 
 	if (sub=="-") { if (s.length()>1) {if (IsDigit(sub2)) {success=true;} }}
  	else {if (s.length()>0) {if (IsDigit(sub)) { success = true;}}} 
-	return success;
+	if (!success) sss=ss;
+	return  sss; 
 }
 
-bool Input:: Get_int(string s, int &ss,const std::string &error) {
+bool Input:: Get_int(string s, int &ss, const std::string &error) {
 	bool success = false;
 	stringstream string_s;
         string_s << s;
@@ -133,43 +189,42 @@ bool Input:: Get_int(string s, int &ss, int low, int high, const std::string &er
 	return success;
 }
 
-bool Input:: Get_string(string s, string &ss,  const std::string error) {
+string Input:: Get_string(string s, const string &ss) {
+	if (s.length() > 0) { return s;} else {return ss;} 
+
+}
+bool Input:: Get_string(string s, string &ss, const  std::string &error) {
 	bool success = false;
 	if (s.length() > 0) { ss=s; success = true;}
 	if (!success) cout << error << endl;
 	return success; 
 }
-bool Input:: Get_string(string s, string &ss, std::vector<std::string>&S, const std::string error) {
-	bool success = false;
+bool Input:: Get_string(string s, string &ss, std::vector<std::string>&S, const std::string &error) {
+	bool success = false; 
 	if (s.length() > 0) { ss=s; success = true;}
 	if (!success) {cout << error << endl;} 
-	else {
-		int i=0; 
-		success = false;
-		int length = S.size();
-		if (i<length) {
-			if (S[i]==ss) success=true;  
-			i++;
-		}
-		if (!success) {cout << "Value of " << ss << " is not recognised. Select from: " << endl; 
+	else {	success=InSet(S,ss);  
+		if (!success) {cout << error << " value '" << ss << "' is not allowed. Select from: " << endl; 
 			PrintList(S); cout << endl;
 		} 
 	}
 	return success; 
 }
 
-bool Input:: Get_double(string s, double &ss) {
+float Input:: Get_float(string s, float ss) {
 	bool success=false;
+	float sss;
 	stringstream string_s;
 	string_s << s ;
-	string_s >> ss;
+	string_s >> sss;
 	string sub; if (s.length()>0) sub = s.substr(0,1);
 	string sub2; if (s.length()>1) sub2= s.substr(1,1); 
 	if (sub=="-") { if (s.length()>1) {if (IsDigit(sub2)) {success=true;} }}
  	else {if (s.length()>0) {if (IsDigit(sub)) { success = true;}}} 
-	return success;
+	if (!success) sss=ss;
+	return sss; 
 }
-bool Input:: Get_double(string s, double &ss, const std::string &error) {
+bool Input:: Get_float(string s, float &ss, const std::string &error) {
 	bool success=false;
 	stringstream string_s;
 	string_s << s ;
@@ -181,7 +236,7 @@ bool Input:: Get_double(string s, double &ss, const std::string &error) {
 	if (!success) cout << error << endl;
 	return success;
 }
-bool Input:: Get_double(string s, double &ss, double low, double high, const std::string &error) {
+bool Input:: Get_float(string s, float &ss, float low, float high, const  std::string &error) {
 	bool success=false;
 	stringstream string_s;
 	string_s << s ;
@@ -198,12 +253,18 @@ bool Input:: Get_double(string s, double &ss, double low, double high, const std
 	return success;
 }
 
-bool Input:: Get_bool(string s, bool &ss,const std::string &error) {
+bool Input:: Get_bool(string s, bool ss) {
 	bool success=false;
-	std::string string_s;
-	string_s=s;
-	if (string_s =="true" ||  string_s =="True" || string_s =="TRUE") {ss=true; success=true;} else 
-	if (string_s =="false" ||  string_s =="False" || string_s =="FALSE") ss=false; else success=false; 
+	bool sss; 
+	if (s =="true" || s =="True" || s =="TRUE") {sss=true; success=true;} else 
+	if (s =="false" ||  s =="False" || s =="FALSE") sss=false; else success=false; 
+	if (!success) sss=ss;
+	return sss; 
+}
+bool Input:: Get_bool(string s, bool &ss, const std::string &error) {
+	bool success=false;
+	if (s =="true" ||  s =="True" || s =="TRUE") {ss=true; success=true;} else 
+	if (s =="false" ||  s =="False" || s =="FALSE") ss=false; else success=false; 
 	if (!success) cout << error << endl;
 	return success;
 }
@@ -240,6 +301,18 @@ int Input:: GetNumStarts() {
 	}
 	return number;
 }
+
+bool Input:: InSet(std::vector<std::string> &Standard, string keyword){
+	bool success=false; 
+	int S_length = Standard.size();
+	int i=0;
+	while (i<S_length && !success) {
+		if (Standard[i] == keyword) success=true; 
+		i++;
+	}
+	return success; 
+}
+
 bool Input:: CheckParameters(string keyword, string name,std::vector<std::string> &Standard, std::vector<std::string> &Input,std::vector<std::string> &Input_values) {
 	bool success=true;
 	bool prop_found; 
@@ -405,13 +478,13 @@ bool Input:: CheckInput(void) {
 		i++; 
 	}
 
-	if (!TestNum(SysList,"sys",0,1,1)) {cout << "There can be no more than 1 sys name in the input" << endl; }
-	if (!TestNum(LatList,"lat",1,1,1)) {cout << "There must be exactly one lat name in the input" << endl; success=false;}
-	if (!TestNum(NewtonList,"newton",0,1,1)) {cout << "There can be no more than 1 newton name in input" << endl; success=false;}
-	if (!TestNum(MonList,"mon",1,1000,1)) {cout << "There must be at least one mon name in input" << endl; success=false;}
-	if (!TestNum(MolList,"mol",1,1000,1)) {cout << "There must be at least one mol name in input" << endl; success=false;}
+	if (!TestNum(SysList,"sys",0,1,1)) {cout << "There can be no more than 1 'sys name' in the input" << endl; }
+	if (!TestNum(LatList,"lat",1,1,1)) {cout << "There must be exactly one 'lat name' in the input" << endl; success=false;}
+	if (!TestNum(NewtonList,"newton",0,1,1)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
+	if (!TestNum(MonList,"mon",1,1000,1)) {cout << "There must be at least one 'mon name' in input" << endl; success=false;}
+	if (!TestNum(MolList,"mol",1,1000,1)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}
 	if (!TestNum(OutputList,"output",1,1000,1)) {cout << "No output defined! " << endl;}
-	if (!TestNum(EngineList,"engine",1,1,1)) {cout << "You need to define exactly one engine in the input " << endl; success=false;}
+	if (!TestNum(EngineList,"engine",0,1,1)) {cout << "There can be no more than 1 'engine' name in the input " << endl; success=false;}
 	
 	return success;
 }

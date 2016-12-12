@@ -2,26 +2,22 @@ lat : hex : n_layers_x : 51
 lat : hex : n_layers_y : 51
 lat : hex : n_layers_z : 51
 sys : ram : calculation_type : micro-emulsion
-engine : nice : MC : true
+//engine : nice : MC : true
 //sys : ram : variation : 1
 mon : A : freedom : free
-//mon : B : freedom : free
-//mon : A : chi - B : 0.6
-mol : A : chainlength : 4
-//mol : A : segtype : A
-//mol : B : segtype : B
-//mol : B : chainlength : 4
-//mol : A : freedom : free
-//mol : B : freedom : free
-//mol : C : chainlength : 10
-//mol : C : freedom : tagged
-//mol : C : segtype : A
-//mol : D : chainlength : 10
-//mol : D : segtype : B
-//mol : D : freedom : tagged
-//mol : C : pos1 : 1;2;3 
-output : out : template : non
-//newton : isaac : method : DIIS
+mon : B : freedom : free
+mon : X : freedom : tagged
+mon : X : tagged_range : (10,10,10)
 
+mol : A : composition : (A)4
+mol : B : composition : (B)4
+mol : AB : composition : (A)10(X)1(B)10
+mol : A : freedom : free
+mol : A : phibulk : 0.3
+mol : B : freedom : solvent
+mol : A : save_memory : true
+output : out : template : non
+newton :isaac : method : DIIS
+//newton : isaac : stop_criterion : again
 
 

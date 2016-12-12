@@ -932,8 +932,8 @@ TransferDataToHost(H_GN_B,GN_B,n_box);
 	for (int p=0; p<n_box; p++) {entropy +=log(H_GN_A[p]/N); entropy +=log(H_GN_B[p]/N);}
 	RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(phi+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-	entropy +=Sum(phi,MM)/N_A*log(phib[0]);
-	entropy +=Sum(phi+MM,MM)/N_B*log(phib[1]);
+	entropy -=Sum(phi,MM)/N_A*log(phib[0]);
+	entropy -=Sum(phi+MM,MM)/N_B*log(phib[1]);
 	F_Helmholtz = energy - entropy;
 	return F_Helmholtz;
 }

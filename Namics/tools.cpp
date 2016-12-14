@@ -481,3 +481,6 @@ void RemoveBoundaries(float *P, int jx, int jy, int bx1, int bxm, int by1, int b
 	b_z(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
 }
 #endif
+
+
+

@@ -39,6 +39,6 @@ string Engine::GetValue(string parameter){
 		}
 		i++;
 	}
-	return " " ; 
+	return "" ; 
 }
  

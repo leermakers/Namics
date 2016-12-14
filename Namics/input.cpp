@@ -45,6 +45,9 @@ public:
 	bool LoadItems(string, std::vector<std::string> &, std::vector<std::string> &, std::vector<std::string> &);
 	bool CheckInput(void); 
 	bool InSet(std::vector<std::string> &, string);
+	bool InSet(vector<int> &, int);
+	bool InSet(vector<int> &, int&, int);
+	bool InSet(std::vector<std::string> &, int&, string);
 	bool ReadFile(string,string &); 
 	bool ArePair(char ,char ); 
 	bool EvenBrackets(string,vector<int> &, vector<int>&); 
@@ -308,6 +311,36 @@ bool Input:: InSet(std::vector<std::string> &Standard, string keyword){
 	int i=0;
 	while (i<S_length && !success) {
 		if (Standard[i] == keyword) success=true; 
+		i++;
+	}
+	return success; 
+}
+bool Input:: InSet(std::vector<std::string> &Standard, int &pos, string keyword){
+	bool success=false;
+	int S_length = Standard.size();
+	int i=0;
+	while (i<S_length && !success) {
+		if (Standard[i] == keyword) {success=true; pos=i;} 
+		i++;
+	}
+	return success; 
+}
+bool Input:: InSet(vector<int> &Standard, int keyword){
+	bool success=false; 
+	int S_length = Standard.size();
+	int i=0;
+	while (i<S_length && !success) {
+		if (Standard[i] == keyword) success=true; 
+		i++;
+	}
+	return success; 
+}
+bool Input:: InSet(vector<int> &Standard, int &pos, int keyword){
+	bool success=false; 
+	int S_length = Standard.size();
+	int i=0;
+	while (i<S_length && !success) {
+		if (Standard[i] == keyword) {success=true; pos=i;} 
 		i++;
 	}
 	return success; 

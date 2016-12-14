@@ -1,13 +1,13 @@
 #include "namics.h"
 #include "tools.cpp" 
 #include "input.cpp"
+#include "lattice.cpp"
 #include "segment.cpp"
 #include "molecule.cpp"
-#include "output.cpp"
-#include "lattice.cpp"
 #include "system.cpp"
-#include "engine.cpp"
 #include "newton.cpp"
+#include "engine.cpp"
+#include "output.cpp"
 
 #ifdef CUDA
 __global__ void distributeg1(float *G1, float *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
@@ -57,21 +57,23 @@ __global__ void collectphi(float* phi, float* GN,float* rho, int* Bx, int* By, i
 
 void subdomain(int *fBx,int *fBy,int *fBz, int *fPx,int *fPy,int *fPz, int zloc){
     int loop = 0;
-    for (int xcord=1; xcord<=10; xcord++){
+		fPx[loop] = 26 ; fPy[loop] = 26 ; fPz[loop] = 26 ;
+		fBx[loop] = 26-10; fBy[loop] = 26-10 ; fBz[loop] = 26-10 ;
+    /*for (int xcord=1; xcord<=10; xcord++){
 		for(int ycord=1; ycord<=10; ycord++){	
 		fPx[loop] = (xcord)*5-2 ; fPy[loop] = (ycord)*5-2 ; fPz[loop] = zloc ;
 		fBx[loop] = (xcord*5-2)-10; fBy[loop] = (ycord*5-2)-10 ; fBz[loop] = zloc-10 ;	
 		loop = loop+1;
 		}
-	}
-	for (int diag=1; diag<=12; diag++){
+	}*/
+	/*for (int diag=1; diag<=12; diag++){
 		fPx[loop] = diag*4 ; fPy[loop] = diag*4 ; fPz[loop] = 26 ;
 		fBx[loop] = (diag*4)-10; fBy[loop] = (diag*4)-10 ; fBz[loop] = 16 ;
 		loop = loop+1;
-	}
+	}*/
 }
 
-void Side(float *X_side, float *X, int M) {
+void Sideh(float *X_side, float *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
@@ -85,7 +87,7 @@ void Side(float *X_side, float *X, int M) {
 
 
 
-void SideCUBIC(float *X_side, float *X, int M) {
+void Side(float *X_side, float *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
 	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
@@ -115,7 +117,7 @@ void advanced_average(float *X_side, float *X, int M){
 	Norm(X_side,1.0/26.0,M);
 }
 
-void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
+void Propagateh(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
 	float *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
 	Zero(gs,MMM);
@@ -130,7 +132,7 @@ void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	Norm(gs,1.0/12.0,MMM); Times(gs,gs,g,MMM);
 }
 
-void PROPAGATE(float *G, float *G1, int s_from, int s_to) { //on big box
+void PROPAGATEh(float *G, float *G1, int s_from, int s_to) { //on big box
 	float *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
 	Zero(gs,MM);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
@@ -145,7 +147,7 @@ void PROPAGATE(float *G, float *G1, int s_from, int s_to) { //on big box
 
 
 
-void PropagateCubic(float* G, float* G1, int s_from, int s_to) { //on small boxes
+void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
 	float *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
 	Zero(gs,MMM);
@@ -156,7 +158,7 @@ void PropagateCubic(float* G, float* G1, int s_from, int s_to) { //on small boxe
 	Norm(gs,1.0/6.0,MMM); Times(gs,gs,g,MMM);
 }
 
-void PROPAGATECUBIC(float *G, float *G1, int s_from, int s_to) { //on big box
+void PROPAGATE(float *G, float *G1, int s_from, int s_to) { //on big box
 	float *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
 	Zero(gs,MM);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
@@ -516,40 +518,36 @@ int main(int argc, char *argv[]) {
 	filename = fname + ".in";
 	vector<Input*> In; In.push_back(new Input(filename)); if (In[0]->Input_error) {return 0;}
 	vector<Lattice*> Lat; Lat.push_back(new Lattice(In,In[0]->LatList[0])); if (!Lat[0]->CheckInput()) {return 0;}
-	
-	n_seg=In[0]->MonList.size();
-
 	vector<Segment*> Seg; 
-	for (int i=0; i<n_seg; i++) Seg.push_back(new Segment(In,In[0]->MonList[i],i,n_seg,Lat[0]->MX,Lat[0]->MY,Lat[0]->MZ));
+	int n_seg=In[0]->MonList.size();	
+	for (int i=0; i<n_seg; i++) Seg.push_back(new Segment(In,Lat,In[0]->MonList[i],i,n_seg));
 	for (int i=0; i<n_seg; i++) {  
 		for (int k=0; k<n_seg; k++) Seg[i]->PutChiKEY(Seg[k]->name); if (!Seg[i]->CheckInput()) return 0;   
 	}
-
 	n_mol = In[0]->MolList.size(); 
- 
-	vector<Molecule*> Mol; for (int i=0; i<n_mol; i++) Mol.push_back(new Molecule(In,Seg,In[0]->MolList[i],i,n_mol));
+	vector<Molecule*> Mol; for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,In[0]->MolList[i]));}
 	for (int i=0; i<n_mol; i++) {if (!Mol[i]->CheckInput()) return 0;}
 	vector<System*> Sys; Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0])); if (!Sys[0]->CheckInput()) {return 0;}
 	if (!Sys[0]->CheckChi_values(n_seg)) return 0;
-	if (In[0]->NewtonList.size()>0) {
-		vector<Newton*> New; New.push_back(new Newton(In,Sys,In[0]->NewtonList[0])); if (!New[0]->CheckInput()) {return 0;}
-	}
-	if (In[0]->EngineList.size()>0) {
-		vector<Engine*> Eng; Eng.push_back(new Engine(In,Sys,In[0]->EngineList[0])); if (!Eng[0]->CheckInput()) {return 0;}
-	}
-	n_out = In[0]->OutputList.size(); 
+	string newton_name;
+	if (In[0]->NewtonList.size()>0) {newton_name=In[0]->NewtonList[0];} else newton_name="noname"; 
+	vector<Newton*> New; New.push_back(new Newton(In,Lat,Seg,Sys,newton_name)); if (!New[0]->CheckInput()) {return 0;}
+	string engine_name;
+	if (In[0]->EngineList.size()>0) {engine_name=In[0]->EngineList[0];} else engine_name="noname";
+	vector<Engine*> Eng; Eng.push_back(new Engine(In,Sys,engine_name)); if (!Eng[0]->CheckInput()) {return 0;}
+	int n_out = In[0]->OutputList.size(); 
 	vector<Output*> Out; for (int i=0; i<n_out; i++) Out.push_back(new Output(In,In[0]->OutputList[i],i,n_out));
 	for (int i=0; i<n_out; i++) {
 		if (!Out[i]->CheckOutInput()) {return 0;}
 		string template_ = Out[i]->GetValue("template");
 		if (!Out[i]->Load(template_)) return 0;  
 	}
-	cal_types.push_back("micro-emulsion"); 
-	cal_types.push_back("membrane"); 
+	New[0]->AllocateMemory();
+	New[0]->PrepareForCalculations(); 
+	New[0]->Solve();
+	MEmulsion=true;
+	Membrane=false;
 
-	if (!In[0]->Get_string(Sys[0]->GetValue("calculation_type"),cal_type,cal_types,"In 'sys' the parameter 'calculation_type' is required")) {return 0;} 
-bool MEmulsion=cal_type=="micro-emulsion"; if (MEmulsion) cout << "micro-emulsion" << endl; 
-bool Membrane=cal_type=="membrane"; if (Membrane) cout<< "micro-emulsion" << endl;
 
 	MX=Lat[0]->MX; MY=Lat[0]->MY;MZ=Lat[0]->MZ;  
 
@@ -679,7 +677,7 @@ bool Membrane=cal_type=="membrane"; if (Membrane) cout<< "micro-emulsion" << end
 
 
 
-	n_box = 112;
+	n_box = 1;
 	Mx=My=Mz=20; 
 
 	jx = (My+2)*(Mz+2); jy = Mz+2; M=(Mx+2)*(My+2)*(Mz+2);

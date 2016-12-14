@@ -1,27 +1,33 @@
-
-class Molecule { 
+class Molecule {
 public:
-	Molecule(vector<Input*>,vector<Segment*>,string,int,int);
-
+	Molecule(vector<Input*>,vector<Lattice*>,vector<Segment*>,string); 
 ~Molecule();
-
-	string name; 
+  
+	string name;  
 	vector<Input*> In;
 	vector<Segment*> Seg; 
-	vector<string> MolMonList;
+	vector<Lattice*> Lat;
+	vector<int> MolMonList;
 	int n_mol; 
 	int M; 
+	int MX,MY,MZ;
+	int BX1,BY1,BZ1,BXM,BYM,BZM;
+	int JX;
+	int JY; 	
 	int mol_nr; 
-	double theta;
-	double phibulk; 
+	float theta;
+	float phibulk;
+	float fraction(int); 
 	string freedom;
-	double n; 
-	double GN; 
+	MoleculeType MolType; 
+	float n; 
+	float GN,GN1,GN2; 
 	int chainlength;
 	bool save_memory; 
 	string composition;
 	vector<int> mon_nr;
 	vector<int> n_mon; 
+	vector<int> molmon_nr; 
 	float *phi;
 	float *Gg_f;
 	float *Gg_b; 
@@ -35,20 +41,23 @@ public:
 	void PutParameter(string);
 	bool Decomposition(string); 
 	int GetChainlength(void); 
-	double Theta(void);
+	float Theta(void);
 	string GetValue(string); 
 	int GetMonNr(string);
 	bool MakeMonList(void);  
 	bool IsPinned(void);
 	bool IsTagged(void); 
 	bool IsCharged(void); 
-	void PrepareForCalculations(void);
-	string GetFreedom(void); 
+	void AllocateMemory(void);
+	bool PrepareForCalculations(); 
+	bool ComputePhi(); 
+	bool ComputePhiMon();
+	bool ComputePhiLin();
 
-
+	
 };
-Molecule::Molecule(vector<Input*> In_,vector<Segment*> Seg_, string name_,int molnr,int N_mol) {
-	In=In_; Seg=Seg_; name=name_; n_mol=N_mol; mol_nr=molnr; 
+Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
+	In=In_; Seg=Seg_; name=name_;  Lat=Lat_;
 	KEYS.push_back("freedom"); 
 	KEYS.push_back("composition"); //KEYS.push_back("chainlength");
 	KEYS.push_back("theta");
@@ -64,6 +73,12 @@ bool Molecule::CheckInput() {
 	if (!In[0]->CheckParameters("mol",name,KEYS,PARAMETERS,VALUES)) {
 		success=false; 	
 	} else { 
+		MX=Lat[0]->MX; MY=Lat[0]->MY; MZ=Lat[0]->MZ; 
+		M=(MX+2)*(MY+2)*(MZ+2); 
+		BX1=Lat[0]->BX1; BY1=Lat[0]->BY1; BZ1=Lat[0]->BZ1;
+		BXM=Lat[0]->BXM; BYM=Lat[0]->BYM; BZM=Lat[0]->BZM;
+		JX=(MX+2)*(MY+2);
+		JY=(MY+2); 	
 		if (GetValue("save_memory").size()>0) {
 			save_memory=In[0]->Get_bool(GetValue("save_memory"),false); 
 			if  (save_memory) { save_memory =false; cout << "For mol '" + name + "' the flag 'save_memory' is not yet activated. Input ignored " << endl;}
@@ -76,20 +91,18 @@ bool Molecule::CheckInput() {
 		if (GetValue("freedom").size()==0 && !IsTagged()) {
 			cout <<"For mol " + name + " the setting 'freedom' is expected. Problem terminated " << endl; success = false;
 			} else { if (!IsTagged()) {
-				string freedom_value;
 				vector<string> free_list; 
 				if (!IsPinned()) free_list.push_back("free"); free_list.push_back("restricted"); free_list.push_back("solvent"); 
 				free_list.push_back("neutralizer");
-				cout <<  GetValue("freedom") << endl; 
-				if (!In[0]->Get_string(GetValue("freedom"),freedom_value,free_list,"In mol " + name + " the value for 'freedom' is not recognised ")) success=false;
-				if (freedom_value == "solvent") {
+				if (!In[0]->Get_string(GetValue("freedom"),freedom,free_list,"In mol " + name + " the value for 'freedom' is not recognised ")) success=false;
+				if (freedom == "solvent") {
 					if (IsPinned()) {success=false; cout << "Mol '" + name + "' is 'pinned' and therefore this molecule can not be the solvent" << endl; } 
 				}
-				if (freedom_value == "neutralizer") {
+				if (freedom == "neutralizer") {
 					if (IsPinned()) {success=false; cout << "Mol '" + name + "' is 'pinned' and therefore this molecule can not be the neutralizer" << endl; } 
 				}
 					if (IsCharged()) {success=false; cout << "Mol '" + name + "' is not 'charged' and therefore this molecule can not be the neutralizer" << endl; } 
-				if (freedom_value == "free") {
+				if (freedom == "free") {
 					if (GetValue("theta").size()>0 || GetValue("n").size() > 0) {
 						cout << "In mol " + name + ", the setting of 'freedom = free', can not not be combined with 'theta' or 'n': use 'phibulk' instead." << endl; success=false;  
 					} else {
@@ -103,24 +116,27 @@ bool Molecule::CheckInput() {
 						} 
 					}
 				}
-				if (freedom_value == "restricted") {
+				if (freedom == "restricted") {
 					if (GetValue("phibulk").size()>0) {
 						cout << "In mol " + name + ", the setting of 'freedom = restricted', can not not be combined with 'phibulk'  use 'theta' or 'n'  instead." << endl; success=false;  
 					} else {
 						if (GetValue("theta").size() ==0 && GetValue("n").size()==0) {
-							cout <<"In mol " + name + ", the setting 'freedom = restriced' should be combined with a value for 'theta' or 'n'; do not use both settings! "<<endl; success=false;
+							cout <<"In mol " + name + ", the setting 'freedom = restricted' should be combined with a value for 'theta' or 'n'; do not use both settings! "<<endl; success=false;
 						} else {
-							float volume =  Seg[0]->MX*Seg[0]->MY*Seg[0]->MZ;
-							if (GetValue("n").size()>0) n=In[0]->Get_float(GetValue("n"),10*volume);
-							if (GetValue("theta").size()>0) theta = In[0]->Get_float(GetValue("theta"),10*volume);
-							if (theta ==10*volume ) theta=n*chainlength; 
-							if (chainlength >0) {if (n==10*volume) n=theta/chainlength;}
-							if (theta < 0 || theta > volume) {
-								cout << "In mol " + name + ", the value of 'n' or 'theta' is out of range 0 .. 'volume', cq 'volume'/N." << endl; success=false;
+							if (GetValue("theta").size() >0 && GetValue("n").size()>0) {
+							cout <<"In mol " + name + ", the setting 'freedom = restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
+							} else {
+
+								if (GetValue("n").size()>0) {n=In[0]->Get_float(GetValue("n"),10*Lat[0]->Volume);theta=n*chainlength;}
+								if (GetValue("theta").size()>0) {theta = In[0]->Get_float(GetValue("theta"),10*Lat[0]->Volume);n=theta/chainlength;} 
+								if (theta < 0 || theta > Lat[0]->Volume) {
+									cout << "In mol " + name + ", the value of 'n' or 'theta' is out of range 0 .. 'volume', cq 'volume'/N." << endl; success=false;
 							
+								}
 							}
 						} 
 					}
+cout << "theta " << theta << " n " << n <<  endl; 
 				}
  
 			} else {
@@ -180,7 +196,7 @@ bool Molecule:: Decomposition(string s){
 		string segname=s.substr(open[k]+1,close[k]-open[k]-1); 
 		int mnr=GetMonNr(segname); 
 		if (mnr <0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised"  << endl; success=false; 
-		} else mon_nr.push_back(mnr);  
+		} else {mon_nr.push_back(mnr);  molmon_nr.push_back(-1);}
 		int nn = In[0]->Get_int(s.substr(close[k]+1,s.size()-close[k]),0); 
 		if (nn<1) {cout <<"In composiiton of mol '" + name + "' the number of repeats should have values larger than unity " << endl; success=false;
 		} else {n_mon.push_back(nn); }
@@ -188,6 +204,7 @@ bool Molecule:: Decomposition(string s){
 		k++;
 	}
 	success = MakeMonList(); 
+	if (chainlength==1) MolType=monomer; else MolType=linear;  
 		
 	return success; 
 }
@@ -201,49 +218,35 @@ bool Molecule:: MakeMonList(void) {
 	int length = mon_nr.size();
 	int i=0;
 	while (i<length) {
-		string Seg_name=Seg[mon_nr[i]]->name;
-		if (!In[0]->InSet(MolMonList,Seg_name)) {
+		if (!In[0]->InSet(MolMonList,mon_nr[i])) {
 			if (Seg[mon_nr[i]]->GetFreedom()=="frozen") {
 				success = false;
 				cout << "In 'composition of mol " + name + ", a segment was found with freedom 'frozen'. This is not permitted. " << endl; 
 
 			}
-			MolMonList.push_back(Seg_name);
+			MolMonList.push_back(mon_nr[i]);
 		}
 		i++;
 	}
 	return success;
-}
-	
-string Molecule::GetFreedom(void){
-	return freedom; 
 } 
 
 bool Molecule::IsPinned() {
 	bool success=false;
-	int seg_nr=0; 
-	int NumSegs=In[0]->MonList.size(); 
 	int length=MolMonList.size();
 	int i=0;
 	while (i<length) {
-		string segmentname=MolMonList[i]; 
-		for (int j=0; j<NumSegs; j++) if (Seg[j]->name==segmentname) seg_nr=j;
-		if (Seg[seg_nr]->GetFreedom()=="pinned") success = true;
+        	if (Seg[MolMonList[i]]->GetFreedom()=="pinned") success=true;
 		i++;
 	}
 	return success;
 }
 bool Molecule::IsTagged() {
 	bool success=false;
-	tag_segment = -1; 
-	int seg_nr=0;
-	int NumSegs=In[0]->MonList.size(); 
 	int length=MolMonList.size();
 	int i=0;
 	while (i<length) {
-		string segmentname=MolMonList[i]; 
-		for (int j=0; j<NumSegs; j++) {if (Seg[j]->name==segmentname) seg_nr=j;}
-		if (Seg[seg_nr]->GetFreedom()=="tagged") {success = true; tag_segment=seg_nr;}
+		if (Seg[MolMonList[i]]->GetFreedom()=="tagged") {success = true; tag_segment=MolMonList[i]; }
 		i++;
 	}
 	return success;
@@ -272,8 +275,18 @@ string Molecule::GetValue(string parameter) {
 	return ""; 
 }
 
-void Molecule:: PrepareForCalculations() {
-	M=(MX+2)*(MY+2)*(MX+2);
+float Molecule::fraction(int segnr){
+	int Nseg=0;
+	int length = mon_nr.size();
+	int i=0;
+	while (i<length) {
+		if (segnr==mon_nr[i]) Nseg+=n_mon[i];
+		i++;
+	}
+	return 1.0*Nseg/chainlength; 
+}
+
+void Molecule:: AllocateMemory() {
 
 //define on CPU
 	H_phi= new float[M*MolMonList.size()]; 
@@ -290,5 +303,82 @@ void Molecule:: PrepareForCalculations() {
 	Gg_b= new float[M*2];
 #endif
 
+
 }
- 
+bool Molecule:: PrepareForCalculations() {
+	bool success=true;
+	int pos=-1; 	
+	Zero(phi,M*MolMonList.size()); 
+	int length = MolMonList.size();
+	int frag_length=mon_nr.size();
+	int i=0;
+	while (i<length) {
+		for (int k=0; k<frag_length; k++) {
+			if (In[0]->InSet(MolMonList,pos,mon_nr[k])) {molmon_nr[k]=pos;} else {cout <<"program error in mol PrepareForCalcualations" << endl; }
+		} 
+		i++;
+	}
+	return success;
+}
+
+bool Molecule::ComputePhi(){
+	bool success=true;
+
+	switch (MolType) {
+		case monomer:
+			success=ComputePhiMon();
+		break;
+		case linear:			
+			success=ComputePhiLin();
+		break;
+		default:
+		cout << "Programming error " << endl; 
+	}
+
+	return success; 
+}
+
+bool Molecule::ComputePhiMon(){
+	bool success=true;
+	Cp(phi,Seg[mon_nr[0]]->G1,M);
+	RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	GN=Sum(phi,M);
+	Times(phi,phi,Seg[mon_nr[0]]->G1,M);
+	return success;
+}
+
+bool Molecule::ComputePhiLin(){
+	bool success=true;
+
+	int blocks=mon_nr.size(); 
+	float *G1;
+	int i=0; 
+	int s=0;
+	while (i<blocks) {
+		G1=Seg[mon_nr[i]]->G1; 
+		for (int k=0; k<n_mon[i]; k++) {
+			if (s==0) Cp(Gg_f,G1,M); else {Lat[0]->propagate(Gg_f,G1,s-1,s);}
+			s++;
+		} 	
+		i++;	
+	}
+
+	Lat[0]->remove_bounds(Gg_f+M*(chainlength-1)); 
+	GN1=Sum(Gg_f+M*(chainlength-1),M);
+	i=blocks; 
+	s=chainlength-1;
+	while (i>0) { i--;
+		float *G1=Seg[mon_nr[i]]->G1; 
+		for (int k=0; k<n_mon[i]; k++) {
+			if (s==chainlength-1) Cp(Gg_b+(s%2)*M,G1,M); else Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2);
+			AddTimes(phi+molmon_nr[i]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
+			s--;
+		} 	
+	}
+	Lat[0]->remove_bounds(Gg_b);
+	GN2=Sum(Gg_b,M);
+	if (abs(GN1/GN2-1)<1e-3) {GN=GN1;} else cout << "GN1 != GN2 .... check propagator"  << endl;
+	return success;
+}
+
+

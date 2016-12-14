@@ -31,6 +31,8 @@ CFLAGS = $(CPPFLAGS)
 
      LIBS +=  $(MATRIXLIB)
 
+OBJECTS = namics.o input.o newton.o system.o molecule.o monomer.o engine.o lattice.o
+
 namics : namics.o
 	g++ -o namics namics.o -L$(LIB_DIR) $(LIBS)
 

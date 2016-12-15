@@ -540,7 +540,7 @@ int main(int argc, char *argv[]) {
 	vector<Newton*> New; New.push_back(new Newton(In,Lat,Seg,Mol,Sys,In[0]->NewtonList[0])); if (!New[0]->CheckInput()) {return 0;}
 	vector<Engine*> Eng; Eng.push_back(new Engine(In,Sys,In[0]->EngineList[0])); if (!Eng[0]->CheckInput()) {return 0;}
 	int n_out = In[0]->OutputList.size(); 
-	vector<Output*> Out; for (int i=0; i<n_out; i++) Out.push_back(new Output(In,Lat,Seg,Mol,In[0]->OutputList[i],i,n_out));
+	vector<Output*> Out; for (int i=0; i<n_out; i++) Out.push_back(new Output(In,Lat,Seg,Mol,Sys,In[0]->OutputList[i],i,n_out));
 	for (int i=0; i<n_out; i++) {
 		if (!Out[i]->CheckOutInput()) {return 0;}
 		string template_ = Out[i]->GetValue("template");
@@ -552,6 +552,9 @@ int main(int argc, char *argv[]) {
 	MEmulsion=true;
 	Membrane=false;
 	Out[0]->density();
+	Out[0]->printlist();
+	
+
 
 	//MX=Lat[0]->MX; MY=Lat[0]->MY;MZ=Lat[0]->MZ;  
 	//JX=(MX+2)*(MY+2); JY=(MY+2);M=JX*(MZ+2); 

@@ -14,7 +14,7 @@ mon : A : freedom : free
 mon : B : freedom : free
 mon : A : chi-B : 0
 mon : X : freedom : tagged
-mon : X : tagged_range : (26,26,26)
+mon : X : tagged_range : (6,6,6)
 
 mol : A : composition : (A)4
 mol : B : composition : (B)4
@@ -27,11 +27,11 @@ mol : B : freedom : solvent
 //mol : A : save_memory : true
 output : out : template : non
 newton :isaac : method : DIIS-alpha
-newton : isaac : i_info : 1
-newton : isaac : m : 6
+newton : isaac : i_info : 10
+newton : isaac : m : 10
 newton : isaac : delta_max : 0.001
-newton : isaac : iterationlimit : 100
-newton : isaac : tolerance : 1e-4
+newton : isaac : iterationlimit : 1000
+newton : isaac : tolerance : 1e-3
 newton : isaac : read_guess : true
 
 

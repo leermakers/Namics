@@ -540,7 +540,7 @@ int main(int argc, char *argv[]) {
 	vector<Newton*> New; New.push_back(new Newton(In,Lat,Seg,Mol,Sys,In[0]->NewtonList[0])); if (!New[0]->CheckInput()) {return 0;}
 	vector<Engine*> Eng; Eng.push_back(new Engine(In,Sys,In[0]->EngineList[0])); if (!Eng[0]->CheckInput()) {return 0;}
 	int n_out = In[0]->OutputList.size(); 
-	vector<Output*> Out; for (int i=0; i<n_out; i++) Out.push_back(new Output(In,In[0]->OutputList[i],i,n_out));
+	vector<Output*> Out; for (int i=0; i<n_out; i++) Out.push_back(new Output(In,Lat,Seg,Mol,In[0]->OutputList[i],i,n_out));
 	for (int i=0; i<n_out; i++) {
 		if (!Out[i]->CheckOutInput()) {return 0;}
 		string template_ = Out[i]->GetValue("template");
@@ -551,14 +551,14 @@ int main(int argc, char *argv[]) {
 	New[0]->Solve();
 	MEmulsion=true;
 	Membrane=false;
-
+	Out[0]->density();
 
 	//MX=Lat[0]->MX; MY=Lat[0]->MY;MZ=Lat[0]->MZ;  
 	//JX=(MX+2)*(MY+2); JY=(MY+2);M=JX*(MZ+2); 
-	double* phi=Mol[0]->phi;
-	double* phipol=Mol[2]->phi;
+	// double* phi=Mol[0]->phi;
+	// double* phipol=Mol[2]->phi;
 
-for (int z=6; z<MZ; z+=10) cout << "z = " << z << " phi= " <<  phi[26*JX+26*JY+z] << " and " << phipol[26*JX+26*JY+z]+phipol[26*JX+26*JY+z+M]+phipol[26*JX+26*JY+z+2*M] << endl;
+// for (int z=6; z<MZ; z+=10) cout << "z = " << z << " phi= " <<  phi[26*JX+26*JY+z] << " and " << phipol[26*JX+26*JY+z]+phipol[26*JX+26*JY+z+M]+phipol[26*JX+26*JY+z+2*M] << endl;
 
 
 /*************************

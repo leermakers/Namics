@@ -514,6 +514,13 @@ int main(int argc, char *argv[]) {
 	string line;
 	ofstream out_file;
 
+#ifdef CUDA
+	cudaDeviceReset();
+	stat = cublasCreate(&handle); if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS failed \n");}
+	cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
+#endif
+
+
 	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;}
 	filename = fname + ".in";
 	vector<Input*> In; In.push_back(new Input(filename)); if (In[0]->Input_error) {return 0;}
@@ -546,23 +553,24 @@ int main(int argc, char *argv[]) {
 	Membrane=false;
 
 
-	MX=Lat[0]->MX; MY=Lat[0]->MY;MZ=Lat[0]->MZ;  
-	JX=(MX+2)*(MY+2); JY=(MY+2);M=JX*(MZ+2); 
+	//MX=Lat[0]->MX; MY=Lat[0]->MY;MZ=Lat[0]->MZ;  
+	//JX=(MX+2)*(MY+2); JY=(MY+2);M=JX*(MZ+2); 
 	double* phi=Mol[0]->phi;
 	double* phipol=Mol[2]->phi;
 
 for (int z=6; z<MZ; z+=10) cout << "z = " << z << " phi= " <<  phi[26*JX+26*JY+z] << " and " << phipol[26*JX+26*JY+z]+phipol[26*JX+26*JY+z+M]+phipol[26*JX+26*JY+z+2*M] << endl;
 
 
+/*************************
 	Aij = new double[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; //needed for SVD which is done on cpu.
 	Ci = new double[m]; for (int i=0; i<m; i++) Ci[i]=0;
 	Apij = new double[m*m]; for (int i=0; i<m*m; i++) Apij[i]=0;
+*********************/
 
-#ifdef CUDA
-	cudaDeviceReset();
-	stat = cublasCreate(&handle); if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS failed \n");}
-	cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-#endif
+
+
+
+/*********************
 	n_seg=2; //number of segment types.
 
 
@@ -726,7 +734,7 @@ for (int z=6; z<MZ; z+=10) cout << "z = " << z << " phi= " <<  phi[26*JX+26*JY+z
 //		in_file.close();
 //	} else cout << "file " << filename << " is not available." << endl;
 	double Free_energy;
-	int variation = 1;
+	int variation = 0;
 	
 	if (variation == 1)
 	{
@@ -787,7 +795,7 @@ return 0;
 		int interface = 26;
 		subdomain(H_Bx,H_By,H_Bz,H_Px,H_Py,H_Pz,interface);
 
-	/*H_Bx[0]=15;
+	H_Bx[0]=15;
 	H_By[0]=15;
 	H_Bz[0]=15;
 	H_Px[0]=26;
@@ -798,7 +806,7 @@ return 0;
 	H_Bz[1]=15;
 	H_Px[1]=20;
 	H_Py[1]=20;
-	H_Pz[1]=26;*/
+	H_Pz[1]=26;
 
 		for (int p=0; p<n_box; p++){
 			H_mask[p*M + jx*(H_Px[p]-H_Bx[p])+jy*(H_Py[p]-H_By[p])+(H_Pz[p]-H_Bz[p])]=1;
@@ -846,7 +854,7 @@ return 0;
 	Cp(PHI,H_phi+2*MM,MM); Add(PHI,phi+3*MM,MM); 
 	vtk_output(fname+"_phi.vtk",PHI);
 
-/*	ofstream varfile;
+	ofstream varfile;
 	varfile.open ("surf_profile.dat");
 	for (int z=1; z<MZ; z++){	
 		varfile << z <<"\t" << PHI[10*JX+40*JY+ z] << endl;
@@ -859,14 +867,14 @@ return 0;
 		varfile2 << z <<"\t" << PHI[15*JX+35*JY+ z] << endl;
 		}
 	varfile2.close();
-*/	
+	
 	
 	
 	
 	Cp(PHI,H_phi,MM);
 	vtk_output(fname+"A_phi.vtk",PHI);
 	
-/*	ofstream varfile3;
+	ofstream varfile3;
 	varfile3.open ("mol_profile.dat");
 	for (int z=1; z<MZ; z++){	
 		varfile3 << z <<"\t" << PHI[10*JX+40*JY+ z] << endl;
@@ -879,7 +887,7 @@ return 0;
 		varfile4 << z <<"\t" << PHI[15*JX+35*JY+ z] << endl;
 		}
 	varfile4.close();
-*/	
+
 	
 	Cp(PHI,H_phi+MM,MM);
 	vtk_output(fname+"B_phi.vtk",PHI);
@@ -887,6 +895,7 @@ return 0;
 	out_file.open(filename.c_str());
 	out_file << "Free_energy : " << Free_energy << endl;
 	out_file.close();
+**********************************************************/
 
 	return 0;
 }

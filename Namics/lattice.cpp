@@ -11,7 +11,7 @@ public:
 	int JX,JY,M;
 	int Volume;
 	string lattice_type;
-	float bond_length; 
+	double bond_length; 
 	//if you add to this set of properties, you should set the defaults or read frominput as well. got to CheckInput(); 
 
 	std::vector<string> KEYS;
@@ -22,10 +22,10 @@ public:
 	string GetValue(string); 
 	void AllocateMemory(void); 
 	bool PrepareForCalculations(void); 
-	void propagate(float*,float*, int, int);
-	void remove_bounds(float*);
-	void set_bounds(float*); 
-	void Side(float *, float *, int);
+	void propagate(double*,double*, int, int);
+	void remove_bounds(double*);
+	void set_bounds(double*); 
+	void Side(double *, double *, int);
 
 };
 Lattice::Lattice(vector<Input*> In_,string name_) {
@@ -158,7 +158,7 @@ bool Lattice::PrepareForCalculations(void) {
 	return success; 
 }
 
-void Lattice::Side(float *X_side, float *X, int M) {
+void Lattice::Side(double *X_side, double *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
 	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
@@ -166,8 +166,8 @@ void Lattice::Side(float *X_side, float *X, int M) {
 	Norm(X_side,1.0/6.0,M);
 }
 
-void Lattice::propagate(float *G, float *G1, int s_from, int s_to) { 
-	float *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
+void Lattice::propagate(double *G, double *G1, int s_from, int s_to) { 
+	double *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 	Zero(gs,M);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(gs+JX,gs_1,M-JX); Add(gs,gs_1+JX,M-JX);
@@ -176,11 +176,11 @@ void Lattice::propagate(float *G, float *G1, int s_from, int s_to) {
 	Norm(gs,1.0/6.0,M); Times(gs,gs,G1,M);
 }
 
-void Lattice::remove_bounds(float *X){ 
+void Lattice::remove_bounds(double *X){ 
 	RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 }
  
-void Lattice::set_bounds(float *X){  
+void Lattice::set_bounds(double *X){  
 	SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 }
  

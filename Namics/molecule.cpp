@@ -15,22 +15,23 @@ public:
 	int JX;
 	int JY; 	
 	int mol_nr; 
-	float theta;
-	float phibulk;
-	float fraction(int); 
+	double theta;
+	double phibulk;
+	double fraction(int); 
 	string freedom;
 	MoleculeType MolType; 
-	float n; 
-	float GN,GN1,GN2; 
+	double n; 
+	double GN,GN1,GN2; 
 	int chainlength;
 	bool save_memory; 
 	string composition;
 	vector<int> mon_nr;
 	vector<int> n_mon; 
 	vector<int> molmon_nr; 
-	float *phi;
-	float *Gg_f;
-	float *Gg_b; 
+	double *phi;
+	double *phitot;
+	double *Gg_f;
+	double *Gg_b; 
 	int tag_segment; 
 		
 
@@ -41,7 +42,7 @@ public:
 	void PutParameter(string);
 	bool Decomposition(string); 
 	int GetChainlength(void); 
-	float Theta(void);
+	double Theta(void);
 	string GetValue(string); 
 	int GetMonNr(string);
 	bool MakeMonList(void);  
@@ -109,7 +110,7 @@ bool Molecule::CheckInput() {
 						if (GetValue("phibulk").size() ==0) {
 							cout <<"In mol " + name + ", the setting 'freedom = free' should be combined with a value for 'phibulk'. "<<endl; success=false;
 						} else {
-							phibulk=In[0]->Get_float(GetValue("phibulk"),-1); 
+							phibulk=In[0]->Get_double(GetValue("phibulk"),-1); 
 							if (phibulk < 0 || phibulk >1) {
 								cout << "In mol " + name + ", the value of 'phibulk' is out of range 0 .. 1." << endl; success=false;
 							}
@@ -127,8 +128,8 @@ bool Molecule::CheckInput() {
 							cout <<"In mol " + name + ", the setting 'freedom = restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
 							} else {
 
-								if (GetValue("n").size()>0) {n=In[0]->Get_float(GetValue("n"),10*Lat[0]->Volume);theta=n*chainlength;}
-								if (GetValue("theta").size()>0) {theta = In[0]->Get_float(GetValue("theta"),10*Lat[0]->Volume);n=theta/chainlength;} 
+								if (GetValue("n").size()>0) {n=In[0]->Get_double(GetValue("n"),10*Lat[0]->Volume);theta=n*chainlength;}
+								if (GetValue("theta").size()>0) {theta = In[0]->Get_double(GetValue("theta"),10*Lat[0]->Volume);n=theta/chainlength;} 
 								if (theta < 0 || theta > Lat[0]->Volume) {
 									cout << "In mol " + name + ", the value of 'n' or 'theta' is out of range 0 .. 'volume', cq 'volume'/N." << endl; success=false;
 							
@@ -136,7 +137,6 @@ bool Molecule::CheckInput() {
 							}
 						} 
 					}
-cout << "theta " << theta << " n " << n <<  endl; 
 				}
  
 			} else {
@@ -196,14 +196,14 @@ bool Molecule:: Decomposition(string s){
 		string segname=s.substr(open[k]+1,close[k]-open[k]-1); 
 		int mnr=GetMonNr(segname); 
 		if (mnr <0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised"  << endl; success=false; 
-		} else {mon_nr.push_back(mnr);  molmon_nr.push_back(-1);}
+		} else {mon_nr.push_back(mnr); }
 		int nn = In[0]->Get_int(s.substr(close[k]+1,s.size()-close[k]),0); 
 		if (nn<1) {cout <<"In composiiton of mol '" + name + "' the number of repeats should have values larger than unity " << endl; success=false;
 		} else {n_mon.push_back(nn); }
 		chainlength +=nn;
 		k++;
 	}
-	success = MakeMonList(); 
+	success = MakeMonList();
 	if (chainlength==1) MolType=monomer; else MolType=linear;  
 		
 	return success; 
@@ -226,6 +226,14 @@ bool Molecule:: MakeMonList(void) {
 			}
 			MolMonList.push_back(mon_nr[i]);
 		}
+		i++;
+	}
+	i=0;
+	int pos;
+	while (i<length) {
+		if (In[0]->InSet(MolMonList,pos,mon_nr[i])) {molmon_nr.push_back(pos);
+		//	cout << "in frag i " << i << " there is segment nr " <<  mon_nr[i] << " and it is on molmon  pos " << pos << endl; 
+		} else {cout <<"program error in mol PrepareForCalcualations" << endl; }
 		i++;
 	}
 	return success;
@@ -252,7 +260,7 @@ bool Molecule::IsTagged() {
 	return success;
 }
 bool Molecule::IsCharged() {
-	float charge =0;
+	double charge =0;
 	int length = n_mon.size(); 
 	int i=0;
 	while (i<length) {
@@ -275,7 +283,7 @@ string Molecule::GetValue(string parameter) {
 	return ""; 
 }
 
-float Molecule::fraction(int segnr){
+double Molecule::fraction(int segnr){
 	int Nseg=0;
 	int length = mon_nr.size();
 	int i=0;
@@ -289,35 +297,28 @@ float Molecule::fraction(int segnr){
 void Molecule:: AllocateMemory() {
 
 //define on CPU
-	H_phi= new float[M*MolMonList.size()]; 
+	H_phi= new double[M*MolMonList.size()]; 
 
 #ifdef CUDA
 //define on GPU
-	phi=(float*)AllOnDev(M*MolMonList.size());
-	Gg_f=(float*)AllOnDev(M*chainlength);
-	Gg_b=(float*)AllOnDev(M*2);
+	phi=(double*)AllOnDev(M*MolMonList.size());
+	phitot=(double*)AllOnDev(M);
+	Gg_f=(double*)AllOnDev(M*chainlength);
+	Gg_b=(double*)AllOnDev(M*2);
 #else
 //set ref for the rho equal to H_rho etc. or define the ref if not done above.
 	phi = H_phi;
-	Gg_f= new float[M*chainlength];
-	Gg_b= new float[M*2];
+	phitot = new double[M];
+	Gg_f = new double[M*chainlength];
+	Gg_b = new double[M*2];
 #endif
 
 
 }
 bool Molecule:: PrepareForCalculations() {
 	bool success=true;
-	int pos=-1; 	
+	Zero(phitot,M);
 	Zero(phi,M*MolMonList.size()); 
-	int length = MolMonList.size();
-	int frag_length=mon_nr.size();
-	int i=0;
-	while (i<length) {
-		for (int k=0; k<frag_length; k++) {
-			if (In[0]->InSet(MolMonList,pos,mon_nr[k])) {molmon_nr[k]=pos;} else {cout <<"program error in mol PrepareForCalcualations" << endl; }
-		} 
-		i++;
-	}
 	return success;
 }
 
@@ -351,7 +352,7 @@ bool Molecule::ComputePhiLin(){
 	bool success=true;
 
 	int blocks=mon_nr.size(); 
-	float *G1;
+	double *G1;
 	int i=0; 
 	int s=0;
 	while (i<blocks) {
@@ -368,7 +369,7 @@ bool Molecule::ComputePhiLin(){
 	i=blocks; 
 	s=chainlength-1;
 	while (i>0) { i--;
-		float *G1=Seg[mon_nr[i]]->G1; 
+		double *G1=Seg[mon_nr[i]]->G1; 
 		for (int k=0; k<n_mon[i]; k++) {
 			if (s==chainlength-1) Cp(Gg_b+(s%2)*M,G1,M); else Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2);
 			AddTimes(phi+molmon_nr[i]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
@@ -376,8 +377,8 @@ bool Molecule::ComputePhiLin(){
 		} 	
 	}
 	Lat[0]->remove_bounds(Gg_b);
-	GN2=Sum(Gg_b,M);
-	if (abs(GN1/GN2-1)<1e-3) {GN=GN1;} else cout << "GN1 != GN2 .... check propagator"  << endl;
+	GN2=Sum(Gg_b,M); GN = GN1;
+if (abs(GN1-GN2)>1e-2) cout << "GN1 != GN2 .... check propagator" << "GN1:" << GN1 << " GN2: " << GN2 << endl;
 	return success;
 }
 

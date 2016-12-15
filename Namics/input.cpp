@@ -34,9 +34,9 @@ public:
 	string Get_string(string, const string &);
 	bool Get_string(string, string &, const  std::string & );
 	bool Get_string(string , string &, std::vector<std::string>&, const std::string &);
-	float Get_float(string, float );
-	bool Get_float(string, float &, const std::string &);
-	bool Get_float(string, float &, float, float, const std::string &);
+	double Get_double(string, double );
+	bool Get_double(string, double &, const std::string &);
+	bool Get_double(string, double &, double, double, const std::string &);
 	bool Get_bool(string, bool );
 	bool Get_bool(string, bool &, const std::string &);
 	bool TestNum(std::vector<std::string> &, string ,int, int, int);
@@ -214,9 +214,9 @@ bool Input:: Get_string(string s, string &ss, std::vector<std::string>&S, const 
 	return success; 
 }
 
-float Input:: Get_float(string s, float ss) {
+double Input:: Get_double(string s, double ss) {
 	bool success=false;
-	float sss;
+	double sss;
 	stringstream string_s;
 	string_s << s ;
 	string_s >> sss;
@@ -227,7 +227,7 @@ float Input:: Get_float(string s, float ss) {
 	if (!success) sss=ss;
 	return sss; 
 }
-bool Input:: Get_float(string s, float &ss, const std::string &error) {
+bool Input:: Get_double(string s, double &ss, const std::string &error) {
 	bool success=false;
 	stringstream string_s;
 	string_s << s ;
@@ -239,7 +239,7 @@ bool Input:: Get_float(string s, float &ss, const std::string &error) {
 	if (!success) cout << error << endl;
 	return success;
 }
-bool Input:: Get_float(string s, float &ss, float low, float high, const  std::string &error) {
+bool Input:: Get_double(string s, double &ss, double low, double high, const  std::string &error) {
 	bool success=false;
 	stringstream string_s;
 	string_s << s ;
@@ -510,14 +510,18 @@ bool Input:: CheckInput(void) {
 			for( int k=0; k<key_length; k++) cout << KEYS[k] << endl;  success=false;}
 		i++; 
 	}
-
+	
 	if (!TestNum(SysList,"sys",0,1,1)) {cout << "There can be no more than 1 'sys name' in the input" << endl; }
+	if (SysList.size()==0) SysList.push_back("noname"); 
 	if (!TestNum(LatList,"lat",1,1,1)) {cout << "There must be exactly one 'lat name' in the input" << endl; success=false;}
+	if (!TestNum(NewtonList,"newton",0,1,1)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
+	if (NewtonList.size()==0) NewtonList.push_back("noname");
 	if (!TestNum(NewtonList,"newton",0,1,1)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
 	if (!TestNum(MonList,"mon",1,1000,1)) {cout << "There must be at least one 'mon name' in input" << endl; success=false;}
 	if (!TestNum(MolList,"mol",1,1000,1)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}
 	if (!TestNum(OutputList,"output",1,1000,1)) {cout << "No output defined! " << endl;}
 	if (!TestNum(EngineList,"engine",0,1,1)) {cout << "There can be no more than 1 'engine' name in the input " << endl; success=false;}
+	if (EngineList.size()==0) EngineList.push_back("noname");
 	
 	return success;
 }

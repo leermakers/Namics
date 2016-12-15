@@ -1,4 +1,4 @@
- 
+
 class System {
 public:
 	System(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,string);
@@ -7,7 +7,7 @@ public:
 
 	string name;
 	vector<Input*> In; 
-	float* CHI;
+	double* CHI;
 	vector<Segment*> Seg; 
 	vector<Molecule*> Mol;
 	vector<Lattice*> Lat; 
@@ -16,9 +16,9 @@ public:
 	vector<int> SysMonList; 
 	vector<int> FrozenList;
 	vector<int> SysTagList; 
-	float* phitot; 
-	float* KSAM;
-	float* H_KSAM;
+	double* phitot; 
+	double* KSAM;
+	double* H_KSAM;
 	bool GPU; 
 	int n_mol; 
 	int solvent; 
@@ -38,7 +38,7 @@ public:
 	void AllocateMemory();
 	bool PrepareForCalculations();
 	bool ComputePhis();
-	bool PutU(float*); 
+	bool PutU(double*); 
 
 	
 
@@ -62,7 +62,7 @@ bool System::CheckInput() {
 	MZ=Lat[0]->MZ;
 	M=(MX+2)*(MY+2)*(MZ+2); 	
 	bool solvent_found=false; tag_segment=-1; solvent=-1;  //value -1 means no solvent defined. tag_segment=-1; 
-	float phibulktot=0;  
+	double phibulktot=0;  
 	success= In[0]->CheckParameters("sys",name,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		success=CheckChi_values(In[0]->MonList.size()); 
@@ -88,7 +88,6 @@ bool System::CheckInput() {
 			if (Mol[i]->freedom=="solvent") {solvent_found=true; solvent=i; }
 			if (Mol[i]->IsTagged()) { 
 				tag_segment = Mol[i]->tag_segment; 
-cout <<"tag_segment" << tag_segment << " " << Seg[tag_segment]->n_pos<< endl; 
 				Mol[i]->n=1.0*Seg[tag_segment]->n_pos;
 				Mol[i]->theta= Mol[i]->n*Mol[i]->chainlength;  
 			}
@@ -142,9 +141,9 @@ string System::GetValue(string parameter){
 
 bool System::CheckChi_values(int n_seg){
 	bool success=true;
-	CHI = new float[n_seg*n_seg]; 
+	CHI = new double[n_seg*n_seg]; 
 	for (int i=0; i<n_seg; i++) for (int k=0; k<n_seg; k++) {
-		CHI[i*n_seg+k]=In[0]->Get_float(Seg[i]->GetValue("chi-"+Seg[k]->name),123);
+		CHI[i*n_seg+k]=In[0]->Get_double(Seg[i]->GetValue("chi-"+Seg[k]->name),123);
 	}
 	for (int i=0; i<n_seg; i++) for (int k=0; k<n_seg; k++) if (CHI[i*n_seg+k] == 123) CHI[i*n_seg+k] = CHI[k*n_seg+i];
 	for (int i=0; i<n_seg; i++) for (int k=0; k<n_seg; k++) if (CHI[i*n_seg+k] == 123) CHI[i*n_seg+k] = 0;
@@ -155,7 +154,7 @@ bool System::CheckChi_values(int n_seg){
  	return success; 
 }
 
-bool System::PutU(float* x) {
+bool System::PutU(double* x) {
 	bool success=true;
 	int length=SysMonList.size();
 	int i=0;
@@ -168,13 +167,13 @@ bool System::PutU(float* x) {
 
 void System::AllocateMemory() {
 //define on CPU
-	H_KSAM=new float[M];
+	H_KSAM=new double[M];
 #ifdef CUDA
 //define on GPU
-	phitot = (float*)AllOnDev(M); 
-	KSAM=(float*)AllOnDev(M);	
+	phitot = (double*)AllOnDev(M); 
+	KSAM=(double*)AllOnDev(M);	
 #else
-	phitot = new float[M]; 
+	phitot = new double[M]; 
 	KSAM = H_KSAM;
 #endif
 	n_mol = In[0]->MolList.size(); 
@@ -199,14 +198,14 @@ bool System::PrepareForCalculations() {
 	length=FrozenList.size();
 	int i=0;
 	while (i<length) {
-		float*MASK=Seg[FrozenList[i]]->MASK; 
+		double*MASK=Seg[FrozenList[i]]->MASK; 
 		Add(KSAM,MASK,M);
 		i++;
 	}
 	length=SysTagList.size();
 	i=0;
 	while (i<length) {
-		float* MASK=Seg[SysTagList[i]]->MASK; 
+		double* MASK=Seg[SysTagList[i]]->MASK; 
 		Add(KSAM,MASK,M);
 		i++;
 	}
@@ -221,16 +220,14 @@ bool System::PrepareForCalculations() {
 
 
 bool System::ComputePhis(){
-
 	bool success=true;
-
-	PrepareForCalculations();
-	float totphibulk=0;		
-	float norm=0; 
+	success=PrepareForCalculations();
+	double totphibulk=0;		
+	double norm=0; 
 	Zero(phitot,M); 
 	int length=FrozenList.size();
 	for (int i=0; i<length; i++) {
-		float *phi_frozen=Seg[FrozenList[i]]->GetPhi();  
+		double *phi_frozen=Seg[FrozenList[i]]->GetPhi();  
 		Add(phitot,phi_frozen,M); 
 	}
 	for (int i=0; i<n_mol; i++) {
@@ -244,9 +241,10 @@ bool System::ComputePhis(){
 		if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {norm=Mol[i]->n/Mol[i]->GN;}
 		int k=0;
 		while (k<length) {
-			float *phi=Mol[i]->phi+k*M;
-			float *G1=Seg[Mol[i]->MolMonList[k]]->G1;
+			double *phi=Mol[i]->phi+k*M;
+			double *G1=Seg[Mol[i]->MolMonList[k]]->G1;
 			Div(phi,G1,M); if (norm>0) Norm(phi,norm,M);
+//cout <<"in mol " << i << "sum phi is " << Sum(phi,M) << endl; 
 			k++;
 		}
 
@@ -256,26 +254,21 @@ bool System::ComputePhis(){
 	int k=0;
 	length = Mol[solvent]->MolMonList.size();
 	while (k<length) {
-		float *phi=Mol[solvent]->phi+k*M;
-		float *G1=Seg[Mol[solvent]->MolMonList[k]]->G1;
-		Div(phi,G1,M); if (norm>0) Norm(phi,norm,M);
+		double *phi=Mol[solvent]->phi+k*M;
+		if (norm>0) Norm(phi,norm,M);
+//cout <<"in solvent " << Sum(phi,M) << endl; 
 		k++;
 	}
 	for (int i=0; i<n_mol; i++) {
 		int length=Mol[i]->MolMonList.size();
 		int k=0;
 		while (k<length) {
-			k++; 
-		}
-	}
-	for (int i=0; i<n_mol; i++) {
-		int length=Mol[i]->MolMonList.size();
-		int k=0;
-		while (k<length) {
-			float* phi_mon=Seg[Mol[i]->MolMonList[k]]->phi;
-			float* phi_molmon = Mol[i]->phi + k*M; 
+			double* phi_mon=Seg[Mol[i]->MolMonList[k]]->phi;
+			double* mol_phitot=Mol[i]->phitot;
+			double* phi_molmon = Mol[i]->phi + k*M; 
 			Add(phi_mon,phi_molmon,M);
-			Add(phitot,phi_mon,M); 
+			Add(phitot,phi_molmon,M); 
+			Add(mol_phitot,phi_molmon,M);
 			Seg[i]->phibulk +=Mol[i]->fraction(Mol[i]->MolMonList[k])*Mol[i]->phibulk; 
 			k++; 
 		}

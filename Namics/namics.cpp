@@ -10,7 +10,7 @@
 #include "output.cpp"
 
 #ifdef CUDA
-__global__ void distributeg1(float *G1, float *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+__global__ void distributeg1(double *G1, double *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
         int i = blockIdx.x*blockDim.x+threadIdx.x;
         int j = blockIdx.y*blockDim.y+threadIdx.y;
         int k = blockIdx.z*blockDim.z+threadIdx.z;
@@ -31,7 +31,7 @@ __global__ void distributeg1(float *G1, float *g1, int* Bx, int* By, int* Bz, in
         }
 }
 
-__global__ void collectphi(float* phi, float* GN,float* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+__global__ void collectphi(double* phi, double* GN,double* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
         int i = blockIdx.x*blockDim.x+threadIdx.x;
         int j = blockIdx.y*blockDim.y+threadIdx.y;
         int k = blockIdx.z*blockDim.z+threadIdx.z;
@@ -73,7 +73,7 @@ void subdomain(int *fBx,int *fBy,int *fBz, int *fPx,int *fPy,int *fPz, int zloc)
 	}*/
 }
 
-void Sideh(float *X_side, float *X, int M) {
+void Sideh(double *X_side, double *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
@@ -87,7 +87,7 @@ void Sideh(float *X_side, float *X, int M) {
 
 
 
-void Side(float *X_side, float *X, int M) {
+void Side(double *X_side, double *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
 	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
@@ -95,7 +95,7 @@ void Side(float *X_side, float *X, int M) {
 	Norm(X_side,1.0/6.0,M);
 }
 
-void advanced_average(float *X_side, float *X, int M){
+void advanced_average(double *X_side, double *X, int M){
         Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
@@ -117,9 +117,9 @@ void advanced_average(float *X_side, float *X, int M){
 	Norm(X_side,1.0/26.0,M);
 }
 
-void Propagateh(float* G, float* G1, int s_from, int s_to) { //on small boxes
+void Propagateh(double* G, double* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
-	float *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
+	double *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
 	Zero(gs,MMM);
 	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
 	
@@ -132,8 +132,8 @@ void Propagateh(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	Norm(gs,1.0/12.0,MMM); Times(gs,gs,g,MMM);
 }
 
-void PROPAGATEh(float *G, float *G1, int s_from, int s_to) { //on big box
-	float *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
+void PROPAGATEh(double *G, double *G1, int s_from, int s_to) { //on big box
+	double *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
 	Zero(gs,MM);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
@@ -147,9 +147,9 @@ void PROPAGATEh(float *G, float *G1, int s_from, int s_to) { //on big box
 
 
 
-void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
+void Propagate(double* G, double* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
-	float *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
+	double *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
 	Zero(gs,MMM);
 	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
 	Add(gs+jx,gs_1,MMM-jx); Add(gs,gs_1+jx,MMM-jx);
@@ -158,8 +158,8 @@ void Propagate(float* G, float* G1, int s_from, int s_to) { //on small boxes
 	Norm(gs,1.0/6.0,MMM); Times(gs,gs,g,MMM);
 }
 
-void PROPAGATE(float *G, float *G1, int s_from, int s_to) { //on big box
-	float *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
+void PROPAGATE(double *G, double *G1, int s_from, int s_to) { //on big box
+	double *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
 	Zero(gs,MM);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
@@ -170,7 +170,7 @@ void PROPAGATE(float *G, float *G1, int s_from, int s_to) { //on big box
 
 
 #ifdef CUDA
-void DistributeG1(float *G1, float *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void DistributeG1(double *G1, double *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	//int n_blocks=(n_box)/block_size + ((n_box)%block_size == 0 ? 0:1);
 	//distributeg1<<<n_blocks,block_size>>>(G1,g1,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
         dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
@@ -179,7 +179,7 @@ void DistributeG1(float *G1, float *g1, int* Bx, int* By, int* Bz, int MM, int M
 
 }
 #else
-void DistributeG1(float *G1, float *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void DistributeG1(double *G1, double *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int pos_l=-M;
 	int pos_x,pos_y,pos_z;
 	int Bxp,Byp,Bzp;
@@ -198,17 +198,17 @@ void DistributeG1(float *G1, float *g1, int* Bx, int* By, int* Bz, int MM, int M
 #endif
 
 #ifdef CUDA
-void CollectPhi(float* phi, float* GN, float* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void CollectPhi(double* phi, double* GN, double* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
  	 dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
         dim3 blockdim(8,8,8);
         collectphi<<<blocks,blockdim>>>(phi,GN,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
 }
 #else
-void CollectPhi(float* phi, float* GN, float* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void CollectPhi(double* phi, double* GN, double* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int pos_l=-M;
 	int pos_x,pos_y,pos_z;
 	int Bxp,Byp,Bzp;
-	float Inv_H_GNp;
+	double Inv_H_GNp;
 	int ii=0,jj=0,kk=0;
 
 	for (int p=0; p<n_box; p++) { pos_l +=M; ii=0; Bxp=Bx[p]; Byp=By[p]; Bzp=Bz[p]; Inv_H_GNp=1.0/GN[p];
@@ -343,24 +343,24 @@ void ComputeG(){
 
 }
 
-void Ax(float* A, float* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
-	float* U = new float[N*N];
-	float* S = new float[N];
-	float* VT = new float[N*N];
+void Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
+	double* U = new double[N*N];
+	double* S = new double[N];
+	double* VT = new double[N*N];
 	integer MM = (integer)N, NN = (integer)N;
 	integer LDA=MM, LDU=MM, LDVT=NN, INFO, LWORK;
 	int lwork;
-	float WKOPT;
-	float* WORK;
+	double WKOPT;
+	double* WORK;
 	char JOBU='S'; //'S' is nodig om alleen de eerste N colommen in U te schrijven.
 	char JOBVT='A';
 
 	LWORK = -1; //grootte hulpgeheugen aanvragen
-	sgesvd_( &JOBU, &JOBVT, &MM, &NN, A, &LDA, S, U, &LDU, VT, &LDVT, &WKOPT, &LWORK, &INFO );
+	dgesvd_( &JOBU, &JOBVT, &MM, &NN, A, &LDA, S, U, &LDU, VT, &LDVT, &WKOPT, &LWORK, &INFO );
 	lwork = (int)WKOPT;
-	WORK = (float*)malloc( lwork*sizeof(float) );
+	WORK = (double*)malloc( lwork*sizeof(double) );
 	LWORK = (integer)lwork; //nu uitrekenen.
-	sgesvd_( &JOBU, &JOBVT, &MM, &NN, A, &LDA, S, U, &LDU, VT, &LDVT,WORK, &LWORK, &INFO );
+	dgesvd_( &JOBU, &JOBVT, &MM, &NN, A, &LDA, S, U, &LDU, VT, &LDVT,WORK, &LWORK, &INFO );
 	if (INFO >0) { //error message genereren
 	};
 	free(WORK);
@@ -372,8 +372,8 @@ void Ax(float* A, float* X, int N){//From Ax_B; below B is not used: it is assum
 	delete S;
 	delete VT;
 }
-void DIIS(float* x, float* x_x0, float* xR, float* Aij, float* Apij,float* Ci, int k, int m, int iv) {
-	float normC=0; int posi;
+void DIIS(double* x, double* x_x0, double* xR, double* Aij, double* Apij,double* Ci, int k, int m, int iv) {
+	double normC=0; int posi;
 	if (k_diis>m) { k_diis =m;
 		for (int i=1; i<m; i++) for (int j=1; j<m; j++)
 		Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
@@ -396,9 +396,9 @@ void DIIS(float* x, float* x_x0, float* xR, float* Aij, float* Apij,float* Ci, i
 		YplusisCtimesX(x,xR+posi*iv,Ci[i],iv);
 	}
 }
-float GrandPotential(){
-	float GP=0;
-	float volume = 1.0*MX*MY*MZ;
+double GrandPotential(){
+	double GP=0;
+	double volume = 1.0*MX*MY*MZ;
 	RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(phi+MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	RemoveBoundaries(phi+2*MM,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
@@ -411,8 +411,8 @@ float GrandPotential(){
 		
 	return GP;	
 }
-float Helmholtz(){
-	float F_Helmholtz, entropy, energy;
+double Helmholtz(){
+	double F_Helmholtz, entropy, energy;
 	entropy = 0;
 	energy = 0;
 
@@ -441,7 +441,7 @@ TransferDataToHost(H_GN_B,GN_B,n_box);
 	return F_Helmholtz;
 }
 
-float SCF() {
+double SCF() {
 	for (int i=0; i<MX+2; i++) for (int j=0; j<MY+2; j++) for (int k=0; k<MZ+2; k++) {
 		if (k<MZ/2) {
 			H_u[JX*i+JY*j+k]= -0.38335;
@@ -477,6 +477,7 @@ float SCF() {
 	error = sqrt(Dot(g,g,iv));
 	printf("DIIS has been notified\n");
 	printf("Your guess = %1e \n",error);
+cout <<"tolerance " << tolerance << endl;
 	while (error > tolerance && it < iterations) {
 		it++;
 		Cp(x0,x,iv); ComputeG();
@@ -485,7 +486,7 @@ float SCF() {
 		Cp(xR+k*iv,x,iv); YisAminB(x_x0+k*iv,x,x0,iv);
 		DIIS(x,x_x0,xR,Aij,Apij,Ci,k,m,iv);
 		error = sqrt(Dot(g,g,iv));
-		if(it%10 == 0){
+		if(it%1 == 0){
 			printf("it = %i error = %1e \n",it,error);
 		}
 	}
@@ -494,12 +495,12 @@ float SCF() {
 
 
 
-void vtk_output(string filename, float* X) {
+void vtk_output(string filename, double* X) {
 	FILE * fp;
 	fp = fopen(filename.c_str(),"w+");
 	fprintf(fp, "# vtk DataFile Version 3.0 \nvtk output \nASCII \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i \n", MX, MY, MX);
 	fprintf(fp,"SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i \n", MX*MY*MZ);
-	fprintf(fp,"SCALARS Box_profile float\nLOOKUP_TABLE default \n");
+	fprintf(fp,"SCALARS Box_profile double\nLOOKUP_TABLE default \n");
 
 	for (int i=1; i<MX+1; i++) for (int j=1; j<MY+1; j++) for (int k=1; k<MZ+1; k++)
 	fprintf(fp," %f \n", X[i*JX+j*JY+k]);
@@ -512,7 +513,6 @@ int main(int argc, char *argv[]) {
 	string filename;
 	string line;
 	ofstream out_file;
-
 
 	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;}
 	filename = fname + ".in";
@@ -527,14 +527,11 @@ int main(int argc, char *argv[]) {
 	n_mol = In[0]->MolList.size(); 
 	vector<Molecule*> Mol; for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,In[0]->MolList[i]));}
 	for (int i=0; i<n_mol; i++) {if (!Mol[i]->CheckInput()) return 0;}
-	vector<System*> Sys; Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0])); if (!Sys[0]->CheckInput()) {return 0;}
+	vector<System*> Sys; Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0]));
+	if (!Sys[0]->CheckInput()) {return 0;}
 	if (!Sys[0]->CheckChi_values(n_seg)) return 0;
-	string newton_name;
-	if (In[0]->NewtonList.size()>0) {newton_name=In[0]->NewtonList[0];} else newton_name="noname"; 
-	vector<Newton*> New; New.push_back(new Newton(In,Lat,Seg,Sys,newton_name)); if (!New[0]->CheckInput()) {return 0;}
-	string engine_name;
-	if (In[0]->EngineList.size()>0) {engine_name=In[0]->EngineList[0];} else engine_name="noname";
-	vector<Engine*> Eng; Eng.push_back(new Engine(In,Sys,engine_name)); if (!Eng[0]->CheckInput()) {return 0;}
+	vector<Newton*> New; New.push_back(new Newton(In,Lat,Seg,Mol,Sys,In[0]->NewtonList[0])); if (!New[0]->CheckInput()) {return 0;}
+	vector<Engine*> Eng; Eng.push_back(new Engine(In,Sys,In[0]->EngineList[0])); if (!Eng[0]->CheckInput()) {return 0;}
 	int n_out = In[0]->OutputList.size(); 
 	vector<Output*> Out; for (int i=0; i<n_out; i++) Out.push_back(new Output(In,In[0]->OutputList[i],i,n_out));
 	for (int i=0; i<n_out; i++) {
@@ -550,11 +547,16 @@ int main(int argc, char *argv[]) {
 
 
 	MX=Lat[0]->MX; MY=Lat[0]->MY;MZ=Lat[0]->MZ;  
+	JX=(MX+2)*(MY+2); JY=(MY+2);M=JX*(MZ+2); 
+	double* phi=Mol[0]->phi;
+	double* phipol=Mol[2]->phi;
+
+for (int z=6; z<MZ; z+=10) cout << "z = " << z << " phi= " <<  phi[26*JX+26*JY+z] << " and " << phipol[26*JX+26*JY+z]+phipol[26*JX+26*JY+z+M]+phipol[26*JX+26*JY+z+2*M] << endl;
 
 
-	Aij = new float[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; //needed for SVD which is done on cpu.
-	Ci = new float[m]; for (int i=0; i<m; i++) Ci[i]=0;
-	Apij = new float[m*m]; for (int i=0; i<m*m; i++) Apij[i]=0;
+	Aij = new double[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; //needed for SVD which is done on cpu.
+	Ci = new double[m]; for (int i=0; i<m; i++) Ci[i]=0;
+	Apij = new double[m*m]; for (int i=0; i<m*m; i++) Apij[i]=0;
 
 #ifdef CUDA
 	cudaDeviceReset();
@@ -587,60 +589,60 @@ int main(int argc, char *argv[]) {
 	iv = MM*n_seg;
 	Theta_A = 1.0*MX*MY*MZ/2.0;	//Fill half the Big box with solvent A.
 
-		phib = new float[2];
-		H_MASK = new float[MM]; H_Zero(H_MASK,MM);
-		H_KSAM = new float[MM];
-		H_u = new float[MM*n_seg];
-		H_G1= new float[MM*n_seg]; //there are just two segment types A and B
-		H_phi = new float[MM*4];  //we will collect phi(A4), phi(B4), phi(A20) and phi(B20) in phi vector.
-		H_PHI = new float[MM*n_seg]; //will collect phi(A), phi(B).
-		//H_psi = new float[MM];
+		phib = new double[2];
+		H_MASK = new double[MM]; H_Zero(H_MASK,MM);
+		H_KSAM = new double[MM];
+		H_u = new double[MM*n_seg];
+		H_G1= new double[MM*n_seg]; //there are just two segment types A and B
+		H_phi = new double[MM*4];  //we will collect phi(A4), phi(B4), phi(A20) and phi(B20) in phi vector.
+		H_PHI = new double[MM*n_seg]; //will collect phi(A), phi(B).
+		//H_psi = new double[MM];
 
 #ifdef CUDA
-		BlasResult= (float*)AllOnDev(1);
-		x = (float*)AllOnDev(iv); u=x; Zero(x,iv);
-		x0 = (float*)AllOnDev(iv);
-		g= (float*)AllOnDev(iv);
-		xR= (float*)AllOnDev(m*iv);
-		x_x0= (float*)AllOnDev(m*iv);
-		phi= (float*)AllOnDev(MM*4);	   //NA, NB, block A and Bloc B of copolymer.
-		PHI = (float*)AllOnDev(MM*n_seg); //only A and B types
-		phi_side = (float*)AllOnDev(MM*n_seg);
-		phitot= (float*)AllOnDev(MM);
-		G1= (float*)AllOnDev(MM*n_seg);
-		alpha= (float*)AllOnDev(MM);
-		MASK=(float*)AllOnDev(MM); Zero(MASK,MM);
-		KSAM =(float*)AllOnDev(MM);
+		BlasResult= (double*)AllOnDev(1);
+		x = (double*)AllOnDev(iv); u=x; Zero(x,iv);
+		x0 = (double*)AllOnDev(iv);
+		g= (double*)AllOnDev(iv);
+		xR= (double*)AllOnDev(m*iv);
+		x_x0= (double*)AllOnDev(m*iv);
+		phi= (double*)AllOnDev(MM*4);	   //NA, NB, block A and Bloc B of copolymer.
+		PHI = (double*)AllOnDev(MM*n_seg); //only A and B types
+		phi_side = (double*)AllOnDev(MM*n_seg);
+		phitot= (double*)AllOnDev(MM);
+		G1= (double*)AllOnDev(MM*n_seg);
+		alpha= (double*)AllOnDev(MM);
+		MASK=(double*)AllOnDev(MM); Zero(MASK,MM);
+		KSAM =(double*)AllOnDev(MM);
 //		if (charges) {
-//			phi_na =(float*)AllOnDev(MM);
-//			phi_cl =(float*)AllOnDev(MM);
-//			psi_0 =(float*)AllOnDev(MM);
-//			psi_side =(float*)AllOnDev(MM);
+//			phi_na =(double*)AllOnDev(MM);
+//			phi_cl =(double*)AllOnDev(MM);
+//			psi_0 =(double*)AllOnDev(MM);
+//			psi_side =(double*)AllOnDev(MM);
 //			psi=x+MM;
-//			q =(float*)AllOnDev(MM);
+//			q =(double*)AllOnDev(MM);
 //		}
 
 #else
-		x = new float[iv]; u=x;  Zero(x,iv);
-		x0 = new float[iv];
-		g = new float[iv];
-		xR = new float[m*iv];
-		x_x0 =new float[m*iv];
+		x = new double[iv]; u=x;  Zero(x,iv);
+		x0 = new double[iv];
+		g = new double[iv];
+		xR = new double[m*iv];
+		x_x0 =new double[m*iv];
 		phi = H_phi;
 		PHI = H_PHI;	  //collects densities per segment type.
-		phi_side = new float[MM*n_seg];
-		phitot = new float[MM];
+		phi_side = new double[MM*n_seg];
+		phitot = new double[MM];
 		G1 = H_G1;
-		alpha = new float[MM];
+		alpha = new double[MM];
 		MASK=H_MASK;
 		KSAM=H_KSAM;
 //		if (charges) {
 //			psi=x+MM;
-//			phi_na = new float[MM];
-//			phi_cl = new float[MM];
-//			q = new float[MM];
-//			psi_0 = new float[MM];
-//			psi_side = new float[MM];
+//			phi_na = new double[MM];
+//			phi_cl = new double[MM];
+//			q = new double[MM];
+//			psi_0 = new double[MM];
+//			psi_side = new double[MM];
 //		}
 #endif
 //		if (!Full) for (int i=1; i<MX+1; i++) for (int j=1; j<MY+1; j++) for (int k=1; k<MZ+1; k++)
@@ -683,9 +685,9 @@ int main(int argc, char *argv[]) {
 	jx = (My+2)*(Mz+2); jy = Mz+2; M=(Mx+2)*(My+2)*(Mz+2);
 	bx1=1; bxm=Mx; by1=1; bym=My; bz1=1; bzm=Mz; //reflecting for small boxes
 
-	H_mask = new float[M*n_box];
+	H_mask = new double[M*n_box];
 #ifdef CUDA
-	mask= (float*)AllOnDev(M*n_box);
+	mask= (double*)AllOnDev(M*n_box);
 #else
 	mask=H_mask;
 #endif
@@ -723,7 +725,7 @@ int main(int argc, char *argv[]) {
 //		}
 //		in_file.close();
 //	} else cout << "file " << filename << " is not available." << endl;
-	float Free_energy;
+	double Free_energy;
 	int variation = 1;
 	
 	if (variation == 1)
@@ -745,27 +747,28 @@ int main(int argc, char *argv[]) {
 		}
 
 		invert(H_KSAM,H_MASK,MM);
-		H_g1= new float[M*n_box]; H_Zero(H_g1,M*n_box);
-		H_rho = new float[M*n_box];
-		H_GN_A = new float[n_box];
-		H_GN_B = new float[n_box];
+		H_g1= new double[M*n_box]; H_Zero(H_g1,M*n_box);
+		H_rho = new double[M*n_box];
+		H_GN_A = new double[n_box];
+		H_GN_B = new double[n_box];
 
 	#ifdef CUDA
-		Gg_f=(float*)AllOnDev(M*N*n_box);
-		GG_F=(float*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
-		Gg_b=(float*)AllOnDev(M*2*n_box);
-		GN_A=(float*)AllOnDev(n_box);
-		GN_B=(float*)AllOnDev(n_box);
-		rho =(float*)AllOnDev(M*n_box);
-		g1=(float*)AllOnDev(M*n_box);
+		Gg_f=(double*)AllOnDev(M*N*n_box);
+		GG_F=(double*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
+		Gg_b=(double*)AllOnDev(M*2*n_box);
+		GN_A=(double*)AllOnDev(n_box);
+		GN_B=(double*)AllOnDev(n_box);
+		rho =(double*)AllOnDev(M*n_box);
+		g1=(double*)AllOnDev(M*n_box);
 	#else
-		Gg_f = new float[M*(N+1)*n_box]; Gg_b = new float[M*2*n_box];
-		GG_F = new float[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
+		Gg_f = new double[M*(N+1)*n_box]; Gg_b = new double[M*2*n_box];
+		GG_F = new double[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
 		GN_A= H_GN_A;
 		GN_B= H_GN_B;
 		rho = H_rho;
 		g1 = H_g1;
 	#endif
+return 0; 
 		Free_energy = SCF(); 
 		Free_energy=Helmholtz();
 		printf("Free energy : %1f \n", Free_energy);
@@ -803,22 +806,22 @@ int main(int argc, char *argv[]) {
 		}
 
 		invert(H_KSAM,H_MASK,MM);
-		H_g1= new float[M*n_box]; H_Zero(H_g1,M*n_box);
-		H_rho = new float[M*n_box];
-		H_GN_A = new float[n_box];
-		H_GN_B = new float[n_box];
+		H_g1= new double[M*n_box]; H_Zero(H_g1,M*n_box);
+		H_rho = new double[M*n_box];
+		H_GN_A = new double[n_box];
+		H_GN_B = new double[n_box];
 
 	#ifdef CUDA
-		Gg_f=(float*)AllOnDev(M*N*n_box);
-		GG_F=(float*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
-		Gg_b=(float*)AllOnDev(M*2*n_box);
-		GN_A=(float*)AllOnDev(n_box);
-		GN_B=(float*)AllOnDev(n_box);
-		rho =(float*)AllOnDev(M*n_box);
-		g1=(float*)AllOnDev(M*n_box);
+		Gg_f=(double*)AllOnDev(M*N*n_box);
+		GG_F=(double*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
+		Gg_b=(double*)AllOnDev(M*2*n_box);
+		GN_A=(double*)AllOnDev(n_box);
+		GN_B=(double*)AllOnDev(n_box);
+		rho =(double*)AllOnDev(M*n_box);
+		g1=(double*)AllOnDev(M*n_box);
 	#else
-		Gg_f = new float[M*(N+1)*n_box]; Gg_b = new float[M*2*n_box];
-		GG_F = new float[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
+		Gg_f = new double[M*(N+1)*n_box]; Gg_b = new double[M*2*n_box];
+		GG_F = new double[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
 		GN_A= H_GN_A;
 		GN_B= H_GN_B;
 		rho = H_rho;

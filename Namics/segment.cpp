@@ -9,9 +9,9 @@ public:
 	vector<Lattice*> Lat; 
 	int n_seg; 
 	int seg_nr;  
-	float epsilon;
-	float valence; 
-	float phibulk; 
+	double epsilon;
+	double valence; 
+	double phibulk; 
 	string freedom;
 
 	string filename; 
@@ -25,18 +25,19 @@ public:
 	int* H_Px; 
 	int* H_Py;
 	int* H_Pz;
-	float* H_MASK;
-	float* H_u; 
-	float* H_G1;
-	float* H_phi;
+	double* H_MASK;
+	double* H_u; 
+	double* H_G1;
+	double* H_phi;
 	int* Px; 
 	int* Py;
 	int* Pz;
-	float* MASK; 
-	float* G1;
-	float* phi;
-	float* phi_side;
-	float* u;    
+	double* MASK; 
+	double* G1;
+	double* phi;
+	double* phi_side;
+	double* u;  
+	double* alpha;  
 
 
 	std::vector<string> KEYS;
@@ -51,11 +52,11 @@ public:
 	bool IsFrozen();
 	bool IsTagged(); 
 	bool CreateMASK();
-	float* GetMASK(); 
-	float* GetPhi(); 
-	bool PutU(float*);
+	double* GetMASK(); 
+	double* GetPhi(); 
+	bool PutU(double*);
 	void AllocateMemory();
-	bool PrepareForCalculations(float*);  
+	bool PrepareForCalculations(double*);  
 
 };
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
@@ -87,9 +88,9 @@ bool Segment::CheckInput() {
 		M=(MX+2)*(MY+2)*(MZ+2); JX=(MX+2)*(MY+2); JY=(MY+2); 
 		BX1=Lat[0]->BX1; BY1=Lat[0]->BY1; BZ1=Lat[0]->BZ1;
 		BXM=Lat[0]->BXM; BYM=Lat[0]->BYM; BZM=Lat[0]->BZM;
-		valence=In[0]->Get_float(GetValue("valence"),0);
+		valence=In[0]->Get_double(GetValue("valence"),0);
 		if (valence<-5 || valence > 5) cout <<"For mon " + name + " valence value out of range -5 .. 5. Default value used instead" << endl; 
-		epsilon=In[0]->Get_float(GetValue("epsilon"),80);
+		epsilon=In[0]->Get_double(GetValue("epsilon"),80);
 		if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 255. Default value 80 used instead" << endl;
 
 		options.push_back("free"); options.push_back("pinned");options.push_back("frozen");options.push_back("tagged");
@@ -357,7 +358,7 @@ bool Segment::CreateMASK() {
 		int M = (MX+2)*(MY+2)*(MZ+2);
 		int JX = (MX+2)*(MY+2);
 		int JY = (MY+2);
-		if (H_MASK==NULL) {H_MASK = new float[M];} else {cout << "MASK already exists; task to create MASK rejected. " << endl; success=false; }
+		if (H_MASK==NULL) {H_MASK = new double[M];} else {cout << "MASK already exists; task to create MASK rejected. " << endl; success=false; }
 		H_Zero(H_MASK,M);
 		if (block) {
 			for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++) for (int z=1; z<MZ+1; z++) 
@@ -371,17 +372,17 @@ bool Segment::CreateMASK() {
 	return success; 
 }
 
-float* Segment::GetMASK() {
+double* Segment::GetMASK() {
 	if (MASK==NULL) {cout <<"MASK not yet created. Task to point to MASK in segment is rejected. " << endl; return NULL;} 
 	else return MASK; 
 }
 
-float* Segment::GetPhi() {
+double* Segment::GetPhi() {
 	if (freedom=="frozen") Cp(phi,MASK,M); 
 	return phi; 
 }
 
-bool Segment::PutU(float *x) {
+bool Segment::PutU(double *x) {
 	bool success=true;
 	if (freedom=="frozen" || freedom=="tagged") { success=false; } else Cp(u,x,M); 
 	return success; 
@@ -426,10 +427,10 @@ void Segment::AllocateMemory() {
 	if (H_Px==NULL && n_pos>0) H_Px=new int[n_pos];
 	if (H_Py==NULL && n_pos>0) H_Py=new int[n_pos];
 	if (H_Pz==NULL && n_pos>0) H_Pz=new int[n_pos];
-	H_G1= new float[M]; 
-	H_phi=new float[M];
-	if (H_MASK == NULL) H_MASK=new float[M]; //or H_MASK = new int[]?
-	H_u = new float[M];
+	H_G1= new double[M]; 
+	H_phi=new double[M];
+	if (H_MASK == NULL) H_MASK=new double[M]; //or H_MASK = new int[]?
+	H_u = new double[M];
 #ifdef CUDA
 //define on GPU
 	if (n_pos>0) {
@@ -437,10 +438,10 @@ void Segment::AllocateMemory() {
 		Py=(int*)AllIntOnDev(n_pos);
 		Pz=(int*)AllIntOnDev(n_pos);
 	}
-	u=(float*)AllOnDev(M);
-	G1=(float*)AllOnDev(M);
-	MASK=(float*)AllOnDev(M);
-	phi_side(float*)AllOnDev(M);
+	u=(double*)AllOnDev(M);
+	G1=(double*)AllOnDev(M);
+	MASK=(double*)AllOnDev(M);
+	phi_side(double*)AllOnDev(M);
 #else
 	if (n_pos>0) {
 		Px=H_Px;
@@ -451,15 +452,15 @@ void Segment::AllocateMemory() {
 	phi =H_phi;
 	G1 = H_G1;
 	u=H_u;
-	phi_side = new float[M]; 
+	phi_side = new double[M]; 
 #endif
 
 }
-bool Segment::PrepareForCalculations(float* KSAM) {
+bool Segment::PrepareForCalculations(double* KSAM) {
 	bool success=true; 
 	phibulk=0;
-	if (freedom=="frozen") {Cp(phi,MASK,M); invert(KSAM,MASK,M);} else Zero(phi,M);
-	Boltzmann(G1,u,M); 
+	if (freedom=="frozen") {Cp(phi,MASK,M); invert(KSAM,MASK,M);} else Zero(phi,M); 
+	if (alpha==NULL) {Boltzmann(G1,u,M);} else {Boltzmann(G1,u,alpha,M);}
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
 	if (freedom=="tagged") Cp(G1,MASK,M);
 	SetBoundaries(G1,   JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);

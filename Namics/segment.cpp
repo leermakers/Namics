@@ -37,7 +37,7 @@ public:
 	double* phi;
 	double* phi_side;
 	double* u;  
-	double* alpha;  
+	double* alpha=NULL;  
 
 
 	std::vector<string> KEYS;

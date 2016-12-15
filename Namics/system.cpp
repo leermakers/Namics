@@ -104,7 +104,7 @@ bool System::CheckInput() {
 		if (GetValue("calculation_type").size()>0) {
 			if (!In[0]->Get_string(GetValue("calculation_type"),calculation_type,options," Info about calculation_type rejected") ) {success=false;};
 			if (calculation_type=="micro-emulsion") {
-				if (!In[0]->MolList.size()==3) {cout << "In 'calculation_type : micro-emulsion', we expect three molecules " << endl; success=false;  }
+				if (In[0]->MolList.size()!=3) {cout << "In 'calculation_type : micro-emulsion', we expect three molecules " << endl; success=false;  }
 				int length=In[0]->MolList.size();
 				int i=0;
 				int number_of_solvents=0;

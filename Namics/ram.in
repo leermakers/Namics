@@ -1,6 +1,38 @@
-calculation_type : micro-emulsion
-n_layers_x : 51
-n_layers_y : 51
-n_layers_z : 51
-n_segments : 2
-variation : 1
+lat : hex : n_layers_x : 51
+lat : hex : n_layers_y : 51
+lat : hex : n_layers_z : 51
+lat : hex : lowerbound_x : periodic
+lat : hex : upperbound_x : periodic
+lat : hex : lowerbound_y : periodic
+lat : hex : upperbound_y : periodic
+lat : hex : lowerbound_z : mirror_1
+lat : hex : upperbound_z : mirror_1
+//sys : ram : calculation_type : micro-emulsion
+//engine : nice : MC : true
+//sys : ram : variation : 1
+mon : A : freedom : free
+mon : B : freedom : free
+mon : A : chi-B : 0
+mon : X : freedom : tagged
+mon : X : tagged_range : (26,26,26)
+
+mol : A : composition : (A)4
+mol : B : composition : (B)4
+mol : AB : composition : (A)20(X)1(B)20
+//mol : AB : freedom : restricted
+//mol : AB : n : 0.1
+mol : A : freedom : restricted
+mol : A : theta : 66325.5
+mol : B : freedom : solvent
+//mol : A : save_memory : true
+output : out : template : non
+newton :isaac : method : DIIS-alpha
+newton : isaac : i_info : 1
+newton : isaac : m : 6
+newton : isaac : delta_max : 0.001
+newton : isaac : iterationlimit : 100
+newton : isaac : tolerance : 1e-4
+newton : isaac : read_guess : true
+
+
+

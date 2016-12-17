@@ -1,7 +1,7 @@
 ## Namics: 
 (as in dyNAMICS)
 Hybrid SCF-MD simulation tool. Package under development.
-
+:relaxed:
 
 
 

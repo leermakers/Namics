@@ -1,5 +1,12 @@
 Namics: (as in dyNAMICS)
+
+
+
 Hybrid SCF-MD simulation tool. Package under development.
+
+
+
+
 
 
 Lead developers:
@@ -7,9 +14,15 @@ Lead developers:
 *	Ramanathan Varadharajan
 
 
+
+
+
 Package Details:
 	*	iterator scheme: DIIS & DIIS-alpha.
 	*	can propagate through tagged molecule or frozen molecule.
+
+
+
 
 
 Developer Log for Master branch:  (Add the new log message at top)

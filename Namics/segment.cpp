@@ -26,7 +26,6 @@ public:
 	int* H_Py;
 	int* H_Pz;
 	double* H_MASK;
-	double* H_u; 
 	double* H_G1;
 	double* H_phi;
 	int* Px; 
@@ -37,8 +36,6 @@ public:
 	double* phi;
 	double* phi_side;
 	double* u;  
-	double* alpha=NULL;  
-
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -54,7 +51,6 @@ public:
 	bool CreateMASK();
 	double* GetMASK(); 
 	double* GetPhi(); 
-	bool PutU(double*);
 	void AllocateMemory();
 	bool PrepareForCalculations(double*);  
 
@@ -174,6 +170,7 @@ bool Segment::CheckInput() {
 //--------------------------frozen
 
 if (freedom == "frozen") {
+			phibulk=0;
 			if (GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tag_filename").size()>0) {
 			cout<< "For mon " + name + ", you should exclusively combine 'freedom : frozen' with 'frozen_range' or 'frozen_filename'" << endl;  success=false;}
 			if (GetValue("frozen_range").size()>0 && GetValue("frozen_filename").size()>0) {
@@ -246,8 +243,8 @@ if (freedom == "frozen") {
 //------------------------- tagged	 
 
 
-
-if (freedom == "tagged") { 
+	
+if (freedom == "tagged") { phibulk=0;
 			if (GetValue("pinned_range").size()>0 || GetValue("frozen_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("frozen_filename").size()>0) {
 			cout<< "For mon " + name + ", you should exclusively combine 'freedom : tagged' with 'tagged_range' or 'tagged_filename'" << endl;  success=false;}
 			if (GetValue("tagged_range").size()>0 && GetValue("tagged_filename").size()>0) {
@@ -382,12 +379,6 @@ double* Segment::GetPhi() {
 	return phi; 
 }
 
-bool Segment::PutU(double *x) {
-	bool success=true;
-	if (freedom=="frozen" || freedom=="tagged") { success=false; } else Cp(u,x,M); 
-	return success; 
-}
-
 string Segment::GetFreedom(void){
 	return freedom; 
 }
@@ -399,9 +390,11 @@ bool Segment::IsPinned(void) {
 	return freedom == "pinned"; 
 }
 bool Segment::IsFrozen(void) {
+	phibulk =0;
 	return freedom == "frozen"; 
 }
 bool Segment::IsTagged(void) {
+	phibulk =0;
 	return freedom == "tagged"; 
 }
 
@@ -430,7 +423,7 @@ void Segment::AllocateMemory() {
 	H_G1= new double[M]; 
 	H_phi=new double[M];
 	if (H_MASK == NULL) H_MASK=new double[M]; //or H_MASK = new int[]?
-	H_u = new double[M];
+	u = new double[M];
 #ifdef CUDA
 //define on GPU
 	if (n_pos>0) {
@@ -451,7 +444,6 @@ void Segment::AllocateMemory() {
 	MASK=H_MASK;  
 	phi =H_phi;
 	G1 = H_G1;
-	u=H_u;
 	phi_side = new double[M]; 
 #endif
 
@@ -460,7 +452,7 @@ bool Segment::PrepareForCalculations(double* KSAM) {
 	bool success=true; 
 	phibulk=0;
 	if (freedom=="frozen") {Cp(phi,MASK,M); invert(KSAM,MASK,M);} else Zero(phi,M); 
-	if (alpha==NULL) {Boltzmann(G1,u,M);} else {Boltzmann(G1,u,alpha,M);}
+	Boltzmann(G1,u,M);
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
 	if (freedom=="tagged") Cp(G1,MASK,M);
 	SetBoundaries(G1,   JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);

@@ -38,10 +38,7 @@ public:
 	void AllocateMemory();
 	bool PrepareForCalculations();
 	bool ComputePhis();
-	bool PutU(double*); 
-
 	
-
 };
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,string name_) {
 	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; 
@@ -154,17 +151,6 @@ bool System::CheckChi_values(int n_seg){
  	return success; 
 }
 
-bool System::PutU(double* x) {
-	bool success=true;
-	int length=SysMonList.size();
-	int i=0;
-	while (i<length) {
-		success=Seg[SysMonList[i]]->PutU(x+M*i);
-		i++;
-	}
-	return success;
-}
-
 void System::AllocateMemory() {
 //define on CPU
 	H_KSAM=new double[M];
@@ -210,6 +196,7 @@ bool System::PrepareForCalculations() {
 		i++;
 	}
 	invert(KSAM,KSAM,M); 
+	Lat[0]->remove_bounds(KSAM); 
 	n_mol = In[0]->MolList.size(); 
 	success=Lat[0]->PrepareForCalculations(); 
 	int n_mon=In[0]->MonList.size();
@@ -260,6 +247,7 @@ bool System::ComputePhis(){
 		k++;
 	}
 	for (int i=0; i<n_mol; i++) {
+
 		int length=Mol[i]->MolMonList.size();
 		int k=0;
 		while (k<length) {
@@ -269,9 +257,13 @@ bool System::ComputePhis(){
 			Add(phi_mon,phi_molmon,M);
 			Add(phitot,phi_molmon,M); 
 			Add(mol_phitot,phi_molmon,M);
-			Seg[i]->phibulk +=Mol[i]->fraction(Mol[i]->MolMonList[k])*Mol[i]->phibulk; 
+			Seg[Mol[i]->MolMonList[k]]->phibulk +=Mol[i]->fraction(Mol[i]->MolMonList[k])*Mol[i]->phibulk; 
 			k++; 
 		}
+	}
+	int n_seg=In[0]->MonList.size();
+	for (int i=0; i<n_seg; i++) {
+		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M); 
 	}
 
 

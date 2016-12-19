@@ -15,6 +15,7 @@ public:
 	int JX;
 	int JY; 	
 	int mol_nr; 
+	double Mu; 
 	double theta;
 	double phibulk;
 	double fraction(int); 

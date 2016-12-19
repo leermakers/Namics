@@ -494,20 +494,6 @@ cout <<"tolerance " << tolerance << endl;
 }
 
 
-
-void vtk_output(string filename, double* X) {
-	FILE * fp;
-	fp = fopen(filename.c_str(),"w+");
-	fprintf(fp, "# vtk DataFile Version 3.0 \nvtk output \nASCII \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i \n", MX, MY, MX);
-	fprintf(fp,"SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i \n", MX*MY*MZ);
-	fprintf(fp,"SCALARS Box_profile double\nLOOKUP_TABLE default \n");
-
-	for (int i=1; i<MX+1; i++) for (int j=1; j<MY+1; j++) for (int k=1; k<MZ+1; k++)
-	fprintf(fp," %f \n", X[i*JX+j*JY+k]);
-	fclose(fp);
-}
-
-
 int main(int argc, char *argv[]) {
 	string fname;
 	string filename;

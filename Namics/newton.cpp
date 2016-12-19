@@ -4,7 +4,7 @@ public:
 
 ~Newton();
 
-	string name;
+	string name; 
 	vector<Input*> In; 
 	vector<System*> Sys;
 	vector<Segment*> Seg;
@@ -132,7 +132,6 @@ void Newton::AllocateMemory() {
 	g= (double*)AllOnDev(iv);
 	xR= (double*)AllOnDev(m*iv);
 	x_x0= (double*)AllOnDev(m*iv);
-	alpha= (double*)AllOnDev(M);
 
 #else
 	x = new double[iv]; 
@@ -140,7 +139,6 @@ void Newton::AllocateMemory() {
 	g = new double[iv];
 	xR = new double[m*iv];
 	x_x0 =new double[m*iv];
-	alpha = new double[M];
 	Aij = new double[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; 
 	Ci = new double[m]; for (int i=0; i<m; i++) Ci[i]=0;
 	Apij = new double[m*m]; for (int i=0; i<m*m; i++) Apij[i]=0;
@@ -156,8 +154,9 @@ bool Newton::PutU() {
 	int sysmon_length = Sys[0]->SysMonList.size();
 	for (int i=0; i<sysmon_length; i++) {
 		double *u=Seg[Sys[0]->SysMonList[i]]->u;
+		alpha=Sys[0]->alpha; 
 		Cp(u,x+i*M,M); 
-		if (method == "Picard")	Add(u,alpha,M);
+		if (method == "Picard") Add(u,alpha,M);
 		if (method == "DIIS-ext") Add(u,x+sysmon_length*M,M); 
 	}
 	return success;
@@ -237,6 +236,7 @@ bool Newton::Solve(void) {
 	}
 	
 	if (method=="Picard") success=Iterate_Picard(); else success=Iterate_DIIS(); 
+	Sys[0]->CheckResults(); 
 
 	return success; 
 }
@@ -252,6 +252,7 @@ void Newton:: Message(int it, int iterationlimit,double residual, double toleran
 
 bool Newton:: Iterate_Picard() {
 	double chi; 
+	alpha=Sys[0]->alpha;	
 	bool success=true;
 	
 	int sysmon_length = Sys[0]->SysMonList.size();
@@ -278,7 +279,7 @@ bool Newton:: Iterate_Picard() {
 
 		residual=Dot(g,g,iv);
 		UpdateAlpha(alpha, Sys[0]->phitot, delta_max, M);
-		YisAminUnity(g,Sys[0]->phitot,M); 
+		YisAplusC(g,Sys[0]->phitot,-1.0,M); 
 		Lat[0]->remove_bounds(g); 
 
 		residual=residual+Dot(g,g,M);
@@ -349,6 +350,7 @@ void Newton::ComputePhis() {
 }
 
 void Newton::ComputeG(){ 
+	alpha=Sys[0]->alpha; 
 	double chi; 
 	ComputePhis();
 	int sysmon_length = Sys[0]->SysMonList.size();
@@ -374,6 +376,7 @@ void Newton::ComputeG(){
 }
 
 void Newton::ComputeG_ext(){ 
+	alpha=Sys[0]->alpha;
 	double chi; 
 	ComputePhis();
 	int sysmon_length = Sys[0]->SysMonList.size();
@@ -390,7 +393,7 @@ void Newton::ComputeG_ext(){
 		Lat[0]->remove_bounds(g+i*M);
 		Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
 	}
-	YisAminUnity(g+sysmon_length*M,Sys[0]->phitot,M);
+	YisAplusC(g+sysmon_length*M,Sys[0]->phitot, -1.0, M);
 	Lat[0]->remove_bounds(g+sysmon_length*M);
 	Norm(g+sysmon_length*M,-1,M);//you can improve ......
 	//Norm(g,-1,sysmon_length*M);

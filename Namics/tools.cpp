@@ -31,9 +31,9 @@ __global__ void yisaminb(double *Y, double *A,double *B, int M){
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]-B[idx];
 }
-__global__ void yisaminunity(double *Y, double *A, int M){
+__global__ void yisaplusc(double *Y, double *A, double C, int M){
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) Y[idx] = A[idx]-1.0;
+	if (idx<M) Y[idx] = A[idx]+C;
 }
 __global__ void yisaplusb(double *Y, double *A,double *B, int M){
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -353,13 +353,13 @@ void YisAminB(double *Y, double *A, double *B, int M){
 }
 #endif
 #ifdef CUDA
-void YisAminUnity(double *Y, double *A, int M){
+void YisAplusC(double *Y, double *A, double C, int M){
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	yisaminunity<<<n_blocks,block_size>>>(Y,A,M);
+	yisaplusc<<<n_blocks,block_size>>>(Y,A,C,M);
 }
 #else
-void YisAminUnity(double *Y, double *A, int M){
-	for (int i=0; i<M; i++) Y[i] = A[i]-1.0;
+void YisAplusC(double *Y, double *A, double C, int M){
+	for (int i=0; i<M; i++) Y[i] = A[i]+C;
 }
 #endif
 #ifdef CUDA

@@ -16,9 +16,15 @@ public:
 	vector<int> SysMonList; 
 	vector<int> FrozenList;
 	vector<int> SysTagList; 
+	double FreeEnergy;
+	double GrandPotential;
 	double* phitot; 
 	double* KSAM;
 	double* H_KSAM;
+	double* GrandPotentialDensity;
+	double* FreeEnergyDensity;
+	double* alpha;
+	double* TEMP;
 	bool GPU; 
 	int n_mol; 
 	int solvent; 
@@ -38,6 +44,10 @@ public:
 	void AllocateMemory();
 	bool PrepareForCalculations();
 	bool ComputePhis();
+	bool CheckResults();
+	double GetFreeEnergy();
+	double GetGrandPotential();
+	bool CreateMu();
 	
 };
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,string name_) {
@@ -157,10 +167,18 @@ void System::AllocateMemory() {
 #ifdef CUDA
 //define on GPU
 	phitot = (double*)AllOnDev(M); 
-	KSAM=(double*)AllOnDev(M);	
+	KSAM=(double*)AllOnDev(M);
+	alpha=(double*)AllOnDev(M);
+	FreeEnergyDensity=(double*)AllOnDev(M);
+	GrandPotentialDensity =(double*)AllOnDev(M);
+	TEMP =(double*)AllOnDev(M);	
 #else
 	phitot = new double[M]; 
 	KSAM = H_KSAM;
+	alpha=new double[M];
+	FreeEnergyDensity=new double[M];
+	GrandPotentialDensity =new double[M];
+	TEMP =new double[M];	
 #endif
 	n_mol = In[0]->MolList.size(); 
 	int i=0;
@@ -238,6 +256,7 @@ bool System::ComputePhis(){
 	}
 	Mol[solvent]->phibulk=1.0-totphibulk; 
 	norm=Mol[solvent]->phibulk/Mol[solvent]->chainlength;
+	Mol[solvent]->n=norm*Mol[solvent]->GN; 
 	int k=0;
 	length = Mol[solvent]->MolMonList.size();
 	while (k<length) {
@@ -265,15 +284,151 @@ bool System::ComputePhis(){
 	for (int i=0; i<n_seg; i++) {
 		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M); 
 	}
-
-
-//Testing time;
-	
-//normalize.
-//make sure that the tagged positions are not in frozen range.  
 	
 	return success;  
 }
+
+bool System::CheckResults() {
+	bool success=true;	
+	FreeEnergy=GetFreeEnergy();
+	GrandPotential=GetGrandPotential();
+	CreateMu();
+cout <<"free energy = " << FreeEnergy << endl; 
+cout <<"grand potential = " << GrandPotential << endl; 
+	int n_mol=In[0]->MolList.size();
+	double thermo_check=0;
+	for (int i=0; i<n_mol; i++) {
+		if (Mol[i]->freedom != "frozen")  {
+			double Mu=Mol[i]->Mu;
+			double n=Mol[i]->n;
+			thermo_check +=  n*Mu; 
+		}
+	}
+cout <<"free energy (GP + n*mu) = " << thermo_check + GrandPotential << endl; 
+cout <<"Grand potential (F-n*mu)= " << FreeEnergy -thermo_check << endl; 
+
+	return success;  
+}
+
+double System::GetFreeEnergy(void) {
+	double* F=FreeEnergyDensity;
+	double constant=0;
+	int n_mol=In[0]->MolList.size();
+	for (int i=0; i<n_mol; i++) Lat[0]->remove_bounds(Mol[i]->phitot);
+	int n_mon=In[0]->MonList.size();
+	for (int i=0; i<n_mon; i++) {Lat[0]->remove_bounds(Seg[i]->phi); Lat[0]->remove_bounds(Seg[i]->phi_side);}
+
+	Zero(F,M);
+	for (int i=0; i<n_mol; i++){
+		if (Mol[i]->freedom !="frozen") {
+			double n=Mol[i]->n;
+			double GN=Mol[i]->GN; 
+			int N=Mol[i]->chainlength;
+			double *phi=Mol[i]->phitot;  
+			constant = log(N*n/GN)/N; 
+			Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M); 
+		}
+	}
+	int n_sysmon=SysMonList.size();
+	for (int j=0; j<n_sysmon; j++) {
+		double* phi=Seg[SysMonList[j]]->phi;
+		double* u=Seg[SysMonList[j]]->u;
+		Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
+	}
+	for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
+		double chi = CHI[j*n_mon+k]/2;
+		double *phi_side = Seg[k]->phi_side;
+		double *phi = Seg[j]->phi;
+		Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M); 
+	}
+
+	for (int i=0; i<n_mol; i++){
+		if (Mol[i]->freedom !="frozen") {
+			constant=0;
+			int n_molmon=Mol[i]->MolMonList.size();
+			for (int j=0; j<n_molmon; j++) for (int k=0; k<n_molmon; k++) {
+				int fA=Mol[i]->fraction(Mol[i]->MolMonList[j]);
+				int fB=Mol[i]->fraction(Mol[i]->MolMonList[k]);
+				double chi = CHI[Mol[i]->MolMonList[j]*n_mon+Mol[i]->MolMonList[k]]/2;
+				constant -=fA*fB*chi;
+			}
+			double* phi=Mol[i]->phitot;
+			Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
+		}
+	}
+	Lat[0]->remove_bounds(F);
+	return Sum(F,M);
+}
+
+double System::GetGrandPotential(void) {
+	double* GP =GrandPotentialDensity;
+	int n_mol=In[0]->MolList.size();
+	int n_mon=In[0]->MonList.size();
+	Zero(GP,M);
+	for (int i=0; i<n_mol; i++){
+		if (Mol[i]->freedom !="frozen") {
+			double *phi=Mol[i]->phitot;
+			double phibulk = Mol[i]->phibulk;
+			int N=Mol[i]->chainlength;
+
+			Cp(TEMP,phi,M); YisAplusC(TEMP,TEMP,-phibulk,M); Norm(TEMP,1.0/N,M); //GP has wrong sign. will be corrected at end of this routine; 
+			Add(GP,TEMP,M); Lat[0]->remove_bounds(GP);
+		}
+	}
+	Add(GP,alpha,M);
+	int n_sysmon=SysMonList.size();
+	for (int j=0; j<n_sysmon; j++)for (int k=0; k<n_sysmon; k++){
+		double phibulkA=Seg[SysMonList[j]]->phibulk;
+		double phibulkB=Seg[SysMonList[k]]->phibulk;
+		double chi = CHI[SysMonList[j]*n_mon+SysMonList[k]]/2; 
+		double *phi=Seg[SysMonList[j]]->phi; 
+		double *phi_side=Seg[SysMonList[k]]->phi_side; 
+		Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
+	} 
+	Norm(GP,-1.0,M); //correct the sign.
+	Lat[0]->remove_bounds(GP); Times(GP,GP,KSAM,M);
+	return Sum(GP,M); 
+
+}
+
+bool System::CreateMu() {
+	bool success=true;
+	double constant; 
+	int n_mol=In[0]->MolList.size();
+	int n_mon=In[0]->MonList.size();
+	for (int i=0; i<n_mol; i++) {
+		if (Mol[i]->freedom != "frozen") { 
+			double Mu=0; 
+			double NA=Mol[i]->chainlength;
+			double n=Mol[i]->n;
+			double GN=Mol[i]->GN;
+			Mu=log(NA*n/GN);
+
+			constant=0;
+			for (int k=0; k<n_mol; k++) {
+				if (!(Mol[k]->freedom == "frozen" || Mol[k]->freedom =="tagged")) {
+					double NB = Mol[k]->chainlength;
+					double phibulkB=Mol[k]->phibulk;
+					constant +=phibulkB/NB;
+				}
+			}
+			Mu = Mu - N_A*constant;
+			for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
+				double chi= CHI[j*n_mon+k]/2;
+				double phibulkA=Seg[j]->phibulk;
+				double phibulkB=Seg[k]->phibulk;	
+				double Fa=Mol[i]->fraction(j);
+				double Fb=Mol[i]->fraction(k); 
+				Mu = Mu-NA*chi*(phibulkA-Fa)*(phibulkB-Fb);
+			}
+//cout <<"mol" << i << " = " << Mu << endl;
+			Mol[i]->Mu=Mu; 
+		} else Mol[i]->Mu=0;
+	}
+	return success; 	
+}
+
+//TODO //make sure that the tagged positions are not in frozen range. 
 
 
  

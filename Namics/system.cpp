@@ -298,7 +298,7 @@ cout <<"grand potential = " << GrandPotential << endl;
 	int n_mol=In[0]->MolList.size();
 	double thermo_check=0;
 	for (int i=0; i<n_mol; i++) {
-		if (Mol[i]->freedom != "frozen")  {
+		if (!Mol[i]->IsTagged() )  {
 			double Mu=Mol[i]->Mu;
 			double n=Mol[i]->n;
 			thermo_check +=  n*Mu; 
@@ -320,7 +320,7 @@ double System::GetFreeEnergy(void) {
 
 	Zero(F,M);
 	for (int i=0; i<n_mol; i++){
-		if (Mol[i]->freedom !="frozen") {
+		if (!Mol[i]->IsTagged()) {
 			double n=Mol[i]->n;
 			double GN=Mol[i]->GN; 
 			int N=Mol[i]->chainlength;
@@ -343,7 +343,7 @@ double System::GetFreeEnergy(void) {
 	}
 
 	for (int i=0; i<n_mol; i++){
-		if (Mol[i]->freedom !="frozen") {
+//		if (!Mol[i]->IsPinned()) {
 			constant=0;
 			int n_molmon=Mol[i]->MolMonList.size();
 			for (int j=0; j<n_molmon; j++) for (int k=0; k<n_molmon; k++) {
@@ -354,9 +354,9 @@ double System::GetFreeEnergy(void) {
 			}
 			double* phi=Mol[i]->phitot;
 			Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
-		}
+//		}
 	}
-	Lat[0]->remove_bounds(F);
+	Lat[0]->remove_bounds(F); Times(F,F,KSAM,M); 
 	return Sum(F,M);
 }
 
@@ -366,24 +366,26 @@ double System::GetGrandPotential(void) {
 	int n_mon=In[0]->MonList.size();
 	Zero(GP,M);
 	for (int i=0; i<n_mol; i++){
-		if (Mol[i]->freedom !="frozen") {
+//		if (!Mol[i]->IsTagged()) {
 			double *phi=Mol[i]->phitot;
 			double phibulk = Mol[i]->phibulk;
 			int N=Mol[i]->chainlength;
 
 			Cp(TEMP,phi,M); YisAplusC(TEMP,TEMP,-phibulk,M); Norm(TEMP,1.0/N,M); //GP has wrong sign. will be corrected at end of this routine; 
 			Add(GP,TEMP,M); Lat[0]->remove_bounds(GP);
-		}
+//		}
 	}
 	Add(GP,alpha,M);
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++)for (int k=0; k<n_sysmon; k++){
-		double phibulkA=Seg[SysMonList[j]]->phibulk;
-		double phibulkB=Seg[SysMonList[k]]->phibulk;
-		double chi = CHI[SysMonList[j]*n_mon+SysMonList[k]]/2; 
-		double *phi=Seg[SysMonList[j]]->phi; 
-		double *phi_side=Seg[SysMonList[k]]->phi_side; 
-		Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
+		if (!(Seg[j]->freedom == "tagged" || Seg[k]->freedom=="tagged" )) {
+			double phibulkA=Seg[SysMonList[j]]->phibulk;
+			double phibulkB=Seg[SysMonList[k]]->phibulk;
+			double chi = CHI[SysMonList[j]*n_mon+SysMonList[k]]/2; 
+			double *phi=Seg[SysMonList[j]]->phi; 
+			double *phi_side=Seg[SysMonList[k]]->phi_side; 
+			Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
+		}
 	} 
 	Norm(GP,-1.0,M); //correct the sign.
 	Lat[0]->remove_bounds(GP); Times(GP,GP,KSAM,M);
@@ -397,33 +399,31 @@ bool System::CreateMu() {
 	int n_mol=In[0]->MolList.size();
 	int n_mon=In[0]->MonList.size();
 	for (int i=0; i<n_mol; i++) {
-		if (Mol[i]->freedom != "frozen") { 
-			double Mu=0; 
-			double NA=Mol[i]->chainlength;
-			double n=Mol[i]->n;
-			double GN=Mol[i]->GN;
-			Mu=log(NA*n/GN);
+		double Mu=0; 
+		double NA=Mol[i]->chainlength;
+		double n=Mol[i]->n;
+		double GN=Mol[i]->GN;
+		Mu=log(NA*n/GN);
 
-			constant=0;
-			for (int k=0; k<n_mol; k++) {
-				if (!(Mol[k]->freedom == "frozen" || Mol[k]->freedom =="tagged")) {
-					double NB = Mol[k]->chainlength;
-					double phibulkB=Mol[k]->phibulk;
-					constant +=phibulkB/NB;
-				}
+		constant=0;
+		for (int k=0; k<n_mol; k++) {
+			if (!(Mol[k]->freedom == "pinned" || Mol[k]->freedom =="tagged")) {
+				double NB = Mol[k]->chainlength;
+				double phibulkB=Mol[k]->phibulk;
+				constant +=phibulkB/NB;
 			}
-			Mu = Mu - N_A*constant;
-			for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
-				double chi= CHI[j*n_mon+k]/2;
-				double phibulkA=Seg[j]->phibulk;
-				double phibulkB=Seg[k]->phibulk;	
-				double Fa=Mol[i]->fraction(j);
-				double Fb=Mol[i]->fraction(k); 
-				Mu = Mu-NA*chi*(phibulkA-Fa)*(phibulkB-Fb);
-			}
+		}
+		Mu = Mu - N_A*constant;
+		for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
+			double chi= CHI[j*n_mon+k]/2;
+			double phibulkA=Seg[j]->phibulk;
+			double phibulkB=Seg[k]->phibulk;	
+			double Fa=Mol[i]->fraction(j);
+			double Fb=Mol[i]->fraction(k); 
+			Mu = Mu-NA*chi*(phibulkA-Fa)*(phibulkB-Fb);
+		}
 //cout <<"mol" << i << " = " << Mu << endl;
-			Mol[i]->Mu=Mu; 
-		} else Mol[i]->Mu=0;
+		Mol[i]->Mu=Mu; 
 	}
 	return success; 	
 }

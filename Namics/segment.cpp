@@ -452,6 +452,7 @@ bool Segment::PrepareForCalculations(double* KSAM) {
 	bool success=true; 
 	phibulk=0;
 	if (freedom=="frozen") {Cp(phi,MASK,M); invert(KSAM,MASK,M);} else Zero(phi,M); 
+	if (freedom=="tagged") Zero(u,M); 
 	Boltzmann(G1,u,M);
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
 	if (freedom=="tagged") Cp(G1,MASK,M);

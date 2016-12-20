@@ -1,4 +1,5 @@
 
+
 class System {
 public:
 	System(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,string);
@@ -86,7 +87,7 @@ bool System::CheckInput() {
 				}
 				if (Seg[Mol[i]->MolMonList[j]]->freedom=="tagged"){
 					if (In[0]->InSet(SysTagList,Mol[i]->MolMonList[j])) {
-						cout <<"You can not use the 'tag monomer' " + GetMonName(Mol[i]->MolMonList[j]) + " in more than one molecule." << endl; success=false;  
+						//cout <<"You can not use the 'tag monomer' " + GetMonName(Mol[i]->MolMonList[j]) + " in more than one molecule." << endl; success=false;  
 					} else	SysTagList.push_back(Mol[i]->MolMonList[j]);					
 				}
 				j++;
@@ -274,10 +275,16 @@ bool System::ComputePhis(){
 			double* mol_phitot=Mol[i]->phitot;
 			double* phi_molmon = Mol[i]->phi + k*M; 
 			Add(phi_mon,phi_molmon,M);
-			Add(phitot,phi_molmon,M); 
+			if (!(Seg[Mol[i]->MolMonList[k]]->freedom == "tagged")) Add(phitot,phi_molmon,M); 
 			Add(mol_phitot,phi_molmon,M);
 			Seg[Mol[i]->MolMonList[k]]->phibulk +=Mol[i]->fraction(Mol[i]->MolMonList[k])*Mol[i]->phibulk; 
 			k++; 
+		}
+		length=SysTagList.size();
+		k=0;
+		while (k<length) {
+			Cp(Seg[SysTagList[k]]->phi,Seg[SysTagList[k]]->MASK,M); 
+			k++;
 		}
 	}
 	int n_seg=In[0]->MonList.size();
@@ -293,19 +300,17 @@ bool System::CheckResults() {
 	FreeEnergy=GetFreeEnergy();
 	GrandPotential=GetGrandPotential();
 	CreateMu();
-cout <<"free energy = " << FreeEnergy << endl; 
+cout <<"free energy     = " << FreeEnergy << endl; 
 cout <<"grand potential = " << GrandPotential << endl; 
 	int n_mol=In[0]->MolList.size();
-	double thermo_check=0;
+	double n_times_mu=0;
 	for (int i=0; i<n_mol; i++) {
-		if (!Mol[i]->IsTagged() )  {
-			double Mu=Mol[i]->Mu;
-			double n=Mol[i]->n;
-			thermo_check +=  n*Mu; 
-		}
+		double Mu=Mol[i]->Mu;
+		double n=Mol[i]->n;
+		n_times_mu +=  n*Mu; 
 	}
-cout <<"free energy (GP + n*mu) = " << thermo_check + GrandPotential << endl; 
-cout <<"Grand potential (F-n*mu)= " << FreeEnergy -thermo_check << endl; 
+cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl; 
+cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
 
 	return success;  
 }
@@ -320,14 +325,13 @@ double System::GetFreeEnergy(void) {
 
 	Zero(F,M);
 	for (int i=0; i<n_mol; i++){
-		if (!Mol[i]->IsTagged()) {
-			double n=Mol[i]->n;
-			double GN=Mol[i]->GN; 
-			int N=Mol[i]->chainlength;
-			double *phi=Mol[i]->phitot;  
-			constant = log(N*n/GN)/N; 
-			Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M); 
-		}
+		double n=Mol[i]->n;
+		double GN=Mol[i]->GN; 
+		int N=Mol[i]->chainlength;
+		if (Mol[i]->IsTagged()) N--; //assuming there is just one tagged segment per molecule
+		double *phi=Mol[i]->phitot; //contains also the tagged segment 
+		constant = log(N*n/GN)/N; 
+		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M); 
 	}
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++) {
@@ -343,18 +347,17 @@ double System::GetFreeEnergy(void) {
 	}
 
 	for (int i=0; i<n_mol; i++){
-//		if (!Mol[i]->IsPinned()) {
-			constant=0;
-			int n_molmon=Mol[i]->MolMonList.size();
-			for (int j=0; j<n_molmon; j++) for (int k=0; k<n_molmon; k++) {
-				int fA=Mol[i]->fraction(Mol[i]->MolMonList[j]);
-				int fB=Mol[i]->fraction(Mol[i]->MolMonList[k]);
-				double chi = CHI[Mol[i]->MolMonList[j]*n_mon+Mol[i]->MolMonList[k]]/2;
-				constant -=fA*fB*chi;
-			}
-			double* phi=Mol[i]->phitot;
-			Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
-//		}
+		constant=0;
+		int n_molmon=Mol[i]->MolMonList.size(); 
+		for (int j=0; j<n_molmon; j++) for (int k=0; k<n_molmon; k++) {
+			double fA=Mol[i]->fraction(Mol[i]->MolMonList[j]);   
+			double fB=Mol[i]->fraction(Mol[i]->MolMonList[k]); 
+			if (Mol[i]->IsTagged()) {int N=Mol[i]->chainlength; fA=fA*N/(N-1); fB=fB*N/(N-1); }  
+			double chi = CHI[Mol[i]->MolMonList[j]*n_mon+Mol[i]->MolMonList[k]]/2;
+			constant -=fA*fB*chi;
+		}
+		double* phi=Mol[i]->phitot;
+		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
 	}
 	Lat[0]->remove_bounds(F); Times(F,F,KSAM,M); 
 	return Sum(F,M);
@@ -366,26 +369,24 @@ double System::GetGrandPotential(void) {
 	int n_mon=In[0]->MonList.size();
 	Zero(GP,M);
 	for (int i=0; i<n_mol; i++){
-//		if (!Mol[i]->IsTagged()) {
-			double *phi=Mol[i]->phitot;
-			double phibulk = Mol[i]->phibulk;
-			int N=Mol[i]->chainlength;
-
-			Cp(TEMP,phi,M); YisAplusC(TEMP,TEMP,-phibulk,M); Norm(TEMP,1.0/N,M); //GP has wrong sign. will be corrected at end of this routine; 
-			Add(GP,TEMP,M); Lat[0]->remove_bounds(GP);
-//		}
+		double *phi=Mol[i]->phitot;
+		double phibulk = Mol[i]->phibulk;
+		int N=Mol[i]->chainlength;
+		if (Mol[i]->IsTagged()) N--; //One segment of the tagged molecule is tagged and then removed from GP through KSAM
+		Cp(TEMP,phi,M); YisAplusC(TEMP,TEMP,-phibulk,M); Norm(TEMP,1.0/N,M); //GP has wrong sign. will be corrected at end of this routine; 
+		Add(GP,TEMP,M); 
 	}
 	Add(GP,alpha,M);
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++)for (int k=0; k<n_sysmon; k++){
-		if (!(Seg[j]->freedom == "tagged" || Seg[k]->freedom=="tagged" )) {
-			double phibulkA=Seg[SysMonList[j]]->phibulk;
-			double phibulkB=Seg[SysMonList[k]]->phibulk;
-			double chi = CHI[SysMonList[j]*n_mon+SysMonList[k]]/2; 
-			double *phi=Seg[SysMonList[j]]->phi; 
-			double *phi_side=Seg[SysMonList[k]]->phi_side; 
-			Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
-		}
+		if (!(Seg[SysMonList[j]]->freedom=="tagged" || Seg[SysMonList[j]]->freedom=="tagged"  )) { //not sure about this line...
+		double phibulkA=Seg[SysMonList[j]]->phibulk;
+		double phibulkB=Seg[SysMonList[k]]->phibulk;
+		double chi = CHI[SysMonList[j]*n_mon+SysMonList[k]]/2; 
+		double *phi=Seg[SysMonList[j]]->phi; 
+		double *phi_side=Seg[SysMonList[k]]->phi_side; 
+		Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
+	}
 	} 
 	Norm(GP,-1.0,M); //correct the sign.
 	Lat[0]->remove_bounds(GP); Times(GP,GP,KSAM,M);
@@ -400,30 +401,32 @@ bool System::CreateMu() {
 	int n_mon=In[0]->MonList.size();
 	for (int i=0; i<n_mol; i++) {
 		double Mu=0; 
-		double NA=Mol[i]->chainlength;
+		double NA=Mol[i]->chainlength; 
+		if (Mol[i]->IsTagged()) NA=NA-1;
 		double n=Mol[i]->n;
 		double GN=Mol[i]->GN;
-		Mu=log(NA*n/GN);
-
+		Mu=log(NA*n/GN)+1;
 		constant=0;
 		for (int k=0; k<n_mol; k++) {
-			if (!(Mol[k]->freedom == "pinned" || Mol[k]->freedom =="tagged")) {
-				double NB = Mol[k]->chainlength;
-				double phibulkB=Mol[k]->phibulk;
-				constant +=phibulkB/NB;
-			}
+			double NB = Mol[k]->chainlength;
+			if (Mol[k]->IsTagged()) NB=NB-1; 
+			double phibulkB=Mol[k]->phibulk;
+			constant +=phibulkB/NB;
 		}
-		Mu = Mu - N_A*constant;
+		Mu = Mu - NA*constant;
+
 		for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
 			double chi= CHI[j*n_mon+k]/2;
 			double phibulkA=Seg[j]->phibulk;
 			double phibulkB=Seg[k]->phibulk;	
 			double Fa=Mol[i]->fraction(j);
 			double Fb=Mol[i]->fraction(k); 
+			if (Mol[i]->IsTagged()) {Fa=Fa*(NA+1)/(NA); Fb=Fb*(NA+1)/NA;}
 			Mu = Mu-NA*chi*(phibulkA-Fa)*(phibulkB-Fb);
 		}
-//cout <<"mol" << i << " = " << Mu << endl;
+
 		Mol[i]->Mu=Mu; 
+//cout <<"mol" << i << " = " << Mu << endl;
 	}
 	return success; 	
 }

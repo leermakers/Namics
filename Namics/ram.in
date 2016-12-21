@@ -12,26 +12,26 @@ lat : hex : upperbound_z : mirror_1
 //sys : ram : variation : 1
 mon : A : freedom : free
 mon : B : freedom : free
-mon : A : chi-B : 0
+mon : A : chi-B : 0.6
 mon : X : freedom : tagged
-mon : X : tagged_range : (6,6,6)
+mon : X : tagged_range : (26,26,26)
 
 mol : A : composition : (A)4
 mol : B : composition : (B)4
 mol : AB : composition : (A)20(X)1(B)20
-//mol : AB : freedom : restricted
-//mol : AB : n : 0.1
+//mol : AX : composition : (A)20(X)1
+//mol : XB : composition : (X)1(B)20
 mol : A : freedom : restricted
 mol : A : theta : 66325.5
 mol : B : freedom : solvent
 //mol : A : save_memory : true
 output : out : template : non
-newton :isaac : method : DIIS-alpha
-newton : isaac : i_info : 10
-newton : isaac : m : 10
-newton : isaac : delta_max : 0.001
-newton : isaac : iterationlimit : 1000
-newton : isaac : tolerance : 1e-3
+newton :isaac : method : DIIS
+newton : isaac : i_info : 25
+newton : isaac : m : 60
+newton : isaac : delta_max : 0.1
+newton : isaac : iterationlimit : 2000
+newton : isaac : tolerance : 1e-5
 newton : isaac : read_guess : true
 
 

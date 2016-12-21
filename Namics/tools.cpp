@@ -31,9 +31,25 @@ __global__ void yisaminb(double *Y, double *A,double *B, int M){
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]-B[idx];
 }
+__global__ void yisaplusc(double *Y, double *A, double C, int M){
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) Y[idx] = A[idx]+C;
+}
+__global__ void yisaplusb(double *Y, double *A,double *B, int M){
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) Y[idx] = A[idx]+B[idx];
+}
 __global__ void yplusisctimesx(double *Y, double *X, double C, int M){
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] += C*X[idx];
+}
+__global__ void updatealpha(double *Y, double *X, double C, int M){
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) Y[idx] += C*(X[idx]-1.0);
+}
+__global__ void picard(double *Y, double *X, double C, int M){
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) Y[idx] = C*Y[idx]+(1-C)*X[idx];
 }
 __global__ void add(double *P, double *A, int M){
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -47,13 +63,9 @@ __global__ void boltzmann(double *P, double *A, int M){
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=exp(-A[idx]);
 }
-__global__ void boltzmann(double *P, double *A, double *B, int M){
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) P[idx]=exp(-(A[idx]+B[idx]));
-}
 __global__ void putalpha(double *g,double *phitot,double *phi_side,double chi,double phibulk,int M){
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) g[idx] = g[idx] - chi*(phi_side[idx]/phitot[idx]-phibulk);
+	if (idx<M) if (phitot[idx]>0) g[idx] = g[idx] - chi*(phi_side[idx]/phitot[idx]-phibulk);
 }
 __global__ void div(double *P,double *A,int M){
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -66,7 +78,7 @@ __global__ void oneminusphitot(double *g, double *phitot, int M){
 __global__ void addg(double *g, double *phitot, double *alpha, int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) {
-		g[idx]= g[idx] -alpha[idx] +1/phitot[idx]-1;
+		if (phitot[idx]>0 g[idx]= g[idx] -alpha[idx] +1/phitot[idx]-1; else g[idx]=0;
 	}
 }
 
@@ -340,6 +352,26 @@ void YisAminB(double *Y, double *A, double *B, int M){
 	for (int i=0; i<M; i++) Y[i] = A[i]-B[i];
 }
 #endif
+#ifdef CUDA
+void YisAplusC(double *Y, double *A, double C, int M){
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	yisaplusc<<<n_blocks,block_size>>>(Y,A,C,M);
+}
+#else
+void YisAplusC(double *Y, double *A, double C, int M){
+	for (int i=0; i<M; i++) Y[i] = A[i]+C;
+}
+#endif
+#ifdef CUDA
+void YisAplusB(double *Y, double *A, double *B, int M){
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	yisaplusb<<<n_blocks,block_size>>>(Y,A,B,M);
+}
+#else
+void YisAplusB(double *Y, double *A, double *B, int M){
+	for (int i=0; i<M; i++) Y[i] = A[i]+B[i];
+}
+#endif
 
 #ifdef CUDA
 void YplusisCtimesX(double *Y, double *X, double C, int M){
@@ -349,6 +381,27 @@ void YplusisCtimesX(double *Y, double *X, double C, int M){
 #else
 void YplusisCtimesX(double *Y, double *X, double C, int M) {
 	for (int i=0; i<M; i++) Y[i] += C*X[i];
+}
+#endif
+
+#ifdef CUDA
+void UpdateAlpha(double *Y, double *X, double C, int M){
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	updatealpha<<<n_blocks,block_size>>>(Y,X,C,M);
+}
+#else
+void UpdateAlpha(double *Y, double *X, double C, int M) {
+	for (int i=0; i<M; i++) Y[i] += C*(X[i]-1.0);
+}
+#endif
+#ifdef CUDA
+void Picard(double *Y, double *X, double C, int M){
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	picard<<<n_blocks,block_size>>>(Y,X,C,M);
+}
+#else
+void Picard(double *Y, double *X, double C, int M) {
+	for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
 }
 #endif
 
@@ -386,25 +439,13 @@ void Boltzmann(double *P, double *A, int M){
 #endif
 
 #ifdef CUDA
-void Boltzmann(double *P, double *A, double *B, int M){
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	boltzmann<<<n_blocks,block_size>>>(P,A,B,M);
-}
-#else
-void Boltzmann(double *P, double *A, double *B, int M){
-	for (int i=0; i<M; i++) P[i]=exp(-(A[i]+B[i]));
-}
-#endif
-
-
-#ifdef CUDA
 void PutAlpha(double *g, double *phitot, double *phi_side, double chi, double phibulk, int M){
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	putalpha<<<n_blocks,block_size>>>(g,phitot,phi_side,chi,phibulk,M);
 }
 #else
 void PutAlpha(double *g, double *phitot, double *phi_side, double chi, double phibulk, int M){
-	for (int i=0; i<M; i++) g[i] = g[i] - chi*(phi_side[i]/phitot[i]-phibulk);
+	for (int i=0; i<M; i++) if (phitot[i]>0) g[i] = g[i] - chi*(phi_side[i]/phitot[i]-phibulk);
 }
 #endif
 
@@ -426,7 +467,7 @@ void AddG(double *g, double *phitot, double *alpha, int M){
 }
 #else
 void AddG(double *g, double *phitot, double *alpha, int M){
-	for (int i=0; i<M; i++) g[i]= -g[i] +alpha[i] +1/phitot[i]+phitot[i];
+	for (int i=0; i<M; i++) if (phitot[i]>0)  g[i]= g[i] -alpha[i] +1/phitot[i]-1.0; else g[i]=0;
 }
 #endif
 

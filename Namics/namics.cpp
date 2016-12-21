@@ -494,20 +494,6 @@ cout <<"tolerance " << tolerance << endl;
 }
 
 
-
-void vtk_output(string filename, double* X) {
-	FILE * fp;
-	fp = fopen(filename.c_str(),"w+");
-	fprintf(fp, "# vtk DataFile Version 3.0 \nvtk output \nASCII \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i \n", MX, MY, MX);
-	fprintf(fp,"SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i \n", MX*MY*MZ);
-	fprintf(fp,"SCALARS Box_profile double\nLOOKUP_TABLE default \n");
-
-	for (int i=1; i<MX+1; i++) for (int j=1; j<MY+1; j++) for (int k=1; k<MZ+1; k++)
-	fprintf(fp," %f \n", X[i*JX+j*JY+k]);
-	fclose(fp);
-}
-
-
 int main(int argc, char *argv[]) {
 	string fname;
 	string filename;
@@ -551,19 +537,23 @@ int main(int argc, char *argv[]) {
 	New[0]->Solve();
 	MEmulsion=true;
 	Membrane=false;
-	Out[0]->density();
-	Out[0]->printlist();
+//	Out[0]->density();
+//	Out[0]->printlist();
 	
-
-
-	//MX=Lat[0]->MX; MY=Lat[0]->MY;MZ=Lat[0]->MZ;  
-	//JX=(MX+2)*(MY+2); JY=(MY+2);M=JX*(MZ+2); 
-	// double* phi=Mol[0]->phi;
-	// double* phipol=Mol[2]->phi;
-
-// for (int z=6; z<MZ; z+=10) cout << "z = " << z << " phi= " <<  phi[26*JX+26*JY+z] << " and " << phipol[26*JX+26*JY+z]+phipol[26*JX+26*JY+z+M]+phipol[26*JX+26*JY+z+2*M] << endl;
-
-
+	MX=Lat[0]->MX; MY=Lat[0]->MY;MZ=Lat[0]->MZ;  
+	JX=(MX+2)*(MY+2); JY=(MY+2);M=JX*(MZ+2); 
+	double * sysphitot=Sys[0]->phitot; 
+if (In[0]->MolList.size()==2) { 
+	double* phi=Mol[0]->phitot;
+	double* phipol=Mol[1]->phitot;
+ 	for (int z=1; z<MZ; z+=1) cout << "z = " << z << " phi= " <<  phi[26*JX+26*JY+z] << " and " << phipol[26*JX+26*JY+z] <<  " and " << sysphitot[26*JX+26*JY+z] << endl;
+} else {
+if (In[0]->MolList.size()==3) { 
+	double* phi=Mol[0]->phitot;
+	double* phipol=Mol[1]->phitot;
+	double* phipol2=Mol[2]->phitot;
+ 	for (int z=1; z<MZ; z+=1) cout << "z = " << z << " phi= " <<  phi[26*JX+26*JY+z] << " and " << phipol[26*JX+26*JY+z] << " and " << phipol2[26*JX+26*JY+z] <<  " and " << sysphitot[26*JX+26*JY+z] <<  endl;
+}}
 /*************************
 	Aij = new double[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; //needed for SVD which is done on cpu.
 	Ci = new double[m]; for (int i=0; i<m; i++) Ci[i]=0;

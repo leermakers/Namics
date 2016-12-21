@@ -4,7 +4,7 @@ public:
 
 ~Newton();
 
-	string name;
+	string name; 
 	vector<Input*> In; 
 	vector<System*> Sys;
 	vector<Segment*> Seg;
@@ -46,7 +46,12 @@ public:
 	void Ax(double* , double* , int );
 	void DIIS(double* , double* , double* , double*, double* ,double* , int , int , int );
 	void ComputeG(); 
-	void ComputeG_alpha();
+	void ComputePhis();
+	void ComputeG_ext();
+	bool Iterate_Picard();
+	bool Iterate_DIIS();
+	void Message(int, int,double, double); 
+	bool PutU();
 
 };
 Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,string name_) {
@@ -78,7 +83,10 @@ bool Newton::CheckInput() {
 		tolerance=In[0]->Get_double(GetValue("tolerance"),1e-5);
 		if (tolerance < 1e-12 ||tolerance>10) {tolerance = 1e-5;  cout << "Value of tolerance out of range 1e-12..10 Value set to default value 1e-5" <<endl; }  
 		if (GetValue("method").size()==0) {method="DIIS";} else {
-			vector<string>method_options; method_options.push_back("DIIS");method_options.push_back("DIIS-alpha");
+			vector<string>method_options; 
+			method_options.push_back("DIIS");
+			method_options.push_back("DIIS-ext"); 
+			method_options.push_back("Picard"); 
 			if (!In[0]->Get_string(GetValue("method"),method,method_options,"In 'newton' the entry for 'method' not recognized: choose from:")) success=false;
 		}
 		m=In[0]->Get_int(GetValue("m"),10); 
@@ -114,6 +122,7 @@ string Newton::GetValue(string parameter){
 
 void Newton::AllocateMemory() {
 	iv = Sys[0]->SysMonList.size() * M;	
+	if (method=="DIIS-ext") iv +=M; 
 //define on CPU
 
 #ifdef CUDA
@@ -123,7 +132,6 @@ void Newton::AllocateMemory() {
 	g= (double*)AllOnDev(iv);
 	xR= (double*)AllOnDev(m*iv);
 	x_x0= (double*)AllOnDev(m*iv);
-	alpha= (double*)AllOnDev(M);
 
 #else
 	x = new double[iv]; 
@@ -131,7 +139,6 @@ void Newton::AllocateMemory() {
 	g = new double[iv];
 	xR = new double[m*iv];
 	x_x0 =new double[m*iv];
-	alpha = new double[M];
 	Aij = new double[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; 
 	Ci = new double[m]; for (int i=0; i<m; i++) Ci[i]=0;
 	Apij = new double[m*m]; for (int i=0; i<m*m; i++) Apij[i]=0;
@@ -140,6 +147,19 @@ void Newton::AllocateMemory() {
 	Zero(x,iv);
 	u=Seg[0]->u;
 //do here initial guess and put it in x. 
+}
+
+bool Newton::PutU() {
+	bool success=true;
+	int sysmon_length = Sys[0]->SysMonList.size();
+	for (int i=0; i<sysmon_length; i++) {
+		double *u=Seg[Sys[0]->SysMonList[i]]->u;
+		alpha=Sys[0]->alpha; 
+		Cp(u,x+i*M,M); 
+		if (method == "Picard") Add(u,alpha,M);
+		if (method == "DIIS-ext") Add(u,x+sysmon_length*M,M); 
+	}
+	return success;
 }
 
 void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
@@ -202,6 +222,7 @@ bool Newton::PrepareForCalculations() {
 	return success; 
 }
 bool Newton::Solve(void) {
+	bool success=true;
 	if (read_guess){ 
 		for (int i=0; i<MX+2; i++) for (int j=0; j<MY+2; j++) for (int k=0; k<MZ+2; k++) {
 			if (k<MZ/2) {
@@ -213,6 +234,66 @@ bool Newton::Solve(void) {
 			}
 		}
 	}
+	
+	if (method=="Picard") success=Iterate_Picard(); else success=Iterate_DIIS(); 
+	Sys[0]->CheckResults(); 
+
+	return success; 
+}
+
+void Newton:: Message(int it, int iterationlimit,double residual, double tolerance) {
+	if (it < iterationlimit/10) cout <<"That was easy." << endl;
+	if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
+	if (it <2) cout <<"You hit the nail on the head." << endl; 
+	if (residual > tolerance) { cout << "Iterations failed." << endl;
+		if (residual < tolerance/10) cout <<"I almost made it..." << endl;
+	}
+}
+
+bool Newton:: Iterate_Picard() {
+	double chi; 
+	alpha=Sys[0]->alpha;	
+	bool success=true;
+	
+	int sysmon_length = Sys[0]->SysMonList.size();
+	int mon_length = In[0]->MonList.size();	
+	it=0;
+	cout <<"Picard has been notified" << endl; 
+	residual=1;
+	while (residual > tolerance && it < iterationlimit) {
+		Cp(x0,x,iv); 
+		ComputePhis(); 
+		Zero(x,iv);
+		for (int i=0; i<sysmon_length; i++) for (int k=0; k<mon_length; k++) { 
+                        chi= -1.0*Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  //The minus sign here is to change the sign of x! just a trick due to properties of PutAlpha where a minus sing is implemented....
+			if (chi!=0) PutAlpha(x+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+		}
+		for (int i=0; i<sysmon_length; i++) {
+			Lat[0]->remove_bounds(x+i*M);
+			Times(x+i*M,x+i*M,Sys[0]->KSAM,M);
+		}
+
+		Picard(x,x0,delta_max,iv); 
+		YisAminB(g,x,x0,iv); 
+		for (int i=0; i<sysmon_length; i++) Times(g+i*M,g+i*M,Sys[0]->KSAM,M);  
+
+		residual=Dot(g,g,iv);
+		UpdateAlpha(alpha, Sys[0]->phitot, delta_max, M);
+		YisAplusC(g,Sys[0]->phitot,-1.0,M); 
+		Lat[0]->remove_bounds(g); 
+
+		residual=residual+Dot(g,g,M);
+		residual=sqrt(residual); 
+		if(it%i_info == 0){
+			printf("it = %i g = %1e \n",it,residual);
+		}
+		it++; 
+	}
+	Message(it,iterationlimit,residual,tolerance); 
+	return success; 
+}
+
+bool Newton:: Iterate_DIIS() {
 
 #ifdef CUDA
 	TransferDataToDevice(H_mask, mask, M*n_box);
@@ -232,8 +313,7 @@ bool Newton::Solve(void) {
 #endif
 	Zero(x0,iv);
 	it=0; k_diis=1; k=0;
-	Sys[0]->PutU(x);
-	if (method=="DIIS-alpha") ComputeG_alpha(); else ComputeG();
+	if (method=="DIIS-ext") ComputeG_ext(); else ComputeG();
 	YplusisCtimesX(x,g,delta_max,iv);
 	YisAminB(x_x0,x,x0,iv);
 	Cp(xR,x,iv);
@@ -243,8 +323,7 @@ bool Newton::Solve(void) {
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
 		Cp(x0,x,iv);
-		Sys[0]->PutU(x);
-		if (method=="DIIS-alpha") ComputeG_alpha(); else ComputeG();
+		if (method=="DIIS-ext") ComputeG_ext(); else ComputeG();
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(x,g,-delta_max,iv);
 		Cp(xR+k*iv,x,iv); YisAminB(x_x0+k*iv,x,x0,iv);
@@ -255,63 +334,68 @@ bool Newton::Solve(void) {
 			printf("it = %i g = %1e \n",it,residual);
 		}
 	}
-	cout <<"That will do. " << endl;
+
+	Message(it,iterationlimit,residual,tolerance); 
 
 	
 	//return Helmholtz();
 
 
-	//success=Sys[0]->ComputePhis(); 
 	return it<iterationlimit+1;
 } 
 
-void Newton::ComputeG(){ 
-#ifdef CUDA
-	Zero(phi,4*MM);
-#endif 
+void Newton::ComputePhis() {
+	PutU(); 	
 	Sys[0]->ComputePhis();
+}
+
+void Newton::ComputeG(){ 
+	alpha=Sys[0]->alpha; 
+	double chi; 
+	ComputePhis();
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size();	
 
-
-	for (int k=0; k<mon_length; k++)	Lat[0]->Side(Seg[k]->phi_side,Seg[k]->phi,M);
 	Cp(g,x,iv); Zero(alpha,M);
-
-	for (int i=0; i<sysmon_length; i++) 
-		for (int k=0; k<mon_length; k++) 
-			PutAlpha(g+k*M,Sys[0]->phitot,Seg[k]->phi_side,Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k],Seg[k]->phibulk,M);
-
-	for (int i=0; i<sysmon_length; i++) Add(alpha,g+i*M,M);
+	for (int i=0; i<sysmon_length; i++) {
+		for (int k=0; k<mon_length; k++) { 
+                        chi= Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  
+			if (chi!=0) PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+		}
+	}
+	for (int i=0; i<sysmon_length; i++) {
+		Add(alpha,g+i*M,M);
+	}
 
 	Norm(alpha,1.0/sysmon_length,M);
 	for (int i=0; i<sysmon_length; i++) {
 		AddG(g+i*M,Sys[0]->phitot,alpha,M);
 		Lat[0]->remove_bounds(g+i*M);
-		Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
+		//Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
 	} 
 }
 
-void Newton::ComputeG_alpha(){ 
-
-#ifdef CUDA
-	Zero(phi,4*MM);
-#endif
+void Newton::ComputeG_ext(){ 
+	alpha=Sys[0]->alpha;
+	double chi; 
+	ComputePhis();
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size();	
-		
-	for (int k=0; k<mon_length; k++) Seg[k]->alpha=alpha; 
-	
-	Sys[0]->ComputePhis();
 
-	YplusisCtimesX(alpha, Sys[0]->phitot, delta_max, M);
-
-	for (int k=0; k<mon_length; k++)	Lat[0]->Side(Seg[k]->phi_side,Seg[k]->phi,M);
 	Cp(g,x,iv); 
-	for (int i=0; i<sysmon_length; i++) 
-		for (int k=0; k<mon_length; k++) 
-			PutAlpha(g+k*M,Sys[0]->phitot,Seg[k]->phi_side,Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k],Seg[k]->phibulk,M);
+	for (int i=0; i<sysmon_length; i++) { 
+		for (int k=0; k<mon_length; k++){ 
+                        chi= Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  
+			if (chi!=0) PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+		}
+	}
 	for (int i=0; i<sysmon_length; i++){
 		Lat[0]->remove_bounds(g+i*M);
 		Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
 	}
+	YisAplusC(g+sysmon_length*M,Sys[0]->phitot, -1.0, M);
+	Lat[0]->remove_bounds(g+sysmon_length*M);
+	Norm(g+sysmon_length*M,-1,M);//you can improve ......
+	//Norm(g,-1,sysmon_length*M);
+	
 }

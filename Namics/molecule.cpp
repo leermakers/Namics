@@ -15,6 +15,7 @@ public:
 	int JX;
 	int JY; 	
 	int mol_nr; 
+	double Mu; 
 	double theta;
 	double phibulk;
 	double fraction(int); 
@@ -254,7 +255,7 @@ bool Molecule::IsTagged() {
 	int length=MolMonList.size();
 	int i=0;
 	while (i<length) {
-		if (Seg[MolMonList[i]]->GetFreedom()=="tagged") {success = true; tag_segment=MolMonList[i]; }
+		if (Seg[MolMonList[i]]->freedom=="tagged") {success = true; tag_segment=MolMonList[i]; }
 		i++;
 	}
 	return success;

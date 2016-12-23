@@ -1,56 +1,4 @@
-
-
-class System {
-public:
-	System(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,string);
-
-~System();
-
-	string name;
-	vector<Input*> In; 
-	double* CHI;
-	vector<Segment*> Seg; 
-	vector<Molecule*> Mol;
-	vector<Lattice*> Lat; 
-	int M; 
-	int MX,MY,MZ;
-	vector<int> SysMonList; 
-	vector<int> FrozenList;
-	vector<int> SysTagList; 
-	double FreeEnergy;
-	double GrandPotential;
-	double* phitot; 
-	double* KSAM;
-	double* H_KSAM;
-	double* GrandPotentialDensity;
-	double* FreeEnergyDensity;
-	double* alpha;
-	double* TEMP;
-	bool GPU; 
-	int n_mol; 
-	int solvent; 
-	int tag_segment; 
-	bool input_error; 
-	string calculation_type; 
-		
-
-	std::vector<string> KEYS;
-	std::vector<string> PARAMETERS;
-	std::vector<string> VALUES;
-	bool CheckInput();
-	void PutParameter(string); 
-	string GetValue(string); 	
-	string GetMonName(int );
-	bool CheckChi_values(int);
-	void AllocateMemory();
-	bool PrepareForCalculations();
-	bool ComputePhis();
-	bool CheckResults();
-	double GetFreeEnergy();
-	double GetGrandPotential();
-	bool CreateMu();
-	
-};
+#include "system.h"
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,string name_) {
 	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; 
 	KEYS.push_back("calculation_type");
@@ -74,7 +22,10 @@ bool System::CheckInput() {
 	success= In[0]->CheckParameters("sys",name,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		success=CheckChi_values(In[0]->MonList.size()); 
-
+		
+		
+		GPU=In[0]->Get_bool(GetValue("GPU"),false);
+		if (GPU) {if (!cuda) cout << "You should compile the program using the CUDA=1 flag: GPU calculations are impossible; proceed with CPU computations..." << endl;}
 		int i=0;
 		int length = In[0]->MolList.size(); 
 		while (i<length) {
@@ -164,9 +115,13 @@ bool System::CheckChi_values(int n_seg){
 
 void System::AllocateMemory() {
 //define on CPU
+	phib = new double[In[0]->MolList.size()];
+	//H_GN_A = new double[n_box];
+	//H_GN_B = new double[n_box];
 	H_KSAM=new double[M];
 #ifdef CUDA
 //define on GPU
+	phib = (double*)AllOnDev(In[0]->MolList.size());
 	phitot = (double*)AllOnDev(M); 
 	KSAM=(double*)AllOnDev(M);
 	alpha=(double*)AllOnDev(M);
@@ -433,5 +388,29 @@ bool System::CreateMu() {
 
 //TODO //make sure that the tagged positions are not in frozen range. 
 
+
+//
+//#ifdef CUDA
+//TransferDataToHost(H_GN_A,GN_A,n_box);
+//TransferDataToHost(H_GN_B,GN_B,n_box);
+//#endif
+//}
+
+//#ifdef CUDA
+//	TransferDataToDevice(H_mask, mask, M*n_box);
+//	TransferDataToDevice(H_MASK, MASK, MM);
+//	TransferDataToDevice(H_KSAM, KSAM, MM);
+//	TransferDataToDevice(H_u, u, MM*n_seg);
+//	TransferIntDataToDevice(H_Bx, Bx, n_box);
+//	TransferIntDataToDevice(H_By, By, n_box);
+//	TransferIntDataToDevice(H_Bz, Bz, n_box);
+//	TransferIntDataToDevice(H_Px, Px, n_box);
+//	TransferIntDataToDevice(H_Py, Py, n_box);
+//	TransferIntDataToDevice(H_Pz, Pz, n_box);
+//	if (charges) TransferDataToDevice(H_psi,psi,MM);
+//#else
+//	Cp(u,H_u,MM*n_seg);
+//	if (charges) Cp(psi,H_psi,MM);
+//#endif
 
  

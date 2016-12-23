@@ -1,33 +1,4 @@
-class Lattice {
-public: 
-	Lattice(vector<Input*>,string);
-
-~Lattice();
-
-	string name;
-	vector<Input*> In;
-	int MX,MY,MZ;		 
-	int BX1,BY1,BZ1,BXM,BYM,BZM;
-	int JX,JY,M;
-	int Volume;
-	string lattice_type;
-	double bond_length; 
-	//if you add to this set of properties, you should set the defaults or read frominput as well. got to CheckInput(); 
-
-	std::vector<string> KEYS;
-	std::vector<string> PARAMETERS;
-	std::vector<string> VALUES;
-	bool CheckInput();
-	void PutParameter(string); 
-	string GetValue(string); 
-	void AllocateMemory(void); 
-	bool PrepareForCalculations(void); 
-	void propagate(double*,double*, int, int);
-	void remove_bounds(double*);
-	void set_bounds(double*); 
-	void Side(double *, double *, int);
-
-};
+#include "lattice.h"
 Lattice::Lattice(vector<Input*> In_,string name_) {
 	In=In_; name=name_; 
 	KEYS.push_back("n_layers_x");   KEYS.push_back("n_layers_y"); KEYS.push_back("n_layers_z");
@@ -183,4 +154,176 @@ void Lattice::remove_bounds(double *X){
 void Lattice::set_bounds(double *X){  
 	SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 }
- 
+
+/* 
+
+All below is commented out. This is here to recover from first program. 
+
+void Sideh(double *X_side, double *X, int M) {
+	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+
+	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
+	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
+	Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
+	Add(X_side+JX,X+JY,MM-JX-JY); Add(X_side+JY,X+JX,MM-JY-JX);
+	Add(X_side+1,X+JY,MM-JY-1); Add(X_side+JY,X+1,MM-JY-1);
+	Add(X_side+1,X+JX,MM-JX-1); Add(X_side+JX,X+1,MM-JX-1);
+	Norm(X_side,1.0/12.0,M);
+}
+
+
+
+void Side(double *X_side, double *X, int M) {
+	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
+	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
+	Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
+	Norm(X_side,1.0/6.0,M);
+}
+
+void advanced_average(double *X_side, double *X, int M){
+        Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+
+	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
+	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
+	Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
+
+	Add(X_side+JX+JY,X,M-JX-JY); Add(X_side, X+JX+JY, M-JX-JY);
+	Add(X_side+JY+1,X,M-JY-1); Add(X_side, X+JY+1, M-JY-1);
+	Add(X_side+JX+1,X,M-JX-1); Add(X_side, X+JX+1, M-JX-1);
+        Add(X_side+JX-JY,X,M-JX+JY); Add(X_side, X+JX-JY, M-JX+JY);
+	Add(X_side+JY-1,X,M-JY+1); Add(X_side, X+JY-1, M-JY+1);
+	Add(X_side+JX-1,X,M-JX+1); Add(X_side, X+JX-1, M-JX+1);
+
+	Add(X_side+JX+JY+1,X,M-JX-JY-1); Add(X_side, X+JX+JY+1, M-JX-JY-1);
+	Add(X_side+JX+JY-1,X,M-JX-JY+1); Add(X_side, X+JX+JY-1, M-JX-JY+1);
+	Add(X_side+JX-JY+1,X,M-JX+JY-1); Add(X_side, X+JX-JY+1, M-JX+JY-1);
+	Add(X_side-JX+JY+1,X,M+JX-JY-1); Add(X_side, X-JX+JY+1, M+JX-JY-1);
+
+	Norm(X_side,1.0/26.0,M);
+}
+
+void Propagateh(double* G, double* G1, int s_from, int s_to) { //on small boxes
+	int MMM=M*n_box;
+	double *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
+	Zero(gs,MMM);
+	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
+	
+	Add(gs+jx,gs_1,MMM-jx); Add(gs,gs_1+jx,MMM-jx);
+	Add(gs+jy,gs_1,MMM-jy); Add(gs,gs_1+jy,MMM-jy);
+	Add(gs+1,gs_1,MMM-1);  Add(gs,gs_1+1, MMM-1);	
+	Add(gs+jx,gs_1+jy,MMM-jx-jy); Add(gs+jy,gs_1+jx,MMM-jx-jy);
+	Add(gs+1,gs_1+jy,MMM-jy-1); Add(gs+jy,gs_1+1,MMM-jy-1);
+	Add(gs+1,gs_1+jx,MMM-jx-1); Add(gs+jx,gs_1+1,MMM-jx-1);
+	Norm(gs,1.0/12.0,MMM); Times(gs,gs,g,MMM);
+}
+
+void PROPAGATEh(double *G, double *G1, int s_from, int s_to) { //on big box
+	double *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
+	Zero(gs,MM);
+	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
+	Add(gs+JY,gs_1,MM-JY); Add(gs,gs_1+JY,MM-JY);
+	Add(gs+1,gs_1,MM-1);  Add(gs,gs_1+1, MM-1);
+	Add(gs+JX,gs_1+JY,MM-JX-JY); Add(gs+JY,gs_1+JX,MM-JX-JY);
+	Add(gs+1,gs_1+JY,MM-JY-1); Add(gs+JY,gs_1+1,MM-JY-1);
+	Add(gs+1,gs_1+JX,MM-JX-1); Add(gs+JX,gs_1+1,MM-JX-1);
+	Norm(gs,1.0/12.0,MM); Times(gs,gs,g,MM);
+}
+
+
+
+void Propagate(double* G, double* G1, int s_from, int s_to) { //on small boxes
+	int MMM=M*n_box;
+	double *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
+	Zero(gs,MMM);
+	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
+	Add(gs+jx,gs_1,MMM-jx); Add(gs,gs_1+jx,MMM-jx);
+	Add(gs+jy,gs_1,MMM-jy); Add(gs,gs_1+jy,MMM-jy);
+	Add(gs+1,gs_1,MMM-1);  Add(gs,gs_1+1, MMM-1);
+	Norm(gs,1.0/6.0,MMM); Times(gs,gs,g,MMM);
+}
+
+void PROPAGATE(double *G, double *G1, int s_from, int s_to) { //on big box
+	double *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
+	Zero(gs,MM);
+	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
+	Add(gs+JY,gs_1,MM-JY); Add(gs,gs_1+JY,MM-JY);
+	Add(gs+1,gs_1,MM-1);  Add(gs,gs_1+1, MM-1);
+	Norm(gs,1.0/6.0,MM); Times(gs,gs,g,MM);
+}
+
+#ifdef CUDA
+void DistributeG1(double *G1, double *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+	//int n_blocks=(n_box)/block_size + ((n_box)%block_size == 0 ? 0:1);
+	//distributeg1<<<n_blocks,block_size>>>(G1,g1,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+        dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
+        dim3 blockdim(8,8,8);
+        distributeg1<<<blocks,blockdim>>>(G1,g1,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+
+}
+#else
+void DistributeG1(double *G1, double *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+	int pos_l=-M;
+	int pos_x,pos_y,pos_z;
+	int Bxp,Byp,Bzp;
+	int ii=0,jj=0,kk=0;
+
+	for (int p=0; p<n_box; p++) { pos_l +=M; ii=0; Bxp=H_Bx[p]; Byp=H_By[p]; Bzp=H_Bz[p];
+		for (int i=1; i<Mx+1; i++) { ii+=jx; jj=0; if (Bxp+i>MX) pos_x=(Bxp+i-MX)*JX; else pos_x = (Bxp+i)*JX;
+			for (int j=1; j<My+1; j++) {jj+=jy;  kk=0; if (Byp+j>MY) pos_y=(Byp+j-MY)*JY; else pos_y = (Byp+j)*JY;
+				for (int k=1; k<Mz+1; k++) { kk++; if (Bzp+k>MZ) pos_z=(Bzp+k-MZ); else pos_z = (Bzp+k);
+					g1[pos_l+ii+jj+kk]=G1[pos_x+pos_y+pos_z];
+				}
+			}
+		}
+	}
+}
+#endif
+
+#ifdef CUDA
+void CollectPhi(double* phi, double* GN, double* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+ 	 dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
+        dim3 blockdim(8,8,8);
+        collectphi<<<blocks,blockdim>>>(phi,GN,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+}
+#else
+void CollectPhi(double* phi, double* GN, double* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+	int pos_l=-M;
+	int pos_x,pos_y,pos_z;
+	int Bxp,Byp,Bzp;
+	double Inv_H_GNp;
+	int ii=0,jj=0,kk=0;
+
+	for (int p=0; p<n_box; p++) { pos_l +=M; ii=0; Bxp=Bx[p]; Byp=By[p]; Bzp=Bz[p]; Inv_H_GNp=1.0/GN[p];
+		for (int i=1; i<Mx+1; i++) {ii+=jx; jj=0;  if (Bxp+i>MX) pos_x=(Bxp+i-MX)*JX; else pos_x = (Bxp+i)*JX;
+			for (int j=1; j<My+1; j++) {jj+=jy;  kk=0; if (Byp+j>MY) pos_y=(Byp+j-MY)*JY; else pos_y = (Byp+j)*JY;
+				for (int k=1; k<Mz+1; k++) { kk++; if (Bzp+k>MZ) pos_z=(Bzp+k-MZ); else pos_z = (Bzp+k);
+					phi[pos_x+pos_y+pos_z]+=rho[pos_l+ii+jj+kk]*Inv_H_GNp;
+				}
+			}
+		}
+	}
+}
+
+#endif
+
+//#ifdef CUDA
+//		if (charges) {
+//			phi_na =(double*)AllOnDev(MM);
+//			phi_cl =(double*)AllOnDev(MM);
+//			psi_0 =(double*)AllOnDev(MM);
+//			psi_side =(double*)AllOnDev(MM);
+//			psi=x+MM;
+//			q =(double*)AllOnDev(MM);
+//		}
+#else
+//		if (charges) {
+//			psi=x+MM;
+//			q = new double[MM];
+//			psi_0 = new double[MM];
+//			psi_side = new double[MM];
+//		}
+//#endif
+*/

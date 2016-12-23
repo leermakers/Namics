@@ -1,59 +1,5 @@
-class Newton {
-public:
-	Newton(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,string);
+#include "newton.h"
 
-~Newton();
-
-	string name; 
-	vector<Input*> In; 
-	vector<System*> Sys;
-	vector<Segment*> Seg;
-	vector<Lattice*> Lat;  
-	vector<Molecule*> Mol;
-	int iterationlimit,m,i_info;
-	int k_diis,it; 
-	double tolerance,delta_max;
-	double residual;
-	bool e_info,s_info; 
-	string method;
-	bool store_guess;
-	bool read_guess;  
-	string stop_criterion;
-	int iv; 
-	int M,MX,MY,MZ,JX,JY;
-	double* x;
-	double* u;
-	double* x0;
-	double* g;
-	double* xR;
-	double* x_x0;
-	double* alpha;
-	double* Aij;
-	double* Ci;
-	double* Apij; 
-//if properties are added, also read them form input and/or set the default. See CheckInput() below. 
-		
-
-	std::vector<string> KEYS;
-	std::vector<string> PARAMETERS;
-	std::vector<string> VALUES;
-	bool CheckInput();
-	void PutParameter(string); 
-	string GetValue(string); 
-	bool Solve();
-	void AllocateMemory(); 
-	bool PrepareForCalculations(void);
-	void Ax(double* , double* , int );
-	void DIIS(double* , double* , double* , double*, double* ,double* , int , int , int );
-	void ComputeG(); 
-	void ComputePhis();
-	void ComputeG_ext();
-	bool Iterate_Picard();
-	bool Iterate_DIIS();
-	void Message(int, int,double, double); 
-	bool PutU();
-
-};
 Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,string name_) {
 	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_; 
 	KEYS.push_back("method"); KEYS.push_back("e_info"); KEYS.push_back("s_info");
@@ -312,7 +258,8 @@ bool Newton:: Iterate_DIIS() {
 //	if (charges) Cp(psi,H_psi,MM);
 #endif
 	Zero(x0,iv);
-	it=0; k_diis=1; k=0;
+	it=0; k_diis=1; 
+	int k=0;
 	if (method=="DIIS-ext") ComputeG_ext(); else ComputeG();
 	YplusisCtimesX(x,g,delta_max,iv);
 	YisAminB(x_x0,x,x0,iv);

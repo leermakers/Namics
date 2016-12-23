@@ -30,11 +30,14 @@ CPPFLAGS+= -O3
 CFLAGS = $(CPPFLAGS)
 
      LIBS +=  $(MATRIXLIB)
+   
+OBJECTS = tools.o namics.o input.o lattice.o segment.o molecule.o newton.o engine.o output.o system.o
 
-OBJECTS = namics.o input.o newton.o system.o molecule.o monomer.o engine.o lattice.o
+#namics : namics.o
+#	g++ -o namics namics.o -L$(LIB_DIR) $(LIBS)
 
-namics : namics.o
-	g++ -o namics namics.o -L$(LIB_DIR) $(LIBS)
 
+namics : $(OBJECTS)
+	g++ -o namics $(OBJECTS) -L$(LIB_DIR) $(LIBS)
 clean : 
 	rm *.o

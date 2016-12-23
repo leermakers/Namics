@@ -1,67 +1,9 @@
-class Molecule {
-public:
-	Molecule(vector<Input*>,vector<Lattice*>,vector<Segment*>,string); 
-~Molecule();
-  
-	string name;  
-	vector<Input*> In;
-	vector<Segment*> Seg; 
-	vector<Lattice*> Lat;
-	vector<int> MolMonList;
-	int n_mol; 
-	int M; 
-	int MX,MY,MZ;
-	int BX1,BY1,BZ1,BXM,BYM,BZM;
-	int JX;
-	int JY; 	
-	int mol_nr; 
-	double Mu; 
-	double theta;
-	double phibulk;
-	double fraction(int); 
-	string freedom;
-	MoleculeType MolType; 
-	double n; 
-	double GN,GN1,GN2; 
-	int chainlength;
-	bool save_memory; 
-	string composition;
-	vector<int> mon_nr;
-	vector<int> n_mon; 
-	vector<int> molmon_nr; 
-	double *phi;
-	double *phitot;
-	double *Gg_f;
-	double *Gg_b; 
-	int tag_segment; 
-		
+#include "molecule.h"
 
-	std::vector<string> KEYS;
-	std::vector<string> PARAMETERS;
-	std::vector<string> VALUES;
-	bool CheckInput(void);
-	void PutParameter(string);
-	bool Decomposition(string); 
-	int GetChainlength(void); 
-	double Theta(void);
-	string GetValue(string); 
-	int GetMonNr(string);
-	bool MakeMonList(void);  
-	bool IsPinned(void);
-	bool IsTagged(void); 
-	bool IsCharged(void); 
-	void AllocateMemory(void);
-	bool PrepareForCalculations(); 
-	bool ComputePhi(); 
-	bool ComputePhiMon();
-	bool ComputePhiLin();
-
-	
-};
 Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
 	In=In_; Seg=Seg_; name=name_;  Lat=Lat_;
 	KEYS.push_back("freedom"); 
-	KEYS.push_back("composition"); //KEYS.push_back("chainlength");
+	KEYS.push_back("composition"); 
 	KEYS.push_back("theta");
 	KEYS.push_back("phibulk");
 	KEYS.push_back("n");
@@ -297,6 +239,8 @@ double Molecule::fraction(int segnr){
 
 void Molecule:: AllocateMemory() {
 
+
+
 //define on CPU
 	H_phi= new double[M*MolMonList.size()]; 
 
@@ -383,4 +327,46 @@ if (abs(GN1-GN2)>1e-2) cout << "GN1 != GN2 .... check propagator" << "GN1:" << G
 	return success;
 }
 
+
+/* 
+		H_g1= new double[M*n_box]; H_Zero(H_g1,M*n_box);
+		H_rho = new double[M*n_box];
+		H_GN_A = new double[n_box];
+		H_GN_B = new double[n_box];
+
+	#ifdef CUDA
+		Gg_f=(double*)AllOnDev(M*N*n_box);
+		GG_F=(double*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
+		Gg_b=(double*)AllOnDev(M*2*n_box);
+		GN_A=(double*)AllOnDev(n_box);
+		GN_B=(double*)AllOnDev(n_box);
+		rho =(double*)AllOnDev(M*n_box);
+		g1=(double*)AllOnDev(M*n_box);
+	#else
+		Gg_f = new double[M*(N+1)*n_box]; Gg_b = new double[M*2*n_box];
+		GG_F = new double[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
+		GN_A= H_GN_A;
+		GN_B= H_GN_B;
+		rho = H_rho;
+		g1 = H_g1;
+	#endif
+
+	#ifdef CUDA
+		Gg_f=(double*)AllOnDev(M*N*n_box);
+		GG_F=(double*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
+		Gg_b=(double*)AllOnDev(M*2*n_box);
+		GN_A=(double*)AllOnDev(n_box);
+		GN_B=(double*)AllOnDev(n_box);
+		rho =(double*)AllOnDev(M*n_box);
+		g1=(double*)AllOnDev(M*n_box);
+	#else
+		Gg_f = new double[M*(N+1)*n_box]; Gg_b = new double[M*2*n_box];
+		GG_F = new double[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
+		GN_A= H_GN_A;
+		GN_B= H_GN_B;
+		rho = H_rho;
+		g1 = H_g1;
+	#endif	
+
+*/
 

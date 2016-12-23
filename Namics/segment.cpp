@@ -1,60 +1,4 @@
-class Segment {
-public:
-	Segment(vector<Input*>,vector<Lattice*>,string,int,int);
-
-~Segment(); 
-
-	string name; 
-	vector<Input*> In;  
-	vector<Lattice*> Lat; 
-	int n_seg; 
-	int seg_nr;  
-	double epsilon;
-	double valence; 
-	double phibulk; 
-	string freedom;
-
-	string filename; 
-	bool block;
-	int n_pos;  
-	int MX,MY,MZ;
-	int JX,JY;
-	int BX1,BXM,BY1,BYM,BZ1,BZM;
-	int M; 
-	int xl,yl,zl,xh,yh,zh;
-	int* H_Px; 
-	int* H_Py;
-	int* H_Pz;
-	double* H_MASK;
-	double* H_G1;
-	double* H_phi;
-	int* Px; 
-	int* Py;
-	int* Pz;
-	double* MASK; 
-	double* G1;
-	double* phi;
-	double* phi_side;
-	double* u;  
-
-	std::vector<string> KEYS;
-	std::vector<string> PARAMETERS;
-	std::vector<string> VALUES; 
-	bool CheckInput(); 
-	void PutChiKEY(string); 
-	string GetValue(string); 
-	string GetFreedom();
-	bool IsFree();
-	bool IsPinned();
-	bool IsFrozen();
-	bool IsTagged(); 
-	bool CreateMASK();
-	double* GetMASK(); 
-	double* GetPhi(); 
-	void AllocateMemory();
-	bool PrepareForCalculations(double*);  
-
-};
+#include "segment.h"
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; 
 	KEYS.push_back("freedom"); 
@@ -70,7 +14,7 @@ Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segn
 Segment::~Segment() {
 }
 
-bool Segment::CheckInput() {
+  bool Segment::CheckInput() {
 	bool success;
 	vector<std::string>set;
 	vector<std::string>xyz;
@@ -241,8 +185,6 @@ if (freedom == "frozen") {
 		}//frozen
 
 //------------------------- tagged	 
-
-
 	
 if (freedom == "tagged") { phibulk=0;
 			if (GetValue("pinned_range").size()>0 || GetValue("frozen_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("frozen_filename").size()>0) {
@@ -349,7 +291,7 @@ if (freedom == "tagged") { phibulk=0;
 	return success; 
 }
 
-bool Segment::CreateMASK() {
+  bool Segment::CreateMASK() {
 	bool success=true; 
 	if (freedom!="free") {
 		int M = (MX+2)*(MY+2)*(MZ+2);
@@ -369,40 +311,40 @@ bool Segment::CreateMASK() {
 	return success; 
 }
 
-double* Segment::GetMASK() {
+  double* Segment::GetMASK() {
 	if (MASK==NULL) {cout <<"MASK not yet created. Task to point to MASK in segment is rejected. " << endl; return NULL;} 
 	else return MASK; 
 }
 
-double* Segment::GetPhi() {
+  double* Segment::GetPhi() {
 	if (freedom=="frozen") Cp(phi,MASK,M); 
 	return phi; 
 }
 
-string Segment::GetFreedom(void){
+  string Segment::GetFreedom(void){
 	return freedom; 
 }
 
-bool Segment::IsFree(void) {
+  bool Segment::IsFree(void) {
 	return freedom == "free"; 
 }
-bool Segment::IsPinned(void) {
+  bool Segment::IsPinned(void) {
 	return freedom == "pinned"; 
 }
-bool Segment::IsFrozen(void) {
+  bool Segment::IsFrozen(void) {
 	phibulk =0;
 	return freedom == "frozen"; 
 }
-bool Segment::IsTagged(void) {
+  bool Segment::IsTagged(void) {
 	phibulk =0;
 	return freedom == "tagged"; 
 }
 
-void Segment::PutChiKEY(string new_name) {
+  void Segment::PutChiKEY(string new_name) {
 	if(name != new_name) KEYS.push_back("chi-" + new_name); 
 }
 
-string Segment::GetValue(string parameter) {
+  string Segment::GetValue(string parameter) {
 	int length = PARAMETERS.size(); 
 	int i=0;
 	while (i<length) {
@@ -412,7 +354,7 @@ string Segment::GetValue(string parameter) {
 	return ""; 
 }
 
-void Segment::AllocateMemory() {
+  void Segment::AllocateMemory() {
 	M=(MX+2)*(MY+2)*(MX+2);
 	phibulk =0; //initialisatie van monomer phibulk.
 
@@ -448,7 +390,8 @@ void Segment::AllocateMemory() {
 #endif
 
 }
-bool Segment::PrepareForCalculations(double* KSAM) {
+
+  bool Segment::PrepareForCalculations(double* KSAM) {
 	bool success=true; 
 	phibulk=0;
 	if (freedom=="frozen") {Cp(phi,MASK,M); invert(KSAM,MASK,M);} else Zero(phi,M); 
@@ -460,3 +403,36 @@ bool Segment::PrepareForCalculations(double* KSAM) {
 	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);  
 	return success;
 }	
+
+
+
+/*
+	for (int p=0; p<n_box; p++){
+		H_mask[p*M + jx*(H_Px[p]-H_Bx[p])+jy*(H_Py[p]-H_By[p])+(H_Pz[p]-H_Bz[p])]=1;
+		H_MASK[((H_Px[p]-1)%MX+1)*JX + ((H_Py[p]-1)%MY+1)*JY + (H_Pz[p]-1)%MZ+1]=1;
+	}
+
+	H_mask = new double[M*n_box];
+#ifdef CUDA
+	mask= (double*)AllOnDev(M*n_box);
+#else
+	mask=H_mask;
+#endif
+
+	H_Zero(H_mask,M*n_box);
+	H_Bx  = new int[n_box];  H_By  = new int[n_box];   H_Bz  = new int[n_box];
+	H_Px = new int[n_box];  H_Py = new int[n_box];   H_Pz = new int[n_box];
+#ifdef CUDA
+	Bx=(int*)AllIntOnDev(n_box);
+	By=(int*)AllIntOnDev(n_box);
+	Bz=(int*)AllIntOnDev(n_box);
+	Px=(int*)AllIntOnDev(n_box);
+	Py=(int*)AllIntOnDev(n_box);
+	Pz=(int*)AllIntOnDev(n_box);
+
+#else
+	Bx=H_Bx; By=H_By; Bz=H_Bz;
+	Px=H_Px; Py=H_Py; Pz=H_Pz;
+
+#endif
+*/

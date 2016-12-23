@@ -1,21 +1,5 @@
+#include "engine.h"
 
-class Engine {
-public:
-	Engine(vector<Input*>,vector<System*>,string);
-
-~Engine();
-
-	string name; 
-	vector<Input*> In; 
-	vector<System*> Sys; 	
-
-	std::vector<string> KEYS;
-	std::vector<string> PARAMETERS;
-	std::vector<string> VALUES;
-	bool CheckInput();
-	void PutParameter(string); 
-	string GetValue(string); 
-};
 Engine::Engine(vector<Input*> In_,vector<System*> Sys_, string name_) {
 	In=In_; name=name_;   Sys=Sys_; 
 	KEYS.push_back("MC"); KEYS.push_back("SN_MD");
@@ -42,3 +26,23 @@ string Engine::GetValue(string parameter){
 	return "" ; 
 }
  
+
+/*
+void subdomain(int *fBx,int *fBy,int *fBz, int *fPx,int *fPy,int *fPz, int zloc){
+    int loop = 0;
+		fPx[loop] = 26 ; fPy[loop] = 26 ; fPz[loop] = 26 ;
+		fBx[loop] = 26-10; fBy[loop] = 26-10 ; fBz[loop] = 26-10 ;
+    for (int xcord=1; xcord<=10; xcord++){
+		for(int ycord=1; ycord<=10; ycord++){	
+		fPx[loop] = (xcord)*5-2 ; fPy[loop] = (ycord)*5-2 ; fPz[loop] = zloc ;
+		fBx[loop] = (xcord*5-2)-10; fBy[loop] = (ycord*5-2)-10 ; fBz[loop] = zloc-10 ;	
+		loop = loop+1;
+		}
+	}
+	for (int diag=1; diag<=12; diag++){
+		fPx[loop] = diag*4 ; fPy[loop] = diag*4 ; fPz[loop] = 26 ;
+		fBx[loop] = (diag*4)-10; fBy[loop] = (diag*4)-10 ; fBz[loop] = 16 ;
+		loop = loop+1;
+	}
+} 
+*/

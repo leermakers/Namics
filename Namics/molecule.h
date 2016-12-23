@@ -3,17 +3,19 @@
 #include "namics.h"
 #include "input.h"
 #include "segment.h"
+#include "alias.h"
 #include "lattice.h"
 #include "tools.h"
 class Molecule {
 public:
-	Molecule(vector<Input*>,vector<Lattice*>,vector<Segment*>,string); 
+	Molecule(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Alias*>,string); 
 ~Molecule();
   
 	string name;  
 	vector<Input*> In;
 	vector<Segment*> Seg; 
 	vector<Lattice*> Lat;
+	vector<Alias*> Al;
 	vector<int> MolMonList;
 	int n_mol; 
 	int M; 

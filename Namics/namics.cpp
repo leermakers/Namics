@@ -4,6 +4,7 @@
 #include "input.h"
 #include "lattice.h"
 #include "segment.h"
+#include "alias.h"
 #include "molecule.h"
 #include "system.h"
 #include "newton.h"
@@ -15,7 +16,7 @@ double e=1.60217e-19;
 double k_BT=1.38065e-23*298.15;
 double eps0=8.85418e-12;
 double eps=80;
-double factor=e*e/(eps*eps0*b_length*k_BT);
+double factor=e*e/(eps*eps0*b_length*k_BT); 
 
 int main(int argc, char *argv[]) {
 	string fname;
@@ -23,7 +24,6 @@ int main(int argc, char *argv[]) {
 	string line;
 	ofstream out_file;
 	bool cuda; 
-
 
 #ifdef CUDA
 	cudaDeviceReset();
@@ -41,8 +41,10 @@ int main(int argc, char *argv[]) {
 	vector<Segment*> Seg; int n_seg=In[0]->MonList.size();	
 	for (int i=0; i<n_seg; i++) Seg.push_back(new Segment(In,Lat,In[0]->MonList[i],i,n_seg));
 	for (int i=0; i<n_seg; i++) { for (int k=0; k<n_seg; k++) Seg[i]->PutChiKEY(Seg[k]->name); if (!Seg[i]->CheckInput()) return 0;}
+	vector<Alias*> Al; int n_al = In[0]->AliasList.size();
+	for (int i=0; i<n_al; i++) {Al.push_back(new Alias(In,In[0]->AliasList[i])); if (!Al[i]->CheckInput()) return 0;} 
 	int n_mol = In[0]->MolList.size();  
-	vector<Molecule*> Mol; for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,In[0]->MolList[i])); if (!Mol[i]->CheckInput()) return 0;}
+	vector<Molecule*> Mol; for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,Al,In[0]->MolList[i])); if (!Mol[i]->CheckInput()) return 0;}
 	vector<System*> Sys; Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0])); Sys[0]->cuda=cuda;  
 	if (!Sys[0]->CheckInput()) {return 0;} if (!Sys[0]->CheckChi_values(n_seg)) return 0; 
 	vector<Newton*> New; New.push_back(new Newton(In,Lat,Seg,Mol,Sys,In[0]->NewtonList[0])); if (!New[0]->CheckInput()) {return 0;}

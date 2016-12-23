@@ -34,5 +34,6 @@ newton : isaac : iterationlimit : 2000
 newton : isaac : tolerance : 1e-5
 newton : isaac : read_guess : true
 sys : frans : GPU : true
+alias : N : value : 10
 
 

@@ -23,6 +23,7 @@ public:
 	std::vector<string> MolList;
 	std::vector<string> MonList;
 	std::vector<string> LatList;
+	std::vector<string> AliasList; 
 	std::vector<string> NewtonList;
 	std::vector<string> OutputList; 
 	std::vector<string> EngineList;

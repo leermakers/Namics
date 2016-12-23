@@ -2,7 +2,7 @@
 Input::Input(string name_) {
 	name=name_;
 	//KEYS.push_back("start"); 
-	KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); 	
+	KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); KEYS.push_back("alias"); 	
  	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("output"); 
 
 	in_file.open(name.c_str()); Input_error=false; 
@@ -464,6 +464,7 @@ bool Input:: CheckInput(void) {
 	if (NewtonList.size()==0) NewtonList.push_back("noname");
 	if (!TestNum(NewtonList,"newton",0,1,1)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
 	if (!TestNum(MonList,"mon",1,1000,1)) {cout << "There must be at least one 'mon name' in input" << endl; success=false;}
+	if (AliasList.size()==0) AliasList.push_back("noname"); 
 	if (!TestNum(MolList,"mol",1,1000,1)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}
 	if (!TestNum(OutputList,"output",1,1000,1)) {cout << "No output defined! " << endl;}
 	if (!TestNum(EngineList,"engine",0,1,1)) {cout << "There can be no more than 1 'engine' name in the input " << endl; success=false;}

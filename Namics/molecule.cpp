@@ -1,7 +1,7 @@
 #include "molecule.h"
 
-Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
-	In=In_; Seg=Seg_; name=name_;  Lat=Lat_;
+Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<Alias*> Al_, string name_) {
+	In=In_; Seg=Seg_; name=name_;  Lat=Lat_; Al=Al_;
 	KEYS.push_back("freedom"); 
 	KEYS.push_back("composition"); 
 	KEYS.push_back("theta");

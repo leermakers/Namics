@@ -38,6 +38,20 @@ public:
 	bool input_error; 
 	bool cuda; 
 	string calculation_type; 
+
+	vector<string> ints;
+	vector<string> doubles;
+	vector<string> bools;
+	vector<string> strings;
+	vector<double> doubles_value;
+	vector<int> ints_value;
+	vector<bool> bools_value;
+	vector<string> strings_value;
+	void push(string,double);
+	void push(string,int);
+	void push(string,bool);
+	void push(string,string);
+	void PushOutput();
 		
 
 	std::vector<string> KEYS;
@@ -54,8 +68,7 @@ public:
 	bool CheckResults();
 	double GetFreeEnergy();
 	double GetGrandPotential();
-	bool CreateMu();
-	
+	bool CreateMu();	
 };
 #endif
 

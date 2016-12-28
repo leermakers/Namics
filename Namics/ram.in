@@ -25,7 +25,7 @@ mol : A : freedom : restricted
 mol : A : theta : 66325.5
 mol : B : freedom : solvent
 //mol : A : save_memory : true
-output : out : template : non
+output : ana : type : ana
 newton :isaac : method : DIIS
 newton : isaac : i_info : 25
 newton : isaac : m : 60

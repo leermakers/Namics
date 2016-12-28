@@ -44,6 +44,20 @@ public:
 	double *Gg_f;
 	double *Gg_b; 
 	int tag_segment; 
+
+	vector<string> ints;
+	vector<string> doubles;
+	vector<string> bools;
+	vector<string> strings;
+	vector<double> doubles_value;
+	vector<int> ints_value;
+	vector<bool> bools_value;
+	vector<string> strings_value;
+	void push(string,double);
+	void push(string,int);
+	void push(string,bool);
+	void push(string,string);
+	void PushOutput();
 		
 
 	std::vector<string> KEYS;

@@ -3,11 +3,15 @@
 #include "namics.h"
 #include "input.h"
 #include "lattice.h"
+#include "segment.h"
 #include "molecule.h"
 #include "system.h"
+#include "newton.h"
+#include "alias.h"
+#include "engine.h"
 class Output {
 public:
-	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,string,int,int);
+	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,vector<Alias*>,vector<Engine*>,string,int,int);
 
 ~Output();
 
@@ -17,6 +21,9 @@ public:
 	vector<Segment*> Seg; 
 	vector<Molecule*> Mol;
 	vector<System*> Sys;
+	vector<Newton*> New;
+	vector<Alias*> Al;
+	vector<Engine*> Eng;
 	int n_output; 
 	int output_nr; 
 	std::string template_;
@@ -40,7 +47,7 @@ public:
 	void vtk(string, double *);
 	void density();
 	void printlist();
-
+	void WriteOutput(void);
 
 };
 #endif

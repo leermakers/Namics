@@ -20,11 +20,26 @@ public:
 	int Volume;
 	string lattice_type;
 	double bond_length; 
-	//if you add to this set of properties, you should set the defaults or read frominput as well. got to CheckInput(); 
+	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput(). 
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
+
+	vector<string> ints;
+	vector<string> doubles;
+	vector<string> bools;
+	vector<string> strings;
+	vector<double> doubles_value;
+	vector<int> ints_value;
+	vector<bool> bools_value;
+	vector<string> strings_value;
+	void push(string,double);
+	void push(string,int);
+	void push(string,bool);
+	void push(string,string);
+	void PushOutput();
+
 	bool CheckInput();
 	void PutParameter(string); 
 	string GetValue(string); 
@@ -34,7 +49,6 @@ public:
 	void remove_bounds(double*);
 	void set_bounds(double*); 
 	void Side(double *, double *, int);
-
 };
 
 #endif

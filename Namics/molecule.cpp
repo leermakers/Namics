@@ -226,6 +226,33 @@ string Molecule::GetValue(string parameter) {
 	return ""; 
 }
 
+void Molecule::push(string s, double X) {
+	doubles.push_back(s);
+	doubles_value.push_back(X); 
+}
+void Molecule::push(string s, int X) {
+	ints.push_back(s);
+	ints_value.push_back(X); 
+}
+void Molecule::push(string s, bool X) {
+	bools.push_back(s);
+	bools_value.push_back(X); 
+}
+void Molecule::push(string s, string X) {
+	strings.push_back(s);
+	strings_value.push_back(X); 	
+}
+void Molecule::PushOutput() {
+	strings.clear();
+	strings_value.clear();
+	bools.clear();
+	bools_value.clear();
+	doubles.clear();
+	doubles_value.clear();
+	ints.clear();
+	ints_value.clear();  
+}
+
 double Molecule::fraction(int segnr){
 	int Nseg=0;
 	int length = mon_nr.size();

@@ -1,6 +1,7 @@
 #include "output.h"
-Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,string name_,int outnr,int N_out) {
-	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr; 
+#include "time.h"
+Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_,vector<Alias*> Al_,vector<Engine*> Eng_,string name_,int outnr,int N_out) {
+	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_; Al=Al_; Eng=Eng_;
 	KEYS.push_back("template"); 
 	KEYS.push_back("type");
 	KEYS.push_back("write_bounds");
@@ -16,11 +17,22 @@ void Output::PutParameter(string new_param) {
 }
 
 bool Output::Load(string template_) {
-return In[0]->LoadItems(template_, OUT_name, OUT_property, OUT_value);
+	bool success=true;
+	success= In[0]->LoadItems(template_, OUT_name, OUT_property, OUT_value);
+	return success; 
 }
 
 bool Output::CheckOutInput() {
-	return In[0]->CheckParameters("output",name,KEYS,PARAMETERS,VALUES);
+	bool success=true;
+	success=In[0]->CheckParameters("output",name,KEYS,PARAMETERS,VALUES);
+	if (success) {
+		vector <string> options;
+		options.push_back("ana"); options.push_back("profile"); options.push_back("vtk"); options.push_back("kal"); 
+		if (GetValue("type").size() > 0) {
+			if (!In[0]->Get_string(GetValue("type"),type,options,"For the output you need to define 'type' ")); 
+		} else {success=false; cout << "For 'output' " + name  + "a value for 'type' was not found."  << endl; }
+	} 
+	return success; 
 }
 
 string Output::GetValue(string parameter) {
@@ -31,6 +43,151 @@ string Output::GetValue(string parameter) {
 		i++;
 	} 
 	return " "; 
+}
+void Output::WriteOutput() {
+	int length;
+	string s; 
+	string filename;
+	vector<string> sub;
+	string infilename=In[0]->name;
+	In[0]->split(infilename,'.',sub);
+	filename=sub[0].append(".").append(name); 
+	Sys[0]->PushOutput();
+	Lat[0]->PushOutput();
+	New[0]->PushOutput();
+	Eng[0]->PushOutput();
+
+	length=In[0]->MonList.size();
+	for (int i=0; i<length; i++) Seg[i]->PushOutput();
+	length=In[0]->MolList.size();
+	for (int i=0; i<length; i++) Mol[i]->PushOutput();
+	length=In[0]->AliasList.size();
+	for (int i=0; i<length; i++) Al[i]->PushOutput();
+	
+
+
+	if (type=="ana") {
+		time_t now;
+		time(&now); 
+		FILE *fp;
+		fp=fopen(filename.c_str(),"a");// a  is for append; w is for writing
+		fprintf(fp,"version: %s %s",version.c_str(),ctime(&now));
+//System parameters		
+		s="sys : " + Sys[0]->name + " :";  
+		length = Sys[0]->ints.size();
+		for (int i=0; i<length; i++) 
+			fprintf(fp,"%s %s : %i \n",s.c_str(),Sys[0]->ints[i].c_str(),Sys[0]->ints_value[i]);
+		length = Sys[0]->doubles.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Sys[0]->doubles[i].c_str(),Sys[0]->doubles_value[i]);
+		length = Lat[0]->bools.size(); 
+		for (int i=0; i<length; i++) {
+			if (Sys[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Sys[0]->bools[i].c_str(),"true");
+			else fprintf(fp,"%s %s : %s \n",s.c_str(),Sys[0]->bools[i].c_str(),"false");
+		}
+		length = Sys[0]->strings.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Sys[0]->strings[i].c_str(),Sys[0]->strings_value[i].c_str());
+
+//Lattice parameters
+		s="lat : " + Lat[0]->name + " :";  
+		length = Lat[0]->ints.size();
+		for (int i=0; i<length; i++) 
+			fprintf(fp,"%s %s : %i \n",s.c_str(),Lat[0]->ints[i].c_str(),Lat[0]->ints_value[i]);
+		length = Lat[0]->doubles.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Lat[0]->doubles[i].c_str(),Lat[0]->doubles_value[i]);
+		length = Lat[0]->bools.size(); 
+		for (int i=0; i<length; i++) {
+			if (Lat[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Lat[0]->bools[i].c_str(),"true");
+			else fprintf(fp,"%s %s : %s \n",s.c_str(),Lat[0]->bools[i].c_str(),"false");
+		}
+		length = Lat[0]->strings.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Lat[0]->strings[i].c_str(),Lat[0]->strings_value[i].c_str());
+
+//Newton parameters
+		s="newton : " + New[0]->name + " :";  
+		length = New[0]->ints.size();
+		for (int i=0; i<length; i++) 
+			fprintf(fp,"%s %s : %i \n",s.c_str(),New[0]->ints[i].c_str(),New[0]->ints_value[i]);
+		length = New[0]->doubles.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),New[0]->doubles[i].c_str(),New[0]->doubles_value[i]);
+		length = New[0]->bools.size(); 
+		for (int i=0; i<length; i++) {
+			if (New[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),New[0]->bools[i].c_str(),"true");
+			else fprintf(fp,"%s %s : %s \n",s.c_str(),New[0]->bools[i].c_str(),"false");
+		}
+		length = New[0]->strings.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),New[0]->strings[i].c_str(),New[0]->strings_value[i].c_str());
+
+//Engine parameters
+		s="engine : " + Eng[0]->name + " :";  
+		length = Eng[0]->ints.size();
+		for (int i=0; i<length; i++) 
+			fprintf(fp,"%s %s : %i \n",s.c_str(),Eng[0]->ints[i].c_str(),Eng[0]->ints_value[i]);
+		length = Eng[0]->doubles.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Eng[0]->doubles[i].c_str(),Eng[0]->doubles_value[i]);
+		length = Eng[0]->bools.size(); 
+		for (int i=0; i<length; i++) {
+			if (Eng[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[0]->bools[i].c_str(),"true");
+			else fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[0]->bools[i].c_str(),"false");
+		}
+		length = Eng[0]->strings.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[0]->strings[i].c_str(),Eng[0]->strings_value[i].c_str());
+
+//segment parameters
+		length=In[0]->MonList.size();
+		for (int j=0; j<length; j++) {
+			s="engine : " + Seg[j]->name + " :";  
+			length = Seg[j]->ints.size();
+			for (int i=0; i<length; i++) 
+				fprintf(fp,"%s %s : %i \n",s.c_str(),Seg[j]->ints[i].c_str(),Seg[j]->ints_value[i]);
+			length = Seg[j]->doubles.size();
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Seg[j]->doubles[i].c_str(),Seg[j]->doubles_value[i]);
+			length = Seg[j]->bools.size(); 
+			for (int i=0; i<length; i++) {
+				if (Seg[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[j]->bools[i].c_str(),"true");
+				else fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[j]->bools[i].c_str(),"false");
+			}
+			length = Seg[j]->strings.size();
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Seg[j]->strings[i].c_str(),Seg[j]->strings_value[i].c_str());
+		}
+//molecule parameters
+		length=In[0]->MolList.size();
+		for (int j=0; j<length; j++) {
+			s="engine : " + Mol[j]->name + " :";  
+			length = Mol[j]->ints.size();
+			for (int i=0; i<length; i++) 
+				fprintf(fp,"%s %s : %i \n",s.c_str(),Mol[j]->ints[i].c_str(),Mol[j]->ints_value[i]);
+			length = Mol[j]->doubles.size();
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Mol[j]->doubles[i].c_str(),Mol[j]->doubles_value[i]);
+			length = Mol[j]->bools.size(); 
+			for (int i=0; i<length; i++) {
+				if (Mol[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Mol[j]->bools[i].c_str(),"true");
+				else fprintf(fp,"%s %s : %s \n",s.c_str(),Mol[j]->bools[i].c_str(),"false");
+			}
+			length = Mol[j]->strings.size();
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Mol[j]->strings[i].c_str(),Mol[j]->strings_value[i].c_str());
+		}
+
+//alias parameters
+		length=In[0]->AliasList.size();
+		for (int j=0; j<length; j++) {
+			s="engine : " + Al[j]->name + " :";  
+			length = Al[j]->ints.size();
+			for (int i=0; i<length; i++) 
+				fprintf(fp,"%s %s : %i \n",s.c_str(),Al[j]->ints[i].c_str(),Al[j]->ints_value[i]);
+			length = Al[j]->doubles.size();
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Al[j]->doubles[i].c_str(),Al[j]->doubles_value[i]);
+			length = Al[j]->bools.size(); 
+			for (int i=0; i<length; i++) {
+				if (Al[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Al[j]->bools[i].c_str(),"true");
+				else fprintf(fp,"%s %s : %s \n",s.c_str(),Al[j]->bools[i].c_str(),"false");
+			}
+			length = Al[j]->strings.size();
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Al[j]->strings[i].c_str(),Al[j]->strings_value[i].c_str());
+		}
+
+		fprintf(fp,"%s \n","system delimiter"); 
+		fclose(fp); 
+	} else {cout <<"Sorry only 'ana' output is provided at this stage" << endl; }
 }
 
 void Output::vtk(string filename, double *X){

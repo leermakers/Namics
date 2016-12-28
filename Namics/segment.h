@@ -28,6 +28,22 @@ public:
 	int BX1,BXM,BY1,BYM,BZ1,BZM;
 	int M; 
 	int xl,yl,zl,xh,yh,zh;
+
+	vector<string> ints;
+	vector<string> doubles;
+	vector<string> bools;
+	vector<string> strings;
+	vector<double> doubles_value;
+	vector<int> ints_value;
+	vector<bool> bools_value;
+	vector<string> strings_value;
+	void push(string,double);
+	void push(string,int);
+	void push(string,bool);
+	void push(string,string);
+	void PushOutput();
+
+
 	int* H_Px; 
 	int* H_Py;
 	int* H_Pz;

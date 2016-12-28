@@ -9,7 +9,21 @@ public:
 	string value;
 	
 	string name; 
-	vector<Input*> In; 	
+	vector<Input*> In; 
+
+	vector<string> ints;
+	vector<string> doubles;
+	vector<string> bools;
+	vector<string> strings;
+	vector<double> doubles_value;
+	vector<int> ints_value;
+	vector<bool> bools_value;
+	vector<string> strings_value;
+	void push(string,double);
+	void push(string,int);
+	void push(string,bool);
+	void push(string,string);
+	void PushOutput();	
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;

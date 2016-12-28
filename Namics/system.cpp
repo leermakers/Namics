@@ -98,6 +98,33 @@ string System::GetValue(string parameter){
 	return "" ; 
 }
 
+void System::push(string s, double X) {
+	doubles.push_back(s);
+	doubles_value.push_back(X); 
+}
+void System::push(string s, int X) {
+	ints.push_back(s);
+	ints_value.push_back(X); 
+}
+void System::push(string s, bool X) {
+	bools.push_back(s);
+	bools_value.push_back(X); 
+}
+void System::push(string s, string X) {
+	strings.push_back(s);
+	strings_value.push_back(X); 	
+}
+void System::PushOutput() {
+	strings.clear();
+	strings_value.clear();
+	bools.clear();
+	bools_value.clear();
+	doubles.clear();
+	doubles_value.clear();
+	ints.clear();
+	ints_value.clear();  
+}
+
 bool System::CheckChi_values(int n_seg){
 	bool success=true;
 	CHI = new double[n_seg*n_seg]; 

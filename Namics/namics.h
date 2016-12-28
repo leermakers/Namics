@@ -28,8 +28,11 @@ using namespace std;
 //I.V. Ionova, E.A. Carter, "Error vector choice in direct inversion in the iterative subspace method, J. Compt. Chem. 17, 1836-1847, 1996.
 
 #ifndef MAINxH //here define global variables. 
+extern string version;
 extern double b_length;
 extern double e;
+extern double T;
+extern double k_B;  
 extern double k_BT;
 extern double eps0;
 extern double eps;

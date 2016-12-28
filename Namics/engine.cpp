@@ -1,8 +1,8 @@
 #include "engine.h"
 
-Engine::Engine(vector<Input*> In_,vector<System*> Sys_, string name_) {
-	In=In_; name=name_;   Sys=Sys_; 
-	KEYS.push_back("MC"); KEYS.push_back("SN_MD");
+Engine::Engine(vector<Input*> In_,vector<System*> Sys_,vector<Newton*> New_, string name_) {
+	In=In_; name=name_;   Sys=Sys_; New=New_; 
+	KEYS.push_back("MC"); KEYS.push_back("SN_MD"); KEYS.push_back("brand"); 
 }
 Engine::~Engine() {
 }
@@ -11,7 +11,16 @@ void Engine::PutParameter(string new_param) {
 }
 
 bool Engine::CheckInput() {
-	return In[0]->CheckParameters("engine",name,KEYS,PARAMETERS,VALUES);
+	bool success=true;
+	success=In[0]->CheckParameters("engine",name,KEYS,PARAMETERS,VALUES);
+	if (success) {
+		vector<string> options;
+		options.push_back("sfbox"); //options.push_back("zero-tension");
+		if (GetValue("brand").size()>0) {
+			if (!In[0]->Get_string(GetValue("sfbox"),brand,options,"In engine "+ name + "value of brand not recognised; default 'sfbox' used. ")) brand="sfbox"; 
+		} else brand="sfbox"; 
+	}
+	return success; 
 }
  
 string Engine::GetValue(string parameter){
@@ -24,6 +33,45 @@ string Engine::GetValue(string parameter){
 		i++;
 	}
 	return "" ; 
+}
+
+void Engine::push(string s, double X) {
+	doubles.push_back(s);
+	doubles_value.push_back(X); 
+}
+void Engine::push(string s, int X) {
+	ints.push_back(s);
+	ints_value.push_back(X); 
+}
+void Engine::push(string s, bool X) {
+	bools.push_back(s);
+	bools_value.push_back(X); 
+}
+void Engine::push(string s, string X) {
+	strings.push_back(s);
+	strings_value.push_back(X); 	
+}
+void Engine::PushOutput() {
+	strings.clear();
+	strings_value.clear();
+	bools.clear();
+	bools_value.clear();
+	doubles.clear();
+	doubles_value.clear();
+	ints.clear();
+	ints_value.clear();  
+}
+
+bool Engine::Doit(){
+	bool success=true;
+	if (brand=="sfbox") {
+		New[0]->AllocateMemory(); 
+		New[0]->PrepareForCalculations();
+		New[0]->Solve();
+	} else {
+		cout <<"Sorry to date only 'sfbox' is implemented" << endl; 
+	}
+	return success;
 }
  
 

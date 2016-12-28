@@ -129,6 +129,61 @@ bool Lattice::PrepareForCalculations(void) {
 	return success; 
 }
 
+void Lattice::push(string s, double X) {
+	doubles.push_back(s);
+	doubles_value.push_back(X); 
+}
+void Lattice::push(string s, int X) {
+	ints.push_back(s);
+	ints_value.push_back(X); 
+}
+void Lattice::push(string s, bool X) {
+	bools.push_back(s);
+	bools_value.push_back(X); 
+}
+void Lattice::push(string s, string X) {
+	strings.push_back(s);
+	strings_value.push_back(X); 	
+}
+void Lattice::PushOutput() {
+	strings.clear();
+	strings_value.clear();
+	bools.clear();
+	bools_value.clear();
+	doubles.clear();
+	doubles_value.clear();
+	ints.clear();
+	ints_value.clear();  
+	push("n_layers_x",MX);
+	push("n_layers_y",MY);
+	push("n_layers_z",MZ);
+	string mirror1="mirror_1"; 
+	string periodic="periodic";
+	string mirror2="mirror_2";
+	string s; 
+	if (BX1==1) push("lowerbound_x",mirror1);
+	if (BXM==MX-1) push("upperbound_x",mirror1);
+	if (BX1==2) push("lowerbound_x",mirror2);
+	if (BXM==MX-2) push("upperbound_x",mirror2);
+	if (BX1==MX) push("lowerbound_x",periodic);
+	if (BXM==1) push("upperbound_x",periodic);
+	if (BY1==1) push("lowerbound_y",mirror1);
+	if (BYM==MY-1) push("upperbound_y",mirror1);
+	if (BY1==2) push("lowerbound_y",mirror2);
+	if (BYM==MY-2) push("upperbound_y",mirror2);
+	if (BY1==MY) push("lowerbound_y",periodic);
+	if (BYM==1) push("upperbound_y",periodic);	
+	if (BZ1==1) push("lowerbound_z",mirror1);
+	if (BZM==MZ-1) push("upperbound_z",mirror1);
+	if (BZ1==2) push("lowerbound_z",mirror2);
+	if (BZM==MZ-2) push("upperbound_z",mirror2);
+	if (BZ1==MZ) push("lowerbound_z",periodic);
+	if (BZM==1) push("upperbound_z",periodic);
+	push("volume",MX*MY*MZ); 
+	push("lattice_type",lattice_type);
+	push("bond_length",bond_length); 
+}
+
 void Lattice::Side(double *X_side, double *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);

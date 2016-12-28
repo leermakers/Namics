@@ -6,7 +6,8 @@ public:
 	Alias(vector<Input*>,string);
 
 ~Alias();
-	string value;
+	int value;
+	string composition;
 	
 	string name; 
 	vector<Input*> In; 

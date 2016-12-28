@@ -19,7 +19,7 @@ bool Lattice::CheckInput() {
 		if (!In[0]->Get_int(GetValue("n_layers_x"),MX,1,1e6,"In 'lat' the parameter 'n_layers_x' is required")) {success=false;}
 		if (!In[0]->Get_int(GetValue("n_layers_y"),MY,1,1e6,"In 'lat' the parameter 'n_layers_y' is required")) {success=false;}
 		if (!In[0]->Get_int(GetValue("n_layers_z"),MZ,1,1e6,"In 'lat' the parameter 'n_layers_z' is required")) {success=false;}
-		Volume=MX*MY*MZ;
+		volume=MX*MY*MZ;
 		JX=(MX+2)*(MY+2); JY=(MY+2); M = (MX+2)*(MY+2)*(MZ+2);   
 		Mx=In[0]->Get_int(GetValue("sub_box_size"),MX/2);
 		if (Mx>MX) {cout << "'sub_box_size' can not exceed the size of the main box." << endl; success=false;} else My=Mz=Mx;
@@ -179,7 +179,7 @@ void Lattice::PushOutput() {
 	if (BZM==MZ-2) push("upperbound_z",mirror2);
 	if (BZ1==MZ) push("lowerbound_z",periodic);
 	if (BZM==1) push("upperbound_z",periodic);
-	push("volume",MX*MY*MZ); 
+	push("volume",volume); 
 	push("lattice_type",lattice_type);
 	push("bond_length",bond_length); 
 }

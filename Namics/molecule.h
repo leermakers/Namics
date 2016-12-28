@@ -41,6 +41,7 @@ public:
 	double *phi;
 	double *H_phi;
 	double *phitot;
+	double *H_phitot; 
 	double *Gg_f;
 	double *Gg_b; 
 	int tag_segment; 
@@ -58,6 +59,7 @@ public:
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
+	double* GetPointer(string);
 		
 
 	std::vector<string> KEYS;

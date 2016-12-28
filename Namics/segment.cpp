@@ -379,6 +379,22 @@ void Segment::PushOutput() {
 	doubles_value.clear();
 	ints.clear();
 	ints_value.clear();  
+	push("freedom",freedom);
+	if (freedom=="pinned") push("range",GetValue("pinned_range"));
+	if (freedom=="frozen") push("range",GetValue("frozen_range"));
+	if (freedom=="tagged") push("range",GetValue("tagged_range"));
+	string profile="profile;0"; push("phi",profile);
+	profile="profile;1"; push("u",profile);
+	profile="profile;2"; push("mask",profile);
+}
+
+double* Segment::GetPointer(string s) {
+	vector<string> sub;
+	In[0]->split(s,';',sub);
+	if (sub[1]=="0") return H_phi;
+	if (sub[1]=="1") return H_u;
+	if (sub[1]=="2") return H_MASK;
+	return NULL; 
 }
 
 void Segment::AllocateMemory() {
@@ -389,10 +405,9 @@ void Segment::AllocateMemory() {
 	if (H_Px==NULL && n_pos>0) H_Px=new int[n_pos];
 	if (H_Py==NULL && n_pos>0) H_Py=new int[n_pos];
 	if (H_Pz==NULL && n_pos>0) H_Pz=new int[n_pos];
-	H_G1= new double[M]; 
+	H_u= new double[M]; 
 	H_phi=new double[M];
 	if (H_MASK == NULL) H_MASK=new double[M]; //or H_MASK = new int[]?
-	u = new double[M];
 #ifdef CUDA
 //define on GPU
 	if (n_pos>0) {
@@ -412,7 +427,8 @@ void Segment::AllocateMemory() {
 	}	
 	MASK=H_MASK;  
 	phi =H_phi;
-	G1 = H_G1;
+	u = H_u;
+	G1=new double[M];
 	phi_side = new double[M]; 
 #endif
 

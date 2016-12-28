@@ -17,7 +17,7 @@ public:
 	int Mx,My,Mz;	 
 	int BX1,BY1,BZ1,BXM,BYM,BZM;
 	int JX,JY,M;
-	int Volume;
+	int volume;
 	string lattice_type;
 	double bond_length; 
 	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput(). 

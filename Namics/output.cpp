@@ -52,7 +52,6 @@ void Output::WriteOutput() {
 	string infilename=In[0]->name;
 	In[0]->split(infilename,'.',sub);
 	filename=sub[0].append(".").append(name); 
-	Sys[0]->PushOutput();
 	Lat[0]->PushOutput();
 	New[0]->PushOutput();
 	Eng[0]->PushOutput();
@@ -63,6 +62,7 @@ void Output::WriteOutput() {
 	for (int i=0; i<length; i++) Mol[i]->PushOutput();
 	length=In[0]->AliasList.size();
 	for (int i=0; i<length; i++) Al[i]->PushOutput();
+	Sys[0]->PushOutput(); //needs to be seg[i]->pushoutput; 
 	
 
 
@@ -133,9 +133,9 @@ void Output::WriteOutput() {
 		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[0]->strings[i].c_str(),Eng[0]->strings_value[i].c_str());
 
 //segment parameters
-		length=In[0]->MonList.size();
-		for (int j=0; j<length; j++) {
-			s="engine : " + Seg[j]->name + " :";  
+		int length_A=In[0]->MonList.size();
+		for (int j=0; j<length_A; j++) {
+			s="seg : " + Seg[j]->name + " :";  
 			length = Seg[j]->ints.size();
 			for (int i=0; i<length; i++) 
 				fprintf(fp,"%s %s : %i \n",s.c_str(),Seg[j]->ints[i].c_str(),Seg[j]->ints_value[i]);
@@ -150,9 +150,9 @@ void Output::WriteOutput() {
 			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Seg[j]->strings[i].c_str(),Seg[j]->strings_value[i].c_str());
 		}
 //molecule parameters
-		length=In[0]->MolList.size();
-		for (int j=0; j<length; j++) {
-			s="engine : " + Mol[j]->name + " :";  
+		length_A=In[0]->MolList.size();
+		for (int j=0; j<length_A; j++) {
+			s="mol : " + Mol[j]->name + " :";  
 			length = Mol[j]->ints.size();
 			for (int i=0; i<length; i++) 
 				fprintf(fp,"%s %s : %i \n",s.c_str(),Mol[j]->ints[i].c_str(),Mol[j]->ints_value[i]);
@@ -168,9 +168,9 @@ void Output::WriteOutput() {
 		}
 
 //alias parameters
-		length=In[0]->AliasList.size();
-		for (int j=0; j<length; j++) {
-			s="engine : " + Al[j]->name + " :";  
+		length_A=In[0]->AliasList.size();
+		for (int j=0; j<length_A; j++) {
+			s="alias : " + Al[j]->name + " :";  
 			length = Al[j]->ints.size();
 			for (int i=0; i<length; i++) 
 				fprintf(fp,"%s %s : %i \n",s.c_str(),Al[j]->ints[i].c_str(),Al[j]->ints_value[i]);

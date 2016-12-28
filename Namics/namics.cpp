@@ -22,14 +22,13 @@ string version="0.0.0.0.0.0.0.0";
 // alias version number =0
 // output version number =0
 
-double b_length=5e-10;
 double e=1.60217e-19;
 double T=298.15;
 double k_B=1.38065e-23;
 double k_BT=k_B*T;
 double eps0=8.85418e-12;
 double eps=80;
-double factor=e*e/(eps*eps0*b_length*k_BT); 
+//double factor=e*e/(eps*eps0*b_length*k_BT); 
 
 int main(int argc, char *argv[]) {
 	string fname;

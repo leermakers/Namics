@@ -71,9 +71,9 @@ bool Molecule::CheckInput() {
 							cout <<"In mol " + name + ", the setting 'freedom = restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
 							} else {
 
-								if (GetValue("n").size()>0) {n=In[0]->Get_double(GetValue("n"),10*Lat[0]->Volume);theta=n*chainlength;}
-								if (GetValue("theta").size()>0) {theta = In[0]->Get_double(GetValue("theta"),10*Lat[0]->Volume);n=theta/chainlength;} 
-								if (theta < 0 || theta > Lat[0]->Volume) {
+								if (GetValue("n").size()>0) {n=In[0]->Get_double(GetValue("n"),10*Lat[0]->volume);theta=n*chainlength;}
+								if (GetValue("theta").size()>0) {theta = In[0]->Get_double(GetValue("theta"),10*Lat[0]->volume);n=theta/chainlength;} 
+								if (theta < 0 || theta > Lat[0]->volume) {
 									cout << "In mol " + name + ", the value of 'n' or 'theta' is out of range 0 .. 'volume', cq 'volume'/N." << endl; success=false;
 							
 								}
@@ -251,6 +251,35 @@ void Molecule::PushOutput() {
 	doubles_value.clear();
 	ints.clear();
 	ints_value.clear();  
+	push("composition",GetValue("composition"));
+	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
+	push("theta",theta);
+	push("theta exc",theta-phibulk*Lat[0]->volume);
+	push("n",n);
+	push("chainlength",chainlength);
+	push("phibulk",phibulk);
+	push("Mu",Mu);
+	push("GN",GN);
+	string s="profile;0"; push("phi",s);
+	int length = MolMonList.size();
+	for (int i=0; i<length; i++) {
+		stringstream ss; ss<<i+1; string str=ss.str();
+		 s= "profile;"+str; push("phi-"+Seg[MolMonList[i]]->name,s); }
+		
+}
+
+double* Molecule::GetPointer(string s) {
+	vector<string> sub;
+	In[0]->split(s,';',sub);
+	if (sub[1]=="0") return H_phitot;
+	int length=MolMonList.size();
+	int i=0;
+	while (i<length) { 
+		stringstream ss; ss<<i+1; string str=ss.str();
+		if (sub[1]==str) return H_phi+i*M; 
+		i++;
+	}
+	return NULL;
 }
 
 double Molecule::fraction(int segnr){
@@ -270,6 +299,7 @@ void Molecule:: AllocateMemory() {
 
 //define on CPU
 	H_phi= new double[M*MolMonList.size()]; 
+	H_phitot=new double[M];
 
 #ifdef CUDA
 //define on GPU
@@ -280,7 +310,7 @@ void Molecule:: AllocateMemory() {
 #else
 //set ref for the rho equal to H_rho etc. or define the ref if not done above.
 	phi = H_phi;
-	phitot = new double[M];
+	phitot = H_phitot;
 	Gg_f = new double[M*chainlength];
 	Gg_b = new double[M*2];
 #endif

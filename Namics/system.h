@@ -27,6 +27,9 @@ public:
 	double* phib; 
 	double* KSAM;
 	double* H_KSAM;
+	double* H_GrandPotentialDensity;
+	double* H_FreeEnergyDensity;
+	double* H_alpha;
 	double* GrandPotentialDensity;
 	double* FreeEnergyDensity;
 	double* alpha;
@@ -52,6 +55,7 @@ public:
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
+	double* GetPointer(string);
 		
 
 	std::vector<string> KEYS;

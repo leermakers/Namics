@@ -91,6 +91,12 @@ void Newton::PushOutput() {
 	doubles_value.clear();
 	ints.clear();
 	ints_value.clear();  
+	push("method",method);
+	push("residual",residual);
+	push("tolerance",tolerance);
+	push("iterations",it);
+	push("iterationlimit",iterationlimit);
+	push("stop_criterion",stop_criterion);
 }
 
 void Newton::AllocateMemory() {

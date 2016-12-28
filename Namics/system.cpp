@@ -123,6 +123,31 @@ void System::PushOutput() {
 	doubles_value.clear();
 	ints.clear();
 	ints_value.clear();  
+	push("e",e);
+	push("k_B",k_B);
+	push("eps0",eps0);
+	push("Temperature",T);
+	push("free energy",FreeEnergy);
+	push("grand potential",GrandPotential);
+	push("calculation_type",calculation_type);
+	push("cuda",cuda);
+	push("solvent",Mol[solvent]->name);
+	int n_mon=In[0]->MonList.size();
+	for(int i=0; i<n_mon; i++) for(int j=0; j<n_mon; j++) if (i!=j) Seg[i]->push("chi - " + Seg[j]->name,CHI[i*n_mon+j]); 
+	string s="profile;0"; push("alpha",s);
+	s="profile;1"; push("GrandPotentialDensity",s);
+	s="profile;2"; push("FreeEnergyDensity",s);
+	s="profile;3"; push("KSAM",s);
+}
+	
+double* System::GetPointer(string s){
+	vector<string>sub;
+	In[0]->split(s,';',sub);
+	if (sub[1]=="0") return H_alpha; 
+	if (sub[1]=="1") return H_GrandPotentialDensity;
+	if (sub[1]=="2") return H_FreeEnergyDensity;
+	if (sub[1]=="3") return H_KSAM;
+	return NULL; 
 }
 
 bool System::CheckChi_values(int n_seg){
@@ -146,6 +171,9 @@ void System::AllocateMemory() {
 	//H_GN_A = new double[n_box];
 	//H_GN_B = new double[n_box];
 	H_KSAM=new double[M];
+	H_GrandPotentialDensity = new double[M];
+	H_FreeEnergyDensity = new double[M]; 
+	H_alpha = new double[M];
 #ifdef CUDA
 //define on GPU
 	phib = (double*)AllOnDev(In[0]->MolList.size());
@@ -158,9 +186,9 @@ void System::AllocateMemory() {
 #else
 	phitot = new double[M]; 
 	KSAM = H_KSAM;
-	alpha=new double[M];
-	FreeEnergyDensity=new double[M];
-	GrandPotentialDensity =new double[M];
+	alpha= H_alpha;
+	FreeEnergyDensity=H_FreeEnergyDensity;
+	GrandPotentialDensity = H_GrandPotentialDensity;
 	TEMP =new double[M];	
 #endif
 	n_mol = In[0]->MolList.size(); 
@@ -239,7 +267,8 @@ bool System::ComputePhis(){
 	}
 	Mol[solvent]->phibulk=1.0-totphibulk; 
 	norm=Mol[solvent]->phibulk/Mol[solvent]->chainlength;
-	Mol[solvent]->n=norm*Mol[solvent]->GN; 
+	Mol[solvent]->n=norm*Mol[solvent]->GN;
+	Mol[solvent]->theta=Mol[solvent]->n*Mol[solvent]->chainlength;  
 	int k=0;
 	length = Mol[solvent]->MolMonList.size();
 	while (k<length) {

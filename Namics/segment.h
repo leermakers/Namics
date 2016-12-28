@@ -42,13 +42,14 @@ public:
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
+	double* GetPointer(string); 
 
 
 	int* H_Px; 
 	int* H_Py;
 	int* H_Pz;
 	double* H_MASK;
-	double* H_G1;
+	double* H_u;
 	double* H_phi;
 	int* Px; 
 	int* Py;

@@ -29,14 +29,13 @@ using namespace std;
 
 #ifndef MAINxH //here define global variables. 
 extern string version;
-extern double b_length;
 extern double e;
 extern double T;
 extern double k_B;  
 extern double k_BT;
 extern double eps0;
 extern double eps;
-extern double factor;
+//extern double factor;
 #endif
 
 enum MoleculeType {monomer, linear};

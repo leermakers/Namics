@@ -14,8 +14,12 @@ bool Alias::CheckInput() {
 	bool success=true;
 	success= In[0]->CheckParameters("alias",name,KEYS,PARAMETERS,VALUES);
 	if (success) {
+		value =0;
 		if (GetValue("value").size()>0) {
-			In[0]->Get_string(GetValue("value"),value);
+			int defaultvalue=12345678;
+			value=In[0]->Get_int(GetValue("value"),defaultvalue);
+			if (value==12345678) composition=GetValue("value"); 
+			if (value < 0|| value >1e7 ) {cout <<"In alias " + name + " the numerical value of 'value' out of range 0 ... 1e7" << endl; success=false; }
 		}
 	}
 	return success;
@@ -58,4 +62,9 @@ void Alias::PushOutput() {
 	doubles_value.clear();
 	ints.clear();
 	ints_value.clear();  
+	if (composition.size()>0) {
+		push("composition",composition);
+	} else {
+		if (value>0) push("value",value);
+	}
 }

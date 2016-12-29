@@ -106,7 +106,7 @@ double* Output::GetPointer(string key, string name, string prop) {
 					listlength= Mol[i]->strings.size();
 					j=0;
 					while (j<listlength) {
-						if (prop==Mol[i]->strings[j].substr(0,7)) return Mol[i]->GetPointer(Mol[i]->strings_value[j]); 
+						if (prop==Mol[i]->strings[j]) return Mol[i]->GetPointer(Mol[i]->strings_value[j]); 
 						j++;
 					}
 				}
@@ -120,7 +120,7 @@ double* Output::GetPointer(string key, string name, string prop) {
 					listlength= Seg[i]->strings.size();
 					j=0;
 					while (j<listlength) {
-						if (prop==Seg[i]->strings[j].substr(0,7)) return Seg[i]->GetPointer(Seg[i]->strings_value[j]); 
+						if (prop==Seg[i]->strings[j]) return Seg[i]->GetPointer(Seg[i]->strings_value[j]); 
 						j++;
 					}
 				}
@@ -134,7 +134,7 @@ double* Output::GetPointer(string key, string name, string prop) {
 					listlength= Al[i]->strings.size();
 					j=0;
 					while (j<listlength) {
-						if (prop==Al[i]->strings[j].substr(0,7)) return Al[i]->GetPointer(Al[i]->strings_value[j]); 
+						if (prop==Al[i]->strings[j]) return Al[i]->GetPointer(Al[i]->strings_value[j]); 
 						j++;
 					}
 				}
@@ -145,7 +145,7 @@ double* Output::GetPointer(string key, string name, string prop) {
 			listlength= Eng[0]->strings.size();
 			j=0;
 			while (j<listlength) {
-				if (prop==Eng[0]->strings[j].substr(0,7)) return Eng[0]->GetPointer(Eng[0]->strings_value[j]); 
+				if (prop==Eng[0]->strings[j]) return Eng[0]->GetPointer(Eng[0]->strings_value[j]); 
 				j++;
 			}
 			break;

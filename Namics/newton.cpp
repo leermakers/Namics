@@ -92,6 +92,8 @@ void Newton::PushOutput() {
 	ints.clear();
 	ints_value.clear();  
 	push("method",method);
+	push("m",m);
+	push("delta_max",delta_max);
 	push("residual",residual);
 	push("tolerance",tolerance);
 	push("iterations",it);

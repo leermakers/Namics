@@ -126,7 +126,7 @@ void System::PushOutput() {
 	push("e",e);
 	push("k_B",k_B);
 	push("eps0",eps0);
-	push("Temperature",T);
+	push("temperature",T);
 	push("free energy",FreeEnergy);
 	push("grand potential",GrandPotential);
 	push("calculation_type",calculation_type);

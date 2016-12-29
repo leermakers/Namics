@@ -26,16 +26,14 @@ public:
 	vector<Engine*> Eng;
 	int n_output; 
 	int output_nr; 
-	std::string template_;
-	std::string type;
 	bool write_bounds;
 	bool append; 
 	bool input_error; 
 		
 
+	std::vector<string> OUT_key;
 	std::vector<string> OUT_name;
-	std::vector<string> OUT_property;
-	std::vector<string> OUT_value;
+	std::vector<string> OUT_prop;
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;

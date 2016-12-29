@@ -76,7 +76,7 @@ bool Engine::Doit(){
  
 
 /*
-void subdomain(int *fBx,int *fBy,int *fBz, int *fPx,int *fPy,int *fPz, int zloc){
+void Engine::subdomain(int *fBx,int *fBy,int *fBz, int *fPx,int *fPy,int *fPz, int zloc){
     int loop = 0;
 		fPx[loop] = 26 ; fPy[loop] = 26 ; fPz[loop] = 26 ;
 		fBx[loop] = 26-10; fBy[loop] = 26-10 ; fBz[loop] = 26-10 ;

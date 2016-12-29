@@ -2,12 +2,10 @@
 #include "time.h"
 Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_,vector<Alias*> Al_,vector<Engine*> Eng_,string name_,int outnr,int N_out) {
 	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_; Al=Al_; Eng=Eng_;
-	KEYS.push_back("template"); 
-	KEYS.push_back("type");
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append"); 
 	if (!CheckOutInput()) input_error = true;
-	if (!Load(GetValue("template"))) input_error=true;  
+	if (!Load(name)) input_error=true;  
 
 }
 Output::~Output() {
@@ -18,7 +16,7 @@ void Output::PutParameter(string new_param) {
 
 bool Output::Load(string template_) {
 	bool success=true;
-	success= In[0]->LoadItems(template_, OUT_name, OUT_property, OUT_value);
+	success= In[0]->LoadItems(name, OUT_key, OUT_name, OUT_prop);
 	return success; 
 }
 
@@ -26,11 +24,12 @@ bool Output::CheckOutInput() {
 	bool success=true;
 	success=In[0]->CheckParameters("output",name,KEYS,PARAMETERS,VALUES);
 	if (success) {
-		vector <string> options;
-		options.push_back("ana"); options.push_back("profile"); options.push_back("vtk"); options.push_back("kal"); 
-		if (GetValue("type").size() > 0) {
-			if (!In[0]->Get_string(GetValue("type"),type,options,"For the output you need to define 'type' ")); 
-		} else {success=false; cout << "For 'output' " + name  + "a value for 'type' was not found."  << endl; }
+		if (GetValue("append").size()>0) {
+			In[0]->Get_bool(GetValue("append"),append);
+		} else append=true; 
+		if (GetValue("write_bounds").size()>0) {
+			In[0]->Get_bool(GetValue("write_bounds"),write_bounds);
+		} else write_bounds=false; 
 	} 
 	return success; 
 }
@@ -52,25 +51,12 @@ void Output::WriteOutput() {
 	string infilename=In[0]->name;
 	In[0]->split(infilename,'.',sub);
 	filename=sub[0].append(".").append(name); 
-	Lat[0]->PushOutput();
-	New[0]->PushOutput();
-	Eng[0]->PushOutput();
 
-	length=In[0]->MonList.size();
-	for (int i=0; i<length; i++) Seg[i]->PushOutput();
-	length=In[0]->MolList.size();
-	for (int i=0; i<length; i++) Mol[i]->PushOutput();
-	length=In[0]->AliasList.size();
-	for (int i=0; i<length; i++) Al[i]->PushOutput();
-	Sys[0]->PushOutput(); //needs to be seg[i]->pushoutput; 
-	
-
-
-	if (type=="ana") {
+	if (name=="ana") {
 		time_t now;
 		time(&now); 
 		FILE *fp;
-		fp=fopen(filename.c_str(),"a");// a  is for append; w is for writing
+		if (append) fp=fopen(filename.c_str(),"a"); else fp=fopen(filename.c_str(),"w");
 		fprintf(fp,"version: %s %s",version.c_str(),ctime(&now));
 //System parameters		
 		s="sys : " + Sys[0]->name + " :";  

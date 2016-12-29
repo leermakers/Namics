@@ -65,11 +65,19 @@ int main(int argc, char *argv[]) {
 	if (n_out ==0) cout <<"Warning: no output defined" << endl; 
 	vector<Output*> Out; for (int i=0; i<n_out; i++) { Out.push_back(new Output(In,Lat,Seg,Mol,Sys,New,Al,Eng,In[0]->OutputList[i],i,n_out)); if (Out[i]->input_error) return 0;}
 
-	//New[0]->AllocateMemory(); 
-	//New[0]->PrepareForCalculations(); 
-	//New[0]->Solve(); 
-	
  	Eng[0]->Doit(); 
+
+	Lat[0]->PushOutput();
+	New[0]->PushOutput();
+	Eng[0]->PushOutput();
+	int length = In[0]->MonList.size();
+	for (int i=0; i<length; i++) Seg[i]->PushOutput();
+	length = In[0]->MolList.size();
+	for (int i=0; i<length; i++) Mol[i]->PushOutput();
+	length = In[0]->AliasList.size();
+	for (int i=0; i<length; i++) Al[i]->PushOutput();
+	Sys[0]->PushOutput(); //needs to be after pushing output for seg.
+
 	for (int i=0; i<n_out; i++) Out[i]->WriteOutput(); 	
 
 //	Out[0]->density();

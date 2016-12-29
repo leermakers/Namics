@@ -329,7 +329,7 @@ bool Input:: CheckParameters(string keyword, string name,std::vector<std::string
 }
 
 
-bool Input:: LoadItems(string template_,std::vector<std::string> &Out_name, std::vector<std::string> &Prop, std::vector<std::string> &Value) {
+bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::vector<std::string> &Out_name, std::vector<std::string> &Out_prop) {
 	int length = elems.size();
 	int key_length = KEYS.size();
 	int name_length;
@@ -345,11 +345,11 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_name, std:
 				if (KEYS[j] == set[2]) {
 					key_found=true;
 					switch (j) {
-						case 1:
+						case 0:
 							if (SysList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl; 
 								PrintList(SysList); name_found=false;} 
 							break;
-						case 2:
+						case 1:
 							k=0; name_length=MolList.size(); name_found=false; 
 							while (k<name_length) {
 								if (MolList[k]==set[3]) name_found=true; 
@@ -359,7 +359,7 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_name, std:
 								PrintList(MolList);
 							}
 							break;
-						case 3:
+						case 2:
 							k=0; name_length=MonList.size(); name_found=false; 
 							while (k<name_length) {
 								if (MonList[k]==set[3]) name_found=true; 
@@ -367,6 +367,16 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_name, std:
 							}
 							if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(MonList); 
+							}
+							break;
+						case 3:
+							k=0; name_length=AliasList.size(); name_found=false; 
+							while (k<name_length) {
+								if (AliasList[k]==set[3]) name_found=true; 
+								k++;
+							}
+							if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+								PrintList(AliasList); 
 							}
 							break;
 						case 4:
@@ -384,6 +394,16 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_name, std:
 								PrintList(EngineList); name_found=false;
 							}
 							break;
+						case 7:
+							k=0; name_length=OutputList.size(); name_found=false; 
+							while (k<name_length) {
+								if (OutputList[k]==set[3]) name_found=true; 
+								k++;
+							}
+							if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+								PrintList(OutputList); 
+							}
+							break;
 						default:
 							key_found=false; 
 						}					
@@ -396,7 +416,7 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_name, std:
 			} 
 			if (!name_found) {cout << endl; return false; 
 			}   
-			Out_name.push_back(set[2]); Prop.push_back(set[3]); Value.push_back(set[4]);	
+			Out_key.push_back(set[2]); Out_name.push_back(set[3]); Out_prop.push_back(set[4]);	
 		} //end temp
 		i++;
 	} //end i; 
@@ -424,19 +444,27 @@ bool Input:: CheckInput(void) {
 	while (success && i<length) {
 		vector<std::string> set;
 		split(elems[i],':',set); 
-		if (set[1]=="output" && set[2]=="in") {cout << "In line " << set[0] << "file extension 'in' is not allowed. This would overwride the inputfile."<< endl; success=false;}
-		if (set[1]=="output" && set[3]=="template") {
-			word=set[4];
-			j=0; Keywordfound=false; key_length =KEYS.size();
- 
-			while (j<key_length) { 
-				if (word==KEYS[j]) {Keywordfound=true; }
-				j++; 
+
+		if (set[1]=="output") {
+			vector<string> options; 
+			options.push_back("ana"); options.push_back("vtk"); options.push_back("kal"); options.push_back("pro");
+			string option;
+			if (!Get_string(set[2],option,options,"Value for output extension '" + set[2] + "' not allowed. ")) {success=false;} 
+			else {
+				word=set[2];
+				
+				j=0; Keywordfound=false; key_length =KEYS.size();
+ 				if (word=="ana") Keywordfound=true; 
+				while (j<key_length) { 
+					if (word==KEYS[j]) {Keywordfound=true; }
+					j++; 
+				}
+				if (!Keywordfound) {
+					KEYS.push_back(word);
+					key_length++;
+				}
 			}
-			if (!Keywordfound) {
-				KEYS.push_back(word);
-				key_length++;
-			} else {cout << " In line " << set[0] << "template name '" << word << "' is already taken or is a standard Keyword." <<endl; success=false;}
+			
 		}
 		i++;
 	} 	 

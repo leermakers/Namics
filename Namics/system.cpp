@@ -127,13 +127,13 @@ void System::PushOutput() {
 	push("k_B",k_B);
 	push("eps0",eps0);
 	push("temperature",T);
-	push("free energy",FreeEnergy);
-	push("grand potential",GrandPotential);
+	push("free_energy",FreeEnergy);
+	push("grand_potential",GrandPotential);
 	push("calculation_type",calculation_type);
 	push("cuda",cuda);
 	push("solvent",Mol[solvent]->name);
 	int n_mon=In[0]->MonList.size();
-	for(int i=0; i<n_mon; i++) for(int j=0; j<n_mon; j++) if (i!=j) Seg[i]->push("chi - " + Seg[j]->name,CHI[i*n_mon+j]); 
+	for(int i=0; i<n_mon; i++) for(int j=0; j<n_mon; j++) if (i!=j) Seg[i]->push("chi-" + Seg[j]->name,CHI[i*n_mon+j]); 
 	string s="profile;0"; push("alpha",s);
 	s="profile;1"; push("GrandPotentialDensity",s);
 	s="profile;2"; push("FreeEnergyDensity",s);
@@ -148,6 +148,50 @@ double* System::GetPointer(string s){
 	if (sub[1]=="2") return H_FreeEnergyDensity;
 	if (sub[1]=="3") return H_KSAM;
 	return NULL; 
+}
+
+bool System::GetValue(string prop,int int_result,double double_result,string string_result,int result_nr){
+	int i=0;
+	int length = ints.size();
+	while (i<length) {
+		if (prop==ints[i]) { 
+			int_result=ints_value[i];
+			result_nr=1;
+			return true;
+		}
+		i++;
+	}
+	i=0;
+	length = doubles.size();
+	while (i<length) {
+		if (prop==doubles[i]) { 
+			double_result=doubles_value[i];
+			result_nr=2;
+			return true;
+		}
+		i++;
+	}
+	i=0;
+	length = bools.size();
+	while (i<length) {
+		if (prop==bools[i]) { 
+			if (bools_value[i]) string_result="true"; else string_result="false"; 
+			result_nr=3;
+			return true;
+		}
+		i++;
+	}
+	i=0;
+	length = strings.size();
+	while (i<length) {
+		if (prop==strings[i]) { 
+			string_result=strings_value[i]; 
+			result_nr=3;
+			return true;
+		}
+		i++;
+	}
+	return false; 
 }
 
 bool System::CheckChi_values(int n_seg){

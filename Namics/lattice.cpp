@@ -184,6 +184,51 @@ void Lattice::PushOutput() {
 	push("bond_length",bond_length); 
 }
 
+bool Lattice::GetValue(string prop,int int_result,double double_result,string string_result,int result_nr){
+	int i=0;
+	int length = ints.size();
+	while (i<length) {
+		if (prop==ints[i]) { 
+			int_result=ints_value[i];
+			result_nr=1;
+			return true;
+		}
+		i++;
+	}
+	i=0;
+	length = doubles.size();
+	while (i<length) {
+		if (prop==doubles[i]) { 
+			double_result=doubles_value[i];
+			result_nr=2;
+			return true;
+		}
+		i++;
+	}
+	i=0;
+	length = bools.size();
+	while (i<length) {
+		if (prop==bools[i]) { 
+			if (bools_value[i]) string_result="true"; else string_result="false"; 
+			result_nr=3;
+			return true;
+		}
+		i++;
+	}
+	i=0;
+	length = strings.size();
+	while (i<length) {
+		if (prop==strings[i]) { 
+			string_result=strings_value[i]; 
+			result_nr=3;
+			return true;
+		}
+		i++;
+	}
+	return false; 
+}
+
+
 void Lattice::Side(double *X_side, double *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);

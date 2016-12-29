@@ -330,7 +330,11 @@ bool Input:: CheckParameters(string keyword, string name,std::vector<std::string
 
 
 bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::vector<std::string> &Out_name, std::vector<std::string> &Out_prop) {
+	bool success=true; 
 	int length = elems.size();
+	bool wild_monlist=false;
+	bool wild_mollist=false;
+	bool wild_aliaslist=false;
 	int key_length = KEYS.size();
 	int name_length;
 	bool key_found,name_found; 
@@ -346,12 +350,15 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::
 					key_found=true;
 					switch (j) {
 						case 0:
+							if (set[3]=="*") set[3]=SysList[0];
 							if (SysList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl; 
 								PrintList(SysList); name_found=false;} 
 							break;
 						case 1:
-							k=0; name_length=MolList.size(); name_found=false; 
-							while (k<name_length) {
+							name_found=false;
+							if (set[3]=="*") { name_found = true; wild_mollist=true;}
+							k=0; name_length=MolList.size();  
+							while (k<name_length && !name_found) {
 								if (MolList[k]==set[3]) name_found=true; 
 								k++;
 							}
@@ -360,8 +367,10 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::
 							}
 							break;
 						case 2:
-							k=0; name_length=MonList.size(); name_found=false; 
-							while (k<name_length) {
+							name_found=false;
+							if (set[3]=="*") {name_found=true; wild_monlist=true;}
+							k=0; name_length=MonList.size();  
+							while (k<name_length && !name_found) {
 								if (MonList[k]==set[3]) name_found=true; 
 								k++;
 							}
@@ -370,8 +379,11 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::
 							}
 							break;
 						case 3:
-							k=0; name_length=AliasList.size(); name_found=false; 
-							while (k<name_length) {
+							name_found=false;
+							k=0; name_length=AliasList.size(); 
+							if (set[3]=="*") {name_found=true; wild_aliaslist=true;}
+ 
+							while (k<name_length && !name_found) {
 								if (AliasList[k]==set[3]) name_found=true; 
 								k++;
 							}
@@ -380,16 +392,19 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::
 							}
 							break;
 						case 4:
+							if (set[3]=="*") set[3]=LatList[0];
 							if (LatList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(LatList); name_found=false;
 							}
 							break;
 						case 5:
+							if (set[3]=="*") set[3]=NewtonList[0];
 							if (NewtonList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(NewtonList); name_found=false;
 							}
 							break;
 						case 6:
+							if (set[3]=="*") set[3]=EngineList[0];
 							if (EngineList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(EngineList); name_found=false;
 							}
@@ -414,13 +429,31 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::
 			if (!key_found) {cout<< "In line " << set[0] << " the keyword '" << set[2] << "' not recognized. Choose keywords from: " << endl; 
 				for (int k=1; k<7; k++) cout << KEYS[k] << endl; return false; 
 			} 
-			if (!name_found) {cout << endl; return false; 
+			if (!name_found) {return false; 
 			}   
-			Out_key.push_back(set[2]); Out_name.push_back(set[3]); Out_prop.push_back(set[4]);	
+			if (wild_aliaslist) {
+				int length =AliasList.size();
+				for (int i=0; i<length; i++) {Out_key.push_back(set[2]); Out_name.push_back(AliasList[i]); Out_prop.push_back(set[4]); }
+			}
+			if (wild_mollist) {
+				int length =MolList.size();
+				for (int i=0; i<length; i++) {Out_key.push_back(set[2]); Out_name.push_back(MolList[i]); Out_prop.push_back(set[4]); }
+			}
+			if (wild_monlist) {
+				int length =MonList.size();
+				for (int i=0; i<length; i++) {Out_key.push_back(set[2]); Out_name.push_back(MonList[i]); Out_prop.push_back(set[4]); }
+			}
+			if (!(wild_monlist || wild_mollist ||wild_aliaslist)) {Out_key.push_back(set[2]); Out_name.push_back(set[3]); Out_prop.push_back(set[4]);}
+			
+			if (set[1]=="vtk" && Out_key.size()>1) {
+				cout << "vtk output can have only one entry: the following entries were found:" << endl; success =false; 
+				int length =Out_key.size();
+				for (int i=0; i<length; i++) {cout << set[1] << " : " << Out_key[i] << " : " << Out_name[i] << " : " << Out_prop[i] << endl; }
+			} 
 		} //end temp
 		i++;
 	} //end i; 
-	return true; 
+	return success; 
 }
 
 bool Input:: CheckInput(void) {

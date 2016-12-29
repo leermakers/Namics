@@ -5,7 +5,7 @@ Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append"); 
 	if (!CheckOutInput()) input_error = true;
-	if (!Load(name)) input_error=true;  
+	if (!Load()) input_error=true;  
 
 }
 Output::~Output() {
@@ -14,9 +14,51 @@ void Output::PutParameter(string new_param) {
 	KEYS.push_back(new_param); 
 }
 
-bool Output::Load(string template_) {
+bool Output::Load() {
 	bool success=true;
+	int molnr=0;
 	success= In[0]->LoadItems(name, OUT_key, OUT_name, OUT_prop);
+	if (success) {	
+		int length=OUT_key.size();
+
+		for (int i=0; i<length; i++) {
+			if (OUT_key[i]=="mol"){
+				vector<string> sub;
+				In[0]->split(OUT_prop[i],'*',sub);
+
+
+				if (!(sub[0]==OUT_prop[i])){
+					int k=0; int mollength=In[0]->MolList.size();
+					while (k<mollength) {
+						if (In[0]->MolList[k]==OUT_name[i]) molnr=k; 
+						k++;
+					}
+					int monlength=Mol[molnr]->MolMonList.size();
+					for (int j=0; j<monlength; j++) {
+						OUT_key.push_back(OUT_key[i]);
+						OUT_name.push_back(OUT_name[i]);
+						string s=sub[0];
+						s=s.append(Seg[Mol[molnr]->MolMonList[j]]->name);
+						s=s.append(sub[1]);
+						OUT_prop.push_back(s);
+					} 
+					OUT_key.erase(OUT_key.begin()+i);
+					OUT_name.erase(OUT_name.begin()+i);
+					OUT_prop.erase(OUT_prop.begin()+i);
+
+				}
+
+			}
+		}
+
+		if (name=="vtk" && OUT_key.size()>1) {
+			cout << "vtk output can have only one member. Multiple entries were found namely: " << endl; 
+			success=false;
+			int length=OUT_key.size();
+			for (int i=0; i<length; i++) cout << name << " : " << OUT_key[i] << " : " << OUT_name[i] << " : " << OUT_prop[i] << endl; 
+		}
+
+	}
 	return success; 
 }
 
@@ -43,6 +85,130 @@ string Output::GetValue(string parameter) {
 	} 
 	return " "; 
 }
+
+double* Output::GetPointer(string key, string name, string prop) {
+	int monlistlength=In[0]->MonList.size();
+	int mollistlength=In[0]->MolList.size();
+	int aliaslistlength=In[0]->AliasList.size();
+	int listlength; 
+	int choice;
+	int i,j; 
+	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="alias") choice=4; if  (key=="engine") choice=5;
+
+	switch(choice) {
+		case 1:
+			return Sys[0]->GetPointer(prop); 
+			break;
+		case 2:
+			i=0;
+			while (i<mollistlength){
+				if (name==In[0]->MolList[i]) {
+					listlength= Mol[i]->strings.size();
+					j=0;
+					while (j<listlength) {
+						if (prop==Mol[i]->strings[j].substr(0,7)) return Mol[i]->GetPointer(Mol[i]->strings_value[j]); 
+						j++;
+					}
+				}
+				i++;
+			}
+			break;
+		case 3:
+			i=0;
+			while (i<monlistlength){
+				if (name==In[0]->MonList[i]) {
+					listlength= Seg[i]->strings.size();
+					j=0;
+					while (j<listlength) {
+						if (prop==Seg[i]->strings[j].substr(0,7)) return Seg[i]->GetPointer(Seg[i]->strings_value[j]); 
+						j++;
+					}
+				}
+				i++;
+			}
+			break;
+		case 4:
+			i=0;
+			while (i<aliaslistlength){
+				if (name==In[0]->AliasList[i]) {
+					listlength= Al[i]->strings.size();
+					j=0;
+					while (j<listlength) {
+						if (prop==Al[i]->strings[j].substr(0,7)) return Al[i]->GetPointer(Al[i]->strings_value[j]); 
+						j++;
+					}
+				}
+				i++;
+			}
+			break;
+		case 5:
+			listlength= Eng[0]->strings.size();
+			j=0;
+			while (j<listlength) {
+				if (prop==Eng[0]->strings[j].substr(0,7)) return Eng[0]->GetPointer(Eng[0]->strings_value[j]); 
+				j++;
+			}
+			break;
+		default:
+			cout << "Program error: in Output, GetPointer reaches default...." << endl; 
+	}
+	return NULL; 
+}
+bool Output::GetValue(string key, string name, string prop, int int_result, double double_result, string string_result, int result_nr) {
+	bool success=true;  
+	int monlistlength=In[0]->MonList.size();
+	int mollistlength=In[0]->MolList.size();
+	int aliaslistlength=In[0]->AliasList.size();
+	int choice;
+	int i; 
+	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="alias") choice=4; if  (key=="newton") choice=5; if  (key=="lat") choice=6;if  (key=="engine") choice=7;
+
+
+	switch(choice) {
+		case 1:
+			success=Sys[0]->GetValue(prop,int_result,double_result,string_result,result_nr); 
+			break;
+		case 2:
+			success=false;
+			i=0;
+			while (!success && i<mollistlength){
+				if (name==In[0]->MolList[i]) success=Mol[i]->GetValue(prop,int_result,double_result,string_result,result_nr);
+				i++;
+			}
+			break;
+		case 3:
+			success=false;
+			i=0;
+			while (!success && i<monlistlength){
+				if (name==In[0]->MonList[i]) success=Seg[i]->GetValue(prop,int_result,double_result,string_result,result_nr);
+				i++;
+			}
+			break;
+		case 4:
+			success=false;
+			i=0;
+			while (!success && i<aliaslistlength){
+				if (name==In[0]->AliasList[i]) success=Al[i]->GetValue(prop,int_result,double_result,string_result,result_nr);
+				i++;
+			}
+			break;
+		case 5:
+			success=New[0]->GetValue(prop,int_result,double_result,string_result,result_nr);
+			break;
+		case 6:
+			success=Lat[0]->GetValue(prop,int_result,double_result,string_result,result_nr);
+			break;
+		case 7:
+			success=Eng[0]->GetValue(prop,int_result,double_result,string_result,result_nr);
+			break;
+		default:
+			cout << "Program error: in Output, GetValue reaches default...." << endl; 
+	}
+	if (!success) result_nr=0; 
+	return success; 
+}
+
+
 void Output::WriteOutput() {
 	int length;
 	string s; 
@@ -51,6 +217,12 @@ void Output::WriteOutput() {
 	string infilename=In[0]->name;
 	In[0]->split(infilename,'.',sub);
 	filename=sub[0].append(".").append(name); 
+
+	if (name=="vtk") {
+		double*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0]);	
+		if (!(X==NULL)) vtk(filename,X); else {cout << "vtk file was not generated because 'profile' was not found" << endl;}
+	}
+
 
 	if (name=="ana") {
 		time_t now;
@@ -173,7 +345,7 @@ void Output::WriteOutput() {
 
 		fprintf(fp,"%s \n","system delimiter"); 
 		fclose(fp); 
-	} else {cout <<"Sorry only 'ana' output is provided at this stage" << endl; }
+	}
 }
 
 void Output::vtk(string filename, double *X){

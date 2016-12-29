@@ -41,11 +41,13 @@ public:
 	bool CheckOutInput(void);
 	void PutParameter(string); 
 	string GetValue(string);
-	bool Load(string); 
+	bool Load(); 
 	void vtk(string, double *);
 	void density();
 	void printlist();
 	void WriteOutput(void);
+	bool GetValue(string, string, string, int, double, string, int);
+	double* GetPointer(string, string, string);
 
 };
 #endif

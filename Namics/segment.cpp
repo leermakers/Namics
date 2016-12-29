@@ -397,6 +397,50 @@ double* Segment::GetPointer(string s) {
 	return NULL; 
 }
 
+bool Segment::GetValue(string prop,int int_result,double double_result,string string_result,int result_nr){
+	int i=0;
+	int length = ints.size();
+	while (i<length) {
+		if (prop==ints[i]) { 
+			int_result=ints_value[i];
+			result_nr=1;
+			return true;
+		}
+		i++;
+	}
+	i=0;
+	length = doubles.size();
+	while (i<length) {
+		if (prop==doubles[i]) { 
+			double_result=doubles_value[i];
+			result_nr=2;
+			return true;
+		}
+		i++;
+	}
+	i=0;
+	length = bools.size();
+	while (i<length) {
+		if (prop==bools[i]) { 
+			if (bools_value[i]) string_result="true"; else string_result="false"; 
+			result_nr=3;
+			return true;
+		}
+		i++;
+	}
+	i=0;
+	length = strings.size();
+	while (i<length) {
+		if (prop==strings[i]) { 
+			string_result=strings_value[i]; 
+			result_nr=3;
+			return true;
+		}
+		i++;
+	}
+	return false; 
+}
+
 void Segment::AllocateMemory() {
 	M=(MX+2)*(MY+2)*(MX+2);
 	phibulk =0; //initialisatie van monomer phibulk.

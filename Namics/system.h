@@ -56,6 +56,7 @@ public:
 	void push(string,string);
 	void PushOutput();
 	double* GetPointer(string);
+	bool GetValue(string,int,double,string,int); 
 		
 
 	std::vector<string> KEYS;

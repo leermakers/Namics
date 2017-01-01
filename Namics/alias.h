@@ -26,7 +26,7 @@ public:
 	void push(string,string);
 	void PushOutput();
 	double* GetPointer(string);
-	bool GetValue(string,int,double,string,int);	
+	int GetValue(string,int&,double&,string&);	
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;

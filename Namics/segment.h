@@ -43,7 +43,7 @@ public:
 	void push(string,string);
 	void PushOutput();
 	double* GetPointer(string); 
-	bool GetValue(string,int,double,string,int);
+	int GetValue(string,int&,double&,string&);
 
 
 	int* H_Px; 

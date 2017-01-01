@@ -121,6 +121,36 @@ string Lattice::GetValue(string parameter){
 	return "" ; 
 }
 
+double Lattice::GetValue(double* X,string s){ //need a check to find out if s contains 3 integers separated by ','
+if (X==NULL) cout << "pointer X is zero" << endl; 
+	int x=0,y=0,z=0;
+	vector<string> sub;
+	In[0]->split(s,',',sub);
+	if (sub.size()>2) {
+		x=In[0]->Get_int(sub[0],x);
+		y=In[0]->Get_int(sub[1],y);
+		z=In[0]->Get_int(sub[2],y);
+		if (x<0||x>MX+1||y<0||y>MY+1||z<0||z>MZ+1) {
+			cout <<"Requested postition in 'kal' output out of bounds." << endl; 
+			return 0;
+		} else return X[JX*x+JY*y+z]; 
+	} else  cout <<"Request for profile output does not contain the coordinate in 'kal' output" << endl;
+	return 0;
+}
+
+void Lattice::vtk(string filename, double* X, string id) {
+	FILE *fp;
+	fp = fopen(filename.c_str(),"w+");
+	fprintf(fp,"# vtk DataFile Version 7.0 \nvtk output \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i\n",MX,MY,MZ);
+	fprintf(fp,"SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i\n",MX*MY*MZ);
+	fprintf(fp,"SCALARS %s \nLOOKUP_TABLE default \n",id.c_str());
+	for (int i=1; i<MX+1; i++)
+	for (int j=1; j<MY+1; j++)
+	for (int k=1; k<MZ+1; k++)
+	fprintf(fp,"%f \n",X[i*JX+j*JY+k]);
+	fclose(fp);
+}
+
 void Lattice::AllocateMemory(void) {
 	
 }
@@ -184,14 +214,13 @@ void Lattice::PushOutput() {
 	push("bond_length",bond_length); 
 }
 
-bool Lattice::GetValue(string prop,int int_result,double double_result,string string_result,int result_nr){
+int Lattice::GetValue(string prop,int &int_result,double &double_result,string &string_result){
 	int i=0;
 	int length = ints.size();
 	while (i<length) {
 		if (prop==ints[i]) { 
 			int_result=ints_value[i];
-			result_nr=1;
-			return true;
+			return 1;
 		}
 		i++;
 	}
@@ -200,8 +229,7 @@ bool Lattice::GetValue(string prop,int int_result,double double_result,string st
 	while (i<length) {
 		if (prop==doubles[i]) { 
 			double_result=doubles_value[i];
-			result_nr=2;
-			return true;
+			return 2;
 		}
 		i++;
 	}
@@ -210,8 +238,7 @@ bool Lattice::GetValue(string prop,int int_result,double double_result,string st
 	while (i<length) {
 		if (prop==bools[i]) { 
 			if (bools_value[i]) string_result="true"; else string_result="false"; 
-			result_nr=3;
-			return true;
+			return 3;
 		}
 		i++;
 	}
@@ -220,12 +247,11 @@ bool Lattice::GetValue(string prop,int int_result,double double_result,string st
 	while (i<length) {
 		if (prop==strings[i]) { 
 			string_result=strings_value[i]; 
-			result_nr=3;
-			return true;
+			return 3;
 		}
 		i++;
 	}
-	return false; 
+	return 0; 
 }
 
 

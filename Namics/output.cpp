@@ -154,8 +154,7 @@ double* Output::GetPointer(string key, string name, string prop) {
 	}
 	return NULL; 
 }
-bool Output::GetValue(string key, string name, string prop, int int_result, double double_result, string string_result, int result_nr) {
-	bool success=true;  
+int Output::GetValue(string key, string name, string prop, int &int_result, double &double_result, string &string_result) {
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
 	int aliaslistlength=In[0]->AliasList.size();
@@ -163,49 +162,44 @@ bool Output::GetValue(string key, string name, string prop, int int_result, doub
 	int i; 
 	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="alias") choice=4; if  (key=="newton") choice=5; if  (key=="lat") choice=6;if  (key=="engine") choice=7;
 
-
 	switch(choice) {
 		case 1:
-			success=Sys[0]->GetValue(prop,int_result,double_result,string_result,result_nr); 
+			return Sys[0]->GetValue(prop,int_result,double_result,string_result); 
 			break;
 		case 2:
-			success=false;
 			i=0;
-			while (!success && i<mollistlength){
-				if (name==In[0]->MolList[i]) success=Mol[i]->GetValue(prop,int_result,double_result,string_result,result_nr);
+			while (i<mollistlength){
+				if (name==In[0]->MolList[i]) return Mol[i]->GetValue(prop,int_result,double_result,string_result);
 				i++;
 			}
 			break;
 		case 3:
-			success=false;
 			i=0;
-			while (!success && i<monlistlength){
-				if (name==In[0]->MonList[i]) success=Seg[i]->GetValue(prop,int_result,double_result,string_result,result_nr);
+			while (i<monlistlength){
+				if (name==In[0]->MonList[i]) return Seg[i]->GetValue(prop,int_result,double_result,string_result);
 				i++;
 			}
 			break;
 		case 4:
-			success=false;
 			i=0;
-			while (!success && i<aliaslistlength){
-				if (name==In[0]->AliasList[i]) success=Al[i]->GetValue(prop,int_result,double_result,string_result,result_nr);
+			while (i<aliaslistlength){
+				if (name==In[0]->AliasList[i]) return Al[i]->GetValue(prop,int_result,double_result,string_result);
 				i++;
 			}
 			break;
 		case 5:
-			success=New[0]->GetValue(prop,int_result,double_result,string_result,result_nr);
+			return New[0]->GetValue(prop,int_result,double_result,string_result);
 			break;
 		case 6:
-			success=Lat[0]->GetValue(prop,int_result,double_result,string_result,result_nr);
+			return Lat[0]->GetValue(prop,int_result,double_result,string_result);
 			break;
 		case 7:
-			success=Eng[0]->GetValue(prop,int_result,double_result,string_result,result_nr);
+			return Eng[0]->GetValue(prop,int_result,double_result,string_result);
 			break;
 		default:
 			cout << "Program error: in Output, GetValue reaches default...." << endl; 
 	}
-	if (!success) result_nr=0; 
-	return success; 
+	return 0; 
 }
 
 
@@ -218,9 +212,48 @@ void Output::WriteOutput() {
 	In[0]->split(infilename,'.',sub);
 	filename=sub[0].append(".").append(name); 
 
+	if (name=="kal") {
+		ifstream my_file(filename.c_str());
+		FILE *fp;
+		if (!(my_file||append)) {
+			fp=fopen(filename.c_str(),"w");
+			int length = OUT_key.size();
+			for (int i=0; i<length; i++) {
+				string s=OUT_key[i].append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]); 
+				fprintf(fp,"%s \t",s.c_str()); 
+			}
+			fprintf(fp,"\n"); append=true; 
+		} else 	fp=fopen(filename.c_str(),"a"); 
+		int length = OUT_key.size();
+		for (int i=0; i<length; i++) {
+			int int_result=0;
+			int result_nr=0;
+			double double_result=0;
+			string string_result; 
+			vector<string> sub;
+			In[0] -> split(OUT_prop[i],'(',sub);
+			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,double_result,string_result);
+			if (result_nr==0) {fprintf(fp,"\t");}
+			if (result_nr==1) {fprintf(fp,"%i\t",int_result);}
+			if (result_nr==2) {fprintf(fp,"%f\t",double_result);}
+			if (result_nr==3) {
+				if (sub[0]==OUT_prop[i]) {
+					fprintf(fp,"%s\t",string_result.c_str());
+				} else {
+					double* X=GetPointer(OUT_key[i],OUT_name[i],sub[0]);
+					fprintf(fp,"%f\t",Lat[0]->GetValue(X,sub[1])); 
+				}
+			}
+		}
+		fprintf(fp,"\n"); 
+		fclose(fp); 
+	}
+
 	if (name=="vtk") {
 		double*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0]);	
-		if (!(X==NULL)) vtk(filename,X); else {cout << "vtk file was not generated because 'profile' was not found" << endl;}
+		string s=OUT_key[0].append(" : ").append(OUT_name[0]).append(" : ").append(OUT_prop[0]);
+		if (!(X==NULL)) 
+		Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found" << endl;}
 	}
 
 

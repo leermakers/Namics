@@ -39,7 +39,9 @@ public:
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	bool GetValue(string,int,double,string,int);
+	int GetValue(string,int&,double&,string&);
+	double GetValue(double*,string);
+	void vtk(string, double*,string);
 
 	bool CheckInput();
 	void PutParameter(string); 

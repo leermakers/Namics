@@ -46,7 +46,7 @@ public:
 	void density();
 	void printlist();
 	void WriteOutput(void);
-	bool GetValue(string, string, string, int, double, string, int);
+	int GetValue(string, string, string, int&, double&, string&);
 	double* GetPointer(string, string, string);
 
 };

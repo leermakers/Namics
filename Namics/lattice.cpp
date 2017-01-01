@@ -150,6 +150,17 @@ void Lattice::vtk(string filename, double* X, string id) {
 	fprintf(fp,"%f \n",X[i*JX+j*JY+k]);
 	fclose(fp);
 }
+void Lattice::PutProfiles(FILE* pf,vector<double*> X){
+	int length =X.size();
+	for (int x=1; x<MX+1; x++)
+	for (int y=1; y<MY+1; y++)
+	for (int z=1; z<MZ+1; z++) {
+		fprintf(pf,"%i \t %i \t %i \t",x,y,z);
+		for (int i=0; i<length; i++) fprintf(pf,"%f \t",X[i][x*JX+y*JY+z]);
+		fprintf(pf,"\n");
+	}
+	
+}
 
 void Lattice::AllocateMemory(void) {
 	

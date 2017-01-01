@@ -25,9 +25,9 @@ mol : A : freedom : restricted
 mol : A : theta : 66325.5
 mol : B : freedom : solvent
 //mol : A : save_memory : true
-output : kal : append : false
-kal : mol : AB : phi(26,26,26)
-kal : sys : * : grand_potential
+output : pro : append : false
+pro : mol : * : phi
+//kal : sys : * : grand_potential
 newton :isaac : method : DIIS
 newton : isaac : i_info : 25
 newton : isaac : m : 60

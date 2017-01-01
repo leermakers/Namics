@@ -42,6 +42,7 @@ public:
 	int GetValue(string,int&,double&,string&);
 	double GetValue(double*,string);
 	void vtk(string, double*,string);
+	void PutProfiles(FILE*,vector<double*>);
 
 	bool CheckInput();
 	void PutParameter(string); 

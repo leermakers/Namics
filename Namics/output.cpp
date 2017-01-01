@@ -211,6 +211,26 @@ void Output::WriteOutput() {
 	string infilename=In[0]->name;
 	In[0]->split(infilename,'.',sub);
 	filename=sub[0].append(".").append(name); 
+	
+	if (name=="pro") {
+		vector<double*> pointer;
+		FILE *fp;
+		fp=fopen(filename.c_str(),"w");
+		int length=OUT_key.size();
+		fprintf(fp,"x \t y \t z \t"); 
+		for (int i=0; i<length; i++) {
+			double*  X = GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i]);
+			if (X!=NULL) {
+				pointer.push_back(X); 
+				string s=OUT_key[i].append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]); 
+				fprintf(fp,"%s \t",s.c_str()); 
+			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl; }
+		}
+		fprintf(fp,"\n"); 
+		Lat[0] -> PutProfiles(fp,pointer);
+		
+		fclose(fp);
+	}
 
 	if (name=="kal") {
 		ifstream my_file(filename.c_str());

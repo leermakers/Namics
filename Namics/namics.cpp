@@ -1,6 +1,6 @@
 #define MAINxH
-#include "namics.h"
 #include "tools.h" 
+#include "namics.h"
 #include "input.h"
 #include "lattice.h"
 #include "segment.h"
@@ -22,6 +22,8 @@ string version="0.0.0.0.0.0.0.0";
 // alias version number =0
 // output version number =0
 
+double* BlasResult=(double*)AllOnDev(1);
+int block_size=256;
 double e=1.60217e-19;
 double T=298.15;
 double k_B=1.38065e-23;
@@ -38,10 +40,11 @@ int main(int argc, char *argv[]) {
 	bool cuda; 
 
 #ifdef CUDA
-	cudaDeviceReset();
-	stat = cublasCreate(&handle); if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS failed \n");}
-	cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-	BlasResult= (double*)AllOnDev(1);
+	//cudaDeviceReset();
+	//stat = cublasCreate(&handle); if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS failed \n");}
+	//cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
+	//BlasResult= (double*)AllOnDev(1);
+	GPU_present();
 	cuda=true;
 #else 
 	cuda=false; 
@@ -63,8 +66,7 @@ int main(int argc, char *argv[]) {
 	vector<Engine*> Eng; Eng.push_back(new Engine(In,Sys,New,In[0]->EngineList[0])); if (!Eng[0]->CheckInput()) {return 0;} 
 	int n_out = In[0]->OutputList.size(); 
 	if (n_out ==0) cout <<"Warning: no output defined" << endl; 
-	vector<Output*> Out; for (int i=0; i<n_out; i++) { Out.push_back(new Output(In,Lat,Seg,Mol,Sys,New,Al,Eng,In[0]->OutputList[i],i,n_out)); if (Out[i]->input_error) return 0;}
-
+	vector<Output*> Out; for (int i=0; i<n_out; i++) { Out.push_back(new Output(In,Lat,Seg,Mol,Sys,New,Al,Eng,In[0]->OutputList[i],i,n_out)); if (Out[i]->input_error) {cout << "input_error in output " << endl; return 0;}}
  	Eng[0]->Doit(); 
 
 	Lat[0]->PushOutput();

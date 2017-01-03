@@ -10,6 +10,10 @@ Lattice::Lattice(vector<Input*> In_,string name_) {
 Lattice::~Lattice() {
 }
 
+void Lattice::AllocateMemory(void) {
+
+}
+
 bool Lattice::CheckInput() {
 	bool success;
 	string Value;
@@ -162,9 +166,7 @@ void Lattice::PutProfiles(FILE* pf,vector<double*> X){
 	
 }
 
-void Lattice::AllocateMemory(void) {
-	
-}
+
 bool Lattice::PrepareForCalculations(void) {
 	bool success=true;
 	return success; 

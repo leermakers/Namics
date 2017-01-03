@@ -46,9 +46,7 @@ public:
 	void PushOutput();
 	int GetValue(string,int&,double&,string&);
 
-
 	double* x;
-	double* u;
 	double* x0;
 	double* g;
 	double* xR;

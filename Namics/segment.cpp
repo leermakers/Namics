@@ -12,9 +12,85 @@ Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segn
 	KEYS.push_back("tag_filename"); 
 }
 Segment::~Segment() {
+	delete [] H_Px;
+	delete [] H_Py;
+	delete [] H_Pz;
+	delete [] H_u;
+	delete [] H_phi;
+	delete [] H_MASK;
+#ifdef CUDA
+	if (n_pos>0) {
+		cudaFree(Px);
+		cudaFree(Py);
+		cudaFree(Pz);
+	}
+	cudaFree(u);
+	cudaFree(G1);
+	cudaFree(MASK);
+	cudaFree(phi_side);
+#else
+	delete[] G1;
+	delete[] phi_side;
+#endif
+	
 }
 
-  bool Segment::CheckInput() {
+void Segment::AllocateMemory() {
+	M=(MX+2)*(MY+2)*(MX+2);
+	phibulk =0; //initialisatie van monomer phibulk.
+
+	if (H_Px==NULL && n_pos>0) H_Px=new int[n_pos];
+	if (H_Py==NULL && n_pos>0) H_Py=new int[n_pos];
+	if (H_Pz==NULL && n_pos>0) H_Pz=new int[n_pos];
+	H_u= new double[M]; 
+	H_phi=new double[M];
+	if (H_MASK == NULL) H_MASK=new double[M]; 
+#ifdef CUDA
+	//if (n_pos>0) {
+	//	Px=(int*)AllIntOnDev(n_pos);
+	//	Py=(int*)AllIntOnDev(n_pos);
+	//	Pz=(int*)AllIntOnDev(n_pos);
+	//}
+	u=(double*)AllOnDev(M);
+	G1=(double*)AllOnDev(M);
+	MASK=(double*)AllOnDev(M);
+	phi_side=(double*)AllOnDev(M);
+#else
+	if (n_pos>0) {
+		Px=H_Px;
+		Py=H_Py;
+		Pz=H_Pz;
+	}	
+	MASK=H_MASK;  
+	phi =H_phi;
+	u = H_u;
+	G1=new double[M];
+	phi_side = new double[M]; 
+#endif
+}
+bool Segment::PrepareForCalculations(double* KSAM) {
+#ifdef CUDA
+	TransferDataToDevice(H_MASK, MASK, M);
+	TransferDataToDevice(H_u, u, M);
+	//TransferIntDataToDevice(H_Px, Px, n_pos);
+	//TransferIntDataToDevice(H_Py, Py, n_pos);
+	//TransferIntDataToDevice(H_Pz, Pz, n_pos);
+#endif
+
+	bool success=true; 
+	phibulk=0;
+	if (freedom=="frozen") {Cp(phi,MASK,M); Invert(KSAM,MASK,M);} else Zero(phi,M); 
+	if (freedom=="tagged") Zero(u,M); 
+	Boltzmann(G1,u,M);
+//cout << "in prop segment : sum G1= " + name +  " " <<  Sum(G1,M) << endl; 
+	if (freedom=="pinned") Times(G1,G1,MASK,M);
+	if (freedom=="tagged") Cp(G1,MASK,M);
+	Lat[0]->set_bounds(G1);
+	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);  
+	return success;
+}
+
+bool Segment::CheckInput() {
 	bool success;
 	vector<std::string>set;
 	vector<std::string>xyz;
@@ -25,9 +101,7 @@ Segment::~Segment() {
 		MX=Lat[0]->MX;
 		MY=Lat[0]->MY;
 		MZ=Lat[0]->MZ;
-		M=(MX+2)*(MY+2)*(MZ+2); JX=(MX+2)*(MY+2); JY=(MY+2); 
-		BX1=Lat[0]->BX1; BY1=Lat[0]->BY1; BZ1=Lat[0]->BZ1;
-		BXM=Lat[0]->BXM; BYM=Lat[0]->BYM; BZM=Lat[0]->BZM;
+		M=(MX+2)*(MY+2)*(MZ+2); 
 		valence=In[0]->Get_double(GetValue("valence"),0);
 		if (valence<-5 || valence > 5) cout <<"For mon " + name + " valence value out of range -5 .. 5. Default value used instead" << endl; 
 		epsilon=In[0]->Get_double(GetValue("epsilon"),80);
@@ -291,7 +365,7 @@ if (freedom == "tagged") { phibulk=0;
 	return success; 
 }
 
-  bool Segment::CreateMASK() {
+bool Segment::CreateMASK() {
 	bool success=true; 
 	if (freedom!="free") {
 		int M = (MX+2)*(MY+2)*(MZ+2);
@@ -311,40 +385,40 @@ if (freedom == "tagged") { phibulk=0;
 	return success; 
 }
 
-  double* Segment::GetMASK() {
+double* Segment::GetMASK() {
 	if (MASK==NULL) {cout <<"MASK not yet created. Task to point to MASK in segment is rejected. " << endl; return NULL;} 
 	else return MASK; 
 }
 
-  double* Segment::GetPhi() {
+double* Segment::GetPhi() {
 	if (freedom=="frozen") Cp(phi,MASK,M); 
 	return phi; 
 }
 
-  string Segment::GetFreedom(void){
+string Segment::GetFreedom(void){
 	return freedom; 
 }
 
-  bool Segment::IsFree(void) {
+bool Segment::IsFree(void) {
 	return freedom == "free"; 
 }
-  bool Segment::IsPinned(void) {
+bool Segment::IsPinned(void) {
 	return freedom == "pinned"; 
 }
-  bool Segment::IsFrozen(void) {
+bool Segment::IsFrozen(void) {
 	phibulk =0;
 	return freedom == "frozen"; 
 }
-  bool Segment::IsTagged(void) {
+bool Segment::IsTagged(void) {
 	phibulk =0;
 	return freedom == "tagged"; 
 }
 
-  void Segment::PutChiKEY(string new_name) {
+void Segment::PutChiKEY(string new_name) {
 	if(name != new_name) KEYS.push_back("chi-" + new_name); 
 }
 
-  string Segment::GetValue(string parameter) {
+string Segment::GetValue(string parameter) {
 	int length = PARAMETERS.size(); 
 	int i=0;
 	while (i<length) {
@@ -385,7 +459,11 @@ void Segment::PushOutput() {
 	if (freedom=="tagged") push("range",GetValue("tagged_range"));
 	string profile="profile;0"; push("phi",profile);
 	profile="profile;1"; push("u",profile);
-	profile="profile;2"; push("mask",profile);
+	//profile="profile;2"; push("mask",profile);
+#ifdef CUDA
+	TransferDataToHost(H_phi, phi, M);
+	TransferDataToHost(H_u, u, M);
+#endif
 }
 
 double* Segment::GetPointer(string s) {
@@ -393,7 +471,7 @@ double* Segment::GetPointer(string s) {
 	In[0]->split(s,';',sub);
 	if (sub[1]=="0") return H_phi;
 	if (sub[1]=="1") return H_u;
-	if (sub[1]=="2") return H_MASK;
+	//if (sub[1]=="2") return H_MASK;
 	return NULL; 
 }
 
@@ -437,55 +515,8 @@ int Segment::GetValue(string prop,int &int_result,double &double_result,string &
 	return 0; 
 }
 
-void Segment::AllocateMemory() {
-	M=(MX+2)*(MY+2)*(MX+2);
-	phibulk =0; //initialisatie van monomer phibulk.
 
-//define on CPU
-	if (H_Px==NULL && n_pos>0) H_Px=new int[n_pos];
-	if (H_Py==NULL && n_pos>0) H_Py=new int[n_pos];
-	if (H_Pz==NULL && n_pos>0) H_Pz=new int[n_pos];
-	H_u= new double[M]; 
-	H_phi=new double[M];
-	if (H_MASK == NULL) H_MASK=new double[M]; //or H_MASK = new int[]?
-#ifdef CUDA
-//define on GPU
-	if (n_pos>0) {
-		Px=(int*)AllIntOnDev(n_pos);
-		Py=(int*)AllIntOnDev(n_pos);
-		Pz=(int*)AllIntOnDev(n_pos);
-	}
-	u=(double*)AllOnDev(M);
-	G1=(double*)AllOnDev(M);
-	MASK=(double*)AllOnDev(M);
-	phi_side(double*)AllOnDev(M);
-#else
-	if (n_pos>0) {
-		Px=H_Px;
-		Py=H_Py;
-		Pz=H_Pz;
-	}	
-	MASK=H_MASK;  
-	phi =H_phi;
-	u = H_u;
-	G1=new double[M];
-	phi_side = new double[M]; 
-#endif
-
-}
-
-  bool Segment::PrepareForCalculations(double* KSAM) {
-	bool success=true; 
-	phibulk=0;
-	if (freedom=="frozen") {Cp(phi,MASK,M); invert(KSAM,MASK,M);} else Zero(phi,M); 
-	if (freedom=="tagged") Zero(u,M); 
-	Boltzmann(G1,u,M);
-	if (freedom=="pinned") Times(G1,G1,MASK,M);
-	if (freedom=="tagged") Cp(G1,MASK,M);
-	SetBoundaries(G1,   JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);  
-	return success;
-}	
+	
 
 
 

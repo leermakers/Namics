@@ -19,15 +19,17 @@
 #include <iomanip> 
 using namespace std;
 #ifdef CUDA
-#include <cuda.h>
-#include <cublas_v2.h>
-#include <cuda_runtime.h>
+//#include <cuda.h>
+//#include <cublas_v2.h>
+//#include <cuda_runtime.h>
 #endif
 
 //nvcc Open.cu -lm -lcuda -lcudart -llapack -lblas -lf2c -lcublas -arch=sm_20 -o box
 //I.V. Ionova, E.A. Carter, "Error vector choice in direct inversion in the iterative subspace method, J. Compt. Chem. 17, 1836-1847, 1996.
 
 #ifndef MAINxH //here define global variables. 
+extern double* BlasResult;
+extern int block_size;
 extern string version;
 extern double e;
 extern double T;

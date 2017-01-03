@@ -6,6 +6,12 @@ Engine::Engine(vector<Input*> In_,vector<System*> Sys_,vector<Newton*> New_, str
 }
 Engine::~Engine() {
 }
+
+void Engine::AllocateMemory() {
+	cout <<"nothing to allocate in Engine" << endl; 
+}
+
+
 void Engine::PutParameter(string new_param) {
 	KEYS.push_back(new_param); 
 }
@@ -112,7 +118,6 @@ bool Engine::Doit(){
 	bool success=true;
 	if (brand=="sfbox") {
 		New[0]->AllocateMemory(); 
-		New[0]->PrepareForCalculations();
 		New[0]->Solve();
 	} else {
 		cout <<"Sorry to date only 'sfbox' is implemented" << endl; 

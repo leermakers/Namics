@@ -6,6 +6,7 @@ public:
 	Alias(vector<Input*>,string);
 
 ~Alias();
+	void AllocateMemory();
 	int value;
 	string composition;
 	

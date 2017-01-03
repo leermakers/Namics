@@ -9,7 +9,7 @@ public:
 	Engine(vector<Input*>,vector<System*>,vector<Newton*>,string);
 
 ~Engine();
-
+	void AllocateMemory(); 
 	string name; 
 	vector<Input*> In; 
 	vector<System*> Sys; 	

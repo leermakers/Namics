@@ -10,6 +10,36 @@ Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg
 	KEYS.push_back("save_memory"); 
 }
 Molecule::~Molecule() {
+	delete [] H_phi;
+	delete [] H_phitot;
+#ifdef CUDA
+	cudaFree(phi);
+	cudaFree(phitot);
+	cudaFree(Gg_f);
+	cudaFree(Gg_b);
+#else
+	delete [] phi;
+	delete [] phitot;
+	delete [] Gg_f;
+	delete [] Gg_b;
+#endif
+}
+
+void Molecule:: AllocateMemory() {
+	H_phi= new double[M*MolMonList.size()]; 
+	H_phitot=new double[M];
+
+#ifdef CUDA
+	phi=(double*)AllOnDev(M*MolMonList.size());
+	phitot=(double*)AllOnDev(M);
+	Gg_f=(double*)AllOnDev(M*chainlength);
+	Gg_b=(double*)AllOnDev(M*2);
+#else
+	phi = H_phi;
+	phitot = H_phitot;
+	Gg_f = new double[M*chainlength];
+	Gg_b = new double[M*2];
+#endif
 }
 
 bool Molecule::CheckInput() {
@@ -265,6 +295,10 @@ void Molecule::PushOutput() {
 	for (int i=0; i<length; i++) {
 		stringstream ss; ss<<i+1; string str=ss.str();
 		 s= "profile;"+str; push("phi-"+Seg[MolMonList[i]]->name,s); }
+#ifdef CUDA
+	TransferDataToHost(H_phitot,phitot,M);
+	TransferDataToHost(H_phi,phi,M*MolMonList.size());
+#endif
 		
 }
 
@@ -333,30 +367,7 @@ double Molecule::fraction(int segnr){
 	return 1.0*Nseg/chainlength; 
 }
 
-void Molecule:: AllocateMemory() {
 
-
-
-//define on CPU
-	H_phi= new double[M*MolMonList.size()]; 
-	H_phitot=new double[M];
-
-#ifdef CUDA
-//define on GPU
-	phi=(double*)AllOnDev(M*MolMonList.size());
-	phitot=(double*)AllOnDev(M);
-	Gg_f=(double*)AllOnDev(M*chainlength);
-	Gg_b=(double*)AllOnDev(M*2);
-#else
-//set ref for the rho equal to H_rho etc. or define the ref if not done above.
-	phi = H_phi;
-	phitot = H_phitot;
-	Gg_f = new double[M*chainlength];
-	Gg_b = new double[M*2];
-#endif
-
-
-}
 bool Molecule:: PrepareForCalculations() {
 	bool success=true;
 	Zero(phitot,M);
@@ -399,6 +410,7 @@ bool Molecule::ComputePhiLin(){
 	int s=0;
 	while (i<blocks) {
 		G1=Seg[mon_nr[i]]->G1; 
+//cout << "Sum G1 = " << Sum(G1,M) << endl; 
 		for (int k=0; k<n_mon[i]; k++) {
 			if (s==0) Cp(Gg_f,G1,M); else {Lat[0]->propagate(Gg_f,G1,s-1,s);}
 			s++;

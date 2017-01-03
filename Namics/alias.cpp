@@ -6,6 +6,12 @@ Alias::Alias(vector<Input*> In_, string name_) {
 }
 Alias::~Alias() {
 }
+
+void Alias::AllocateMemory() {
+	cout <<"nothing to allocate in alias...."<< endl; 
+}
+
+
 void Alias::PutParameter(string new_param) {
 	KEYS.push_back(new_param); 
 }

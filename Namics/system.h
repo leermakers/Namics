@@ -23,10 +23,10 @@ public:
 	vector<int> SysTagList; 
 	double FreeEnergy;
 	double GrandPotential;
+	double* BR;
 	double* phitot; 
 	double* phib; 
 	double* KSAM;
-	double* H_KSAM;
 	double* H_GrandPotentialDensity;
 	double* H_FreeEnergyDensity;
 	double* H_alpha;

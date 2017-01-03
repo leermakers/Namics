@@ -8,6 +8,47 @@ Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	KEYS.push_back("stop_criterion"); 
 }
 Newton::~Newton() {
+	delete [] Aij;
+	delete [] Ci;
+	delete [] Apij; 
+#ifdef CUDA
+	cudaFree(x);
+	cudaFree(x0);
+	cudaFree(g);
+	cudaFree(xR);
+	cudaFree(x_x0);
+#else
+	delete[] x;
+	delete[] x0;
+	delete[] g;
+	delete[] xR;
+	delete[] x_x0;
+#endif
+}
+
+void Newton::AllocateMemory() {
+	iv = Sys[0]->SysMonList.size() * M;	
+	if (method=="DIIS-ext") iv +=M;
+ 
+	Aij = new double[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; 
+	Ci = new double[m]; for (int i=0; i<m; i++) Ci[i]=0;
+	Apij = new double[m*m]; for (int i=0; i<m*m; i++) Apij[i]=0;
+#ifdef CUDA
+	x = (double*)AllOnDev(iv); 
+	x0 = (double*)AllOnDev(iv);
+	g= (double*)AllOnDev(iv);
+	xR= (double*)AllOnDev(m*iv);
+	x_x0= (double*)AllOnDev(m*iv);
+
+#else
+	x = new double[iv]; 
+	x0 = new double[iv];
+	g = new double[iv];
+	xR = new double[m*iv];
+	x_x0 =new double[m*iv];
+#endif
+	Sys[0]->AllocateMemory(); 
+	Zero(x,iv);
 }
 
 bool Newton::CheckInput() {
@@ -140,34 +181,6 @@ int Newton::GetValue(string prop,int &int_result,double &double_result,string &s
 	}
 	return 0; 
 }
-void Newton::AllocateMemory() {
-	iv = Sys[0]->SysMonList.size() * M;	
-	if (method=="DIIS-ext") iv +=M; 
-//define on CPU
-
-#ifdef CUDA
-//define on GPU
-	x = (double*)AllOnDev(iv); 
-	x0 = (double*)AllOnDev(iv);
-	g= (double*)AllOnDev(iv);
-	xR= (double*)AllOnDev(m*iv);
-	x_x0= (double*)AllOnDev(m*iv);
-
-#else
-	x = new double[iv]; 
-	x0 = new double[iv];
-	g = new double[iv];
-	xR = new double[m*iv];
-	x_x0 =new double[m*iv];
-	Aij = new double[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; 
-	Ci = new double[m]; for (int i=0; i<m; i++) Ci[i]=0;
-	Apij = new double[m*m]; for (int i=0; i<m*m; i++) Apij[i]=0;
-#endif
-	Sys[0]->AllocateMemory(); 
-	Zero(x,iv);
-	u=Seg[0]->u;
-//do here initial guess and put it in x. 
-}
 
 bool Newton::PutU() {
 	bool success=true;
@@ -175,7 +188,7 @@ bool Newton::PutU() {
 	for (int i=0; i<sysmon_length; i++) {
 		double *u=Seg[Sys[0]->SysMonList[i]]->u;
 		alpha=Sys[0]->alpha; 
-		Cp(u,x+i*M,M); 
+		Cp(Seg[Sys[0]->SysMonList[i]]->u,x+i*M,M); 
 		if (method == "Picard") Add(u,alpha,M);
 		if (method == "DIIS-ext") Add(u,x+sysmon_length*M,M); 
 	}
@@ -238,23 +251,27 @@ void Newton::DIIS(double* x, double* x_x0, double* xR, double* Aij, double* Apij
 
 bool Newton::PrepareForCalculations() {
 	bool success=true;
- 	success=Sys[0]->PrepareForCalculations();
 	return success; 
 }
 bool Newton::Solve(void) {
 	bool success=true;
-	if (read_guess){ 
+	if (read_guess){ //this should definitely go to lattice, but I keep it here because for testing...
+		double *X= new double[2*M];
 		for (int i=0; i<MX+2; i++) for (int j=0; j<MY+2; j++) for (int k=0; k<MZ+2; k++) {
 			if (k<MZ/2) {
-				x[JX*i+JY*j+k]= -0.38335;
-				x[JX*i+JY*j+k+M]= 0.38335;
+				X[JX*i+JY*j+k]= -0.38335;
+				X[JX*i+JY*j+k+M]= 0.38335;
 			} else {
-				x[JX*i+JY*j+k]=0;
-				x[JX*i+JY*j+k+M]=0;
+				X[JX*i+JY*j+k]=0;
+				X[JX*i+JY*j+k+M]=0;
 			}
 		}
+#ifdef CUDA
+		TransferDataToDevice(X,x,2*M);
+#else
+		Cp(x,X,2*M);
+#endif
 	}
-	
 	if (method=="Picard") success=Iterate_Picard(); else success=Iterate_DIIS(); 
 	Sys[0]->CheckResults(); 
 
@@ -314,23 +331,6 @@ bool Newton:: Iterate_Picard() {
 }
 
 bool Newton:: Iterate_DIIS() {
-
-#ifdef CUDA
-	TransferDataToDevice(H_mask, mask, M*n_box);
-	TransferDataToDevice(H_MASK, MASK, MM);
-	TransferDataToDevice(H_KSAM, KSAM, MM);
-	TransferDataToDevice(H_u, u, MM*n_seg);
-	TransferIntDataToDevice(H_Bx, Bx, n_box);
-	TransferIntDataToDevice(H_By, By, n_box);
-	TransferIntDataToDevice(H_Bz, Bz, n_box);
-	TransferIntDataToDevice(H_Px, Px, n_box);
-	TransferIntDataToDevice(H_Py, Py, n_box);
-	TransferIntDataToDevice(H_Pz, Pz, n_box);
-//	if (charges) TransferDataToDevice(H_psi,psi,MM);
-#else
-//	Cp(u,H_u,MM*n_seg);
-//	if (charges) Cp(psi,H_psi,MM);
-#endif
 	Zero(x0,iv);
 	it=0; k_diis=1; 
 	int k=0;
@@ -349,7 +349,7 @@ bool Newton:: Iterate_DIIS() {
 		YplusisCtimesX(x,g,-delta_max,iv);
 		Cp(xR+k*iv,x,iv); YisAminB(x_x0+k*iv,x,x0,iv);
 		DIIS(x,x_x0,xR,Aij,Apij,Ci,k,m,iv);
-		Cp(u,x,M); 
+		//Cp(u,x,M); 
 		residual = sqrt(Dot(g,g,iv));
 		if(it%i_info == 0){
 			printf("it = %i g = %1e \n",it,residual);
@@ -357,11 +357,6 @@ bool Newton:: Iterate_DIIS() {
 	}
 
 	Message(it,iterationlimit,residual,tolerance); 
-
-	
-	//return Helmholtz();
-
-
 	return it<iterationlimit+1;
 } 
 

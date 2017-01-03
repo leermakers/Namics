@@ -5,6 +5,89 @@ System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	KEYS.push_back("GPU"); 	
 }
 System::~System() {
+	delete [] KSAM;
+	delete [] H_GrandPotentialDensity;
+	delete [] H_FreeEnergyDensity;
+	delete [] H_alpha;
+#ifdef CUDA
+	cudaFree(BR);
+	cudaFree(phib);
+	cudaFree(phitot);
+	cudaFree(alpha);
+	cudaFree(GrandPotentialDensity);
+	cudaFree(FreeEnergyDensity);
+	cudaFree(TEMP);
+#else
+	delete [] BR;
+	delete [] phib;	
+	delete [] phitot; 
+	delete [] TEMP;
+#endif
+}
+
+void System::AllocateMemory() {
+	M=(Lat[0]->MX+2)*(Lat[0]->MY+2)*(Lat[0]->MZ+2);
+	//H_GN_A = new double[n_box];
+	//H_GN_B = new double[n_box];
+	KSAM=new double[M];
+	H_GrandPotentialDensity = new double[M];
+	H_FreeEnergyDensity = new double[M]; 
+	H_alpha = new double[M];
+#ifdef CUDA
+	BR=(double*)AllOnDev(1);
+	phib = (double*)AllOnDev(In[0]->MolList.size());
+	phitot = (double*)AllOnDev(M); 
+	alpha=(double*)AllOnDev(M);	
+	GrandPotentialDensity =(double*)AllOnDev(M);
+	FreeEnergyDensity=(double*)AllOnDev(M);
+	TEMP =(double*)AllOnDev(M);	
+#else
+	BR=(double*)AllOnDev(1);
+	phib = new double[In[0]->MolList.size()];
+	phitot = new double[M]; 
+	alpha= H_alpha;
+	FreeEnergyDensity=H_FreeEnergyDensity;
+	GrandPotentialDensity = H_GrandPotentialDensity;
+	TEMP =new double[M];	
+#endif
+	n_mol = In[0]->MolList.size(); 
+	int i=0;
+	Lat[0]->AllocateMemory(); 
+	int n_mon=In[0]->MonList.size();
+	while (i<n_mon) {Seg[i]->AllocateMemory(); i++;}
+	i=0;
+	while (i<n_mol) {Mol[i]->AllocateMemory(); i++;}
+}
+
+bool System::PrepareForCalculations() {
+	bool success=true;
+	FrozenList.clear();
+	int length = In[0]->MonList.size();
+	for (int i=0; i<length; i++) {if (Seg[i]->freedom == "frozen") FrozenList.push_back(i); }
+	if (FrozenList.size()+SysMonList.size()+SysTagList.size() !=In[0]->MonList.size()) {cout <<" There are un-used monomers in system. Remove them before starting" << endl; success=false;}
+	Zero(KSAM,M); 
+	length=FrozenList.size();
+	int i=0;
+	while (i<length) {
+		double*MASK=Seg[FrozenList[i]]->MASK; 
+		Add(KSAM,MASK,M);
+		i++;
+	}
+	length=SysTagList.size();
+	i=0;
+	while (i<length) {
+		double* MASK=Seg[SysTagList[i]]->MASK; 
+		Add(KSAM,MASK,M);
+		i++;
+	}
+	H_Invert(KSAM,KSAM,M); 
+	Lat[0]->remove_bounds(KSAM); 
+	n_mol = In[0]->MolList.size();
+	success=Lat[0]->PrepareForCalculations(); 
+	int n_mon=In[0]->MonList.size();
+	for (int i=0; i<n_mon; i++) {success=Seg[i]->PrepareForCalculations(KSAM);}
+	for (int i=0; i<n_mol; i++) {success=Mol[i]->PrepareForCalculations();}
+	return success; 
 }
 
 string System:: GetMonName(int mon_number_I){
@@ -137,7 +220,12 @@ void System::PushOutput() {
 	string s="profile;0"; push("alpha",s);
 	s="profile;1"; push("GrandPotentialDensity",s);
 	s="profile;2"; push("FreeEnergyDensity",s);
-	s="profile;3"; push("KSAM",s);
+	//"profile;3"; push("KSAM",s);
+#ifdef CUDA
+	TransferDataToHost(H_alpha, alpha, M);
+	TransferDataToHost(H_GrandPotentialDensity, GrandPotentialDensity, M);
+	TransferDataToHost(H_FreeEnergyDensity, FreeEnergyDensity, M);
+#endif
 }
 	
 double* System::GetPointer(string s){
@@ -146,7 +234,7 @@ double* System::GetPointer(string s){
 	if (sub[1]=="0") return H_alpha; 
 	if (sub[1]=="1") return H_GrandPotentialDensity;
 	if (sub[1]=="2") return H_FreeEnergyDensity;
-	if (sub[1]=="3") return H_KSAM;
+	// (sub[1]=="3") return H_KSAM;
 	return NULL; 
 }
 
@@ -205,76 +293,6 @@ bool System::CheckChi_values(int n_seg){
  	return success; 
 }
 
-void System::AllocateMemory() {
-//define on CPU
-	phib = new double[In[0]->MolList.size()];
-	//H_GN_A = new double[n_box];
-	//H_GN_B = new double[n_box];
-	H_KSAM=new double[M];
-	H_GrandPotentialDensity = new double[M];
-	H_FreeEnergyDensity = new double[M]; 
-	H_alpha = new double[M];
-#ifdef CUDA
-//define on GPU
-	phib = (double*)AllOnDev(In[0]->MolList.size());
-	phitot = (double*)AllOnDev(M); 
-	KSAM=(double*)AllOnDev(M);
-	alpha=(double*)AllOnDev(M);
-	FreeEnergyDensity=(double*)AllOnDev(M);
-	GrandPotentialDensity =(double*)AllOnDev(M);
-	TEMP =(double*)AllOnDev(M);	
-#else
-	phitot = new double[M]; 
-	KSAM = H_KSAM;
-	alpha= H_alpha;
-	FreeEnergyDensity=H_FreeEnergyDensity;
-	GrandPotentialDensity = H_GrandPotentialDensity;
-	TEMP =new double[M];	
-#endif
-	n_mol = In[0]->MolList.size(); 
-	int i=0;
-	Lat[0]->AllocateMemory(); 
-	int n_mon=In[0]->MonList.size();
-	while (i<n_mon) {Seg[i]->AllocateMemory(); i++;}
-	i=0;
-	while (i<n_mol) {Mol[i]->AllocateMemory(); i++;}
-}
-
-bool System::PrepareForCalculations() {
-	bool success=true;
-
-	FrozenList.clear();
-	int length = In[0]->MonList.size();
-	for (int i=0; i<length; i++) {if (Seg[i]->freedom == "frozen") FrozenList.push_back(i); }
-	if (FrozenList.size()+SysMonList.size()+SysTagList.size() !=In[0]->MonList.size()) {cout <<" There are un-used monomers in system. Remove them before starting" << endl; success=false;}
-
-	Zero(KSAM,M); 
-
-	length=FrozenList.size();
-	int i=0;
-	while (i<length) {
-		double*MASK=Seg[FrozenList[i]]->MASK; 
-		Add(KSAM,MASK,M);
-		i++;
-	}
-	length=SysTagList.size();
-	i=0;
-	while (i<length) {
-		double* MASK=Seg[SysTagList[i]]->MASK; 
-		Add(KSAM,MASK,M);
-		i++;
-	}
-	invert(KSAM,KSAM,M); 
-	Lat[0]->remove_bounds(KSAM); 
-	n_mol = In[0]->MolList.size(); 
-	success=Lat[0]->PrepareForCalculations(); 
-	int n_mon=In[0]->MonList.size();
-	for (int i=0; i<n_mon; i++) {success=Seg[i]->PrepareForCalculations(KSAM);}
-	for (int i=0; i<n_mol; i++) {success=Mol[i]->PrepareForCalculations();}
-	return success; 
-}
-
-
 bool System::ComputePhis(){
 	bool success=true;
 	success=PrepareForCalculations();
@@ -296,6 +314,7 @@ bool System::ComputePhis(){
 		if (Mol[i]->freedom=="restricted") {norm = Mol[i]->n/Mol[i]->GN; Mol[i]->phibulk=Mol[i]->chainlength*norm;  totphibulk +=Mol[i]->phibulk; }
 		if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {norm=Mol[i]->n/Mol[i]->GN;}
 		int k=0;
+//cout <<"norm for " << i << " = " << norm << endl; 
 		while (k<length) {
 			double *phi=Mol[i]->phi+k*M;
 			double *G1=Seg[Mol[i]->MolMonList[k]]->G1;

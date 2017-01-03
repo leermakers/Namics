@@ -4,8 +4,9 @@ Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_; Al=Al_; Eng=Eng_;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append"); 
-	if (!CheckOutInput()) input_error = true;
-	if (!Load()) input_error=true;  
+	input_error=false;
+	if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
+	if (!Load()) {input_error=true;  cout <<"Error found in load output items in output module " << endl; }
 
 }
 Output::~Output() {
@@ -72,7 +73,7 @@ bool Output::CheckOutInput() {
 		if (GetValue("write_bounds").size()>0) {
 			In[0]->Get_bool(GetValue("write_bounds"),write_bounds);
 		} else write_bounds=false; 
-	} 
+	} else cout <<"Error in CheckParameters in output" << endl; 
 	return success; 
 }
 

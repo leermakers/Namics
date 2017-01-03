@@ -24,8 +24,6 @@ public:
 	bool block;
 	int n_pos;  
 	int MX,MY,MZ;
-	int JX,JY;
-	int BX1,BXM,BY1,BYM,BZ1,BZM;
 	int M; 
 	int xl,yl,zl,xh,yh,zh;
 
@@ -55,7 +53,7 @@ public:
 	int* Px; 
 	int* Py;
 	int* Pz;
-	double* MASK; 
+	double* MASK;
 	double* G1;
 	double* phi;
 	double* phi_side;

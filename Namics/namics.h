@@ -28,7 +28,7 @@ using namespace std;
 //I.V. Ionova, E.A. Carter, "Error vector choice in direct inversion in the iterative subspace method, J. Compt. Chem. 17, 1836-1847, 1996.
 
 #ifndef MAINxH //here define global variables. 
-extern double* BlasResult;
+//extern double* BlasResult;
 extern int block_size;
 extern string version;
 extern double e;

@@ -10,7 +10,6 @@ System::~System() {
 	delete [] H_FreeEnergyDensity;
 	delete [] H_alpha;
 #ifdef CUDA
-	cudaFree(BR);
 	cudaFree(phib);
 	cudaFree(phitot);
 	cudaFree(alpha);
@@ -18,7 +17,6 @@ System::~System() {
 	cudaFree(FreeEnergyDensity);
 	cudaFree(TEMP);
 #else
-	delete [] BR;
 	delete [] phib;	
 	delete [] phitot; 
 	delete [] TEMP;
@@ -34,7 +32,6 @@ void System::AllocateMemory() {
 	H_FreeEnergyDensity = new double[M]; 
 	H_alpha = new double[M];
 #ifdef CUDA
-	BR=(double*)AllOnDev(1);
 	phib = (double*)AllOnDev(In[0]->MolList.size());
 	phitot = (double*)AllOnDev(M); 
 	alpha=(double*)AllOnDev(M);	
@@ -42,7 +39,6 @@ void System::AllocateMemory() {
 	FreeEnergyDensity=(double*)AllOnDev(M);
 	TEMP =(double*)AllOnDev(M);	
 #else
-	BR=(double*)AllOnDev(1);
 	phib = new double[In[0]->MolList.size()];
 	phitot = new double[M]; 
 	alpha= H_alpha;
@@ -311,10 +307,16 @@ bool System::ComputePhis(){
 		norm=0;
 		int length=Mol[i]->MolMonList.size();
 		if (Mol[i]->freedom=="free") {norm=Mol[i]->phibulk/Mol[i]->chainlength; totphibulk +=Mol[i]->phibulk; }
-		if (Mol[i]->freedom=="restricted") {norm = Mol[i]->n/Mol[i]->GN; Mol[i]->phibulk=Mol[i]->chainlength*norm;  totphibulk +=Mol[i]->phibulk; }
-		if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {norm=Mol[i]->n/Mol[i]->GN;}
+		if (Mol[i]->freedom=="restricted") {
+			if (Mol[i]->GN>0) {
+			norm = Mol[i]->n/Mol[i]->GN; Mol[i]->phibulk=Mol[i]->chainlength*norm;  totphibulk +=Mol[i]->phibulk; 
+			} else { norm = 0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
+		}
+		if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {
+			if (Mol[i]->GN>0) norm=Mol[i]->n/Mol[i]->GN; else {norm=0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
+	
+		}
 		int k=0;
-//cout <<"norm for " << i << " = " << norm << endl; 
 		while (k<length) {
 			double *phi=Mol[i]->phi+k*M;
 			double *G1=Seg[Mol[i]->MolMonList[k]]->G1;

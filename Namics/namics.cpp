@@ -22,7 +22,7 @@ string version="0.0.0.0.0.0.0.0";
 // alias version number =0
 // output version number =0
 
-double* BlasResult=(double*)AllOnDev(1);
+
 int block_size=256;
 double e=1.60217e-19;
 double T=298.15;

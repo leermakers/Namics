@@ -9,7 +9,7 @@
 
 extern cublasStatus_t stat;
 extern cublasHandle_t handle;
-
+extern double* BlasResult;
 
 __global__ void distributeg1(double, double, int*,  int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int );
 __global__ void collectphi(double*, double*,double*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);

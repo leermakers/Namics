@@ -79,10 +79,13 @@ bool Segment::PrepareForCalculations(double* KSAM) {
 
 	bool success=true; 
 	phibulk=0;
-	if (freedom=="frozen") {Cp(phi,MASK,M); Invert(KSAM,MASK,M);} else Zero(phi,M); 
+	if (freedom=="frozen") {
+		Cp(phi,MASK,M); //Invert(KSAM,MASK,M);
+	} else Zero(phi,M); 
 	if (freedom=="tagged") Zero(u,M); 
 	Boltzmann(G1,u,M);
-//cout << "in prop segment : sum G1= " + name +  " " <<  Sum(G1,M) << endl; 
+	double result = Sum(G1,M);
+	if (result ==0) cout << "In segment the value of G1 was not successfully initiated. Its value remained zero " << endl; 
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
 	if (freedom=="tagged") Cp(G1,MASK,M);
 	Lat[0]->set_bounds(G1);

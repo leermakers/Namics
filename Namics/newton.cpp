@@ -272,6 +272,10 @@ bool Newton::Solve(void) {
 		Cp(x,X,2*M);
 #endif
 	}
+	double result1,result2;
+	result1=Sum(x,2*M);
+	result2=Sum(x,2*M);
+	if (result1!=result2) cout <<"GPU is not working properly because consecutive calls to Sum to not give the same answer: " << result1 <<" and " << result2 << endl; 
 	if (method=="Picard") success=Iterate_Picard(); else success=Iterate_DIIS(); 
 	Sys[0]->CheckResults(); 
 
@@ -349,7 +353,6 @@ bool Newton:: Iterate_DIIS() {
 		YplusisCtimesX(x,g,-delta_max,iv);
 		Cp(xR+k*iv,x,iv); YisAminB(x_x0+k*iv,x,x0,iv);
 		DIIS(x,x_x0,xR,Aij,Apij,Ci,k,m,iv);
-		//Cp(u,x,M); 
 		residual = sqrt(Dot(g,g,iv));
 		if(it%i_info == 0){
 			printf("it = %i g = %1e \n",it,residual);

@@ -44,7 +44,7 @@ public:
 	void vtk(string, double*,string);
 	void PutProfiles(FILE*,vector<double*>);
 
-	bool CheckInput();
+	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string); 
 	void AllocateMemory(void); 

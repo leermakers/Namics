@@ -90,7 +90,7 @@ string System:: GetMonName(int mon_number_I){
 	return Seg[mon_number_I]->name; 
 }
 
-bool System::CheckInput() {
+bool System::CheckInput(int start) {
 	bool success=true;
 	MX=Lat[0]->MX; 
 	MY=Lat[0]->MY;
@@ -98,7 +98,7 @@ bool System::CheckInput() {
 	M=(MX+2)*(MY+2)*(MZ+2); 	
 	bool solvent_found=false; tag_segment=-1; solvent=-1;  //value -1 means no solvent defined. tag_segment=-1; 
 	double phibulktot=0;  
-	success= In[0]->CheckParameters("sys",name,KEYS,PARAMETERS,VALUES);
+	success= In[0]->CheckParameters("sys",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		success=CheckChi_values(In[0]->MonList.size()); 
 		

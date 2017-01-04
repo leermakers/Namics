@@ -46,7 +46,7 @@ public:
 	bool Get_bool(string, bool &, const std::string &);
 	bool TestNum(std::vector<std::string> &, string ,int, int, int);
 	int GetNumStarts(void); 
-	bool CheckParameters(string, string name,std::vector<std::string> &, std::vector<std::string> &,std::vector<std::string> &);
+	bool CheckParameters(string, string,int,std::vector<std::string> &, std::vector<std::string> &,std::vector<std::string> &);
 	bool LoadItems(string, std::vector<std::string> &, std::vector<std::string> &, std::vector<std::string> &);
 	bool CheckInput(void); 
 	bool InSet(std::vector<std::string> &, string);

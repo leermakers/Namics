@@ -25,17 +25,20 @@ mol : A : freedom : restricted
 mol : A : theta : 66325.5
 mol : B : freedom : solvent
 //mol : A : save_memory : true
-output : pro : append : false
-pro : mol : * : phi
+output : ana : append : true
+//pro : mol : * : phi
 //kal : sys : * : grand_potential
 newton :isaac : method : DIIS
 newton : isaac : i_info : 25
 newton : isaac : m : 60
 newton : isaac : delta_max : 0.1
-newton : isaac : iterationlimit : 200000
+newton : isaac : iterationlimit : 10
 newton : isaac : tolerance : 1e-5
 newton : isaac : read_guess : true
 sys : frans : GPU : true
 alias : N : value : 10
-
-
+start
+mol : A : theta : 66360
+start
+mol : A : theta : 66361
+start

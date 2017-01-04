@@ -18,8 +18,6 @@ Molecule::~Molecule() {
 	cudaFree(Gg_f);
 	cudaFree(Gg_b);
 #else
-	delete [] phi;
-	delete [] phitot;
 	delete [] Gg_f;
 	delete [] Gg_b;
 #endif
@@ -42,9 +40,9 @@ void Molecule:: AllocateMemory() {
 #endif
 }
 
-bool Molecule::CheckInput() {
+bool Molecule::CheckInput(int start) {
 	bool success=true;
-	if (!In[0]->CheckParameters("mol",name,KEYS,PARAMETERS,VALUES)) {
+	if (!In[0]->CheckParameters("mol",name,start,KEYS,PARAMETERS,VALUES)) {
 		success=false; 	
 	} else { 
 		MX=Lat[0]->MX; MY=Lat[0]->MY; MZ=Lat[0]->MZ; 

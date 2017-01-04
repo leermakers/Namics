@@ -16,9 +16,9 @@ void Alias::PutParameter(string new_param) {
 	KEYS.push_back(new_param); 
 }
 
-bool Alias::CheckInput() {
+bool Alias::CheckInput(int start) {
 	bool success=true;
-	success= In[0]->CheckParameters("alias",name,KEYS,PARAMETERS,VALUES);
+	success= In[0]->CheckParameters("alias",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		value =0;
 		if (GetValue("value").size()>0) {

@@ -14,11 +14,11 @@ void Lattice::AllocateMemory(void) {
 
 }
 
-bool Lattice::CheckInput() {
+bool Lattice::CheckInput(int start) {
 	bool success;
 	string Value;
 	vector<string> options;
-	success = In[0]->CheckParameters("lat",name,KEYS,PARAMETERS,VALUES);
+	success = In[0]->CheckParameters("lat",name,start,KEYS,PARAMETERS,VALUES);
 	if (success){
 		if (!In[0]->Get_int(GetValue("n_layers_x"),MX,1,1e6,"In 'lat' the parameter 'n_layers_x' is required")) {success=false;}
 		if (!In[0]->Get_int(GetValue("n_layers_y"),MY,1,1e6,"In 'lat' the parameter 'n_layers_y' is required")) {success=false;}

@@ -5,8 +5,8 @@ Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append"); 
 	input_error=false;
-	if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
-	if (!Load()) {input_error=true;  cout <<"Error found in load output items in output module " << endl; }
+	//if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
+	//if (!Load()) {input_error=true;  cout <<"Error found in load output items in output module " << endl; }
 
 }
 Output::~Output() {
@@ -63,16 +63,23 @@ bool Output::Load() {
 	return success; 
 }
 
-bool Output::CheckOutInput() {
+bool Output::CheckInput(int start) {
 	bool success=true;
-	success=In[0]->CheckParameters("output",name,KEYS,PARAMETERS,VALUES);
+	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		if (GetValue("append").size()>0) {
-			In[0]->Get_bool(GetValue("append"),append);
-		} else append=true; 
+			if (name=="ana") append=true;
+			append=In[0]->Get_bool(GetValue("append"),append); 
+		} else {
+			if (name=="ana") append=true;
+			if (name=="kal") append=true;
+			if (name=="pro") append=false;
+			if (name=="vtk") append=false;
+		} 
 		if (GetValue("write_bounds").size()>0) {
 			In[0]->Get_bool(GetValue("write_bounds"),write_bounds);
 		} else write_bounds=false; 
+		if (success) {if (!Load()) {cout <<"Error in Load() in output" << endl; success=false; }}
 	} else cout <<"Error in CheckParameters in output" << endl; 
 	return success; 
 }
@@ -84,7 +91,7 @@ string Output::GetValue(string parameter) {
 		if (PARAMETERS[i]==parameter) {return VALUES[i];}		
 		i++;
 	} 
-	return " "; 
+	return ""; 
 }
 
 double* Output::GetPointer(string key, string name, string prop) {

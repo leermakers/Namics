@@ -38,49 +38,85 @@ int main(int argc, char *argv[]) {
 	string line;
 	ofstream out_file;
 	bool cuda; 
+	int start=0;
+	int n_starts=0;
 
 #ifdef CUDA
-	//cudaDeviceReset();
-	//stat = cublasCreate(&handle); if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS failed \n");}
-	//cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-	//BlasResult= (double*)AllOnDev(1);
 	GPU_present();
 	cuda=true;
 #else 
 	cuda=false; 
 #endif
+	vector<Input*> In; 
+	vector<Lattice*> Lat; 
+	vector<Segment*> Seg; 
+	vector<Alias*> Al;
+	vector<Molecule*> Mol;
+	vector<System*> Sys; 
+	vector<Newton*> New; 
+	vector<Engine*> Eng;
+ 	vector<Output*> Out;
 	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;}
 	filename = fname + ".in";
-	vector<Input*> In; In.push_back(new Input(filename)); if (In[0]->Input_error) {return 0;}
-	vector<Lattice*> Lat; Lat.push_back(new Lattice(In,In[0]->LatList[0])); if (!Lat[0]->CheckInput()) {return 0;}
-	vector<Segment*> Seg; int n_seg=In[0]->MonList.size();	
-	for (int i=0; i<n_seg; i++) Seg.push_back(new Segment(In,Lat,In[0]->MonList[i],i,n_seg));
-	for (int i=0; i<n_seg; i++) { for (int k=0; k<n_seg; k++) Seg[i]->PutChiKEY(Seg[k]->name); if (!Seg[i]->CheckInput()) return 0;}
-	vector<Alias*> Al; int n_al = In[0]->AliasList.size();
-	for (int i=0; i<n_al; i++) {Al.push_back(new Alias(In,In[0]->AliasList[i])); if (!Al[i]->CheckInput()) return 0;} 
-	int n_mol = In[0]->MolList.size();  
-	vector<Molecule*> Mol; for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,Al,In[0]->MolList[i])); if (!Mol[i]->CheckInput()) return 0;}
-	vector<System*> Sys; Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0])); Sys[0]->cuda=cuda;  
-	if (!Sys[0]->CheckInput()) {return 0;} if (!Sys[0]->CheckChi_values(n_seg)) return 0; 
-	vector<Newton*> New; New.push_back(new Newton(In,Lat,Seg,Mol,Sys,In[0]->NewtonList[0])); if (!New[0]->CheckInput()) {return 0;}
-	vector<Engine*> Eng; Eng.push_back(new Engine(In,Sys,New,In[0]->EngineList[0])); if (!Eng[0]->CheckInput()) {return 0;} 
-	int n_out = In[0]->OutputList.size(); 
-	if (n_out ==0) cout <<"Warning: no output defined" << endl; 
-	vector<Output*> Out; for (int i=0; i<n_out; i++) { Out.push_back(new Output(In,Lat,Seg,Mol,Sys,New,Al,Eng,In[0]->OutputList[i],i,n_out)); if (Out[i]->input_error) {cout << "input_error in output " << endl; return 0;}}
- 	Eng[0]->Doit(); 
+	In.push_back(new Input(filename)); if (In[0]->Input_error) {return 0;}
+ 	n_starts=In[0]->GetNumStarts(); if (n_starts==0) n_starts++; 
+	while (start<n_starts) { start++;
+		cout <<"Problem nr " << start << " out of " << n_starts << endl; 
+		
+		Lat.push_back(new Lattice(In,In[0]->LatList[0])); if (!Lat[0]->CheckInput(start)) {return 0;}
 
-	Lat[0]->PushOutput();
-	New[0]->PushOutput();
-	Eng[0]->PushOutput();
-	int length = In[0]->MonList.size();
-	for (int i=0; i<length; i++) Seg[i]->PushOutput();
-	length = In[0]->MolList.size();
-	for (int i=0; i<length; i++) Mol[i]->PushOutput();
-	length = In[0]->AliasList.size();
-	for (int i=0; i<length; i++) Al[i]->PushOutput();
-	Sys[0]->PushOutput(); //needs to be after pushing output for seg.
+		int n_seg=In[0]->MonList.size();  	
+		for (int i=0; i<n_seg; i++) Seg.push_back(new Segment(In,Lat,In[0]->MonList[i],i,n_seg));
+		for (int i=0; i<n_seg; i++) { 
+			for (int k=0; k<n_seg; k++) Seg[i]->PutChiKEY(Seg[k]->name); 
+			if (!Seg[i]->CheckInput(start)) return 0;
+		}
+		int n_al = In[0]->AliasList.size(); 
+		for (int i=0; i<n_al; i++) {
+			Al.push_back(new Alias(In,In[0]->AliasList[i])); 
+			if (!Al[i]->CheckInput(start)) return 0;
+		} 
 
-	for (int i=0; i<n_out; i++) Out[i]->WriteOutput(); 	
+		int n_mol = In[0]->MolList.size();  
+		for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,Al,In[0]->MolList[i])); if (!Mol[i]->CheckInput(start)) return 0;}
+
+		Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0])); Sys[0]->cuda=cuda;  
+		if (!Sys[0]->CheckInput(start)) {return 0;} if (!Sys[0]->CheckChi_values(n_seg)) return 0; 
+
+		New.push_back(new Newton(In,Lat,Seg,Mol,Sys,In[0]->NewtonList[0])); if (!New[0]->CheckInput(start)) {return 0;}
+
+		Eng.push_back(new Engine(In,Sys,New,In[0]->EngineList[0])); if (!Eng[0]->CheckInput(start)) {return 0;} 
+
+		int n_out = In[0]->OutputList.size(); 
+		if (n_out ==0) cout <<"Warning: no output defined" << endl; 
+		
+		for (int i=0; i<n_out; i++) { 
+			Out.push_back(new Output(In,Lat,Seg,Mol,Sys,New,Al,Eng,In[0]->OutputList[i],i,n_out)); 
+			if (!Out[i]->CheckInput(start)) {cout << "input_error in output " << endl; return 0;} 
+		}
+ 		Eng[0]->Doit(); 
+
+		Lat[0]->PushOutput();
+		New[0]->PushOutput();
+		Eng[0]->PushOutput();
+		int length = In[0]->MonList.size();
+		for (int i=0; i<length; i++) Seg[i]->PushOutput();
+		length = In[0]->MolList.size();
+		for (int i=0; i<length; i++) Mol[i]->PushOutput();
+		length = In[0]->AliasList.size();
+		for (int i=0; i<length; i++) Al[i]->PushOutput();
+		Sys[0]->PushOutput(); //needs to be after pushing output for seg.
+
+		for (int i=0; i<n_out; i++) Out[i]->WriteOutput(); 
+		for (int i=0; i<n_out; i++) delete Out[i]; Out.clear();
+		delete Eng[0]; Eng.clear(); 
+		delete New[0]; New.clear();
+		delete Sys[0]; Sys.clear();
+ 		for (int i=0; i<n_mol; i++) delete Mol[i]; Mol.clear();
+		for (int i=0; i<n_al; i++)  delete Al[i]; Al.clear();
+		for (int i=0; i<n_seg; i++) delete Seg[i]; Seg.clear();	
+		delete Lat[0]; Lat.clear();
+	}	
 
 //	Out[0]->density();
 //	Out[0]->printlist();

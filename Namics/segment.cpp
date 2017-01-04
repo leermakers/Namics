@@ -12,9 +12,9 @@ Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segn
 	KEYS.push_back("tag_filename"); 
 }
 Segment::~Segment() {
-	delete [] H_Px;
-	delete [] H_Py;
-	delete [] H_Pz;
+	if (H_Px==NULL && n_pos>0) delete [] H_Px;
+	if (H_Py==NULL && n_pos>0) delete [] H_Py;
+	if (H_Pz==NULL && n_pos>0) delete [] H_Pz;
 	delete [] H_u;
 	delete [] H_phi;
 	delete [] H_MASK;
@@ -38,13 +38,12 @@ Segment::~Segment() {
 void Segment::AllocateMemory() {
 	M=(MX+2)*(MY+2)*(MX+2);
 	phibulk =0; //initialisatie van monomer phibulk.
-
 	if (H_Px==NULL && n_pos>0) H_Px=new int[n_pos];
 	if (H_Py==NULL && n_pos>0) H_Py=new int[n_pos];
 	if (H_Pz==NULL && n_pos>0) H_Pz=new int[n_pos];
 	H_u= new double[M]; 
 	H_phi=new double[M];
-	if (H_MASK == NULL) H_MASK=new double[M]; 
+	if (freedom=="free") {H_MASK=new double[M]; Zero(H_MASK,M); }
 #ifdef CUDA
 	//if (n_pos>0) {
 	//	Px=(int*)AllIntOnDev(n_pos);
@@ -93,13 +92,13 @@ bool Segment::PrepareForCalculations(double* KSAM) {
 	return success;
 }
 
-bool Segment::CheckInput() {
+bool Segment::CheckInput(int start) {
 	bool success;
 	vector<std::string>set;
 	vector<std::string>xyz;
 	vector<std::string>coor; 
 	vector<string>options; 
-	success = In[0]->CheckParameters("mon",name,KEYS,PARAMETERS,VALUES);
+	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {
 		MX=Lat[0]->MX;
 		MY=Lat[0]->MY;
@@ -374,7 +373,7 @@ bool Segment::CreateMASK() {
 		int M = (MX+2)*(MY+2)*(MZ+2);
 		int JX = (MX+2)*(MY+2);
 		int JY = (MY+2);
-		if (H_MASK==NULL) {H_MASK = new double[M];} else {cout << "MASK already exists; task to create MASK rejected. " << endl; success=false; }
+		H_MASK = new double[M]; 		
 		H_Zero(H_MASK,M);
 		if (block) {
 			for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++) for (int z=1; z<MZ+1; z++) 

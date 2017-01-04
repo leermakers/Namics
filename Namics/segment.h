@@ -62,7 +62,7 @@ public:
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
   	std::vector<string> VALUES; 
-	bool CheckInput(); 
+	bool CheckInput(int); 
 	void PutChiKEY(string); 
 	string GetValue(string); 
 	string GetFreedom();

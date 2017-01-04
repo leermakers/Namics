@@ -51,12 +51,12 @@ void Newton::AllocateMemory() {
 	Zero(x,iv);
 }
 
-bool Newton::CheckInput() {
+bool Newton::CheckInput(int start) {
 	bool success=true;
 	string value;
 	MX=Lat[0]->MX; MY=Lat[0]->MY; MZ=Lat[0]->MZ; M=(MX+2)*(MY+2)*(MZ+2);
 	JX=(MX+2)*(MY+2); JY=(MY+2); 
-	success=In[0]->CheckParameters("newton",name,KEYS,PARAMETERS,VALUES);
+	success=In[0]->CheckParameters("newton",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		e_info=In[0]->Get_bool(GetValue("e_info"),true); 
 		s_info=In[0]->Get_bool(GetValue("s_info"),false); 

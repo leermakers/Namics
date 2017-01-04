@@ -66,7 +66,7 @@ public:
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
-	bool CheckInput(void);
+	bool CheckInput(int);
 	void PutParameter(string);
 	bool Decomposition(string); 
 	int GetChainlength(void); 

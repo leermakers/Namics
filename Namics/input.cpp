@@ -1,9 +1,9 @@
 #include "input.h"
 Input::Input(string name_) {
 	name=name_;
-	//KEYS.push_back("start"); 
+	KEYS.push_back("start"); 
 	KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); KEYS.push_back("alias"); 	
- 	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("output"); 
+ 	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("output");   
 
 	in_file.open(name.c_str()); Input_error=false; 
 
@@ -247,6 +247,7 @@ int Input:: GetNumStarts() {
 		vector<std::string> set;
 		split(elems[i],':',set);
 		if (set[1] == "start") number++;
+		if ( (i==length-1)&& ( set[1]!="start") ) number++;
 	}
 	return number;
 }
@@ -292,35 +293,63 @@ bool Input:: InSet(vector<int> &Standard, int &pos, int keyword){
 	return success; 
 }
 
-bool Input:: CheckParameters(string keyword, string name,std::vector<std::string> &Standard, std::vector<std::string> &Input,std::vector<std::string> &Input_values) {
+bool Input:: CheckParameters(string keyword, string name,int start, std::vector<std::string> &Standard, std::vector<std::string> &Input,std::vector<std::string> &Input_values) {
 	bool success=true;
 	bool prop_found; 
 	int length = elems.size();
 	int S_length = Standard.size();
 	int I_length;
 	string parameter; 
+	int n_start=0;
+	int n_found=0;
 	int i=0;
 	int j; 
-	while (i<length){
+	while (i<length && n_start<start){
 		vector<std::string> set;
 		split(elems[i],':',set);
-		if (set[1] == keyword && set[2]== name) {
-			parameter=set[3];
-			j=0; prop_found=false; 
-			while (j<S_length && !prop_found) {
-				if (Standard[j]==parameter) prop_found=true;
-				j++; 
-			}
-			if (!prop_found) {success=false; cout <<"In line " << set[0] << " "  << keyword << " property '" << parameter << "' is unknown. Select from: "<< endl; 
-				for (int k=0; k<S_length; k++) cout << Standard[k] << endl; 
-			} else {
-				j=0; I_length = Input.size(); prop_found=false;
-				while (j<I_length &&!prop_found) {
-					if (Input[j]==parameter) prop_found = true; 
-					j++;
+		if (set[1]=="start") {
+			n_start++; 
+			int k=0;
+			int k_length=Input.size();  
+			while (k<k_length) { //remove doubles and keep last value
+				int l=k+1;
+				int l_length=Input.size();  
+				while (l<l_length) {
+					if (Input[k]==Input[l]) {
+						Input_values[k]=Input_values[l];
+						Input.erase(Input.begin()+l);
+						Input_values.erase(Input_values.begin()+l);
+						l_length--;
+						k_length--;
+						l--;
+					}
+					l++;	
 				}
-				if (prop_found) {success=false; cout <<"In line " << set[0] << " " << keyword << " property '" << parameter << "' is already defined. "<< endl; }
-				else {Input.push_back(parameter); Input_values.push_back(set[4]);}
+				k++; 	
+			}	
+		}
+		else {
+			if (set[1] == keyword && set[2]== name) {
+				parameter=set[3];
+				j=0; prop_found=false; 
+				while (j<S_length && !prop_found) {
+					if (Standard[j]==parameter) prop_found=true;
+					j++; 
+				}
+				if (!prop_found) {success=false; cout <<"In line " << set[0] << " "  << keyword << " property '" << parameter << "' is unknown. Select from: "<< endl; 
+					for (int k=0; k<S_length; k++) cout << Standard[k] << endl; 
+				} else {
+					j=0; I_length = Input.size(); prop_found=false; n_found=0;
+					while (j<I_length) {
+						if (Input[j]==parameter) {prop_found = true; n_found++;}
+						j++;
+					}
+					if (prop_found && n_found>1 && n_start==0) {success=false; cout <<n_start<<" "  << start << endl;  cout <<"In line " << set[0] << " " << keyword << " property '" << parameter << "' is already defined. "<< endl; }
+					else {
+						if (prop_found && n_found>1) {success=false; cout <<"After 'start' " << n_start << ", in line " << set[0] << " " << keyword << " property '" << parameter << "' is already defined. "<< endl; }
+						else {Input.push_back(parameter); Input_values.push_back(set[4]);}
+					}
+				}
 			}
 		}
 		i++;
@@ -525,6 +554,7 @@ bool Input:: CheckInput(void) {
 	if (NewtonList.size()==0) NewtonList.push_back("noname");
 	if (!TestNum(NewtonList,"newton",0,1,1)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
 	if (!TestNum(MonList,"mon",1,1000,1)) {cout << "There must be at least one 'mon name' in input" << endl; success=false;}
+	TestNum(AliasList,"alias",0,1000,1); 
 	if (AliasList.size()==0) AliasList.push_back("noname"); 
 	if (!TestNum(MolList,"mol",1,1000,1)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}
 	if (!TestNum(OutputList,"output",1,1000,1)) {cout << "No output defined! " << endl;}

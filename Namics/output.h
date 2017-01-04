@@ -38,7 +38,7 @@ public:
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
-	bool CheckOutInput(void);
+	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string);
 	bool Load(); 

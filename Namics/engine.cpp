@@ -16,9 +16,9 @@ void Engine::PutParameter(string new_param) {
 	KEYS.push_back(new_param); 
 }
 
-bool Engine::CheckInput() {
+bool Engine::CheckInput(int start) {
 	bool success=true;
-	success=In[0]->CheckParameters("engine",name,KEYS,PARAMETERS,VALUES);
+	success=In[0]->CheckParameters("engine",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		vector<string> options;
 		options.push_back("sfbox"); //options.push_back("zero-tension");

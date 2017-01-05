@@ -1,12 +1,12 @@
 #ifndef NEWTONxH
 #define NEWTONxH
+#include "tools.h"
 #include "namics.h"
 #include "input.h"
 #include "system.h"
 #include "segment.h"
 #include "lattice.h"
 #include "molecule.h"
-#include "tools.h"
 class Newton {
 public:
 	Newton(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,string);

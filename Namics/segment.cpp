@@ -25,6 +25,7 @@ Segment::~Segment() {
 		cudaFree(Pz);
 	}
 	cudaFree(u);
+	cudaFree(phi);
 	cudaFree(G1);
 	cudaFree(MASK);
 	cudaFree(phi_side);
@@ -37,22 +38,24 @@ Segment::~Segment() {
 
 void Segment::AllocateMemory() {
 	M=(MX+2)*(MY+2)*(MX+2);
+
 	phibulk =0; //initialisatie van monomer phibulk.
 	if (H_Px==NULL && n_pos>0) H_Px=new int[n_pos];
 	if (H_Py==NULL && n_pos>0) H_Py=new int[n_pos];
 	if (H_Pz==NULL && n_pos>0) H_Pz=new int[n_pos];
 	H_u= new double[M]; 
 	H_phi=new double[M];
-	if (freedom=="free") {H_MASK=new double[M]; Zero(H_MASK,M); }
+	if (freedom=="free") {H_MASK=new double[M]; H_Zero(H_MASK,M); }
 #ifdef CUDA
 	//if (n_pos>0) {
 	//	Px=(int*)AllIntOnDev(n_pos);
 	//	Py=(int*)AllIntOnDev(n_pos);
 	//	Pz=(int*)AllIntOnDev(n_pos);
 	//}
-	u=(double*)AllOnDev(M);
 	G1=(double*)AllOnDev(M);
+	u=(double*)AllOnDev(M);
 	MASK=(double*)AllOnDev(M);
+	phi=(double*)AllOnDev(M);
 	phi_side=(double*)AllOnDev(M);
 #else
 	if (n_pos>0) {
@@ -70,7 +73,7 @@ void Segment::AllocateMemory() {
 bool Segment::PrepareForCalculations(double* KSAM) {
 #ifdef CUDA
 	TransferDataToDevice(H_MASK, MASK, M);
-	TransferDataToDevice(H_u, u, M);
+	//TransferDataToDevice(H_u, u, M);
 	//TransferIntDataToDevice(H_Px, Px, n_pos);
 	//TransferIntDataToDevice(H_Py, Py, n_pos);
 	//TransferIntDataToDevice(H_Pz, Pz, n_pos);
@@ -79,16 +82,14 @@ bool Segment::PrepareForCalculations(double* KSAM) {
 	bool success=true; 
 	phibulk=0;
 	if (freedom=="frozen") {
-		Cp(phi,MASK,M); //Invert(KSAM,MASK,M);
+		Cp(phi,MASK,M); 
 	} else Zero(phi,M); 
 	if (freedom=="tagged") Zero(u,M); 
 	Boltzmann(G1,u,M);
-	double result = Sum(G1,M);
-	if (result ==0) cout << "In segment the value of G1 was not successfully initiated. Its value remained zero " << endl; 
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
 	if (freedom=="tagged") Cp(G1,MASK,M);
 	Lat[0]->set_bounds(G1);
-	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);  
+	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M); 
 	return success;
 }
 

@@ -5,21 +5,21 @@ System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	KEYS.push_back("GPU"); 	
 }
 System::~System() {
-	delete [] KSAM;
+	
 	delete [] H_GrandPotentialDensity;
 	delete [] H_FreeEnergyDensity;
 	delete [] H_alpha;
 #ifdef CUDA
-	cudaFree(phib);
 	cudaFree(phitot);
 	cudaFree(alpha);
 	cudaFree(GrandPotentialDensity);
 	cudaFree(FreeEnergyDensity);
 	cudaFree(TEMP);
-#else
-	delete [] phib;	
+	cudaFree(KSAM);
+#else	
 	delete [] phitot; 
 	delete [] TEMP;
+	delete [] KSAM;
 #endif
 }
 
@@ -27,25 +27,26 @@ void System::AllocateMemory() {
 	M=(Lat[0]->MX+2)*(Lat[0]->MY+2)*(Lat[0]->MZ+2);
 	//H_GN_A = new double[n_box];
 	//H_GN_B = new double[n_box];
-	KSAM=new double[M];
+
 	H_GrandPotentialDensity = new double[M];
 	H_FreeEnergyDensity = new double[M]; 
 	H_alpha = new double[M];
 #ifdef CUDA
-	phib = (double*)AllOnDev(In[0]->MolList.size());
 	phitot = (double*)AllOnDev(M); 
 	alpha=(double*)AllOnDev(M);	
 	GrandPotentialDensity =(double*)AllOnDev(M);
 	FreeEnergyDensity=(double*)AllOnDev(M);
 	TEMP =(double*)AllOnDev(M);	
+	KSAM =(double*)AllOnDev(M);
 #else
-	phib = new double[In[0]->MolList.size()];
 	phitot = new double[M]; 
 	alpha= H_alpha;
+	KSAM=new double[M];
 	FreeEnergyDensity=H_FreeEnergyDensity;
 	GrandPotentialDensity = H_GrandPotentialDensity;
 	TEMP =new double[M];	
 #endif
+
 	n_mol = In[0]->MolList.size(); 
 	int i=0;
 	Lat[0]->AllocateMemory(); 
@@ -61,6 +62,7 @@ bool System::PrepareForCalculations() {
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) {if (Seg[i]->freedom == "frozen") FrozenList.push_back(i); }
 	if (FrozenList.size()+SysMonList.size()+SysTagList.size() !=In[0]->MonList.size()) {cout <<" There are un-used monomers in system. Remove them before starting" << endl; success=false;}
+
 	Zero(KSAM,M); 
 	length=FrozenList.size();
 	int i=0;
@@ -76,7 +78,8 @@ bool System::PrepareForCalculations() {
 		Add(KSAM,MASK,M);
 		i++;
 	}
-	H_Invert(KSAM,KSAM,M); 
+
+	Invert(KSAM,KSAM,M); 
 	Lat[0]->remove_bounds(KSAM); 
 	n_mol = In[0]->MolList.size();
 	success=Lat[0]->PrepareForCalculations(); 
@@ -291,18 +294,21 @@ bool System::CheckChi_values(int n_seg){
 
 bool System::ComputePhis(){
 	bool success=true;
-	success=PrepareForCalculations();
+	//success=PrepareForCalculations();
+
 	double totphibulk=0;		
 	double norm=0; 
 	Zero(phitot,M); 
 	int length=FrozenList.size();
 	for (int i=0; i<length; i++) {
-		double *phi_frozen=Seg[FrozenList[i]]->GetPhi();  
+		double *phi_frozen=Seg[FrozenList[i]]->phi;  
 		Add(phitot,phi_frozen,M); 
 	}
+
 	for (int i=0; i<n_mol; i++) {
 		success=Mol[i]->ComputePhi();
 	}
+
 	for (int i=0; i<n_mol; i++) {
 		norm=0;
 		int length=Mol[i]->MolMonList.size();
@@ -321,7 +327,6 @@ bool System::ComputePhis(){
 			double *phi=Mol[i]->phi+k*M;
 			double *G1=Seg[Mol[i]->MolMonList[k]]->G1;
 			Div(phi,G1,M); if (norm>0) Norm(phi,norm,M);
-//cout <<"in mol " << i << "sum phi is " << Sum(phi,M) << endl; 
 			k++;
 		}
 
@@ -335,7 +340,7 @@ bool System::ComputePhis(){
 	while (k<length) {
 		double *phi=Mol[solvent]->phi+k*M;
 		if (norm>0) Norm(phi,norm,M);
-//cout <<"in solvent " << Sum(phi,M) << endl; 
+//cout <<"SumPHI in solvent " << solvent << " mon " << k << ": "  << Sum(phi,M) << endl; 
 		k++;
 	}
 	for (int i=0; i<n_mol; i++) {
@@ -361,9 +366,9 @@ bool System::ComputePhis(){
 	}
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++) {
-		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M); 
-	}
-	
+		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M);
+//cout <<"sumU in Seg list " << i <<" : " << Dot(Seg[i]->u,Seg[i]->u,M)<< endl;  
+	}	
 	return success;  
 }
 

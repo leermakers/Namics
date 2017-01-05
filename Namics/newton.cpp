@@ -4,7 +4,7 @@ Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_; 
 	KEYS.push_back("method"); KEYS.push_back("e_info"); KEYS.push_back("s_info");
 	KEYS.push_back("delta_max"); KEYS.push_back("m"); KEYS.push_back("i_info");
-	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance"); KEYS.push_back("store_guess"); KEYS.push_back("read_guess");
+	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance"); KEYS.push_back("store_guess"); KEYS.push_back("read_guess"); 
 	KEYS.push_back("stop_criterion"); 
 }
 Newton::~Newton() {
@@ -30,16 +30,15 @@ void Newton::AllocateMemory() {
 	iv = Sys[0]->SysMonList.size() * M;	
 	if (method=="DIIS-ext") iv +=M;
  
-	Aij = new double[m*m]; for (int i=0; i<m*m; i++) Aij[i]=0; 
-	Ci = new double[m]; for (int i=0; i<m; i++) Ci[i]=0;
-	Apij = new double[m*m]; for (int i=0; i<m*m; i++) Apij[i]=0;
+	Aij = new double[m*m]; H_Zero(Aij,m*m); //for (int i=0; i<m*m; i++) Aij[i]=0; 
+	Ci = new double[m]; H_Zero(Ci,m); //for (int i=0; i<m; i++) Ci[i]=0;
+	Apij = new double[m*m]; H_Zero(Apij,m*m); //for (int i=0; i<m*m; i++) Apij[i]=0;
 #ifdef CUDA
 	x = (double*)AllOnDev(iv); 
 	x0 = (double*)AllOnDev(iv);
 	g= (double*)AllOnDev(iv);
 	xR= (double*)AllOnDev(m*iv);
 	x_x0= (double*)AllOnDev(m*iv);
-
 #else
 	x = new double[iv]; 
 	x0 = new double[iv];
@@ -188,10 +187,11 @@ bool Newton::PutU() {
 	for (int i=0; i<sysmon_length; i++) {
 		double *u=Seg[Sys[0]->SysMonList[i]]->u;
 		alpha=Sys[0]->alpha; 
-		Cp(Seg[Sys[0]->SysMonList[i]]->u,x+i*M,M); 
+		Cp(u,x+i*M,M); 
 		if (method == "Picard") Add(u,alpha,M);
 		if (method == "DIIS-ext") Add(u,x+sysmon_length*M,M); 
 	}
+
 	return success;
 }
 
@@ -255,37 +255,36 @@ bool Newton::PrepareForCalculations() {
 }
 bool Newton::Solve(void) {
 	bool success=true;
+	double *X1=Seg[0]->H_u;
+	double *X2=Seg[1]->H_u; 
 	if (read_guess){ //this should definitely go to lattice, but I keep it here because for testing...
-		double *X= new double[2*M];
 		for (int i=0; i<MX+2; i++) for (int j=0; j<MY+2; j++) for (int k=0; k<MZ+2; k++) {
-			if (k<MZ/2) {
-				X[JX*i+JY*j+k]= -0.38335;
-				X[JX*i+JY*j+k+M]= 0.38335;
+			if (k<MZ/2+1) {
+				X1[JX*i+JY*j+k]= -0.38335;
+				X2[JX*i+JY*j+k]= 0.38335;
 			} else {
-				X[JX*i+JY*j+k]=0;
-				X[JX*i+JY*j+k+M]=0;
+				X1[JX*i+JY*j+k]=0;
+				X2[JX*i+JY*j+k]=0;
 			}
 		}
-#ifdef CUDA
-		TransferDataToDevice(X,x,2*M);
-#else
-		Cp(x,X,2*M);
-#endif
 	}
-	double result1,result2;
-	result1=Sum(x,2*M);
-	result2=Sum(x,2*M);
-	if (result1!=result2) cout <<"GPU is not working properly because consecutive calls to Sum to not give the same answer: " << result1 <<" and " << result2 << endl; 
+#ifdef CUDA
+		TransferDataToDevice(X1,x,M);
+		TransferDataToDevice(X2,x+M,M);
+#else
+		Cp(x,X1,M);
+		Cp(x+M,X2,M);
+#endif
+
 	if (method=="Picard") success=Iterate_Picard(); else success=Iterate_DIIS(); 
 	Sys[0]->CheckResults(); 
-
 	return success; 
 }
 
 void Newton:: Message(int it, int iterationlimit,double residual, double tolerance) {
 	if (it < iterationlimit/10) cout <<"That was easy." << endl;
 	if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
-	if (it <2) cout <<"You hit the nail on the head." << endl; 
+	if (it <2 && iterationlimit >1 ) cout <<"You hit the nail on the head." << endl; 
 	if (residual > tolerance) { cout << "Iterations failed." << endl;
 		if (residual < tolerance/10) cout <<"I almost made it..." << endl;
 	}
@@ -364,14 +363,15 @@ bool Newton:: Iterate_DIIS() {
 } 
 
 void Newton::ComputePhis() {
-	PutU(); 	
+	PutU();
+	Sys[0]->PrepareForCalculations();
 	Sys[0]->ComputePhis();
 }
 
 void Newton::ComputeG(){ 
-	alpha=Sys[0]->alpha; 
 	double chi; 
 	ComputePhis();
+
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size();	
 
@@ -379,7 +379,10 @@ void Newton::ComputeG(){
 	for (int i=0; i<sysmon_length; i++) {
 		for (int k=0; k<mon_length; k++) { 
                         chi= Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  
-			if (chi!=0) PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+			if (chi!=0) {
+				PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+			}
+
 		}
 	}
 	for (int i=0; i<sysmon_length; i++) {

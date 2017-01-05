@@ -22,7 +22,7 @@ string version="0.0.0.0.0.0.0.0";
 // alias version number =0
 // output version number =0
 
-
+double* BlasResult=(double*)AllOnDev(1);
 int block_size=256;
 double e=1.60217e-19;
 double T=298.15;
@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
 	vector<Newton*> New; 
 	vector<Engine*> Eng;
  	vector<Output*> Out;
+
 	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;}
 	filename = fname + ".in";
 	In.push_back(new Input(filename)); if (In[0]->Input_error) {return 0;}
@@ -95,7 +96,6 @@ int main(int argc, char *argv[]) {
 			if (!Out[i]->CheckInput(start)) {cout << "input_error in output " << endl; return 0;} 
 		}
  		Eng[0]->Doit(); 
-
 		Lat[0]->PushOutput();
 		New[0]->PushOutput();
 		Eng[0]->PushOutput();
@@ -117,9 +117,6 @@ int main(int argc, char *argv[]) {
 		for (int i=0; i<n_seg; i++) delete Seg[i]; Seg.clear();	
 		delete Lat[0]; Lat.clear();
 	}	
-
-//	Out[0]->density();
-//	Out[0]->printlist();
 	
 	return 0;
 }

@@ -26,7 +26,6 @@ Molecule::~Molecule() {
 void Molecule:: AllocateMemory() {
 	H_phi= new double[M*MolMonList.size()]; 
 	H_phitot=new double[M];
-
 #ifdef CUDA
 	phi=(double*)AllOnDev(M*MolMonList.size());
 	phitot=(double*)AllOnDev(M);
@@ -393,7 +392,7 @@ bool Molecule::ComputePhi(){
 bool Molecule::ComputePhiMon(){
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
-	RemoveBoundaries(phi,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	Lat[0]->remove_bounds(phi);
 	GN=Sum(phi,M);
 	Times(phi,phi,Seg[mon_nr[0]]->G1,M);
 	return success;
@@ -408,7 +407,6 @@ bool Molecule::ComputePhiLin(){
 	int s=0;
 	while (i<blocks) {
 		G1=Seg[mon_nr[i]]->G1; 
-//cout << "Sum G1 = " << Sum(G1,M) << endl; 
 		for (int k=0; k<n_mon[i]; k++) {
 			if (s==0) Cp(Gg_f,G1,M); else {Lat[0]->propagate(Gg_f,G1,s-1,s);}
 			s++;

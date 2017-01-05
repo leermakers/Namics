@@ -117,7 +117,7 @@ int Engine::GetValue(string prop,int &int_result,double &double_result,string &s
 bool Engine::Doit(){
 	bool success=true;
 	if (brand=="sfbox") {
-		New[0]->AllocateMemory(); 
+		New[0]->AllocateMemory();
 		New[0]->Solve();
 	} else {
 		cout <<"Sorry to date only 'sfbox' is implemented" << endl; 

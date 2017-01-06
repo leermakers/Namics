@@ -56,7 +56,6 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	Zero(x_x0,m*iv);
 if (debug){
 	double test; Sum(test,xx,iv); cout <<"Sum of xx after putting to zero" << test << endl; 
-	double test2; Invert(x0,xx,iv); Sum(test2,x0,iv); cout <<"Sum of xx after inverting " << test2 << endl; 
 }
 	Sys[0]->AllocateMemory();
 }

@@ -39,11 +39,11 @@ if (debug) cout << "AllocateMemory in system " << endl;
 	GrandPotentialDensity =(double*)AllOnDev(M);
 	FreeEnergyDensity=(double*)AllOnDev(M);
 	TEMP =(double*)AllOnDev(M);	
-	KSAM =(double*)AllOnDev(M);
+	KSAM =(int*)AllOnDev(M);
 #else
 	phitot = new double[M]; 
 	alpha= H_alpha;
-	KSAM=new double[M];
+	KSAM=new int[M];
 	FreeEnergyDensity=H_FreeEnergyDensity;
 	GrandPotentialDensity = H_GrandPotentialDensity;
 	TEMP =new double[M];	
@@ -70,14 +70,14 @@ if (debug) cout <<"PrepareForCalculations in System " << endl;
 	length=FrozenList.size();
 	int i=0;
 	while (i<length) {
-		double*MASK=Seg[FrozenList[i]]->MASK; 
+		int*MASK=Seg[FrozenList[i]]->MASK; 
 		Add(KSAM,MASK,M);
 		i++;
 	}
 	length=SysTagList.size();
 	i=0;
 	while (i<length) {
-		double* MASK=Seg[SysTagList[i]]->MASK; 
+		int* MASK=Seg[SysTagList[i]]->MASK; 
 		Add(KSAM,MASK,M);
 		i++;
 	}

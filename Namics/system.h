@@ -24,7 +24,7 @@ public:
 	double FreeEnergy;
 	double GrandPotential;
 	double* phitot;  
-	double* KSAM;
+	int* KSAM;
 	double* H_GrandPotentialDensity;
 	double* H_FreeEnergyDensity;
 	double* H_alpha;

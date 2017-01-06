@@ -289,10 +289,17 @@ void Lattice::propagate(double *G, double *G1, int s_from, int s_to) {
 void Lattice::remove_bounds(double *X){ 
 	RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 }
+void Lattice::remove_bounds(int *X){ 
+	RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+}
  
 void Lattice::set_bounds(double *X){  
 	SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 }
+void Lattice::set_bounds(int *X){  
+	SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+}
+
 
 /* 
 
@@ -369,8 +376,6 @@ void PROPAGATEh(double *G, double *G1, int s_from, int s_to) { //on big box
 	Add(gs+1,gs_1+JX,MM-JX-1); Add(gs+JX,gs_1+1,MM-JX-1);
 	Norm(gs,1.0/12.0,MM); Times(gs,gs,g,MM);
 }
-
-
 
 void Propagate(double* G, double* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;

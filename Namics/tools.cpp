@@ -1,7 +1,7 @@
 #include "tools.h"  
-#include "namics.h"
+#include "namics.h" 
 
- 
+   
 #ifdef CUDA
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
@@ -94,6 +94,10 @@ __global__ void times(double *P, double *A, double *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=A[idx]*B[idx];
 }
+__global__ void times(double *P, double *A, int *B, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx]=A[idx]*B[idx];
+}
 __global__ void addtimes(double *P, double *A, double *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx]*B[idx];
@@ -106,9 +110,17 @@ __global__ void zero(double *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0.0;
 }
+__global__ void zero(int *P, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx] = 0;
+}
 __global__ void cp (double *P, double *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = A[idx];
+}
+__global__ void cp (double *P, int *A, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx] = 1.0*A[idx];
 }
 __global__ void yisaminb(double *Y, double *A,double *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -138,6 +150,10 @@ __global__ void add(double *P, double *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
 }
+__global__ void add(int *P, int *A, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx]+=A[idx];
+}
 __global__ void dubble(double *P, double *A, double norm, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]*=norm/A[idx];
@@ -145,6 +161,10 @@ __global__ void dubble(double *P, double *A, double norm, int M)   {
 __global__ void boltzmann(double *P, double *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=exp(-A[idx]);
+}
+__global__ void invert(int *SKAM, int *MASK, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
 }
 __global__ void invert(double *SKAM, double *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -243,8 +263,58 @@ __global__ void b_z(double *P, int Mx, int My, int mmz, int bz1, int bzm, int jx
 		P[idx+mmz]=0;
 	}
 }
-
-
+__global__ void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+	int idx, jx_mmx=jx*mmx, jx_bxm=jx*bxm, bx1_jx=bx1*jx;
+	int yi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
+	if (yi<My && zi<Mz) {
+		idx=jy*yi+zi;
+		P[idx]=P[bx1_jx+idx];
+		P[jx_mmx+idx]=P[jx_bxm+idx];
+	}
+}
+__global__ void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+	int idx, jx_mmx=jx*mmx;
+	int yi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
+	if (yi<My && zi<Mz) {
+		idx=jy*yi+zi;
+		P[idx]=0;
+		P[jx_mmx+idx]=0;
+	}
+}
+__global__ void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+	int idx, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
+	int xi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
+	if (xi<Mx && zi<Mz) {
+		idx=jx*xi+zi;
+		P[idx]=P[jy_by1+idx];
+		P[jy_mmy+idx]=P[jy_bym+idx];
+	}
+}
+__global__ void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+	int idx, jy_mmy=jy*mmy;
+	int xi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
+	if (xi<Mx && zi<Mz) {
+		idx=jx*xi+zi;
+		P[idx]=0;
+		P[jy_mmy+idx]=0;
+	}
+}
+__global__ void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
+	if (xi<Mx && yi<My) {
+		idx=jx*xi+jy*yi;
+		P[idx]=P[idx+bz1];
+		P[idx+mmz]=P[idx+bzm];
+	}
+}
+__global__ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
+	if (xi<Mx && yi<My) {
+		idx=jx*xi+jy*yi;
+		P[idx]=0;
+		P[idx+mmz]=0;
+	}
+}
 #else
 void bx(double *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int i;
@@ -303,6 +373,63 @@ void b_z(double *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)  
 		P[i+mmz]=0;
 	}
 }
+void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+	int i;
+	int jx_mmx=jx*mmx;
+	int jx_bxm=jx*bxm;
+	int bx1_jx=bx1*jx;
+	for (int y=0; y<My; y++)
+	for (int z=0; z<Mz; z++){
+		i=jy*y+z;
+		P[i]=P[bx1_jx+i];
+		P[jx_mmx+i]=P[jx_bxm+i];
+	}
+}
+void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+	int i, jx_mmx=jx*mmx;// jx_bxm=jx*bxm, bx1_jx=bx1*jx;
+	for (int y=0; y<My; y++)
+	for (int z=0; z<Mz; z++){
+		i=jy*y+z;
+		P[i]=0;
+		P[jx_mmx+i]=0;
+	}
+}
+void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+	int i, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
+	for (int x=0; x<Mx; x++)
+	for (int z=0; z<Mz; z++) {
+		i=jx*x+z;
+		P[i]=P[jy_by1+i];
+		P[jy_mmy+i]=P[jy_bym+i];
+	}
+}
+void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+	int i, jy_mmy=jy*mmy;// jy_bym=jy*bym, jy_by1=jy*by1;
+	for (int x=0; x<Mx; x++)
+	for (int z=0; z<Mz; z++) {
+		i=jx*x+z;
+		P[i]=0;
+		P[jy_mmy+i]=0;
+	}
+}
+void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+	int i;
+	for (int x=0; x<Mx; x++)
+	for (int y=0; y<My; y++) {
+		i=jx*x+jy*y;
+		P[i]=P[i+bz1];
+		P[i+mmz]=P[i+bzm];
+	}
+}
+void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+	int i;
+	for (int x=0; x<Mx; x++)
+	for (int y=0; y<My; y++) {
+		i=jx*x+jy*y;
+		P[i]=0;
+		P[i+mmz]=0;
+	}
+}
 #endif
 
 #ifdef CUDA
@@ -353,6 +480,7 @@ int *AllIntOnDev(int N)    {
 
 #ifdef CUDA
 void Dot(double &result, double *x,double *y, int M)   {
+
 	double *H_XXX=new double[M];
 	double *H_YYY=new double[M];
 	TransferDataToHost(H_XXX, x, M);
@@ -361,18 +489,17 @@ void Dot(double &result, double *x,double *y, int M)   {
 	delete[] H_XXX;
 	delete[] H_YYY;
 
-/*
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	double *D_XX=AllOnDev(block_size);
-	double *H_XX=new double[block_size];
-	dot<<<n_blocks,block_size>>>(x,y,BlasResult,M);
-	TransferDataToDevice(H_XX, D_XX, block_size);
-	result=0; for (int i=0; i<block_size; i++) result+=H_XX[i];
+
+/*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	double *D_XX=AllOnDev(n_blocks);
+	double *H_XX=new double[n_blocks];
+	dot<<<n_blocks,block_size>>>(x,y,D_XX,M);
+	cudaThreadSynchronize();
+	TransferDataToDevice(H_XX, D_XX, n_blocks);
+	result=0; for (int i=0; i<n_blocks; i++) result+=H_XX[i];
 	delete[] H_XX;
 	cudaFree(D_XX);
-	if (cudaSuccess != cudaGetLastError()) cout <<"Problem at Dot" << endl;
-*/
-
+	if (cudaSuccess != cudaGetLastError()) cout <<"Problem at Dot" << endl;*/
 }
 #else
 void Dot(double &result, double *x,double *y, int M)   {
@@ -383,12 +510,13 @@ void Dot(double &result, double *x,double *y, int M)   {
 
 #ifdef CUDA
 void Sum(double &result, double *x, int M)   {
+
 	double *H_XXX=new double[M];
 	TransferDataToHost(H_XXX, x, M);
 	result=H_Sum(H_XXX,M);
 	if (debug) cout <<"Host sum =" << result << endl;	
-	delete[] H_XXX;
-/*
+	
+
 	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) { //only for ram-proglem...
 		int MX=51;
 		int MY=51;	
@@ -399,19 +527,18 @@ void Sum(double &result, double *x, int M)   {
 		int x= (i-y*JY-z)/JX;
 		cout <<" At (x y z)" << i << "= " << x <<" " << y << " " << z  << " NaN" << endl; 
 	}
-	 
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	double *D_XX=AllOnDev(block_size);
-	double *H_XX=new double[block_size];
+ 	delete[] H_XXX;
+/*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	double *D_XX=AllOnDev(n_blocks);
+	double *H_XX=new double[n_blocks];
 	sum<<<n_blocks,block_size>>>(x,D_XX,M);
-	TransferDataToDevice(H_XX, D_XX, block_size);
-	result=0; for (int i=0; i<block_size; i++) {result+=H_XX[i];}
+	cudaThreadSynchronize();
+	TransferDataToDevice(H_XX, D_XX,n_blocks);
+	result=0; for (int i=0; i<n_blocks; i++) {result+=H_XX[i];}
 	if (cudaSuccess != cudaGetLastError()) cout <<"Problem at Sum" << endl;
 	if (debug) cout <<"device sum = " << result << endl; 
 	delete[] H_XX;
-	cudaFree(D_XX); 
-*/
-
+	cudaFree(D_XX); */
 }
 #else
 void Sum(double &result, double *x,int M)   {
@@ -444,6 +571,17 @@ void Times(double *P, double *A, double *B, int M)   {
 	for (int i=0; i<M; i++) P[i]=A[i]*B[i];
 }
 #endif
+#ifdef CUDA
+void Times(double *P, double *A, int *B, int M)   {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	times<<<n_blocks,block_size>>>(P,A,B,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Times"<<endl;}
+}
+#else
+void Times(double *P, double *A, int *B, int M)   {
+	for (int i=0; i<M; i++) P[i]=A[i]*B[i];
+}
+#endif
 
 #ifdef CUDA
 void Norm(double *P, double C, int M)   {
@@ -465,6 +603,18 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 }
 #else
 void Zero(double* P, int M)   {
+	for (int i=0; i<M; i++) P[i] =0.0;
+}
+#endif
+
+#ifdef CUDA
+void Zero(int* P, int M)   {
+int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	zero<<<n_blocks,block_size>>>(P,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Zero"<<endl;}
+}
+#else
+void Zero(int* P, int M)   {
 	for (int i=0; i<M; i++) P[i] =0;
 }
 #endif
@@ -478,6 +628,18 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 #else
 void Cp(double *P,double *A, int M)   {
 	for (int i=0; i<M; i++) P[i] = A[i];
+}
+#endif
+
+#ifdef CUDA
+void Cp(double *P,int *A, int M)   {
+int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	cp<<<n_blocks,block_size>>>(P,A,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Cp"<<endl;}
+}
+#else
+void Cp(double *P,int *A, int M)   {
+	for (int i=0; i<M; i++) P[i] = 1.0*A[i];
 }
 #endif
 
@@ -561,6 +723,17 @@ void Add(double *P, double *A, int M)   {
 	for (int i=0; i<M; i++) P[i]+=A[i];
 }
 #endif
+#ifdef CUDA
+void Add(int *P, int *A, int M)    {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	add<<<n_blocks,block_size>>>(P,A,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Add"<<endl;}
+}
+#else
+void Add(int *P, int *A, int M)   {
+	for (int i=0; i<M; i++) P[i]+=A[i];
+}
+#endif
 
 #ifdef CUDA
 void Dubble(double *P, double *A, double norm,int M)   {
@@ -593,6 +766,17 @@ void Invert(double *KSAM, double *MASK, int M)   {
 }
 #else
 void Invert(double *KSAM, double *MASK, int M)   {
+	for (int i=0; i<M; i++) {if (MASK[i]==0) KSAM[i]=1.0; else KSAM[i]=0.0;}
+}
+#endif
+#ifdef CUDA
+void Invert(int *KSAM, int *MASK, int M)   {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	invert<<<n_blocks,block_size>>>(KSAM,MASK,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Invert"<<endl;}
+}
+#else
+void Invert(int *KSAM, int *MASK, int M)   {
 	for (int i=0; i<M; i++) {if (MASK[i]==0) KSAM[i]=1.0; else KSAM[i]=0.0;}
 }
 #endif
@@ -659,6 +843,9 @@ void OneMinusPhitot(double *g, double *phitot, int M)   {
 void H_Zero(double* H_P, int M)   {//this precedure should act on a host P.
 	for (int i=0; i<M; i++) H_P[i] = 0;
 }
+void H_Zero(int* H_P, int M)   {//this precedure should act on a host P.
+	for (int i=0; i<M; i++) H_P[i] = 0;
+}
 
 double H_Sum(double* H, int M){
 	double Sum=0;
@@ -671,7 +858,7 @@ double H_Dot(double* A, double *B, int M){
 	return Sum;
 }
 
-void H_Invert(double* KSAM, double *MASK, int M)   { //only necessary on CPU
+void H_Invert(int* KSAM, int *MASK, int M)   { //only necessary on CPU
 	for (int z=0; z<M; z++) {if (MASK[z]==0) KSAM[z]=1.0; else KSAM[z]=0.0;}
 }
 
@@ -688,6 +875,24 @@ void SetBoundaries(double *P, int jx, int jy, int bx1, int bxm, int by1, int bym
 }
 #else
 void SetBoundaries(double *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)    {
+	bx(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
+	by(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
+	bz(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+}
+#endif
+#ifdef CUDA
+void SetBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
+	dim3 dimBlock(16,16);
+	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
+	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
+	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
+	bx<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
+	by<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
+	bz<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at SetBoundaries"<<endl;}
+}
+#else
+void SetBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)    {
 	bx(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
 	by(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
 	bz(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
@@ -713,7 +918,24 @@ void RemoveBoundaries(double *P, int jx, int jy, int bx1, int bxm, int by1, int 
 	b_z(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
 }
 #endif
-
+#ifdef CUDA
+void RemoveBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
+	dim3 dimBlock(16,16);
+	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
+	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
+	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
+	b_x<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
+	b_y<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
+	b_z<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at RemoveBoundaries"<<endl;}
+}
+#else
+void RemoveBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)    {
+	b_x(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
+	b_y(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
+	b_z(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+}
+#endif
 
 
 

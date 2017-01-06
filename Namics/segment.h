@@ -47,13 +47,13 @@ public:
 	int* H_Px; 
 	int* H_Py;
 	int* H_Pz;
-	double* H_MASK;
+	int* H_MASK;
 	double* H_u;
 	double* H_phi;
 	int* Px; 
 	int* Py;
 	int* Pz;
-	double* MASK;
+	int* MASK;
 	double* G1;
 	double* phi;
 	double* phi_side;
@@ -71,10 +71,10 @@ public:
 	bool IsFrozen();
 	bool IsTagged(); 
 	bool CreateMASK();
-	double* GetMASK(); 
+	int* GetMASK(); 
 	double* GetPhi(); 
 	void AllocateMemory();
-	bool PrepareForCalculations(double*);  
+	bool PrepareForCalculations(int*);  
 
 };
 

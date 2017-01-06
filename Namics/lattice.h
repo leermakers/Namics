@@ -51,7 +51,9 @@ public:
 	bool PrepareForCalculations(void); 
 	void propagate(double*,double*, int, int);
 	void remove_bounds(double*);
-	void set_bounds(double*); 
+	void remove_bounds(int*);
+	void set_bounds(double*);
+	void set_bounds(int*); 
 	void Side(double *, double *, int);
 };
 

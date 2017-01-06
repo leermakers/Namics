@@ -3,14 +3,13 @@
 #ifdef CUDA
 
 #include <cuda.h>
-#include <cublas_v2.h>
+//#include <cublas_v2.h>
 #include <cuda_runtime.h>
 
-
-extern cublasStatus_t stat;
-extern cublasHandle_t handle;
-extern const int block_size; 
-
+//extern cublasStatus_t stat;
+//extern cublasHandle_t handle;
+extern const int block_size;
+ 
 __global__ void distributeg1(double, double, int*,  int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int );
 __global__ void collectphi(double*, double*,double*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 __global__ void sum(double*, double*, int);

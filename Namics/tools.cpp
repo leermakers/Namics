@@ -1,12 +1,11 @@
 #include "tools.h"  
 #include "namics.h"
-	
+
  
 #ifdef CUDA
-cublasHandle_t handle;
-cublasStatus_t stat=cublasCreate(&handle);
+//cublasHandle_t handle;
+//cublasStatus_t stat=cublasCreate(&handle);
 const int block_size = 256;
-
 /*
 __global__ void distributeg1(double *G1, double *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY)   {
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
@@ -311,11 +310,11 @@ bool GPU_present()    {
 	cudaDeviceReset(); 
 	int deviceCount =0; cuDeviceGetCount(&deviceCount);
    	if (deviceCount ==0) printf("There is no device supporting Cuda.\n"); else cudaDeviceReset();
-	if (deviceCount>0) {
+	//if (deviceCount>0) {
 	//	stat = cublasCreate(&handle); 
-		if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS handle creation failed \n");}
-		cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-	}
+	//	if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS handle creation failed \n");}
+	//	cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
+	//}
 	return deviceCount > 0;
 }
 #else

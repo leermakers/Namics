@@ -112,6 +112,7 @@ void RemoveBoundaries(double*, int, int, int, int, int, int, int, int, int, int,
 
 void H_Zero(double*, int);
 double H_Sum(double*, int);
+double H_Dot(double*, double*, int);
 void H_Invert(double*, double*, int);
 
 #endif

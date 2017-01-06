@@ -30,7 +30,7 @@ output : ana : append : true
 //kal : sys : * : grand_potential
 newton :isaac : method : DIIS
 newton : isaac : i_info : 25
-newton : isaac : m : 60
+newton : isaac : m : 6
 newton : isaac : delta_max : 0.1
 newton : isaac : iterationlimit : 1
 newton : isaac : tolerance : 1e-5

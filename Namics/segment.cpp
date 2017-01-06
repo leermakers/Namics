@@ -1,6 +1,7 @@
 #include "segment.h"
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; 
+if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("freedom"); 
 	KEYS.push_back("valence");
 	KEYS.push_back("epsilon");;
@@ -12,6 +13,7 @@ Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segn
 	KEYS.push_back("tag_filename"); 
 }
 Segment::~Segment() {
+if (debug) cout <<"Segment destructor" + name << endl;
 	if (n_pos>0) {
 		delete [] H_Px;
 		delete [] H_Py;
@@ -102,6 +104,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 }
 
 bool Segment::CheckInput(int start) {
+if (debug) cout <<"CheckInput in Segment " + name << endl;
 	bool success;
 	vector<std::string>set;
 	vector<std::string>xyz;
@@ -377,6 +380,7 @@ if (freedom == "tagged") { phibulk=0;
 }
 
 bool Segment::CreateMASK() {
+if (debug) cout <<"CreateMask for segment " + name << endl;
 	bool success=true; 
 	if (freedom!="free") {
 		int M = (MX+2)*(MY+2)*(MZ+2);
@@ -397,39 +401,48 @@ bool Segment::CreateMASK() {
 }
 
 double* Segment::GetMASK() {
+if (debug) cout <<"Get Mask for segment" + name << endl;
 	if (MASK==NULL) {cout <<"MASK not yet created. Task to point to MASK in segment is rejected. " << endl; return NULL;} 
 	else return MASK; 
 }
 
 double* Segment::GetPhi() {
+if (debug) cout <<"GetPhi in segment " + name << endl;
 	if (freedom=="frozen") Cp(phi,MASK,M); 
 	return phi; 
 }
 
 string Segment::GetFreedom(void){
+if (debug) cout <<"GetFreedom for segment " + name << endl;
 	return freedom; 
 }
 
 bool Segment::IsFree(void) {
+if (debug) cout <<"Is free for " + name << endl;
 	return freedom == "free"; 
 }
 bool Segment::IsPinned(void) {
+if (debug) cout <<"IsPinned for segment " + name << endl;
 	return freedom == "pinned"; 
 }
 bool Segment::IsFrozen(void) {
+if (debug) cout <<"IsFrozen for segment " + name << endl;
 	phibulk =0;
 	return freedom == "frozen"; 
 }
 bool Segment::IsTagged(void) {
+if (debug) cout <<"IsTagged for segment " + name << endl;
 	phibulk =0;
 	return freedom == "tagged"; 
 }
 
 void Segment::PutChiKEY(string new_name) {
+if (debug) cout <<"PutChiKey " + name << endl;
 	if(name != new_name) KEYS.push_back("chi-" + new_name); 
 }
 
 string Segment::GetValue(string parameter) {
+if (debug) cout <<"GetValue for segment " + name + " for parameter " + parameter << endl;
 	int length = PARAMETERS.size(); 
 	int i=0;
 	while (i<length) {
@@ -440,22 +453,27 @@ string Segment::GetValue(string parameter) {
 }
 
 void Segment::push(string s, double X) {
+if (debug) cout <<"Push in Segment (double) " + name << endl;
 	doubles.push_back(s);
 	doubles_value.push_back(X); 
 }
 void Segment::push(string s, int X) {
+if (debug) cout <<"Push in Segment (int) " + name << endl;
 	ints.push_back(s);
 	ints_value.push_back(X); 
 }
 void Segment::push(string s, bool X) {
+if (debug) cout <<"Push in Segment (bool) " + name << endl;
 	bools.push_back(s);
 	bools_value.push_back(X); 
 }
 void Segment::push(string s, string X) {
+if (debug) cout <<"Push in Segment (string) " + name << endl;
 	strings.push_back(s);
 	strings_value.push_back(X); 	
 }
 void Segment::PushOutput() {
+if (debug) cout <<"PushOutput for segment " + name << endl;
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -478,6 +496,7 @@ void Segment::PushOutput() {
 }
 
 double* Segment::GetPointer(string s) {
+if (debug) cout <<"Get Pointer for segment " + name << endl;
 	vector<string> sub;
 	In[0]->split(s,';',sub);
 	if (sub[1]=="0") return H_phi;
@@ -487,6 +506,7 @@ double* Segment::GetPointer(string s) {
 }
 
 int Segment::GetValue(string prop,int &int_result,double &double_result,string &string_result){
+if (debug) cout <<"GetValue long for segment " + name << endl;
 	int i=0;
 	int length = ints.size();
 	while (i<length) {
@@ -525,10 +545,6 @@ int Segment::GetValue(string prop,int &int_result,double &double_result,string &
 	}
 	return 0; 
 }
-
-
-	
-
 
 
 /*

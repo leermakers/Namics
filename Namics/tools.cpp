@@ -149,7 +149,7 @@ __global__ void boltzmann(double *P, double *A, int M)   {
 }
 __global__ void invert(double *SKAM, double *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) if (MASK[idx]==0.0) SKAM[idx]=1.0; else SKAM[idx]=0.0;
+	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
 }
 __global__ void putalpha(double *g,double *phitot,double *phi_side,double chi,double phibulk,int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -354,6 +354,15 @@ int *AllIntOnDev(int N)    {
 
 #ifdef CUDA
 void Dot(double &result, double *x,double *y, int M)   {
+	double *H_XXX=new double[M];
+	double *H_YYY=new double[M];
+	TransferDataToHost(H_XXX, x, M);
+	TransferDataToHost(H_YYY, y, M);
+	result=H_Dot(H_XXX,H_YYY,M);
+	delete[] H_XXX;
+	delete[] H_YYY;
+
+/*
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	double *D_XX=AllOnDev(block_size);
 	double *H_XX=new double[block_size];
@@ -363,6 +372,8 @@ void Dot(double &result, double *x,double *y, int M)   {
 	delete[] H_XX;
 	cudaFree(D_XX);
 	if (cudaSuccess != cudaGetLastError()) cout <<"Problem at Dot" << endl;
+*/
+
 }
 #else
 void Dot(double &result, double *x,double *y, int M)   {
@@ -373,20 +384,23 @@ void Dot(double &result, double *x,double *y, int M)   {
 
 #ifdef CUDA
 void Sum(double &result, double *x, int M)   {
-	//double *H_XXX=new double[M];
-	//TransferDataToDevice(H_XXX, x, M);
-	//for (int i=0; i<M; i++) if (isnan(H_XXX[i])) {
-		
-	//	int MX=51;
-	//	int MY=51;	
-	//	int JX=(MX+2)*(MY+2);
-	//	int JY=(MY+2);
-	//	int z= ((i % JX)%JY);
-	//	int y= ((i % JX)-z)/JY;
-	//	int x= (i-y*JY-z)/JX;
-	//	cout <<" At (x y z)" << i << "= " << x <<" " << y << " " << z  << " NaN" << endl; 
-	//}
-	//cout <<"Host sum =" << H_Sum(H_XXX,M) << endl; 
+	double *H_XXX=new double[M];
+	TransferDataToHost(H_XXX, x, M);
+	result=H_Sum(H_XXX,M);
+	if (debug) cout <<"Host sum =" << result << endl;	
+	delete[] H_XXX;
+/*
+	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) { //only for ram-proglem...
+		int MX=51;
+		int MY=51;	
+		int JX=(MX+2)*(MY+2);
+		int JY=(MY+2);
+		int z= ((i % JX)%JY);
+		int y= ((i % JX)-z)/JY;
+		int x= (i-y*JY-z)/JX;
+		cout <<" At (x y z)" << i << "= " << x <<" " << y << " " << z  << " NaN" << endl; 
+	}
+	 
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	double *D_XX=AllOnDev(block_size);
 	double *H_XX=new double[block_size];
@@ -394,13 +408,15 @@ void Sum(double &result, double *x, int M)   {
 	TransferDataToDevice(H_XX, D_XX, block_size);
 	result=0; for (int i=0; i<block_size; i++) {result+=H_XX[i];}
 	if (cudaSuccess != cudaGetLastError()) cout <<"Problem at Sum" << endl;
-	//cout <<"device sum = " << result << endl; 
+	if (debug) cout <<"device sum = " << result << endl; 
 	delete[] H_XX;
 	cudaFree(D_XX); 
-	//delete[] H_XXX;
+*/
+
 }
 #else
 void Sum(double &result, double *x,int M)   {
+if (degug) cout <<"Sum in absence of cuda" << endl; 
 	result=0;
  	for (int i=0; i<M; i++) result +=x[i];
 }
@@ -578,7 +594,7 @@ void Invert(double *KSAM, double *MASK, int M)   {
 }
 #else
 void Invert(double *KSAM, double *MASK, int M)   {
-	for (int i=0; i<M; i++) if (MASK[i]==0.0) KSAM[i]=1.0; else KSAM[i]=0.0;
+	for (int i=0; i<M; i++) {if (MASK[i]==0) KSAM[i]=1.0; else KSAM[i]=0.0;}
 }
 #endif
 
@@ -650,6 +666,12 @@ double H_Sum(double* H, int M){
 	for (int i=0; i<M; i++) Sum+=H[i];
 	return Sum;
 }
+double H_Dot(double* A, double *B, int M){
+	double Sum=0;
+	for (int i=0; i<M; i++) Sum+=A[i]*B[i];
+	return Sum;
+}
+
 void H_Invert(double* KSAM, double *MASK, int M)   { //only necessary on CPU
 	for (int z=0; z<M; z++) {if (MASK[z]==0) KSAM[z]=1.0; else KSAM[z]=0.0;}
 }

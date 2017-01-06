@@ -29,7 +29,7 @@ double k_B=1.38065e-23;
 double k_BT=k_B*T;
 double eps0=8.85418e-12;
 double eps=80;
-bool debug =false;
+bool debug =true;
 //double factor=e*e/(eps*eps0*b_length*k_BT); 
 
 int main(int argc, char *argv[]) {

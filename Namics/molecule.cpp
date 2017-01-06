@@ -2,6 +2,7 @@
 
 Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<Alias*> Al_, string name_) {
 	In=In_; Seg=Seg_; name=name_;  Lat=Lat_; Al=Al_;
+if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("freedom"); 
 	KEYS.push_back("composition"); 
 	KEYS.push_back("theta");
@@ -10,6 +11,7 @@ Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg
 	KEYS.push_back("save_memory"); 
 }
 Molecule::~Molecule() {
+if (debug) cout <<"Destructor for Mol " + name << endl;
 	delete [] H_phi;
 	delete [] H_phitot;
 #ifdef CUDA
@@ -51,6 +53,7 @@ if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 }
 
 bool Molecule::CheckInput(int start) {
+if (debug) cout <<"CheckInput for Mol " + name << endl;
 	bool success=true;
 	if (!In[0]->CheckParameters("mol",name,start,KEYS,PARAMETERS,VALUES)) {
 		success=false; 	
@@ -129,7 +132,8 @@ bool Molecule::CheckInput(int start) {
 	return success; 
 }
 
-int Molecule:: GetMonNr(string s){
+int Molecule::GetMonNr(string s){
+if (debug) cout <<"GetMonNr for Mol " + name << endl;
 	int n_segments=In[0]->MonList.size();
 	int found=-1;
 	int i=0;
@@ -140,7 +144,8 @@ int Molecule:: GetMonNr(string s){
 	return found; 
 }
 
-bool Molecule:: Decomposition(string s){
+bool Molecule::Decomposition(string s){
+if (debug) cout <<"Decomposition for Mol " + name << endl;
 	bool success = true;
 	vector<int> open;
 	vector<int> close;
@@ -191,6 +196,7 @@ bool Molecule:: Decomposition(string s){
 }
 
 int Molecule::GetChainlength(void){
+if (debug) cout <<"GetChainlength for Mol " + name << endl;
 	return chainlength; 
 } 
 
@@ -221,6 +227,7 @@ bool Molecule:: MakeMonList(void) {
 } 
 
 bool Molecule::IsPinned() {
+if (debug) cout <<"IsPinned for Mol " + name << endl;
 	bool success=false;
 	int length=MolMonList.size();
 	int i=0;
@@ -231,6 +238,7 @@ bool Molecule::IsPinned() {
 	return success;
 }
 bool Molecule::IsTagged() {
+if (debug) cout <<"IsTagged for Mol " + name << endl;
 	bool success=false;
 	int length=MolMonList.size();
 	int i=0;
@@ -241,6 +249,7 @@ bool Molecule::IsTagged() {
 	return success;
 }
 bool Molecule::IsCharged() {
+if (debug) cout <<"IsCharged for Mol " + name << endl;
 	double charge =0;
 	int length = n_mon.size(); 
 	int i=0;
@@ -251,10 +260,12 @@ bool Molecule::IsCharged() {
 	return charge<-1e-5 || charge > 1e-5; 
 }
 void Molecule::PutParameter(string new_param) {
+if (debug) cout <<"PutParameter for Mol " + name << endl;
 	KEYS.push_back(new_param); 
 }
 
 string Molecule::GetValue(string parameter) {
+if (debug) cout <<"GetValue " + parameter + " for Mol " + name << endl;
 	int length = PARAMETERS.size(); 
 	int i=0;
 	while (i<length) {
@@ -265,22 +276,27 @@ string Molecule::GetValue(string parameter) {
 }
 
 void Molecule::push(string s, double X) {
+if (debug) cout <<"push (double) for Mol " + name << endl;
 	doubles.push_back(s);
 	doubles_value.push_back(X); 
 }
 void Molecule::push(string s, int X) {
+if (debug) cout <<"push (int) for Mol " + name << endl;
 	ints.push_back(s);
 	ints_value.push_back(X); 
 }
 void Molecule::push(string s, bool X) {
+if (debug) cout <<"push (bool) for Mol " + name << endl;
 	bools.push_back(s);
 	bools_value.push_back(X); 
 }
 void Molecule::push(string s, string X) {
+if (debug) cout <<"push (string) for Mol " + name << endl;
 	strings.push_back(s);
 	strings_value.push_back(X); 	
 }
 void Molecule::PushOutput() {
+if (debug) cout <<"PushOutput for Mol " + name << endl;
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -311,7 +327,7 @@ void Molecule::PushOutput() {
 }
 
 double* Molecule::GetPointer(string s) {
-	vector<string> sub;
+if (debug) cout <<"GetPointer for Mol " + name << endl;	vector<string> sub;
 	In[0]->split(s,';',sub);
 	if (sub[1]=="0") return H_phitot;
 	int length=MolMonList.size();
@@ -325,6 +341,7 @@ double* Molecule::GetPointer(string s) {
 }
 
 int Molecule::GetValue(string prop,int &int_result,double &double_result,string &string_result){
+if (debug) cout <<"GetValue (long) for Mol " + name << endl;
 	int i=0;
 	int length = ints.size();
 	while (i<length) {
@@ -365,6 +382,7 @@ int Molecule::GetValue(string prop,int &int_result,double &double_result,string 
 }
 
 double Molecule::fraction(int segnr){
+if (debug) cout <<"fraction for Mol " + name << endl;
 	int Nseg=0;
 	int length = mon_nr.size();
 	int i=0;
@@ -379,6 +397,7 @@ double Molecule::fraction(int segnr){
 
 
 bool Molecule::ComputePhi(){
+if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	bool success=true;
 
 	switch (MolType) {
@@ -396,6 +415,7 @@ bool Molecule::ComputePhi(){
 }
 
 bool Molecule::ComputePhiMon(){
+if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
 	Lat[0]->remove_bounds(phi);
@@ -405,6 +425,7 @@ bool Molecule::ComputePhiMon(){
 }
 
 bool Molecule::ComputePhiLin(){
+if (debug) cout <<"ComputePhiLin for Mol " + name << endl;
 	bool success=true;
 	Zero(Gg_f,M*chainlength);
 	int blocks=mon_nr.size(); 

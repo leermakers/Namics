@@ -1,11 +1,12 @@
 #include "system.h"
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,string name_) {
 	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; 
+if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("calculation_type");
 	KEYS.push_back("GPU"); 	
 }
 System::~System() {
-	
+if (debug) cout << "Destructor for system " << endl;	
 	delete [] H_GrandPotentialDensity;
 	delete [] H_FreeEnergyDensity;
 	delete [] H_alpha;
@@ -92,10 +93,12 @@ if (debug) cout <<"PrepareForCalculations in System " << endl;
 }
 
 string System:: GetMonName(int mon_number_I){
+if (debug) cout << "GetMonName for system " << endl;
 	return Seg[mon_number_I]->name; 
 }
 
 bool System::CheckInput(int start) {
+if (debug) cout << "CheckInput for system " << endl;
 	bool success=true;
 	MX=Lat[0]->MX; 
 	MY=Lat[0]->MY;
@@ -167,10 +170,12 @@ bool System::CheckInput(int start) {
 }
 
 void System::PutParameter(string new_param) {
+if (debug) cout << "PutParameter for system " << endl;
 	KEYS.push_back(new_param); 
 }
 
 string System::GetValue(string parameter){
+if (debug) cout << "GetValue " + parameter + " for system " << endl;
 	int i=0;
 	int length = PARAMETERS.size();
 	while (i<length) {
@@ -183,22 +188,27 @@ string System::GetValue(string parameter){
 }
 
 void System::push(string s, double X) {
+if (debug) cout << "push (double) for system " << endl;
 	doubles.push_back(s);
 	doubles_value.push_back(X); 
 }
 void System::push(string s, int X) {
+if (debug) cout << "push (int) for system " << endl;
 	ints.push_back(s);
 	ints_value.push_back(X); 
 }
 void System::push(string s, bool X) {
+if (debug) cout << "push (bool) for system " << endl;
 	bools.push_back(s);
 	bools_value.push_back(X); 
 }
 void System::push(string s, string X) {
+if (debug) cout << "push (string) for system " << endl;
 	strings.push_back(s);
 	strings_value.push_back(X); 	
 }
 void System::PushOutput() {
+if (debug) cout << "PushOutput for system " << endl;
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -230,6 +240,7 @@ void System::PushOutput() {
 }
 	
 double* System::GetPointer(string s){
+if (debug) cout << "GetPointer for system " << endl;
 	vector<string>sub;
 	In[0]->split(s,';',sub);
 	if (sub[1]=="0") return H_alpha; 
@@ -240,6 +251,7 @@ double* System::GetPointer(string s){
 }
 
 int System::GetValue(string prop,int &int_result,double &double_result,string &string_result){
+if (debug) cout << "GetValue (long) for system " << endl;
 	int i=0;
 	int length = ints.size();
 	while (i<length) {
@@ -280,6 +292,7 @@ int System::GetValue(string prop,int &int_result,double &double_result,string &s
 }
 
 bool System::CheckChi_values(int n_seg){
+if (debug) cout << "CheckChi_values for system " << endl;
 	bool success=true;
 	CHI = new double[n_seg*n_seg]; 
 	for (int i=0; i<n_seg; i++) for (int k=0; k<n_seg; k++) {
@@ -380,6 +393,7 @@ double sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << 
 }
 
 bool System::CheckResults() {
+if (debug) cout << "CheckResults for system " << endl;
 	bool success=true;	
 	FreeEnergy=GetFreeEnergy();
 	GrandPotential=GetGrandPotential();
@@ -400,6 +414,7 @@ cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl;
 }
 
 double System::GetFreeEnergy(void) {
+if (debug) cout << "GetFreeEnergy for system " << endl;
 	double* F=FreeEnergyDensity;
 	double constant=0;
 	int n_mol=In[0]->MolList.size();
@@ -449,6 +464,7 @@ double System::GetFreeEnergy(void) {
 }
 
 double System::GetGrandPotential(void) {
+if (debug) cout << "GetGrandPotential for system " << endl;
 	double* GP =GrandPotentialDensity;
 	int n_mol=In[0]->MolList.size();
 	int n_mon=In[0]->MonList.size();
@@ -481,6 +497,7 @@ double System::GetGrandPotential(void) {
 }
 
 bool System::CreateMu() {
+if (debug) cout << "CreateMu for system " << endl;
 	bool success=true;
 	double constant; 
 	int n_mol=In[0]->MolList.size();

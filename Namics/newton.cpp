@@ -1,7 +1,8 @@
 #include "newton.h"
 
 Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,string name_) {
-	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_; 
+	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;
+if(debug) cout <<"Constructor in Newton " << endl;  
 	KEYS.push_back("method"); KEYS.push_back("e_info"); KEYS.push_back("s_info");
 	KEYS.push_back("delta_max"); KEYS.push_back("m"); KEYS.push_back("i_info");
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance"); KEYS.push_back("store_guess"); KEYS.push_back("read_guess"); 
@@ -9,6 +10,7 @@ Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 }
 
 Newton::~Newton() {
+if(debug) cout <<"Destructor in Newton " << endl; 
 	delete [] Aij;
 	delete [] Ci;
 	delete [] Apij; 
@@ -31,7 +33,6 @@ void Newton::AllocateMemory() {
 if(debug) cout <<"AllocateMemeory in Newton " << endl; 
 	iv = Sys[0]->SysMonList.size() * M;	
 	if (method=="DIIS-ext") iv +=M;
- 
 	Aij = new double[m*m]; H_Zero(Aij,m*m);  
 	Ci = new double[m]; H_Zero(Ci,m); 
 	Apij = new double[m*m]; H_Zero(Apij,m*m); 
@@ -48,8 +49,16 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	xR = new double[m*iv];
 	x_x0 =new double[m*iv];
 #endif
-	Sys[0]->AllocateMemory(); 
 	Zero(xx,iv);
+	Zero(x0,iv);
+	Zero(g,iv);
+	Zero(xR,m*iv);
+	Zero(x_x0,m*iv);
+if (debug){
+	double test; Sum(test,xx,iv); cout <<"Sum of xx after putting to zero" << test << endl; 
+	double test2; Invert(x0,xx,iv); Sum(test2,x0,iv); cout <<"Sum of xx after inverting " << test2 << endl; 
+}
+	Sys[0]->AllocateMemory();
 }
 
 bool Newton::PrepareForCalculations() {
@@ -59,6 +68,7 @@ if (debug) cout <<"PrepareForCalculations in Newton " << endl;
 }
 
 bool Newton::CheckInput(int start) {
+if(debug) cout <<"CheckInput in Newton " << endl; 
 	bool success=true;
 	string value;
 	MX=Lat[0]->MX; MY=Lat[0]->MY; MZ=Lat[0]->MZ; M=(MX+2)*(MY+2)*(MZ+2);
@@ -99,10 +109,12 @@ bool Newton::CheckInput(int start) {
 
 
 void Newton::PutParameter(string new_param) {
+if(debug) cout <<"PutParameter in Newton " << endl; 
 	KEYS.push_back(new_param); 
 }
 
 string Newton::GetValue(string parameter){
+if(debug) cout <<"GetValue " + parameter + " in  Newton " << endl;
 	int i=0;
 	int length = PARAMETERS.size();
 	while (i<length) {
@@ -115,22 +127,27 @@ string Newton::GetValue(string parameter){
 }
 
 void Newton::push(string s, double X) {
+if(debug) cout <<"push (double) in  Newton " << endl;
 	doubles.push_back(s);
 	doubles_value.push_back(X); 
 }
 void Newton::push(string s, int X) {
+if(debug) cout <<"push (int) in  Newton " << endl;
 	ints.push_back(s);
 	ints_value.push_back(X); 
 }
 void Newton::push(string s, bool X) {
+if(debug) cout <<"push (bool) in  Newton " << endl;
 	bools.push_back(s);
 	bools_value.push_back(X); 
 }
 void Newton::push(string s, string X) {
+if(debug) cout <<"push (string) in  Newton " << endl;
 	strings.push_back(s);
 	strings_value.push_back(X); 	
 }
 void Newton::PushOutput() {
+if(debug) cout <<"PushOutput in  Newton " << endl;
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -150,6 +167,7 @@ void Newton::PushOutput() {
 }
 
 int Newton::GetValue(string prop,int &int_result,double &double_result,string &string_result){
+if(debug) cout <<"GetValue (long) in  Newton " << endl;
 	int i=0;
 	int length = ints.size();
 	while (i<length) {
@@ -190,6 +208,7 @@ int Newton::GetValue(string prop,int &int_result,double &double_result,string &s
 }
 
 bool Newton::PutU() {
+if(debug) cout <<"PutU in  Newton " << endl;
 	bool success=true;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	for (int i=0; i<sysmon_length; i++) {
@@ -203,6 +222,7 @@ bool Newton::PutU() {
 }
 
 void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
+if(debug) cout <<"Ax in  Newton " << endl;
 	double* U = new double[N*N];
 	double* S = new double[N];
 	double* VT = new double[N*N];
@@ -232,6 +252,7 @@ void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: i
 	delete VT;
 }
 void Newton::DIIS(double* xx, double* x_x0, double* xR, double* Aij, double* Apij,double* Ci, int k, int m, int iv) {
+if(debug) cout <<"DIIS in  Newton " << endl;
 	double normC=0; int posi;
 	if (k_diis>m) { k_diis =m;
 		for (int i=1; i<m; i++) for (int j=1; j<m; j++)
@@ -259,6 +280,7 @@ void Newton::DIIS(double* xx, double* x_x0, double* xR, double* Aij, double* Api
 
 
 bool Newton::Solve(void) {
+if(debug) cout <<"Solve in  Newton " << endl;
 	bool success=true;
 	double *X1=Seg[0]->H_u;
 	double *X2=Seg[1]->H_u; 
@@ -289,6 +311,7 @@ bool Newton::Solve(void) {
 }
 
 void Newton::Message(int it, int iterationlimit,double residual, double tolerance) {
+if(debug) cout <<"Messiage in  Newton " << endl;
 	if (it < iterationlimit/10) cout <<"That was easy." << endl;
 	if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
 	if (it <2 && iterationlimit >1 ) cout <<"You hit the nail on the head." << endl; 
@@ -298,6 +321,7 @@ void Newton::Message(int it, int iterationlimit,double residual, double toleranc
 }
 
 bool Newton::Iterate_Picard() {
+if(debug) cout <<"Iterate_Picard in  Newton " << endl;
 	double chi; 
 	alpha=Sys[0]->alpha;	
 	bool success=true;
@@ -342,6 +366,7 @@ bool Newton::Iterate_Picard() {
 }
 
 bool Newton::Iterate_DIIS() {
+if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	Zero(x0,iv);
 	it=0; k_diis=1; 
 	int k=0;
@@ -373,12 +398,14 @@ bool Newton::Iterate_DIIS() {
 } 
 
 void Newton::ComputePhis() {
+if(debug) cout <<"ComputPhis in  Newton " << endl;
 	PutU();
 	Sys[0]->PrepareForCalculations();
 	Sys[0]->ComputePhis();
 }
 
 void Newton::ComputeG(){ 
+if(debug) cout <<"ComputeG in  Newton " << endl;
 	double chi; 
 	ComputePhis();
 
@@ -408,6 +435,7 @@ void Newton::ComputeG(){
 }
 
 void Newton::ComputeG_ext(){ 
+if(debug) cout <<"CompueG_est() in  Newton " << endl;
 	alpha=Sys[0]->alpha;
 	double chi; 
 	ComputePhis();

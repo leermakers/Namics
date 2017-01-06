@@ -32,7 +32,7 @@ newton :isaac : method : DIIS
 newton : isaac : i_info : 25
 newton : isaac : m : 60
 newton : isaac : delta_max : 0.1
-newton : isaac : iterationlimit : 1000
+newton : isaac : iterationlimit : 1
 newton : isaac : tolerance : 1e-5
 newton : isaac : read_guess : true
 sys : frans : GPU : true

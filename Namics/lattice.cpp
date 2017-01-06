@@ -74,8 +74,8 @@ bool Lattice::CheckInput(int start) {
 		Value.clear();	
 		Value=GetValue("upperbound_x"); if (Value.length()>0) {
 			In[0]->Get_string(Value,VALUE4,options,"for 'upperbound_x' boundary condition not recognized."); 
-			if (VALUE4=="mirror_1") BXM=MX-1; 
-			if (VALUE4=="mirror_2") BXM=MX-2;
+			if (VALUE4=="mirror_1") BXM=MX; 
+			if (VALUE4=="mirror_2") BXM=MX-1;
 			if (VALUE4=="periodic") BXM=1;
 		} else {
 			VALUE4="periodic";
@@ -84,8 +84,8 @@ bool Lattice::CheckInput(int start) {
 		Value.clear();	
 		Value=GetValue("upperbound_y"); if (Value.length()>0) {
 			In[0]->Get_string(Value,VALUE5,options,"for 'upperbound_y' boundary condition not recognized."); 
-			if (VALUE5=="mirror_1") BYM=MY-1; 
-			if (VALUE5=="mirror_2") BYM=MY-2;
+			if (VALUE5=="mirror_1") BYM=MY; 
+			if (VALUE5=="mirror_2") BYM=MY-1;
 			if (VALUE5=="periodic") BYM=1;
 		} else {
 			VALUE5="periodic";
@@ -94,8 +94,8 @@ bool Lattice::CheckInput(int start) {
 		Value.clear();	
 		Value=GetValue("upperbound_z"); if (Value.length()>0) { 
 			In[0]->Get_string(Value,VALUE6,options,"for 'upperbound_z' boundary condition not recognized."); 
-			if (VALUE6=="mirror_1") BZM=MZ-1; 
-			if (VALUE6=="mirror_2") BZM=MZ-2;
+			if (VALUE6=="mirror_1") BZM=MZ; 
+			if (VALUE6=="mirror_2") BZM=MZ-1;
 			if (VALUE6=="periodic") BZM=1;
 		} else {
 			VALUE6="periodic";

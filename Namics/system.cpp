@@ -24,6 +24,7 @@ System::~System() {
 }
 
 void System::AllocateMemory() {
+if (debug) cout << "AllocateMemory in system " << endl; 
 	M=(Lat[0]->MX+2)*(Lat[0]->MY+2)*(Lat[0]->MZ+2);
 	//H_GN_A = new double[n_box];
 	//H_GN_B = new double[n_box];
@@ -46,7 +47,7 @@ void System::AllocateMemory() {
 	GrandPotentialDensity = H_GrandPotentialDensity;
 	TEMP =new double[M];	
 #endif
-
+	Zero(KSAM,M);
 	n_mol = In[0]->MolList.size(); 
 	int i=0;
 	Lat[0]->AllocateMemory(); 
@@ -57,6 +58,7 @@ void System::AllocateMemory() {
 }
 
 bool System::PrepareForCalculations() {
+if (debug) cout <<"PrepareForCalculations in System " << endl; 
 	bool success=true;
 	FrozenList.clear();
 	int length = In[0]->MonList.size();
@@ -293,6 +295,7 @@ bool System::CheckChi_values(int n_seg){
 }
 
 bool System::ComputePhis(){
+if(debug) cout <<"ComputePhis in system" << endl;
 	bool success=true;
 	//success=PrepareForCalculations();
 
@@ -327,6 +330,9 @@ bool System::ComputePhis(){
 			double *phi=Mol[i]->phi+k*M;
 			double *G1=Seg[Mol[i]->MolMonList[k]]->G1;
 			Div(phi,G1,M); if (norm>0) Norm(phi,norm,M);
+if (debug) {
+double sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << k << ": " << sum << endl; 
+}
 			k++;
 		}
 
@@ -340,7 +346,9 @@ bool System::ComputePhis(){
 	while (k<length) {
 		double *phi=Mol[solvent]->phi+k*M;
 		if (norm>0) Norm(phi,norm,M);
-//cout <<"SumPHI in solvent " << solvent << " mon " << k << ": "  << Sum(phi,M) << endl; 
+if (debug) {
+double sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << k << ":" << sum << endl; 
+}
 		k++;
 	}
 	for (int i=0; i<n_mol; i++) {
@@ -367,8 +375,7 @@ bool System::ComputePhis(){
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++) {
 		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M);
-//cout <<"sumU in Seg list " << i <<" : " << Dot(Seg[i]->u,Seg[i]->u,M)<< endl;  
-	}	
+	}
 	return success;  
 }
 
@@ -437,7 +444,8 @@ double System::GetFreeEnergy(void) {
 		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
 	}
 	Lat[0]->remove_bounds(F); Times(F,F,KSAM,M); 
-	return Sum(F,M);
+	double Fsum; Sum(Fsum,F,M);
+	return Fsum;
 }
 
 double System::GetGrandPotential(void) {
@@ -467,7 +475,8 @@ double System::GetGrandPotential(void) {
 	} 
 	Norm(GP,-1.0,M); //correct the sign.
 	Lat[0]->remove_bounds(GP); Times(GP,GP,KSAM,M);
-	return Sum(GP,M); 
+	double GPsum; Sum(GPsum,GP,M);
+	return  GPsum;
 
 }
 

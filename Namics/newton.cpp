@@ -7,18 +7,19 @@ Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance"); KEYS.push_back("store_guess"); KEYS.push_back("read_guess"); 
 	KEYS.push_back("stop_criterion"); 
 }
+
 Newton::~Newton() {
 	delete [] Aij;
 	delete [] Ci;
 	delete [] Apij; 
 #ifdef CUDA
-	cudaFree(x);
+	cudaFree(xx);
 	cudaFree(x0);
 	cudaFree(g);
 	cudaFree(xR);
 	cudaFree(x_x0);
 #else
-	delete[] x;
+	delete[] xx;
 	delete[] x0;
 	delete[] g;
 	delete[] xR;
@@ -27,27 +28,34 @@ Newton::~Newton() {
 }
 
 void Newton::AllocateMemory() {
+if(debug) cout <<"AllocateMemeory in Newton " << endl; 
 	iv = Sys[0]->SysMonList.size() * M;	
 	if (method=="DIIS-ext") iv +=M;
  
-	Aij = new double[m*m]; H_Zero(Aij,m*m); //for (int i=0; i<m*m; i++) Aij[i]=0; 
-	Ci = new double[m]; H_Zero(Ci,m); //for (int i=0; i<m; i++) Ci[i]=0;
-	Apij = new double[m*m]; H_Zero(Apij,m*m); //for (int i=0; i<m*m; i++) Apij[i]=0;
+	Aij = new double[m*m]; H_Zero(Aij,m*m);  
+	Ci = new double[m]; H_Zero(Ci,m); 
+	Apij = new double[m*m]; H_Zero(Apij,m*m); 
 #ifdef CUDA
-	x = (double*)AllOnDev(iv); 
+	xx = (double*)AllOnDev(iv); 
 	x0 = (double*)AllOnDev(iv);
 	g= (double*)AllOnDev(iv);
 	xR= (double*)AllOnDev(m*iv);
 	x_x0= (double*)AllOnDev(m*iv);
 #else
-	x = new double[iv]; 
+	xx = new double[iv]; 
 	x0 = new double[iv];
 	g = new double[iv];
 	xR = new double[m*iv];
 	x_x0 =new double[m*iv];
 #endif
 	Sys[0]->AllocateMemory(); 
-	Zero(x,iv);
+	Zero(xx,iv);
+}
+
+bool Newton::PrepareForCalculations() {
+if (debug) cout <<"PrepareForCalculations in Newton " << endl; 
+	bool success=true;
+	return success; 
 }
 
 bool Newton::CheckInput(int start) {
@@ -187,11 +195,10 @@ bool Newton::PutU() {
 	for (int i=0; i<sysmon_length; i++) {
 		double *u=Seg[Sys[0]->SysMonList[i]]->u;
 		alpha=Sys[0]->alpha; 
-		Cp(u,x+i*M,M); 
+		Cp(u,xx+i*M,M); 
 		if (method == "Picard") Add(u,alpha,M);
-		if (method == "DIIS-ext") Add(u,x+sysmon_length*M,M); 
+		if (method == "DIIS-ext") Add(u,xx+sysmon_length*M,M); 
 	}
-
 	return success;
 }
 
@@ -213,7 +220,7 @@ void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: i
 	WORK = (double*)malloc( lwork*sizeof(double) );
 	LWORK = (integer)lwork; //nu uitrekenen.
 	dgesvd_( &JOBU, &JOBVT, &MM, &NN, A, &LDA, S, U, &LDU, VT, &LDVT,WORK, &LWORK, &INFO );
-	if (INFO >0) { //error message genereren
+	if (INFO >0) { cout <<"error in Ax " << endl; 
 	};
 	free(WORK);
 	for (int i=0; i<N; i++) X[i]=0;
@@ -224,14 +231,15 @@ void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: i
 	delete S;
 	delete VT;
 }
-void Newton::DIIS(double* x, double* x_x0, double* xR, double* Aij, double* Apij,double* Ci, int k, int m, int iv) {
+void Newton::DIIS(double* xx, double* x_x0, double* xR, double* Aij, double* Apij,double* Ci, int k, int m, int iv) {
 	double normC=0; int posi;
 	if (k_diis>m) { k_diis =m;
 		for (int i=1; i<m; i++) for (int j=1; j<m; j++)
 		Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
 	}
 	for (int i=0; i<k_diis; i++) {posi = k-k_diis+1+i; if (posi<0) posi +=m;
-		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dot(x_x0+posi*iv, x_x0+k*iv,iv);	}
+		double Dvalue; Dot(Dvalue,x_x0+posi*iv, x_x0+k*iv,iv);
+		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue; }
 		// write to (compressed) matrix Apij
 	for (int i=0; i<k_diis; i++) for (int j=0; j<k_diis; j++) {
 		Apij[j+k_diis*i] = Aij[j+m*i];
@@ -239,20 +247,17 @@ void Newton::DIIS(double* x, double* x_x0, double* xR, double* Aij, double* Apij
 	Ax(Apij,Ci,k_diis);
 	for (int i=0; i<k_diis; i++) normC +=Ci[i];
 	for (int i=0; i<k_diis; i++) {Ci[i] =Ci[i]/normC; }
-	Zero(x,iv);
+	Zero(xx,iv);
 	posi = k-k_diis+1; if (posi<0) posi +=m;
 
-	YplusisCtimesX(x,xR+posi*iv,Ci[0],iv); //pv = Ci[0]*xR[0];
+	YplusisCtimesX(xx,xR+posi*iv,Ci[0],iv); //pv = Ci[0]*xR[0];
 	for (int i=1; i<k_diis; i++) {
 		posi = k-k_diis+1+i; if (posi<0) posi +=m;
-		YplusisCtimesX(x,xR+posi*iv,Ci[i],iv);
+		YplusisCtimesX(xx,xR+posi*iv,Ci[i],iv);
 	}
 }
 
-bool Newton::PrepareForCalculations() {
-	bool success=true;
-	return success; 
-}
+
 bool Newton::Solve(void) {
 	bool success=true;
 	double *X1=Seg[0]->H_u;
@@ -269,19 +274,21 @@ bool Newton::Solve(void) {
 		}
 	}
 #ifdef CUDA
-		TransferDataToDevice(X1,x,M);
-		TransferDataToDevice(X2,x+M,M);
+		TransferDataToDevice(X1,xx,M);
+		TransferDataToDevice(X2,xx+M,M);
 #else
-		Cp(x,X1,M);
-		Cp(x+M,X2,M);
+		Cp(xx,X1,M);
+		Cp(xx+M,X2,M);
 #endif
-
+	if (debug) {double test; Sum(test,xx,M); cout << "Sum x " << test << endl; 
+		double test2;Sum(test2,xx+M,M); cout << "Sum x " << test2 << endl;
+	}
 	if (method=="Picard") success=Iterate_Picard(); else success=Iterate_DIIS(); 
 	Sys[0]->CheckResults(); 
 	return success; 
 }
 
-void Newton:: Message(int it, int iterationlimit,double residual, double tolerance) {
+void Newton::Message(int it, int iterationlimit,double residual, double tolerance) {
 	if (it < iterationlimit/10) cout <<"That was easy." << endl;
 	if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
 	if (it <2 && iterationlimit >1 ) cout <<"You hit the nail on the head." << endl; 
@@ -290,7 +297,7 @@ void Newton:: Message(int it, int iterationlimit,double residual, double toleran
 	}
 }
 
-bool Newton:: Iterate_Picard() {
+bool Newton::Iterate_Picard() {
 	double chi; 
 	alpha=Sys[0]->alpha;	
 	bool success=true;
@@ -301,28 +308,29 @@ bool Newton:: Iterate_Picard() {
 	cout <<"Picard has been notified" << endl; 
 	residual=1;
 	while (residual > tolerance && it < iterationlimit) {
-		Cp(x0,x,iv); 
+		Cp(x0,xx,iv); 
 		ComputePhis(); 
-		Zero(x,iv);
+		Zero(xx,iv);
 		for (int i=0; i<sysmon_length; i++) for (int k=0; k<mon_length; k++) { 
                         chi= -1.0*Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  //The minus sign here is to change the sign of x! just a trick due to properties of PutAlpha where a minus sing is implemented....
-			if (chi!=0) PutAlpha(x+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+			if (chi!=0) PutAlpha(xx+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 		}
 		for (int i=0; i<sysmon_length; i++) {
-			Lat[0]->remove_bounds(x+i*M);
-			Times(x+i*M,x+i*M,Sys[0]->KSAM,M);
+			Lat[0]->remove_bounds(xx+i*M);
+			Times(xx+i*M,xx+i*M,Sys[0]->KSAM,M);
 		}
 
-		Picard(x,x0,delta_max,iv); 
-		YisAminB(g,x,x0,iv); 
+		Picard(xx,x0,delta_max,iv); 
+		YisAminB(g,xx,x0,iv); 
 		for (int i=0; i<sysmon_length; i++) Times(g+i*M,g+i*M,Sys[0]->KSAM,M);  
 
-		residual=Dot(g,g,iv);
+		Dot(residual,g,g,iv);
 		UpdateAlpha(alpha, Sys[0]->phitot, delta_max, M);
 		YisAplusC(g,Sys[0]->phitot,-1.0,M); 
 		Lat[0]->remove_bounds(g); 
 
-		residual=residual+Dot(g,g,M);
+		double result; Dot(result,g,g,M);
+		residual=residual+result;
 		residual=sqrt(residual); 
 		if(it%i_info == 0){
 			printf("it = %i g = %1e \n",it,residual);
@@ -333,26 +341,28 @@ bool Newton:: Iterate_Picard() {
 	return success; 
 }
 
-bool Newton:: Iterate_DIIS() {
+bool Newton::Iterate_DIIS() {
 	Zero(x0,iv);
 	it=0; k_diis=1; 
 	int k=0;
 	if (method=="DIIS-ext") ComputeG_ext(); else ComputeG();
-	YplusisCtimesX(x,g,delta_max,iv);
-	YisAminB(x_x0,x,x0,iv);
-	Cp(xR,x,iv);
-	residual = sqrt(Dot(g,g,iv));
+	YplusisCtimesX(xx,g,delta_max,iv);
+	YisAminB(x_x0,xx,x0,iv);
+	Cp(xR,xx,iv);
+	Dot(residual,g,g,iv);
+	residual=sqrt(residual); 
 	printf("DIIS has been notified\n");
 	printf("Your guess = %1e \n",residual);
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
-		Cp(x0,x,iv);
+		Cp(x0,xx,iv);
 		if (method=="DIIS-ext") ComputeG_ext(); else ComputeG();
 		k=it % m; k_diis++; //plek voor laatste opslag
-		YplusisCtimesX(x,g,-delta_max,iv);
-		Cp(xR+k*iv,x,iv); YisAminB(x_x0+k*iv,x,x0,iv);
-		DIIS(x,x_x0,xR,Aij,Apij,Ci,k,m,iv);
-		residual = sqrt(Dot(g,g,iv));
+		YplusisCtimesX(xx,g,-delta_max,iv);
+		Cp(xR+k*iv,xx,iv); YisAminB(x_x0+k*iv,xx,x0,iv);
+		DIIS(xx,x_x0,xR,Aij,Apij,Ci,k,m,iv);
+		Dot(residual,g,g,iv);
+		residual=sqrt(residual);
 		if(it%i_info == 0){
 			printf("it = %i g = %1e \n",it,residual);
 		}
@@ -375,7 +385,7 @@ void Newton::ComputeG(){
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size();	
 
-	Cp(g,x,iv); Zero(alpha,M);
+	Cp(g,xx,iv); Zero(alpha,M);
 	for (int i=0; i<sysmon_length; i++) {
 		for (int k=0; k<mon_length; k++) { 
                         chi= Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  
@@ -404,7 +414,7 @@ void Newton::ComputeG_ext(){
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size();	
 
-	Cp(g,x,iv); 
+	Cp(g,xx,iv); 
 	for (int i=0; i<sysmon_length; i++) { 
 		for (int k=0; k<mon_length; k++){ 
                         chi= Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  

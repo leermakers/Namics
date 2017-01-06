@@ -29,7 +29,6 @@ using namespace std;
 
 #ifndef MAINxH //here define global variables. 
 extern double* BlasResult;
-extern int block_size;
 extern string version;
 extern double e;
 extern double T;
@@ -37,6 +36,7 @@ extern double k_B;
 extern double k_BT;
 extern double eps0;
 extern double eps;
+extern bool debug;
 //extern double factor;
 #endif
 

@@ -12,9 +12,11 @@ Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segn
 	KEYS.push_back("tag_filename"); 
 }
 Segment::~Segment() {
-	if (H_Px==NULL && n_pos>0) delete [] H_Px;
-	if (H_Py==NULL && n_pos>0) delete [] H_Py;
-	if (H_Pz==NULL && n_pos>0) delete [] H_Pz;
+	if (n_pos>0) {
+		delete [] H_Px;
+		delete [] H_Py;
+		delete [] H_Pz;
+	}
 	delete [] H_u;
 	delete [] H_phi;
 	delete [] H_MASK;
@@ -37,26 +39,29 @@ Segment::~Segment() {
 }
 
 void Segment::AllocateMemory() {
-	M=(MX+2)*(MY+2)*(MX+2);
+if (debug) cout <<"Allocate Memory in Segment " + name << endl; 
+	M=Lat[0]->M;
 
 	phibulk =0; //initialisatie van monomer phibulk.
-	if (H_Px==NULL && n_pos>0) H_Px=new int[n_pos];
-	if (H_Py==NULL && n_pos>0) H_Py=new int[n_pos];
-	if (H_Pz==NULL && n_pos>0) H_Pz=new int[n_pos];
-	H_u= new double[M]; 
-	H_phi=new double[M];
+	if (n_pos>0) {
+		H_Px=new int[n_pos];
+		H_Py=new int[n_pos];
+		H_Pz=new int[n_pos];
+	}
+	H_u= new double[M];  H_Zero(H_u,M); 
+	H_phi=new double[M]; H_Zero(H_phi,M);
 	if (freedom=="free") {H_MASK=new double[M]; H_Zero(H_MASK,M); }
 #ifdef CUDA
-	//if (n_pos>0) {
-	//	Px=(int*)AllIntOnDev(n_pos);
-	//	Py=(int*)AllIntOnDev(n_pos);
-	//	Pz=(int*)AllIntOnDev(n_pos);
-	//}
-	G1=(double*)AllOnDev(M);
-	u=(double*)AllOnDev(M);
-	MASK=(double*)AllOnDev(M);
-	phi=(double*)AllOnDev(M);
-	phi_side=(double*)AllOnDev(M);
+	if (n_pos>0) {
+		Px=(int*)AllIntOnDev(n_pos);
+		Py=(int*)AllIntOnDev(n_pos);
+		Pz=(int*)AllIntOnDev(n_pos);
+	}
+	G1=(double*)AllOnDev(M); Zero(G1,M);
+	u=(double*)AllOnDev(M); Zero(u,M); 
+	MASK=(double*)AllOnDev(M); Zero(MASK,M);
+	phi=(double*)AllOnDev(M); Zero(phi,M);
+	phi_side=(double*)AllOnDev(M); Zero(phi_side,M);
 #else
 	if (n_pos>0) {
 		Px=H_Px;
@@ -67,10 +72,13 @@ void Segment::AllocateMemory() {
 	phi =H_phi;
 	u = H_u;
 	G1=new double[M];
-	phi_side = new double[M]; 
+	phi_side = new double[M];
+	Zero(G1,M);
+	Zero(phi_side,M); 	
 #endif
 }
 bool Segment::PrepareForCalculations(double* KSAM) {
+if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl; 
 #ifdef CUDA
 	TransferDataToDevice(H_MASK, MASK, M);
 	//TransferDataToDevice(H_u, u, M);

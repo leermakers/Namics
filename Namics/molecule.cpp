@@ -24,19 +24,30 @@ Molecule::~Molecule() {
 }
 
 void Molecule:: AllocateMemory() {
+if (debug) cout <<"AllocateMemory in Mol " + name << endl; 
 	H_phi= new double[M*MolMonList.size()]; 
 	H_phitot=new double[M];
 #ifdef CUDA
 	phi=(double*)AllOnDev(M*MolMonList.size());
 	phitot=(double*)AllOnDev(M);
-	Gg_f=(double*)AllOnDev(M*chainlength);
-	Gg_b=(double*)AllOnDev(M*2);
+	Gg_f=(double*)AllOnDev(M*chainlength); 
+	Gg_b=(double*)AllOnDev(M*2);	
 #else
 	phi = H_phi;
 	phitot = H_phitot;
 	Gg_f = new double[M*chainlength];
 	Gg_b = new double[M*2];
 #endif
+	Zero(Gg_f,M*chainlength);
+	Zero(Gg_b,2*M);
+}
+
+bool Molecule:: PrepareForCalculations() {
+if (debug) cout <<"PrepareForCalculations in Mol " + name << endl; 
+	bool success=true;
+	Zero(phitot,M);
+	Zero(phi,M*MolMonList.size()); 
+	return success;
 }
 
 bool Molecule::CheckInput(int start) {
@@ -365,12 +376,7 @@ double Molecule::fraction(int segnr){
 }
 
 
-bool Molecule:: PrepareForCalculations() {
-	bool success=true;
-	Zero(phitot,M);
-	Zero(phi,M*MolMonList.size()); 
-	return success;
-}
+
 
 bool Molecule::ComputePhi(){
 	bool success=true;
@@ -393,20 +399,20 @@ bool Molecule::ComputePhiMon(){
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
 	Lat[0]->remove_bounds(phi);
-	GN=Sum(phi,M);
+	Sum(GN,phi,M);
 	Times(phi,phi,Seg[mon_nr[0]]->G1,M);
 	return success;
 }
 
 bool Molecule::ComputePhiLin(){
 	bool success=true;
-
+	Zero(Gg_f,M*chainlength);
 	int blocks=mon_nr.size(); 
 	double *G1;
 	int i=0; 
 	int s=0;
 	while (i<blocks) {
-		G1=Seg[mon_nr[i]]->G1; 
+		G1=Seg[mon_nr[i]]->G1;
 		for (int k=0; k<n_mon[i]; k++) {
 			if (s==0) Cp(Gg_f,G1,M); else {Lat[0]->propagate(Gg_f,G1,s-1,s);}
 			s++;
@@ -415,7 +421,7 @@ bool Molecule::ComputePhiLin(){
 	}
 
 	Lat[0]->remove_bounds(Gg_f+M*(chainlength-1)); 
-	GN1=Sum(Gg_f+M*(chainlength-1),M);
+	Sum(GN1,Gg_f+M*(chainlength-1),M);
 	i=blocks; 
 	s=chainlength-1;
 	while (i>0) { i--;
@@ -427,7 +433,7 @@ bool Molecule::ComputePhiLin(){
 		} 	
 	}
 	Lat[0]->remove_bounds(Gg_b);
-	GN2=Sum(Gg_b,M); GN = GN1;
+	Sum(GN2,Gg_b,M); GN = GN2;
 if (abs(GN1-GN2)>1e-2) cout << "GN1 != GN2 .... check propagator" << "GN1:" << GN1 << " GN2: " << GN2 << endl;
 	return success;
 }

@@ -15,13 +15,13 @@ if (debug) cout <<"Segment constructor" + name << endl;
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor" + name << endl;
 	if (n_pos>0) {
-		delete [] H_Px;
-		delete [] H_Py;
-		delete [] H_Pz;
+		free(H_Px);
+		free(H_Py);
+		free(H_Pz);
 	}
-	delete [] H_u;
-	delete [] H_phi;
-	delete [] H_MASK;
+	free(H_u);
+	free(H_phi);
+	free(H_MASK);
 #ifdef CUDA
 	if (n_pos>0) {
 		cudaFree(Px);
@@ -34,8 +34,8 @@ if (debug) cout <<"Segment destructor" + name << endl;
 	cudaFree(MASK);
 	cudaFree(phi_side);
 #else
-	delete[] G1;
-	delete[] phi_side;
+	free(G1);
+	free(phi_side);
 #endif
 	
 }

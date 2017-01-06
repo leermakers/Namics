@@ -12,16 +12,16 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 }
 Molecule::~Molecule() {
 if (debug) cout <<"Destructor for Mol " + name << endl;
-	delete [] H_phi;
-	delete [] H_phitot;
+	free(H_phi);
+	free(H_phitot);
 #ifdef CUDA
 	cudaFree(phi);
 	cudaFree(phitot);
 	cudaFree(Gg_f);
 	cudaFree(Gg_b);
 #else
-	delete [] Gg_f;
-	delete [] Gg_b;
+	free(Gg_f);
+	free(Gg_b);
 #endif
 }
 

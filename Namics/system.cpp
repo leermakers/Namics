@@ -7,9 +7,9 @@ if (debug) cout << "Constructor for system " << endl;
 }
 System::~System() {
 if (debug) cout << "Destructor for system " << endl;	
-	delete [] H_GrandPotentialDensity;
-	delete [] H_FreeEnergyDensity;
-	delete [] H_alpha;
+	free(H_GrandPotentialDensity);
+	free(H_FreeEnergyDensity);
+	free(H_alpha);
 #ifdef CUDA
 	cudaFree(phitot);
 	cudaFree(alpha);
@@ -18,9 +18,9 @@ if (debug) cout << "Destructor for system " << endl;
 	cudaFree(TEMP);
 	cudaFree(KSAM);
 #else	
-	delete [] phitot; 
-	delete [] TEMP;
-	delete [] KSAM;
+	free(phitot); 
+	free(TEMP);
+	free(KSAM);
 #endif
 }
 

@@ -1,5 +1,6 @@
 #include "tools.h"  
 #include "namics.h" 
+#define MAX_BLOCK_SZ 512
 
    
 #ifdef CUDA
@@ -52,41 +53,33 @@ __global__ void collectphi(double* phi, double* GN,double* rho, int* Bx, int* By
 */
 
 __global__ void dot(double *X, double *Y, double *Z, int M)   {
-   __shared__ double tmp[256];
+   __shared__ double tmp[MAX_BLOCK_SZ];
    int idx = blockDim.x * blockIdx.x + threadIdx.x;
-   int loc_idx = threadIdx.x;
+   int l_idx = threadIdx.x;
    
-   if (idx < M) tmp[loc_idx] = X[idx]*Y[idx];
+   if (idx < M) tmp[l_idx] = X[idx]*Y[idx];
    __syncthreads();
 
    for (int s = blockDim.x/2; s > 0; s /= 2) {
-      if (loc_idx < s)
-         tmp[loc_idx] += tmp[loc_idx + s];
+      if (l_idx < s) tmp[l_idx] += tmp[l_idx + s];
       __syncthreads();
    }
-
-   if (loc_idx == 0) {
-      Z[loc_idx] = tmp[0];
-   }
+   if (threadIdx.x == 0) Z[threadIdx.x] = tmp[0];
 }
 
 __global__ void sum(double *X, double *Z, int M)   {
-   __shared__ double tmp[256];
+   __shared__ double tmp[block_size];
    int idx = blockDim.x * blockIdx.x + threadIdx.x;
-   int loc_idx = threadIdx.x;
+   int l_idx = threadIdx.x;
    
-   if (idx < M) tmp[loc_idx] = X[idx];
+   if (idx < M) tmp[l_idx] = X[idx];
    __syncthreads();
 
    for (int s = blockDim.x/2; s > 0; s /= 2) {
-      if (loc_idx < s)
-         tmp[loc_idx] += tmp[loc_idx + s];
+      if (l_idx < s) tmp[l_idx] += tmp[l_idx + s];
       __syncthreads();
    }
-
-   if (loc_idx == 0) {
-      Z[loc_idx] = tmp[0];
-   }
+   if (threadIdx.x == 0) Z[threadIdx.x] = tmp[0];
 }
 
 
@@ -480,26 +473,29 @@ int *AllIntOnDev(int N)    {
 
 #ifdef CUDA
 void Dot(double &result, double *x,double *y, int M)   {
-
+/**/
 	double *H_XXX=new double[M];
 	double *H_YYY=new double[M];
 	TransferDataToHost(H_XXX, x, M);
 	TransferDataToHost(H_YYY, y, M);
 	result=H_Dot(H_XXX,H_YYY,M);
-	delete[] H_XXX;
-	delete[] H_YYY;
+	free(H_XXX);
+	free(H_YYY);
+/**/
 
 
 /*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	double *D_XX=AllOnDev(n_blocks);
+	Zero(D_XX,n_blocks);
 	double *H_XX=new double[n_blocks];
 	dot<<<n_blocks,block_size>>>(x,y,D_XX,M);
 	cudaThreadSynchronize();
-	TransferDataToDevice(H_XX, D_XX, n_blocks);
+	TransferDataToHost(H_XX, D_XX, n_blocks);
 	result=0; for (int i=0; i<n_blocks; i++) result+=H_XX[i];
-	delete[] H_XX;
+	free(H_XX);
 	cudaFree(D_XX);
-	if (cudaSuccess != cudaGetLastError()) cout <<"Problem at Dot" << endl;*/
+	if (cudaSuccess != cudaGetLastError()) cout <<"Problem at Dot" << endl;
+*/
 }
 #else
 void Dot(double &result, double *x,double *y, int M)   {
@@ -511,34 +507,28 @@ void Dot(double &result, double *x,double *y, int M)   {
 #ifdef CUDA
 void Sum(double &result, double *x, int M)   {
 
-	double *H_XXX=new double[M];
+/**/	double *H_XXX=new double[M];
 	TransferDataToHost(H_XXX, x, M);
 	result=H_Sum(H_XXX,M);
 	if (debug) cout <<"Host sum =" << result << endl;	
-	
+	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl; 
+ 	free(H_XXX); 
+/**/
 
-	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) { //only for ram-proglem...
-		int MX=51;
-		int MY=51;	
-		int JX=(MX+2)*(MY+2);
-		int JY=(MY+2);
-		int z= ((i % JX)%JY);
-		int y= ((i % JX)-z)/JY;
-		int x= (i-y*JY-z)/JX;
-		cout <<" At (x y z)" << i << "= " << x <<" " << y << " " << z  << " NaN" << endl; 
-	}
- 	delete[] H_XXX;
 /*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	double *D_XX=AllOnDev(n_blocks);
+	Zero(D_XX,n_blocks); 
 	double *H_XX=new double[n_blocks];
 	sum<<<n_blocks,block_size>>>(x,D_XX,M);
 	cudaThreadSynchronize();
-	TransferDataToDevice(H_XX, D_XX,n_blocks);
+	TransferDataToHost(H_XX, D_XX,n_blocks);
 	result=0; for (int i=0; i<n_blocks; i++) {result+=H_XX[i];}
 	if (cudaSuccess != cudaGetLastError()) cout <<"Problem at Sum" << endl;
-	if (debug) cout <<"device sum = " << result << endl; 
-	delete[] H_XX;
-	cudaFree(D_XX); */
+	for (int i=0; i<n_blocks; i++) if (isnan(H_XX[i])) cout <<" At " << i << " NaN" << endl; 
+	
+	free(H_XX);
+	cudaFree(D_XX); 
+*/
 }
 #else
 void Sum(double &result, double *x,int M)   {

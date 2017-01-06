@@ -11,9 +11,9 @@ if(debug) cout <<"Constructor in Newton " << endl;
 
 Newton::~Newton() {
 if(debug) cout <<"Destructor in Newton " << endl; 
-	delete [] Aij;
-	delete [] Ci;
-	delete [] Apij; 
+	free(Aij);
+	free(Ci);
+	free(Apij); 
 #ifdef CUDA
 	cudaFree(xx);
 	cudaFree(x0);
@@ -21,11 +21,11 @@ if(debug) cout <<"Destructor in Newton " << endl;
 	cudaFree(xR);
 	cudaFree(x_x0);
 #else
-	delete[] xx;
-	delete[] x0;
-	delete[] g;
-	delete[] xR;
-	delete[] x_x0;
+	free(xx);
+	free(x0);
+	free(g);
+	free(xR);
+	free(x_x0);
 #endif
 }
 

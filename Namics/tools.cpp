@@ -474,8 +474,8 @@ int *AllIntOnDev(int N)    {
 #ifdef CUDA
 void Dot(double &result, double *x,double *y, int M)   {
 /**/
-	double *H_XXX=new double[M];
-	double *H_YYY=new double[M];
+	double *H_XXX=(double*) malloc(M*sizeof(double)); 
+	double *H_YYY=(double*) malloc(M*sizeof(double)); 
 	TransferDataToHost(H_XXX, x, M);
 	TransferDataToHost(H_YYY, y, M);
 	result=H_Dot(H_XXX,H_YYY,M);
@@ -487,7 +487,7 @@ void Dot(double &result, double *x,double *y, int M)   {
 /*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	double *D_XX=AllOnDev(n_blocks);
 	Zero(D_XX,n_blocks);
-	double *H_XX=new double[n_blocks];
+	double *H_XX=(double*) malloc(n_blocks*sizeof(double)); 
 	dot<<<n_blocks,block_size>>>(x,y,D_XX,M);
 	cudaThreadSynchronize();
 	TransferDataToHost(H_XX, D_XX, n_blocks);
@@ -507,7 +507,8 @@ void Dot(double &result, double *x,double *y, int M)   {
 #ifdef CUDA
 void Sum(double &result, double *x, int M)   {
 
-/**/	double *H_XXX=new double[M];
+/**/	
+	double *H_XXX=(double*) malloc(M*sizeof(double)); 
 	TransferDataToHost(H_XXX, x, M);
 	result=H_Sum(H_XXX,M);
 	if (debug) cout <<"Host sum =" << result << endl;	
@@ -518,7 +519,7 @@ void Sum(double &result, double *x, int M)   {
 /*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	double *D_XX=AllOnDev(n_blocks);
 	Zero(D_XX,n_blocks); 
-	double *H_XX=new double[n_blocks];
+	double *H_XX=(double*) malloc(n_blocks*sizeof(double)); 
 	sum<<<n_blocks,block_size>>>(x,D_XX,M);
 	cudaThreadSynchronize();
 	TransferDataToHost(H_XX, D_XX,n_blocks);

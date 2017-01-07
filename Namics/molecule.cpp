@@ -27,8 +27,8 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 
 void Molecule:: AllocateMemory() {
 if (debug) cout <<"AllocateMemory in Mol " + name << endl; 
-	H_phi= new double[M*MolMonList.size()]; 
-	H_phitot=new double[M];
+	H_phi = (double*) malloc(M*MolMonList.size()*sizeof(double)); 
+	H_phitot = (double*) malloc(M*sizeof(double)); 
 #ifdef CUDA
 	phi=(double*)AllOnDev(M*MolMonList.size());
 	phitot=(double*)AllOnDev(M);
@@ -37,8 +37,8 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 #else
 	phi = H_phi;
 	phitot = H_phitot;
-	Gg_f = new double[M*chainlength];
-	Gg_b = new double[M*2];
+	Gg_f = (double*) malloc(M*chainlength*sizeof(double)); 
+	Gg_b = (double*) malloc(M*2*sizeof(double)); 
 #endif
 	Zero(Gg_f,M*chainlength);
 	Zero(Gg_b,2*M);

@@ -21,6 +21,7 @@ if (debug) cout << "Destructor for system " << endl;
 	free(phitot); 
 	free(TEMP);
 	free(KSAM);
+	free(CHI);
 #endif
 }
 
@@ -30,9 +31,9 @@ if (debug) cout << "AllocateMemory in system " << endl;
 	//H_GN_A = new double[n_box];
 	//H_GN_B = new double[n_box];
 
-	H_GrandPotentialDensity = new double[M];
-	H_FreeEnergyDensity = new double[M]; 
-	H_alpha = new double[M];
+	H_GrandPotentialDensity = (double*) malloc(M*sizeof(double));
+	H_FreeEnergyDensity = (double*) malloc(M*sizeof(double));
+	H_alpha = (double*) malloc(M*sizeof(double));
 #ifdef CUDA
 	phitot = (double*)AllOnDev(M); 
 	alpha=(double*)AllOnDev(M);	
@@ -41,12 +42,12 @@ if (debug) cout << "AllocateMemory in system " << endl;
 	TEMP =(double*)AllOnDev(M);	
 	KSAM =(int*)AllOnDev(M);
 #else
-	phitot = new double[M]; 
+	phitot = (double*) malloc(M*sizeof(double));
 	alpha= H_alpha;
-	KSAM=new int[M];
+	KSAM = (int*) malloc(M*sizeof(int));
 	FreeEnergyDensity=H_FreeEnergyDensity;
 	GrandPotentialDensity = H_GrandPotentialDensity;
-	TEMP =new double[M];	
+	TEMP = (double*) malloc(M*sizeof(double));
 #endif
 	Zero(KSAM,M);
 	n_mol = In[0]->MolList.size(); 
@@ -294,7 +295,7 @@ if (debug) cout << "GetValue (long) for system " << endl;
 bool System::CheckChi_values(int n_seg){
 if (debug) cout << "CheckChi_values for system " << endl;
 	bool success=true;
-	CHI = new double[n_seg*n_seg]; 
+	CHI = (double*) malloc(n_seg*n_seg*sizeof(double));
 	for (int i=0; i<n_seg; i++) for (int k=0; k<n_seg; k++) {
 		CHI[i*n_seg+k]=In[0]->Get_double(Seg[i]->GetValue("chi-"+Seg[k]->name),123);
 	}

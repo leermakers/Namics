@@ -45,14 +45,19 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	M=Lat[0]->M;
 
 	phibulk =0; //initialisatie van monomer phibulk.
-	if (n_pos>0) {
-		H_Px=new int[n_pos];
-		H_Py=new int[n_pos];
-		H_Pz=new int[n_pos];
+	//if (n_pos>0) {
+	//	H_Px = (int*) malloc(n_pos*sizeof(int));
+	//	H_Py = (int*) malloc(n_pos*sizeof(int));
+	//	H_Pz = (int*) malloc(n_pos*sizeof(int));
+	//}
+	H_u = (double*) malloc(M*sizeof(double));
+	H_phi = (double*) malloc(M*sizeof(double));
+	H_Zero(H_u,M); 
+	H_Zero(H_phi,M);
+	if (freedom=="free") {
+		H_MASK = (int*) malloc(M*sizeof(int));
+		H_Zero(H_MASK,M); 
 	}
-	H_u= new double[M];  H_Zero(H_u,M); 
-	H_phi=new double[M]; H_Zero(H_phi,M);
-	if (freedom=="free") {H_MASK=new int[M]; H_Zero(H_MASK,M); }
 #ifdef CUDA
 	if (n_pos>0) {
 		Px=(int*)AllIntOnDev(n_pos);
@@ -73,8 +78,8 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	MASK=H_MASK;  
 	phi =H_phi;
 	u = H_u;
-	G1=new double[M];
-	phi_side = new double[M];
+	G1 = (double*) malloc(M*sizeof(double));
+	phi_side = (double*) malloc(M*sizeof(double));
 	Zero(G1,M);
 	Zero(phi_side,M); 	
 #endif
@@ -175,9 +180,9 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					block=false;  
 					In[0]->split(set[0],')',coor);
 					int length=coor.size(); n_pos=length; 
-					H_Px = new int[length];
-					H_Py = new int[length]; 
-					H_Pz = new int[length]; 
+					H_Px = (int*) malloc(n_pos*sizeof(int));
+					H_Py = (int*) malloc(n_pos*sizeof(int));
+					H_Pz = (int*) malloc(n_pos*sizeof(int));
 					int i=0;	
 					while (i<length) { 
 						string s=coor[i].substr(1,coor[i].size()-1); 
@@ -247,9 +252,9 @@ if (freedom == "frozen") {
 					block=false;  
 					In[0]->split(set[0],')',coor);
 					int length=coor.size();
-					H_Px = new int[length];
-					H_Py = new int[length]; 
-					H_Pz = new int[length]; 
+					H_Px = (int*) malloc(n_pos*sizeof(int));
+					H_Py = (int*) malloc(n_pos*sizeof(int));
+					H_Pz = (int*) malloc(n_pos*sizeof(int));
 					int i=0;	
 					while (i<length) { 
 						string s=coor[i].substr(1,coor[i].size()-1); 
@@ -289,9 +294,9 @@ if (freedom == "tagged") { phibulk=0;
 				block=false; coor.clear(); 
 				In[0]->split(set[0],')',coor);
 				n_pos=coor.size();
-				H_Px = new int[n_pos];
-				H_Py = new int[n_pos]; 
-				H_Pz = new int[n_pos]; 
+				H_Px = (int*) malloc(n_pos*sizeof(int));
+				H_Py = (int*) malloc(n_pos*sizeof(int));
+				H_Pz = (int*) malloc(n_pos*sizeof(int));
 				int i=0;	
 				while (i<n_pos) { 
 					xyz.clear(); 
@@ -334,9 +339,9 @@ if (freedom == "tagged") { phibulk=0;
 					}
 					if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
 					else { int p_i; 
-						H_Px = new int[n_pos];
-						H_Py = new int[n_pos]; 
-						H_Pz = new int[n_pos];
+						H_Px = (int*) malloc(n_pos*sizeof(int));
+						H_Py = (int*) malloc(n_pos*sizeof(int));
+						H_Pz = (int*) malloc(n_pos*sizeof(int));
 						i=0; p_i=-1;
 						for (int x=0; x<MX; x++)  for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) {
 							if (In[0]->Get_int(lines[i],0)==1) {p_i++; H_Px[p_i]=x; H_Py[p_i]=y; H_Pz[p_i]=z; }
@@ -347,9 +352,9 @@ if (freedom == "tagged") { phibulk=0;
 					//expect to read x,y,z
 					int i=0;
 					n_pos=length; 
-					H_Px = new int[n_pos];
-					H_Py = new int[n_pos]; 
-					H_Pz = new int[n_pos];
+					H_Px = (int*) malloc(n_pos*sizeof(int));
+					H_Py = (int*) malloc(n_pos*sizeof(int));
+					H_Pz = (int*) malloc(n_pos*sizeof(int));
 					while (i<length) {  
 						xyz.clear(); 
 						In[0]->split(lines[i],',',xyz);
@@ -386,7 +391,7 @@ if (debug) cout <<"CreateMask for segment " + name << endl;
 		int M = (MX+2)*(MY+2)*(MZ+2);
 		int JX = (MX+2)*(MY+2);
 		int JY = (MY+2);
-		H_MASK = new int[M]; 		
+		H_MASK = (int*) malloc(M*sizeof(int));
 		H_Zero(H_MASK,M);
 		if (block) {
 			for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++) for (int z=1; z<MZ+1; z++) 

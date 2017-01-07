@@ -33,9 +33,9 @@ void Newton::AllocateMemory() {
 if(debug) cout <<"AllocateMemeory in Newton " << endl; 
 	iv = Sys[0]->SysMonList.size() * M;	
 	if (method=="DIIS-ext") iv +=M;
-	Aij = new double[m*m]; H_Zero(Aij,m*m);  
-	Ci = new double[m]; H_Zero(Ci,m); 
-	Apij = new double[m*m]; H_Zero(Apij,m*m); 
+	Aij =(double*) malloc(m*m*sizeof(double)); H_Zero(Aij,m*m);
+	Ci =(double*) malloc(m*sizeof(double)); H_Zero(Ci,m);
+	Apij =(double*) malloc(m*m*sizeof(double)); H_Zero(Apij,m*m);
 #ifdef CUDA
 	xx = (double*)AllOnDev(iv); 
 	x0 = (double*)AllOnDev(iv);
@@ -43,11 +43,11 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	xR= (double*)AllOnDev(m*iv);
 	x_x0= (double*)AllOnDev(m*iv);
 #else
-	xx = new double[iv]; 
-	x0 = new double[iv];
-	g = new double[iv];
-	xR = new double[m*iv];
-	x_x0 =new double[m*iv];
+	xx =(double*) malloc(iv*sizeof(double)); 
+	x0 =(double*) malloc(iv*sizeof(double)); 
+	g =(double*) malloc(iv*sizeof(double)); 
+	xR =(double*) malloc(m*iv*sizeof(double)); 
+	x_x0 =(double*) malloc(m*iv*sizeof(double)); 
 #endif
 	Zero(xx,iv);
 	Zero(x0,iv);

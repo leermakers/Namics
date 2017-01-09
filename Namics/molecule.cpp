@@ -295,8 +295,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		
 		i++;
 	}
-cout <<"chainlength " << chainlength << endl; 
-cout <<"molmonlistlength " << MolMonList.size() << endl;
 	success=MakeMonList();
 	if (chainlength==1) MolType=monomer; else MolType=linear;
 

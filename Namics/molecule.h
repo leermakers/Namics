@@ -8,7 +8,7 @@
 #include "tools.h"
 class Molecule {
 public:
-	Molecule(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Alias*>,string); 
+	Molecule(vector<Input*>,vector<Lattice*>,vector<Segment*>,string); 
 ~Molecule();
   
 	string name;  
@@ -17,6 +17,8 @@ public:
 	vector<Lattice*> Lat;
 	vector<Alias*> Al;
 	vector<int> MolMonList;
+	vector<int> MolAlList;
+	int start;
 	int n_mol; 
 	int M; 
 	int MX,MY,MZ;
@@ -32,8 +34,11 @@ public:
 	MoleculeType MolType; 
 	double n; 
 	double GN,GN1,GN2; 
+	double norm;
 	int chainlength;
 	bool save_memory; 
+	bool aliases;
+	bool compute_phi_alias; 
 	string composition;
 	vector<int> mon_nr;
 	vector<int> n_mon; 
@@ -73,6 +78,7 @@ public:
 	double Theta(void);
 	string GetValue(string); 
 	int GetMonNr(string);
+	int GetAlNr(string);
 	bool MakeMonList(void);  
 	bool IsPinned(void);
 	bool IsTagged(void); 

@@ -359,6 +359,7 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 
 
 bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::vector<std::string> &Out_name, std::vector<std::string> &Out_prop) {
+if (debug) cout <<"LoadItems in Input " << endl; 
 	bool success=true; 
 	int length = elems.size();
 	bool wild_monlist=false;
@@ -377,7 +378,7 @@ bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::
 			while (j<key_length) {
 				if (KEYS[j] == set[2]) {
 					key_found=true;
-					switch (j) {
+					switch (j-1) {
 						case 0:
 							if (set[3]=="*") set[3]=SysList[0];
 							if (SysList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl; 

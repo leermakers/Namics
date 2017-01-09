@@ -340,6 +340,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	
 		}
 		int k=0;
+		Mol[i]->norm=norm; 
 		while (k<length) {
 			double *phi=Mol[i]->phi+k*M;
 			double *G1=Seg[Mol[i]->MolMonList[k]]->G1;
@@ -356,6 +357,7 @@ double sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << k << 
 	Mol[solvent]->n=norm*Mol[solvent]->GN;
 	Mol[solvent]->theta=Mol[solvent]->n*Mol[solvent]->chainlength;  
 	int k=0;
+	Mol[solvent]->norm=norm;
 	length = Mol[solvent]->MolMonList.size();
 	while (k<length) {
 		double *phi=Mol[solvent]->phi+k*M;
@@ -410,6 +412,13 @@ cout <<"grand potential = " << GrandPotential << endl;
 	}
 cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl; 
 cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
+	
+	for (int i=0; i<n_mol; i++) {
+		if (Mol[i]->MolAlList.size()>0) {
+			Mol[i]->compute_phi_alias=true;
+			Mol[i]->ComputePhi(); 
+		}
+	}
 
 	return success;  
 }

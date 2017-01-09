@@ -11,7 +11,7 @@
 #include "engine.h"
 class Output {
 public:
-	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,vector<Alias*>,vector<Engine*>,string,int,int);
+	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,vector<Engine*>,string,int,int);
 
 ~Output();
 
@@ -22,7 +22,6 @@ public:
 	vector<Molecule*> Mol;
 	vector<System*> Sys;
 	vector<Newton*> New;
-	vector<Alias*> Al;
 	vector<Engine*> Eng;
 	int n_output; 
 	int output_nr; 

@@ -1,7 +1,8 @@
 #include "molecule.h"
+#include <sstream>
 
-Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<Alias*> Al_, string name_) {
-	In=In_; Seg=Seg_; name=name_;  Lat=Lat_; Al=Al_;
+Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
+	In=In_; Seg=Seg_; name=name_;  Lat=Lat_; 
 if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("freedom"); 
 	KEYS.push_back("composition"); 
@@ -42,17 +43,23 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 #endif
 	Zero(Gg_f,M*chainlength);
 	Zero(Gg_b,2*M);
+	int length =MolAlList.size();
+	for (int i=0; i<length; i++) Al[i]->AllocateMemory(); 
 }
 
 bool Molecule:: PrepareForCalculations() {
 if (debug) cout <<"PrepareForCalculations in Mol " + name << endl; 
+	int length_al=MolAlList.size();
+	for (int i=0; i<length_al; i++) Al[i]->PrepareForCalculations();
 	bool success=true;
 	Zero(phitot,M);
 	Zero(phi,M*MolMonList.size()); 
+	compute_phi_alias=false;
 	return success;
 }
 
-bool Molecule::CheckInput(int start) {
+bool Molecule::CheckInput(int start_) {
+start=start_;
 if (debug) cout <<"CheckInput for Mol " + name << endl;
 	bool success=true;
 	if (!In[0]->CheckParameters("mol",name,start,KEYS,PARAMETERS,VALUES)) {
@@ -132,6 +139,18 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 	return success; 
 }
 
+int Molecule::GetAlNr(string s){
+if (debug) cout <<"GetAlNr for Mol " + name << endl;
+	int n_als=MolAlList.size();
+	int found=-1;
+	int i=0;
+	while(i<n_als) {
+		if (Al[i]->name ==s) found=i; 
+		i++;
+	}
+	return found; 
+}
+
 int Molecule::GetMonNr(string s){
 if (debug) cout <<"GetMonNr for Mol " + name << endl;
 	int n_segments=In[0]->MonList.size();
@@ -149,48 +168,138 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	bool success = true;
 	vector<int> open;
 	vector<int> close;
-	bool done=false;
+	vector<string>sub;
+	In[0]->split(s,'@',sub);
+	aliases=(s!=sub[0]);
+	if (aliases) {//first do the work for aliases....
+		int length_al=sub.size();
+		for (int i=0; i<length_al; i++) {
+			open.clear(); close.clear();
+			string sA;
+			In[0]->EvenBrackets(sub[i],open,close); 
+			if (open.size() ==0) sA=sub[i]; else sA=sub[i].substr(0,open[0]); 
+			if (i==0 && sA=="") { //the 'composition' does not start with an alias. This should not be a problem.
+			} else {
+				if (!In[0]->InSet(In[0]->AliasList,sA)) {
+					cout <<"In composition of mol '" + name + "' Alias '" + sA + "' was not found"<<endl; success=false;
+				} else {
+					int Alnr =GetAlNr(sA);
+					if (Alnr<0) {
+						Al.push_back(new Alias(In,Lat,sA));
+						Alnr=Al.size();
+						if (!Al[Alnr-1]->CheckInput(start)) {return false;} 
+						MolAlList.push_back(Alnr);
+					}
+					Alnr =GetAlNr(sA);
+					int iv = Al[Alnr]->value;
+					string al_comp=Al[Alnr]->composition;
+					if (iv < 0) {
+						string si;
+						stringstream sstm;
+						sstm << Alnr;
+						si = sstm.str();
+						string ssub="";
+						if (open[0]!=0) ssub=sub[i].substr(open[0]);
+						sub[i]=":"+si+":"+al_comp+":"+si+":"+ssub;
+					} else {
+						string sss;
+						stringstream sstm;
+						sstm << iv;
+						sss = sstm.str();
+						sub[i]=sss+sub[i].substr(open[0]);
+					}
+				} 
+			}		
+		}
+		string ss;
+		for (int i=0; i<length_al; i++) {
+			ss=ss.append(sub[i]);
+		}
+		s=ss; 
+	}
+	bool done=false; //now interpreted the (expended) composition
 	while (!done) { done = true; 
 		open.clear(); close.clear();
-		if (!In[0]->EvenBrackets(s,open,close)) {cout << "In composition of mol '" + name + "' the backets are not balanced."<<endl; success=false; 
-		} else {
-			int length=open.size();
-			int i=0;
-			int pos_low=-1;
-			int pos_high=-1;
-			int Pos_high=-1;
-			while (i<length-1) {
-				if (pos_low>0 && pos_high<0) {if (open[i+1]>close[i]) {pos_high=close[i]; Pos_high=open[i+1];}}
-				if (pos_low<0) {if (open[i+1]<close[i]) pos_low=open[i]; }
-				i++;
-			} 
-			if (pos_low >0 && pos_high > 0) { done=false; 
-				string sA,sB,sC;
-				sA=s.substr(0,pos_low);
-				sB=s.substr(pos_low+1,pos_high-pos_low-1);
-				sC=s.substr(Pos_high,length-Pos_high);
-				int x = In[0]->Get_int(s.substr(pos_high+1,length-pos_high),0);
-				s=sA;
-				for (int k=0; k<x; k++) s.append(sB); 
-				s=s.append(sC);
-			} 
+		if (!In[0]->EvenBrackets(s,open,close)) {cout << "In composition of mol '" + name + "' the backets are not balanced."<<endl; success=false; }
+		int length=open.size();
+		int pos_open;
+		int pos_close;
+		int pos_low=0;
+		int i_open=0; pos_open=open[0]; 
+		int i_close=0; pos_close=close[0];
+		if (pos_open > pos_close) {cout << "Brackets open in composition not correct" << endl; return false;}
+		while (i_open < length-1 && done) {
+			i_open++; 
+			pos_open=open[i_open];
+			if (pos_open < pos_close && done) {
+				i_close++; if (i_close<length) pos_close=close[i_close];  
+			} else {
+				if (pos_low==open[i_open-1] ) {
+					pos_low=pos_open; 
+					i_close++; if (i_close<length) pos_close=close[i_close];
+					if (pos_open > pos_close) {cout << "Brackets open in composition not correct" << endl; return false;}
+				} else { 
+					done=false; 
+					int x=In[0]->Get_int(s.substr(pos_close+1),0);
+					string sA,sB,sC;
+					sA=s.substr(0,pos_low);
+					sB=s.substr(pos_low+1,pos_close-pos_low-1);
+					sC=s.substr(pos_open,s.size()-pos_open);  
+					s=sA;for (int k=0; k<x; k++) s.append(sB); s.append(sC);
+				}
+			}
+		}
+		if (pos_low < open[length-1]&& done) {
+			done=false;
+			pos_close=close[length-1];
+			int x=In[0]->Get_int(s.substr(pos_close+1),0);
+			string sA,sB,sC;
+			sA=s.substr(0,pos_low);
+			sB=s.substr(pos_low+1,pos_close-pos_low-1);
+			sC="";  
+			s=sA;for (int k=0; k<x; k++) s.append(sB); s.append(sC);
 		}
 	}
-	int length = open.size();
-	int k=0; chainlength=0;
-	while (k<length) {
-		string segname=s.substr(open[k]+1,close[k]-open[k]-1); 
-		int mnr=GetMonNr(segname); 
-		if (mnr <0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised"  << endl; success=false; 
-		} else {mon_nr.push_back(mnr); }
-		int nn = In[0]->Get_int(s.substr(close[k]+1,s.size()-close[k]),0); 
-		if (nn<1) {cout <<"In composiiton of mol '" + name + "' the number of repeats should have values larger than unity " << endl; success=false;
-		} else {n_mon.push_back(nn); }
-		chainlength +=nn;
-		k++;
+
+	sub.clear();
+	In[0]->split(s,':',sub);
+	int length_sub =sub.size();
+	int AlListLength=MolAlList.size();
+	for (int i=0;i<AlListLength; i++) Al[i]->active=false; 
+	int i=0; chainlength=0; MolMonList.clear();
+	while (i<length_sub) {
+		open.clear(); close.clear();
+		In[0]->EvenBrackets(sub[i],open,close); 
+		if (open.size()==0) {
+			int a=In[0]->Get_int(sub[i],0);
+			if (Al[a]->active) Al[a]->active=false; else Al[a]->active=true;
+		} else {
+			int k=0;
+			int length=open.size();
+			while (k<length) {
+				string segname=sub[i].substr(open[k]+1,close[k]-open[k]-1); 
+				int mnr=GetMonNr(segname); 
+				if (mnr <0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised"  << endl; success=false; 
+				} else {
+					mon_nr.push_back(mnr); 
+					for (int i=0; i<AlListLength; i++) {if (Al[i]->active) Al[i]->frag.push_back(1); else Al[i]->frag.push_back(0);}
+				}
+				int nn = In[0]->Get_int(sub[i].substr(close[k]+1,s.size()-close[k]),0); 
+				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity " << endl; success=false;
+				} else {n_mon.push_back(nn); }
+				chainlength +=nn;
+				k++;
+			}
+			
+		}
+		
+		i++;
 	}
-	success = MakeMonList();
-	if (chainlength==1) MolType=monomer; else MolType=linear;  
+cout <<"chainlength " << chainlength << endl; 
+cout <<"molmonlistlength " << MolMonList.size() << endl;
+	success=MakeMonList();
+	if (chainlength==1) MolType=monomer; else MolType=linear;
+
 		
 	return success; 
 }
@@ -297,6 +406,8 @@ if (debug) cout <<"push (string) for Mol " + name << endl;
 }
 void Molecule::PushOutput() {
 if (debug) cout <<"PushOutput for Mol " + name << endl;
+	int length_al=MolAlList.size();
+	for (int i=0; i<length_al; i++) Al[i]->PushOutput();
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -314,11 +425,19 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	push("phibulk",phibulk);
 	push("Mu",Mu);
 	push("GN",GN);
+	push("norm",norm);
 	string s="profile;0"; push("phi",s);
 	int length = MolMonList.size();
 	for (int i=0; i<length; i++) {
 		stringstream ss; ss<<i+1; string str=ss.str();
-		 s= "profile;"+str; push("phi-"+Seg[MolMonList[i]]->name,s); }
+		s= "profile;"+str; push("phi-"+Seg[MolMonList[i]]->name,s); 
+	}
+	for (int i=0; i<length_al; i++) {
+		push(Al[i]->name+"value",Al[i]->value);
+		push(Al[i]->name+"composition",Al[i]->composition);
+		stringstream ss; ss<<i+length; string str=ss.str();
+		s="profile;"+str; push(Al[i]->name+"-phi",s);
+	}
 #ifdef CUDA
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
@@ -336,6 +455,12 @@ if (debug) cout <<"GetPointer for Mol " + name << endl;	vector<string> sub;
 		stringstream ss; ss<<i+1; string str=ss.str();
 		if (sub[1]==str) return H_phi+i*M; 
 		i++;
+	}
+	int length_al=MolAlList.size();
+	i=0;
+	while (i<length_al) {
+		stringstream ss; ss<<i+length; string str=ss.str();
+		if (sub[i]==str) return Al[i]->H_phi; 
 	}
 	return NULL;
 }
@@ -420,40 +545,57 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
 	Lat[0]->remove_bounds(phi);
 	Sum(GN,phi,M);
+	if (compute_phi_alias) {
+		int length = MolAlList.size();
+		for (int i=0; i<length; i++) {
+			if (Al[i]->frag[0]==1) {
+				Cp(Al[i]->phi,phi,M); Norm(Al[i]->phi,norm,M); 
+			}
+		}
+	}
 	Times(phi,phi,Seg[mon_nr[0]]->G1,M);
+	
 	return success;
 }
 
 bool Molecule::ComputePhiLin(){
-if (debug) cout <<"ComputePhiLin for Mol " + name << endl;
-	bool success=true;
-	Zero(Gg_f,M*chainlength);
-	int blocks=mon_nr.size(); 
-	double *G1;
-	int i=0; 
-	int s=0;
-	while (i<blocks) {
-		G1=Seg[mon_nr[i]]->G1;
-		for (int k=0; k<n_mon[i]; k++) {
-			if (s==0) Cp(Gg_f,G1,M); else {Lat[0]->propagate(Gg_f,G1,s-1,s);}
-			s++;
-		} 	
-		i++;	
-	}
+	if (debug) cout <<"ComputePhiLin for Mol " + name << endl;
+		bool success=true;
+		Zero(Gg_f,M*chainlength);
+		int blocks=mon_nr.size(); 
+		double *G1;
+		int i=0; 
+		int s=0;
+		while (i<blocks) {
+			G1=Seg[mon_nr[i]]->G1;
+			for (int k=0; k<n_mon[i]; k++) {
+				if (s==0) Cp(Gg_f,G1,M); else {Lat[0]->propagate(Gg_f,G1,s-1,s);}
+				s++;
+			} 	
+			i++;	
+		}
 
-	Lat[0]->remove_bounds(Gg_f+M*(chainlength-1)); 
-	Sum(GN1,Gg_f+M*(chainlength-1),M);
-	i=blocks; 
-	s=chainlength-1;
-	while (i>0) { i--;
-		double *G1=Seg[mon_nr[i]]->G1; 
-		for (int k=0; k<n_mon[i]; k++) {
-			if (s==chainlength-1) Cp(Gg_b+(s%2)*M,G1,M); else Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2);
-			AddTimes(phi+molmon_nr[i]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
-			s--;
-		} 	
-	}
-	Lat[0]->remove_bounds(Gg_b);
+		Lat[0]->remove_bounds(Gg_f+M*(chainlength-1)); 
+		Sum(GN1,Gg_f+M*(chainlength-1),M);
+		i=blocks; 
+		s=chainlength-1;
+		while (i>0) { i--;
+			double *G1=Seg[mon_nr[i]]->G1; 
+			for (int k=0; k<n_mon[i]; k++) {
+				if (s==chainlength-1) Cp(Gg_b+(s%2)*M,G1,M); else Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2);
+				AddTimes(phi+molmon_nr[i]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
+				if (compute_phi_alias) {
+					int length = MolAlList.size();
+					for (int i=0; i<length; i++) {
+						if (Al[i]->frag[k]==1) {
+							Composition(Al[i]->phi,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
+						}
+					}
+				}
+				s--;
+			} 	
+		}
+		Lat[0]->remove_bounds(Gg_b);
 	Sum(GN2,Gg_b,M); GN = GN2;
 if (abs(GN1-GN2)>1e-2) cout << "GN1 != GN2 .... check propagator" << "GN1:" << GN1 << " GN2: " << GN2 << endl;
 	return success;

@@ -83,6 +83,10 @@ __global__ void sum(double *X, double *Z, int M)   {
 }
 
 
+__global__ void composition(double *phi, double *Gf, double *Gb, double* G1, double C, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) if (G1[idx]>0) phi[idx] += C*Gf[idx]*Gb[idx]/G1[idx];
+}
 __global__ void times(double *P, double *A, double *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=A[idx]*B[idx];
@@ -533,7 +537,7 @@ void Sum(double &result, double *x, int M)   {
 }
 #else
 void Sum(double &result, double *x,int M)   {
-if (degug) cout <<"Sum in absence of cuda" << endl; 
+if (debug) cout <<"Sum in absence of cuda" << endl; 
 	result=0;
  	for (int i=0; i<M; i++) result +=x[i];
 }
@@ -585,6 +589,20 @@ void Norm(double *P, double C, int M)   {
 	for (int i=0; i<M; i++) P[i] *= C;
 }
 #endif
+
+#ifdef CUDA
+void Composition(double *phi, double *Gf, double *Gb, double* G1, double C, int M)   {
+int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	composition<<<n_blocks,block_size>>>(phi,Gf,Gb,G1,C,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Zero"<<endl;}
+}
+#else
+void Composition(double *phi, double *Gf, double *Gb, double* G1, double C, int M)   {
+	for (int i=0; i<M; i++) if (G1[i]>0) phi[i]+=C*Gf[i]*Gb[i]/G1[i];
+}
+#endif
+
+
 
 #ifdef CUDA
 void Zero(double* P, int M)   {

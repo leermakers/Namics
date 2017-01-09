@@ -1,7 +1,8 @@
 #include "output.h"
 #include "time.h"
-Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_,vector<Alias*> Al_,vector<Engine*> Eng_,string name_,int outnr,int N_out) {
-	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_; Al=Al_; Eng=Eng_;
+Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_,vector<Engine*> Eng_,string name_,int outnr,int N_out) {
+if (debug) cout <<"constructor in Output "<< endl; 
+	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_; Eng=Eng_;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append"); 
 	input_error=false;
@@ -10,12 +11,15 @@ Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 
 }
 Output::~Output() {
+if (debug) cout <<"destructor in output " << endl; 
 }
 void Output::PutParameter(string new_param) {
+if (debug) cout << "PutParameter in Output " << endl; 
 	KEYS.push_back(new_param); 
 }
 
 bool Output::Load() {
+if (debug) cout <<"Load in output " << endl; 
 	bool success=true;
 	int molnr=0;
 	success= In[0]->LoadItems(name, OUT_key, OUT_name, OUT_prop);
@@ -29,20 +33,38 @@ bool Output::Load() {
 
 
 				if (!(sub[0]==OUT_prop[i])){
+					bool wildmon;
+					if (sub[0] =="") wildmon=false; else wildmon=true; 
+
 					int k=0; int mollength=In[0]->MolList.size();
 					while (k<mollength) {
 						if (In[0]->MolList[k]==OUT_name[i]) molnr=k; 
 						k++;
 					}
-					int monlength=Mol[molnr]->MolMonList.size();
-					for (int j=0; j<monlength; j++) {
-						OUT_key.push_back(OUT_key[i]);
-						OUT_name.push_back(OUT_name[i]);
-						string s=sub[0];
-						s=s.append(Seg[Mol[molnr]->MolMonList[j]]->name);
-						s=s.append(sub[1]);
-						OUT_prop.push_back(s);
-					} 
+					if (wildmon) {
+						int monlength=Mol[molnr]->MolMonList.size();
+						for (int j=0; j<monlength; j++) {
+							OUT_key.push_back(OUT_key[i]);
+							OUT_name.push_back(OUT_name[i]);
+							string s=sub[0];
+							s=s.append(Seg[Mol[molnr]->MolMonList[j]]->name);
+							s=s.append(sub[1]);
+							OUT_prop.push_back(s);
+						} 
+					} else {
+						int AlListlength=Mol[molnr]->MolAlList.size();
+						for (int j=0; j<AlListlength; j++) {
+							if (Mol[molnr]->Al[j]->value <1) { 
+								OUT_key.push_back(OUT_key[i]);
+								OUT_name.push_back(OUT_name[i]);
+								string s="";
+								s=s.append(Mol[molnr]->Al[j]->name);
+								s=s.append(sub[1]);
+cout << s <<endl; 
+								OUT_prop.push_back(s);
+							}
+						} 
+					}
 					OUT_key.erase(OUT_key.begin()+i);
 					OUT_name.erase(OUT_name.begin()+i);
 					OUT_prop.erase(OUT_prop.begin()+i);
@@ -64,6 +86,7 @@ bool Output::Load() {
 }
 
 bool Output::CheckInput(int start) {
+if (debug) cout << "CheckInput in output " << endl; 
 	bool success=true;
 	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
@@ -85,6 +108,7 @@ bool Output::CheckInput(int start) {
 }
 
 string Output::GetValue(string parameter) {
+if (debug) cout << "GetValue in output " << endl; 
 	int length = PARAMETERS.size(); 
 	int i=0;
 	while (i<length) {
@@ -95,13 +119,14 @@ string Output::GetValue(string parameter) {
 }
 
 double* Output::GetPointer(string key, string name, string prop) {
+if (debug) cout << "GetPointer in output " << endl; 
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
-	int aliaslistlength=In[0]->AliasList.size();
+	//int aliaslistlength;
 	int listlength; 
 	int choice;
 	int i,j; 
-	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="alias") choice=4; if  (key=="engine") choice=5;
+	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="engine") choice=4;
 
 	switch(choice) {
 		case 1:
@@ -136,20 +161,6 @@ double* Output::GetPointer(string key, string name, string prop) {
 			}
 			break;
 		case 4:
-			i=0;
-			while (i<aliaslistlength){
-				if (name==In[0]->AliasList[i]) {
-					listlength= Al[i]->strings.size();
-					j=0;
-					while (j<listlength) {
-						if (prop==Al[i]->strings[j]) return Al[i]->GetPointer(Al[i]->strings_value[j]); 
-						j++;
-					}
-				}
-				i++;
-			}
-			break;
-		case 5:
 			listlength= Eng[0]->strings.size();
 			j=0;
 			while (j<listlength) {
@@ -163,12 +174,12 @@ double* Output::GetPointer(string key, string name, string prop) {
 	return NULL; 
 }
 int Output::GetValue(string key, string name, string prop, int &int_result, double &double_result, string &string_result) {
+if (debug) cout << "GetValue (long) in output " << endl; 
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
-	int aliaslistlength=In[0]->AliasList.size();
 	int choice;
 	int i; 
-	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="alias") choice=4; if  (key=="newton") choice=5; if  (key=="lat") choice=6;if  (key=="engine") choice=7;
+	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="newton") choice=4; if  (key=="lat") choice=5;if  (key=="engine") choice=6;
 
 	switch(choice) {
 		case 1:
@@ -189,19 +200,12 @@ int Output::GetValue(string key, string name, string prop, int &int_result, doub
 			}
 			break;
 		case 4:
-			i=0;
-			while (i<aliaslistlength){
-				if (name==In[0]->AliasList[i]) return Al[i]->GetValue(prop,int_result,double_result,string_result);
-				i++;
-			}
-			break;
-		case 5:
 			return New[0]->GetValue(prop,int_result,double_result,string_result);
 			break;
-		case 6:
+		case 5:
 			return Lat[0]->GetValue(prop,int_result,double_result,string_result);
 			break;
-		case 7:
+		case 6:
 			return Eng[0]->GetValue(prop,int_result,double_result,string_result);
 			break;
 		default:
@@ -212,6 +216,7 @@ int Output::GetValue(string key, string name, string prop, int &int_result, doub
 
 
 void Output::WriteOutput() {
+if (debug) cout << "WriteOutput in output " << endl; 
 	int length;
 	string s; 
 	string filename;
@@ -386,30 +391,13 @@ void Output::WriteOutput() {
 			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Mol[j]->strings[i].c_str(),Mol[j]->strings_value[i].c_str());
 		}
 
-//alias parameters
-		length_A=In[0]->AliasList.size();
-		for (int j=0; j<length_A; j++) {
-			s="alias : " + Al[j]->name + " :";  
-			length = Al[j]->ints.size();
-			for (int i=0; i<length; i++) 
-				fprintf(fp,"%s %s : %i \n",s.c_str(),Al[j]->ints[i].c_str(),Al[j]->ints_value[i]);
-			length = Al[j]->doubles.size();
-			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Al[j]->doubles[i].c_str(),Al[j]->doubles_value[i]);
-			length = Al[j]->bools.size(); 
-			for (int i=0; i<length; i++) {
-				if (Al[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Al[j]->bools[i].c_str(),"true");
-				else fprintf(fp,"%s %s : %s \n",s.c_str(),Al[j]->bools[i].c_str(),"false");
-			}
-			length = Al[j]->strings.size();
-			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Al[j]->strings[i].c_str(),Al[j]->strings_value[i].c_str());
-		}
-
 		fprintf(fp,"%s \n","system delimiter"); 
 		fclose(fp); 
 	}
 }
 
 void Output::vtk(string filename, double *X){
+if (debug) cout << "vtk in output " << endl; 
 	int MX=Lat[0]->MX; 
 	int MY=Lat[0]->MY;
 	int MZ=Lat[0]->MZ; 
@@ -429,6 +417,7 @@ void Output::vtk(string filename, double *X){
 
 
 void Output::density(){
+if (debug) cout << "density in output " << endl; 
 	int length=In[0]->MolList.size();
 	string fname;
 	for (int i=0; i<length; i++) {
@@ -439,6 +428,7 @@ void Output::density(){
 
 
 void Output::printlist(){
+if (debug) cout << "printlist in output " << endl; 
 	
 	ofstream writefile;
 	writefile.open ("listdetails.cpp");

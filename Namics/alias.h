@@ -1,14 +1,21 @@
 #ifndef ALIASxH
 #define ALIASxH
 #include "input.h"
+#include "lattice.h"
+#include "tools.h"
 class Alias {
 public:
-	Alias(vector<Input*>,string);
+	Alias(vector<Input*>,vector<Lattice*>,string);
 
 ~Alias();
 	void AllocateMemory();
+	vector<Lattice*> Lat; 
 	int value;
 	string composition;
+	bool active;
+	vector<int> frag;
+	double* H_phi;
+	double* phi; 
 	
 	string name; 
 	vector<Input*> In; 
@@ -28,6 +35,7 @@ public:
 	void PushOutput();
 	double* GetPointer(string);
 	int GetValue(string,int&,double&,string&);	
+	void PrepareForCalculations();
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;

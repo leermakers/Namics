@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
 	vector<Input*> In; 
 	vector<Lattice*> Lat; 
 	vector<Segment*> Seg; 
-	vector<Alias*> Al;
+	//vector<Alias*> Al;
 	vector<Molecule*> Mol;
 	vector<System*> Sys; 
 	vector<Newton*> New; 
@@ -72,14 +72,14 @@ int main(int argc, char *argv[]) {
 			for (int k=0; k<n_seg; k++) Seg[i]->PutChiKEY(Seg[k]->name); 
 			if (!Seg[i]->CheckInput(start)) return 0;
 		}
-		int n_al = In[0]->AliasList.size(); 
-		for (int i=0; i<n_al; i++) {
-			Al.push_back(new Alias(In,In[0]->AliasList[i])); 
-			if (!Al[i]->CheckInput(start)) return 0;
-		} 
+		//int n_al = In[0]->AliasList.size();
+		//for (int i=0; i<n_al; i++) {
+		//	Al.push_back(new Alias(In,In[0]->AliasList[i])); 
+		//	if (!Al[i]->CheckInput(start)) return 0;
+		//} 
 
 		int n_mol = In[0]->MolList.size();  
-		for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,Al,In[0]->MolList[i])); if (!Mol[i]->CheckInput(start)) return 0;}
+		for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,In[0]->MolList[i])); if (!Mol[i]->CheckInput(start)) return 0;}
 
 		Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0])); Sys[0]->cuda=cuda;  
 		if (!Sys[0]->CheckInput(start)) {return 0;} if (!Sys[0]->CheckChi_values(n_seg)) return 0; 
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 		if (n_out ==0) cout <<"Warning: no output defined" << endl; 
 		
 		for (int i=0; i<n_out; i++) { 
-			Out.push_back(new Output(In,Lat,Seg,Mol,Sys,New,Al,Eng,In[0]->OutputList[i],i,n_out)); 
+			Out.push_back(new Output(In,Lat,Seg,Mol,Sys,New,Eng,In[0]->OutputList[i],i,n_out)); 
 			if (!Out[i]->CheckInput(start)) {cout << "input_error in output " << endl; return 0;} 
 		}
  		Eng[0]->Doit(); 
@@ -102,9 +102,15 @@ int main(int argc, char *argv[]) {
 		int length = In[0]->MonList.size();
 		for (int i=0; i<length; i++) Seg[i]->PushOutput();
 		length = In[0]->MolList.size();
-		for (int i=0; i<length; i++) Mol[i]->PushOutput();
-		length = In[0]->AliasList.size();
-		for (int i=0; i<length; i++) Al[i]->PushOutput();
+		for (int i=0; i<length; i++) {
+			int length_al=Mol[i]->MolAlList.size();
+			for (int k=0; k<length_al; k++) {
+				Mol[i]->Al[k]->PushOutput();
+			}
+			Mol[i]->PushOutput();
+		}
+		//length = In[0]->AliasList.size();
+		//for (int i=0; i<length; i++) Al[i]->PushOutput();
 		Sys[0]->PushOutput(); //needs to be after pushing output for seg.
 
 		for (int i=0; i<n_out; i++) Out[i]->WriteOutput(); 
@@ -112,8 +118,14 @@ int main(int argc, char *argv[]) {
 		delete Eng[0]; Eng.clear(); 
 		delete New[0]; New.clear();
 		delete Sys[0]; Sys.clear();
- 		for (int i=0; i<n_mol; i++) delete Mol[i]; Mol.clear();
-		for (int i=0; i<n_al; i++)  delete Al[i]; Al.clear();
+ 		for (int i=0; i<n_mol; i++) {
+			int length_al = Mol[i]->MolAlList.size();
+			for (int k=0; k<length_al; k++) {
+				delete Mol[i]->Al[k]; Mol[i]->Al.clear(); 
+			}
+			delete Mol[i]; Mol.clear();
+		}
+		//for (int i=0; i<n_al; i++)  delete Al[i]; Al.clear();
 		for (int i=0; i<n_seg; i++) delete Seg[i]; Seg.clear();	
 		delete Lat[0]; Lat.clear();
 	}	

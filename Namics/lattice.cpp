@@ -1,5 +1,6 @@
 #include "lattice.h"
 Lattice::Lattice(vector<Input*> In_,string name_) {
+if (debug) cout <<"Lattice constructor" << endl; 
 	In=In_; name=name_; 
 	KEYS.push_back("n_layers_x");   KEYS.push_back("n_layers_y"); KEYS.push_back("n_layers_z");
 	KEYS.push_back("lowerbound_x"); KEYS.push_back("upperbound_x");
@@ -8,13 +9,16 @@ Lattice::Lattice(vector<Input*> In_,string name_) {
  	KEYS.push_back("bond_length");  KEYS.push_back("lattice_type");  
 }
 Lattice::~Lattice() {
+if (debug) cout <<"Lattice destructor " << endl; 
 }
 
 void Lattice::AllocateMemory(void) {
+if (debug) cout <<"AllocateMemory in lattice " << endl; 
 
 }
 
 bool Lattice::CheckInput(int start) {
+if (debug) cout <<"CheckInput in lattice " << endl; 
 	bool success;
 	string Value;
 	vector<string> options;
@@ -110,10 +114,12 @@ bool Lattice::CheckInput(int start) {
 }
 
 void Lattice::PutParameter(string new_param) {
+if (debug) cout <<"PutParameters in lattice " << endl;
 	KEYS.push_back(new_param); 
 }
 
 string Lattice::GetValue(string parameter){
+if (debug) cout << "GetValue in lattice " << endl; 
 	int i=0;
 	int length = PARAMETERS.size();
 	while (i<length) {
@@ -126,6 +132,7 @@ string Lattice::GetValue(string parameter){
 }
 
 double Lattice::GetValue(double* X,string s){ //need a check to find out if s contains 3 integers separated by ','
+if (debug) cout << "GetValue in lattice " << endl; 
 if (X==NULL) cout << "pointer X is zero" << endl; 
 	int x=0,y=0,z=0;
 	vector<string> sub;
@@ -143,6 +150,7 @@ if (X==NULL) cout << "pointer X is zero" << endl;
 }
 
 void Lattice::vtk(string filename, double* X, string id) {
+if (debug) cout << "vtk in lattice " << endl; 
 	FILE *fp;
 	fp = fopen(filename.c_str(),"w+");
 	fprintf(fp,"# vtk DataFile Version 7.0 \nvtk output \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i\n",MX,MY,MZ);
@@ -155,6 +163,7 @@ void Lattice::vtk(string filename, double* X, string id) {
 	fclose(fp);
 }
 void Lattice::PutProfiles(FILE* pf,vector<double*> X){
+if (debug) cout <<"PutProfiles in lattice " << endl; 
 	int length =X.size();
 	for (int x=1; x<MX+1; x++)
 	for (int y=1; y<MY+1; y++)
@@ -168,27 +177,33 @@ void Lattice::PutProfiles(FILE* pf,vector<double*> X){
 
 
 bool Lattice::PrepareForCalculations(void) {
+if (debug) cout <<"PrepareForCalculations" << endl; 
 	bool success=true;
 	return success; 
 }
 
 void Lattice::push(string s, double X) {
+if (debug) cout <<"push (double) in lattice " << endl; 
 	doubles.push_back(s);
 	doubles_value.push_back(X); 
 }
 void Lattice::push(string s, int X) {
+if (debug) cout <<"push (int) in lattice " << endl; 
 	ints.push_back(s);
 	ints_value.push_back(X); 
 }
 void Lattice::push(string s, bool X) {
+if (debug) cout <<"push (bool) in lattice " << endl; 
 	bools.push_back(s);
 	bools_value.push_back(X); 
 }
 void Lattice::push(string s, string X) {
+if (debug) cout <<"push (string) in lattice " << endl; 
 	strings.push_back(s);
 	strings_value.push_back(X); 	
 }
 void Lattice::PushOutput() {
+if (debug) cout <<"PushOutput in lattice " << endl; 
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -228,6 +243,7 @@ void Lattice::PushOutput() {
 }
 
 int Lattice::GetValue(string prop,int &int_result,double &double_result,string &string_result){
+if (debug) cout <<"GetValue (long)  in lattice " << endl; 
 	int i=0;
 	int length = ints.size();
 	while (i<length) {
@@ -269,6 +285,7 @@ int Lattice::GetValue(string prop,int &int_result,double &double_result,string &
 
 
 void Lattice::Side(double *X_side, double *X, int M) {
+if (debug) cout <<" Side in lattice " << endl; 
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
 	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
@@ -277,6 +294,7 @@ void Lattice::Side(double *X_side, double *X, int M) {
 }
 
 void Lattice::propagate(double *G, double *G1, int s_from, int s_to) { 
+if (debug) cout <<" propagate in lattice " << endl; 
 	double *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 	Zero(gs,M);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
@@ -287,23 +305,150 @@ void Lattice::propagate(double *G, double *G1, int s_from, int s_to) {
 }
 
 void Lattice::remove_bounds(double *X){ 
+if (debug) cout <<" remove_bounds (double) in lattice " << endl; 
 	RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 }
 void Lattice::remove_bounds(int *X){ 
+if (debug) cout <<" remove_bounds (int) in lattice " << endl; 
 	RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 }
  
 void Lattice::set_bounds(double *X){  
+if (debug) cout <<"set_bounds (doubles) in lattice " << endl; 
 	SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 }
 void Lattice::set_bounds(int *X){  
+if (debug) cout <<"set_bounds (int) in lattice " << endl; 
 	SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 }
 
 
+bool Lattice::ReadRange(int* r, int* H_p, int &n_pos, bool &block, string range, string seg_name, string range_type) {
+if (debug) cout <<"ReadRange in Lattice " << endl; 
+	bool success=true;
+	vector<string>set; 
+	vector<string>coor;
+	vector<string>xyz;
+	In[0]->split(range,';',set);
+	if (set.size()==2) { 
+		coor.clear(); 
+		block=true; In[0]->split(set[0],',',coor);
+		if (coor.size()!=3) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in three: (x,y,z)" << endl; success=false;}
+		else {
+			r[0]=In[0]->Get_int(coor[0],0);
+			if (r[0] < 1 || r[0] > MX) {cout << "In mon " + seg_name + ", for 'pos 1', the x-coordinate in '" + range_type + "' is out of bounds: 1.." << MX << endl; success =false;}
+			r[1]=In[0]->Get_int(coor[1],0);
+			if (r[1] < 1 || r[1] > MY) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' is out of bounds: 1.." << MY << endl; success =false;}
+			r[2]=In[0]->Get_int(coor[2],0);
+			if (r[2] < 1 || r[2] > MZ) {cout << "In mon " + seg_name+ ", for 'pos 1', the z-coordinate in '" + range_type + "' is out of bounds: 1.." << MZ << endl; success =false;} 
+		}
+		coor.clear(); In[0]->split(set[1],',',coor);
+
+		if (coor.size()!=3) {cout << "In mon " + seg_name+ ", for 'pos 2', in 'pinned_range', the coordinates do not come in three: (x,y,z)" << endl; success=false;}
+		else {
+			r[3]=In[0]->Get_int(coor[0],0);
+			if (r[3] < 1 || r[3] > MX) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds; 1.." << MX << endl; success =false;}
+			r[4]=In[0]->Get_int(coor[1],0);
+			if (r[4] < 1 || r[4] > MY) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; 1.." << MY << endl; success =false;}
+			r[5]=In[0]->Get_int(coor[2],0);
+			if (r[5] < 1 || r[5] > MZ) {cout << "In mon " + seg_name+ ", for 'pos 2', the z-coordinate in '" + range_type + "' is out of bounds; 1.." << MZ << endl; success =false;}
+			if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+			if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+			if (r[2] > r[5]) {cout << "In mon " + seg_name+ ", for 'pos 1', the z-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+		}
+	} else {
+		if (n_pos==0) {
+			block=false;  
+			In[0]->split(set[0],')',coor);
+			int length=coor.size(); n_pos=length; 
+		} else {
+			In[0]->split(set[0],')',coor);
+			int length=coor.size(); n_pos=length;
+			int px=0,py=0,pz=0;
+			int i=0;	
+			while (i<length) { 
+				string s=coor[i].substr(1,coor[i].size()-1); 
+				In[0]->split(s,',',xyz);
+				int length_xyz=xyz.size();
+				if (length_xyz!=3) { 
+					cout << "In mon " + seg_name+ " pinned_range  the expected 'triple coordinate' structure (x,y,z) was not found. " << endl;  success = false;
+				} else {   
+					px=In[0]->Get_int(xyz[0],0);
+					if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 1.." << MX << endl; success =false;}
+					py=In[0]->Get_int(xyz[1],0);
+					if (py < 1 || py > MY) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MY << endl; success =false;}								
+					pz=In[0]->Get_int(xyz[2],0);
+					if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MZ << endl; success =false;}	
+				}
+				H_p[i]=px*JX+py*JY+pz;
+				i++;
+			}
+		}
+	}
+	return success; 
+}
+
+bool Lattice::ReadRangeFile(string filename,int* H_p, int &n_pos, string seg_name, string range_type) {
+if (debug) cout <<"ReadRangeFile in Lattice " << endl; 
+	bool success=true; 
+	string content;
+	vector<string> lines;
+	vector<string> sub;  
+	vector<string> xyz; 
+	string Infilename=In[0]->name;
+	In[0]->split(Infilename,'.',sub);
+			  
+	if (!In[0]->ReadFile(sub[0].append(".").append(filename),content)) {success=false;} else {
+		In[0]->split(content,'#',lines);
+		int length = lines.size();
+		if (length == MX*MY*MZ) { //expect to read 'mask file';
+			int i=0;
+			if (n_pos==0) {
+				while (i<length){
+					if (In[0]->Get_int(lines[i],0)==1) n_pos++; 
+					i++; 
+				}; 
+				if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
+			} else { 
+				int p_i; 
+				i=0; p_i=0;
+				while (i<length){
+					if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=i; p_i++;}
+					i++; 
+				}
+			}
+		} else { //expect to read x,y,z
+			int px=0,py=0,pz=0;
+			int i=0;
+			if (n_pos==0) 
+				n_pos=length; 
+			else {
+				while (i<length) {  
+					xyz.clear(); 
+					In[0]->split(lines[i],',',xyz);
+					int length_xyz=xyz.size();
+					if (length_xyz!=3) { 
+						cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'triple coordinate' structure 'x,y,z' was not found. " << endl;  success = false;
+					} else {   
+						px=In[0]->Get_int(xyz[0],0);
+						if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
+						py=In[0]->Get_int(xyz[1],0);
+						if (py < 1 || py > MY) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MY << endl; success =false;}								
+						pz=In[0]->Get_int(xyz[2],0);
+						if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MZ << endl; success =false;}	
+					}
+					H_p[i]=px*JX+py*JY+pz;
+					i++;
+				}
+			}		
+		}	
+	} 
+	return success; 
+}
+
 /* 
 
-All below is commented out. This is here to recover from first program. 
+All below is commented out. This is stored here to recover from earlier program. 
 
 void Sideh(double *X_side, double *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);

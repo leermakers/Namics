@@ -640,5 +640,122 @@ if (abs(GN1-GN2)>1e-2) cout << "GN1 != GN2 .... check propagator" << "GN1:" << G
 		g1 = H_g1;
 	#endif	
 
+n = int(pow(N*3,1.0/3)+0.5);
+Molecule::Matrix1Long(const DensityPart DensPart) {
+	int z,s,s0,t0,v0,t,rs1;
+	Matrix Gi(1,M,1,n);
+	Vector Gi_inv(1,M), Gs(1,M);
+	// in constructor: Seg=Chain->GetSegment(1)
+	Vector phi = Seg->GetPhi(DensPart);
+	Vector G = Seg->GetSWF();
+	Lat->MakeSafe(G);
+	// G and phi for the first segment
+	for (z=1; z<=M; z++) {
+		Gi[z][1] = Gs[z] = G[z];
+		phi[z] = 0;
+	}
+    Lat->MakeSafe(phi);
+	t=1;
+	v0=t0=s0 = 0;
+	// and for the other 2..N
+	for (s=2; s<=N/2; s++) {
+		t++;
+		// n=(3*N)^{1/3}+0.5 is the matrix size
+		if (t>n) {    //(++t>n)
+			t0++;
+			if (t0 == n) t0 = ++v0;
+			t = t0 + 1;
+			s0 = s - t0 - 1;
+		}
+		if (force_set) {
+			Lat->PropagateG(Gs,G,GetForce());
+		} else
+		Lat->PropagateG(Gs,G);
+		if ((t == t0+1 && t0 == v0)
+		   || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(s0+t0)))
+		   || (2*(n-t+s) >= N-1)) {
+			for (z=1; z<=M; z++) {
+				Gi[z][t] = Gs[z];
+			}
+		}
+	}
+	for (z=1; z<=M; z++) {
+		Gi_inv[z] = Gs[z];
+	}
+	if (N%2 == 1) {
+		s = N/2 + 1;
+		if (force_set) {
+			Lat->PropagateG(Gi_inv,G,GetForce());
+		} else
+		Lat->PropagateG(Gi_inv,G);
+		Lat->ConnectG(Gi_inv,Gi_inv,phi);
+		Lat->NormPhiFree(phi,0.5); // correction needed for optimization
+	}
+	for (s=(N+3)/2; s<=N; s++) {
+		if (force_set) {
+			Lat->PropagateG(Gi_inv,G,GetForce());
+		} else
+		Lat->PropagateG(Gi_inv,G);
+		t = N - s + 1 - s0;
+		if (t == t0) {
+			s0 += - n + t0;
+			if (t0 == v0)
+				s0 -= ((n - t0)*(n - t0 + 1))/2;
+			t0 --;
+			if (t0 < v0)
+				v0 = t0;
+			for (z=1; z<=M; z++) {
+				Gs[z] = Gi[z][t];
+			}
+			for (rs1=s0+t0+2; rs1<=(N-s+1); rs1++) {
+				t++;
+				if (force_set) {
+					Lat->PropagateG(Gs,G,GetForce());
+				} else
+				Lat->PropagateG(Gs,G);
+				if (t == t0+1 || s0+n == N-s+1) {
+					for (z=1; z<=M; z++) {
+						Gi[z][t] = Gs[z];
+					}
+				}
+				if (t == n && s0+n < N-s+1) {
+					t  = ++t0;
+					s0 += n - t0;
+				}
+			}
+			t = n;
+		}
+		Lat->ConnectG(Gi_inv,Gi,t,phi); // optimization, chain is symmetric
+	}
+	Lat->CorrectDoubleCountG(phi,G);
+	lnGN = Lat->ComputeLnGN(Gi_inv);
+	if (freedom == fixedTheta) {
+		lnCt = log(theta)-lnGN-log(1.0*N);
+		Lat->NormPhiRestr(phi,Gi_inv,2*theta/N); // factor 2 optimization correction
+		phiBulk = theta/exp(lnGN);
+		SetPhiBulk(phiBulk);
+	} else if (freedom == rangeRestricted) {
+		double phiPreNorm = 0;
+		for (z=1; z<=M; z++) {
+			if (restrictedRange->InRange(z)) {
+				phiPreNorm += phi[z];
+			}
+		}
+		lnCt = log(phiRange/(2*phiPreNorm));// factor 2 optimization correction
+		Lat->NormPhiFree(phi,2*exp(lnCt));// factor 2 optimization correction
+		theta = ComputeTheta();
+		phiBulk = theta/exp(lnGN);
+		SetPhiBulk(phiBulk);
+	} else {
+		Lat->NormPhiFree(phi,2*phiBulk/N);// factor 2 optimization correction
+		lnCb = log(phiBulk/N);
+	}
+	Lat->RestoreFromSafe(G);
+	Lat->RestoreFromSafe(phi);
+}
+
+
+
+
 */
 

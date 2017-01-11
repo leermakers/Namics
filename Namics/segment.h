@@ -23,9 +23,9 @@ public:
 	string filename; 
 	bool block;
 	int n_pos;  
-	int MX,MY,MZ;
+	//int MX,MY,MZ;
 	int M; 
-	int xl,yl,zl,xh,yh,zh;
+	int* r;
 
 	vector<string> ints;
 	vector<string> doubles;
@@ -44,15 +44,11 @@ public:
 	int GetValue(string,int&,double&,string&);
 
 
-	int* H_Px; 
-	int* H_Py;
-	int* H_Pz;
+	int* H_P; 
 	int* H_MASK;
 	double* H_u;
 	double* H_phi;
-	int* Px; 
-	int* Py;
-	int* Pz;
+	int* P; 
 	int* MASK;
 	double* G1;
 	double* phi;

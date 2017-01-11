@@ -55,6 +55,8 @@ public:
 	void set_bounds(double*);
 	void set_bounds(int*); 
 	void Side(double *, double *, int);
+	bool ReadRange(int*, int*, int&, bool&, string, string, string);
+	bool ReadRangeFile(string,int* H_p,int&, string, string);
 };
 
 #endif

@@ -60,7 +60,6 @@ if (debug) cout <<"Load in output " << endl;
 								string s="";
 								s=s.append(Mol[molnr]->Al[j]->name);
 								s=s.append(sub[1]);
-cout << s <<endl; 
 								OUT_prop.push_back(s);
 							}
 						} 

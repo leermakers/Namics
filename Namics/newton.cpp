@@ -31,6 +31,7 @@ if(debug) cout <<"Destructor in Newton " << endl;
 
 void Newton::AllocateMemory() {
 if(debug) cout <<"AllocateMemeory in Newton " << endl; 
+	int M=Lat[0]->M;
 	iv = Sys[0]->SysMonList.size() * M;	
 	if (method=="DIIS-ext") iv +=M;
 	Aij =(double*) malloc(m*m*sizeof(double)); H_Zero(Aij,m*m);
@@ -66,12 +67,10 @@ if (debug) cout <<"PrepareForCalculations in Newton " << endl;
 	return success; 
 }
 
-bool Newton::CheckInput(int start) {
+bool Newton::CheckInput(int start_) { start=start_;
 if(debug) cout <<"CheckInput in Newton " << endl; 
 	bool success=true;
 	string value;
-	MX=Lat[0]->MX; MY=Lat[0]->MY; MZ=Lat[0]->MZ; M=(MX+2)*(MY+2)*(MZ+2);
-	JX=(MX+2)*(MY+2); JY=(MY+2); 
 	success=In[0]->CheckParameters("newton",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		e_info=In[0]->Get_bool(GetValue("e_info"),true); 
@@ -94,8 +93,8 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 		}
 		m=In[0]->Get_int(GetValue("m"),10); 
 		if (m < 0 ||m>100) {m=10;  cout << "Value of 'm' out of range 0..100, value set to default value 10" <<endl; }
-		store_guess=In[0]->Get_bool(GetValue("store_guess"),true);		
-		read_guess=In[0]->Get_bool(GetValue("read_guess"),false);
+		StoreFileGuess=In[0]->Get_string(GetValue("store_guess"),"");		
+		ReadFileGuess=In[0]->Get_string(GetValue("read_guess"),"");
 		if (GetValue("stop_criterion").size() > 0) {
 			vector<string>options;
 			options.push_back("norm_of_g");
@@ -208,6 +207,7 @@ if(debug) cout <<"GetValue (long) in  Newton " << endl;
 
 bool Newton::PutU() {
 if(debug) cout <<"PutU in  Newton " << endl;
+	int M=Lat[0]->M;
 	bool success=true;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	for (int i=0; i<sysmon_length; i++) {
@@ -281,31 +281,16 @@ if(debug) cout <<"DIIS in  Newton " << endl;
 bool Newton::Solve(void) {
 if(debug) cout <<"Solve in  Newton " << endl;
 	bool success=true;
-	double *X1=Seg[0]->H_u;
-	double *X2=Seg[1]->H_u; 
-	if (read_guess){ //this should definitely go to lattice, but I keep it here because for testing...
-		for (int i=0; i<MX+2; i++) for (int j=0; j<MY+2; j++) for (int k=0; k<MZ+2; k++) {
-			if (k<MZ/2+1) {
-				X1[JX*i+JY*j+k]= -0.38335;
-				X2[JX*i+JY*j+k]= 0.38335;
-			} else {
-				X1[JX*i+JY*j+k]=0;
-				X2[JX*i+JY*j+k]=0;
-			}
+	if (start==1) {
+		if (ReadFileGuess!="") {
+			Lat[0]->ReadGuess(ReadFileGuess,xx);
+		} else {
+			Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
 		}
 	}
-#ifdef CUDA
-		TransferDataToDevice(X1,xx,M);
-		TransferDataToDevice(X2,xx+M,M);
-#else
-		Cp(xx,X1,M);
-		Cp(xx+M,X2,M);
-#endif
-	if (debug) {double test; Sum(test,xx,M); cout << "Sum x " << test << endl; 
-		double test2;Sum(test2,xx+M,M); cout << "Sum x " << test2 << endl;
-	}
 	if (method=="Picard") success=Iterate_Picard(); else success=Iterate_DIIS(); 
-	Sys[0]->CheckResults(); 
+	Sys[0]->CheckResults();
+	if (StoreFileGuess!="") Lat[0]->StoreGuess(StoreFileGuess,xx); 
 	return success; 
 }
 
@@ -321,6 +306,7 @@ if(debug) cout <<"Messiage in  Newton " << endl;
 
 bool Newton::Iterate_Picard() {
 if(debug) cout <<"Iterate_Picard in  Newton " << endl;
+	int M=Lat[0]->M;
 	double chi; 
 	alpha=Sys[0]->alpha;	
 	bool success=true;
@@ -405,6 +391,7 @@ if(debug) cout <<"ComputPhis in  Newton " << endl;
 
 void Newton::ComputeG(){ 
 if(debug) cout <<"ComputeG in  Newton " << endl;
+	int M=Lat[0]->M;
 	double chi; 
 	ComputePhis();
 
@@ -435,6 +422,7 @@ if(debug) cout <<"ComputeG in  Newton " << endl;
 
 void Newton::ComputeG_ext(){ 
 if(debug) cout <<"CompueG_est() in  Newton " << endl;
+	int M=Lat[0]->M;
 	alpha=Sys[0]->alpha;
 	double chi; 
 	ComputePhis();

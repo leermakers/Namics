@@ -446,6 +446,64 @@ if (debug) cout <<"ReadRangeFile in Lattice " << endl;
 	return success; 
 }
 
+bool Lattice::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {
+if (debug) cout <<"CreateMASK in lattice " << endl; 
+	if (debug) cout <<"CreateMask for lattice " + name << endl;
+	bool success=true; 
+	H_Zero(H_MASK,M);
+	if (block) {
+		for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++) for (int z=1; z<MZ+1; z++) 
+		if (x >=r[1] && y >= r[2] && z >= r[3] && x <= r[4] && y <= r[5] && z <= r[6]) {H_MASK[x*JX+y*JY+z]=1;} else {H_MASK[x*JX+y*JY+z]=0;}
+	} else {
+		for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
+	}
+	return success; 
+}
+
+bool Lattice::GenerateGuess(double* xx, string CalculationType, string GuessType, double A_value, double B_value) {
+if (debug) cout <<"GenerateGuess in lattice " << endl;
+//GuessType: lamellae,Im3m,FCC,BCC,HEX,gyroid,double_gyroid,double_diamond,perforated_lamellae
+//CalculationType: micro_emulsion,micro_phasesegregation
+	bool success = true;
+	if (GuessType=="lamellae") {
+		double* X1=(double*)malloc(M*sizeof(double));
+		double* X2=(double*)malloc(M*sizeof(double));
+		for (int i=0; i<MX+2; i++) for (int j=0; j<MY+2; j++) for (int k=0; k<MZ+2; k++) {
+			if (k<MZ/2+1) {
+				X1[JX*i+JY*j+k]= A_value;
+				X2[JX*i+JY*j+k]= B_value;
+			} else {
+				X1[JX*i+JY*j+k]=0;
+				X2[JX*i+JY*j+k]=0;
+			}
+		}
+	
+
+#ifdef CUDA
+		TransferDataToDevice(X1,xx,M);
+		TransferDataToDevice(X2,xx+M,M);
+#else
+		Cp(xx,X1,M);
+		Cp(xx+M,X2,M);
+#endif
+		free(X1); free(X2); 
+	}
+
+	return success; 
+}
+
+bool Lattice::ReadGuess(string filename,double *xx) {
+cout <<"not yet implemented" << endl; 
+	bool success=true;
+	return success;
+}
+
+bool Lattice::StoreGuess(string filename,double *xx) {
+cout <<"not yet implemented" << endl;
+	bool success=true;
+	return success; 
+}
+
 /* 
 
 All below is commented out. This is stored here to recover from earlier program. 

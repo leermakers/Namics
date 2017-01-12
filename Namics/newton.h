@@ -21,15 +21,15 @@ public:
 	vector<Molecule*> Mol;
 	int iterationlimit,m,i_info;
 	int k_diis,it; 
+	int start;
 	double tolerance,delta_max;
 	double residual;
 	bool e_info,s_info; 
 	string method;
-	bool store_guess;
-	bool read_guess;  
+	string StoreFileGuess;
+	string ReadFileGuess;  
 	string stop_criterion;
 	int iv; 
-	int M,MX,MY,MZ,JX,JY;
 
 	vector<string> ints;
 	vector<string> doubles;
@@ -55,9 +55,7 @@ public:
 	double* Aij;
 	double* Ci;
 	double* Apij; 
-//if properties are added, also read them form input and/or set the default. See CheckInput() below. 
 		
-
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;

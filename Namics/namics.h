@@ -42,4 +42,5 @@ extern bool debug;
 
 enum MoleculeType {monomer, linear};
 
+
 #endif

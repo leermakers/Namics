@@ -19,11 +19,11 @@ public:
 	double valence; 
 	double phibulk; 
 	string freedom;
+	double guess_u; 
 
 	string filename; 
 	bool block;
 	int n_pos;  
-	//int MX,MY,MZ;
 	int M; 
 	int* r;
 
@@ -66,7 +66,6 @@ public:
 	bool IsPinned();
 	bool IsFrozen();
 	bool IsTagged(); 
-	bool CreateMASK();
 	int* GetMASK(); 
 	double* GetPhi(); 
 	void AllocateMemory();

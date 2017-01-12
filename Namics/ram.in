@@ -7,7 +7,10 @@ lat : hex : lowerbound_y : periodic
 lat : hex : upperbound_y : periodic
 lat : hex : lowerbound_z : mirror_1
 lat : hex : upperbound_z : mirror_1
-//sys : ram : calculation_type : micro-emulsion
+sys : ram : calculation_type : micro_emulsion
+sys : ram : generate_guess : lamellae
+sys : ram : guess-A : -0.38335
+sys : ram : guess-B : 0.38335 
 //engine : nice : MC : true
 //sys : ram : variation : 1
 mon : A : freedom : free
@@ -35,8 +38,9 @@ newton : isaac : m : 16
 newton : isaac : delta_max : 0.1
 newton : isaac : iterationlimit : 500
 newton : isaac : tolerance : 1e-5
-newton : isaac : read_guess : true
-sys : frans : GPU : true
+//newton : isaac : read_guess : filename
+//newton : isaac : store_guess : filename 
+//sys : frans : GPU : true
 alias : N : value : (B)20
 start
 //mol : A : theta : 66360

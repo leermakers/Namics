@@ -213,35 +213,17 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			} 	
 		}
 	
-		if (freedom!="free") CreateMASK(); 
+		if (freedom!="free") { 
+			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
+			Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block); 
+		}
 
 	}
 	
 	return success; 
 }
 
-bool Segment::CreateMASK() {
-if (debug) cout <<"CreateMask for segment " + name << endl;
-	int M=Lat[0]->M;
-	int JX=Lat[0]->JX;
-	int JY=Lat[0]->JY;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int MZ=Lat[0]->MZ;
-	bool success=true; 
-	if (freedom!="free") {
-		H_MASK = (int*) malloc(M*sizeof(int));
-		H_Zero(H_MASK,M);
-		if (block) {
-			for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++) for (int z=1; z<MZ+1; z++) 
-			if (x >=r[1] && y >= r[2] && z >= r[3] && x <= r[4] && y <= r[5] && z <= r[6]) {H_MASK[x*JX+y*JY+z]=1;} else {H_MASK[x*JX+y*JY+z]=0;}
-		} else {
-			for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 		}
-	} else {
-		success=false; 
-	}
-	return success; 
-}
+
 
 int* Segment::GetMASK() {
 if (debug) cout <<"Get Mask for segment" + name << endl;

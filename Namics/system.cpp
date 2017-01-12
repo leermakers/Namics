@@ -3,7 +3,10 @@ System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; 
 if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("calculation_type");
-	KEYS.push_back("GPU"); 	
+	KEYS.push_back("generate_guess");
+	KEYS.push_back("GPU"); 
+	int length = In[0]->MonList.size();
+	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]); 
 }
 System::~System() {
 if (debug) cout << "Destructor for system " << endl;	
@@ -27,7 +30,7 @@ if (debug) cout << "Destructor for system " << endl;
 
 void System::AllocateMemory() {
 if (debug) cout << "AllocateMemory in system " << endl; 
-	M=(Lat[0]->MX+2)*(Lat[0]->MY+2)*(Lat[0]->MZ+2);
+	int M=Lat[0]->M;
 	//H_GN_A = new double[n_box];
 	//H_GN_B = new double[n_box];
 
@@ -61,6 +64,7 @@ if (debug) cout << "AllocateMemory in system " << endl;
 
 bool System::PrepareForCalculations() {
 if (debug) cout <<"PrepareForCalculations in System " << endl; 
+	int M=Lat[0]->M;
 	bool success=true;
 	FrozenList.clear();
 	int length = In[0]->MonList.size();
@@ -100,11 +104,7 @@ if (debug) cout << "GetMonName for system " << endl;
 
 bool System::CheckInput(int start) {
 if (debug) cout << "CheckInput for system " << endl;
-	bool success=true;
-	MX=Lat[0]->MX; 
-	MY=Lat[0]->MY;
-	MZ=Lat[0]->MZ;
-	M=(MX+2)*(MY+2)*(MZ+2); 	
+	bool success=true;	
 	bool solvent_found=false; tag_segment=-1; solvent=-1;  //value -1 means no solvent defined. tag_segment=-1; 
 	double phibulktot=0;  
 	success= In[0]->CheckParameters("sys",name,start,KEYS,PARAMETERS,VALUES);
@@ -147,11 +147,12 @@ if (debug) cout << "CheckInput for system " << endl;
 		//find neutralizer when the charge in the bulk does not add to zero.
 
 		vector<string> options;
-		options.push_back("micro-emulsion"); options.push_back("membrane");
+		options.push_back("micro_emulsion"); options.push_back("micro_phasesegregation");
+		CalculationType="";
 		if (GetValue("calculation_type").size()>0) {
-			if (!In[0]->Get_string(GetValue("calculation_type"),calculation_type,options," Info about calculation_type rejected") ) {success=false;};
-			if (calculation_type=="micro-emulsion") {
-				if (In[0]->MolList.size()!=3) {cout << "In 'calculation_type : micro-emulsion', we expect three molecules " << endl; success=false;  }
+			if (!In[0]->Get_string(GetValue("calculation_type"),CalculationType,options," Info about calculation_type rejected") ) {success=false;};
+			if (CalculationType=="micro_emulsion") {
+				if (In[0]->MolList.size()<3) {cout << "In 'calculation_type : micro-emulsion', we expect at least three types of molecules " << endl; success=false;  }
 				int length=In[0]->MolList.size();
 				int i=0;
 				int number_of_solvents=0;
@@ -160,12 +161,50 @@ if (debug) cout << "CheckInput for system " << endl;
 					if (Mol[i]->IsTagged()) {number_of_surfactants++;} else {number_of_solvents++; }
 					i++; 
 				}
-				if (number_of_solvents !=2 || number_of_surfactants !=1) {
-					cout << "In 'calculation_type : micro-emulsion', we expect exactly two solvents and one surfactant which is tagged. " << endl;
+				if (number_of_solvents <2 || number_of_surfactants <1) {
+					cout << "In 'calculation_type : micro-emulsion', we expect at least two solvents and one surfactant which is tagged. " << endl;
 					success=false; 
 				}
 			}
+			if (CalculationType=="micro_phasesegregation") {
+				int length=In[0]->MolList.size();
+				bool found=false; 
+				int i=0;
+				while (i<length && !found) {
+					if (Mol[i]->MolMonList.size()>1) found=true;
+				}
+				if (!found) {cout << "In 'calculation_type : micro_phasesegregation', we expect at least copolymer in the system " << endl; success=false;  }
+			}			
 		}
+		options.clear();
+		options.push_back("lamellae"); options.push_back("Im3m"); 
+		if (GetValue("generate_guess").size()>0) {
+			if (!In[0]->Get_string(GetValue("generate_guess"),GuessType,options," Info about 'generate_guess' rejected") ) {success=false;};
+			if (GuessType=="lamellae" || GuessType=="Im3m") {
+				int length = In[0]->MonList.size();
+				int n_guess=0;
+				for (int i=0; i<length; i++) {
+					string s="guess-"+In[0]->MonList[i];
+					if (GetValue(s).size()>0) {
+						Seg[i]->guess_u=In[0]->Get_double(GetValue(s),0); 
+						if (Seg[i]->guess_u <-2 || Seg[i]->guess_u >2) {
+							cout << "Suggested 'guess value' for 'u' for mon '" + In[0]->MonList[i] + "' out of range: current range is -2, .., 2. Value ignored. " << endl;
+							Seg[i]->guess_u = 0;
+						} else {
+							n_guess++;
+							if (i==0 && n_guess==1)  MonA=i;
+							if (i==1 && n_guess==2)  MonB=i;
+						}
+					}
+				}
+				if (n_guess < 2) {
+					cout <<"generate_guess needs two valid non-zero (real) values for 'guess_xxx' quantities. Here xxx is a monomomer name; 'generate_guess : " + GuessType + "' is most likely ineffective.  " << endl;
+					cout <<"The idea is that the first 'mon' quantity will be the 'oil' and the second 'mon' quantity the 'water' component. Each filling one half-space. Adjust input accordingly. " << endl;    
+				}				
+			} 
+
+		}
+		
 	}
 	return success; 
 }
@@ -224,7 +263,8 @@ if (debug) cout << "PushOutput for system " << endl;
 	push("temperature",T);
 	push("free_energy",FreeEnergy);
 	push("grand_potential",GrandPotential);
-	push("calculation_type",calculation_type);
+	push("calculation_type",CalculationType);
+	push("guess_type",GuessType);
 	push("cuda",cuda);
 	push("solvent",Mol[solvent]->name);
 	int n_mon=In[0]->MonList.size();
@@ -310,6 +350,7 @@ if (debug) cout << "CheckChi_values for system " << endl;
 
 bool System::ComputePhis(){
 if(debug) cout <<"ComputePhis in system" << endl;
+	int M= Lat[0]->M;
 	bool success=true;
 	//success=PrepareForCalculations();
 
@@ -425,6 +466,7 @@ cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl;
 
 double System::GetFreeEnergy(void) {
 if (debug) cout << "GetFreeEnergy for system " << endl;
+	int M=Lat[0]->M;
 	double* F=FreeEnergyDensity;
 	double constant=0;
 	int n_mol=In[0]->MolList.size();
@@ -475,6 +517,7 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 
 double System::GetGrandPotential(void) {
 if (debug) cout << "GetGrandPotential for system " << endl;
+	int M=Lat[0]->M;
 	double* GP =GrandPotentialDensity;
 	int n_mol=In[0]->MolList.size();
 	int n_mon=In[0]->MonList.size();

@@ -16,8 +16,6 @@ public:
 	vector<Segment*> Seg; 
 	vector<Molecule*> Mol;
 	vector<Lattice*> Lat; 
-	int M; 
-	int MX,MY,MZ;
 	vector<int> SysMonList; 
 	vector<int> FrozenList;
 	vector<int> SysTagList; 
@@ -38,7 +36,8 @@ public:
 	int tag_segment; 
 	bool input_error; 
 	bool cuda; 
-	string calculation_type; 
+
+	int MonA,MonB; 
 
 	vector<string> ints;
 	vector<string> doubles;
@@ -55,8 +54,9 @@ public:
 	void PushOutput();
 	double* GetPointer(string);
 	int GetValue(string,int&,double&,string&); 
+	string CalculationType; // {micro_emulsion,micro_phasesegregation};
+	string GuessType; // {lamellae,Im3m,FCC,BCC,HEX,gyroid,double_gyroid,double_diamond,perforated_lamellae};
 		
-
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;

@@ -57,6 +57,10 @@ public:
 	void Side(double *, double *, int);
 	bool ReadRange(int*, int*, int&, bool&, string, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
+	bool CreateMASK(int*, int*, int*, int, bool);
+	bool GenerateGuess(double*, string, string, double, double);
+	bool ReadGuess(string,double*);
+	bool StoreGuess(string,double*);
 };
 
 #endif

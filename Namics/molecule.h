@@ -20,11 +20,6 @@ public:
 	vector<int> MolAlList;
 	int start;
 	int n_mol; 
-	int M; 
-	int MX,MY,MZ;
-	int BX1,BY1,BZ1,BXM,BYM,BZM;
-	int JX;
-	int JY; 	
 	int mol_nr; 
 	double Mu; 
 	double theta;
@@ -43,12 +38,14 @@ public:
 	vector<int> mon_nr;
 	vector<int> n_mon; 
 	vector<int> molmon_nr; 
+	vector<int> memory;
 	double *phi;
 	double *H_phi;
 	double *phitot;
 	double *H_phitot; 
 	double *Gg_f;
 	double *Gg_b; 
+	double *Gs; 
 	int tag_segment; 
 
 	vector<string> ints;
@@ -86,6 +83,8 @@ public:
 	void AllocateMemory(void);
 	bool PrepareForCalculations(); 
 	bool ComputePhi(); 
+	void propagate_forward(double*, double*, int&, int,int);
+	void propagate_backward(double*, double*, double*,int&,int,int);
 	bool ComputePhiMon();
 	bool ComputePhiLin();
 

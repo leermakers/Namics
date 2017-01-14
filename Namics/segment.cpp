@@ -13,7 +13,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("tag_filename"); 
 }
 Segment::~Segment() {
-if (debug) cout <<"Segment destructor" + name << endl;
+if (debug) cout <<"Segment destructor " + name << endl;
 	if (n_pos>0) {
 		free(H_P);
 	}

@@ -20,35 +20,61 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 	cudaFree(phitot);
 	cudaFree(Gg_f);
 	cudaFree(Gg_b);
+	if (save_memory) cudaFree(Gs); 
 #else
 	free(Gg_f);
 	free(Gg_b);
+	if (save_memory) free(Gs); 
 #endif
 }
 
 void Molecule:: AllocateMemory() {
-if (debug) cout <<"AllocateMemory in Mol " + name << endl; 
+if (debug) cout <<"AllocateMemory in Mol " + name << endl;
+	int M=Lat[0]->M;
+	if (save_memory) {
+		int length_ = mon_nr.size();
+		for (int i=0; i<length_; i++) {
+			int n=int(pow(n_mon[i]*6,1.0/3)+0.5);
+			if (n_mon[i]<120) n++;
+			if (n_mon[i]<60) n++;
+			if (n>n_mon[i]) n=n_mon[i]; //This seems to me to be enough...needs a check though..
+			if (i==0) memory.push_back(n); else memory.push_back(n+memory[i-1]);
+		}
+	}
+	int N; 
+	if (save_memory) {
+		N=memory[n_mon.size()-1]; 
+	} else N=chainlength;
+
 	H_phi = (double*) malloc(M*MolMonList.size()*sizeof(double)); 
 	H_phitot = (double*) malloc(M*sizeof(double)); 
 #ifdef CUDA
 	phi=(double*)AllOnDev(M*MolMonList.size());
 	phitot=(double*)AllOnDev(M);
-	Gg_f=(double*)AllOnDev(M*chainlength); 
-	Gg_b=(double*)AllOnDev(M*2);	
+	Gg_f=(double*)AllOnDev(M*N); 
+	Gg_b=(double*)AllOnDev(M*2);
+	if (save_memory) {
+		Gs=(double*)AllOnDev(M*2);
+	}	
 #else
 	phi = H_phi;
 	phitot = H_phitot;
-	Gg_f = (double*) malloc(M*chainlength*sizeof(double)); 
+	Gg_f = (double*) malloc(M*N*sizeof(double)); 
 	Gg_b = (double*) malloc(M*2*sizeof(double)); 
+	if (save_memory) {
+		Gs = (double*) malloc(M*2*sizeof(double));
+	}
 #endif
-	Zero(Gg_f,M*chainlength);
+	Zero(Gg_f,M*N);
 	Zero(Gg_b,2*M);
+	if (save_memory) Zero(Gs,2*M);
 	int length =MolAlList.size();
 	for (int i=0; i<length; i++) Al[i]->AllocateMemory(); 
 }
 
 bool Molecule:: PrepareForCalculations() {
 if (debug) cout <<"PrepareForCalculations in Mol " + name << endl; 
+	int M=Lat[0]->M;
 	int length_al=MolAlList.size();
 	for (int i=0; i<length_al; i++) Al[i]->PrepareForCalculations();
 	bool success=true;
@@ -65,15 +91,8 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 	if (!In[0]->CheckParameters("mol",name,start,KEYS,PARAMETERS,VALUES)) {
 		success=false; 	
 	} else { 
-		MX=Lat[0]->MX; MY=Lat[0]->MY; MZ=Lat[0]->MZ; 
-		M=(MX+2)*(MY+2)*(MZ+2); 
-		BX1=Lat[0]->BX1; BY1=Lat[0]->BY1; BZ1=Lat[0]->BZ1;
-		BXM=Lat[0]->BXM; BYM=Lat[0]->BYM; BZM=Lat[0]->BZM;
-		JX=(MX+2)*(MY+2);
-		JY=(MY+2); 	
 		if (GetValue("save_memory").size()>0) {
 			save_memory=In[0]->Get_bool(GetValue("save_memory"),false); 
-			if  (save_memory) { save_memory =false; cout << "For mol '" + name + "' the flag 'save_memory' is not yet activated. Input ignored " << endl;}
 		}
 		if (GetValue("composition").size()==0) {cout << "For mol '" + name + "' the definition of 'composition' is required" << endl; success = false;
 		} else {
@@ -445,6 +464,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 
 double* Molecule::GetPointer(string s) {
 if (debug) cout <<"GetPointer for Mol " + name << endl;	vector<string> sub;
+	int M= Lat[0]->M;
 	In[0]->split(s,';',sub);
 	if (sub[1]=="0") return H_phitot;
 	int length=MolMonList.size();
@@ -522,7 +542,6 @@ if (debug) cout <<"fraction for Mol " + name << endl;
 bool Molecule::ComputePhi(){
 if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	bool success=true;
-
 	switch (MolType) {
 		case monomer:
 			success=ComputePhiMon();
@@ -539,6 +558,7 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 
 bool Molecule::ComputePhiMon(){
 if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
+	int M=Lat[0]->M; 
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
 	Lat[0]->remove_bounds(phi);
@@ -556,46 +576,134 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	return success;
 }
 
-bool Molecule::ComputePhiLin(){
-	if (debug) cout <<"ComputePhiLin for Mol " + name << endl;
-		bool success=true;
-		Zero(Gg_f,M*chainlength);
-		int blocks=mon_nr.size(); 
-		double *G1;
-		int i=0; 
-		int s=0;
-		while (i<blocks) {
-			G1=Seg[mon_nr[i]]->G1;
-			for (int k=0; k<n_mon[i]; k++) {
-				if (s==0) Cp(Gg_f,G1,M); else {Lat[0]->propagate(Gg_f,G1,s-1,s);}
-				s++;
-			} 	
-			i++;	
-		}
+void Molecule::propagate_forward(double* Gg_f,double* G1,int &s, int N, int block) {
+if (debug) cout <<"propagate_forward for Mol " + name << endl;
+	int M=Lat[0]->M;
+	if (save_memory) {
+		int k,k0,t0,v0,t;
+		int n=memory[block]; if (block>0) n-=memory[block-1];
+		int n0=0; if (block>0) n0=memory[block-1];
+		if (s==0) {
+			Cp(Gs+M,G1,M);
+		} else {
+			Lat[0] ->propagate(Gs,G1,0,1); //assuming Gs contains previous end-point distribution on pos 1; 
+			Cp(Gg_f+n0*M,Gs+M,M);
+		} 
+		t=1;
+		v0=t0=k0=0;
+		for (k=2; k<=N; k++) {
+			t++; s++;
+			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2);
+			if (t>n) {
+				t0++;
+				if (t0 == n) t0 = ++v0;
+				t = t0 + 1;
+				k0 = k - t0 - 1;
+			}
+			if ((t == t0+1 && t0 == v0)
+		  	 || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(k0+t0)))
+		  	 || (2*(n-t+k) >= N-1)) 
+				Cp(Gg_f+(n0+t-1)*M,Gs+(k%2)*M,M);
 
-		Lat[0]->remove_bounds(Gg_f+M*(chainlength-1)); 
-		Sum(GN1,Gg_f+M*(chainlength-1),M);
-		i=blocks; 
-		s=chainlength-1;
-		while (i>0) { i--;
-			double *G1=Seg[mon_nr[i]]->G1; 
-			for (int k=0; k<n_mon[i]; k++) {
-				if (s==chainlength-1) Cp(Gg_b+(s%2)*M,G1,M); else Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2);
-				AddTimes(phi+molmon_nr[i]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
-				if (compute_phi_alias) {
-					int length = MolAlList.size();
-					for (int i=0; i<length; i++) {
-						if (Al[i]->frag[k]==1) {
-							Composition(Al[i]->phi,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
-						}
+		}
+		if ((N)%2!=0) {
+			Cp(Gs,Gs+M,M); //make sure that Gs has last end-point distribution on both spots.
+		} 
+	} else
+	for (int k=0; k<N; k++) {if (s>0) Lat[0] ->propagate(Gg_f,G1,s-1,s); s++;} 	
+}
+
+void Molecule::propagate_backward(double* Gg_f, double* Gg_b, double* G1, int &s, int N, int block) {
+if (debug) cout <<"propagate_backward for Mol " + name << endl;
+	int M = Lat[0]->M; 
+	if (save_memory) {
+		int k,k0,t0,v0,t,rk1;
+		int n=memory[block]; if (block>0) n-=memory[block-1];
+		int n0=0; if (block>0) n0=memory[block-1];
+
+		t=1;
+		v0=t0=k0=0;
+		for (k=2; k<=N; k++) {t++; if (t>n) { t0++; if (t0 == n) t0 = ++v0; t = t0 + 1; k0 = k - t0 - 1;}}
+		for (k=N; k>=1; k--) {
+			if (k==N) {
+				if (s==chainlength-1) {
+					Cp(Gg_b+(k%2)*M,G1,M);
+				} else {
+					Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2);
+				}
+			} else {
+				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2);
+			}
+			t = k - k0;
+			if (t == t0) {
+				k0 += - n + t0;
+				if (t0 == v0 ) {
+					k0 -= ((n - t0)*(n - t0 + 1))/2;
+				}
+				t0 --;
+				if (t0 < v0) {
+					v0 = t0;
+				}
+				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,M);
+				for (rk1=k0+t0+2; rk1<=k; rk1++) {
+					t++;
+					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2);
+					if (t == t0+1 || k0+n == k) {
+						Cp(Gg_f+(n0+t-1)*M,Gs+(t%2)*M,M);
+					}
+					if (t == n && k0+n < k) {
+						t  = ++t0;
+						k0 += n - t0;
 					}
 				}
-				s--;
-			} 	
+				t = n;
+			}
+			AddTimes(phi+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M); 
+			if (compute_phi_alias) {
+				int length = MolAlList.size();
+				for (int i=0; i<length; i++) {
+					if (Al[i]->frag[k]==1) {
+						Composition(Al[i]->phi,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
+					}
+				}
+			}
+			s--;
 		}
-		Lat[0]->remove_bounds(Gg_b);
-	Sum(GN2,Gg_b,M); GN = GN2;
-if (abs(GN1-GN2)>1e-2) cout << "GN1 != GN2 .... check propagator" << "GN1:" << GN1 << " GN2: " << GN2 << endl;
+		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
+	} else {
+		for (int k=0; k<N; k++) {
+			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2);
+			AddTimes(phi+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
+			if (compute_phi_alias) {
+				int length = MolAlList.size();
+				for (int i=0; i<length; i++) {
+					if (Al[i]->frag[k]==1) {
+						Composition(Al[i]->phi,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
+					}
+				}
+			}
+			s--;
+		} 
+	}	
+}
+
+bool Molecule::ComputePhiLin(){
+	if (debug) cout <<"ComputePhiLin for Mol " + name << endl;
+	int M=Lat[0]->M;
+	bool success=true;
+	int blocks=mon_nr.size(); 
+	int s=0; Cp(Gg_f,Seg[mon_nr[0]]->G1,M); 
+	for (int i=0; i<blocks; i++) {
+		propagate_forward(Gg_f,Seg[mon_nr[i]]->G1,s,n_mon[i],i);
+	} 
+	//Lat[0]->remove_bounds(Gg_f+M*(chainlength-1)); 
+	//Sum(GN1,Gg_f+M*(chainlength-1),M);
+	s=chainlength-1; Cp(Gg_b+(s%2)*M,Seg[mon_nr[blocks-1]]->G1,M);
+	for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,Seg[mon_nr[i]]->G1,s,n_mon[i],i);
+	Lat[0]->remove_bounds(Gg_b);
+	Sum(GN,Gg_b,M); 
+//GN = GN2;
+//	if (abs(GN1-GN2)>1e-2) cout << "GN1 != GN2 .... check propagator" << "GN1:" << GN1 << " GN2: " << GN2 << endl;
 	return success;
 }
 
@@ -645,19 +753,14 @@ Molecule::Matrix1Long(const DensityPart DensPart) {
 	int z,s,s0,t0,v0,t,rs1;
 	Matrix Gi(1,M,1,n);
 	Vector Gi_inv(1,M), Gs(1,M);
-	// in constructor: Seg=Chain->GetSegment(1)
 	Vector phi = Seg->GetPhi(DensPart);
 	Vector G = Seg->GetSWF();
-	Lat->MakeSafe(G);
-	// G and phi for the first segment
 	for (z=1; z<=M; z++) {
 		Gi[z][1] = Gs[z] = G[z];
 		phi[z] = 0;
 	}
-    Lat->MakeSafe(phi);
 	t=1;
 	v0=t0=s0 = 0;
-	// and for the other 2..N
 	for (s=2; s<=N/2; s++) {
 		t++;
 		// n=(3*N)^{1/3}+0.5 is the matrix size
@@ -667,9 +770,6 @@ Molecule::Matrix1Long(const DensityPart DensPart) {
 			t = t0 + 1;
 			s0 = s - t0 - 1;
 		}
-		if (force_set) {
-			Lat->PropagateG(Gs,G,GetForce());
-		} else
 		Lat->PropagateG(Gs,G);
 		if ((t == t0+1 && t0 == v0)
 		   || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(s0+t0)))
@@ -684,17 +784,11 @@ Molecule::Matrix1Long(const DensityPart DensPart) {
 	}
 	if (N%2 == 1) {
 		s = N/2 + 1;
-		if (force_set) {
-			Lat->PropagateG(Gi_inv,G,GetForce());
-		} else
 		Lat->PropagateG(Gi_inv,G);
 		Lat->ConnectG(Gi_inv,Gi_inv,phi);
 		Lat->NormPhiFree(phi,0.5); // correction needed for optimization
 	}
 	for (s=(N+3)/2; s<=N; s++) {
-		if (force_set) {
-			Lat->PropagateG(Gi_inv,G,GetForce());
-		} else
 		Lat->PropagateG(Gi_inv,G);
 		t = N - s + 1 - s0;
 		if (t == t0) {
@@ -709,9 +803,6 @@ Molecule::Matrix1Long(const DensityPart DensPart) {
 			}
 			for (rs1=s0+t0+2; rs1<=(N-s+1); rs1++) {
 				t++;
-				if (force_set) {
-					Lat->PropagateG(Gs,G,GetForce());
-				} else
 				Lat->PropagateG(Gs,G);
 				if (t == t0+1 || s0+n == N-s+1) {
 					for (z=1; z<=M; z++) {
@@ -754,6 +845,124 @@ Molecule::Matrix1Long(const DensityPart DensPart) {
 	Lat->RestoreFromSafe(phi);
 }
 
+
+
+	int z,s,s0,t0,v0,t,rs1,i;
+	Vector phi,G;
+	Matrix Gi(1,M,1,n);
+	Vector Gi_inv(1,M), Gs(1,M);
+	for (i=1; i<=numDiffSegments; i++) {
+		Seg = Chain->GetDiffSegment(i);
+		G = Seg->GetSWF();
+		phi = Seg->GetPhi(DensPart);
+		for (z=1; z<=M; z++) {phi[z] = 0;}
+	}
+	G = Chain->GetSegment(1)->GetSWF();
+	for (z=1; z<=M; z++) {
+		Gi[z][1] = Gs[z] = G[z];
+	}
+	t=1;
+	v0=t0=s0 = 0;
+	for (s=2; s<=N; s++) {
+		t++;
+		if (t>n) {
+			t0++;
+			if (t0 == n) t0 = ++v0;
+			t = t0 + 1;
+			s0 = s - t0 - 1;
+		}
+		Lat->PropagateG(Gs,G);
+		if ((t == t0+1 && t0 == v0)
+		   || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(s0+t0)))
+		   || (2*(n-t+s) >= N-1))
+			for (z=1; z<=M; z++) Gi[z][t] = Gs[z];
+	}
+
+	for (s=N; s>=1; s--) {
+		G = Chain->GetSegment(s)->GetSWF();
+		if (s == N) {
+			for (z=1; z<=M; z++) {Gi_inv[z] = G[z];
+		} else Lat->PropagateG(Gi_inv,G);
+		t = s - s0;
+		if (t == t0) {
+			s0 += - n + t0;
+			if (t0 == v0 ) {
+				s0 -= ((n - t0)*(n - t0 + 1))/2;
+			}
+			t0 --;
+			if (t0 < v0) {
+				v0 = t0;
+			}
+			for (z=1; z<=M; z++) {
+				Gs[z] = Gi[z][t];
+			}
+			for (rs1=s0+t0+2; rs1<=s; rs1++) {
+				t++;
+				G = Chain->GetSegment(rs1)->GetSWF();
+				Lat->PropagateG(Gs,G);
+				if (t == t0+1 || s0+n == s) {
+					for (z=1; z<=M; z++) {
+						Gi[z][t] = Gs[z];
+					}
+				}
+				if (t == n && s0+n < s) {
+					t  = ++t0;
+					s0 += n - t0;
+				}
+			}
+			t = n;
+		}
+		Seg = Chain->GetSegment(s);
+		phi = Seg->GetPhi(DensPart);
+		Lat->ConnectG(Gi_inv,Gi,t,phi);
+	}
+
+	lnGN = Lat->ComputeLnGN(Gi_inv);
+	for (i=1; i<=numDiffSegments; i++) {
+		Seg = Chain->GetDiffSegment(i);
+		G = Seg->GetSWF();
+		phi = Seg->GetPhi(DensPart);
+		Lat->CorrectDoubleCountG(phi,G);
+	}
+	if (freedom == fixedTheta) {
+		lnCt = log(theta) - lnGN - log(1.*N);
+		phiBulk = theta/exp(lnGN);
+		SetPhiBulk(phiBulk);
+	} else if (freedom == rangeRestricted) {
+		double phiPreNorm = 0;
+		for (i=1; i<=numDiffSegments; i++) {
+			Seg = Chain->GetDiffSegment(i);
+			phi = Seg->GetPhi(DensPart);
+			for (z=1; z<=M; z++) {
+				if (restrictedRange->InRange(z)) {
+					phiPreNorm += phi[z];
+				}
+			}
+		}
+		lnCt = log(phiRange/phiPreNorm);
+	} else {
+		lnCb = log(phiBulk/N);
+	}
+	for (i=1; i<=numDiffSegments; i++) {
+		Seg = Chain->GetDiffSegment(i);
+		phi = Seg->GetPhi(DensPart);
+		if (freedom == fixedTheta) {
+			Lat->NormPhiRestr(phi,Gi_inv,theta/N);
+		} else if (freedom == rangeRestricted) {
+			Lat->NormPhiFree(phi,exp(lnCt));
+		} else {
+			Lat->NormPhiFree(phi,phiBulk/N);
+		}
+		G = Seg->GetSWF();
+		Lat->RestoreFromSafe(G);
+		Lat->RestoreFromSafe(phi);
+	}
+	if (freedom == rangeRestricted) {
+		theta = ComputeTheta();
+		phiBulk = theta/exp(lnGN);
+		SetPhiBulk(phiBulk);
+	}
+}
 
 
 

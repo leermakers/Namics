@@ -119,6 +119,11 @@ __global__ void cp (double *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0*A[idx];
 }
+
+__global__ void yisaplusctimesb(double *Y, double *A,double *B, double C, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) Y[idx] = A[idx]+ C * B[idx];
+}
 __global__ void yisaminb(double *Y, double *A,double *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]-B[idx];
@@ -695,6 +700,18 @@ void YplusisCtimesX(double *Y, double *X, double C, int M)   {
 #else
 void YplusisCtimesX(double *Y, double *X, double C, int M)    {
 	for (int i=0; i<M; i++) Y[i] += C*X[i];
+}
+#endif
+
+#ifdef CUDA
+void YisAplusCtimesB(double *Y, double *A, double*B, double C, int M)   {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	yisaplusctimesb<<<n_blocks,block_size>>>(Y,A,B,C,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Uplusisctimesx"<<endl;}
+}
+#else
+void YisAplusCtimesB(double *Y, double *A, double*B, double C, int M)   {
+	for (int i=0; i<M; i++) Y[i]=A[i]+C*B[i];
 }
 #endif
 

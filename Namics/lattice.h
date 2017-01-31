@@ -18,8 +18,17 @@ public:
 	int BX1,BY1,BZ1,BXM,BYM,BZM;
 	int JX,JY,M;
 	int volume;
+	int gradients; 
 	string lattice_type;
+	string geometry;
+	double offset_first_layer; 
 	double bond_length; 
+	double *L;
+	double lambda; 
+	double *lambda0;
+	double *lambda_1; 
+	double *lambda1;
+	double *lambda2;
 	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput(). 
 
 	std::vector<string> KEYS;

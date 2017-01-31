@@ -34,6 +34,7 @@ extern double e;
 extern double T;
 extern double k_B;  
 extern double k_BT;
+extern double PIE; 
 extern double eps0;
 extern double eps;
 extern bool debug;

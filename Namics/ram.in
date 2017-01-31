@@ -1,3 +1,4 @@
+lat : hex : gradients : 3
 lat : hex : n_layers_x : 51
 lat : hex : n_layers_y : 51
 lat : hex : n_layers_z : 51

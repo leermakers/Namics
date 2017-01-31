@@ -28,6 +28,7 @@ double T=298.15;
 double k_B=1.38065e-23;
 double k_BT=k_B*T;
 double eps0=8.85418e-12;
+double PIE=3.14159265; 
 double eps=80;
 bool debug =false;
 //double factor=e*e/(eps*eps0*b_length*k_BT); 
@@ -62,8 +63,7 @@ int main(int argc, char *argv[]) {
 	In.push_back(new Input(filename)); if (In[0]->Input_error) {return 0;}
  	n_starts=In[0]->GetNumStarts(); if (n_starts==0) n_starts++; 
 	while (start<n_starts) { start++;
-		cout <<"Problem nr " << start << " out of " << n_starts << endl; 
-		
+		cout <<"Problem nr " << start << " out of " << n_starts << endl; 	
 		Lat.push_back(new Lattice(In,In[0]->LatList[0])); if (!Lat[0]->CheckInput(start)) {return 0;}
 
 		int n_seg=In[0]->MonList.size();  	
@@ -72,12 +72,6 @@ int main(int argc, char *argv[]) {
 			for (int k=0; k<n_seg; k++) Seg[i]->PutChiKEY(Seg[k]->name); 
 			if (!Seg[i]->CheckInput(start)) return 0;
 		}
-		//int n_al = In[0]->AliasList.size();
-		//for (int i=0; i<n_al; i++) {
-		//	Al.push_back(new Alias(In,In[0]->AliasList[i])); 
-		//	if (!Al[i]->CheckInput(start)) return 0;
-		//} 
-
 		int n_mol = In[0]->MolList.size();  
 		for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,In[0]->MolList[i])); if (!Mol[i]->CheckInput(start)) return 0;}
 

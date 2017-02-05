@@ -229,7 +229,20 @@ if (debug) cout << "WriteOutput in output " << endl;
 		FILE *fp;
 		fp=fopen(filename.c_str(),"w");
 		int length=OUT_key.size();
-		fprintf(fp,"x \t y \t z \t"); 
+		switch(Lat[0]->gradients) {
+			case 1:
+				fprintf(fp,"x \t"); 
+				break;
+			case 2: 
+				fprintf(fp,"x \t y \t"); 
+				break;
+			case 3: 
+				fprintf(fp,"x \t y \t z \t"); 
+				break;
+			default: 
+				break;
+		}
+		//fprintf(fp,"x \t y \t z \t"); 
 		for (int i=0; i<length; i++) {
 			double*  X = GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i]);
 			if (X!=NULL) {

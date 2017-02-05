@@ -153,8 +153,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				if (GetValue("theta").size() >0 || GetValue("n").size() > 0 || GetValue("phibulk").size() >0 || GetValue("freedom").size() > 0) cout <<"Warning. In mol " + name + " tagged segment(s) were detected. In this case no value for 'freedom' is needed, and also 'theta', 'n' and 'phibulk' values are ignored. " << endl;  
 			}
 		} 	 	
-	}
-        	
+	}	
 	return success; 
 }
 
@@ -315,9 +314,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		i++;
 	}
 	success=MakeMonList();
-	if (chainlength==1) MolType=monomer; else MolType=linear;
-
-		
+	if (chainlength==1) MolType=monomer; else MolType=linear;	
 	return success; 
 }
 
@@ -363,6 +360,7 @@ if (debug) cout <<"IsPinned for Mol " + name << endl;
 	}
 	return success;
 }
+
 bool Molecule::IsTagged() {
 if (debug) cout <<"IsTagged for Mol " + name << endl;
 	bool success=false;
@@ -374,6 +372,7 @@ if (debug) cout <<"IsTagged for Mol " + name << endl;
 	}
 	return success;
 }
+
 bool Molecule::IsCharged() {
 if (debug) cout <<"IsCharged for Mol " + name << endl;
 	double charge =0;
@@ -385,6 +384,7 @@ if (debug) cout <<"IsCharged for Mol " + name << endl;
 	}
 	return charge<-1e-5 || charge > 1e-5; 
 }
+
 void Molecule::PutParameter(string new_param) {
 if (debug) cout <<"PutParameter for Mol " + name << endl;
 	KEYS.push_back(new_param); 
@@ -458,8 +458,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 #ifdef CUDA
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
-#endif
-		
+#endif	
 }
 
 double* Molecule::GetPointer(string s) {
@@ -536,9 +535,6 @@ if (debug) cout <<"fraction for Mol " + name << endl;
 	return 1.0*Nseg/chainlength; 
 }
 
-
-
-
 bool Molecule::ComputePhi(){
 if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	bool success=true;
@@ -552,7 +548,6 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 		default:
 		cout << "Programming error " << endl; 
 	}
-
 	return success; 
 }
 
@@ -562,7 +557,7 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
 	Lat[0]->remove_bounds(phi);
-	Sum(GN,phi,M);
+	GN=Lat[0]->WeightedSum(phi);
 	if (compute_phi_alias) {
 		int length = MolAlList.size();
 		for (int i=0; i<length; i++) {
@@ -572,7 +567,6 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 		}
 	}
 	Times(phi,phi,Seg[mon_nr[0]]->G1,M);
-	
 	return success;
 }
 
@@ -696,275 +690,10 @@ bool Molecule::ComputePhiLin(){
 	for (int i=0; i<blocks; i++) {
 		propagate_forward(Gg_f,Seg[mon_nr[i]]->G1,s,n_mon[i],i);
 	} 
-	//Lat[0]->remove_bounds(Gg_f+M*(chainlength-1)); 
-	//Sum(GN1,Gg_f+M*(chainlength-1),M);
 	s=chainlength-1; Cp(Gg_b+(s%2)*M,Seg[mon_nr[blocks-1]]->G1,M);
 	for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,Seg[mon_nr[i]]->G1,s,n_mon[i],i);
 	Lat[0]->remove_bounds(Gg_b);
-	Sum(GN,Gg_b,M); 
-//GN = GN2;
-//	if (abs(GN1-GN2)>1e-2) cout << "GN1 != GN2 .... check propagator" << "GN1:" << GN1 << " GN2: " << GN2 << endl;
+	GN=Lat[0]->WeightedSum(Gg_b);
 	return success;
 }
-
-
-/* 
-		H_g1= new double[M*n_box]; H_Zero(H_g1,M*n_box);
-		H_rho = new double[M*n_box];
-		H_GN_A = new double[n_box];
-		H_GN_B = new double[n_box];
-
-	#ifdef CUDA
-		Gg_f=(double*)AllOnDev(M*N*n_box);
-		GG_F=(double*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
-		Gg_b=(double*)AllOnDev(M*2*n_box);
-		GN_A=(double*)AllOnDev(n_box);
-		GN_B=(double*)AllOnDev(n_box);
-		rho =(double*)AllOnDev(M*n_box);
-		g1=(double*)AllOnDev(M*n_box);
-	#else
-		Gg_f = new double[M*(N+1)*n_box]; Gg_b = new double[M*2*n_box];
-		GG_F = new double[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
-		GN_A= H_GN_A;
-		GN_B= H_GN_B;
-		rho = H_rho;
-		g1 = H_g1;
-	#endif
-
-	#ifdef CUDA
-		Gg_f=(double*)AllOnDev(M*N*n_box);
-		GG_F=(double*)AllOnDev(MM*N_A); //Let N_A be the largest N of the solvents!!!!
-		Gg_b=(double*)AllOnDev(M*2*n_box);
-		GN_A=(double*)AllOnDev(n_box);
-		GN_B=(double*)AllOnDev(n_box);
-		rho =(double*)AllOnDev(M*n_box);
-		g1=(double*)AllOnDev(M*n_box);
-	#else
-		Gg_f = new double[M*(N+1)*n_box]; Gg_b = new double[M*2*n_box];
-		GG_F = new double[MM*N_A]; //Let N_A be the largest N of the solvents!!!!
-		GN_A= H_GN_A;
-		GN_B= H_GN_B;
-		rho = H_rho;
-		g1 = H_g1;
-	#endif	
-
-n = int(pow(N*3,1.0/3)+0.5);
-Molecule::Matrix1Long(const DensityPart DensPart) {
-	int z,s,s0,t0,v0,t,rs1;
-	Matrix Gi(1,M,1,n);
-	Vector Gi_inv(1,M), Gs(1,M);
-	Vector phi = Seg->GetPhi(DensPart);
-	Vector G = Seg->GetSWF();
-	for (z=1; z<=M; z++) {
-		Gi[z][1] = Gs[z] = G[z];
-		phi[z] = 0;
-	}
-	t=1;
-	v0=t0=s0 = 0;
-	for (s=2; s<=N/2; s++) {
-		t++;
-		// n=(3*N)^{1/3}+0.5 is the matrix size
-		if (t>n) {    //(++t>n)
-			t0++;
-			if (t0 == n) t0 = ++v0;
-			t = t0 + 1;
-			s0 = s - t0 - 1;
-		}
-		Lat->PropagateG(Gs,G);
-		if ((t == t0+1 && t0 == v0)
-		   || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(s0+t0)))
-		   || (2*(n-t+s) >= N-1)) {
-			for (z=1; z<=M; z++) {
-				Gi[z][t] = Gs[z];
-			}
-		}
-	}
-	for (z=1; z<=M; z++) {
-		Gi_inv[z] = Gs[z];
-	}
-	if (N%2 == 1) {
-		s = N/2 + 1;
-		Lat->PropagateG(Gi_inv,G);
-		Lat->ConnectG(Gi_inv,Gi_inv,phi);
-		Lat->NormPhiFree(phi,0.5); // correction needed for optimization
-	}
-	for (s=(N+3)/2; s<=N; s++) {
-		Lat->PropagateG(Gi_inv,G);
-		t = N - s + 1 - s0;
-		if (t == t0) {
-			s0 += - n + t0;
-			if (t0 == v0)
-				s0 -= ((n - t0)*(n - t0 + 1))/2;
-			t0 --;
-			if (t0 < v0)
-				v0 = t0;
-			for (z=1; z<=M; z++) {
-				Gs[z] = Gi[z][t];
-			}
-			for (rs1=s0+t0+2; rs1<=(N-s+1); rs1++) {
-				t++;
-				Lat->PropagateG(Gs,G);
-				if (t == t0+1 || s0+n == N-s+1) {
-					for (z=1; z<=M; z++) {
-						Gi[z][t] = Gs[z];
-					}
-				}
-				if (t == n && s0+n < N-s+1) {
-					t  = ++t0;
-					s0 += n - t0;
-				}
-			}
-			t = n;
-		}
-		Lat->ConnectG(Gi_inv,Gi,t,phi); // optimization, chain is symmetric
-	}
-	Lat->CorrectDoubleCountG(phi,G);
-	lnGN = Lat->ComputeLnGN(Gi_inv);
-	if (freedom == fixedTheta) {
-		lnCt = log(theta)-lnGN-log(1.0*N);
-		Lat->NormPhiRestr(phi,Gi_inv,2*theta/N); // factor 2 optimization correction
-		phiBulk = theta/exp(lnGN);
-		SetPhiBulk(phiBulk);
-	} else if (freedom == rangeRestricted) {
-		double phiPreNorm = 0;
-		for (z=1; z<=M; z++) {
-			if (restrictedRange->InRange(z)) {
-				phiPreNorm += phi[z];
-			}
-		}
-		lnCt = log(phiRange/(2*phiPreNorm));// factor 2 optimization correction
-		Lat->NormPhiFree(phi,2*exp(lnCt));// factor 2 optimization correction
-		theta = ComputeTheta();
-		phiBulk = theta/exp(lnGN);
-		SetPhiBulk(phiBulk);
-	} else {
-		Lat->NormPhiFree(phi,2*phiBulk/N);// factor 2 optimization correction
-		lnCb = log(phiBulk/N);
-	}
-	Lat->RestoreFromSafe(G);
-	Lat->RestoreFromSafe(phi);
-}
-
-
-
-	int z,s,s0,t0,v0,t,rs1,i;
-	Vector phi,G;
-	Matrix Gi(1,M,1,n);
-	Vector Gi_inv(1,M), Gs(1,M);
-	for (i=1; i<=numDiffSegments; i++) {
-		Seg = Chain->GetDiffSegment(i);
-		G = Seg->GetSWF();
-		phi = Seg->GetPhi(DensPart);
-		for (z=1; z<=M; z++) {phi[z] = 0;}
-	}
-	G = Chain->GetSegment(1)->GetSWF();
-	for (z=1; z<=M; z++) {
-		Gi[z][1] = Gs[z] = G[z];
-	}
-	t=1;
-	v0=t0=s0 = 0;
-	for (s=2; s<=N; s++) {
-		t++;
-		if (t>n) {
-			t0++;
-			if (t0 == n) t0 = ++v0;
-			t = t0 + 1;
-			s0 = s - t0 - 1;
-		}
-		Lat->PropagateG(Gs,G);
-		if ((t == t0+1 && t0 == v0)
-		   || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(s0+t0)))
-		   || (2*(n-t+s) >= N-1))
-			for (z=1; z<=M; z++) Gi[z][t] = Gs[z];
-	}
-
-	for (s=N; s>=1; s--) {
-		G = Chain->GetSegment(s)->GetSWF();
-		if (s == N) {
-			for (z=1; z<=M; z++) {Gi_inv[z] = G[z];
-		} else Lat->PropagateG(Gi_inv,G);
-		t = s - s0;
-		if (t == t0) {
-			s0 += - n + t0;
-			if (t0 == v0 ) {
-				s0 -= ((n - t0)*(n - t0 + 1))/2;
-			}
-			t0 --;
-			if (t0 < v0) {
-				v0 = t0;
-			}
-			for (z=1; z<=M; z++) {
-				Gs[z] = Gi[z][t];
-			}
-			for (rs1=s0+t0+2; rs1<=s; rs1++) {
-				t++;
-				G = Chain->GetSegment(rs1)->GetSWF();
-				Lat->PropagateG(Gs,G);
-				if (t == t0+1 || s0+n == s) {
-					for (z=1; z<=M; z++) {
-						Gi[z][t] = Gs[z];
-					}
-				}
-				if (t == n && s0+n < s) {
-					t  = ++t0;
-					s0 += n - t0;
-				}
-			}
-			t = n;
-		}
-		Seg = Chain->GetSegment(s);
-		phi = Seg->GetPhi(DensPart);
-		Lat->ConnectG(Gi_inv,Gi,t,phi);
-	}
-
-	lnGN = Lat->ComputeLnGN(Gi_inv);
-	for (i=1; i<=numDiffSegments; i++) {
-		Seg = Chain->GetDiffSegment(i);
-		G = Seg->GetSWF();
-		phi = Seg->GetPhi(DensPart);
-		Lat->CorrectDoubleCountG(phi,G);
-	}
-	if (freedom == fixedTheta) {
-		lnCt = log(theta) - lnGN - log(1.*N);
-		phiBulk = theta/exp(lnGN);
-		SetPhiBulk(phiBulk);
-	} else if (freedom == rangeRestricted) {
-		double phiPreNorm = 0;
-		for (i=1; i<=numDiffSegments; i++) {
-			Seg = Chain->GetDiffSegment(i);
-			phi = Seg->GetPhi(DensPart);
-			for (z=1; z<=M; z++) {
-				if (restrictedRange->InRange(z)) {
-					phiPreNorm += phi[z];
-				}
-			}
-		}
-		lnCt = log(phiRange/phiPreNorm);
-	} else {
-		lnCb = log(phiBulk/N);
-	}
-	for (i=1; i<=numDiffSegments; i++) {
-		Seg = Chain->GetDiffSegment(i);
-		phi = Seg->GetPhi(DensPart);
-		if (freedom == fixedTheta) {
-			Lat->NormPhiRestr(phi,Gi_inv,theta/N);
-		} else if (freedom == rangeRestricted) {
-			Lat->NormPhiFree(phi,exp(lnCt));
-		} else {
-			Lat->NormPhiFree(phi,phiBulk/N);
-		}
-		G = Seg->GetSWF();
-		Lat->RestoreFromSafe(G);
-		Lat->RestoreFromSafe(phi);
-	}
-	if (freedom == rangeRestricted) {
-		theta = ComputeTheta();
-		phiBulk = theta/exp(lnGN);
-		SetPhiBulk(phiBulk);
-	}
-}
-
-
-
-*/
 

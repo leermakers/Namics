@@ -6,8 +6,8 @@ lat : hex : lowerbound_x : periodic
 lat : hex : upperbound_x : periodic
 lat : hex : lowerbound_y : periodic
 lat : hex : upperbound_y : periodic
-lat : hex : lowerbound_z : mirror_1
-lat : hex : upperbound_z : mirror_1
+lat : hex : lowerbound_z : mirror
+lat : hex : upperbound_z : mirror
 sys : ram : calculation_type : micro_emulsion
 sys : ram : generate_guess : lamellae
 sys : ram : guess-A : -0.38335

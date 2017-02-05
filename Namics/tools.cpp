@@ -827,7 +827,7 @@ void Div(double *P, double *A, int M)   {
 }
 #else
 void Div(double *P, double *A, int M)   {
-	for (int i=0; i<M; i++) if (A[i]>0) P[i]/=A[i]; else P[i]=0;
+	for (int i=0; i<M; i++) if (A[i]!=0) P[i]/=A[i]; else P[i]=0;
 }
 #endif
 
@@ -962,9 +962,4 @@ void RemoveBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym
 	b_z(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
 }
 #endif
-
-
-
-
-
 

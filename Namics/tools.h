@@ -89,10 +89,10 @@ void Div(double*, double*, int);
 void AddG(double*, double*, double*, int);
 void OneMinusPhitot(double*, double*, int);
 void ComputeGN(double*, double*, int, int);
-void SetBoundaries(double*, int, int, int, int, int, int, int, int, int, int, int);
+void SetBoundaries(double*,    int, int, int, int, int, int, int, int, int, int, int);
 void RemoveBoundaries(double*, int, int, int, int, int, int, int, int, int, int, int);
-void SetBoundaries(int*, int, int, int, int, int, int, int, int, int, int, int);
-void RemoveBoundaries(int*, int, int, int, int, int, int, int, int, int, int, int);
+void SetBoundaries(int*,       int, int, int, int, int, int, int, int, int, int, int);
+void RemoveBoundaries(int*,    int, int, int, int, int, int, int, int, int, int, int);
 #else
 void bx(double *, int, int, int, int, int, int, int);
 void b_x(double*, int, int, int, int, int, int, int);
@@ -138,10 +138,10 @@ void Div(double*, double*, int);
 void AddG(double*, double*, double*, int);
 void OneMinusPhitot(double*, double*, int);
 void ComputeGN(double*, double*, int, int);
-void SetBoundaries(double*, int, int, int, int, int, int, int, int, int, int, int);
+void SetBoundaries(double*,    int, int, int, int, int, int, int, int, int, int, int);
 void RemoveBoundaries(double*, int, int, int, int, int, int, int, int, int, int, int);
-void SetBoundaries(int*, int, int, int, int, int, int, int, int, int, int, int);
-void RemoveBoundaries(int*, int, int, int, int, int, int, int, int, int, int, int);
+void SetBoundaries(int*,       int, int, int, int, int, int, int, int, int, int, int);
+void RemoveBoundaries(int*,    int, int, int, int, int, int, int, int, int, int, int);
 #endif
 
 void H_Zero(double*, int);

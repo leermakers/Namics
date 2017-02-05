@@ -28,7 +28,6 @@ public:
 	double *lambda0;
 	double *lambda_1; 
 	double *lambda1;
-	double *lambda2;
 	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput(). 
 
 	std::vector<string> KEYS;
@@ -50,6 +49,9 @@ public:
 	void PushOutput();
 	int GetValue(string,int&,double&,string&);
 	double GetValue(double*,string);
+	double WeightedSum(double*); 
+	void TimesL(double*);
+	void DivL(double*);
 	void vtk(string, double*,string);
 	void PutProfiles(FILE*,vector<double*>);
 

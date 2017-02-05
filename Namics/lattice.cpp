@@ -1,9 +1,10 @@
 #include "lattice.h" 
-Lattice::Lattice(vector<Input*> In_,string name_) {
+Lattice::Lattice(vector<Input*> In_,string name_) { //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
 if (debug) cout <<"Lattice constructor" << endl; 
 	In=In_; name=name_; 
 	KEYS.push_back("gradients"); KEYS.push_back("n_layers"); KEYS.push_back("offset_first_layer");
 	KEYS.push_back("n_layers_x");   KEYS.push_back("n_layers_y"); KEYS.push_back("n_layers_z");
+	KEYS.push_back("lowerbound"); KEYS.push_back("upperbound");
 	KEYS.push_back("lowerbound_x"); KEYS.push_back("upperbound_x");
 	KEYS.push_back("lowerbound_y"); KEYS.push_back("upperbound_y");
 	KEYS.push_back("lowerbound_z"); KEYS.push_back("upperbound_z");
@@ -12,12 +13,12 @@ if (debug) cout <<"Lattice constructor" << endl;
 
 Lattice::~Lattice() {
 if (debug) cout <<"lattice destructor " << endl;
-if (L) delete [] L;  //In this program, we will assume that the propagator will work on a simple cubic lattice. 
-			//Interactions will be treated either with similar or with different 'lambda's.
+  //In this program, we will assume that the propagator will work on a simple cubic lattice. 
+			//Interactions will be treated either with simple cubic or FCC 'lambda's.
 if (lambda_1) delete [] lambda_1;
 if (lambda1) delete [] lambda1;
-if (lambda0) delete [] lambda0;
-if (lambda2) delete [] lambda2;  
+if (lambda0) delete [] lambda0; 
+if (L) delete [] L; 
 }
 
 void Lattice::AllocateMemory(void) {
@@ -131,28 +132,35 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				
 				JX=1; JY=0; M=MX+2; 
 				options.clear(); 
-				options.push_back("mirror_1"); options.push_back("mirror_2"); options.push_back("surface"); 
+				options.push_back("mirror"); //options.push_back("mirror_2");
+				options.push_back("surface"); 
+				if (GetValue("lowerbound_x").size()>0) {cout << "lowerbond_x is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_y").size()>0) {cout << "lowerbond_y is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbond_z is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_x").size()>0) {cout << "upperbond_x is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_y").size()>0) {cout << "upperbond_y is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_z").size()>0) {cout << "upperbond_z is not allowed in 1-gradient calculations" << endl; success=false;}
 				
 				Value.clear();
 				Value=GetValue("lowerbound"); 
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound' boundary condition not recognized.")) success=false; 
-					if (VALUE1=="mirror_1") BX1=1; 
-					if (VALUE1=="mirror_2") BX1=2;
+					if (VALUE1=="mirror") BX1=1; 
+					//if (VALUE1=="mirror_2") BX1=2;
 					if (VALUE1=="surface")  BX1=0;
 				} else {
-					VALUE1="mirror_1";
+					VALUE1="mirror";
 					BX1=1;
 				} 
 				Value.clear();
 				Value=GetValue("upperbound"); 
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE2,options,"for 'upperbound' boundary condition not recognized.")) success=false; 
-					if (VALUE2=="mirror_1") BXM=MX; 
-					if (VALUE2=="mirror_2") BXM=MX-1;
+					if (VALUE2=="mirror") BXM=MX; 
+					//if (VALUE2=="mirror_2") BXM=MX-1;
 					if (VALUE2=="surface")  BXM=MX+1;
 				} else {
-					VALUE2="mirror_1";
+					VALUE2="mirror";
 					BXM=MX-1;
 				} 
 				
@@ -189,31 +197,34 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				JX=(MX+2); JY=1; M=(MX+2)*(MY+2); 
 
 				options.clear(); 
-				options.push_back("mirror_1"); options.push_back("mirror_2"); options.push_back("surface");
+				options.push_back("mirror"); //options.push_back("mirror_2"); 
+				options.push_back("surface");
 				if (geometry=="planar") options.push_back("periodic"); 
+				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbond_z is not allowed in 2-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_z").size()>0) {cout << "upperbond_z is not allowed in 2-gradient calculations" << endl; success=false;}
 				
 				Value.clear();
 				Value=GetValue("lowerbound_x"); 
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false; 
-					if (VALUE1=="mirror_1") BX1=1; 
-					if (VALUE1=="mirror_2") BX1=2;
+					if (VALUE1=="mirror") BX1=1; 
+					//if (VALUE1=="mirror_2") BX1=2;
 					if (VALUE1=="surface")  BX1=0;
 					if (VALUE1=="periodic") BX1=MX;
 				} else {
-					VALUE1="mirror_1";
+					VALUE1="mirror";
 					BX1=1;
 				} 
 				Value.clear();
 				Value=GetValue("upperbound_x"); 
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE2,options,"for 'upperbound_x' boundary condition not recognized.")) success=false; 
-					if (VALUE2=="mirror_1") BXM=MX; 
-					if (VALUE2=="mirror_2") BXM=MX-1;
+					if (VALUE2=="mirror") BXM=MX; 
+					//if (VALUE2=="mirror_2") BXM=MX-1;
 					if (VALUE2=="surface")  BXM=MX+1;
 					if (VALUE2=="periodic") BXM=1;
 				} else {
-					VALUE2="mirror_1";
+					VALUE2="mirror";
 					BXM=MX-1;
 				}
  
@@ -222,24 +233,24 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value=GetValue("lowerbound_y"); 
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE3,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false; 
-					if (VALUE3=="mirror_1") BY1=1; 
-					if (VALUE3=="mirror_2") BY1=2;
+					if (VALUE3=="mirror") BY1=1; 
+					//if (VALUE3=="mirror_2") BY1=2;
 					if (VALUE3=="surface")  BY1=0;
 					if (VALUE3=="periodic") BY1=MY; 
 				} else {
-					VALUE3="mirror_1";
+					VALUE3="mirror";
 					BY1=1;
 				} 
 				Value.clear();
 				Value=GetValue("upperbound_x"); 
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE4,options,"for 'upperbound_x' boundary condition not recognized.")) success=false; 
-					if (VALUE4=="mirror_1") BYM=MY; 
-					if (VALUE4=="mirror_2") BYM=MY-1;
+					if (VALUE4=="mirror") BYM=MY; 
+					//if (VALUE4=="mirror_2") BYM=MY-1;
 					if (VALUE4=="surface")  BYM=MY+1;
 					if (VALUE4=="periodic") BYM=1;
 				} else {
-					VALUE4="mirror_1";
+					VALUE4="mirror";
 					BYM=MY-1;
 				}
 				if (VALUE1=="periodic" || VALUE2=="periodic") {
@@ -259,14 +270,15 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (Mx>MX) {cout << "'sub_box_size' can not exceed the size of the main box." << endl; success=false;} else My=Mz=Mx;
 				
 				options.clear(); 
-				options.push_back("mirror_1"); options.push_back("mirror_2"); options.push_back("periodic"); 
+				options.push_back("mirror"); //options.push_back("mirror_2"); 
+				options.push_back("periodic"); 
 				//options.push_back("shifted_mirror");
 				
 				Value.clear();
 				Value=GetValue("lowerbound_x"); if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false;
-					if (VALUE1=="mirror_1") BX1=1; 
-					if (VALUE1=="mirror_2") BX1=2;
+					if (VALUE1=="mirror") BX1=1; 
+					//if (VALUE1=="mirror_2") BX1=2;
 					if (VALUE1=="periodic") BX1=MX;
 				} else {
 					VALUE1="periodic";
@@ -275,8 +287,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value.clear();	
 				Value=GetValue("lowerbound_y"); if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE2,options,"for 'lowerbound_y' boundary condition not recognized.")) success=false;
-					if (VALUE2=="mirror_1") BY1=1; 
-					if (VALUE2=="mirror_2") BY1=2;
+					if (VALUE2=="mirror") BY1=1; 
+					//if (VALUE2=="mirror_2") BY1=2;
 					if (VALUE2=="periodic") BY1=MY; 
 				} else {
 					VALUE2="periodic";
@@ -285,8 +297,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value.clear();	
 				Value=GetValue("lowerbound_z"); if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE3,options,"for 'lowerbound_z' boundary condition not recognized.")) success=false;
-					if (VALUE3=="mirror_1") BZ1=1; 
-					if (VALUE3=="mirror_2") BZ1=2;
+					if (VALUE3=="mirror") BZ1=1; 
+					//if (VALUE3=="mirror_2") BZ1=2;
 					if (VALUE3=="periodic") BZ1=MZ;  
 				} else {
 					VALUE3="periodic";
@@ -295,8 +307,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value.clear();	
 				Value=GetValue("upperbound_x"); if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE4,options,"for 'upperbound_x' boundary condition not recognized.")) success=false; 
-					if (VALUE4=="mirror_1") BXM=MX; 
-					if (VALUE4=="mirror_2") BXM=MX-1;
+					if (VALUE4=="mirror") BXM=MX; 
+					//if (VALUE4=="mirror_2") BXM=MX-1;
 					if (VALUE4=="periodic") BXM=1;
 				} else {
 					VALUE4="periodic";
@@ -305,8 +317,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value.clear();	
 				Value=GetValue("upperbound_y"); if (Value.length()>0) {
 					if(!In[0]->Get_string(Value,VALUE5,options,"for 'upperbound_y' boundary condition not recognized.")) success=false; 
-					if (VALUE5=="mirror_1") BYM=MY; 
-					if (VALUE5=="mirror_2") BYM=MY-1;
+					if (VALUE5=="mirror") BYM=MY; 
+					//if (VALUE5=="mirror_2") BYM=MY-1;
 					if (VALUE5=="periodic") BYM=1;
 				} else {
 					VALUE5="periodic";
@@ -315,8 +327,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value.clear();	
 				Value=GetValue("upperbound_z"); if (Value.length()>0) { 
 					if (!In[0]->Get_string(Value,VALUE6,options,"for 'upperbound_z' boundary condition not recognized.")) success=false; 
-					if (VALUE6=="mirror_1") BZM=MZ; 
-					if (VALUE6=="mirror_2") BZM=MZ-1;
+					if (VALUE6=="mirror") BZM=MZ; 
+					//if (VALUE6=="mirror_2") BZM=MZ-1;
 					if (VALUE6=="periodic") BZM=1;
 				} else {
 					VALUE6="periodic";
@@ -403,6 +415,62 @@ if (X==NULL) cout << "pointer X is zero" << endl;
 			break;
 	}
 	return 0;
+}
+
+void Lattice::TimesL(double* X){
+	switch(gradients) {
+		case 1:
+			if (geometry!="planar") Times(X,X,L,M);
+			break;
+		case 2: 
+			if (geometry!="planar") Times(X,X,L,M);			
+			break;
+		case 3: 
+			break;
+		default:
+			break;
+	}
+}
+
+void Lattice::DivL(double* X){
+	switch(gradients) {
+		case 1:
+			if (geometry!="planar") Div(X,L,M);
+			break;
+		case 2: 
+			if (geometry!="planar") Div(X,L,M);			
+			break;
+		case 3: 
+			break;
+		default:
+			break;
+	}
+}
+
+double Lattice::WeightedSum(double* X){
+	double sum;
+	switch(gradients) {
+		case 1:
+			if (geometry=="planar") {
+				Sum(sum,X,M); return sum;
+			} else {
+				Dot(sum,X,L,M); return sum;
+			}
+			break;
+		case 2: 
+			if (geometry=="planar") {
+				Sum(sum,X,M); return sum;
+			} else {
+				Dot(sum,X,L,M); return sum;
+			}			
+			break;
+		case 3: 
+			Sum(sum,X,M); return sum;
+			break;
+		default:
+			return 0;
+			break;
+	}
 }
 
 void Lattice::vtk(string filename, double* X, string id) {
@@ -506,9 +574,9 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	doubles_value.clear();
 	ints.clear();
 	ints_value.clear(); 
-	string mirror1="mirror_1"; 
+	string mirror="mirror"; 
 	string periodic="periodic";
-	string mirror2="mirror_2";
+	//string mirror2="mirror_2";
 	string surface="surface"; 
 	//string s;
 	push("gradients",gradients);
@@ -520,26 +588,26 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	switch (gradients) {
 		case 1:
 			push("n_layers",MX);
-			if (BX1==1) push("lowerbound",mirror1);
-			if (BXM==MX-1) push("upperbound",mirror1);
-			if (BX1==2) push("lowerbound",mirror2);
-			if (BXM==MX-2) push("upperbound",mirror2);
+			if (BX1==1) push("lowerbound",mirror);
+			if (BXM==MX-1) push("upperbound",mirror);
+			//if (BX1==2) push("lowerbound",mirror_2);
+			//if (BXM==MX-2) push("upperbound",mirror_2);
 			if (BX1==0) push("lowerbound",surface);
 			if (BXM==MX+1) push("upperbound",surface);
 			break;
 		case 2:
 			push("n_layers_x",MX);
 			push("n_layers_y",MY);
-			if (BX1==1) push("lowerbound_x",mirror1);
-			if (BXM==MX-1) push("upperbound_x",mirror1);
-			if (BX1==2) push("lowerbound_x",mirror2);
-			if (BXM==MX-2) push("upperbound_x",mirror2);
+			if (BX1==1) push("lowerbound_x",mirror);
+			if (BXM==MX-1) push("upperbound_x",mirror);
+			//if (BX1==2) push("lowerbound_x",mirror_2);
+			//if (BXM==MX-2) push("upperbound_x",mirror_2);
 			if (BX1==0) push("lowerbound_x",surface);
 			if (BXM==MX+1) push("upperbound_x",surface);
-			if (BY1==1) push("lowerbound_x",mirror1);
-			if (BYM==MY-1) push("upperbound_x",mirror1);
-			if (BY1==2) push("lowerbound_x",mirror2);
-			if (BYM==MY-2) push("upperbound_x",mirror2);
+			if (BY1==1) push("lowerbound_x",mirror);
+			if (BYM==MY-1) push("upperbound_x",mirror);
+			//if (BY1==2) push("lowerbound_x",mirror_2);
+			//if (BYM==MY-2) push("upperbound_x",mirror_2);
 			if (BY1==0) push("lowerbound_x",surface);
 			if (BYM==MY+1) push("upperbound_x",surface);
 			break;
@@ -547,22 +615,22 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 			push("n_layers_x",MX);
 			push("n_layers_y",MY);
 			push("n_layers_z",MZ);	
-			if (BX1==1) push("lowerbound_x",mirror1);
-			if (BXM==MX-1) push("upperbound_x",mirror1);
-			if (BX1==2) push("lowerbound_x",mirror2);
-			if (BXM==MX-2) push("upperbound_x",mirror2);
+			if (BX1==1) push("lowerbound_x",mirror);
+			if (BXM==MX-1) push("upperbound_x",mirror);
+			//if (BX1==2) push("lowerbound_x",mirror_2);
+			//if (BXM==MX-2) push("upperbound_x",mirror_2);
 			if (BX1==MX) push("lowerbound_x",periodic);
 			if (BXM==1) push("upperbound_x",periodic);
-			if (BY1==1) push("lowerbound_y",mirror1);
-			if (BYM==MY-1) push("upperbound_y",mirror1);
-			if (BY1==2) push("lowerbound_y",mirror2);
-			if (BYM==MY-2) push("upperbound_y",mirror2);
+			if (BY1==1) push("lowerbound_y",mirror);
+			if (BYM==MY-1) push("upperbound_y",mirror);
+			//if (BY1==2) push("lowerbound_y",mirror_2);
+			//if (BYM==MY-2) push("upperbound_y",mirror_2);
 			if (BY1==MY) push("lowerbound_y",periodic);
 			if (BYM==1) push("upperbound_y",periodic);	
-			if (BZ1==1) push("lowerbound_z",mirror1);
-			if (BZM==MZ-1) push("upperbound_z",mirror1);
-			if (BZ1==2) push("lowerbound_z",mirror2);
-			if (BZM==MZ-2) push("upperbound_z",mirror2);
+			if (BZ1==1) push("lowerbound_z",mirror);
+			if (BZM==MZ-1) push("upperbound_z",mirror);
+			//if (BZ1==2) push("lowerbound_z",mirror_2);
+			//if (BZM==MZ-2) push("upperbound_z",mirror_2);
 			if (BZ1==MZ) push("lowerbound_z",periodic);
 			if (BZM==1) push("upperbound_z",periodic);
 			break;
@@ -618,7 +686,7 @@ if (debug) cout <<" Side in lattice " << endl;
 	double* SIDE;
 	switch(gradients) {
 		case 1:
-			set_bounds(X);
+			//set_bounds(X);
 			Zero(X_side,M);
 			if (geometry=="planar") {
 				Add(X_side+1,X,M-1); Add(X_side,X+1,M-1);
@@ -637,7 +705,7 @@ if (debug) cout <<" Side in lattice " << endl;
 			}
 			break;
 		case 2:
-			set_bounds(X);
+			//set_bounds(X);
 			Zero(X_side,M); 
 			if (geometry=="planar") {
 				if (lattice_type =="simple_cubic" ) {
@@ -665,7 +733,7 @@ if (debug) cout <<" Side in lattice " << endl;
 					Add(X_side+1,X,M-1);
 					Add(X_side,X,M);
 					AddTimes(X_side,X,lambda0,M);
-					AddTimes(X_side+JX,X,lambda_1,M);
+					AddTimes(X_side+JX,X,lambda_1+JX,M);
 					AddTimes(X_side,X+JX,lambda1,M);
 					Norm(X_side,lambda*lambda,M);
 					
@@ -676,7 +744,7 @@ if (debug) cout <<" Side in lattice " << endl;
 					Add(SIDE+1,X,M-1);
 					Add(SIDE,X,M);
 					AddTimes(X_side,SIDE,lambda0,M);
-					AddTimes(X_side+JX,SIDE,lambda_1,M-JX);
+					AddTimes(X_side+JX,SIDE,lambda_1+JX,M-JX);
 					AddTimes(X_side,SIDE+JX,lambda1,M-JX);
 					Norm(X_side,lambda*lambda,M);	
 					delete [] SIDE;
@@ -684,7 +752,7 @@ if (debug) cout <<" Side in lattice " << endl;
 			}
 			break;
 		case 3:
-			Zero(X_side,M); set_bounds(X);
+			Zero(X_side,M); //set_bounds(X);
 			Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
 			Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
 			Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
@@ -698,30 +766,167 @@ if (debug) cout <<" Side in lattice " << endl;
 void Lattice::propagate(double *G, double *G1, int s_from, int s_to) { //this procedure should function on simple cubic lattice. 
 if (debug) cout <<" propagate in lattice " << endl; 
 	double *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
-	Zero(gs,M);
-	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-	Add(gs+JX,gs_1,M-JX); Add(gs,gs_1+JX,M-JX);
-	Add(gs+JY,gs_1,M-JY); Add(gs,gs_1+JY,M-JY);
-	Add(gs+1,gs_1,M-1);  Add(gs,gs_1+1, M-1);
-	Norm(gs,1.0/6.0,M); Times(gs,gs,G1,M);
+	switch(gradients) {
+		case 1:
+			Zero(gs,M); set_bounds(gs_1);
+			if (geometry=="planar") {
+				Add(gs+1,gs_1,M-1); Add(gs,gs_1+1,M-1);	
+				YplusisCtimesX(gs,gs_1,4.0,M);
+				Norm(gs,lambda,M); Times(gs,gs,G1,M);
+			} else {
+				AddTimes(gs,gs_1,lambda0,M);
+				AddTimes(gs+1,gs_1,lambda_1+1,M-1);
+				AddTimes(gs,gs_1+1,lambda1,M-1);
+				Norm(gs,lambda,M); Times(gs,gs,G1,M);
+			}
+			break;
+		case 2:
+			Zero(gs,M); set_bounds(gs_1);
+			if (geometry=="planar") {
+				Add(gs,gs_1+1,M-1);
+				Add(gs+1,gs_1,M-1);
+				Add(gs+JX,gs_1,M-JX);
+				Add(gs,gs_1+JX,M-JX);
+				YplusisCtimesX(gs,gs_1,2.0,M);
+				Norm(gs,lambda,M); Times(gs,gs,G1,M);
+			} else {
+				Add(gs,gs_1+1,M-1);      
+				Add(gs+1,gs_1,M-1);
+				Add(gs,gs_1,M);
+				AddTimes(gs,gs_1,lambda0,M);
+				AddTimes(gs+JX,gs_1,lambda_1+JX,M);
+				AddTimes(gs,gs_1+JX,lambda1,M);
+				Norm(gs,lambda*lambda,M);Times(gs,gs,G1,M);
+			}
+			break;
+		case 3:
+			Zero(gs,M); set_bounds(gs_1);
+			Add(gs+JX,gs_1,M-JX); Add(gs,gs_1+JX,M-JX);
+			Add(gs+JY,gs_1,M-JY); Add(gs,gs_1+JY,M-JY);
+			Add(gs+1,gs_1,M-1);  Add(gs,gs_1+1, M-1);
+			Norm(gs,1.0/6.0,M); Times(gs,gs,G1,M);
+			break;
+		default:	
+			break; 			
+	}
 }
 
 void Lattice::remove_bounds(double *X){ 
 if (debug) cout <<" remove_bounds (double) in lattice " << endl; 
-	RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	int x,y;
+	switch(gradients) {
+		case 1:
+			X[0]=0; X[MX+1]=0;
+			break;
+		case 2: 
+			for (x=1; x<MX+1; x++) {
+				X[x*JX+0] = 0;
+				X[x*JX+MY+1]=0;
+			}
+			for (y=1; y<MY+1; x++) {
+				X[0+y] = 0;
+				X[(MX+1)*JX+y]=0;
+			}
+			X[0]             =0;
+			X[(MX+1)*JX]     =0;
+			X[0+MY+1]        =0;
+			X[(MX+1)*JX+MY+1]=0;	
+			break;
+		case 3: 
+			RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			break;
+		default:
+			
+			break;
+	}
 }
+
 void Lattice::remove_bounds(int *X){ 
 if (debug) cout <<" remove_bounds (int) in lattice " << endl; 
-	RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	int x,y;
+	switch(gradients) {
+		case 1:
+			X[0]=0; X[MX+1]=0;
+			break;
+		case 2: 
+			for (x=1; x<MX+1; x++) {
+				X[x*JX+0] =0;
+				X[x*JX+MY+1]=0;
+			}
+			for (y=1; y<MY+1; x++) {
+				X[0+y] = 0;
+				X[(MX+1)*JX+y]=0;
+			}
+			X[0]             =0;
+			X[(MX+1)*JX]     =0;
+			X[0+MY+1]        =0;
+			X[(MX+1)*JX+MY+1]=0;			
+
+			break;
+		case 3:
+			RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			break;
+		default:
+			break;
+	}
 }
  
 void Lattice::set_bounds(double *X){  
 if (debug) cout <<"set_bounds (doubles) in lattice " << endl; 
-	SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	int x,y; 
+	switch(gradients) {
+		case 1:
+			X[0]=X[BX1]; X[MX+1]=X[BXM];
+			break;
+		case 2: 
+			for (x=1; x<MX+1; x++) {
+				X[x*JX+0] = X[x*JX+BY1];
+				X[x*JX+MY+1]=X[x*JX+BYM];
+			}
+			for (y=1; y<MY+1; x++) {
+				X[0+y] = X[BX1*JX+y];
+				X[(MX+1)*JX+y]=X[BXM*JX+y];
+			}
+			X[0]             =X[1]*X[JX]; if (X[0]>0) X[0]=sqrt(X[0]);
+			X[(MX+1)*JX]     =X[MX*JX]*X[(MX+1)*JX+1]; if (X[(MX+1)*JX]>0) X[(MX+1)*JX]=sqrt(X[(MX+1)*JX]);
+			X[0+MY+1]        =X[JX+MY+1]*X[0+MY]; if (X[MY+1]>0) X[MY+1]=sqrt(X[MY+1]);
+			X[(MX+1)*JX+MY+1]=X[MX*JX+MY+1]*X[(MX+1)*JX+MY]; if (X[(MX+1)*JX+MY+1]>0) X[(MX+1)*JX+MY+1]=sqrt(X[(MX+1)*JX+MY+1]);						
+			break;
+		case 3:
+			SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			break;
+		default:
+			break;
+	}
 }
+
 void Lattice::set_bounds(int *X){  
 if (debug) cout <<"set_bounds (int) in lattice " << endl; 
-	SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+	int x,y; 	
+	switch(gradients) {
+		case 1:
+			X[0]=X[BX1]; X[MX+1]=X[BXM];
+			break;
+		case 2: 
+			for (x=1; x<MX+1; x++) {
+				X[x*JX+0] = X[x*JX+BY1];
+				X[x*JX+MY+1]=X[x*JX+BYM];
+			}
+			for (y=1; y<MY+1; x++) {
+				X[0+y] = X[BX1*JX+y];
+				X[(MX+1)*JX+y]=X[BXM*JX+y];
+			}
+			X[0]             =X[1]*X[JX]; if (X[0]>0) X[0]=sqrt(X[0]);
+			X[(MX+1)*JX]     =X[MX*JX]*X[(MX+1)*JX+1]; if (X[(MX+1)*JX]>0) X[(MX+1)*JX]=sqrt(X[(MX+1)*JX]);
+			X[0+MY+1]        =X[JX+MY+1]*X[0+MY]; if (X[MY+1]>0) X[MY+1]=sqrt(X[MY+1]);
+			X[(MX+1)*JX+MY+1]=X[MX*JX+MY+1]*X[(MX+1)*JX+MY]; if (X[(MX+1)*JX+MY+1]>0) X[(MX+1)*JX+MY+1]=sqrt(X[(MX+1)*JX+MY+1]);			
+			break;
+		case 3: 
+			SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			break;
+		default:
+			break;
+	}
 }
 
 
@@ -731,61 +936,319 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 	vector<string>set; 
 	vector<string>coor;
 	vector<string>xyz;
+	string diggit; 
+	bool recognize_keyword; 
+	int a; if (range_type=="frozen_range") a=1; else a=0;
 	In[0]->split(range,';',set);
 	if (set.size()==2) { 
 		coor.clear(); 
-		block=true; In[0]->split(set[0],',',coor);
-		if (coor.size()!=3) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in three: (x,y,z)" << endl; success=false;}
-		else {
-			r[0]=In[0]->Get_int(coor[0],0);
-			if (r[0] < 1 || r[0] > MX) {cout << "In mon " + seg_name + ", for 'pos 1', the x-coordinate in '" + range_type + "' is out of bounds: 1.." << MX << endl; success =false;}
-			r[1]=In[0]->Get_int(coor[1],0);
-			if (r[1] < 1 || r[1] > MY) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' is out of bounds: 1.." << MY << endl; success =false;}
-			r[2]=In[0]->Get_int(coor[2],0);
-			if (r[2] < 1 || r[2] > MZ) {cout << "In mon " + seg_name+ ", for 'pos 1', the z-coordinate in '" + range_type + "' is out of bounds: 1.." << MZ << endl; success =false;} 
-		}
-		coor.clear(); In[0]->split(set[1],',',coor);
-
-		if (coor.size()!=3) {cout << "In mon " + seg_name+ ", for 'pos 2', in 'pinned_range', the coordinates do not come in three: (x,y,z)" << endl; success=false;}
-		else {
-			r[3]=In[0]->Get_int(coor[0],0);
-			if (r[3] < 1 || r[3] > MX) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds; 1.." << MX << endl; success =false;}
-			r[4]=In[0]->Get_int(coor[1],0);
-			if (r[4] < 1 || r[4] > MY) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; 1.." << MY << endl; success =false;}
-			r[5]=In[0]->Get_int(coor[2],0);
-			if (r[5] < 1 || r[5] > MZ) {cout << "In mon " + seg_name+ ", for 'pos 2', the z-coordinate in '" + range_type + "' is out of bounds; 1.." << MZ << endl; success =false;}
-			if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-			if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-			if (r[2] > r[5]) {cout << "In mon " + seg_name+ ", for 'pos 1', the z-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-		}
-	} else {
-		if (n_pos==0) {
-			block=false;  
-			In[0]->split(set[0],')',coor);
-			int length=coor.size(); n_pos=length; 
-		} else {
-			In[0]->split(set[0],')',coor);
-			int length=coor.size(); n_pos=length;
-			int px=0,py=0,pz=0;
-			int i=0;	
-			while (i<length) { 
-				string s=coor[i].substr(1,coor[i].size()-1); 
-				In[0]->split(s,',',xyz);
-				int length_xyz=xyz.size();
-				if (length_xyz!=3) { 
-					cout << "In mon " + seg_name+ " pinned_range  the expected 'triple coordinate' structure (x,y,z) was not found. " << endl;  success = false;
-				} else {   
-					px=In[0]->Get_int(xyz[0],0);
-					if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 1.." << MX << endl; success =false;}
-					py=In[0]->Get_int(xyz[1],0);
-					if (py < 1 || py > MY) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MY << endl; success =false;}								
-					pz=In[0]->Get_int(xyz[2],0);
-					if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MZ << endl; success =false;}	
+		block=true; In[0]->split(set[0],',',coor);		
+		switch(gradients) {
+			case 1:
+				if (coor.size()!=1) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come as a single coordinate 'x'" << endl; success=false;}
+				else {
+					diggit=coor[0].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
+						recognize_keyword=false; 
+						if (coor[0]=="firstlayer") {recognize_keyword=true; r[0] = 1;}
+						if (coor[0]=="lowerbound") {recognize_keyword=true; r[0] = 0;}
+						if (coor[0]=="upperbound") {recognize_keyword=true; r[0] = MX+1;}
+						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[0] = MX;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}
+					if (r[0] < 1-a || r[0] > MX+a) {cout << "In mon " + seg_name + ", for 'pos 1', the x-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .." << MX+a << endl; success =false;}
 				}
-				H_p[i]=px*JX+py*JY+pz;
-				i++;
+				coor.clear(); In[0]->split(set[1],',',coor);
+
+				if (coor.size()!=1) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "' the coordinates do not come as a single coordinate 'x'" << endl; success=false;}
+				else {
+					diggit=coor[0].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
+						recognize_keyword=false; 
+						if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
+						if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
+						if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
+						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[3] = MX;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}
+					if (r[3] < 1-a || r[3] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .." << MX+a << endl; success =false;}
+					if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}	
+				}
+				break;
+			case 2:
+				if (coor.size()!=2) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in set of two: 'x,y'" << endl; success=false;}
+				else {
+					diggit=coor[0].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
+						recognize_keyword=false; 
+						if (coor[0]=="firstlayer") {recognize_keyword=true; r[0] = 1;}
+						if (coor[0]=="lowerbound") {recognize_keyword=true; r[0] = 0;}
+						if (coor[0]=="upperbound") {recognize_keyword=true; r[0] = MX+1;}
+						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[0] = MX;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}
+					if (r[0] < 1-a || r[0] > MX+a) {cout << "In mon " + seg_name + ", for 'pos 1', the x-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .." << MX+a << endl; success =false;}
+					diggit=coor[1].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[1]=In[0]->Get_int(coor[1],0); else {
+						recognize_keyword=false; 
+						if (coor[1]=="firstlayer") {recognize_keyword=true; r[1] = 1;}
+						if (coor[1]=="lowerbound") {recognize_keyword=true; r[1] = 0;}
+						if (coor[1]=="upperbound") {recognize_keyword=true; r[1] = MY+1;}
+						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[1] = MY;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}
+					if (r[1] < 1-a || r[1] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .."<< MY+a << endl; success =false;}				
+				}
+				coor.clear(); In[0]->split(set[1],',',coor);
+
+				if (coor.size()!=2) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of two: 'x,y'" << endl; success=false;}
+				else {
+					diggit=coor[0].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
+						recognize_keyword=false; 
+						if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
+						if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
+						if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
+						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[3] = MX;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false;
+						}
+					}
+					if (r[3] <1-a || r[3] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds: " << 1-a << " .. " << MX+a<< endl; success=false;} 
+					diggit=coor[1].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[4]=In[0]->Get_int(coor[1],0); else {
+						recognize_keyword=false;
+						if (coor[1]=="firstlayer") {recognize_keyword=true; r[4] = 1;}
+						if (coor[1]=="lowerbound") {recognize_keyword=true; r[4] = 0;}
+						if (coor[1]=="upperbound") {recognize_keyword=true; r[4] = MY+1;}
+						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[4] = MY;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}
+					if (r[4] < 1-a || r[4] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MY+a << endl; success =false;}
+					if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+					if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+				}
+				break;
+			case 3:
+				if (coor.size()!=3) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in set of three: 'x,y,z'" << endl; success=false;}
+				else {
+					diggit=coor[0].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
+						recognize_keyword=false; 
+						if (coor[0]=="firstlayer") {recognize_keyword=true; r[0] = 1;}
+						if (coor[0]=="lowerbound") {recognize_keyword=true; r[0] = 0;}
+						if (coor[0]=="upperbound") {recognize_keyword=true; r[0] = MX+1;}
+						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[0] = MX;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}
+					if (r[0] < 1-a || r[0] > MX+a) {cout << "In mon " + seg_name + ", for 'pos 1', the x-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .."<< MX+a << endl; success =false;}
+					diggit=coor[1].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[1]=In[0]->Get_int(coor[1],0); else {
+						recognize_keyword=false; 
+						if (coor[1]=="firstlayer") {recognize_keyword=true; r[1] = 1;}
+						if (coor[1]=="lowerbound") {recognize_keyword=true; r[1] = 0;}
+						if (coor[1]=="upperbound") {recognize_keyword=true; r[1] = MY+1;}
+						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[1] = MY;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}					
+					if (r[1] < 1-a || r[1] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .." << MY+a << endl; success =false;}
+					diggit=coor[2].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[2]=In[0]->Get_int(coor[2],0); else {
+						recognize_keyword=false; 
+						if (coor[2]=="firstlayer") {recognize_keyword=true; r[2] = 1;}
+						if (coor[2]=="lowerbound") {recognize_keyword=true; r[2] = 0;}
+						if (coor[2]=="upperbound") {recognize_keyword=true; r[2] = MZ+1;}
+						if (coor[2]=="lastlayer")  {recognize_keyword=true; r[2] = MZ;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}					
+
+					if (r[2] < 1-a || r[2] > MZ+a) {cout << "In mon " + seg_name+ ", for 'pos 1', the z-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .." << MZ+a << endl; success =false;} 
+				}
+				coor.clear(); In[0]->split(set[1],',',coor);
+
+				if (coor.size()!=3) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of three: 'x,y,z'" << endl; success=false;}
+				else {
+					diggit=coor[0].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
+						recognize_keyword=false; 
+						if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
+						if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
+						if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
+						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[3] = MX;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}
+					if (r[3] < 1-a || r[3] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MX+a << endl; success =false;}
+					diggit=coor[1].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[4]=In[0]->Get_int(coor[1],0); else {
+						recognize_keyword=false; 
+						if (coor[1]=="firstlayer") {recognize_keyword=true; r[4] = 1;}
+						if (coor[1]=="lowerbound") {recognize_keyword=true; r[4] = 0;}
+						if (coor[1]=="upperbound") {recognize_keyword=true; r[4] = MY+1;}
+						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[4] = MY;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}					
+					if (r[4] < 1-a || r[4] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .." << MY+a << endl; success =false;}
+					diggit=coor[2].substr(0,1);
+					if (In[0]->IsDigit(diggit)) r[5]=In[0]->Get_int(coor[2],0); else {
+						recognize_keyword=false; 
+						if (coor[2]=="firstlayer") {recognize_keyword=true; r[5] = 1;}
+						if (coor[2]=="lowerbound") {recognize_keyword=true; r[5] = 0;}
+						if (coor[2]=="upperbound") {recognize_keyword=true; r[5] = MZ+1;}
+						if (coor[2]=="lastlayer")  {recognize_keyword=true; r[5] = MZ;}
+						if (!recognize_keyword) {
+							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' 'upperbound' or 'lowerbound'" << endl;
+							success=false; 
+						}
+					}					
+					if (r[5] < 1-a || r[5] > MZ+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the z-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .." << MZ+a << endl; success =false;}
+					if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+					if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+					if (r[2] > r[5]) {cout << "In mon " + seg_name+ ", for 'pos 1', the z-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+				}
+				break;
+			default: 
+				break;
+		}
+	} else { 
+		string s; 
+		In[0]->split(set[0],')',coor);
+		s=coor[0].substr(0,1);
+		if (s!="(") { //now expect one of the keywords
+				block=true;
+			if (gradients==1) {
+				recognize_keyword=false; 
+				if (coor[0]=="firstlayer")         {recognize_keyword=true; r[0] = r[4] = 1; }
+				if (coor[0]=="lowerbound" && a==1) {recognize_keyword=true; r[0] = r[4] = 0; }
+				if (coor[0]=="upperbound" && a==1) {recognize_keyword=true; r[0] = r[4] = MX+1; }
+				if (coor[0]=="lastlayer")          {recognize_keyword=true; r[0] = r[4] = MX;}
+				if (!recognize_keyword) {
+					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the input: 'firstlayer' or 'lastlayer' ";
+					if (a==1) cout << "or 'upperbound' or 'lowerbound'"; cout <<" is expected. " << endl;
+					success=false; 
+				}
+			} else {
+				cout << "In mon " + seg_name + " and  range_type " + range_type + ", the info was not recognised because when 'gradients>1' the lonely keywords 'firstlayer' 'lastlayers', 'upperbound' 'lowerbound' do not work." << endl;
+				success=false; 
+			}
+		} else {
+			int length;
+			int length_xyz;
+			int px,py,pz;
+			string s;
+			int i; 
+			switch(gradients) {
+				case 1: 
+					if (n_pos==0) {
+						block=false;  
+						length=coor.size(); n_pos=length; 
+					} else {
+
+						length=coor.size(); n_pos=length;
+						px=0,py=0,pz=0;
+						i=0;	
+						while (i<length) { 
+							s=coor[i].substr(1,coor[i].size()-1); 
+							In[0]->split(s,',',xyz);
+							length_xyz=xyz.size();
+							if (length_xyz!=1) { 
+								cout << "In mon " + seg_name+ " pinned_range  the expected 'single coordinate' -with brackets- structure '(x)' was not found. " << endl;  success = false;
+							} else {   
+								px=In[0]->Get_int(xyz[0],0);
+								if (px < 0 || px > MX+1) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 0.." << MX+1 << endl; success =false;}					
+							}
+							H_p[i]=px;
+							i++;
+						}
+					}				
+					break;
+				case 2: 
+					if (n_pos==0) {
+						block=false;  
+						length=coor.size(); n_pos=length; 
+					} else {
+						length=coor.size(); n_pos=length;
+						px=0,py=0,pz=0;
+						i=0;	
+						while (i<length) { 
+							s=coor[i].substr(1,coor[i].size()-1); 
+							In[0]->split(s,',',xyz);
+							length_xyz=xyz.size();
+							if (length_xyz!=2) { 
+								cout << "In mon " + seg_name+ " pinned_range  the expected 'pair of coordinate' -with brackets- structure '(x,y)' was not found. " << endl;  success = false;
+							} else {   
+								px=In[0]->Get_int(xyz[0],0);
+								if (px < 0 || px > MX+1) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 0.." << MX+1 << endl; success =false;}
+								py=In[0]->Get_int(xyz[1],0);
+								if (py < 0 || py > MY+1) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 0.." << MY+1 << endl; success =false;}									
+							}
+							H_p[i]=px*JX+py;
+							i++;
+						}
+					}				
+					break;
+				case 3: 		
+					if (n_pos==0) {
+						block=false;  
+						length=coor.size(); n_pos=length; 
+					} else {
+						length=coor.size(); n_pos=length;
+						px=0,py=0,pz=0;
+						i=0;	
+						while (i<length) { 
+							s=coor[i].substr(1,coor[i].size()-1); 
+							In[0]->split(s,',',xyz);
+							length_xyz=xyz.size();
+							if (length_xyz!=3) { 
+								cout << "In mon " + seg_name+ " pinned_range  the expected 'triple coordinate' -with brackets- structure '(x,y,z)' was not found. " << endl;  success = false;
+							} else {   
+								px=In[0]->Get_int(xyz[0],0);
+								if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 1.." << MX << endl; success =false;}
+								py=In[0]->Get_int(xyz[1],0);
+								if (py < 1 || py > MY) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MY << endl; success =false;}								
+								pz=In[0]->Get_int(xyz[2],0);
+								if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MZ << endl; success =false;}	
+							}
+							H_p[i]=px*JX+py*JY+pz;
+							i++;
+						}
+					}
+					break;
+				default:
+					break;
 			}
 		}
+
 	}
 	return success; 
 }
@@ -799,98 +1262,228 @@ if (debug) cout <<"ReadRangeFile in lattice " << endl;
 	vector<string> xyz; 
 	string Infilename=In[0]->name;
 	In[0]->split(Infilename,'.',sub);
-			  
-	if (!In[0]->ReadFile(sub[0].append(".").append(filename),content)) {success=false;} else {
-		In[0]->split(content,'#',lines);
-		int length = lines.size();
-		if (length == MX*MY*MZ) { //expect to read 'mask file';
-			int i=0;
-			if (n_pos==0) {
-				while (i<length){
-					if (In[0]->Get_int(lines[i],0)==1) n_pos++; 
-					i++; 
-				}; 
-				if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
-			} else { 
-				int p_i; 
-				i=0; p_i=0;
-				while (i<length){
-					if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=i; p_i++;}
-					i++; 
-				}
-			}
-		} else { //expect to read x,y,z
-			int px=0,py=0,pz=0;
-			int i=0;
-			if (n_pos==0) 
-				n_pos=length; 
-			else {
-				while (i<length) {  
-					xyz.clear(); 
-					In[0]->split(lines[i],',',xyz);
-					int length_xyz=xyz.size();
-					if (length_xyz!=3) { 
-						cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'triple coordinate' structure 'x,y,z' was not found. " << endl;  success = false;
-					} else {   
-						px=In[0]->Get_int(xyz[0],0);
-						if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
-						py=In[0]->Get_int(xyz[1],0);
-						if (py < 1 || py > MY) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MY << endl; success =false;}								
-						pz=In[0]->Get_int(xyz[2],0);
-						if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MZ << endl; success =false;}	
+	
+	int length;
+	int length_xyz;
+	int px,py,pz,p_i,x,y,z;
+	int i=0;
+	switch(gradients) {
+		case 1:
+			if (!In[0]->ReadFile(sub[0].append(".").append(filename),content)) {success=false;} else {
+				In[0]->split(content,'#',lines);
+				length = lines.size();
+				if (length == MX) { //expect to read 'mask file';
+					i=0;
+					if (n_pos==0) {
+						while (i<length){
+							if (In[0]->Get_int(lines[i],0)==1) n_pos++; 
+							i++; 
+						}; 
+						if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
+					} else {  
+						i=0; p_i=0;
+						for (x=1; x<MX+1; x++) {
+							if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=x; p_i++;}
+							i++; 
+						}
 					}
-					H_p[i]=px*JX+py*JY+pz;
-					i++;
-				}
-			}		
-		}	
-	} 
+				} else { //expect to read x only
+					px=0,py=0; i=0;
+					if (n_pos==0) n_pos=length; 
+					else {
+						while (i<length) {  
+							xyz.clear(); 
+							In[0]->split(lines[i],',',xyz);
+							length_xyz=xyz.size();
+							if (length_xyz!=1) { 
+								cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'single coordinate' 'x' was not found. " << endl;  success = false;
+							} else {   
+								px=In[0]->Get_int(xyz[0],0);
+								if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}								
+							}
+							H_p[i]=px;
+							i++;
+						}
+					}		
+				}	
+			}
+			break;
+		case 2: 
+			if (!In[0]->ReadFile(sub[0].append(".").append(filename),content)) {success=false;} else {
+				In[0]->split(content,'#',lines);
+				length = lines.size();
+				if (length == MX*MY) { //expect to read 'mask file';
+					i=0;
+					if (n_pos==0) {
+						while (i<length){
+							if (In[0]->Get_int(lines[i],0)==1) n_pos++; 
+							i++; 
+						}; 
+						if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
+					} else {  
+						i=0; p_i=0;
+						for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++)  {
+							if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=x*JX+y; p_i++;}
+							i++; 
+						}
+					}
+				} else { //expect to read x,y
+					px=0,py=0; i=0;
+					if (n_pos==0) n_pos=length; 
+					else {
+						while (i<length) {  
+							xyz.clear(); 
+							In[0]->split(lines[i],',',xyz);
+							length_xyz=xyz.size();
+							if (length_xyz!=2) { 
+								cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'pair of coordinates' 'x,y' was not found. " << endl;  success = false;
+							} else {   
+								px=In[0]->Get_int(xyz[0],0);
+								if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
+								py=In[0]->Get_int(xyz[1],0);
+								if (py < 1 || py > MY) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MY << endl; success =false;}								
+							}
+							H_p[i]=px*JX+py;
+							i++;
+						}
+					}		
+				}	
+			} 
+			break;
+		case 3: 	
+			if (!In[0]->ReadFile(sub[0].append(".").append(filename),content)) {success=false;} else {
+				In[0]->split(content,'#',lines);
+				length = lines.size();
+				if (length == MX*MY*MZ) { //expect to read 'mask file';
+					i=0;
+					if (n_pos==0) {
+						while (i<length){
+							if (In[0]->Get_int(lines[i],0)==1) n_pos++; 
+							i++; 
+						}; 
+						if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
+					} else {  
+						i=0; p_i=0;
+						for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++) {
+							if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=x*JX+y*JY+z; p_i++;}
+							i++; 
+						}
+					}
+				} else { //expect to read x,y,z
+					px=0,py=0,pz=0; i=0;
+					if (n_pos==0) n_pos=length; 
+					else {
+						while (i<length) {  
+							xyz.clear(); 
+							In[0]->split(lines[i],',',xyz);
+							length_xyz=xyz.size();
+							if (length_xyz!=3) { 
+								cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'triple coordinate' structure 'x,y,z' was not found. " << endl;  success = false;
+							} else {   
+								px=In[0]->Get_int(xyz[0],0);
+								if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
+								py=In[0]->Get_int(xyz[1],0);
+								if (py < 1 || py > MY) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MY << endl; success =false;}								
+								pz=In[0]->Get_int(xyz[2],0);
+								if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MZ << endl; success =false;}	
+							}
+							H_p[i]=px*JX+py*JY+pz;
+							i++;
+						}
+					}		
+				}	
+			} 
+			break;
+		default: 
+			break;
+	}
 	return success; 
 }
 
 bool Lattice::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {
-if (debug) cout <<"CreateMASK in lattice " << endl; 
-	if (debug) cout <<"CreateMask for lattice " + name << endl;
-	bool success=true; 
-	H_Zero(H_MASK,M);
-	if (block) {
-		for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++) for (int z=1; z<MZ+1; z++) 
-		if (x >=r[1] && y >= r[2] && z >= r[3] && x <= r[4] && y <= r[5] && z <= r[6]) {H_MASK[x*JX+y*JY+z]=1;} else {H_MASK[x*JX+y*JY+z]=0;}
-	} else {
-		for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
+if (debug) cout <<"CreateMask for lattice " + name << endl;
+	bool success=true;
+	int x,y,z;
+	switch(gradients) {
+		case 1:
+			H_Zero(H_MASK,M);
+			if (block) {
+				for (x=r[1]; x<r[4]+1; x++)  H_MASK[x]=1;
+			} else {
+				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
+			}
+			break;
+		case 2:
+			H_Zero(H_MASK,M);
+			if (block) {
+				for (x=r[1]; x<r[4]+1; x++) for (y=r[2]; y<r[5]+1; y++) H_MASK[x*JX+y]=1;
+			} else {
+				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
+			}
+			break;
+		case 3: 	
+			H_Zero(H_MASK,M);
+			if (block) {
+				for (x=r[1]; x<r[4]+1; x++) for (y=r[2]; y<r[5]+1; y++) for (z=r[3]; z<r[6]+1; z++) H_MASK[x*JX+y*JY+z]=1;
+			} else {
+				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
+			}
+			break;
+		default:
+			break;
 	}
 	return success; 
 }
 
-bool Lattice::GenerateGuess(double* xx, string CalculationType, string GuessType, double A_value, double B_value) {
+bool Lattice::GenerateGuess(double* x, string CalculationType, string GuessType, double A_value, double B_value) {
 if (debug) cout <<"GenerateGuess in lattice " << endl;
 //GuessType: lamellae,Im3m,FCC,BCC,HEX,gyroid,double_gyroid,double_diamond,perforated_lamellae
 //CalculationType: micro_emulsion,micro_phasesegregation
 	bool success = true;
-	if (GuessType=="lamellae") {
-		double* X1=(double*)malloc(M*sizeof(double));
-		double* X2=(double*)malloc(M*sizeof(double));
-		for (int i=0; i<MX+2; i++) for (int j=0; j<MY+2; j++) for (int k=0; k<MZ+2; k++) {
-			if (k<MZ/2+1) {
-				X1[JX*i+JY*j+k]= A_value;
-				X2[JX*i+JY*j+k]= B_value;
-			} else {
-				X1[JX*i+JY*j+k]=0;
-				X2[JX*i+JY*j+k]=0;
+	int i,j,k;
+	switch (gradients) {
+		case 1:
+			if (GuessType=="lamellae") {
+				for (i=0; i<MX+2; i++) {
+					if (i<MX/2+1) {
+						x[i]= A_value;
+						x[i+M]= B_value;
+					} else {
+						x[i]=0;
+						x[i+M]=0;
+					}
+				}
 			}
-		}
-	
-
-#ifdef CUDA
-		TransferDataToDevice(X1,xx,M);
-		TransferDataToDevice(X2,xx+M,M);
-#else
-		Cp(xx,X1,M);
-		Cp(xx+M,X2,M);
-#endif
-		free(X1); free(X2); 
+			break;
+		case 2:
+			if (GuessType=="lamellae") {
+				for (i=0; i<MX+2; i++) for (j=0; j<MY+2; j++) {
+					if (j<MY/2+1) {
+						x[JX*i+j]= A_value;
+						x[JX*i+j+M]= B_value;
+					} else {
+						x[JX*i+j]=0;
+						x[JX*i+j+M]=0;
+					}
+				}
+			}
+			break;
+		case 3: 	
+			if (GuessType=="lamellae") {
+				for (i=0; i<MX+2; i++) for (j=0; j<MY+2; j++) for (k=0; k<MZ+2; k++) {
+					if (k<MZ/2+1) {
+						x[JX*i+JY*j+k]= A_value;
+						x[JX*i+JY*j+k+M]= B_value;
+					} else {
+						x[JX*i+JY*j+k]=0;
+						x[JX*i+JY*j+k+M]=0;
+					}
+				}
+			}
+			break;
+		default:
+			break;
 	}
-
 	return success; 
 }
 

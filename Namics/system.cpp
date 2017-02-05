@@ -88,7 +88,6 @@ if (debug) cout <<"PrepareForCalculations in System " << endl;
 	}
 
 	Invert(KSAM,KSAM,M); 
-	Lat[0]->remove_bounds(KSAM); 
 	n_mol = In[0]->MolList.size();
 	success=Lat[0]->PrepareForCalculations(); 
 	int n_mon=In[0]->MonList.size();
@@ -109,11 +108,13 @@ if (debug) cout << "CheckInput for system " << endl;
 	double phibulktot=0;  
 	success= In[0]->CheckParameters("sys",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
-		success=CheckChi_values(In[0]->MonList.size()); 
-		
-		
+		success=CheckChi_values(In[0]->MonList.size()); 	
 		GPU=In[0]->Get_bool(GetValue("GPU"),false);
-		if (GPU) {if (!cuda) cout << "You should compile the program using the CUDA=1 flag: GPU calculations are impossible; proceed with CPU computations..." << endl;}
+		if (GPU) {if (!cuda) cout << "You should compile the program using the CUDA=1 flag: GPU calculations are impossible; proceed with CPU computations..." << endl; GPU=false; }
+		if (Lat[0]->gradients<3) {
+			if (GPU) cout <<"GPU support is (for the time being) only available for three-gradient calculations " << endl; 
+		}
+		if (cuda) {if (!GPU) cout <<" program expect that you are going to use the GPU, but the input is not in line with this (either gradients < 3, or GPU != 'true' : compile without CUDA=1 flag." << endl; success=false;}
 		int i=0;
 		int length = In[0]->MolList.size(); 
 		while (i<length) {
@@ -366,11 +367,15 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	for (int i=0; i<n_mol; i++) {
 		success=Mol[i]->ComputePhi();
 	}
-
 	for (int i=0; i<n_mol; i++) {
 		norm=0;
 		int length=Mol[i]->MolMonList.size();
-		if (Mol[i]->freedom=="free") {norm=Mol[i]->phibulk/Mol[i]->chainlength; totphibulk +=Mol[i]->phibulk; }
+		if (Mol[i]->freedom=="free") {
+			norm=Mol[i]->phibulk/Mol[i]->chainlength; 
+			totphibulk +=Mol[i]->phibulk; 
+			Mol[i]->n=norm*Mol[i]->GN;
+		}
+
 		if (Mol[i]->freedom=="restricted") {
 			if (Mol[i]->GN>0) {
 			norm = Mol[i]->n/Mol[i]->GN; Mol[i]->phibulk=Mol[i]->chainlength*norm;  totphibulk +=Mol[i]->phibulk; 
@@ -431,8 +436,10 @@ double sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << 
 	}
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++) {
+		if (Seg[i]->freedom !="frozen") Lat[0]->set_bounds(Seg[i]->phi); 
 		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M);
 	}
+	
 	return success;  
 }
 
@@ -470,9 +477,12 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 	double* F=FreeEnergyDensity;
 	double constant=0;
 	int n_mol=In[0]->MolList.size();
-	for (int i=0; i<n_mol; i++) Lat[0]->remove_bounds(Mol[i]->phitot);
+	//for (int i=0; i<n_mol; i++) Lat[0]->remove_bounds(Mol[i]->phitot);
 	int n_mon=In[0]->MonList.size();
-	for (int i=0; i<n_mon; i++) {Lat[0]->remove_bounds(Seg[i]->phi); Lat[0]->remove_bounds(Seg[i]->phi_side);}
+	for (int i=0; i<n_mon; i++) {
+		//Lat[0]->remove_bounds(Seg[i]->phi); 
+		Lat[0]->remove_bounds(Seg[i]->phi_side);
+	}
 
 	Zero(F,M);
 	for (int i=0; i<n_mol; i++){
@@ -491,10 +501,11 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 		Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
 	}
 	for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
-		double chi = CHI[j*n_mon+k]/2;
+		double chi;
+		if (Seg[k]->freedom=="frozen") chi=CHI[j*n_mon+k]; else  chi = CHI[j*n_mon+k]/2;
 		double *phi_side = Seg[k]->phi_side;
 		double *phi = Seg[j]->phi;
-		Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M); 
+		if (Seg[j]->freedom !="frozen") {Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M);} 
 	}
 
 	for (int i=0; i<n_mol; i++){
@@ -503,7 +514,10 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 		for (int j=0; j<n_molmon; j++) for (int k=0; k<n_molmon; k++) {
 			double fA=Mol[i]->fraction(Mol[i]->MolMonList[j]);   
 			double fB=Mol[i]->fraction(Mol[i]->MolMonList[k]); 
-			if (Mol[i]->IsTagged()) {int N=Mol[i]->chainlength; fA=fA*N/(N-1); fB=fB*N/(N-1); }  
+			if (Mol[i]->IsTagged()) {
+				int N=Mol[i]->chainlength; 
+				if (N>1) {fA=fA*N/(N-1); fB=fB*N/(N-1); } else {fA =0; fB=0;}
+			}  
 			double chi = CHI[Mol[i]->MolMonList[j]*n_mon+Mol[i]->MolMonList[k]]/2;
 			constant -=fA*fB*chi;
 		}
@@ -511,8 +525,7 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
 	}
 	Lat[0]->remove_bounds(F); Times(F,F,KSAM,M); 
-	double Fsum; Sum(Fsum,F,M);
-	return Fsum;
+	return Lat[0]->WeightedSum(F);
 }
 
 double System::GetGrandPotential(void) {
@@ -544,8 +557,7 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 	} 
 	Norm(GP,-1.0,M); //correct the sign.
 	Lat[0]->remove_bounds(GP); Times(GP,GP,KSAM,M);
-	double GPsum; Sum(GPsum,GP,M);
-	return  GPsum;
+	return  Lat[0]->WeightedSum(GP);
 
 }
 

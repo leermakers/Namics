@@ -378,7 +378,8 @@ if(debug) cout <<"ComputePhis in system" << endl;
 
 		if (Mol[i]->freedom=="restricted") {
 			if (Mol[i]->GN>0) {
-			norm = Mol[i]->n/Mol[i]->GN; Mol[i]->phibulk=Mol[i]->chainlength*norm;  totphibulk +=Mol[i]->phibulk; 
+			norm = Mol[i]->n/Mol[i]->GN; 
+			if (Mol[i]->IsPinned()) Mol[i]->phibulk = 0; else Mol[i]->phibulk=Mol[i]->chainlength*norm;  totphibulk +=Mol[i]->phibulk; 
 			} else { norm = 0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
 		}
 		if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {
@@ -494,6 +495,7 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 		constant = log(N*n/GN)/N; 
 		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M); 
 	}
+
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++) {
 		double* phi=Seg[SysMonList[j]]->phi;

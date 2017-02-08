@@ -145,6 +145,7 @@ void RemoveBoundaries(int*,    int, int, int, int, int, int, int, int, int, int,
 #endif
 
 void H_Zero(double*, int);
+void H_Zero(float*, int);
 void H_Zero(int*, int);
 double H_Sum(double*, int);
 double H_Dot(double*, double*, int);

@@ -866,6 +866,9 @@ void OneMinusPhitot(double *g, double *phitot, int M)   {
 //}
 //#endif
 
+void H_Zero(float* H_P, int M)   {//this precedure should act on a host P.
+	for (int i=0; i<M; i++) H_P[i] = 0;
+}
 void H_Zero(double* H_P, int M)   {//this precedure should act on a host P.
 	for (int i=0; i<M; i++) H_P[i] = 0;
 }

@@ -1,16 +1,17 @@
 #include "newttool.h"
 #include "tools.h"
 #include <stdio.h>
-void multiply(double *v, double alpha, double *h, double *w, int nvar, int m) {
-       int i0,i1,nn;
+void multiply(double *v, double alpha, float *h, double *w, int nvar, int m) {
+	int i0,i1,nn;
 	double sum=0;
-       double *ha, *hai, *va, *wa, *xa;
-       ha = &h[-1];
+	double *va, *wa, *xa;
+	float* hai;
+	float* ha = &h[-1];
 	va = &v[-1];
 	wa = &w[-1];
-       double *x = new double[nvar];
+	double *x = new double[nvar];
 	xa = &x[-1];
-       for (int i=1; i<=nvar; i++) {
+	for (int i=1; i<=nvar; i++) {
                sum = 0;
                if (i>m) i0=i-m; else i0=0;
                i1 = i-1;
@@ -29,7 +30,7 @@ void multiply(double *v, double alpha, double *h, double *w, int nvar, int m) {
        delete [] x;
 }
 
-void multiply(double *v,double alpha, double *h, double *w, int nvar) {
+void multiply(double *v,double alpha, float *h, double *w, int nvar) {
 	int i=0,i1=0,j=0;
 	double sum=0;
 	double *x = new double[nvar];
@@ -55,9 +56,9 @@ double norm2(double *x, int nvar) {
 	return sqrt(sum);
 }
 
-int signdeterminant(double *h, int nvar, int m) {
+int signdeterminant(float *h, int nvar, int m) {
 	int sign=1; int i0;
-	double *ha, *hai;
+	float *ha, *hai;
 	ha = &h[-1];
 	for (int i=1; i<=nvar; i++) {
 		if (i<m) i0=i; else i0=m;
@@ -67,7 +68,7 @@ int signdeterminant(double *h, int nvar, int m) {
 	return sign;
 }
 
-int signdeterminant(double * h,int nvar) {
+int signdeterminant(float *h,int nvar) {
 	int sign=1;
 	for (int i=0; i<nvar; i++) {
 		if ( h[i+i*nvar]<0 ) {
@@ -77,11 +78,11 @@ int signdeterminant(double * h,int nvar) {
 	return sign;
 }
 
-void updateneg(double *l, double *w, int nvar, int m, double alpha) {
+void updateneg(float *l, double *w, int nvar, int m, double alpha) {
 	int i1=0,i0=0,nn=0,j0=0;
 	double dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
-	double *lai,*laj;
-	double *la = &l[-1];
+	float *lai,*laj;
+	float *la = &l[-1];
 	double *wa = &w[-1]; 
 	dmin = 1.0/pow(2.0,54);
 	alpha = sqrt(-alpha); //is it sure that alpha is negative in the argument?
@@ -117,12 +118,12 @@ void updateneg(double *l, double *w, int nvar, int m, double alpha) {
 	}
 }
 
-void updateneg(double *l,double *w, int nvar, double alpha) {
+void updateneg(float *l,double *w, int nvar, double alpha) {
 	int i=0,i1=0,j=0;
 	double dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
 	dmin = 1.0/pow(2.0,54);
 	alpha = sqrt(-alpha);
-	for (i=0; i<=nvar; i++) {
+	for (i=0; i<nvar; i++) {
 		i1 = i-1;
 		sum = 0;
 		for (j=0;j<=i1; j++) {
@@ -148,10 +149,10 @@ void updateneg(double *l,double *w, int nvar, double alpha) {
 	}
 }
 
-void decompos(double *h, int nvar, int m, int &ntr) {
+void decompos(float *h, int nvar, int m, int &ntr) {
 	int i0,i1,nn,j0,k0;
 	double sum,lsum,usum,phi,phitr,c,l;
-	double *ha,*hai,*haj,*hak;
+	float *ha,*hai,*haj,*hak;
 	ha = &h[-1];
 	phitr = FLT_MAX;
 	ntr = 0;
@@ -191,10 +192,10 @@ void decompos(double *h, int nvar, int m, int &ntr) {
 	}
 }
 
-void decompos(double *h, int nvar, int &ntr) {
+void decompos(float *h, int nvar, int &ntr) {
 	int i,j,k;//itr,ntr;
 	double sum,lsum,usum,phi,phitr,c,l;
-	double *ha,*hai,*haj;
+	float *ha,*hai,*haj;
 	ha = &h[-1];
 	phitr = FLT_MAX;
 	ntr = 0;
@@ -232,11 +233,11 @@ void decompos(double *h, int nvar, int &ntr) {
 	}
 }
 
-void updatpos(double *l, double *w, double *v, int nvar, int m, double alpha) {
+void updatpos(float *l, double *w, double *v, int nvar, int m, double alpha) {
 	double b,c,d,p,q,wj,vj,lj;
 	int i0=0,j0=0,nn=0;
-	double *lai,*laj;
-	double *la = &l[-1];
+	float *lai,*laj;
+	float *la = &l[-1];
 	double *wa = &w[-1];
 	double *va = &v[-1];
 	for (int i=1; i<=nvar; i++) {
@@ -264,11 +265,11 @@ void updatpos(double *l, double *w, double *v, int nvar, int m, double alpha) {
 	}
 }
 
-void updatpos(double *l, double *w, double *v, int nvar, double alpha) {
+void updatpos(float *l, double *w, double *v, int nvar, double alpha) {
 	int i,j;
 	double b,c,d;
 	double vai,waj,vaj;
-	double *lai,*laj;
+	float *lai,*laj;
 	double * wa = &w[-1];
 	double * va = &v[-1];
 	i = 0;
@@ -297,15 +298,15 @@ void updatpos(double *l, double *w, double *v, int nvar, double alpha) {
 	}
 }
 
-void gausa(double *l, double *dup, double *g, int nvar, int m) {
+void gausa(float *l, double *dup, double *g, int nvar, int m) {
 	int i0=0,i1=0;
 	double sum;
 	double *dupa;
-	double *lai;
+	float *lai;
 
 	dupa = &dup[-1];
 	double* ga = &g[-1];
-	double* la = &l[-1];
+	float* la = &l[-1];
 
 	for (int i=1; i<=nvar; i++) {
 		if (i>m) i0=i-m; else i0=0;
@@ -319,12 +320,12 @@ void gausa(double *l, double *dup, double *g, int nvar, int m) {
 	}
 }
 
-void gausa(double *l, double *dup, double *g, int nvar) {
+void gausa(float *l, double *dup, double *g, int nvar) {
 	int i,j;
 	double sum;
 	double*dupa;
 	double *ga;
-	double *lai;
+	float *lai;
 
 	dupa = &dup[-1];
 	ga = &g[-1];
@@ -341,12 +342,12 @@ void gausa(double *l, double *dup, double *g, int nvar) {
 	}
 }
 
-void gausb(double *du, double *p, int nvar, int m) {
+void gausb(float *du, double *p, int nvar, int m) {
 	int i0=0,im=0,nn=0;
 	double sum;
-	double *duai;
+	float *duai;
 	double *pa = &p[-1];
-	double *dua= &du[-1]; 
+	float *dua= &du[-1]; 
 	for (int i=nvar; i>=1; i--) {
 		nn=m+i-1; if (nn>nvar) nn=nvar;
 		sum = 0;
@@ -360,11 +361,11 @@ void gausb(double *du, double *p, int nvar, int m) {
 	}
 }
 
-void gausb(double *du, double *p, int nvar) {
+void gausb(float *du, double *p, int nvar) {
 	int i,j;
 	double sum;
 	double *pa;
-	double *duai;
+	float *duai;
 	pa = &p[-1];
 	i = nvar+1;
 	while (i-- > 1) {

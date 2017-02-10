@@ -9,7 +9,7 @@ if(debug) cout <<"Constructor in Newton " << endl;
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance"); KEYS.push_back("store_guess"); KEYS.push_back("read_guess"); 
 	KEYS.push_back("stop_criterion"); 
 	KEYS.push_back("delta_min");
-	KEYS.push_back("hessian_width"); 
+//	KEYS.push_back("hessianwidth"); 
 	KEYS.push_back("linesearchlimit");
 	//KEYS.push_back("samehessian");  
 	KEYS.push_back("max_accuracy_for_hessian_scaling");
@@ -345,12 +345,11 @@ if(debug) cout <<"inneriteration in Newton " << endl;
 	}
 }
 
-void Newton::multiply(double *v, double alpha, float *h, double *w, int nvar, int m) {
+void Newton::multiply(double *v, double alpha, float *h, double *w, int nvar, int m) { 
 if(debug) cout <<"multiply in Newton with m" << endl;
 	int i0,i1,nn;
 	double sum=0;
 	double *va, *wa, *xa;
-	float* hai;
 	float* ha = &h[-1];
 	va = &v[-1];
 	wa = &w[-1];
@@ -358,17 +357,16 @@ if(debug) cout <<"multiply in Newton with m" << endl;
 	xa = &x[-1];
 	for (int i=1; i<=nvar; i++) {
                sum = 0;
-               if (i>m) i0=i-m; else i0=0;
+               if (i>m) i0=i-m; else i0=0; 
                i1 = i-1;
                nn=i+m-1; if (nn>nvar) nn=nvar;
-               hai=&ha[(i-1)*nvar];
                for (int j=i+1; j<=nn; j++) {
-                       sum+= wa[j] * hai[(j-i0];
+                       sum+= wa[j] * ha[(j-i0-1)*nvar+i];
                }
-               xa[i] = (sum+wa[i])*hai[i-i0];
+               xa[i] = (sum+wa[i])*ha[(i-i0-1)*nvar+i];
                sum = 0;
                for (int j=i0+1; j<=i1; j++) {
-                       sum += xa[j] * hai[j-i0];
+                       sum += xa[j] * ha[(j-i0-1)*nvar+i];
                }
                va[i] = alpha*(sum+xa[i]);
        }
@@ -404,16 +402,15 @@ if(debug) cout <<"norm2 in Newton" << endl;
 	return sqrt(sum);
 }
 
-int Newton::signdeterminant(float *h, int nvar, int m) {
+int Newton::signdeterminant(float *h, int nvar, int m) { 
 if(debug) cout <<"signdeterminant in Newton with m" << endl;
 
 	int sign=1; int i0;
-	float *ha, *hai;
+	float *ha;
 	ha = &h[-1];
 	for (int i=1; i<=nvar; i++) {
-		if (i<m) i0=i; else i0=m;
-		hai=&ha[(i-1)*nvar];
-		if (hai[i0]<0) sign=-sign;
+		if (i<m) i0=i; else i0=m; 
+		if (ha[(i0-1)*nvar+i]<0) sign=-sign;
 	}
 	return sign;
 }
@@ -429,11 +426,10 @@ if(debug) cout <<"signdeterminant in Newton" << endl;
 	return sign;
 }
 
-void Newton::updateneg(float *l, double *w, int nvar, int m, double alpha) {
+void Newton::updateneg(float *l, double *w, int nvar, int m, double alpha) { 
 if(debug) cout <<"updateneg in Newton with m" << endl;
 	int i1=0,i0=0,nn=0,j0=0;
 	double dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
-	float *lai,*laj;
 	float *la = &l[-1];
 	double *wa = &w[-1]; 
 	dmin = 1.0/pow(2.0,54);
@@ -442,29 +438,26 @@ if(debug) cout <<"updateneg in Newton with m" << endl;
 		if (i>m) i0=i-m; else i0=0;
 		i1 = i-1;
 		sum = 0;
-		lai = &la[(i-1)*nvar];
-		for (int j=i0+1; j<=i1; j++) sum += lai[j-i0]*wa[j];
+		for (int j=i0+1; j<=i1; j++) sum += la[(j-i0-1)*nvar+i]*wa[j];
 		wa[i] = alpha*wa[i]-sum;
-		t += (wa[i]/lai[i-i0])*wa[i];
+		t += (wa[i]/la[(i-i0-1)*nvar+i])*wa[i];
 	}
 	t = 1-t;
 	if ( t<dmin ) t = dmin;
 	for (int i=nvar; i>=1; i--) {
-		if (i>m) i0=i-m; else i0=0;
+		if (i>m) i0=i-m; else i0=0; 
 		nn=i+m-1;
 		if (nn>nvar) nn=nvar;
 		p = wa[i];
-		lai=&la[(i-1)*nvar];
-		d = lai[i-i0];
+		d = la[(i-i0-1)*nvar+i];
 		b = d*t;
 		t += (p/d)*p;
-		d=b/t; lai[i-i0]=d; 
+		d=b/t; la[(i-i0-1)*nvar+i]=d; 
 		b = -p/b;
 		for (int j=i+1; j<=nn; j++) {
-			if (j>m) j0=j-m; else j0=0;
-			laj = &la[(j-1)*nvar]; 
-			lji = laj[i-j0];
-			laj[i-j0] = lji+b*wa[j];
+			if (j>m) j0=j-m; else j0=0; 
+			lji = la[(i-j0-1)*nvar+j];
+			la[(i-j0-1)*nvar+j] = lji+b*wa[j];
 			wa[j] += p*lji;
 		}
 	}
@@ -502,44 +495,41 @@ if(debug) cout <<"updateneg in Newton" << endl;
 	}
 }
 
-void Newton::decompos(float *h, int nvar, int m, int &ntr) {
+void Newton::decompos(float *h, int nvar, int m, int &ntr) { 
 if(debug) cout <<"decompos in Newton with m" << endl;
 	int i0,i1,nn,j0,k0;
 	double sum,lsum,usum,phi,phitr,c,l;
-	float *ha,*hai,*haj,*hak;
+	float *ha;
 	ha = &h[-1];
 	phitr = FLT_MAX;
 	ntr = 0;
 	for (int i=1; i<=nvar; i++) {
-		hai = &ha[(i-1)*nvar];
 		sum = 0;
 		i0=i-m; if (i0<0) i0=0; 
 		i1=i-1;
 		nn=m+i-1; if (nn>nvar) nn=nvar;
 		for (int j=i0+1; j<=nn; j++) {
-			j0=j-m; if (j0<0) j0=0;
-			haj=&ha[(j-1)*nvar];
+			j0=j-m; if (j0<0) j0=0; //
 			if (j<i) {
-				c=hai[j-i0]; l=c/haj[j-j0]; hai[j-i0]=l;
-				c=haj[i-j0];
-				haj[i-j0]=c/haj[j-j0];
+				c=ha[(j-i0-1)*nvar+i]; l=c/ha[(j-j0-1)*nvar+j]; ha[(j-i0-1)*nvar+i]=l;
+				c=ha[(i-j0-1)*nvar+j];
+				ha[(i-j0-1)*nvar+j]=c/ha[(j-j0-1)*nvar+j];
 				sum=sum+l*c;
 			} else {
 				if (j==i) {
-					phi=hai[i-i0]-sum;
-					hai[i-i0]=phi;
+					phi=ha[(i-i0-1)*nvar+i]-sum;
+					ha[(i-i0-1)*nvar+i]=phi;
 					if (phi<0) ntr++;
 					if (phi<phitr) phitr = phi; 
 				} else {
 					lsum=usum=0;
 					for (int k=j0+1; k<=i1; k++) {
-						k0=k-m; if (k0<0) k0=0;
-						hak=&ha[(k-1)*nvar];
-						lsum+=haj[k-j0]*hak[i-k0];
-						usum+=hai[k-i0]*hak[j-k0];
+						k0=k-m; if (k0<0) k0=0; //
+						lsum+=ha[(k-j0-1)*nvar+j]*ha[(i-k0-1)*nvar+k];
+						usum+=ha[(k-i0-1)*nvar+i]*ha[(j-k0-1)*nvar+k];
 					}	
-					haj[i-j0]-=lsum;
-					hai[j-i0]-=usum;
+					ha[(i-j0-1)*nvar+j]-=lsum;
+					ha[(j-i0-1)*nvar+i]-=usum;
 				}
 			}
 		}
@@ -588,35 +578,33 @@ if(debug) cout <<"decompos in Newton" << endl;
 	}
 }
 
-void Newton::updatpos(float *l, double *w, double *v, int nvar, int m, double alpha) {
+void Newton::updatpos(float *l, double *w, double *v, int nvar, int m, double alpha) { 
 if(debug) cout <<"updatepos in Newton with m" << endl;
 	double b,c,d,p,q,wj,vj,lj;
 	int i0=0,j0=0,nn=0;
-	float *lai,*laj;
 	float *la = &l[-1];
 	double *wa = &w[-1];
 	double *va = &v[-1];
 	for (int i=1; i<=nvar; i++) {
-		if (i>m) i0=i-m; else i0=0;
+		if (i>m) i0=i-m; else i0=0; //
 		nn=i+m-1; if (nn>nvar) nn=nvar;
 		p=wa[i]; 
 		q=va[i];
-		lai= &la[(i-1)*nvar]; 
-		d = lai[i-i0];
+		d = la[(i-i0-1)*nvar+i];
 		b = d+(alpha*p)*q;
-		lai[i-i0] = b;
+		la[(i-i0-1)*nvar+i] = b;
 		d /= b;
 		c = q*alpha/b;
 		b = p*alpha/b;
 		alpha *= d;
 		for (int j=i+1; j<=nn; j++) {
-			if (j>m) j0=j-m; else j0=0;
+			if (j>m) j0=j-m; else j0=0; //
 			wj = wa[j];
-			laj=&la[(j-1)*nvar]; lj=laj[i-j0];
+			lj=la[(i-j0-1)*nvar+j];
 			wa[j]=wj-p*lj;
-			laj[i-j0]=lj*d+c*wj; 
-			vj=va[j]; lj=lai[j-i0]; va[j]=vj-q*lj;
-			lai[j-i0] = lj*d+b*vj;
+			la[(i-j0-1)*nvar+j]=lj*d+c*wj; 
+			vj=va[j]; lj=la[(j-i0-1)*nvar+i]; va[j]=vj-q*lj;
+			la[(j-i0-1)*nvar+i] = lj*d+b*vj;
 		}
 	}
 }
@@ -660,19 +648,16 @@ if(debug) cout <<"gausa in Newton with m" << endl;
 	int i0=0,i1=0;
 	double sum;
 	double *dupa;
-	float *lai;
-
 	dupa = &dup[-1];
 	double* ga = &g[-1];
 	float* la = &l[-1];
 
 	for (int i=1; i<=nvar; i++) {
-		if (i>m) i0=i-m; else i0=0;
+		if (i>m) i0=i-m; else i0=0; //
 		sum=0;
 		i1=i-1; 
-		lai = &la[(i-1)*nvar]; 
 		for (int j=i0+1; j<=i1; j++){
-			sum += lai[j-i0]*dupa[j];
+			sum += la[(j-i0-1)*nvar+i]*dupa[j];
 		}
 		dupa[i] = - ga[i] - sum;
 	}
@@ -706,23 +691,21 @@ if(debug) cout <<"gausb in Newton with m" << endl;
 
 	int i0=0,im=0,nn=0;
 	double sum;
-	float *duai;
 	double *pa = &p[-1];
 	float *dua= &du[-1]; 
 	for (int i=nvar; i>=1; i--) {
 		nn=m+i-1; if (nn>nvar) nn=nvar;
 		sum = 0;
-		duai = &dua[(i-1)*nvar];
-		for (int j=i+1; i<=nn; i++) {
+		for (int j=i+1; j<=nn; j++) {
 			if (i>m) i0=j-i+m; else i0=j;
-			sum += duai[i0]*pa[j];
+			sum += dua[(i0-1)*nvar+i]*pa[j];
 		}
-		if (i>m) im=m; else im=i;
-		pa[i] = pa[i]/duai[im] - sum;
+		if (i>m) im=m; else im=i; 
+		pa[i] = pa[i]/dua[(im-1)*nvar+i] - sum;
 	}
 }
 
-void Newton::gausb(float *du, double *p, int nvar) {
+void Newton::gausb(float *du, double *p, int nvar) { 
 if(debug) cout <<"gausb in Newton " << endl; 
 	int i,j;
 	double sum;
@@ -809,16 +792,15 @@ if(debug) cout <<"direction in Newton " << endl;
 	}
 }
 
-void Newton::startderivatives(float *h, double *g, double *x, int nvar, int m){
+void Newton::startderivatives(float *h, double *g, double *x, int nvar, int m){ //done
 if(debug) cout <<"startderivatives in Newton with m" << endl; 
 	float diagonal = 1+norm2(g,nvar); 
 	H_Zero(h,nvar*(2*m-1));
 	float* ha=&h[-1];
-	float* hai; int i0; 
+	int i0; 
 	for (int i=1; i<=nvar; i++) {
 		if (i<m) i0=i; else i0=m;	
-		hai=&ha[(i-1)*nvar];
-		hai[i0] = diagonal; 
+		ha[(i0-1)*nvar+i] = diagonal; 
 	}
 }
 
@@ -845,14 +827,13 @@ if(debug) cout <<"resethessian in Newton" << endl;
 	resetiteration = iterations;
 }
 
-void Newton::newhessian(float *h, double *g, double *g0, double *x, double *p, int nvar, int m) { 
+void Newton::newhessian(float *h, double *g, double *g0, double *x, double *p, int nvar, int m) { //done
 if(debug) cout <<"newhessian in Newton with m" << endl; 
 	double dmin=0,sum=0,theta=0,php=0,dg=0,gg=0,g2=0,py=0,y2=0;
 	dmin = 1/pow(2.0,nbits); // alternative: DBL_EPSILON or DBL_MIN
 	float *ha = &h[-1];
 	double *pa = &p[-1]; 
 	int i0,nn;
-	float *hai; 
 
 	if (!pseudohessian) findhessian(h,g,x,nvar,m); 
 	else {
@@ -884,12 +865,11 @@ if(debug) cout <<"newhessian in Newton with m" << endl;
 				py /= theta;
 				php /= theta;
 				for (int i=1; i<=nvar; i++) {
-					if (i>m) i0=i-m; else i0=0;
+					if (i>m) i0=i-m; else i0=0;//
 					nn=m+i-1; if (nn>nvar) nn=nvar; 
-					hai=&ha[(i-1)*nvar];
 					pa[i] /= theta;
 					for (int j=i0+1; j<=nn; j++)
-					hai[j-i0] *= theta; 				
+					ha[(j-i0-1)*nvar+i] *= theta; 				
 				}
 			}
 			if (nvar>=1) trustfactor *= (4/(pow(theta-1,2)+1)+0.5);
@@ -901,8 +881,7 @@ if(debug) cout <<"newhessian in Newton with m" << endl;
 				for (int i=0; i<nvar; i++) y[i] -= ALPHA*hp[i]; //because loop goes from i=0; classical c++
 				updatpos(h,y,p,nvar,m,1.0/sum); 
 				trouble -= signdeterminant(h,nvar,m); 
-				if ( trouble<0 ) trouble = 0; else if ( trouble>=3 ) {
-					resethessian(h,g,x,nvar,m);				}
+				if ( trouble<0 ) trouble = 0; else if ( trouble>=3 ) resethessian(h,g,x,nvar,m);
 			} else if ( nvar>=1 && py>0 ) {
 				trouble = 0;
 				theta = py>0.2*ALPHA*php ? 1 : 0.8*ALPHA*php/(ALPHA*php-py);
@@ -975,13 +954,10 @@ if(debug) cout <<"newhessian in Newton" << endl;
 
 				updatpos(h,y,p,nvar,1.0/sum); 
 				trouble -= signdeterminant(h,nvar);  
-				if ( trouble<0 ) trouble = 0; else if ( trouble>=3 ) {
-					resethessian(h,g,x,nvar);
-				}
+				if ( trouble<0 ) trouble = 0; else if ( trouble>=3 ) resethessian(h,g,x,nvar);
 			} else if ( nvar>=1 && py>0 ) {
 				trouble = 0;
-				theta = py>0.2*ALPHA*php ? 1
-				: 0.8*ALPHA*php/(ALPHA*php-py);
+				theta = py>0.2*ALPHA*php ? 1 : 0.8*ALPHA*php/(ALPHA*php-py);
 				if ( theta<1 ) {
 					py = 0;
 					for (int i=0; i<nvar; i++) {
@@ -999,11 +975,10 @@ if(debug) cout <<"newhessian in Newton" << endl;
 	}
 }
 
-void Newton::numhessian(float *h,double *g, double *x,int nvar, int m) {
+void Newton::numhessian(float *h,double *g, double *x,int nvar, int m) { //done
 if(debug) cout <<"numhessian in Newton with m" << endl; 
 	double dmax2=0,dmax3=0,di=0, hji;
 	int i0,j0, nn;
-	float *hai,*haj;
 	double* g1 = new double[nvar];
 	double* d = new double[nvar];
 	double* x0 = new double[nvar];
@@ -1019,24 +994,21 @@ if(debug) cout <<"numhessian in Newton with m" << endl;
 	int mm1=2*m-1; if (mm1>nvar) mm1=nvar; 
 	for (int ia=1; ia<=mm1; ia +=1) {
 		for (int i=ia; i <=nvar; i += mm1) {
-			if (i>m) i0=i-m; else i0=0;
+			if (i>m) i0=i-m; else i0=0;//
 			x0a[i]=xa[i];
-			hai=&h[(i-1)*nvar];
-			di = (1/(dmax3*dmax3*fabs(hai[i-i0])+dmax3+fabs(ga[i])) +1/dmax2)*(1+fabs(xa[i]));
+			di = (1/(dmax3*dmax3*fabs(ha[(i-i0-1)*nvar+i])+dmax3+fabs(ga[i])) +1/dmax2)*(1+fabs(xa[i]));
 				if (di<delta_min) di=delta_min;
 				xa[i]=xa[i]+di; da[i]=di;
 		}
 		ComputeG(g1); 
 		for (int i=ia; i<=nvar; i+=mm1) {
-			if (i>m) i0=i-m; else i0=0; 
+			if (i>m) i0=i-m; else i0=0; // 
 			nn=m+i-1; if (nn>nvar) nn=nvar;
 			xa[i]=x0[i];
 			for (int j=i0+1; j<=nn; j++) {
-				if (j>m) j0=j-m; else j0=0;
+				if (j>m) j0=j-m; else j0=0; //
 				hji = (g1a[i]-ga[i])/da[i];
-				
-				haj=&ha[(j-1)*nvar];
-				haj[i-j0] = hji; 
+				ha[(i-j0-1)*nvar+j] = hji; 
 			}
 		}
 	}

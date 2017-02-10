@@ -15,7 +15,7 @@ public:
 ~Newton();
 
 	string name; 
-	bool debug;
+	bool debug; 
 //*************scheutjens **************
 
 	int lineiterations,linetolerance,resetiteration;

@@ -32,9 +32,9 @@ public:
 	double norm;
 	int chainlength;
 	bool save_memory; 
-	bool aliases;
 	bool compute_phi_alias; 
 	string composition;
+	vector<int> Gnr;
 	vector<int> mon_nr;
 	vector<int> n_mon; 
 	vector<int> molmon_nr; 
@@ -70,6 +70,10 @@ public:
 	std::vector<string> VALUES;
 	bool CheckInput(int);
 	void PutParameter(string);
+	bool ExpandAlias(vector<string>,string&);
+	bool ExpandBrackets(string&);
+	bool Interpret(string,int);
+	bool GenerateTree(string,int,int&,vector<int>,vector<int>);
 	bool Decomposition(string); 
 	int GetChainlength(void); 
 	double Theta(void);

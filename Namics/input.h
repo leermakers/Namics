@@ -56,6 +56,7 @@ public:
 	bool ReadFile(string,string &); 
 	bool ArePair(char ,char ); 
 	bool EvenBrackets(string,vector<int> &, vector<int>&); 
+	bool EvenSquareBrackets(string,vector<int> &, vector<int>&); 
 
 };
 #endif

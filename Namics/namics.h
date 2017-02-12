@@ -41,7 +41,7 @@ extern bool debug;
 //extern double factor;
 #endif
 
-enum MoleculeType {monomer, linear};
+enum MoleculeType {monomer, linear, branched};
 
 
 #endif

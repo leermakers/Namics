@@ -181,64 +181,68 @@ if (debug) cout <<"GetMonNr for Mol " + name << endl;
 	return found; 
 }
 
-bool Molecule::Decomposition(string s){
-if (debug) cout <<"Decomposition for Mol " + name << endl;
-	bool success = true;
+bool Molecule::ExpandAlias(vector<string> sub, string &s) {
+	bool success=true;
 	vector<int> open;
 	vector<int> close;
-	vector<string>sub;
-	In[0]->split(s,'@',sub);
-	aliases=(s!=sub[0]);
-	if (aliases) {//first do the work for aliases....
-		int length_al=sub.size();
-		for (int i=0; i<length_al; i++) {
-			open.clear(); close.clear();
-			string sA;
-			In[0]->EvenBrackets(sub[i],open,close); 
-			if (open.size() ==0) sA=sub[i]; else sA=sub[i].substr(0,open[0]); 
-			if (i==0 && sA=="") { //the 'composition' does not start with an alias. This should not be a problem.
+	int length_al=sub.size();
+	for (int i=0; i<length_al; i++) {
+		open.clear(); close.clear();
+		string sA;
+		In[0]->EvenBrackets(sub[i],open,close); 
+		if (open.size() ==0) sA=sub[i]; else sA=sub[i].substr(0,open[0]); 
+		if (i==0 && sA=="") { //the 'composition' does not start with an alias. This should not be a problem.
+		} else {
+			if (!In[0]->InSet(In[0]->AliasList,sA)) {
+				cout <<"In composition of mol '" + name + "' Alias '" + sA + "' was not found"<<endl; success=false;
 			} else {
-				if (!In[0]->InSet(In[0]->AliasList,sA)) {
-					cout <<"In composition of mol '" + name + "' Alias '" + sA + "' was not found"<<endl; success=false;
+				int Alnr =GetAlNr(sA);
+				if (Alnr<0) {
+					Al.push_back(new Alias(In,Lat,sA));
+					Alnr=Al.size();
+					if (!Al[Alnr-1]->CheckInput(start)) {return false;} 
+					MolAlList.push_back(Alnr);
+				}
+				Alnr =GetAlNr(sA);
+				int iv = Al[Alnr]->value;
+				string al_comp=Al[Alnr]->composition;
+				if (iv < 0) {
+					string si;
+					stringstream sstm;
+					sstm << Alnr;
+					si = sstm.str();
+					string ssub="";
+					if (open[0]!=0) ssub=sub[i].substr(open[0]);
+					sub[i]=":"+si+":"+al_comp+":"+si+":"+ssub;
 				} else {
-					int Alnr =GetAlNr(sA);
-					if (Alnr<0) {
-						Al.push_back(new Alias(In,Lat,sA));
-						Alnr=Al.size();
-						if (!Al[Alnr-1]->CheckInput(start)) {return false;} 
-						MolAlList.push_back(Alnr);
-					}
-					Alnr =GetAlNr(sA);
-					int iv = Al[Alnr]->value;
-					string al_comp=Al[Alnr]->composition;
-					if (iv < 0) {
-						string si;
-						stringstream sstm;
-						sstm << Alnr;
-						si = sstm.str();
-						string ssub="";
-						if (open[0]!=0) ssub=sub[i].substr(open[0]);
-						sub[i]=":"+si+":"+al_comp+":"+si+":"+ssub;
-					} else {
-						string sss;
-						stringstream sstm;
-						sstm << iv;
-						sss = sstm.str();
-						sub[i]=sss+sub[i].substr(open[0]);
-					}
-				} 
-			}		
-		}
-		string ss;
-		for (int i=0; i<length_al; i++) {
-			ss=ss.append(sub[i]);
-		}
-		s=ss; 
+					string sss;
+					stringstream sstm;
+					sstm << iv;
+					sss = sstm.str();
+					sub[i]=sss+sub[i].substr(open[0]);
+				}
+			} 
+		}		
 	}
-	bool done=false; //now interpreted the (expended) composition
+	string ss;
+	for (int i=0; i<length_al; i++) {
+		ss=ss.append(sub[i]);
+	}
+	s=ss; 
+	return success; 
+}
+
+bool Molecule::ExpandBrackets(string &s) {
+	bool success=true;
+	vector<int> open;
+	vector<int> close;
+	bool done=false; //now interpreted the (expanded) composition 
 	while (!done) { done = true; 
 		open.clear(); close.clear();
-		if (!In[0]->EvenBrackets(s,open,close)) {cout << "In composition of mol '" + name + "' the backets are not balanced."<<endl; success=false; }
+		if (!In[0]->EvenBrackets(s,open,close)) {
+			cout << "s : " << s << endl; 
+			cout << "In composition of mol '" + name + "' the backets are not balanced."<<endl; success=false;
+		 }
 		int length=open.size();
 		int pos_open;
 		int pos_close;
@@ -278,13 +282,19 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			s=sA;for (int k=0; k<x; k++) s.append(sB); s.append(sC);
 		}
 	}
+	return success; 
+}
 
-	sub.clear();
+bool Molecule::Interpret(string s,int generation){
+	bool success=true;
+	vector<string>sub; 
+	vector<int>open;
+	vector<int>close;
+//cout <<" in interpret s " << s << endl; 
 	In[0]->split(s,':',sub);
 	int length_sub =sub.size();
 	int AlListLength=MolAlList.size();
-	for (int i=0;i<AlListLength; i++) Al[i]->active=false; 
-	int i=0; chainlength=0; MolMonList.clear();
+	int i=0; 
 	while (i<length_sub) {
 		open.clear(); close.clear();
 		In[0]->EvenBrackets(sub[i],open,close); 
@@ -299,7 +309,8 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				int mnr=GetMonNr(segname); 
 				if (mnr <0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised"  << endl; success=false; 
 				} else {
-					mon_nr.push_back(mnr); 
+					mon_nr.push_back(mnr);
+					Gnr.push_back(generation);  
 					for (int i=0; i<AlListLength; i++) {if (Al[i]->active) Al[i]->frag.push_back(1); else Al[i]->frag.push_back(0);}
 				}
 				int nn = In[0]->Get_int(sub[i].substr(close[k]+1,s.size()-close[k]),0); 
@@ -308,13 +319,106 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				chainlength +=nn;
 				k++;
 			}
-			
 		}
-		
 		i++;
 	}
+	return success; 
+}
+
+bool Molecule::GenerateTree(string s,int generation,int &pos, vector<int> open,vector<int> close) {
+	bool success=true;
+	string ss;
+	int i=0;
+	int newgeneration=0;
+	int new_generation=0;
+	int length=open.size();
+	int pos_open=0;
+	int pos_close=s.length();  
+	bool openfound,closedfound;
+	while  (pos_open<pos_close) {
+		pos_open =s.length()+1;
+		pos_close=s.length();
+		openfound=closedfound=false;
+		i=0; 
+		while (i<length && !(openfound && closedfound) ){
+			if (close[i]>pos && !closedfound) {closedfound=true; pos_close=close[i]+1; new_generation=i+1;}
+			if (open[i]>pos && !openfound) {openfound=true; pos_open=open[i]+1; newgeneration=i+1;}
+			i++;
+		}
+		
+		if (pos_close<pos_open) {
+			ss=s.substr(pos,pos_close-pos);
+			if (ss.substr(0,1)=="[") {
+//cout <<"string ss IN ][ " << ss << "and new_generation " << new_generation << endl; 
+				pos=pos+1; 
+				GenerateTree(s,new_generation,pos,open,close);
+				pos_close=pos_open+1;
+			} else {
+				pos=pos_close;
+//cout <<"go to interpret ] " << ss << " and generation " << generation << " pos " << pos <<  endl;
+				Interpret(ss,generation);
+			}
+		} else {
+			ss=s.substr(pos,pos_open-pos);
+			pos=pos_open;
+//cout <<"go to interpret [ " << ss << " and generation " << generation << " pos " << pos << " new generation " << newgeneration << endl; 
+			Interpret(ss,generation);
+			GenerateTree(s,newgeneration,pos,open,close);
+		} 
+	}
+	return success; 
+}
+
+
+bool Molecule::Decomposition(string s){
+if (debug) cout <<"Decomposition for Mol " + name << endl;
+	bool success = true;
+	bool aliases = true;
+	MolType=linear;//default; 
+	int loopnr=0;
+	vector<int> open;
+	vector<int> close;
+	vector<string>sub;
+	while (aliases) {
+		loopnr++;
+		In[0]->split(s,'#',sub);
+		aliases=(s!=sub[0]);
+		if (aliases) ExpandAlias(sub,s);
+		if (loopnr == 20) {
+			cout << "Nesting nr 20 reached in aliases for mol " + name + " -composition. It is decided that this is too deep to continue; Possible, you have defined an alias-A inside alias-B which itself refers to alias-A. This is not allowed. Problem terminated. " << endl;  
+			success=false; 
+		}
+	}
+	if (!ExpandBrackets(s)) success=false;
+
+	//test dendrimer
+	//test asymmetric dendrimer
+	//test ring
+	//test comb
+	//test star
+
+	if (!In[0]->EvenSquareBrackets(s,open,close)) {cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl; success=false;  }
+	if (open.size()>0) MolType=branched;
+
+	int generation=0;
+	int pos=0;
+	chainlength=0;
+	MolMonList.clear();
+	int AlListLength=MolAlList.size();
+	for (int i=0;i<AlListLength; i++) Al[i]->active=false; 
+	GenerateTree(s,generation,pos,open,close); 
+
 	success=MakeMonList();
-	if (chainlength==1) MolType=monomer; else MolType=linear;	
+	if (chainlength==1) MolType=monomer;	
+
+	if (MolType==branched) {
+//		int length=Gnr.size();
+//		for (int i=0; i<length; i++) {
+//			cout << "segnr " << mon_nr[i] << " nn " << n_mon[i] << " Gnr " << Gnr[i] << endl;  
+//		}
+		success=false;
+	}
+
 	return success; 
 }
 

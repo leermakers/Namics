@@ -30,9 +30,23 @@ Input::~Input() {
 
 bool Input::ArePair(char opening,char closing){
 	if (opening == '(' && closing == ')') return true;
-	//else if (opening == '[' && closing == ']') return true;
+	else if (opening == '[' && closing == ']') return true;
 	//else if (opening == '{' && closing == '}') return true;
 	return false; 
+}
+
+bool Input::EvenSquareBrackets(string exp,vector<int> &open, vector<int> &close) {
+	vector <char> S;
+	int length = exp.size(); 
+	for (int i=0; i<length; i++) {
+		if (exp[i] == '[' ) {S.push_back(exp[i]); open.push_back(i);} 
+		else if (exp[i] == ']') { close.push_back(i);
+			if (S.size()==0 || !ArePair(S[S.size()-1],exp[i])) return false;
+			else
+			S.pop_back();
+		}
+	}
+	return S.size()==0 ? true:false; 
 }
 
 bool Input::EvenBrackets(string exp,vector<int> &open, vector<int> &close) {

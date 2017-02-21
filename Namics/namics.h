@@ -1,3 +1,6 @@
+#ifndef NAMICSxH
+#define NAMICSxH
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,37 +19,29 @@
 #include <iomanip> 
 using namespace std;
 #ifdef CUDA
-#include <cuda.h>
-#include <cublas_v2.h>
-#include <cuda_runtime.h>
+//#include <cuda.h>
+//#include <cublas_v2.h>
+//#include <cuda_runtime.h>
 #endif
-
-
-//#include <f2c.h>
-//#include <clapack.h>
 
 //nvcc Open.cu -lm -lcuda -lcudart -llapack -lblas -lf2c -lcublas -arch=sm_20 -o box
 //I.V. Ionova, E.A. Carter, "Error vector choice in direct inversion in the iterative subspace method, J. Compt. Chem. 17, 1836-1847, 1996.
 
-double b_length=5e-10,e=1.60217e-19,k_BT=1.38065e-23*298.15,eps0=8.85418e-12,eps=80,factor=e*e/(eps*eps0*b_length*k_BT);
-//conversion from volume fraction salt to molar salt concentration is in this setting approximately c_s=12*phib_s.
-int N,N1,N2,n_seg,n_sol,n_mol,n_cosol,n_box,iterations=1000;
-int N_A,N_B;
-double CHI,alpha_seg,phib_s;
-double Theta_A, GNA, GNB;
-int i,j,k,k_diis,m=20,s,it,iv,Mx,My,Mz,M,jx,jy,MX,MY,MZ,JX,JY,MM,bx1,by1,bz1,bxm,bym,bzm,BX1,BY1,BZ1,BXM,BYM,BZM;
-double error = 1, tolerance = 1e-3, eta = 0.1;//because of double, tolerance can not set to very low values...
-double *Aij,*Ci,*Apij,*phi,*rho,*g1,*phitot,*G1,*alpha,*Gg_f,*Gg_b,*phi_side,*x,*x0,*g,*xR,*x_x0,*mask,*GN_A,*GN_B,*MASK,*KSAM;
-double *GG_F;
-int *Px,*Py,*Pz,*Bx, *By, *Bz;
-double *u;
-double *phib;
-bool MEmulsion,Membrane;
-bool charges = true;
-double *H_mask, *H_psi, *H_phi, *H_u, *H_MASK, *H_KSAM, *H_g1, *H_G1, *H_rho, *H_GN_A, *H_GN_B, *H_PHI;
-double *q, *psi, *psi_0, *psi_side, *phi_na, *phi_cl, *PHI;
-int *H_Px,*H_Py,*H_Pz, *H_Bx, *H_By, *H_Bz;
-std::vector<string> cal_types;
-string cal_type; 
-enum MoleculeType {monomer, linear};
+#ifndef MAINxH //here define global variables. 
+extern double* BlasResult;
+extern string version;
+extern double e;
+extern double T;
+extern double k_B;  
+extern double k_BT;
+extern double PIE; 
+extern double eps0;
+extern double eps;
+extern bool debug;
+//extern double factor;
+#endif
 
+enum MoleculeType {monomer, linear, branched};
+
+
+#endif

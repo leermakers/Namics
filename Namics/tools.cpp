@@ -107,6 +107,10 @@ __global__ void zero(double *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0.0;
 }
+__global__ void unity(double *P, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx] = 1.0;
+}
 __global__ void zero(int *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0;
@@ -607,7 +611,17 @@ void Composition(double *phi, double *Gf, double *Gb, double* G1, double C, int 
 }
 #endif
 
-
+#ifdef CUDA
+void Unity(double* P, int M)   {
+int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	unity<<<n_blocks,block_size>>>(P,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Zero"<<endl;}
+}
+#else
+void Unity(double* P, int M)   {
+	for (int i=0; i<M; i++) P[i] =1.0;
+}
+#endif
 
 #ifdef CUDA
 void Zero(double* P, int M)   {

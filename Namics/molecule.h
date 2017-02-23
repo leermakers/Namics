@@ -35,6 +35,10 @@ public:
 	bool compute_phi_alias; 
 	string composition;
 	vector<int> Gnr;
+	vector<int> first_s;
+	vector<int> last_s;
+	vector<int> first_b;
+	vector<int> last_b;
 	vector<int> mon_nr;
 	vector<int> n_mon; 
 	vector<int> molmon_nr; 
@@ -46,6 +50,7 @@ public:
 	double *Gg_f;
 	double *Gg_b; 
 	double *Gs; 
+	double *UNITY;
 	int tag_segment; 
 
 	vector<string> ints;
@@ -85,14 +90,17 @@ public:
 	bool IsTagged(void); 
 	bool IsCharged(void); 
 	void AllocateMemory(void);
-	bool PrepareForCalculations(); 
+	bool PrepareForCalculations(int*); 
 	bool ComputePhi(); 
 	void propagate_forward(double*, double*, int&, int,int);
+	double* propagate_forward(int&,int,int);
 	void propagate_backward(double*, double*, double*,int&,int,int);
+	void propagate_backward(int&,int,int);
+	double* Forward(int, int&);
+	void Backward(double*, int, int&);
 	bool ComputePhiMon();
 	bool ComputePhiLin();
-
-	
+	bool ComputePhiBra();
 };
 
 #endif

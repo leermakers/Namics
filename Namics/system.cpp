@@ -92,7 +92,7 @@ if (debug) cout <<"PrepareForCalculations in System " << endl;
 	success=Lat[0]->PrepareForCalculations(); 
 	int n_mon=In[0]->MonList.size();
 	for (int i=0; i<n_mon; i++) {success=Seg[i]->PrepareForCalculations(KSAM);}
-	for (int i=0; i<n_mol; i++) {success=Mol[i]->PrepareForCalculations();}
+	for (int i=0; i<n_mol; i++) {success=Mol[i]->PrepareForCalculations(KSAM);}
 	return success; 
 }
 

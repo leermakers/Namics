@@ -88,7 +88,8 @@ int main(int argc, char *argv[]) {
 			Out.push_back(new Output(In,Lat,Seg,Mol,Sys,New,Eng,In[0]->OutputList[i],i,n_out)); 
 			if (!Out[i]->CheckInput(start)) {cout << "input_error in output " << endl; return 0;} 
 		}
- 		Eng[0]->Doit(); 
+ 		Eng[0]->Doit();
+ 
 		Lat[0]->PushOutput();
 		New[0]->PushOutput();
 		Eng[0]->PushOutput();

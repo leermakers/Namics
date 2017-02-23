@@ -29,12 +29,25 @@ CPPFLAGS+= -O3
 #	CPPFLAGS = -I$(INC_DIR) $(DEBUG_STR) -g -O3 -Wall -DHAS_LAPACK -DNO_BLAS_WRAP
 CFLAGS = $(CPPFLAGS)
 
-     LIBS +=  $(MATRIXLIB)
+	LIBS +=  $(MATRIXLIB)
+	LIBS += -L/usr/include -lcuda -lcudart -lcublas
 
-OBJECTS = namics.o input.o newton.o system.o molecule.o monomer.o engine.o lattice.o
+ifdef CUDA
+    
+    CPPFLAGS += -DCUDA
+    NVCCFLAGS += -DCUDA -arch sm_13  
+endif
+    
+%.o: %.cu
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@
+   
+OBJECTS = namics.o tools.o input.o lattice.o segment.o alias.o molecule.o newton.o engine.o output.o system.o
 
-namics : namics.o
-	g++ -o namics namics.o -L$(LIB_DIR) $(LIBS)
+#namics : namics.o
+#	g++ -o namics namics.o -L$(LIB_DIR) $(LIBS)
 
+
+namics : $(OBJECTS)
+	g++ -o namics $(OBJECTS) -L$(LIB_DIR) $(LIBS)
 clean : 
 	rm *.o

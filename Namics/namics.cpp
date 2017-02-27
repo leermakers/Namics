@@ -57,10 +57,14 @@ int main(int argc, char *argv[]) {
 	vector<Engine*> Eng;
  	vector<Output*> Out;
 
-	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;}
+	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;} //argc counts no. of input arguments ./namics fname(2 arguments).... and makes fname from argv[1] else shows error and stops.
 	filename = fname + ".in";
 	In.push_back(new Input(filename)); if (In[0]->Input_error) {return 0;}
  	n_starts=In[0]->GetNumStarts(); if (n_starts==0) n_starts++; 
+
+
+// Loop begins for more than one starts in input.
+
 	while (start<n_starts) { start++;
 		cout <<"Problem nr " << start << " out of " << n_starts << endl; 	
 		Lat.push_back(new Lattice(In,In[0]->LatList[0])); if (!Lat[0]->CheckInput(start)) {return 0;}

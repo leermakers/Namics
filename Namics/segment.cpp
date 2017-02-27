@@ -10,7 +10,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("tagged_range");
 	KEYS.push_back("pinned_filename"); 	
 	KEYS.push_back("frozen_filename");
-	KEYS.push_back("tag_filename"); 
+	KEYS.push_back("tagged_filename"); 
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;

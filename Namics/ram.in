@@ -18,7 +18,7 @@ mon : A : freedom : free
 mon : B : freedom : free
 mon : A : chi-B : 0.6
 mon : X : freedom : tagged
-mon : X : tagged_range : (26,26,26)
+mon : X : tagged_filename : sub
 
 mol : A : composition : (A)4 
 mol : B : composition : (B)4

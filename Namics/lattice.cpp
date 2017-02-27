@@ -773,6 +773,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 				Add(gs+1,gs_1,M-1); Add(gs,gs_1+1,M-1);	
 				YplusisCtimesX(gs,gs_1,4.0,M);
 				Norm(gs,lambda,M); Times(gs,gs,G1,M);
+//cout <<" from - to " << s_from << " - " << s_to << endl; 
 			} else {
 				AddTimes(gs,gs_1,lambda0,M);
 				AddTimes(gs+1,gs_1,lambda_1+1,M-1);

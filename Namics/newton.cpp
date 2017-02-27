@@ -45,20 +45,20 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	int M=Lat[0]->M;
 	iv = Sys[0]->SysMonList.size() * M;	
 	if (method=="DIIS-ext") iv +=M;
-	Aij =(double*) malloc(m*m*sizeof(double)); H_Zero(Aij,m*m);
-	Ci =(double*) malloc(m*sizeof(double)); H_Zero(Ci,m);
+	Aij  =(double*) malloc(m*m*sizeof(double)); H_Zero(Aij,m*m);
+	Ci   =(double*) malloc(m*sizeof(double)); H_Zero(Ci,m);
 	Apij =(double*) malloc(m*m*sizeof(double)); H_Zero(Apij,m*m);
 #ifdef CUDA
-	xx = (double*)AllOnDev(iv); 
-	x0 = (double*)AllOnDev(iv);
-	g= (double*)AllOnDev(iv);
-	xR= (double*)AllOnDev(m*iv);
+	xx  = (double*)AllOnDev(iv); 
+	x0  = (double*)AllOnDev(iv);
+	g   = (double*)AllOnDev(iv);
+	xR  = (double*)AllOnDev(m*iv);
 	x_x0= (double*)AllOnDev(m*iv);
 #else
-	xx =(double*) malloc(iv*sizeof(double)); 
-	x0 =(double*) malloc(iv*sizeof(double)); 
-	g =(double*) malloc(iv*sizeof(double)); 
-	xR =(double*) malloc(m*iv*sizeof(double)); 
+	xx   =(double*) malloc(iv*sizeof(double)); 
+	x0   =(double*) malloc(iv*sizeof(double)); 
+	g    =(double*) malloc(iv*sizeof(double)); 
+	xR   =(double*) malloc(m*iv*sizeof(double)); 
 	x_x0 =(double*) malloc(m*iv*sizeof(double)); 
 #endif
 	Zero(xx,iv);
@@ -282,7 +282,7 @@ if(debug) cout <<"GetValue (long) in  Newton " << endl;
 	return 0; 
 }
 
-void Newton::inneriteration(float*h, double *g, double *x,double accuracy, int nvar, int m) {
+void Newton::inneriteration(float*h, double *g, double *x,double accuracy, int nvar) {
 if(debug) cout <<"inneriteration in Newton " << endl; 
 
 	if (iterations > 0) samehessian = false;
@@ -298,7 +298,7 @@ if(debug) cout <<"inneriteration in Newton " << endl;
 			cout << accuracy << '\t' << minAccuracySoFar << '\t' << resetHessianCriterion << endl;
 			cout << "walking backwards: newton reset" << endl;
 		}
-		if (m>0) resethessian(h,g,x,nvar,m); else resethessian(h,g,x,nvar);
+		resethessian(h,g,x,nvar);
 		minAccuracySoFar *=1.5;
 
 		if (delta_max >0.005) delta_max *=0.9;
@@ -314,7 +314,7 @@ if(debug) cout <<"inneriteration in Newton " << endl;
 		if (!s_info) {
 			cout << "too many small alphas: newton reset" << endl;
 		}
-		if (m>0) resethessian(h,g,x,nvar,m); else resethessian(h,g,x,nvar);
+		resethessian(h,g,x,nvar);
 		if (delta_max >0.005) delta_max *=0.9;
 		numIterationsSinceHessian = 0;
 	}
@@ -343,34 +343,6 @@ if(debug) cout <<"inneriteration in Newton " << endl;
 		pseudohessian = false; reset_pseudohessian =true;
 		numIterationsSinceHessian = 0;
 	}
-}
-
-void Newton::multiply(double *v, double alpha, float *h, double *w, int nvar, int m) { 
-if(debug) cout <<"multiply in Newton with m" << endl;
-	int i0,i1,nn;
-	double sum=0;
-	double *va, *wa, *xa;
-	float* ha = &h[-1];
-	va = &v[-1];
-	wa = &w[-1];
-	double *x = new double[nvar];
-	xa = &x[-1];
-	for (int i=1; i<=nvar; i++) {
-               sum = 0;
-               if (i>m) i0=i-m; else i0=0; 
-               i1 = i-1;
-               nn=i+m-1; if (nn>nvar) nn=nvar;
-               for (int j=i+1; j<=nn; j++) {
-                       sum+= wa[j] * ha[(j-i0-1)*nvar+i];
-               }
-               xa[i] = (sum+wa[i])*ha[(i-i0-1)*nvar+i];
-               sum = 0;
-               for (int j=i0+1; j<=i1; j++) {
-                       sum += xa[j] * ha[(j-i0-1)*nvar+i];
-               }
-               va[i] = alpha*(sum+xa[i]);
-       }
-       delete [] x;
 }
 
 void Newton::multiply(double *v,double alpha, float *h, double *w, int nvar) {
@@ -402,19 +374,6 @@ if(debug) cout <<"norm2 in Newton" << endl;
 	return sqrt(sum);
 }
 
-int Newton::signdeterminant(float *h, int nvar, int m) { 
-if(debug) cout <<"signdeterminant in Newton with m" << endl;
-
-	int sign=1; int i0;
-	float *ha;
-	ha = &h[-1];
-	for (int i=1; i<=nvar; i++) {
-		if (i<m) i0=i; else i0=m; 
-		if (ha[(i0-1)*nvar+i]<0) sign=-sign;
-	}
-	return sign;
-}
-
 int Newton::signdeterminant(float *h,int nvar) {
 if(debug) cout <<"signdeterminant in Newton" << endl;
 	int sign=1;
@@ -424,43 +383,6 @@ if(debug) cout <<"signdeterminant in Newton" << endl;
 		}
 	}
 	return sign;
-}
-
-void Newton::updateneg(float *l, double *w, int nvar, int m, double alpha) { 
-if(debug) cout <<"updateneg in Newton with m" << endl;
-	int i1=0,i0=0,nn=0,j0=0;
-	double dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
-	float *la = &l[-1];
-	double *wa = &w[-1]; 
-	dmin = 1.0/pow(2.0,54);
-	alpha = sqrt(-alpha); //is it sure that alpha is negative in the argument?
-	for (int i=1; i<=nvar; i++) {
-		if (i>m) i0=i-m; else i0=0;
-		i1 = i-1;
-		sum = 0;
-		for (int j=i0+1; j<=i1; j++) sum += la[(j-i0-1)*nvar+i]*wa[j];
-		wa[i] = alpha*wa[i]-sum;
-		t += (wa[i]/la[(i-i0-1)*nvar+i])*wa[i];
-	}
-	t = 1-t;
-	if ( t<dmin ) t = dmin;
-	for (int i=nvar; i>=1; i--) {
-		if (i>m) i0=i-m; else i0=0; 
-		nn=i+m-1;
-		if (nn>nvar) nn=nvar;
-		p = wa[i];
-		d = la[(i-i0-1)*nvar+i];
-		b = d*t;
-		t += (p/d)*p;
-		d=b/t; la[(i-i0-1)*nvar+i]=d; 
-		b = -p/b;
-		for (int j=i+1; j<=nn; j++) {
-			if (j>m) j0=j-m; else j0=0; 
-			lji = la[(i-j0-1)*nvar+j];
-			la[(i-j0-1)*nvar+j] = lji+b*wa[j];
-			wa[j] += p*lji;
-		}
-	}
 }
 
 void Newton::updateneg(float *l,double *w, int nvar, double alpha) {
@@ -491,47 +413,6 @@ if(debug) cout <<"updateneg in Newton" << endl;
 			lji = l[j+nvar*i];
 			l[j+nvar*i] = lji+b*w[j];
 			w[j] += p*lji;
-		}
-	}
-}
-
-void Newton::decompos(float *h, int nvar, int m, int &ntr) { 
-if(debug) cout <<"decompos in Newton with m" << endl;
-	int i0,i1,nn,j0,k0;
-	double sum,lsum,usum,phi,phitr,c,l;
-	float *ha;
-	ha = &h[-1];
-	phitr = FLT_MAX;
-	ntr = 0;
-	for (int i=1; i<=nvar; i++) {
-		sum = 0;
-		i0=i-m; if (i0<0) i0=0; 
-		i1=i-1;
-		nn=m+i-1; if (nn>nvar) nn=nvar;
-		for (int j=i0+1; j<=nn; j++) {
-			j0=j-m; if (j0<0) j0=0; //
-			if (j<i) {
-				c=ha[(j-i0-1)*nvar+i]; l=c/ha[(j-j0-1)*nvar+j]; ha[(j-i0-1)*nvar+i]=l;
-				c=ha[(i-j0-1)*nvar+j];
-				ha[(i-j0-1)*nvar+j]=c/ha[(j-j0-1)*nvar+j];
-				sum=sum+l*c;
-			} else {
-				if (j==i) {
-					phi=ha[(i-i0-1)*nvar+i]-sum;
-					ha[(i-i0-1)*nvar+i]=phi;
-					if (phi<0) ntr++;
-					if (phi<phitr) phitr = phi; 
-				} else {
-					lsum=usum=0;
-					for (int k=j0+1; k<=i1; k++) {
-						k0=k-m; if (k0<0) k0=0; //
-						lsum+=ha[(k-j0-1)*nvar+j]*ha[(i-k0-1)*nvar+k];
-						usum+=ha[(k-i0-1)*nvar+i]*ha[(j-k0-1)*nvar+k];
-					}	
-					ha[(i-j0-1)*nvar+j]-=lsum;
-					ha[(j-i0-1)*nvar+i]-=usum;
-				}
-			}
 		}
 	}
 }
@@ -578,37 +459,6 @@ if(debug) cout <<"decompos in Newton" << endl;
 	}
 }
 
-void Newton::updatpos(float *l, double *w, double *v, int nvar, int m, double alpha) { 
-if(debug) cout <<"updatepos in Newton with m" << endl;
-	double b,c,d,p,q,wj,vj,lj;
-	int i0=0,j0=0,nn=0;
-	float *la = &l[-1];
-	double *wa = &w[-1];
-	double *va = &v[-1];
-	for (int i=1; i<=nvar; i++) {
-		if (i>m) i0=i-m; else i0=0; //
-		nn=i+m-1; if (nn>nvar) nn=nvar;
-		p=wa[i]; 
-		q=va[i];
-		d = la[(i-i0-1)*nvar+i];
-		b = d+(alpha*p)*q;
-		la[(i-i0-1)*nvar+i] = b;
-		d /= b;
-		c = q*alpha/b;
-		b = p*alpha/b;
-		alpha *= d;
-		for (int j=i+1; j<=nn; j++) {
-			if (j>m) j0=j-m; else j0=0; //
-			wj = wa[j];
-			lj=la[(i-j0-1)*nvar+j];
-			wa[j]=wj-p*lj;
-			la[(i-j0-1)*nvar+j]=lj*d+c*wj; 
-			vj=va[j]; lj=la[(j-i0-1)*nvar+i]; va[j]=vj-q*lj;
-			la[(j-i0-1)*nvar+i] = lj*d+b*vj;
-		}
-	}
-}
-
 void Newton::updatpos(float *l, double *w, double *v, int nvar, double alpha) {
 if(debug) cout <<"updatepos in Newton" << endl; 
 	int i,j;
@@ -643,26 +493,6 @@ if(debug) cout <<"updatepos in Newton" << endl;
 	}
 }
 
-void Newton::gausa(float *l, double *dup, double *g, int nvar, int m) {
-if(debug) cout <<"gausa in Newton with m" << endl;  
-	int i0=0,i1=0;
-	double sum;
-	double *dupa;
-	dupa = &dup[-1];
-	double* ga = &g[-1];
-	float* la = &l[-1];
-
-	for (int i=1; i<=nvar; i++) {
-		if (i>m) i0=i-m; else i0=0; //
-		sum=0;
-		i1=i-1; 
-		for (int j=i0+1; j<=i1; j++){
-			sum += la[(j-i0-1)*nvar+i]*dupa[j];
-		}
-		dupa[i] = - ga[i] - sum;
-	}
-}
-
 void Newton::gausa(float *l, double *dup, double *g, int nvar) {
 if(debug) cout <<"gausa in Newton" << endl;  
 	int i,j;
@@ -683,25 +513,6 @@ if(debug) cout <<"gausa in Newton" << endl;
 			sum += lai[(j-1)*nvar]*dupa[j];
 		}
 		dupa[i] = - ga[i] - sum;
-	}
-}
-
-void Newton::gausb(float *du, double *p, int nvar, int m) {
-if(debug) cout <<"gausb in Newton with m" << endl; 
-
-	int i0=0,im=0,nn=0;
-	double sum;
-	double *pa = &p[-1];
-	float *dua= &du[-1]; 
-	for (int i=nvar; i>=1; i--) {
-		nn=m+i-1; if (nn>nvar) nn=nvar;
-		sum = 0;
-		for (int j=i+1; j<=nn; j++) {
-			if (i>m) i0=j-i+m; else i0=j;
-			sum += dua[(i0-1)*nvar+i]*pa[j];
-		}
-		if (i>m) im=m; else im=i; 
-		pa[i] = pa[i]/dua[(im-1)*nvar+i] - sum;
 	}
 }
 
@@ -753,25 +564,6 @@ if(debug) cout <<"newfunction in Newton " << endl;
 	return pow(norm2(g,nvar),2);
 }
 
-void Newton::direction(float *h, double *p, double *g, double *g0, double *x, int nvar, int m, double alpha){
-if(debug) cout <<"direction in Newton with m" << endl; 
-	newtondirection = true;
-
-	gausa(h,p,g,nvar,m);
-	gausb(h,p,nvar,m); 
-	if (ignore_newton_direction) {
-		newtondirection = true;
-	} else {
-		newtondirection = signdeterminant(h,nvar,m)>0;
-	}
-	if ( !newtondirection ) {
-		for (int i=0; i<nvar; i++) {
-			p[i] *= -1;
-		}
-		if ( e_info) cout << "*";
-	}
-}
-
 void Newton::direction(float *h, double *p, double *g, double *g0, double *x, int nvar, double alpha){
 if(debug) cout <<"direction in Newton " << endl; 
 
@@ -792,18 +584,6 @@ if(debug) cout <<"direction in Newton " << endl;
 	}
 }
 
-void Newton::startderivatives(float *h, double *g, double *x, int nvar, int m){ //done
-if(debug) cout <<"startderivatives in Newton with m" << endl; 
-	float diagonal = 1+norm2(g,nvar); 
-	H_Zero(h,nvar*(2*m-1));
-	float* ha=&h[-1];
-	int i0; 
-	for (int i=1; i<=nvar; i++) {
-		if (i<m) i0=i; else i0=m;	
-		ha[(i0-1)*nvar+i] = diagonal; 
-	}
-}
-
 void Newton::startderivatives(float *h, double *g, double *x, int nvar){
 if(debug) cout <<"startderivatives in Newton" << endl; 
 	float diagonal = 1+norm2(g,nvar); 
@@ -813,13 +593,6 @@ if(debug) cout <<"startderivatives in Newton" << endl;
 	}
 }
 
-void Newton::resethessian(float *h,double* g,double* x,int nvar, int m){
-if(debug) cout <<"resethessian in Newton with m" << endl; 
-	trouble = 0;		
-	startderivatives(h,g,x,nvar,m);
-	resetiteration = iterations;
-}
-
 void Newton::resethessian(float *h,double *g,double *x,int nvar){
 if(debug) cout <<"resethessian in Newton" << endl; 
 	trouble = 0;		
@@ -827,88 +600,10 @@ if(debug) cout <<"resethessian in Newton" << endl;
 	resetiteration = iterations;
 }
 
-void Newton::newhessian(float *h, double *g, double *g0, double *x, double *p, int nvar, int m) { //done
-if(debug) cout <<"newhessian in Newton with m" << endl; 
-	double dmin=0,sum=0,theta=0,php=0,dg=0,gg=0,g2=0,py=0,y2=0;
-	dmin = 1/pow(2.0,nbits); // alternative: DBL_EPSILON or DBL_MIN
-	float *ha = &h[-1];
-	double *pa = &p[-1]; 
-	int i0,nn;
-
-	if (!pseudohessian) findhessian(h,g,x,nvar,m); 
-	else {
-		if (!samehessian && ALPHA!=0 && iterations!=0) {
-			double *y = new double[nvar];
-			double *hp = new double[nvar];
-			py = php = y2 = gg = g2 = 0;
-			for (int i=0; i<nvar; i++) { //because i runs from 0 unit nvar-1 we do not need ga, ya
-				y[i] = dg = g[i]-g0[i];
-				py += p[i]*dg;
-				y2 += pow(y[i],2);
-				gg += g[i]*g0[i];
-				g2 += pow(g[i],2);
-			}
-	
-			if ( !newtondirection ) {
-				multiply(hp,1,h,p,nvar,m); 
-			} else {
-				for (int i=0; i<nvar; i++) hp[i] = -g0[i];
-			}
-
-			Dot(php,p,hp,nvar);
-			theta = py/(10*dmin+ALPHA*php);
-			if ( nvar>=1 && theta>0 && iterations==resetiteration+1 && accuracy > max_accuracy_for_hessian_scaling) {
-				if (e_info ) {
-					cout << "hessian scaling: " << theta << endl;
-				}
-				ALPHA *= theta;
-				py /= theta;
-				php /= theta;
-				for (int i=1; i<=nvar; i++) {
-					if (i>m) i0=i-m; else i0=0;//
-					nn=m+i-1; if (nn>nvar) nn=nvar; 
-					pa[i] /= theta;
-					for (int j=i0+1; j<=nn; j++)
-					ha[(j-i0-1)*nvar+i] *= theta; 				
-				}
-			}
-			if (nvar>=1) trustfactor *= (4/(pow(theta-1,2)+1)+0.5);
-			if ( nvar>1 ) {
-				sum = ALPHA*pow(norm2(p,nvar),2);
-				theta = fabs(py/(ALPHA*php));
-				if ( theta<.01 ) sum /= 0.8;
-				else if ( theta>100 ) sum *= theta/50;
-				for (int i=0; i<nvar; i++) y[i] -= ALPHA*hp[i]; //because loop goes from i=0; classical c++
-				updatpos(h,y,p,nvar,m,1.0/sum); 
-				trouble -= signdeterminant(h,nvar,m); 
-				if ( trouble<0 ) trouble = 0; else if ( trouble>=3 ) resethessian(h,g,x,nvar,m);
-			} else if ( nvar>=1 && py>0 ) {
-				trouble = 0;
-				theta = py>0.2*ALPHA*php ? 1 : 0.8*ALPHA*php/(ALPHA*php-py);
-				if ( theta<1 ) {
-					py = 0;
-					for (int i=0; i<nvar; i++) {
-						y[i] = theta*y[i]+(1-theta)*ALPHA*hp[i];
-						py += p[i]*y[i];
-					}
-				}
-				updatpos(h,y,y,nvar,m,1.0/(ALPHA*py)); 
-				updateneg(h,hp,nvar,m,-1.0/php);	 
-			}
-
-			delete [] y;
-			delete [] hp;
-		} else if ( !samehessian ) resethessian(h,g,x,nvar,m);
-	}
-}
-
-
 void Newton::newhessian(float *h, double *g, double *g0, double *x, double *p, int nvar) { 
 if(debug) cout <<"newhessian in Newton" << endl; 
 	double dmin=0,sum=0,theta=0,php=0,dg=0,gg=0,g2=0,py=0,y2=0;
 	dmin = 1/pow(2.0,nbits); // alternative: DBL_EPSILON or DBL_MIN
-
-
 	if (!pseudohessian){ 
 		findhessian(h,g,x,nvar); 
 	} else {
@@ -975,49 +670,6 @@ if(debug) cout <<"newhessian in Newton" << endl;
 	}
 }
 
-void Newton::numhessian(float *h,double *g, double *x,int nvar, int m) { //done
-if(debug) cout <<"numhessian in Newton with m" << endl; 
-	double dmax2=0,dmax3=0,di=0, hji;
-	int i0,j0, nn;
-	double* g1 = new double[nvar];
-	double* d = new double[nvar];
-	double* x0 = new double[nvar];
-	double* ga = &g[-1];
-	float* ha = &h[-1];
-	double* g1a = &g[-1];
-	double* da = &d[-1];
-	double* xa = &x[-1];
-	double* x0a= &x0[-1];
-	dmax2 = pow(2.0,nbits/2); //alternative 2*pow(DBL_EPSILON,-0.5)?
-	dmax3 = pow(2.0,nbits/3); //alternative 2*pow(DBL_EPSILON,-1.0/3)?
-
-	int mm1=2*m-1; if (mm1>nvar) mm1=nvar; 
-	for (int ia=1; ia<=mm1; ia +=1) {
-		for (int i=ia; i <=nvar; i += mm1) {
-			if (i>m) i0=i-m; else i0=0;//
-			x0a[i]=xa[i];
-			di = (1/(dmax3*dmax3*fabs(ha[(i-i0-1)*nvar+i])+dmax3+fabs(ga[i])) +1/dmax2)*(1+fabs(xa[i]));
-				if (di<delta_min) di=delta_min;
-				xa[i]=xa[i]+di; da[i]=di;
-		}
-		ComputeG(g1); 
-		for (int i=ia; i<=nvar; i+=mm1) {
-			if (i>m) i0=i-m; else i0=0; // 
-			nn=m+i-1; if (nn>nvar) nn=nvar;
-			xa[i]=x0[i];
-			for (int j=i0+1; j<=nn; j++) {
-				if (j>m) j0=j-m; else j0=0; //
-				hji = (g1a[i]-ga[i])/da[i];
-				ha[(i-j0-1)*nvar+j] = hji; 
-			}
-		}
-	}
-	delete [] g1;
-	delete [] d;
-	delete [] x0; 
-	ComputeG(g);
-}
-
 void Newton::numhessian(float* h,double* g, double* x,int nvar) {
 if(debug) cout <<"numhessian in Newton" << endl; 
 	double dmax2=0,dmax3=0,di=0;
@@ -1037,7 +689,7 @@ if(debug) cout <<"numhessian in Newton" << endl;
 		ComputeG(g1);
 		x[i] = xt[i];
 		for (int j=0; j<nvar; j++ ) {
-			h[j+nvar*i] = (g1[j]-g[j])/di; //aanpassen voor m
+			h[j+nvar*i] = (g1[j]-g[j])/di;
 		}
 	}
 	delete [] g1;
@@ -1045,51 +697,6 @@ if(debug) cout <<"numhessian in Newton" << endl;
 	ComputeG(g);
 }
 
-
-void Newton::decomposition(float *h, int nvar, int m, int &trouble){
-if(debug) cout <<"decomposition in Newton with m" << endl; 
-	int ntr=0;
-	decompos(h,nvar,m,ntr); 
-	if (e_info) {
-		if (iterations==0) {
-			if (ntr==0) {
-				cout << "Not too bad.";
-			} else {
-				cout << " sign might be wrong.";
-			}
-		} else if (ntr>0 && trouble==0) {
-			if (ntr==1) {
-				cout << "Wait a sec.";
-			} else {
-				cout << "some TROUBLES appear.";
-			}
-		} else if (ntr>trouble+1) {
-			for (int i=1; i<= ntr; i++) {
-				cout << "O";
-			}
-			cout << "H!";
-		} else if (trouble>0) {
-			if (ntr==0) {
-				cout << "Here we go.";
-			} else if (ntr<trouble-1) {
-				cout << "Hold on.";
-			} else if (ntr < trouble) {
-				cout << "There is some hope for you.";
-			} else if (ntr == trouble) {
-				cout << "no Progress.";
-			} else if (ntr > 4) {
-				cout << "We won't fix it.";
-			} else {
-				cout << "More troubles.";
-			}
-		}
-		if (iterations==0 || trouble>0 || ntr>0) {
-			cout <<  endl;
-		}
-	}
-	trouble = ntr;
-
-}
 void Newton::decomposition(float *h,int nvar, int &trouble){
 if(debug) cout <<"decomposition in Newton" << endl; 
 	int ntr=0;
@@ -1136,15 +743,6 @@ if(debug) cout <<"decomposition in Newton" << endl;
 
 }
 
-void Newton::findhessian(float *h, double *g, double *x, int nvar, int m) {
-if(debug) cout <<"findhessian in Newton with m" << endl; 
-	if ( !samehessian ) {
-		if ( iterations==0 ) resethessian(h,g,x,nvar,m);
-		numhessian(h,g,x,nvar,m); // passes through residuals so check pseudohessian
-		if (!pseudohessian) decomposition(h,nvar,m,trouble);
-	}
-}
-
 void Newton::findhessian(float *h, double *g, double *x,int nvar) {
 if(debug) cout <<"findhessian in Newton" << endl; 
 	if ( !samehessian ) {
@@ -1154,11 +752,11 @@ if(debug) cout <<"findhessian in Newton" << endl;
 	}
 }
 
-void Newton::newdirection(float *h, double *p, double *p0, double *g, double *g0, double *x, int nvar, int m, double alphabound) {
-if(debug) cout <<"newdirection in Newton with m" << endl; 
-	inneriteration(h,g,x,accuracy,nvar,m);
+void Newton::newdirection(float *h, double *p, double *p0, double *g, double *g0, double *x, int nvar, double alphabound) {
+if(debug) cout <<"newdirection in Newton" << endl; 
+	inneriteration(h,g,x,accuracy,nvar);
 	memcpy(p0, p, sizeof(*p0)*nvar);
-	if (m>0) direction(h,p,g,g0,x,nvar,m, ALPHA); else direction(h,p,g,g0,x,nvar,ALPHA);
+	direction(h,p,g,g0,x,nvar,ALPHA);
 	accuracy = residue(g,p,x,nvar,ALPHA);
 }
 
@@ -1175,15 +773,15 @@ if(debug) cout <<"newtrustregion in Newton" << endl;
 	if ( trustregion<delta_min ) trustregion = delta_min;
 }
 
-double Newton::linesearch(double *g, double *g0, double *p, double *x, double *x0, int nvar, int m, double alphabound) {
-if(debug) cout <<"linesearch in Newton with m" << endl; 
+double Newton::linesearch(double *g, double *g0, double *p, double *x, double *x0, int nvar, double alphabound) {
+if(debug) cout <<"linesearch in Newton" << endl; 
 	double newalpha = alphabound<1 ? alphabound : 1;
-	newalpha = zero(g,g0,p,x,x0,nvar,m,newalpha);
+	newalpha = zero(g,g0,p,x,x0,nvar,newalpha);
 	return newalpha;
 }
 
-double Newton::zero(double *g, double *g0, double *p, double *x, double *x0, int nvar, int m, double newalpha) {
-if(debug) cout <<"zero in Newton with m" << endl; 
+double Newton::zero(double *g, double *g0, double *p, double *x, double *x0, int nvar, double newalpha) {
+if(debug) cout <<"zero in Newton " << endl; 
 	double alpha=newalpha;
 	bool valid, timedep;
 	lineiterations++;
@@ -1219,13 +817,13 @@ if(debug) cout <<"zero in Newton with m" << endl;
 	return alpha;
 }
 
-double Newton::stepchange(double *g, double *g0, double *p, double *p0, double *x, double *x0, int nvar, int m, double &alpha){
-if(debug) cout <<"stepchange in Newton with m" << endl; 
+double Newton::stepchange(double *g, double *g0, double *p, double *p0, double *x, double *x0, int nvar, double &alpha){
+if(debug) cout <<"stepchange in Newton" << endl; 
 	double change, crit;
 	change = crit = linecriterion(g,g0,p,p0,nvar);
 	while ( crit<0.35 && lineiterations<linesearchlimit ) {
 		alpha /= 4;
-		zero(g,g0,p,x,x0,nvar,m,alpha);
+		zero(g,g0,p,x,x0,nvar,alpha);
 		crit = linecriterion(g,g0,p,p0,nvar);
 		change = 1;
 	}
@@ -1249,20 +847,15 @@ if(debug) cout <<"iterate in Newton" << endl;
 	p = new double[nvar]; H_Zero(p,nvar); 
 	g0 = new double[nvar]; H_Zero(g0,nvar); 
 	p0 = new double[nvar]; H_Zero(p0,nvar);
-	if (hessianwidth>0) { 
-		h = new float [nvar*(2*hessianwidth-1)]; H_Zero(h,nvar*(2*hessianwidth-1));  
-	} else {
-		h = new float [nvar*nvar]; H_Zero(h,nvar*nvar);
-	}
+	h = new float [nvar*nvar]; H_Zero(h,nvar*nvar);
 
 	if (e_info) {cout <<"NEWTON has been notified."<< endl; 
 		cout << "Your guess:"; 
 	}
 	ComputeG(g); 
-	if (hessianwidth >0) newhessian(h,g,g0,x,p,nvar,hessianwidth); else newhessian(h,g,g0,x,p,nvar);
+	newhessian(h,g,g0,x,p,nvar);
 	minimum = newfunction(g,x,nvar);
-	newdirection(h,p,p0,g,g0,x,nvar,hessianwidth,alphabound);
-	//newtrustregion(g,g0,p,p0,nvar);
+	newdirection(h,p,p0,g,g0,x,nvar,alphabound);
 	normg=sqrt(minimum);
 	while ((tolerance < accuracy || tolerance*10<normg) && iterations<iterationlimit && accuracy == fabs(accuracy) ) {
 		if (e_info && it%i_info == 0){
@@ -1273,11 +866,11 @@ if(debug) cout <<"iterate in Newton" << endl;
 		alphabound = alphamax = trustregion/(norm2(p,nvar)+1/pow(2.0,nbits));
 		memcpy(x0, x, sizeof(*x0)*nvar);
 		memcpy(g0, g, sizeof(*g0)*nvar);
-		ALPHA = linesearch(g,g0,p,x,x0,nvar,hessianwidth,alphabound);
-		trustfactor *= stepchange(g,g0,p,p0,x,x0,nvar,hessianwidth,ALPHA); // alpha is modified as well!
+		ALPHA = linesearch(g,g0,p,x,x0,nvar,alphabound);
+		trustfactor *= stepchange(g,g0,p,p0,x,x0,nvar,ALPHA); // alpha is modified as well!
 		trustfactor *= ALPHA/alphabound;
-		if (it==1) {if (hessianwidth>0) newhessian(h,g,g0,x,p,nvar,hessianwidth); else newhessian(h,g,g0,x,p,nvar);}
-		newdirection(h,p,p0,g,g0,x,nvar,hessianwidth,alphabound);
+		if (it==1) {newhessian(h,g,g0,x,p,nvar);}
+		newdirection(h,p,p0,g,g0,x,nvar,alphabound);
 		normg=sqrt(minimum); 
 	}
 	delete p; delete g0 ; delete p0; 
@@ -1475,8 +1068,8 @@ if(debug) cout <<"ComputeG in  Newton " << endl;
 	double chi; 
 	ComputePhis();
 
-	int sysmon_length = Sys[0]->SysMonList.size();
-	int mon_length = In[0]->MonList.size();	
+	int sysmon_length = Sys[0]->SysMonList.size(); /only in molecules.
+	int mon_length = In[0]->MonList.size(); //also frozen segments	
 
 	Cp(g,xx,iv); Zero(alpha,M);
 	for (int i=0; i<sysmon_length; i++) {

@@ -468,7 +468,6 @@ cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl;
 			Mol[i]->ComputePhi(); 
 		}
 	}
-
 	return success;  
 }
 

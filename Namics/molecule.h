@@ -43,6 +43,7 @@ public:
 	vector<int> n_mon; 
 	vector<int> molmon_nr; 
 	vector<int> memory;
+	vector<int> last_stored;
 	double *phi;
 	double *H_phi;
 	double *phitot;

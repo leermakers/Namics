@@ -1412,7 +1412,6 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 		case 1:
 			H_Zero(H_MASK,M);
 			if (block) {
-cout << r[0] << " " << r[3] << endl ;
 				for (x=r[0]; x<r[3]+1; x++)  H_MASK[x]=1;
 			} else {
 				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	

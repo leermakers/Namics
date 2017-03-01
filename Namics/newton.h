@@ -19,6 +19,7 @@ public:
 
 	int lineiterations,linetolerance,resetiteration;
 	int iterations;
+	int print_hessian_at_it;
 	int linesearchlimit;
 	double smallAlpha;
 	int maxNumSmallAlpha;
@@ -35,6 +36,7 @@ public:
 	bool newtondirection;
 	bool reset_pseudohessian;
 	bool pseudohessian;
+	bool hessian; 
 	bool samehessian;
 	double accuracy;
 	double max_accuracy_for_hessian_scaling;
@@ -97,6 +99,7 @@ public:
 	double* p0;
 	double* g0;
 	float* h;
+	int* mask;
 		
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -110,6 +113,7 @@ public:
 	void Ax(double* , double* , int );
 	void DIIS(double* , double* , double* , double*, double* ,double* , int , int , int );
 	void ComputeG(double*); 
+	void COMPUTEG(double*,double*,int); 
 	void ComputePhis();
 	void ComputeG_ext();
 	bool Iterate_Picard();

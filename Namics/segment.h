@@ -32,9 +32,10 @@ public:
 
 	string filename; 
 	bool block;
-	int n_pos,n_box;  
+	int n_pos;  
+	int n_box;
 	int* r;
-	int mx,my,mz,mm;
+	int mx,my,mz,m;
 
 	vector<string> ints;
 	vector<string> doubles;

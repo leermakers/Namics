@@ -978,7 +978,7 @@ void RemoveBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym
 	b_y(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
 	b_z(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
 }
-#endif
+#endif 
 
 #define MAX_ITER 100
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))

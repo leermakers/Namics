@@ -9,7 +9,6 @@ if(debug) cout <<"Constructor in Newton " << endl;
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance"); KEYS.push_back("store_guess"); KEYS.push_back("read_guess"); 
 	KEYS.push_back("stop_criterion"); 
 	KEYS.push_back("delta_min");
-//	KEYS.push_back("hessianwidth"); 
 	KEYS.push_back("linesearchlimit");
 	//KEYS.push_back("samehessian");  
 	KEYS.push_back("max_accuracy_for_hessian_scaling");
@@ -66,9 +65,6 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	Zero(g,iv);
 	Zero(xR,m*iv);
 	Zero(x_x0,m*iv);
-if (debug){
-	double test; Sum(test,xx,iv); cout <<"Sum of xx after putting to zero" << test << endl; 
-}
 	Sys[0]->AllocateMemory();
 }
 
@@ -156,8 +152,6 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 				cout <<"small_alpha is out of range; 0, ..., 1; small_alpha value set to default: 1e-5 " << endl; 
 				smallAlpha=0.00001; 
 			}
-
-
 		}		
 		if (m < 0 ||m>100) {m=10;  cout << "Value of 'm' out of range 0..100, value set to default value 10" <<endl; }
 		StoreFileGuess=In[0]->Get_string(GetValue("store_guess"),"");		
@@ -892,7 +886,7 @@ if(debug) cout <<"PutU in  Newton " << endl;
 	return success;
 }
 
-
+/*
 void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton " << endl;
 	double* U = new double[N*N];
@@ -924,8 +918,8 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	delete S;
 	delete VT;
 }
+*/
 
-/*
 void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton " << endl;
 	
@@ -954,7 +948,7 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	delete U;
 	delete S;
 	delete V;
-}*/
+}
 
 void Newton::DIIS(double* xx, double* x_x0, double* xR, double* Aij, double* Apij,double* Ci, int k, int m, int iv) {
 if(debug) cout <<"DIIS in  Newton " << endl;

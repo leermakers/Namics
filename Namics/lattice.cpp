@@ -3,6 +3,7 @@ Lattice::Lattice(vector<Input*> In_,string name_) { //this file contains switch 
 if (debug) cout <<"Lattice constructor" << endl; 
 	In=In_; name=name_; 
 	KEYS.push_back("gradients"); KEYS.push_back("n_layers"); KEYS.push_back("offset_first_layer");
+	KEYS.push_back("geometry"); 
 	KEYS.push_back("n_layers_x");   KEYS.push_back("n_layers_y"); KEYS.push_back("n_layers_z");
 	KEYS.push_back("lowerbound"); KEYS.push_back("upperbound");
 	KEYS.push_back("lowerbound_x"); KEYS.push_back("upperbound_x");
@@ -15,10 +16,12 @@ Lattice::~Lattice() {
 if (debug) cout <<"lattice destructor " << endl;
   //In this program, we will assume that the propagator will work on a simple cubic lattice. 
 			//Interactions will be treated either with simple cubic or FCC 'lambda's.
-if (lambda_1) delete [] lambda_1;
-if (lambda1) delete [] lambda1;
-if (lambda0) delete [] lambda0; 
-if (L) delete [] L; 
+	if (gradients!=3 && geometry !="planar" ) {
+		if (lambda_1) delete [] lambda_1;
+		if (lambda1) delete [] lambda1;
+		if (lambda0) delete [] lambda0; 
+		if (L) delete [] L; 
+	}
 }
 
 void Lattice::AllocateMemory(void) {

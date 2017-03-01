@@ -1,4 +1,5 @@
-#include "segment.h"
+#include "segment.h" 
+#include <fstream>
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; 
 if (debug) cout <<"Segment constructor" + name << endl;
@@ -11,13 +12,14 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("pinned_filename"); 	
 	KEYS.push_back("frozen_filename");
 	KEYS.push_back("tagged_filename"); 
+	KEYS.push_back("clamp_filename");
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
 	if (n_pos>0) {
 		free(H_P);
 	}
-	free(r);
+	if (freedom !="free") free(r);
 	free(H_u);
 	free(H_phi);
 	free(H_MASK);
@@ -39,7 +41,7 @@ if (debug) cout <<"Segment destructor " + name << endl;
 
 void Segment::AllocateMemory() {
 if (debug) cout <<"Allocate Memory in Segment " + name << endl; 
-	M=Lat[0]->M;
+	int M=Lat[0]->M;
 
 	phibulk =0; //initialisatie van monomer phibulk.
 	//r=(int*) malloc(6*sizeof(int));
@@ -78,7 +80,9 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 #endif
 }
 bool Segment::PrepareForCalculations(int* KSAM) {
-if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl; 
+if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
+
+	int M=Lat[0]->M; 
 #ifdef CUDA
 	TransferIntDataToDevice(H_MASK, MASK, M);
 	//TransferDataToDevice(H_u, u, M);
@@ -113,7 +117,13 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		epsilon=In[0]->Get_double(GetValue("epsilon"),80);
 		if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 255. Default value 80 used instead" << endl;
 
-		options.push_back("free"); options.push_back("pinned");options.push_back("frozen");options.push_back("tagged");
+		options.push_back("free"); 
+		options.push_back("pinned");
+		options.push_back("frozen");
+		options.push_back("tagged");
+		options.push_back("clamp"); 
+
+		
 		freedom = In[0]->Get_string(GetValue("freedom"),"free"); 
 		if (!In[0]->InSet(options,freedom)) cout << "Freedom for mon " + name + " not recognized. Default value 'freedom' is used"<< endl;
 
@@ -125,6 +135,16 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		} else {
 			r=(int*) malloc(6*sizeof(int));
 		}
+
+		if (freedom =="clamps" ) {
+			
+			if (GetValue("clamp_filename").size()>0) {
+				if (!GetClamp(GetValue("clamp_filename"))) {
+					success=false; cout <<"Failed to read 'clamp_filename'. Problem terminated" << endl; 
+				}
+			} else {success=false; cout << "When freedom of segment is 'clamps' we expect to find the quantity 'clamp_filename' which refers to a file that contains the data for the sub_box with clamping coordinates " << endl; } 
+		}
+		
 	
 		if (freedom == "pinned") {
 			phibulk=0;
@@ -223,7 +243,64 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	return success; 
 }
 
-
+bool Segment::GetClamp(string filename) {
+	bool success=true;
+	string line_;
+	string NN,X,Y,Z;
+	int pos;
+	int N=0;
+	mx=my=mz=0;
+	n_box=0;
+	int i=0;
+	ifstream in_file;
+	in_file.open(filename.c_str());
+	if (in_file.is_open()) {
+		while (in_file) {
+			n_box++; i++; 
+			if (i==1) {
+				in_file >> line_ >> NN >> line_ >> X >> Y >> Z ;				
+				if (!In[0]->Get_int(NN,pos,0)) { success=false; cout<<" length of 'fragment' not an integer " << endl; }
+				else {if (N>0) {if (N!=pos) {cout <<"lengths of fregment are not equal " << endl; success=false;}} else N = pos;}
+				if (!In[0]->Get_int(X,pos,0)) {success=false; cout <<"X-value for sub_box size is not integer " << endl;  } 
+				else {if (mx>0) {if (mx !=pos) {success=false; cout <<"We can deal with only one sub-box size" << endl;}} else mx=pos; }
+				if (!In[0]->Get_int(Y,pos,0)) {success=false; cout <<"Y-value for sub_box size is not integer " << endl;  } 
+				else {if (my>0) {if (my !=pos) {success=false; cout <<"We can deal with only one sub-box size" << endl;}} else my=pos; }
+				if (!In[0]->Get_int(Z,pos,0)) {success=false; cout <<"Z-value for sub_box size is not integer " << endl;  } 
+				else {if (mz>0) {if (mz !=pos) {success=false; cout <<"We can deal with only one sub-box size" << endl;}} else mz=pos; }
+			}
+			if (i==2) {in_file>>X>>Y>>Z;
+				if (!In[0]->Get_int(X,pos,0)) {success =false; cout << " X-pos of particle sub_box nr " << n_box << " not integer"  << endl; }
+				else bx.push_back(pos);
+				if (!In[0]->Get_int(Y,pos,0)) {success =false; cout << " Y-pos of particle sub_box nr " << n_box << " not integer"  << endl; }
+				else by.push_back(pos);
+				if (!In[0]->Get_int(Z,pos,0)) {success =false; cout << " Z-pos of particle sub_box nr " << n_box << " not integer"  << endl; }
+				else bz.push_back(pos);
+			}
+			if (i==3) {in_file>>X>>Y>>Z;
+				if (!In[0]->Get_int(X,pos,0)) {success =false; cout << " X-pos of particle pos 1 of sub_box nr " << n_box << " not integer"  << endl; }
+				else px1.push_back(pos);
+				if (!In[0]->Get_int(Y,pos,0)) {success =false; cout << " Y-pos of particle pos 1 of sub_box nr " << n_box << " not integer"  << endl; }
+				else py1.push_back(pos);
+				if (!In[0]->Get_int(Z,pos,0)) {success =false; cout << " Z-pos of particle pos 1 of sub_box nr " << n_box << " not integer"  << endl; }
+				else pz1.push_back(pos);
+			}
+			if (i==4) {i=0;in_file>>X>>Y>>Z;
+				if (!In[0]->Get_int(X,pos,0)) {success =false; cout << " X-pos of particle pos 2 of sub_box nr " << n_box << " not integer"  << endl; }
+				else px2.push_back(pos);
+				if (!In[0]->Get_int(Y,pos,0)) {success =false; cout << " Y-pos of particle pos 2 of sub_box nr " << n_box << " not integer"  << endl; }
+				else py2.push_back(pos);
+				if (!In[0]->Get_int(Z,pos,0)) {success =false; cout << " Z-pos of particle pos 2 of sub_box nr " << n_box << " not integer"  << endl; }
+				else pz2.push_back(pos);
+			}
+		}
+		
+	} else {
+		success=false;
+		cout <<"To read 'clamp_file', the file " << filename << " is not available." << endl; 
+	}
+	in_file.close();
+	return success; 
+}
 
 int* Segment::GetMASK() {
 if (debug) cout <<"Get Mask for segment" + name << endl;
@@ -233,6 +310,7 @@ if (debug) cout <<"Get Mask for segment" + name << endl;
 
 double* Segment::GetPhi() {
 if (debug) cout <<"GetPhi in segment " + name << endl;
+	int M=Lat[0]->M;
 	if (freedom=="frozen") Cp(phi,MASK,M); 
 	return phi; 
 }
@@ -241,7 +319,10 @@ string Segment::GetFreedom(void){
 if (debug) cout <<"GetFreedom for segment " + name << endl;
 	return freedom; 
 }
-
+bool Segment::IsClamp(void) {
+if (debug) cout <<"Is free for " + name << endl;
+	return freedom == "clamp"; 
+}
 bool Segment::IsFree(void) {
 if (debug) cout <<"Is free for " + name << endl;
 	return freedom == "free"; 
@@ -315,6 +396,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	profile="profile;1"; push("u",profile);
 	//profile="profile;2"; push("mask",profile);
 #ifdef CUDA
+	int M = Lat[0]->M;
 	TransferDataToHost(H_phi, phi, M);
 	TransferDataToHost(H_u, u, M);
 #endif

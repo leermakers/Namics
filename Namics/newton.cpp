@@ -892,6 +892,7 @@ if(debug) cout <<"PutU in  Newton " << endl;
 	return success;
 }
 
+
 void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton " << endl;
 	double* U = new double[N*N];
@@ -899,6 +900,7 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	double* VT = new double[N*N];
 	integer MM = (integer)N, NN = (integer)N;
 	integer LDA=MM, LDU=MM, LDVT=NN, INFO, LWORK;
+
 	int lwork;
 	double WKOPT;
 	double* WORK;
@@ -915,13 +917,45 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	};
 	free(WORK);
 	for (int i=0; i<N; i++) X[i]=0;
-	for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[i*N + j];//*B[j];
+	for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[i*N + j];// *B[j];
 	for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is use decause it is no longer needed.
 	for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += VT[i*N + j]*S[j];
 	delete U;
 	delete S;
 	delete VT;
 }
+
+/*
+void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
+if(debug) cout <<"Ax in  Newton " << endl;
+	
+    double **U = new double*[N + 1];
+    double **V = new double*[N + 1];
+    double *S = new double[N + 1];
+    for (int i=0; i < N + 1; i++) {
+        U[i] = new double[N + 1];
+        V[i] = new double[N + 1];
+    }
+
+	
+	for (int i=0; i<N; i++) for (int j=0; j<N; j++) U[i+1][j+1] = A[i*N + j];
+    
+    	if (N > 1) {
+        	svdcmp(U, N, N, S, V);
+
+		for (int i=0; i<N; i++) X[i]=0;
+		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[i+1][j+1];// *B[j];
+		for (int i=0; i<N; i++) {S[i+1] = X[i]/S[i+1]; X[i]=0;} //S is use decause it is no longer needed.
+		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += V[i+1][j+1]*S[j+1];
+	} else {
+		X[0]=1;
+	}
+	
+	delete U;
+	delete S;
+	delete V;
+}*/
+
 void Newton::DIIS(double* xx, double* x_x0, double* xR, double* Aij, double* Apij,double* Ci, int k, int m, int iv) {
 if(debug) cout <<"DIIS in  Newton " << endl;
 	double normC=0; int posi;
@@ -1068,7 +1102,7 @@ if(debug) cout <<"ComputeG in  Newton " << endl;
 	double chi; 
 	ComputePhis();
 
-	int sysmon_length = Sys[0]->SysMonList.size(); /only in molecules.
+	int sysmon_length = Sys[0]->SysMonList.size(); 
 	int mon_length = In[0]->MonList.size(); //also frozen segments	
 
 	Cp(g,xx,iv); Zero(alpha,M);

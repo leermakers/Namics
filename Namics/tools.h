@@ -157,7 +157,8 @@ void H_Invert(double*, double*, int);
 
 #endif
 
-
+double pythag(double, double);
+void svdcmp(double **, int , int , double *, double **);
 
 
 

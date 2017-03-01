@@ -12,7 +12,16 @@ public:
 
 	string name; 
 	vector<Input*> In;  
-	vector<Lattice*> Lat; 
+	vector<Lattice*> Lat;
+	vector<int> px1;
+	vector<int> px2;
+	vector<int> py1;
+	vector<int> py2;
+	vector<int> pz1;
+	vector<int> pz2;
+	vector<int> bx;
+	vector<int> by;
+	vector<int> bz; 
 	int n_seg; 
 	int seg_nr;  
 	double epsilon;
@@ -23,9 +32,9 @@ public:
 
 	string filename; 
 	bool block;
-	int n_pos;  
-	int M; 
+	int n_pos,n_box;  
 	int* r;
+	int mx,my,mz,mm;
 
 	vector<string> ints;
 	vector<string> doubles;
@@ -62,10 +71,12 @@ public:
 	void PutChiKEY(string); 
 	string GetValue(string); 
 	string GetFreedom();
+	bool GetClamp(string); 
 	bool IsFree();
 	bool IsPinned();
 	bool IsFrozen();
-	bool IsTagged(); 
+	bool IsTagged();
+	bool IsClamp(); 
 	int* GetMASK(); 
 	double* GetPhi(); 
 	void AllocateMemory();

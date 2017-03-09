@@ -4,6 +4,7 @@ Input::Input(string name_) {
 	KEYS.push_back("start"); 
 	KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); KEYS.push_back("alias"); 	
  	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("output");   
+	
 
 	in_file.open(name.c_str()); Input_error=false; 
 
@@ -395,12 +396,14 @@ if (debug) cout <<"LoadItems in Input " << endl;
 					switch (j-1) {
 						case 0:
 							if (set[3]=="*") set[3]=SysList[0];
-							if (SysList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl; 
+							if (set[1]=="var") name_found=true;
+							if (SysList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl; 
 								PrintList(SysList); name_found=false;} 
 							break;
 						case 1:
 							name_found=false;
 							if (set[3]=="*") { name_found = true; wild_mollist=true;}
+							if (set[1]=="var") name_found=true;
 							k=0; name_length=MolList.size();  
 							while (k<name_length && !name_found) {
 								if (MolList[k]==set[3]) name_found=true; 
@@ -412,7 +415,8 @@ if (debug) cout <<"LoadItems in Input " << endl;
 							break;
 						case 2:
 							name_found=false;
-							if (set[3]=="*") {name_found=true; wild_monlist=true;}
+							if (set[3]=="*") {name_found=true; wild_monlist=true;} 
+							if (set[1]=="var") name_found=true;
 							k=0; name_length=MonList.size();  
 							while (k<name_length && !name_found) {
 								if (MonList[k]==set[3]) name_found=true; 
@@ -426,7 +430,8 @@ if (debug) cout <<"LoadItems in Input " << endl;
 							name_found=false;
 							k=0; name_length=AliasList.size(); 
 							if (set[3]=="*") {name_found=true; wild_aliaslist=true;}
- 
+                                                        if (set[1]=="var") name_found=true;
+
 							while (k<name_length && !name_found) {
 								if (AliasList[k]==set[3]) name_found=true; 
 								k++;
@@ -437,24 +442,25 @@ if (debug) cout <<"LoadItems in Input " << endl;
 							break;
 						case 4:
 							if (set[3]=="*") set[3]=LatList[0];
-							if (LatList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							if (LatList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(LatList); name_found=false;
 							}
 							break;
 						case 5:
 							if (set[3]=="*") set[3]=NewtonList[0];
-							if (NewtonList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							if (NewtonList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(NewtonList); name_found=false;
 							}
 							break;
 						case 6:
 							if (set[3]=="*") set[3]=EngineList[0];
-							if (EngineList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							if (EngineList[0]!=set[3] && set[1]!= "var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(EngineList); name_found=false;
 							}
 							break;
 						case 7:
-							k=0; name_length=OutputList.size(); name_found=false; 
+							k=0; name_length=OutputList.size(); name_found=false;
+                                                        if (set[1]=="var") name_found=true; 
 							while (k<name_length) {
 								if (OutputList[k]==set[3]) name_found=true; 
 								k++;
@@ -543,6 +549,44 @@ bool Input:: CheckInput(void) {
 			}
 			
 		}
+
+
+                if (set[1]=="engine") {
+                        vector<string> options;
+                        options.push_back("var"); options.push_back("sfbox"); options.push_back("search"); 
+                        string option;
+                        if (!Get_string(set[4],option,options,"Value for Engine brand '" + set[4] + "' not allowed. ")) {success=false;}
+                        else {
+                                word=set[4];
+
+                                j=0; Keywordfound=false; key_length =KEYS.size();
+                                while (j<key_length) {
+                                        if (word==KEYS[j]) {Keywordfound=true; }
+                                        j++;
+                                }
+                                if (!Keywordfound) {
+                                        KEYS.push_back(word);
+                                        key_length++;
+                                }
+				
+
+                        }
+
+                }
+
+		if (set[1]=="search"){
+			vector<string> options;
+			options.push_back("grandpotential"); options.push_back("phibulk");
+			string option;
+			if (!Get_string(set[2],option,options, "Cannot search for ' " +set[2]+"'. Choose from options.")) {success=false;}
+			else { 
+				if (set[2]==options[0]) {if (set[3]!="sys") {cout << "In search option 'grandpotential' is a property of 'sys' and not a property of '"+set[3]+"'. Execution stopped." << endl; success=false; return 0;} }
+				else if (set[2]==options[1]){if(set[3]!="mol"){cout << "In search option 'phibulk' is a property of 'mol' and not a property of '"+set[3]+"'. Executions stopped." << endl; success=false; return 0;}}
+			}
+		}
+
+
+
 		i++;
 	} 	 
 	i=0;

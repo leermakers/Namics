@@ -70,6 +70,7 @@ public:
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
 	bool CreateMASK(int*, int*, int*, int, bool);
 	bool GenerateGuess(double*, string, string, double, double);
+	bool GuessVar(double*, double, string, double, double);
 	bool ReadGuess(string,double*);
 	bool StoreGuess(string,double*);
 };

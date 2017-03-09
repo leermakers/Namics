@@ -223,7 +223,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				}
 			} 
 			if (GetValue("tagged_filename").size()>0) {s="tagged";
-				filename=GetValue("tagged_filename"); 
+				filename=GetValue("tagged_filename");
 				n_pos=0;
 			 	if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {

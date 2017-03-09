@@ -1021,18 +1021,36 @@ if(debug) cout <<"DIIS in  Newton " << endl;
 	}
 }
 
+bool Newton::Guess(void){
+if(debug) cout << "guess in Newton" << endl;
+	bool success=true;
+        if (start==1) {
+                if (ReadFileGuess!="") {
+                        Lat[0]->ReadGuess(ReadFileGuess,xx);
+                } else {
+                        Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
+                }
+        }
+	return success;
+}
+
 
 bool Newton::Solve(void) {
 if(debug) cout <<"Solve in  Newton " << endl;
 	bool success=true;
-	if (start==1) {
+/*	if (start==1) {
 		if (ReadFileGuess!="") {
 			Lat[0]->ReadGuess(ReadFileGuess,xx);
 		} else {
 			Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
 		}
 	}
+
 	if (method=="pseudohessian" || method=="hessian") {iterate(xx,iv);} else 
+
+*/
+	if (method=="pseudohessian") {iterate(xx,iv);} else 
+
 	if (method=="Picard") {success=Iterate_Picard();} else success=Iterate_DIIS(); 
 	Sys[0]->CheckResults();
 	if (StoreFileGuess!="") Lat[0]->StoreGuess(StoreFileGuess,xx); 

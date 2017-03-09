@@ -44,7 +44,7 @@ public:
 	void vtk(string, double *);
 	void density();
 	void printlist();
-	void WriteOutput(void);
+	void WriteOutput(int);
 	int GetValue(string, string, string, int&, double&, string&);
 	double* GetPointer(string, string, string);
 

@@ -691,7 +691,6 @@ if(debug) cout <<"numhessian in Newton" << endl;
 		for (int j=0; j<nvar; j++ ) {
 			h[j+nvar*i] = (g1[j]-g[j])/di;
 		}
-		if (h[i+nvar*i]==0) h[i+nvar*i] =1;
 	}
 	delete [] g1;
 	COMPUTEG(x,g,nvar);
@@ -928,8 +927,13 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	double* U = new double[N*N];
 	double* S = new double[N];
 	double* VT = new double[N*N];
+#ifdef  __CLAPACK_H
 	integer MM = (integer)N, NN = (integer)N;
 	integer LDA=MM, LDU=MM, LDVT=NN, INFO, LWORK;
+#else
+        int MM = (int)N, NN = (int)N;
+	int LDA=MM, LDU=MM, LDVT=NN, INFO, LWORK;
+#endif
 
 	int lwork;
 	double WKOPT;
@@ -941,7 +945,11 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	dgesvd_( &JOBU, &JOBVT, &MM, &NN, A, &LDA, S, U, &LDU, VT, &LDVT, &WKOPT, &LWORK, &INFO );
 	lwork = (int)WKOPT;
 	WORK = (double*)malloc( lwork*sizeof(double) );
+#ifdef  __CLAPACK_H
 	LWORK = (integer)lwork; //nu uitrekenen.
+#else
+       LWORK = (int)lwork; //nu uitrekenen.
+#endif
 	dgesvd_( &JOBU, &JOBVT, &MM, &NN, A, &LDA, S, U, &LDU, VT, &LDVT,WORK, &LWORK, &INFO );
 	if (INFO >0) { cout <<"error in Ax " << endl; 
 	};
@@ -957,7 +965,7 @@ if(debug) cout <<"Ax in  Newton " << endl;
 */
 
 void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
-if(debug) cout <<"Ax in  Newton " << endl;
+if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	
     double **U = new double*[N + 1];
     double **V = new double*[N + 1];

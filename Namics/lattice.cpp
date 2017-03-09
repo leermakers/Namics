@@ -2,7 +2,7 @@
 Lattice::Lattice(vector<Input*> In_,string name_) { //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
 if (debug) cout <<"Lattice constructor" << endl; 
 	In=In_; name=name_; 
-	KEYS.push_back("gradients"); KEYS.push_back("n_layers"); KEYS.push_back("offset_first_layer");
+	KEYS.push_back("gradients"); KEYS.push_back("geometry"); KEYS.push_back("n_layers"); KEYS.push_back("offset_first_layer");
 	KEYS.push_back("n_layers_x");   KEYS.push_back("n_layers_y"); KEYS.push_back("n_layers_z");
 	KEYS.push_back("lowerbound"); KEYS.push_back("upperbound");
 	KEYS.push_back("lowerbound_x"); KEYS.push_back("upperbound_x");
@@ -1486,6 +1486,37 @@ if (debug) cout <<"GenerateGuess in lattice " << endl;
 	}
 	return success; 
 }
+
+bool Lattice::GuessVar(double* x, double theta,string GuessType, double A_value, double B_value){
+if (debug) cout << "GuessVar in Lattice " << endl;
+	bool success = true;
+	int i;
+	int height = theta/1;
+	switch (gradients) {
+		case 1:
+			if (GuessType=="lamellae"){
+				for (i=0; i<MX+2; i++) {
+                                        if (i<height+1) {
+                                                x[i]= A_value;
+                                                x[i+M]= B_value;
+                                        } else {
+                                                x[i]=0;
+                                                x[i+M]=0;
+                                        }
+
+				}
+			}
+			break;
+		case 2: cout << "var is not implemented in 2 or 3 gradient problems yet" << endl; success=false; break;
+		case 3: cout << "var is not implemented in 2 or 3 gradient problems yet" << endl; success=false; break;
+
+	}
+	return success;
+}
+
+
+
+
 
 bool Lattice::ReadGuess(string filename,double *xx) {
 cout <<"ReadGuess not yet implemented in lattice" << endl; 

@@ -6,12 +6,15 @@
 #include "newton.h"
 class Engine {
 public:
-	Engine(vector<Input*>,vector<System*>,vector<Newton*>,string);
+	Engine(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,string);
 
 ~Engine();
 	void AllocateMemory(); 
 	string name; 
 	vector<Input*> In; 
+	vector<Lattice*> Lat;
+	vector<Segment*> Seg;
+	vector<Molecule*> Mol;
 	vector<System*> Sys; 	
 	vector<Newton*> New; 	
 	string brand; 
@@ -30,7 +33,12 @@ public:
 	void push(string,string);
 	void PushOutput();
 	double* GetPointer(string);
+	int SubProblemNum();
 	int GetValue(string,int&,double&,string&);
+	
+	std::vector<string> VAR_param;
+        std::vector<string> VAR_val;
+        std::vector<string> VAR_key;
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -38,6 +46,9 @@ public:
 	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string); 
-	bool Doit(void); 
+	bool Doit(int); 
+	bool VarMol(int);
+	bool VarMon(int);
+	bool search(void);
 };
 #endif

@@ -214,7 +214,7 @@ if (debug) cout << "GetValue (long) in output " << endl;
 }
 
 
-void Output::WriteOutput() {
+void Output::WriteOutput(int subl) {
 if (debug) cout << "WriteOutput in output " << endl; 
 	int length;
 	string s; 
@@ -222,8 +222,11 @@ if (debug) cout << "WriteOutput in output " << endl;
 	vector<string> sub;
 	string infilename=In[0]->name;
 	In[0]->split(infilename,'.',sub);
-	filename=sub[0].append(".").append(name); 
-	
+	string key;
+	char numc[2];
+        sprintf(numc,"%d",subl);
+	filename=sub[0].append("_").append(numc).append(".").append(name); 
+  	
 	if (name=="pro") {
 		vector<double*> pointer;
 		FILE *fp;
@@ -247,13 +250,14 @@ if (debug) cout << "WriteOutput in output " << endl;
 			double*  X = GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i]);
 			if (X!=NULL) {
 				pointer.push_back(X); 
-				string s=OUT_key[i].append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]); 
-				fprintf(fp,"%s \t",s.c_str()); 
+				key = OUT_key[i];
+				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]); 
+				fprintf(fp,"%s \t",s.c_str());
 			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl; }
 		}
 		fprintf(fp,"\n"); 
 		Lat[0] -> PutProfiles(fp,pointer);
-		
+
 		fclose(fp);
 	}
 

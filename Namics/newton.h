@@ -104,6 +104,7 @@ public:
 	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string); 
+	bool Guess();
 	bool Solve();
 	void AllocateMemory(); 
 	bool PrepareForCalculations(void);

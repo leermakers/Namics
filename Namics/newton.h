@@ -19,6 +19,7 @@ public:
 
 	int lineiterations,linetolerance,resetiteration;
 	int iterations;
+	int print_hessian_at_it;
 	int linesearchlimit;
 	double smallAlpha;
 	int maxNumSmallAlpha;
@@ -35,6 +36,7 @@ public:
 	bool newtondirection;
 	bool reset_pseudohessian;
 	bool pseudohessian;
+	bool hessian; 
 	bool samehessian;
 	double accuracy;
 	double max_accuracy_for_hessian_scaling;
@@ -97,6 +99,7 @@ public:
 	double* p0;
 	double* g0;
 	float* h;
+	int* mask;
 		
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -110,6 +113,7 @@ public:
 	void Ax(double* , double* , int );
 	void DIIS(double* , double* , double* , double*, double* ,double* , int , int , int );
 	void ComputeG(double*); 
+	void COMPUTEG(double*,double*,int); 
 	void ComputePhis();
 	void ComputeG_ext();
 	bool Iterate_Picard();
@@ -120,42 +124,28 @@ public:
 //**********Scheutjens****************
 	
 	void iterate(double*,int); //there is only one iterate;
-	void newdirection(float*, double*, double*, double*, double*, double*, int, int, double); //there is only one of this.
-	void inneriteration(float*, double*,double*,double,int, int);  
-	void direction(float*, double*, double*, double*, double*, int, int, double);
+	void newdirection(float*, double*, double*, double*, double*, double*, int, double); //there is only one of this.
+	void inneriteration(float*, double*,double*,double, int);  
 	void direction(float*, double*, double*, double*, double*, int, double);
-	void newhessian(float*,double*,double*,double*,double*,int,int);
 	void newhessian(float*,double*,double*,double*,double*,int);
-	void resethessian(float*, double*, double*, int, int);
 	void resethessian(float*, double*, double*, int);
-	void startderivatives(float*,double*,double*,int,int);
 	void startderivatives(float*,double*,double*,int);
 
 	void newtrustregion(double*,double*,double*,double*,int); //there is only one. 
-	double linesearch(double*,double*,double*,double*,double*,int,int, double);  //there is only one. 
-	double zero(double*,double*,double*,double*,double*,int,int, double);
-	double stepchange(double*,double*,double*,double*,double*,double*,int,int,double&);
+	double linesearch(double*,double*,double*,double*,double*,int, double);  //there is only one. 
+	double zero(double*,double*,double*,double*,double*,int,double);
+	double stepchange(double*,double*,double*,double*,double*,double*,int,double&);
 	double linecriterion(double*, double*, double*, double*,int); 
-	void numhessian(float*, double*, double*, int, int);
 	void numhessian(float*, double*, double*, int);
 	void findhessian(float* ,double*,double*,int);
-	void findhessian(float* ,double*,double*,int, int);
-	void decomposition(float*,int,int,int&); 
 	void decomposition(float*,int,int&); 
 	double norm2(double*,int);
-	void decompos(float*, int, int, int&);
 	void decompos(float*, int, int&);
-	int signdeterminant(float*, int, int);
 	int signdeterminant(float*, int);
-	void multiply(double*, double, float*, double*, int, int);
 	void multiply(double*, double, float*, double*, int);
-	void updateneg(float*,double*, int, int, double);
 	void updateneg(float* ,double* , int, double);
-	void updatpos(float*, double*, double*, int, int, double);
 	void updatpos(float*, double*, double*, int, double);
-	void gausa(float*, double*, double*, int, int);
 	void gausa(float*, double*, double*, int);
-	void gausb(float*, double*, int, int);
 	void gausb(float*, double*, int);	
 	double newfunction(double*, double*, int);	
 	double residue(double*, double*, double*, int, double);	

@@ -3,6 +3,7 @@ Lattice::Lattice(vector<Input*> In_,string name_) { //this file contains switch 
 if (debug) cout <<"Lattice constructor" << endl; 
 	In=In_; name=name_; 
 	KEYS.push_back("gradients"); KEYS.push_back("n_layers"); KEYS.push_back("offset_first_layer");
+	KEYS.push_back("geometry"); 
 	KEYS.push_back("n_layers_x");   KEYS.push_back("n_layers_y"); KEYS.push_back("n_layers_z");
 	KEYS.push_back("lowerbound"); KEYS.push_back("upperbound");
 	KEYS.push_back("lowerbound_x"); KEYS.push_back("upperbound_x");
@@ -15,10 +16,12 @@ Lattice::~Lattice() {
 if (debug) cout <<"lattice destructor " << endl;
   //In this program, we will assume that the propagator will work on a simple cubic lattice. 
 			//Interactions will be treated either with simple cubic or FCC 'lambda's.
-if (lambda_1) delete [] lambda_1;
-if (lambda1) delete [] lambda1;
-if (lambda0) delete [] lambda0; 
-if (L) delete [] L; 
+	if (gradients!=3 && geometry !="planar" ) {
+		if (lambda_1) delete [] lambda_1;
+		if (lambda1) delete [] lambda1;
+		if (lambda0) delete [] lambda0; 
+		if (L) delete [] L; 
+	}
 }
 
 void Lattice::AllocateMemory(void) {
@@ -773,6 +776,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 				Add(gs+1,gs_1,M-1); Add(gs,gs_1+1,M-1);	
 				YplusisCtimesX(gs,gs_1,4.0,M);
 				Norm(gs,lambda,M); Times(gs,gs,G1,M);
+//cout <<" from - to " << s_from << " - " << s_to << endl; 
 			} else {
 				AddTimes(gs,gs_1,lambda0,M);
 				AddTimes(gs+1,gs_1,lambda_1+1,M-1);
@@ -945,7 +949,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 		block=true; In[0]->split(set[0],',',coor);		
 		switch(gradients) {
 			case 1:
-				if (coor.size()!=1) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come as a single coordinate 'x'" << endl; success=false;}
+				if (coor.size()!=1) {cout << "In mon " + seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come as a single coordinate 'x'" << endl; success=false;}
 				else {
 					diggit=coor[0].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
@@ -1148,10 +1152,10 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 				block=true;
 			if (gradients==1) {
 				recognize_keyword=false; 
-				if (coor[0]=="firstlayer")         {recognize_keyword=true; r[0] = r[4] = 1; }
-				if (coor[0]=="lowerbound" && a==1) {recognize_keyword=true; r[0] = r[4] = 0; }
-				if (coor[0]=="upperbound" && a==1) {recognize_keyword=true; r[0] = r[4] = MX+1; }
-				if (coor[0]=="lastlayer")          {recognize_keyword=true; r[0] = r[4] = MX;}
+				if (coor[0]=="firstlayer")         {recognize_keyword=true; r[0] = r[3] = 1; }
+				if (coor[0]=="lowerbound" && a==1) {recognize_keyword=true; r[0] = r[3] = 0; }
+				if (coor[0]=="upperbound" && a==1) {recognize_keyword=true; r[0] = r[3] = MX+1; }
+				if (coor[0]=="lastlayer")          {recognize_keyword=true; r[0] = r[3] = MX;}
 				if (!recognize_keyword) {
 					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the input: 'firstlayer' or 'lastlayer' ";
 					if (a==1) cout << "or 'upperbound' or 'lowerbound'"; cout <<" is expected. " << endl;
@@ -1408,7 +1412,7 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 		case 1:
 			H_Zero(H_MASK,M);
 			if (block) {
-				for (x=r[1]; x<r[4]+1; x++)  H_MASK[x]=1;
+				for (x=r[0]; x<r[3]+1; x++)  H_MASK[x]=1;
 			} else {
 				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}
@@ -1416,7 +1420,7 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 		case 2:
 			H_Zero(H_MASK,M);
 			if (block) {
-				for (x=r[1]; x<r[4]+1; x++) for (y=r[2]; y<r[5]+1; y++) H_MASK[x*JX+y]=1;
+				for (x=r[0]; x<r[3]+1; x++) for (y=r[1]; y<r[4]+1; y++) H_MASK[x*JX+y]=1;
 			} else {
 				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}
@@ -1424,7 +1428,7 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 		case 3: 	
 			H_Zero(H_MASK,M);
 			if (block) {
-				for (x=r[1]; x<r[4]+1; x++) for (y=r[2]; y<r[5]+1; y++) for (z=r[3]; z<r[6]+1; z++) H_MASK[x*JX+y*JY+z]=1;
+				for (x=r[1]; x<r[3]+1; x++) for (y=r[1]; y<r[4]+1; y++) for (z=r[2]; z<r[5]+1; z++) H_MASK[x*JX+y*JY+z]=1;
 			} else {
 				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}

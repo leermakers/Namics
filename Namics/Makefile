@@ -30,9 +30,9 @@ CPPFLAGS+= -O3
 CFLAGS = $(CPPFLAGS)
 
 	LIBS +=  $(MATRIXLIB)
-	LIBS += -L/usr/include -lcuda -lcudart -lcublas
 
 ifdef CUDA
+	LIBS += -L/usr/include -lcuda -lcudart -lcublas
     
     CPPFLAGS += -DCUDA
     NVCCFLAGS += -DCUDA -arch sm_13  

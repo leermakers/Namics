@@ -34,6 +34,7 @@ public:
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
 
+	vector<string> BC;
 	vector<string> ints;
 	vector<string> doubles;
 	vector<string> bools;
@@ -56,8 +57,10 @@ public:
 	void PutProfiles(FILE*,vector<double*>);
 
 	bool CheckInput(int);
+	bool PutM(void);
 	void PutParameter(string); 
 	string GetValue(string); 
+	void DeAllocateMemory(void); 
 	void AllocateMemory(void); 
 	bool PrepareForCalculations(void); 
 	void propagate(double*,double*, int, int);

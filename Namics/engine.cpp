@@ -18,12 +18,13 @@ void Engine::PutParameter(string new_param) {
 
 bool Engine::CheckInput(int start) {
 	bool success=true;
+//right now all the checks for engine are done in input.cpp. could be move back here.
 	success=In[0]->CheckParameters("engine",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		vector<string> options;
 		options.push_back("sfbox"); options.push_back("var"); options.push_back("search");
 		if (GetValue("brand").size()>0) {
-                        if (!In[0]->Get_string(GetValue("brand"),brand,options,"In engine " + name + " value of brand " + brand + " is not recognised")) brand="var";
+                        if (!In[0]->Get_string(GetValue("brand"),brand,options,"In engine " + name + " value of brand " + brand + " is not recognised"));
 		} else brand="sfbox"; 
 	}
 	return success; 

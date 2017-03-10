@@ -576,12 +576,12 @@ bool Input:: CheckInput(void) {
 
 		if (set[1]=="search"){
 			vector<string> options;
-			options.push_back("grandpotential"); options.push_back("phibulk");
+			options.push_back("sys"); options.push_back("mol");
 			string option;
-			if (!Get_string(set[2],option,options, "Cannot search for ' " +set[2]+"'. Choose from options.")) {success=false;}
+			if (!Get_string(set[2],option,options, "Cannot search in ' " +set[2]+"'. Choose from options.")) {success=false;}
 			else { 
-				if (set[2]==options[0]) {if (set[3]!="sys") {cout << "In search option 'grandpotential' is a property of 'sys' and not a property of '"+set[3]+"'. Execution stopped." << endl; success=false; return 0;} }
-				else if (set[2]==options[1]){if(set[3]!="mol"){cout << "In search option 'phibulk' is a property of 'mol' and not a property of '"+set[3]+"'. Executions stopped." << endl; success=false; return 0;}}
+				if (set[2]==options[0]) {if (set[3]!="grandpotential") {cout << "In 'sys' I can only search for grandpotential and not '"+set[3]+"'. Execution stopped." << endl; success=false; return 0;} }
+				else if (set[2]==options[1]){if(set[3]!="phibulk"){cout << "In 'mol' I can only serach for 'phibulk' and not '"+set[3]+"'. Executions stopped." << endl; success=false; return 0;}}
 			}
 		}
 

@@ -102,9 +102,9 @@ bool Lattice::PutM() {
 			if (BC[0]=="surface") BX1=0;
 			if (BC[0]=="mirror") BX1=1;
 			if (BC[0]=="periodic") BX1=MX;
-			if (BC[1]=="surface") BX1=MX+1;
-			if (BC[1]=="mirror") BX1=MX;
-			if (BC[1]=="periodic") BX1=1;
+			if (BC[1]=="surface") BXM=MX+1;
+			if (BC[1]=="mirror") BXM=MX;
+			if (BC[1]=="periodic") BXM=1;
 			break;
 		case 2: 
 			if (geometry=="cylindrical") {volume = MY*PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));} else volume = MX*MY; 
@@ -112,15 +112,15 @@ bool Lattice::PutM() {
 			if (BC[0]=="surface") BX1=0;
 			if (BC[0]=="mirror") BX1=1;
 			if (BC[0]=="periodic") BX1=MX;
-			if (BC[1]=="surface") BX1=MX+1;
-			if (BC[1]=="mirror") BX1=MX;
-			if (BC[1]=="periodic") BX1=1;
+			if (BC[1]=="surface") BXM=MX+1;
+			if (BC[1]=="mirror") BXM=MX;
+			if (BC[1]=="periodic") BXM=1;
 			if (BC[2]=="surface") BY1=0;
 			if (BC[2]=="mirror") BY1=1;
 			if (BC[2]=="periodic") BY1=MY;
-			if (BC[3]=="surface") BY1=MY+1;
-			if (BC[3]=="mirror") BY1=MY;
-			if (BC[3]=="periodic") BY1=1;
+			if (BC[3]=="surface") BYM=MY+1;
+			if (BC[3]=="mirror") BYM=MY;
+			if (BC[3]=="periodic") BYM=1;
 			break;
 		case 3: 
 			volume = MX*MY*MZ;
@@ -129,21 +129,21 @@ bool Lattice::PutM() {
 			if (BC[0]=="surface") BX1=0;
 			if (BC[0]=="mirror") BX1=1;
 			if (BC[0]=="periodic") BX1=MX;
-			if (BC[1]=="surface") BX1=MX+1;
-			if (BC[1]=="mirror") BX1=MX;
-			if (BC[1]=="periodic") BX1=1;
+			if (BC[1]=="surface") BXM=MX+1;
+			if (BC[1]=="mirror") BXM=MX;
+			if (BC[1]=="periodic") BXM=1;
 			if (BC[2]=="surface") BY1=0;
 			if (BC[2]=="mirror") BY1=1;
 			if (BC[2]=="periodic") BY1=MY;
-			if (BC[3]=="surface") BY1=MY+1;
-			if (BC[3]=="mirror") BY1=MY;
-			if (BC[3]=="periodic") BY1=1;
+			if (BC[3]=="surface") BYM=MY+1;
+			if (BC[3]=="mirror") BYM=MY;
+			if (BC[3]=="periodic") BYM=1;
 			if (BC[4]=="surface") BZ1=0;
 			if (BC[4]=="mirror") BZ1=1;
 			if (BC[4]=="periodic") BZ1=MZ;
-			if (BC[5]=="surface") BZ1=MZ+1;
-			if (BC[5]=="mirror") BZ1=MZ;
-			if (BC[5]=="periodic") BZ1=1;
+			if (BC[5]=="surface") BZM=MZ+1;
+			if (BC[5]=="mirror") BZM=MZ;
+			if (BC[5]=="periodic") BZM=1;
 			break;
 		default:
 			break;

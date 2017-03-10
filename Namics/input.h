@@ -39,9 +39,9 @@ public:
 	string Get_string(string, const string &);
 	bool Get_string(string, string &, const  std::string & );
 	bool Get_string(string , string &, std::vector<std::string>&, const std::string &);
-	rene Get_rene(string, rene );
-	bool Get_rene(string, rene &, const std::string &);
-	bool Get_rene(string, rene &, rene, rene, const std::string &);
+	Real Get_Real(string, Real );
+	bool Get_Real(string, Real &, const std::string &);
+	bool Get_Real(string, Real &, Real, Real, const std::string &);
 	bool Get_bool(string, bool );
 	bool Get_bool(string, bool &, const std::string &);
 	bool TestNum(std::vector<std::string> &, string ,int, int, int);

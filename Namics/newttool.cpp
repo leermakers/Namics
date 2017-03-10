@@ -1,15 +1,15 @@
 #include "newttool.h"
 #include "tools.h"
 #include <stdio.h>
-void multiply(double *v, double alpha, float *h, double *w, int nvar, int m) {
+void multiply(Real *v, Real alpha, float *h, Real *w, int nvar, int m) {
 	int i0,i1,nn;
-	double sum=0;
-	double *va, *wa, *xa;
+	Real sum=0;
+	Real *va, *wa, *xa;
 	float* hai;
 	float* ha = &h[-1];
 	va = &v[-1];
 	wa = &w[-1];
-	double *x = new double[nvar];
+	Real *x = new Real[nvar];
 	xa = &x[-1];
 	for (int i=1; i<=nvar; i++) {
                sum = 0;
@@ -30,10 +30,10 @@ void multiply(double *v, double alpha, float *h, double *w, int nvar, int m) {
        delete [] x;
 }
 
-void multiply(double *v,double alpha, float *h, double *w, int nvar) {
+void multiply(Real *v,Real alpha, float *h, Real *w, int nvar) {
 	int i=0,i1=0,j=0;
-	double sum=0;
-	double *x = new double[nvar];
+	Real sum=0;
+	Real *x = new Real[nvar];
 	for (i=0; i<nvar; i++) {
 		sum = 0;
 		i1 = i-1;
@@ -50,8 +50,8 @@ void multiply(double *v,double alpha, float *h, double *w, int nvar) {
 	delete [] x;
 }
 
-double norm2(double *x, int nvar) {
-	double sum=0;
+Real norm2(Real *x, int nvar) {
+	Real sum=0;
 	for (int i=0; i<nvar; i++) sum += pow(x[i],2);
 	return sqrt(sum);
 }
@@ -78,12 +78,12 @@ int signdeterminant(float *h,int nvar) {
 	return sign;
 }
 
-void updateneg(float *l, double *w, int nvar, int m, double alpha) {
+void updateneg(float *l, Real *w, int nvar, int m, Real alpha) {
 	int i1=0,i0=0,nn=0,j0=0;
-	double dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
+	Real dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
 	float *lai,*laj;
 	float *la = &l[-1];
-	double *wa = &w[-1]; 
+	Real *wa = &w[-1]; 
 	dmin = 1.0/pow(2.0,54);
 	alpha = sqrt(-alpha); //is it sure that alpha is negative in the argument?
 	for (int i=1; i<=nvar; i++) {
@@ -118,9 +118,9 @@ void updateneg(float *l, double *w, int nvar, int m, double alpha) {
 	}
 }
 
-void updateneg(float *l,double *w, int nvar, double alpha) {
+void updateneg(float *l,Real *w, int nvar, Real alpha) {
 	int i=0,i1=0,j=0;
-	double dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
+	Real dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
 	dmin = 1.0/pow(2.0,54);
 	alpha = sqrt(-alpha);
 	for (i=0; i<nvar; i++) {
@@ -151,7 +151,7 @@ void updateneg(float *l,double *w, int nvar, double alpha) {
 
 void decompos(float *h, int nvar, int m, int &ntr) {
 	int i0,i1,nn,j0,k0;
-	double sum,lsum,usum,phi,phitr,c,l;
+	Real sum,lsum,usum,phi,phitr,c,l;
 	float *ha,*hai,*haj,*hak;
 	ha = &h[-1];
 	phitr = FLT_MAX;
@@ -194,7 +194,7 @@ void decompos(float *h, int nvar, int m, int &ntr) {
 
 void decompos(float *h, int nvar, int &ntr) {
 	int i,j,k;//itr,ntr;
-	double sum,lsum,usum,phi,phitr,c,l;
+	Real sum,lsum,usum,phi,phitr,c,l;
 	float *ha,*hai,*haj;
 	ha = &h[-1];
 	phitr = FLT_MAX;
@@ -233,13 +233,13 @@ void decompos(float *h, int nvar, int &ntr) {
 	}
 }
 
-void updatpos(float *l, double *w, double *v, int nvar, int m, double alpha) {
-	double b,c,d,p,q,wj,vj,lj;
+void updatpos(float *l, Real *w, Real *v, int nvar, int m, Real alpha) {
+	Real b,c,d,p,q,wj,vj,lj;
 	int i0=0,j0=0,nn=0;
 	float *lai,*laj;
 	float *la = &l[-1];
-	double *wa = &w[-1];
-	double *va = &v[-1];
+	Real *wa = &w[-1];
+	Real *va = &v[-1];
 	for (int i=1; i<=nvar; i++) {
 		if (i>m) i0=i-m; else i0=0;
 		nn=i+m-1; if (nn>nvar) nn=nvar;
@@ -265,13 +265,13 @@ void updatpos(float *l, double *w, double *v, int nvar, int m, double alpha) {
 	}
 }
 
-void updatpos(float *l, double *w, double *v, int nvar, double alpha) {
+void updatpos(float *l, Real *w, Real *v, int nvar, Real alpha) {
 	int i,j;
-	double b,c,d;
-	double vai,waj,vaj;
+	Real b,c,d;
+	Real vai,waj,vaj;
 	float *lai,*laj;
-	double * wa = &w[-1];
-	double * va = &v[-1];
+	Real * wa = &w[-1];
+	Real * va = &v[-1];
 	i = 0;
 	while (i++<nvar) {
 		vai = va[i];
@@ -298,14 +298,14 @@ void updatpos(float *l, double *w, double *v, int nvar, double alpha) {
 	}
 }
 
-void gausa(float *l, double *dup, double *g, int nvar, int m) {
+void gausa(float *l, Real *dup, Real *g, int nvar, int m) {
 	int i0=0,i1=0;
-	double sum;
-	double *dupa;
+	Real sum;
+	Real *dupa;
 	float *lai;
 
 	dupa = &dup[-1];
-	double* ga = &g[-1];
+	Real* ga = &g[-1];
 	float* la = &l[-1];
 
 	for (int i=1; i<=nvar; i++) {
@@ -320,11 +320,11 @@ void gausa(float *l, double *dup, double *g, int nvar, int m) {
 	}
 }
 
-void gausa(float *l, double *dup, double *g, int nvar) {
+void gausa(float *l, Real *dup, Real *g, int nvar) {
 	int i,j;
-	double sum;
-	double*dupa;
-	double *ga;
+	Real sum;
+	Real*dupa;
+	Real *ga;
 	float *lai;
 
 	dupa = &dup[-1];
@@ -342,11 +342,11 @@ void gausa(float *l, double *dup, double *g, int nvar) {
 	}
 }
 
-void gausb(float *du, double *p, int nvar, int m) {
+void gausb(float *du, Real *p, int nvar, int m) {
 	int i0=0,im=0,nn=0;
-	double sum;
+	Real sum;
 	float *duai;
-	double *pa = &p[-1];
+	Real *pa = &p[-1];
 	float *dua= &du[-1]; 
 	for (int i=nvar; i>=1; i--) {
 		nn=m+i-1; if (nn>nvar) nn=nvar;
@@ -361,10 +361,10 @@ void gausb(float *du, double *p, int nvar, int m) {
 	}
 }
 
-void gausb(float *du, double *p, int nvar) {
+void gausb(float *du, Real *p, int nvar) {
 	int i,j;
-	double sum;
-	double *pa;
+	Real sum;
+	Real *pa;
 	float *duai;
 	pa = &p[-1];
 	i = nvar+1;
@@ -379,12 +379,12 @@ void gausb(float *du, double *p, int nvar) {
 	}
 }
 
-double residue(double *g, double *p, double *x, int nvar, double alpha) {
+Real residue(Real *g, Real *p, Real *x, int nvar, Real alpha) {
 	return sqrt(norm2(p,nvar)*norm2(g,nvar)/(1+norm2(x,nvar)));
 }
 
-double linecriterion(double *g, double *g0, double *p, double *p0, int nvar) {
-	double normg,gg0;
+Real linecriterion(Real *g, Real *g0, Real *p, Real *p0, int nvar) {
+	Real normg,gg0;
 	normg = norm2(g0,nvar);
 	Dot(gg0,g,g0,nvar);
 	gg0=gg0/normg/normg;
@@ -401,7 +401,7 @@ double linecriterion(double *g, double *g0, double *p, double *p0, int nvar) {
 	}
 }
 
-double newfunction(double *g, double *x, int nvar) {
+Real newfunction(Real *g, Real *x, int nvar) {
 	return pow(norm2(g,nvar),2);
 }
 

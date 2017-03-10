@@ -21,13 +21,13 @@ public:
 	int gradients; 
 	string lattice_type;
 	string geometry;
-	rene offset_first_layer; 
-	rene bond_length; 
-	rene *L;
-	rene lambda; 
-	rene *lambda0;
-	rene *lambda_1; 
-	rene *lambda1;
+	Real offset_first_layer; 
+	Real bond_length; 
+	Real *L;
+	Real lambda; 
+	Real *lambda0;
+	Real *lambda_1; 
+	Real *lambda1;
 	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput(). 
 
 	std::vector<string> KEYS;
@@ -36,25 +36,25 @@ public:
 
 	vector<string> BC;
 	vector<string> ints;
-	vector<string> renes;
+	vector<string> Reals;
 	vector<string> bools;
 	vector<string> strings;
-	vector<rene> renes_value;
+	vector<Real> Reals_value;
 	vector<int> ints_value;
 	vector<bool> bools_value;
 	vector<string> strings_value;
-	void push(string,rene);
+	void push(string,Real);
 	void push(string,int);
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	int GetValue(string,int&,rene&,string&);
-	rene GetValue(rene*,string);
-	rene WeightedSum(rene*); 
-	void TimesL(rene*);
-	void DivL(rene*);
-	void vtk(string, rene*,string);
-	void PutProfiles(FILE*,vector<rene*>);
+	int GetValue(string,int&,Real&,string&);
+	Real GetValue(Real*,string);
+	Real WeightedSum(Real*); 
+	void TimesL(Real*);
+	void DivL(Real*);
+	void vtk(string, Real*,string);
+	void PutProfiles(FILE*,vector<Real*>);
 
 	bool CheckInput(int);
 	bool PutM(void);
@@ -63,19 +63,19 @@ public:
 	void DeAllocateMemory(void); 
 	void AllocateMemory(void); 
 	bool PrepareForCalculations(void); 
-	void propagate(rene*,rene*, int, int);
-	void remove_bounds(rene*);
+	void propagate(Real*,Real*, int, int);
+	void remove_bounds(Real*);
 	void remove_bounds(int*);
-	void set_bounds(rene*);
+	void set_bounds(Real*);
 	void set_bounds(int*); 
-	void Side(rene *, rene *, int);
+	void Side(Real *, Real *, int);
 	bool ReadRange(int*, int*, int&, bool&, string, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
 	bool CreateMASK(int*, int*, int*, int, bool);
-	bool GenerateGuess(rene*, string, string, rene, rene);
-	bool GuessVar(rene*, rene, string, rene, rene);
-	bool ReadGuess(string,rene*);
-	bool StoreGuess(string,rene*);
+	bool GenerateGuess(Real*, string, string, Real, Real);
+	bool GuessVar(Real*, Real, string, Real, Real);
+	bool ReadGuess(string,Real*);
+	bool StoreGuess(string,Real*);
 };
 
 #endif

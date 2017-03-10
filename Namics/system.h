@@ -12,24 +12,24 @@ public:
 
 	string name;
 	vector<Input*> In; 
-	rene* CHI;
+	Real* CHI;
 	vector<Segment*> Seg; 
 	vector<Molecule*> Mol;
 	vector<Lattice*> Lat; 
 	vector<int> SysMonList; 
 	vector<int> FrozenList;
 	vector<int> SysTagList; 
-	rene FreeEnergy;
-	rene GrandPotential;
-	rene* phitot;  
+	Real FreeEnergy;
+	Real GrandPotential;
+	Real* phitot;  
 	int* KSAM;
-	rene* H_GrandPotentialDensity;
-	rene* H_FreeEnergyDensity;
-	rene* H_alpha;
-	rene* GrandPotentialDensity;
-	rene* FreeEnergyDensity;
-	rene* alpha;
-	rene* TEMP;
+	Real* H_GrandPotentialDensity;
+	Real* H_FreeEnergyDensity;
+	Real* H_alpha;
+	Real* GrandPotentialDensity;
+	Real* FreeEnergyDensity;
+	Real* alpha;
+	Real* TEMP;
 	bool GPU; 
 	int n_mol; 
 	int solvent; 
@@ -40,22 +40,22 @@ public:
 	int MonA,MonB; 
 
 	vector<string> ints;
-	vector<string> renes;
+	vector<string> Reals;
 	vector<string> bools;
 	vector<string> strings;
-	vector<rene> renes_value;
+	vector<Real> Reals_value;
 	vector<int> ints_value;
 	vector<bool> bools_value;
 	vector<string> strings_value;
-	void push(string,rene);
+	void push(string,Real);
 	void push(string,int);
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	rene* GetPointer(string);
-	int GetValue(string,int&,rene&,string&); 
+	Real* GetPointer(string);
+	int GetValue(string,int&,Real&,string&); 
 	string CalculationType; // {micro_emulsion,micro_phasesegregation};
-	string GuessType; // {lamellae,Im3m,FCC,BCC,HEX,gyroid,rene_gyroid,rene_diamond,perforated_lamellae};
+	string GuessType; // {lamellae,Im3m,FCC,BCC,HEX,gyroid,Real_gyroid,Real_diamond,perforated_lamellae};
 		
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -69,8 +69,8 @@ public:
 	bool PrepareForCalculations();
 	bool ComputePhis();
 	bool CheckResults();
-	rene GetFreeEnergy();
-	rene GetGrandPotential();
+	Real GetFreeEnergy();
+	Real GetGrandPotential();
 	bool CreateMu();	
 };
 #endif

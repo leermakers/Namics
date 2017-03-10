@@ -117,7 +117,7 @@ if (debug) cout << "GetValue in output " << endl;
 	return ""; 
 }
 
-rene* Output::GetPointer(string key, string name, string prop) {
+Real* Output::GetPointer(string key, string name, string prop) {
 if (debug) cout << "GetPointer in output " << endl; 
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
@@ -172,7 +172,7 @@ if (debug) cout << "GetPointer in output " << endl;
 	}
 	return NULL; 
 }
-int Output::GetValue(string key, string name, string prop, int &int_result, rene &rene_result, string &string_result) {
+int Output::GetValue(string key, string name, string prop, int &int_result, Real &Real_result, string &string_result) {
 if (debug) cout << "GetValue (long) in output " << endl; 
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
@@ -182,30 +182,30 @@ if (debug) cout << "GetValue (long) in output " << endl;
 
 	switch(choice) {
 		case 1:
-			return Sys[0]->GetValue(prop,int_result,rene_result,string_result); 
+			return Sys[0]->GetValue(prop,int_result,Real_result,string_result); 
 			break;
 		case 2:
 			i=0;
 			while (i<mollistlength){
-				if (name==In[0]->MolList[i]) return Mol[i]->GetValue(prop,int_result,rene_result,string_result);
+				if (name==In[0]->MolList[i]) return Mol[i]->GetValue(prop,int_result,Real_result,string_result);
 				i++;
 			}
 			break;
 		case 3:
 			i=0;
 			while (i<monlistlength){
-				if (name==In[0]->MonList[i]) return Seg[i]->GetValue(prop,int_result,rene_result,string_result);
+				if (name==In[0]->MonList[i]) return Seg[i]->GetValue(prop,int_result,Real_result,string_result);
 				i++;
 			}
 			break;
 		case 4:
-			return New[0]->GetValue(prop,int_result,rene_result,string_result);
+			return New[0]->GetValue(prop,int_result,Real_result,string_result);
 			break;
 		case 5:
-			return Lat[0]->GetValue(prop,int_result,rene_result,string_result);
+			return Lat[0]->GetValue(prop,int_result,Real_result,string_result);
 			break;
 		case 6:
-			return Eng[0]->GetValue(prop,int_result,rene_result,string_result);
+			return Eng[0]->GetValue(prop,int_result,Real_result,string_result);
 			break;
 		default:
 			cout << "Program error: in Output, GetValue reaches default...." << endl; 
@@ -228,7 +228,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 	filename=sub[0].append("_").append(numc).append(".").append(name); 
   	
 	if (name=="pro") {
-		vector<rene*> pointer;
+		vector<Real*> pointer;
 		FILE *fp;
 		fp=fopen(filename.c_str(),"w");
 		int length=OUT_key.size();
@@ -247,7 +247,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 		}
 		//fprintf(fp,"x \t y \t z \t"); 
 		for (int i=0; i<length; i++) {
-			rene*  X = GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i]);
+			Real*  X = GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i]);
 			if (X!=NULL) {
 				pointer.push_back(X); 
 				key = OUT_key[i];
@@ -277,19 +277,19 @@ if (debug) cout << "WriteOutput in output " << endl;
 		for (int i=0; i<length; i++) {
 			int int_result=0;
 			int result_nr=0;
-			rene rene_result=0;
+			Real Real_result=0;
 			string string_result; 
 			vector<string> sub;
 			In[0] -> split(OUT_prop[i],'(',sub);
-			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,rene_result,string_result);
+			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,Real_result,string_result);
 			if (result_nr==0) {fprintf(fp,"\t");}
 			if (result_nr==1) {fprintf(fp,"%i\t",int_result);}
-			if (result_nr==2) {fprintf(fp,"%f\t",rene_result);}
+			if (result_nr==2) {fprintf(fp,"%f\t",Real_result);}
 			if (result_nr==3) {
 				if (sub[0]==OUT_prop[i]) {
 					fprintf(fp,"%s\t",string_result.c_str());
 				} else {
-					rene* X=GetPointer(OUT_key[i],OUT_name[i],sub[0]);
+					Real* X=GetPointer(OUT_key[i],OUT_name[i],sub[0]);
 					fprintf(fp,"%f\t",Lat[0]->GetValue(X,sub[1])); 
 				}
 			}
@@ -299,7 +299,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 	}
 
 	if (name=="vtk") {
-		rene*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0]);	
+		Real*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0]);	
 		string s=OUT_key[0].append(" : ").append(OUT_name[0]).append(" : ").append(OUT_prop[0]);
 		if (!(X==NULL)) 
 		Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found" << endl;}
@@ -317,8 +317,8 @@ if (debug) cout << "WriteOutput in output " << endl;
 		length = Sys[0]->ints.size();
 		for (int i=0; i<length; i++) 
 			fprintf(fp,"%s %s : %i \n",s.c_str(),Sys[0]->ints[i].c_str(),Sys[0]->ints_value[i]);
-		length = Sys[0]->renes.size();
-		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Sys[0]->renes[i].c_str(),Sys[0]->renes_value[i]);
+		length = Sys[0]->Reals.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Sys[0]->Reals[i].c_str(),Sys[0]->Reals_value[i]);
 		length = Lat[0]->bools.size(); 
 		for (int i=0; i<length; i++) {
 			if (Sys[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Sys[0]->bools[i].c_str(),"true");
@@ -332,8 +332,8 @@ if (debug) cout << "WriteOutput in output " << endl;
 		length = Lat[0]->ints.size();
 		for (int i=0; i<length; i++) 
 			fprintf(fp,"%s %s : %i \n",s.c_str(),Lat[0]->ints[i].c_str(),Lat[0]->ints_value[i]);
-		length = Lat[0]->renes.size();
-		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Lat[0]->renes[i].c_str(),Lat[0]->renes_value[i]);
+		length = Lat[0]->Reals.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Lat[0]->Reals[i].c_str(),Lat[0]->Reals_value[i]);
 		length = Lat[0]->bools.size(); 
 		for (int i=0; i<length; i++) {
 			if (Lat[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Lat[0]->bools[i].c_str(),"true");
@@ -347,8 +347,8 @@ if (debug) cout << "WriteOutput in output " << endl;
 		length = New[0]->ints.size();
 		for (int i=0; i<length; i++) 
 			fprintf(fp,"%s %s : %i \n",s.c_str(),New[0]->ints[i].c_str(),New[0]->ints_value[i]);
-		length = New[0]->renes.size();
-		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),New[0]->renes[i].c_str(),New[0]->renes_value[i]);
+		length = New[0]->Reals.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),New[0]->Reals[i].c_str(),New[0]->Reals_value[i]);
 		length = New[0]->bools.size(); 
 		for (int i=0; i<length; i++) {
 			if (New[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),New[0]->bools[i].c_str(),"true");
@@ -362,8 +362,8 @@ if (debug) cout << "WriteOutput in output " << endl;
 		length = Eng[0]->ints.size();
 		for (int i=0; i<length; i++) 
 			fprintf(fp,"%s %s : %i \n",s.c_str(),Eng[0]->ints[i].c_str(),Eng[0]->ints_value[i]);
-		length = Eng[0]->renes.size();
-		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Eng[0]->renes[i].c_str(),Eng[0]->renes_value[i]);
+		length = Eng[0]->Reals.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Eng[0]->Reals[i].c_str(),Eng[0]->Reals_value[i]);
 		length = Eng[0]->bools.size(); 
 		for (int i=0; i<length; i++) {
 			if (Eng[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[0]->bools[i].c_str(),"true");
@@ -379,8 +379,8 @@ if (debug) cout << "WriteOutput in output " << endl;
 			length = Seg[j]->ints.size();
 			for (int i=0; i<length; i++) 
 				fprintf(fp,"%s %s : %i \n",s.c_str(),Seg[j]->ints[i].c_str(),Seg[j]->ints_value[i]);
-			length = Seg[j]->renes.size();
-			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Seg[j]->renes[i].c_str(),Seg[j]->renes_value[i]);
+			length = Seg[j]->Reals.size();
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Seg[j]->Reals[i].c_str(),Seg[j]->Reals_value[i]);
 			length = Seg[j]->bools.size(); 
 			for (int i=0; i<length; i++) {
 				if (Seg[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[j]->bools[i].c_str(),"true");
@@ -396,8 +396,8 @@ if (debug) cout << "WriteOutput in output " << endl;
 			length = Mol[j]->ints.size();
 			for (int i=0; i<length; i++) 
 				fprintf(fp,"%s %s : %i \n",s.c_str(),Mol[j]->ints[i].c_str(),Mol[j]->ints_value[i]);
-			length = Mol[j]->renes.size();
-			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Mol[j]->renes[i].c_str(),Mol[j]->renes_value[i]);
+			length = Mol[j]->Reals.size();
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Mol[j]->Reals[i].c_str(),Mol[j]->Reals_value[i]);
 			length = Mol[j]->bools.size(); 
 			for (int i=0; i<length; i++) {
 				if (Mol[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Mol[j]->bools[i].c_str(),"true");
@@ -412,7 +412,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 	}
 }
 
-void Output::vtk(string filename, rene *X){
+void Output::vtk(string filename, Real *X){
 if (debug) cout << "vtk in output " << endl; 
 	int MX=Lat[0]->MX; 
 	int MY=Lat[0]->MY;

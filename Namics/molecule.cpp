@@ -49,25 +49,25 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		N=memory[n_mon.size()-1]; 
 	} else N=chainlength;
 
-	H_phi = (rene*) malloc(M*MolMonList.size()*sizeof(rene)); 
-	H_phitot = (rene*) malloc(M*sizeof(rene)); 
+	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); 
+	H_phitot = (Real*) malloc(M*sizeof(Real)); 
 #ifdef CUDA
-	phi=(rene*)AllOnDev(M*MolMonList.size());
-	phitot=(rene*)AllOnDev(M);
-	UNITY = (rene*)AllonDev(M);
-	Gg_f=(rene*)AllOnDev(M*N); 
-	Gg_b=(rene*)AllOnDev(M*2);
+	phi=(Real*)AllOnDev(M*MolMonList.size());
+	phitot=(Real*)AllOnDev(M);
+	UNITY = (Real*)AllonDev(M);
+	Gg_f=(Real*)AllOnDev(M*N); 
+	Gg_b=(Real*)AllOnDev(M*2);
 	if (save_memory) {
-		Gs=(rene*)AllOnDev(M*2);
+		Gs=(Real*)AllOnDev(M*2);
 	}	
 #else
 	phi = H_phi;
 	phitot = H_phitot;
-	UNITY = (rene*) malloc(M*sizeof(rene));
-	Gg_f = (rene*) malloc(M*N*sizeof(rene)); 
-	Gg_b = (rene*) malloc(M*2*sizeof(rene)); 
+	UNITY = (Real*) malloc(M*sizeof(Real));
+	Gg_f = (Real*) malloc(M*N*sizeof(Real)); 
+	Gg_b = (Real*) malloc(M*2*sizeof(Real)); 
 	if (save_memory) {
-		Gs = (rene*) malloc(M*2*sizeof(rene));
+		Gs = (Real*) malloc(M*2*sizeof(Real));
 	}
 #endif
 	Zero(Gg_f,M*N);
@@ -126,7 +126,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						if (GetValue("phibulk").size() ==0) {
 							cout <<"In mol " + name + ", the setting 'freedom = free' should be combined with a value for 'phibulk'. "<<endl; success=false;
 						} else {
-							phibulk=In[0]->Get_rene(GetValue("phibulk"),-1); 
+							phibulk=In[0]->Get_Real(GetValue("phibulk"),-1); 
 							if (phibulk < 0 || phibulk >1) {
 								cout << "In mol " + name + ", the value of 'phibulk' is out of range 0 .. 1." << endl; success=false;
 							}
@@ -144,8 +144,8 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 							cout <<"In mol " + name + ", the setting 'freedom = restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
 							} else {
 
-								if (GetValue("n").size()>0) {n=In[0]->Get_rene(GetValue("n"),10*Lat[0]->volume);theta=n*chainlength;}
-								if (GetValue("theta").size()>0) {theta = In[0]->Get_rene(GetValue("theta"),10*Lat[0]->volume);n=theta/chainlength;} 
+								if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*Lat[0]->volume);theta=n*chainlength;}
+								if (GetValue("theta").size()>0) {theta = In[0]->Get_Real(GetValue("theta"),10*Lat[0]->volume);n=theta/chainlength;} 
 								if (theta < 0 || theta > Lat[0]->volume) {
 									cout << "In mol " + name + ", the value of 'n' or 'theta' is out of range 0 .. 'volume', cq 'volume'/N." << endl; success=false;
 							
@@ -540,7 +540,7 @@ if (debug) cout <<"IsTagged for Mol " + name << endl;
 
 bool Molecule::IsCharged() {
 if (debug) cout <<"IsCharged for Mol " + name << endl;
-	rene charge =0;
+	Real charge =0;
 	int length = n_mon.size(); 
 	int i=0;
 	while (i<length) {
@@ -566,10 +566,10 @@ if (debug) cout <<"GetValue " + parameter + " for Mol " + name << endl;
 	return ""; 
 }
 
-void Molecule::push(string s, rene X) {
-if (debug) cout <<"push (rene) for Mol " + name << endl;
-	renes.push_back(s);
-	renes_value.push_back(X); 
+void Molecule::push(string s, Real X) {
+if (debug) cout <<"push (Real) for Mol " + name << endl;
+	Reals.push_back(s);
+	Reals_value.push_back(X); 
 }
 void Molecule::push(string s, int X) {
 if (debug) cout <<"push (int) for Mol " + name << endl;
@@ -594,8 +594,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	strings_value.clear();
 	bools.clear();
 	bools_value.clear();
-	renes.clear();
-	renes_value.clear();
+	Reals.clear();
+	Reals_value.clear();
 	ints.clear();
 	ints_value.clear();  
 	push("composition",GetValue("composition"));
@@ -626,7 +626,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 #endif	
 }
 
-rene* Molecule::GetPointer(string s) {
+Real* Molecule::GetPointer(string s) {
 if (debug) cout <<"GetPointer for Mol " + name << endl;	vector<string> sub;
 	int M= Lat[0]->M;
 	In[0]->split(s,';',sub);
@@ -647,7 +647,7 @@ if (debug) cout <<"GetPointer for Mol " + name << endl;	vector<string> sub;
 	return NULL;
 }
 
-int Molecule::GetValue(string prop,int &int_result,rene &rene_result,string &string_result){
+int Molecule::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
 if (debug) cout <<"GetValue (long) for Mol " + name << endl;
 	int i=0;
 	int length = ints.size();
@@ -659,10 +659,10 @@ if (debug) cout <<"GetValue (long) for Mol " + name << endl;
 		i++;
 	}
 	i=0;
-	length = renes.size();
+	length = Reals.size();
 	while (i<length) {
-		if (prop==renes[i]) { 
-			rene_result=renes_value[i];
+		if (prop==Reals[i]) { 
+			Real_result=Reals_value[i];
 			return 2;
 		}
 		i++;
@@ -688,7 +688,7 @@ if (debug) cout <<"GetValue (long) for Mol " + name << endl;
 	return 0; 
 }
 
-rene Molecule::fraction(int segnr){
+Real Molecule::fraction(int segnr){
 if (debug) cout <<"fraction for Mol " + name << endl;
 	int Nseg=0;
 	int length = mon_nr.size();
@@ -740,10 +740,10 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	return success;
 }
 
-rene* Molecule::propagate_forward(int &s, int block, int generation) {
+Real* Molecule::propagate_forward(int &s, int block, int generation) {
 if (debug) cout <<"propagate_forward for Mol " + name << endl;
 	int M=Lat[0]->M;
-	rene* G1 = Seg[mon_nr[block]]->G1;
+	Real* G1 = Seg[mon_nr[block]]->G1;
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t;
@@ -794,7 +794,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 }
 
 
-void Molecule::propagate_forward(rene* Gg_f, rene* G1,int &s, int N, int block) {
+void Molecule::propagate_forward(Real* Gg_f, Real* G1,int &s, int N, int block) {
 if (debug) cout <<"propagate_forward for Mol " + name << endl;
 	int M=Lat[0]->M;
 	if (save_memory) {
@@ -834,7 +834,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 void Molecule::propagate_backward(int &s, int block, int generation) {
 if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	int M = Lat[0]->M; 
-	rene *G1=Seg[mon_nr[block]]->G1;
+	Real *G1=Seg[mon_nr[block]]->G1;
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t,rk1;
@@ -909,7 +909,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 }
 
 
-void Molecule::propagate_backward(rene* Gg_f, rene* Gg_b, rene* G1, int &s, int N, int block) {
+void Molecule::propagate_backward(Real* Gg_f, Real* Gg_b, Real* G1, int &s, int N, int block) {
 if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	int M = Lat[0]->M; 
 	if (save_memory) {
@@ -997,13 +997,13 @@ bool Molecule::ComputePhiLin(){
 	return success;
 }
 
-void Molecule::Backward(rene* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU 
+void Molecule::Backward(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU 
 	int b0 = first_b[generation];
 	int bN = last_b[generation];
 	vector<int> Br;
-	vector<rene*> Gb;	
+	vector<Real*> Gb;	
 	int M=Lat[0]->M;
-	rene* GS = new rene[4*M];
+	Real* GS = new Real[4*M];
 	int k=bN;
 	int ss=0; 
 	while (k>=b0){
@@ -1019,7 +1019,7 @@ void Molecule::Backward(rene* G_start, int generation, int &s){//not yet robust 
 				Br.push_back(generation); ss--; 
 				if (save_memory) Gb.push_back(Gg_f+last_stored[k]*M); else Gb.push_back(Gg_f+ss*M); 
 				int length = Br.size();
-				rene *GX = new rene[length*M];
+				Real *GX = new Real[length*M];
 				for (int i=0; i<length; i++) Cp(GX+i*M,Gb[i],M);
 				Cp(GS+3*M,Gg_b,M); 
 				for (int i=0; i<length; i++) {
@@ -1043,14 +1043,14 @@ void Molecule::Backward(rene* G_start, int generation, int &s){//not yet robust 
 	delete GS;
 }
 
-rene* Molecule::Forward(int generation, int &s) { 
+Real* Molecule::Forward(int generation, int &s) { 
 	int b0 = first_b[generation];
 	int bN = last_b[generation];
 	vector<int> Br;
-	vector<rene*> Gb;
+	vector<Real*> Gb;
 	int M=Lat[0]->M;
-	rene* GS = new rene[3*M]; 
-	rene* Glast=NULL;   
+	Real* GS = new Real[3*M]; 
+	Real* Glast=NULL;   
 	int k=b0; 
 	while (k<=bN) {
 		if (b0<k && k<bN) { 
@@ -1093,7 +1093,7 @@ bool Molecule::ComputePhiBra() {
 	bool success=true;
 	int generation=0;
 	int s=0; 
-	rene* G=Forward(generation,s);
+	Real* G=Forward(generation,s);
 	Lat[0]->remove_bounds(G);
 	GN=Lat[0]->WeightedSum(G);
 	s--;

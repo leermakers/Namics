@@ -1,5 +1,6 @@
 #ifndef ALIASxH
 #define ALIASxH
+#include "namics.h"
 #include "input.h"
 #include "lattice.h"
 #include "tools.h"
@@ -14,27 +15,27 @@ public:
 	string composition;
 	bool active;
 	vector<int> frag;
-	double* H_phi;
-	double* phi; 
+	Real* H_phi;
+	Real* phi; 
 	
 	string name; 
 	vector<Input*> In; 
 
 	vector<string> ints;
-	vector<string> doubles;
+	vector<string> Reals;
 	vector<string> bools;
 	vector<string> strings;
-	vector<double> doubles_value;
+	vector<Real> Reals_value;
 	vector<int> ints_value;
 	vector<bool> bools_value;
 	vector<string> strings_value;
-	void push(string,double);
+	void push(string,Real);
 	void push(string,int);
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	double* GetPointer(string);
-	int GetValue(string,int&,double&,string&);	
+	Real* GetPointer(string);
+	int GetValue(string,int&,Real&,string&);	
 	void PrepareForCalculations();
 
 	std::vector<string> KEYS;

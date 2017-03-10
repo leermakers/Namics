@@ -21,16 +21,16 @@ string version="0.0.0.0.0.0.0.0";
 // segment version number =0
 // alias version number =0
 // output version number =0
-rene check = 0.4534345;
-rene e=1.60217e-19;
-rene T=298.15;
-rene k_B=1.38065e-23;
-rene k_BT=k_B*T;
-rene eps0=8.85418e-12;
-rene PIE=3.14159265; 
-rene eps=80;
+Real check = 0.4534345;
+Real e=1.60217e-19;
+Real T=298.15;
+Real k_B=1.38065e-23;
+Real k_BT=k_B*T;
+Real eps0=8.85418e-12;
+Real PIE=3.14159265; 
+Real eps=80;
 bool debug = false;
-//rene factor=e*e/(eps*eps0*b_length*k_BT); 
+//Real factor=e*e/(eps*eps0*b_length*k_BT); 
 
 int main(int argc, char *argv[]) {
 	string fname;

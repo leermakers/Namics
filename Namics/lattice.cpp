@@ -30,18 +30,18 @@ void Lattice::DeAllocateMemory(void) {
 
 void Lattice::AllocateMemory(void) {
 if (debug) cout <<"AllocateMemory in lattice " << endl; 
-	rene r;
-	rene one_over_lambda_min_two=1.0/lambda-2.0;
+	Real r;
+	Real one_over_lambda_min_two=1.0/lambda-2.0;
 	int i,j;
 	PutM();
 	DeAllocateMemory();
 	switch (gradients) {
 		case 1:
 			if (geometry!="planar") {
-				L = new rene[M]; Zero(L,M);
-				lambda_1 = new rene[M]; Zero(lambda_1,M);
-				lambda1 = new rene[M]; Zero(lambda1,M);
-				lambda0 = new rene[M]; Zero(lambda0,M);
+				L = new Real[M]; Zero(L,M);
+				lambda_1 = new Real[M]; Zero(lambda_1,M);
+				lambda1 = new Real[M]; Zero(lambda1,M);
+				lambda0 = new Real[M]; Zero(lambda0,M);
 			}
 			if (geometry=="cylindrical") {
 				for (i=1; i<MX+1; i++) {
@@ -64,10 +64,10 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 			break;
 		case 2:
 			if (geometry!="planar") {
-				L=new rene[M]; Zero(L,M); 
-				lambda_1 = new rene[M]; Zero(lambda_1,M);
-				lambda1 = new rene[M]; Zero(lambda1,M);
-				lambda0 = new rene[M]; Zero(lambda0,M);				
+				L=new Real[M]; Zero(L,M); 
+				lambda_1 = new Real[M]; Zero(lambda_1,M);
+				lambda1 = new Real[M]; Zero(lambda1,M);
+				lambda0 = new Real[M]; Zero(lambda0,M);				
 			}
 			if (geometry=="cylindrical") {
 				for (i=1; i<MX+1; i++) 
@@ -192,7 +192,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				} else geometry = "planar";
 				if (geometry=="flat") geometry="planar"; 	
 				if (geometry!="planar") {
-					offset_first_layer=In[0]->Get_rene(GetValue("offset_first_layer"),0);
+					offset_first_layer=In[0]->Get_Real(GetValue("offset_first_layer"),0);
 					if (offset_first_layer<0) {
 						cout <<"value of 'offset_first_layer' can not be negative. Value ignored. " << endl; 
 						offset_first_layer=0;
@@ -258,7 +258,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (geometry=="planar") {volume = MX*MY;}
 
 				if (geometry!="planar") {
-					offset_first_layer=In[0]->Get_rene(GetValue("offset_first_layer"),0);
+					offset_first_layer=In[0]->Get_Real(GetValue("offset_first_layer"),0);
 					if (offset_first_layer<0) {
 						cout <<"value of 'offset_first_layer' can not be negative. Value ignored. " << endl; 
 						offset_first_layer=0;
@@ -445,7 +445,7 @@ if (debug) cout << "GetValue in lattice " << endl;
 	return "" ; 
 }
 
-rene Lattice::GetValue(rene* X,string s){ //need a check to find out if s contains 3 integers separated by ','
+Real Lattice::GetValue(Real* X,string s){ //need a check to find out if s contains 3 integers separated by ','
 if (debug) cout << "GetValue in lattice " << endl; 
 if (X==NULL) cout << "pointer X is zero" << endl;	
 	int x=0,y=0,z=0;
@@ -490,7 +490,7 @@ if (X==NULL) cout << "pointer X is zero" << endl;
 	return 0;
 }
 
-void Lattice::TimesL(rene* X){
+void Lattice::TimesL(Real* X){
 	switch(gradients) {
 		case 1:
 			if (geometry!="planar") Times(X,X,L,M);
@@ -505,7 +505,7 @@ void Lattice::TimesL(rene* X){
 	}
 }
 
-void Lattice::DivL(rene* X){
+void Lattice::DivL(Real* X){
 	switch(gradients) {
 		case 1:
 			if (geometry!="planar") Div(X,L,M);
@@ -520,8 +520,8 @@ void Lattice::DivL(rene* X){
 	}
 }
 
-rene Lattice::WeightedSum(rene* X){
-	rene sum;
+Real Lattice::WeightedSum(Real* X){
+	Real sum;
 	switch(gradients) {
 		case 1:
 			if (geometry=="planar") {
@@ -546,7 +546,7 @@ rene Lattice::WeightedSum(rene* X){
 	}
 }
 
-void Lattice::vtk(string filename, rene* X, string id) {
+void Lattice::vtk(string filename, Real* X, string id) {
 if (debug) cout << "vtk in lattice " << endl;
 	FILE *fp;
 	int i,j,k;
@@ -577,7 +577,7 @@ if (debug) cout << "vtk in lattice " << endl;
 	}
 	fclose(fp);
 }
-void Lattice::PutProfiles(FILE* pf,vector<rene*> X){
+void Lattice::PutProfiles(FILE* pf,vector<Real*> X){
 if (debug) cout <<"PutProfiles in lattice " << endl; 
 	int x,y,z,i;
 	int length=X.size(); 	
@@ -617,10 +617,10 @@ if (debug) cout <<"PrepareForCalculations in lattice" << endl;
 	return success; 
 }
 
-void Lattice::push(string s, rene X) {
-if (debug) cout <<"push (rene) in lattice " << endl; 
-	renes.push_back(s);
-	renes_value.push_back(X); 
+void Lattice::push(string s, Real X) {
+if (debug) cout <<"push (Real) in lattice " << endl; 
+	Reals.push_back(s);
+	Reals_value.push_back(X); 
 }
 void Lattice::push(string s, int X) {
 if (debug) cout <<"push (int) in lattice " << endl; 
@@ -643,8 +643,8 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	strings_value.clear();
 	bools.clear();
 	bools_value.clear();
-	renes.clear();
-	renes_value.clear();
+	Reals.clear();
+	Reals_value.clear();
 	ints.clear();
 	ints_value.clear(); 
 	string mirror="mirror"; 
@@ -712,7 +712,7 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	} 
 }
 
-int Lattice::GetValue(string prop,int &int_result,rene &rene_result,string &string_result){
+int Lattice::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
 if (debug) cout <<"GetValue (long)  in lattice " << endl; 
 	int i=0;
 	int length = ints.size();
@@ -724,10 +724,10 @@ if (debug) cout <<"GetValue (long)  in lattice " << endl;
 		i++;
 	}
 	i=0;
-	length = renes.size();
+	length = Reals.size();
 	while (i<length) {
-		if (prop==renes[i]) { 
-			rene_result=renes_value[i];
+		if (prop==Reals[i]) { 
+			Real_result=Reals_value[i];
 			return 2;
 		}
 		i++;
@@ -754,9 +754,9 @@ if (debug) cout <<"GetValue (long)  in lattice " << endl;
 }
 
 
-void Lattice::Side(rene *X_side, rene *X, int M) { //this procedure should use the lambda's according to lattice_type;
+void Lattice::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to lattice_type;
 if (debug) cout <<" Side in lattice " << endl; 
-	rene* SIDE;
+	Real* SIDE;
 	switch(gradients) {
 		case 1:
 			//set_bounds(X);
@@ -811,7 +811,7 @@ if (debug) cout <<" Side in lattice " << endl;
 					Norm(X_side,lambda*lambda,M);
 					
 				} else {
-					SIDE=new rene[M];
+					SIDE=new Real[M];
 					Zero(SIDE,M);
 					Add(SIDE,X+1,M-1);      
 					Add(SIDE+1,X,M-1);
@@ -836,9 +836,9 @@ if (debug) cout <<" Side in lattice " << endl;
 	}
 }
 
-void Lattice::propagate(rene *G, rene *G1, int s_from, int s_to) { //this procedure should function on simple cubic lattice. 
+void Lattice::propagate(Real *G, Real *G1, int s_from, int s_to) { //this procedure should function on simple cubic lattice. 
 if (debug) cout <<" propagate in lattice " << endl; 
-	rene *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
+	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 	switch(gradients) {
 		case 1:
 			Zero(gs,M); set_bounds(gs_1);
@@ -885,8 +885,8 @@ if (debug) cout <<" propagate in lattice " << endl;
 	}
 }
 
-void Lattice::remove_bounds(rene *X){ 
-if (debug) cout <<" remove_bounds (rene) in lattice " << endl; 
+void Lattice::remove_bounds(Real *X){ 
+if (debug) cout <<" remove_bounds (Real) in lattice " << endl; 
 	int x,y;
 	switch(gradients) {
 		case 1:
@@ -945,8 +945,8 @@ if (debug) cout <<" remove_bounds (int) in lattice " << endl;
 	}
 }
  
-void Lattice::set_bounds(rene *X){  
-if (debug) cout <<"set_bounds (renes) in lattice " << endl; 
+void Lattice::set_bounds(Real *X){  
+if (debug) cout <<"set_bounds (Reals) in lattice " << endl; 
 	int x,y; 
 	switch(gradients) {
 		case 1:
@@ -1509,9 +1509,9 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 	return success; 
 }
 
-bool Lattice::GenerateGuess(rene* x, string CalculationType, string GuessType, rene A_value, rene B_value) {
+bool Lattice::GenerateGuess(Real* x, string CalculationType, string GuessType, Real A_value, Real B_value) {
 if (debug) cout <<"GenerateGuess in lattice " << endl;
-//GuessType: lamellae,Im3m,FCC,BCC,HEX,gyroid,rene_gyroid,rene_diamond,perforated_lamellae
+//GuessType: lamellae,Im3m,FCC,BCC,HEX,gyroid,Real_gyroid,Real_diamond,perforated_lamellae
 //CalculationType: micro_emulsion,micro_phasesegregation
 	bool success = true;
 	int i,j,k;
@@ -1561,7 +1561,7 @@ if (debug) cout <<"GenerateGuess in lattice " << endl;
 	return success; 
 }
 
-bool Lattice::GuessVar(rene* x, rene theta,string GuessType, rene A_value, rene B_value){
+bool Lattice::GuessVar(Real* x, Real theta,string GuessType, Real A_value, Real B_value){
 if (debug) cout << "GuessVar in Lattice " << endl;
 	bool success = true;
 	int i;
@@ -1592,13 +1592,13 @@ if (debug) cout << "GuessVar in Lattice " << endl;
 
 
 
-bool Lattice::ReadGuess(string filename,rene *xx) {
+bool Lattice::ReadGuess(string filename,Real *xx) {
 cout <<"ReadGuess not yet implemented in lattice" << endl; 
 	bool success=true;
 	return success;
 }
 
-bool Lattice::StoreGuess(string filename,rene *xx) {
+bool Lattice::StoreGuess(string filename,Real *xx) {
 cout <<"StoreGuess not yet implemented in lattice" << endl;
 	bool success=true;
 	return success; 
@@ -1608,7 +1608,7 @@ cout <<"StoreGuess not yet implemented in lattice" << endl;
 
 All below is commented out. This is stored here to recover from earlier program. 
 
-void Sideh(rene *X_side, rene *X, int M) {
+void Sideh(Real *X_side, Real *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
@@ -1622,7 +1622,7 @@ void Sideh(rene *X_side, rene *X, int M) {
 
 
 
-void Side(rene *X_side, rene *X, int M) {
+void Side(Real *X_side, Real *X, int M) {
 	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
 	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
@@ -1630,7 +1630,7 @@ void Side(rene *X_side, rene *X, int M) {
 	Norm(X_side,1.0/6.0,M);
 }
 
-void advanced_average(rene *X_side, rene *X, int M){
+void advanced_average(Real *X_side, Real *X, int M){
         Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 
 	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
@@ -1652,9 +1652,9 @@ void advanced_average(rene *X_side, rene *X, int M){
 	Norm(X_side,1.0/26.0,M);
 }
 
-void Propagateh(rene* G, rene* G1, int s_from, int s_to) { //on small boxes
+void Propagateh(Real* G, Real* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
-	rene *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
+	Real *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
 	Zero(gs,MMM);
 	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
 	
@@ -1667,8 +1667,8 @@ void Propagateh(rene* G, rene* G1, int s_from, int s_to) { //on small boxes
 	Norm(gs,1.0/12.0,MMM); Times(gs,gs,g,MMM);
 }
 
-void PROPAGATEh(rene *G, rene *G1, int s_from, int s_to) { //on big box
-	rene *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
+void PROPAGATEh(Real *G, Real *G1, int s_from, int s_to) { //on big box
+	Real *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
 	Zero(gs,MM);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
@@ -1680,9 +1680,9 @@ void PROPAGATEh(rene *G, rene *G1, int s_from, int s_to) { //on big box
 	Norm(gs,1.0/12.0,MM); Times(gs,gs,g,MM);
 }
 
-void Propagate(rene* G, rene* G1, int s_from, int s_to) { //on small boxes
+void Propagate(Real* G, Real* G1, int s_from, int s_to) { //on small boxes
 	int MMM=M*n_box;
-	rene *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
+	Real *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
 	Zero(gs,MMM);
 	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
 	Add(gs+jx,gs_1,MMM-jx); Add(gs,gs_1+jx,MMM-jx);
@@ -1691,8 +1691,8 @@ void Propagate(rene* G, rene* G1, int s_from, int s_to) { //on small boxes
 	Norm(gs,1.0/6.0,MMM); Times(gs,gs,g,MMM);
 }
 
-void PROPAGATE(rene *G, rene *G1, int s_from, int s_to) { //on big box
-	rene *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
+void PROPAGATE(Real *G, Real *G1, int s_from, int s_to) { //on big box
+	Real *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
 	Zero(gs,MM);
 	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
@@ -1702,7 +1702,7 @@ void PROPAGATE(rene *G, rene *G1, int s_from, int s_to) { //on big box
 }
 
 #ifdef CUDA
-void DistributeG1(rene *G1, rene *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void DistributeG1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	//int n_blocks=(n_box)/block_size + ((n_box)%block_size == 0 ? 0:1);
 	//distributeg1<<<n_blocks,block_size>>>(G1,g1,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
         dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
@@ -1711,7 +1711,7 @@ void DistributeG1(rene *G1, rene *g1, int* Bx, int* By, int* Bz, int MM, int M, 
 
 }
 #else
-void DistributeG1(rene *G1, rene *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void DistributeG1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int pos_l=-M;
 	int pos_x,pos_y,pos_z;
 	int Bxp,Byp,Bzp;
@@ -1730,17 +1730,17 @@ void DistributeG1(rene *G1, rene *g1, int* Bx, int* By, int* Bz, int MM, int M, 
 #endif
 
 #ifdef CUDA
-void CollectPhi(rene* phi, rene* GN, rene* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void CollectPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
  	 dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
         dim3 blockdim(8,8,8);
         collectphi<<<blocks,blockdim>>>(phi,GN,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
 }
 #else
-void CollectPhi(rene* phi, rene* GN, rene* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void CollectPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int pos_l=-M;
 	int pos_x,pos_y,pos_z;
 	int Bxp,Byp,Bzp;
-	rene Inv_H_GNp;
+	Real Inv_H_GNp;
 	int ii=0,jj=0,kk=0;
 
 	for (int p=0; p<n_box; p++) { pos_l +=M; ii=0; Bxp=Bx[p]; Byp=By[p]; Bzp=Bz[p]; Inv_H_GNp=1.0/GN[p];
@@ -1758,19 +1758,19 @@ void CollectPhi(rene* phi, rene* GN, rene* rho, int* Bx, int* By, int* Bz, int M
 
 //#ifdef CUDA
 //		if (charges) {
-//			phi_na =(rene*)AllOnDev(MM);
-//			phi_cl =(rene*)AllOnDev(MM);
-//			psi_0 =(rene*)AllOnDev(MM);
-//			psi_side =(rene*)AllOnDev(MM);
+//			phi_na =(Real*)AllOnDev(MM);
+//			phi_cl =(Real*)AllOnDev(MM);
+//			psi_0 =(Real*)AllOnDev(MM);
+//			psi_side =(Real*)AllOnDev(MM);
 //			psi=x+MM;
-//			q =(rene*)AllOnDev(MM);
+//			q =(Real*)AllOnDev(MM);
 //		}
 #else
 //		if (charges) {
 //			psi=x+MM;
-//			q = new rene[MM];
-//			psi_0 = new rene[MM];
-//			psi_side = new rene[MM];
+//			q = new Real[MM];
+//			psi_0 = new Real[MM];
+//			psi_side = new Real[MM];
 //		}
 //#endif
 */

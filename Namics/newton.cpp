@@ -46,22 +46,22 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	int M=Lat[0]->M;
 	iv = Sys[0]->SysMonList.size() * M;	
 	if (method=="DIIS-ext") iv +=M;
-	Aij  =(rene*) malloc(m*m*sizeof(rene)); H_Zero(Aij,m*m);
-	Ci   =(rene*) malloc(m*sizeof(rene)); H_Zero(Ci,m);
-	Apij =(rene*) malloc(m*m*sizeof(rene)); H_Zero(Apij,m*m);
+	Aij  =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
+	Ci   =(Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
+	Apij =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
 	mask= (int*) malloc(iv*sizeof(int));
 #ifdef CUDA
-	xx  = (rene*)AllOnDev(iv); 
-	x0  = (rene*)AllOnDev(iv);
-	g   = (rene*)AllOnDev(iv);
-	xR  = (rene*)AllOnDev(m*iv);
-	x_x0= (rene*)AllOnDev(m*iv);
+	xx  = (Real*)AllOnDev(iv); 
+	x0  = (Real*)AllOnDev(iv);
+	g   = (Real*)AllOnDev(iv);
+	xR  = (Real*)AllOnDev(m*iv);
+	x_x0= (Real*)AllOnDev(m*iv);
 #else
-	xx   =(rene*) malloc(iv*sizeof(rene)); 
-	x0   =(rene*) malloc(iv*sizeof(rene)); 
-	g    =(rene*) malloc(iv*sizeof(rene)); 
-	xR   =(rene*) malloc(m*iv*sizeof(rene)); 
-	x_x0 =(rene*) malloc(m*iv*sizeof(rene)); 
+	xx   =(Real*) malloc(iv*sizeof(Real)); 
+	x0   =(Real*) malloc(iv*sizeof(Real)); 
+	g    =(Real*) malloc(iv*sizeof(Real)); 
+	xR   =(Real*) malloc(m*iv*sizeof(Real)); 
+	x_x0 =(Real*) malloc(m*iv*sizeof(Real)); 
 #endif
 	Zero(xx,iv);
 	Zero(x0,iv);
@@ -90,10 +90,10 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 		if (iterationlimit < 0 || iterationlimit>1e6) {iterationlimit = 1000; 
 		cout << "Value of 'iterationlimit' out of range 0..1e6, and value set to default value 1000" <<endl; } 
 
-		delta_max=In[0]->Get_rene(GetValue("delta_max"),0.1); 
+		delta_max=In[0]->Get_Real(GetValue("delta_max"),0.1); 
 		if (delta_max < 0 || delta_max>100) {delta_max = 0.1;  cout << "Value of delta_max out of range 0..100, and value set to default value 0.1" <<endl; } 
 		delta_min=delta_max/100000;
-		tolerance=In[0]->Get_rene(GetValue("tolerance"),1e-5);
+		tolerance=In[0]->Get_Real(GetValue("tolerance"),1e-5);
 		if (tolerance < 1e-12 ||tolerance>10) {tolerance = 1e-5;  cout << "Value of tolerance out of range 1e-12..10 Value set to default value 1e-5" <<endl; }  
 		if (GetValue("method").size()==0) {method="DIIS";} else {
 			vector<string>method_options; 
@@ -118,17 +118,17 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 				cout <<"linesearchlimit is out of range: 1..100; default value of 20 is used instead" << endl;
 				linesearchlimit=20;
 			}
-			max_accuracy_for_hessian_scaling=In[0]->Get_rene(GetValue("max_accuracy_for_hessian_scaling"),0.1);
+			max_accuracy_for_hessian_scaling=In[0]->Get_Real(GetValue("max_accuracy_for_hessian_scaling"),0.1);
 			if (max_accuracy_for_hessian_scaling<1e-7 || max_accuracy_for_hessian_scaling>1) {
 				cout <<"max_accuracy_for_hessian_scaling is out of range: 1e-7...1; default value 0.1 is used instead" << endl; 
 				max_accuracy_for_hessian_scaling=0.1; 
 			}
-			minAccuracyForHessian=In[0]->Get_rene(GetValue("min_accuracy_for_hessian"),0);
+			minAccuracyForHessian=In[0]->Get_Real(GetValue("min_accuracy_for_hessian"),0);
 			if (minAccuracyForHessian<0 ||minAccuracyForHessian>0.1) {
 				cout <<"min_accuracy_for_hessian is out of range: 0...0.1; default value 0 is used instead (no hessian computation)" << endl; 
 				minAccuracyForHessian=0; 
 			}
-			maxFrReverseDirection =In[0]->Get_rene(GetValue("max_fr_reverse_direction"),0.4);
+			maxFrReverseDirection =In[0]->Get_Real(GetValue("max_fr_reverse_direction"),0.4);
 			if (maxFrReverseDirection <0.1 ||maxFrReverseDirection >0.5) {
 				cout <<"max_fr_reverse_direction is out of range: 0.1...0.5; default value 0.4 is used instead" << endl; 
 				maxFrReverseDirection =0.4; 
@@ -145,12 +145,12 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 				maxNumSmallAlpha=50; 
 			}
 
-			delta_min=In[0]->Get_rene(GetValue("delta_min"),0);
+			delta_min=In[0]->Get_Real(GetValue("delta_min"),0);
 			if (delta_min <0 || delta_min>delta_max) {
 				cout <<"delta_min is out of range; 0, ..., " << delta_max << "; delta_min value set to 0 " << endl; 
 				delta_min=0; 
 			}
-			smallAlpha=In[0]->Get_rene(GetValue("small_alpha"),0.00001);
+			smallAlpha=In[0]->Get_Real(GetValue("small_alpha"),0.00001);
 			if (smallAlpha <0 || smallAlpha>1) {
 				cout <<"small_alpha is out of range; 0, ..., 1; small_alpha value set to default: 1e-5 " << endl; 
 				smallAlpha=0.00001; 
@@ -188,10 +188,10 @@ if(debug) cout <<"GetValue " + parameter + " in  Newton " << endl;
 	return "" ; 
 }
 
-void Newton::push(string s, rene X) {
-if(debug) cout <<"push (rene) in  Newton " << endl;
-	renes.push_back(s);
-	renes_value.push_back(X); 
+void Newton::push(string s, Real X) {
+if(debug) cout <<"push (Real) in  Newton " << endl;
+	Reals.push_back(s);
+	Reals_value.push_back(X); 
 }
 void Newton::push(string s, int X) {
 if(debug) cout <<"push (int) in  Newton " << endl;
@@ -214,8 +214,8 @@ if(debug) cout <<"PushOutput in  Newton " << endl;
 	strings_value.clear();
 	bools.clear();
 	bools_value.clear();
-	renes.clear();
-	renes_value.clear();
+	Reals.clear();
+	Reals_value.clear();
 	ints.clear();
 	ints_value.clear();  
 	push("method",method);
@@ -237,7 +237,7 @@ if(debug) cout <<"PushOutput in  Newton " << endl;
 	}
 }
 
-int Newton::GetValue(string prop,int &int_result,rene &rene_result,string &string_result){
+int Newton::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
 if(debug) cout <<"GetValue (long) in  Newton " << endl;
 	int i=0;
 	int length = ints.size();
@@ -249,10 +249,10 @@ if(debug) cout <<"GetValue (long) in  Newton " << endl;
 		i++;
 	}
 	i=0;
-	length = renes.size();
+	length = Reals.size();
 	while (i<length) {
-		if (prop==renes[i]) { 
-			rene_result=renes_value[i];
+		if (prop==Reals[i]) { 
+			Real_result=Reals_value[i];
 			return 2;
 		}
 		i++;
@@ -278,7 +278,7 @@ if(debug) cout <<"GetValue (long) in  Newton " << endl;
 	return 0; 
 }
 
-void Newton::inneriteration(float*h, rene *g, rene *x,rene accuracy, int nvar) {
+void Newton::inneriteration(float*h, Real *g, Real *x,Real accuracy, int nvar) {
 if(debug) cout <<"inneriteration in Newton " << endl; 
 
 	if (iterations > 0) samehessian = false;
@@ -306,7 +306,7 @@ if(debug) cout <<"inneriteration in Newton " << endl;
 
 	if (smallAlphaCount == maxNumSmallAlpha) {
 		smallAlphaCount = 0;
-		//if (!reverseDirection) {reverseDirection=new rene[reverseDirectionRange];H_Zero(reverseDirection,reverseDirectionRange); }
+		//if (!reverseDirection) {reverseDirection=new Real[reverseDirectionRange];H_Zero(reverseDirection,reverseDirectionRange); }
 		if (!s_info) {
 			cout << "too many small alphas: newton reset" << endl;
 		}
@@ -327,11 +327,11 @@ if(debug) cout <<"inneriteration in Newton " << endl;
 	}
 
 	numIterationsSinceHessian++;
-	rene frReverseDirection = rene(numReverseDirection)/reverseDirectionRange;
+	Real frReverseDirection = Real(numReverseDirection)/reverseDirectionRange;
 	if ((frReverseDirection > maxFrReverseDirection && pseudohessian && accuracy < minAccuracyForHessian)) {
 		cout <<"Bad convergence (reverse direction), computing full hessian..." << endl;
 		pseudohessian = false; reset_pseudohessian =true;
-		//if (!reverseDirection) {reverseDirection=new rene[reverseDirectionRange]; H_Zero(reverseDirection,reverseDirectionRange); }
+		//if (!reverseDirection) {reverseDirection=new Real[reverseDirectionRange]; H_Zero(reverseDirection,reverseDirectionRange); }
 		numIterationsSinceHessian = 0;
 	} else if ((numIterationsSinceHessian >= n_iterations_for_hessian &&
 				iterations > 0 && accuracy < minAccuracyForHessian && minimum < minAccuracyForHessian)) {
@@ -341,11 +341,11 @@ if(debug) cout <<"inneriteration in Newton " << endl;
 	}
 }
 
-void Newton::multiply(rene *v,rene alpha, float *h, rene *w, int nvar) {
+void Newton::multiply(Real *v,Real alpha, float *h, Real *w, int nvar) {
 if(debug) cout <<"multiply in Newton" << endl;
 	int i=0,i1=0,j=0;
-	rene sum=0;
-	rene *x = new rene[nvar];
+	Real sum=0;
+	Real *x = new Real[nvar];
 	for (i=0; i<nvar; i++) {
 		sum = 0;
 		i1 = i-1;
@@ -362,10 +362,10 @@ if(debug) cout <<"multiply in Newton" << endl;
 	delete [] x;
 }
 
-rene Newton::norm2(rene *x, int nvar) {
+Real Newton::norm2(Real *x, int nvar) {
 if(debug) cout <<"norm2 in Newton" << endl;
 
-	rene sum=0;
+	Real sum=0;
 	for (int i=0; i<nvar; i++) sum += pow(x[i],2);
 	return sqrt(sum);
 }
@@ -381,10 +381,10 @@ if(debug) cout <<"signdeterminant in Newton" << endl;
 	return sign;
 }
 
-void Newton::updateneg(float *l,rene *w, int nvar, rene alpha) {
+void Newton::updateneg(float *l,Real *w, int nvar, Real alpha) {
 if(debug) cout <<"updateneg in Newton" << endl;
 	int i=0,i1=0,j=0;
-	rene dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
+	Real dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
 	dmin = 1.0/pow(2.0,54);
 	alpha = sqrt(-alpha);
 	for (i=0; i<nvar; i++) {
@@ -416,7 +416,7 @@ if(debug) cout <<"updateneg in Newton" << endl;
 void Newton::decompos(float *h, int nvar, int &ntr) {
 if(debug) cout <<"decompos in Newton" << endl;
 	int i,j,k;//itr,ntr;
-	rene sum,lsum,usum,phi,phitr,c,l;
+	Real sum,lsum,usum,phi,phitr,c,l;
 	float *ha,*hai,*haj;
 	ha = &h[-1];
 	phitr = FLT_MAX;
@@ -455,14 +455,14 @@ if(debug) cout <<"decompos in Newton" << endl;
 	}
 }
 
-void Newton::updatpos(float *l, rene *w, rene *v, int nvar, rene alpha) {
+void Newton::updatpos(float *l, Real *w, Real *v, int nvar, Real alpha) {
 if(debug) cout <<"updatepos in Newton" << endl; 
 	int i,j;
-	rene b,c,d;
-	rene vai,waj,vaj;
+	Real b,c,d;
+	Real vai,waj,vaj;
 	float *lai,*laj;
-	rene * wa = &w[-1];
-	rene * va = &v[-1];
+	Real * wa = &w[-1];
+	Real * va = &v[-1];
 	i = 0;
 	while (i++<nvar) {
 		vai = va[i];
@@ -489,11 +489,11 @@ if(debug) cout <<"updatepos in Newton" << endl;
 	}
 }
 
-void Newton::gausa(float *l, rene *dup, rene *g, int nvar) {
+void Newton::gausa(float *l, Real *dup, Real *g, int nvar) {
 if(debug) cout <<"gausa in Newton" << endl;  
 	int i,j;
-	rene*dupa,sum;
-	rene *ga;
+	Real*dupa,sum;
+	Real *ga;
 	float *lai;
 
 	dupa = &dup[-1];
@@ -511,10 +511,10 @@ if(debug) cout <<"gausa in Newton" << endl;
 	}
 }
 
-void Newton::gausb(float *du, rene *p, int nvar) { 
+void Newton::gausb(float *du, Real *p, int nvar) { 
 if(debug) cout <<"gausb in Newton " << endl; 
 	int i,j;
-	rene *pa,sum;
+	Real *pa,sum;
 	float *duai;
 	pa = &p[-1];
 	i = nvar+1;
@@ -529,14 +529,14 @@ if(debug) cout <<"gausb in Newton " << endl;
 	}
 }
 
-rene Newton::residue(rene *g, rene *p, rene *x, int nvar, rene alpha) {
+Real Newton::residue(Real *g, Real *p, Real *x, int nvar, Real alpha) {
 if(debug) cout <<"residue in Newton " << endl; 
 	return sqrt(norm2(p,nvar)*norm2(g,nvar)/(1+norm2(x,nvar)));
 }
 
-rene Newton::linecriterion(rene *g, rene *g0, rene *p, rene *p0, int nvar) {
+Real Newton::linecriterion(Real *g, Real *g0, Real *p, Real *p0, int nvar) {
 if(debug) cout <<"linecriterion in Newton " << endl; 
-	rene normg,gg0;
+	Real normg,gg0;
 	normg = norm2(g0,nvar);
 	Dot(gg0,g,g0,nvar);
 	gg0=gg0/normg/normg;
@@ -553,12 +553,12 @@ if(debug) cout <<"linecriterion in Newton " << endl;
 	}
 }
 
-rene Newton::newfunction(rene *g, rene *x, int nvar) {
+Real Newton::newfunction(Real *g, Real *x, int nvar) {
 if(debug) cout <<"newfunction in Newton " << endl; 
 	return pow(norm2(g,nvar),2);
 }
 
-void Newton::direction(float *h, rene *p, rene *g, rene *g0, rene *x, int nvar, rene alpha){
+void Newton::direction(float *h, Real *p, Real *g, Real *g0, Real *x, int nvar, Real alpha){
 if(debug) cout <<"direction in Newton " << endl; 
 
 	newtondirection = true;
@@ -578,7 +578,7 @@ if(debug) cout <<"direction in Newton " << endl;
 	}
 }
 
-void Newton::startderivatives(float *h, rene *g, rene *x, int nvar){
+void Newton::startderivatives(float *h, Real *g, Real *x, int nvar){
 if(debug) cout <<"startderivatives in Newton" << endl; 
 	float diagonal = 1+norm2(g,nvar); 
 	H_Zero(h,nvar*nvar);
@@ -587,23 +587,23 @@ if(debug) cout <<"startderivatives in Newton" << endl;
 	}
 }
 
-void Newton::resethessian(float *h,rene *g,rene *x,int nvar){
+void Newton::resethessian(float *h,Real *g,Real *x,int nvar){
 if(debug) cout <<"resethessian in Newton" << endl; 
 	trouble = 0;		
 	startderivatives(h,g,x,nvar);
 	resetiteration = iterations;
 }
 
-void Newton::newhessian(float *h, rene *g, rene *g0, rene *x, rene *p, int nvar) { 
+void Newton::newhessian(float *h, Real *g, Real *g0, Real *x, Real *p, int nvar) { 
 if(debug) cout <<"newhessian in Newton" << endl; 
-	rene dmin=0,sum=0,theta=0,php=0,dg=0,gg=0,g2=0,py=0,y2=0;
+	Real dmin=0,sum=0,theta=0,php=0,dg=0,gg=0,g2=0,py=0,y2=0;
 	dmin = 1/pow(2.0,nbits); // alternative: DBL_EPSILON or DBL_MIN
 	if (!pseudohessian){ 
 		findhessian(h,g,x,nvar); 
 	} else {
 		if (!samehessian && ALPHA!=0 && iterations!=0) {
-			rene *y = new rene[nvar];
-			rene *hp = new rene[nvar];
+			Real *y = new Real[nvar];
+			Real *hp = new Real[nvar];
 			py = php = y2 = gg = g2 = 0;
 			for (int i=0; i<nvar; i++) {
 				y[i] = dg = g[i]-g0[i];
@@ -670,12 +670,12 @@ void print_hessian(float* h, int nvar) {
 		if (h[i*nvar+j]!=0) cout <<"i " << i << " j " << j << " h= " << h[i*nvar+j] << endl;  
 }
 
-void Newton::numhessian(float* h,rene* g, rene* x, int nvar) {
+void Newton::numhessian(float* h,Real* g, Real* x, int nvar) {
 if(debug) cout <<"numhessian in Newton" << endl;
-	rene dmax2=0,dmax3=0,di=0;
-	rene *g1;
-	g1 = new rene[iv];
-	rene xt;
+	Real dmax2=0,dmax3=0,di=0;
+	Real *g1;
+	g1 = new Real[iv];
+	Real xt;
 	dmax2 = pow(2.0,nbits/2); //alternative 2*pow(DBL_EPSILON,-0.5)?
 	dmax3 = pow(2.0,nbits/3); //alternative 2*pow(DBL_EPSILON,-1.0/3)?
 	for (int i=0; i<nvar; i++) {
@@ -742,7 +742,7 @@ if(debug) cout <<"decomposition in Newton" << endl;
 
 }
 
-void Newton::findhessian(float *h, rene *g, rene *x,int nvar) {
+void Newton::findhessian(float *h, Real *g, Real *x,int nvar) {
 if(debug) cout <<"findhessian in Newton" << endl; 
 	if ( !samehessian ) {
 		if ( iterations==0 ) resethessian(h,g,x,nvar); 
@@ -753,7 +753,7 @@ if(debug) cout <<"findhessian in Newton" << endl;
 	}
 }
 
-void Newton::newdirection(float *h, rene *p, rene *p0, rene *g, rene *g0, rene *x, int nvar, rene alphabound) {
+void Newton::newdirection(float *h, Real *p, Real *p0, Real *g, Real *g0, Real *x, int nvar, Real alphabound) {
 if(debug) cout <<"newdirection in Newton" << endl; 
 	inneriteration(h,g,x,accuracy,nvar);
 	memcpy(p0, p, sizeof(*p0)*nvar);
@@ -761,9 +761,9 @@ if(debug) cout <<"newdirection in Newton" << endl;
 	accuracy = residue(g,p,x,nvar,ALPHA);
 }
 
-void Newton::newtrustregion(rene *g, rene *g0, rene *p, rene *p0, int nvar){
+void Newton::newtrustregion(Real *g, Real *g0, Real *p, Real *p0, int nvar){
 if(debug) cout <<"newtrustregion in Newton" << endl; 
-	rene normp0 = norm2(p0,nvar);
+	Real normp0 = norm2(p0,nvar);
 
 	if ( normp0>0 && trustregion>2*ALPHA*normp0 ) {
 		trustregion = 2*ALPHA*normp0;
@@ -774,16 +774,16 @@ if(debug) cout <<"newtrustregion in Newton" << endl;
 	if ( trustregion<delta_min ) trustregion = delta_min;
 }
 
-rene Newton::linesearch(rene *g, rene *g0, rene *p, rene *x, rene *x0, int nvar, rene alphabound) {
+Real Newton::linesearch(Real *g, Real *g0, Real *p, Real *x, Real *x0, int nvar, Real alphabound) {
 if(debug) cout <<"linesearch in Newton" << endl; 
-	rene newalpha = alphabound<1 ? alphabound : 1;
+	Real newalpha = alphabound<1 ? alphabound : 1;
 	newalpha = zero(g,g0,p,x,x0,nvar,newalpha);
 	return newalpha;
 }
 
-rene Newton::zero(rene *g, rene *g0, rene *p, rene *x, rene *x0, int nvar, rene newalpha) {
+Real Newton::zero(Real *g, Real *g0, Real *p, Real *x, Real *x0, int nvar, Real newalpha) {
 if(debug) cout <<"zero in Newton " << endl; 
-	rene alpha=newalpha;
+	Real alpha=newalpha;
 	bool valid, timedep;
 	lineiterations++;
 	if ( (lineiterations==5)) {
@@ -818,9 +818,9 @@ if(debug) cout <<"zero in Newton " << endl;
 	return alpha;
 }
 
-rene Newton::stepchange(rene *g, rene *g0, rene *p, rene *p0, rene *x, rene *x0, int nvar, rene &alpha){
+Real Newton::stepchange(Real *g, Real *g0, Real *p, Real *p0, Real *x, Real *x0, int nvar, Real &alpha){
 if(debug) cout <<"stepchange in Newton" << endl; 
-	rene change, crit;
+	Real change, crit;
 	change = crit = linecriterion(g,g0,p,p0,nvar);
 	while ( crit<0.35 && lineiterations<linesearchlimit ) {
 		alpha /= 4;
@@ -830,7 +830,7 @@ if(debug) cout <<"stepchange in Newton" << endl;
 	}
 	return change;
 }
-void Newton::COMPUTEG(rene *x, rene *g, int nvar) {
+void Newton::COMPUTEG(Real *x, Real *g, int nvar) {
 	int pos=nvar;
 	for (int i=iv-1; i>=0; i--) {
 		if (mask[i]==1) { 
@@ -845,13 +845,13 @@ void Newton::COMPUTEG(rene *x, rene *g, int nvar) {
 	}
 }
 
-void Newton::iterate(rene *x,int nvar) {
+void Newton::iterate(Real *x,int nvar) {
 if(debug) cout <<"iterate in Newton" << endl; 
 	nbits=52;
 	ignore_newton_direction = false; 
 	it = iterations=0; lineiterations=0; numIterationsSinceHessian = 0; 
 	if (nvar<1) return;
-	rene alphamax=0; alphabound=0; alphaMax=delta_max; alphaMin=delta_min; 
+	Real alphamax=0; alphabound=0; alphaMax=delta_max; alphaMin=delta_min; 
 	ALPHA=1;
 	minAccuracySoFar = 1e30; reverseDirectionRange = 50; trouble=0;
 	resetiteration=0; 
@@ -864,9 +864,9 @@ if(debug) cout <<"iterate in Newton" << endl;
 	int xxx=0;
 	for (int i=0; i<nvar; i++) {if (g[i]==0) mask[i]=0; else {xxx++;  mask[i]=1;}}
 	nvar=xxx;
-	p = new rene[nvar]; H_Zero(p,nvar); 
-	g0 = new rene[nvar]; H_Zero(g0,nvar); 
-	p0 = new rene[nvar]; H_Zero(p0,nvar);
+	p = new Real[nvar]; H_Zero(p,nvar); 
+	g0 = new Real[nvar]; H_Zero(g0,nvar); 
+	p0 = new Real[nvar]; H_Zero(p0,nvar);
 	h = new float [nvar*nvar]; H_Zero(h,nvar*nvar);
 	 
 
@@ -912,7 +912,7 @@ if(debug) cout <<"PutU in  Newton " << endl;
 	bool success=true;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	for (int i=0; i<sysmon_length; i++) {
-		rene *u=Seg[Sys[0]->SysMonList[i]]->u;
+		Real *u=Seg[Sys[0]->SysMonList[i]]->u;
 		alpha=Sys[0]->alpha; 
 		Cp(u,xx+i*M,M); 
 		if (method == "Picard") Add(u,alpha,M);
@@ -922,11 +922,11 @@ if(debug) cout <<"PutU in  Newton " << endl;
 }
 
 /*
-void Newton::Ax(rene* A, rene* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
+void Newton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton " << endl;
-	rene* U = new rene[N*N];
-	rene* S = new rene[N];
-	rene* VT = new rene[N*N];
+	Real* U = new Real[N*N];
+	Real* S = new Real[N];
+	Real* VT = new Real[N*N];
 #ifdef  __CLAPACK_H
 	integer MM = (integer)N, NN = (integer)N;
 	integer LDA=MM, LDU=MM, LDVT=NN, INFO, LWORK;
@@ -936,15 +936,15 @@ if(debug) cout <<"Ax in  Newton " << endl;
 #endif
 
 	int lwork;
-	rene WKOPT;
-	rene* WORK;
+	Real WKOPT;
+	Real* WORK;
 	char JOBU='S'; //'S' is nodig om alleen de eerste N colommen in U te schrijven.
 	char JOBVT='A';
 
 	LWORK = -1; //grootte hulpgeheugen aanvragen
 	dgesvd_( &JOBU, &JOBVT, &MM, &NN, A, &LDA, S, U, &LDU, VT, &LDVT, &WKOPT, &LWORK, &INFO );
 	lwork = (int)WKOPT;
-	WORK = (rene*)malloc( lwork*sizeof(rene) );
+	WORK = (Real*)malloc( lwork*sizeof(Real) );
 #ifdef  __CLAPACK_H
 	LWORK = (integer)lwork; //nu uitrekenen.
 #else
@@ -964,15 +964,15 @@ if(debug) cout <<"Ax in  Newton " << endl;
 }
 */
 
-void Newton::Ax(rene* A, rene* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
+void Newton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	
-    rene **U = new rene*[N + 1];
-    rene **V = new rene*[N + 1];
-    rene *S = new rene[N + 1];
+    Real **U = new Real*[N + 1];
+    Real **V = new Real*[N + 1];
+    Real *S = new Real[N + 1];
     for (int i=0; i < N + 1; i++) {
-        U[i] = new rene[N + 1];
-        V[i] = new rene[N + 1];
+        U[i] = new Real[N + 1];
+        V[i] = new Real[N + 1];
     }
 
 	
@@ -994,15 +994,15 @@ if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	delete V;
 }
 
-void Newton::DIIS(rene* xx, rene* x_x0, rene* xR, rene* Aij, rene* Apij,rene* Ci, int k, int m, int iv) {
+void Newton::DIIS(Real* xx, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* Ci, int k, int m, int iv) {
 if(debug) cout <<"DIIS in  Newton " << endl;
-	rene normC=0; int posi;
+	Real normC=0; int posi;
 	if (k_diis>m) { k_diis =m;
 		for (int i=1; i<m; i++) for (int j=1; j<m; j++)
 		Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
 	}
 	for (int i=0; i<k_diis; i++) {posi = k-k_diis+1+i; if (posi<0) posi +=m;
-		rene Dvalue; Dot(Dvalue,x_x0+posi*iv, x_x0+k*iv,iv);
+		Real Dvalue; Dot(Dvalue,x_x0+posi*iv, x_x0+k*iv,iv);
 		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue; }
 		// write to (compressed) matrix Apij
 	for (int i=0; i<k_diis; i++) for (int j=0; j<k_diis; j++) {
@@ -1057,7 +1057,7 @@ if(debug) cout <<"Solve in  Newton " << endl;
 	return success; 
 }
 
-void Newton::Message(int it, int iterationlimit,rene residual, rene tolerance) {
+void Newton::Message(int it, int iterationlimit,Real residual, Real tolerance) {
 if(debug) cout <<"Messiage in  Newton " << endl;
 	if (it < iterationlimit/10) cout <<"That was easy." << endl;
 	if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
@@ -1070,7 +1070,7 @@ if(debug) cout <<"Messiage in  Newton " << endl;
 bool Newton::Iterate_Picard() {
 if(debug) cout <<"Iterate_Picard in  Newton " << endl;
 	int M=Lat[0]->M;
-	rene chi; 
+	Real chi; 
 	alpha=Sys[0]->alpha;	
 	bool success=true;
 	
@@ -1101,7 +1101,7 @@ if(debug) cout <<"Iterate_Picard in  Newton " << endl;
 		YisAplusC(g,Sys[0]->phitot,-1.0,M); 
 		Lat[0]->remove_bounds(g); 
 
-		rene result; Dot(result,g,g,M);
+		Real result; Dot(result,g,g,M);
 		residual=residual+result;
 		residual=sqrt(residual); 
 		if(it%i_info == 0){
@@ -1152,10 +1152,10 @@ if(debug) cout <<"ComputPhis in  Newton " << endl;
 	Sys[0]->ComputePhis();
 }
 
-void Newton::ComputeG(rene* g){ 
+void Newton::ComputeG(Real* g){ 
 if(debug) cout <<"ComputeG in  Newton " << endl;
 	int M=Lat[0]->M;
-	rene chi; 
+	Real chi; 
 	ComputePhis();
 
 	int sysmon_length = Sys[0]->SysMonList.size(); 
@@ -1187,7 +1187,7 @@ void Newton::ComputeG_ext(){
 if(debug) cout <<"CompueG_est() in  Newton " << endl;
 	int M=Lat[0]->M;
 	alpha=Sys[0]->alpha;
-	rene chi; 
+	Real chi; 
 	ComputePhis();
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size();	

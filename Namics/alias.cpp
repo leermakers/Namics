@@ -1,6 +1,5 @@
 #include "alias.h"
 
-
 Alias::Alias(vector<Input*> In_,vector<Lattice*> Lat_, string name_) {
 	In=In_; name=name_;   Lat=Lat_;
 	KEYS.push_back("value"); 
@@ -18,9 +17,9 @@ if (debug) cout <<"Destructor for alias " + name << endl;
 void Alias::AllocateMemory() {
 int M=Lat[0]->M;
 if (debug) cout <<"AllocateMemory in Alias " + name << endl;
-	H_phi = (double*) malloc(M*sizeof(double)); H_Zero(H_phi,M);
+	H_phi = (Real*) malloc(M*sizeof(Real)); H_Zero(H_phi,M);
 #ifdef CUDA
-	phi=(double*)AllOnDev(M); Zero(phi,M);
+	phi=(Real*)AllOnDev(M); Zero(phi,M);
 #else 
 	phi=H_phi; 
 #endif
@@ -71,10 +70,10 @@ if (debug) cout <<"GetValue in Alias " + name << endl;
 	return "" ; 
 }
  
-void Alias::push(string s, double X) {
-if (debug) cout <<"push (double) in Alias " + name << endl;
-	doubles.push_back(s);
-	doubles_value.push_back(X); 
+void Alias::push(string s, Real X) {
+if (debug) cout <<"push (Real) in Alias " + name << endl;
+	Reals.push_back(s);
+	Reals_value.push_back(X); 
 }
 void Alias::push(string s, int X) {
 if (debug) cout <<"push (int) in Alias " + name << endl;
@@ -97,8 +96,8 @@ if (debug) cout <<"PushOutput in Alias " + name << endl;
 	strings_value.clear();
 	bools.clear();
 	bools_value.clear();
-	doubles.clear();
-	doubles_value.clear();
+	Reals.clear();
+	Reals_value.clear();
 	ints.clear();
 	ints_value.clear();  
 #ifdef CUDA
@@ -106,13 +105,13 @@ if (debug) cout <<"PushOutput in Alias " + name << endl;
 #endif
 }
 
-double* Alias::GetPointer(string s) {
+Real* Alias::GetPointer(string s) {
 if (debug) cout <<"GetPointer in Alias " + name << endl;
 	return NULL;
 }
 
 
-int Alias::GetValue(string prop,int &int_result,double &double_result,string &string_result){
+int Alias::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
 if (debug) cout <<"GetValue (long)  in Alias " + name << endl;
 	int i=0;
 	int length = ints.size();
@@ -124,10 +123,10 @@ if (debug) cout <<"GetValue (long)  in Alias " + name << endl;
 		i++;
 	}
 	i=0;
-	length = doubles.size();
+	length = Reals.size();
 	while (i<length) {
-		if (prop==doubles[i]) { 
-			double_result=doubles_value[i];
+		if (prop==Reals[i]) { 
+			Real_result=Reals_value[i];
 			return 2;
 		}
 		i++;

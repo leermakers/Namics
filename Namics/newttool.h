@@ -3,26 +3,27 @@
 
 #include <math.h>
 #include <float.h>
+#include "namics.h"
 
-double norm2(double*,int);
+Real norm2(Real*,int);
 void decompos(float*, int, int, int&);
 void decompos(float*, int, int&);
 int signdeterminant(float*, int, int);
 int signdeterminant(float*, int);
-void multiply(double*, double, float*, double*, int, int);
-void multiply(double*, double, float*, double*, int);
-void updateneg(float*,double*, int, int, double);
-void updateneg(float* ,double* , int, double);
-void updatpos(float*, double*, double*, int, int, double);
-void updatpos(float*, double*, double*, int, double);
-void gausa(float*, double*, double*, int, int);
-void gausa(float*, double*, double*, int);
-void gausb(float*, double*, int, int);
-void gausb(float*, double*, int);
+void multiply(Real*, Real, float*, Real*, int, int);
+void multiply(Real*, Real, float*, Real*, int);
+void updateneg(float*,Real*, int, int, Real);
+void updateneg(float* ,Real* , int, Real);
+void updatpos(float*, Real*, Real*, int, int, Real);
+void updatpos(float*, Real*, Real*, int, Real);
+void gausa(float*, Real*, Real*, int, int);
+void gausa(float*, Real*, Real*, int);
+void gausb(float*, Real*, int, int);
+void gausb(float*, Real*, int);
 		
 
-double linecriterion(double*, double*, double*, double*, int);
-double newfunction(double*, double*, int);	
-double residue(double*, double*, double*, int, double);
+Real linecriterion(Real*, Real*, Real*, Real*, int);
+Real newfunction(Real*, Real*, int);	
+Real residue(Real*, Real*, Real*, int, Real);
 
 #endif

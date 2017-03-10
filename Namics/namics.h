@@ -46,8 +46,7 @@
 
 #include <iomanip> 
 using namespace std;
-typedef double rene;
-
+typedef double Real;
 #ifdef CUDA
 //#include <cuda.h>
 //#include <cublas_v2.h>

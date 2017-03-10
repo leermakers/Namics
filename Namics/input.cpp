@@ -175,9 +175,9 @@ bool Input:: Get_string(string s, string &ss, std::vector<std::string>&S, const 
 	return success; 
 }
 
-rene Input:: Get_rene(string s, rene ss) {
+Real Input:: Get_Real(string s, Real ss) {
 	bool success=false;
-	rene sss;
+	Real sss;
 	stringstream string_s;
 	string_s << s ;
 	string_s >> sss;
@@ -188,7 +188,7 @@ rene Input:: Get_rene(string s, rene ss) {
 	if (!success) sss=ss;
 	return sss; 
 }
-bool Input:: Get_rene(string s, rene &ss, const std::string &error) {
+bool Input:: Get_Real(string s, Real &ss, const std::string &error) {
 	bool success=false;
 	stringstream string_s;
 	string_s << s ;
@@ -200,7 +200,7 @@ bool Input:: Get_rene(string s, rene &ss, const std::string &error) {
 	if (!success) cout << error << endl;
 	return success;
 }
-bool Input:: Get_rene(string s, rene &ss, rene low, rene high, const  std::string &error) {
+bool Input:: Get_Real(string s, Real &ss, Real low, Real high, const  std::string &error) {
 	bool success=false;
 	stringstream string_s;
 	string_s << s ;
@@ -326,7 +326,7 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 			n_start++; 
 			int k=0;
 			int k_length=Input.size();  
-			while (k<k_length) { //remove renes and keep last value
+			while (k<k_length) { //remove Reals and keep last value
 				int l=k+1;
 				int l_length=Input.size();  
 				while (l<l_length) {

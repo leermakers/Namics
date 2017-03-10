@@ -31,26 +31,26 @@ if (debug) cout << "Destructor for system " << endl;
 void System::AllocateMemory() {
 if (debug) cout << "AllocateMemory in system " << endl; 
 	int M=Lat[0]->M;
-	//H_GN_A = new rene[n_box];
-	//H_GN_B = new rene[n_box];
+	//H_GN_A = new Real[n_box];
+	//H_GN_B = new Real[n_box];
 
-	H_GrandPotentialDensity = (rene*) malloc(M*sizeof(rene));
-	H_FreeEnergyDensity = (rene*) malloc(M*sizeof(rene));
-	H_alpha = (rene*) malloc(M*sizeof(rene));
+	H_GrandPotentialDensity = (Real*) malloc(M*sizeof(Real));
+	H_FreeEnergyDensity = (Real*) malloc(M*sizeof(Real));
+	H_alpha = (Real*) malloc(M*sizeof(Real));
 #ifdef CUDA
-	phitot = (rene*)AllOnDev(M); 
-	alpha=(rene*)AllOnDev(M);	
-	GrandPotentialDensity =(rene*)AllOnDev(M);
-	FreeEnergyDensity=(rene*)AllOnDev(M);
-	TEMP =(rene*)AllOnDev(M);	
+	phitot = (Real*)AllOnDev(M); 
+	alpha=(Real*)AllOnDev(M);	
+	GrandPotentialDensity =(Real*)AllOnDev(M);
+	FreeEnergyDensity=(Real*)AllOnDev(M);
+	TEMP =(Real*)AllOnDev(M);	
 	KSAM =(int*)AllOnDev(M);
 #else
-	phitot = (rene*) malloc(M*sizeof(rene));
+	phitot = (Real*) malloc(M*sizeof(Real));
 	alpha= H_alpha;
 	KSAM = (int*) malloc(M*sizeof(int));
 	FreeEnergyDensity=H_FreeEnergyDensity;
 	GrandPotentialDensity = H_GrandPotentialDensity;
-	TEMP = (rene*) malloc(M*sizeof(rene));
+	TEMP = (Real*) malloc(M*sizeof(Real));
 #endif
 	Zero(KSAM,M);
 	n_mol = In[0]->MolList.size(); 
@@ -105,7 +105,7 @@ bool System::CheckInput(int start) {
 if (debug) cout << "CheckInput for system " << endl;
 	bool success=true;	
 	bool solvent_found=false; tag_segment=-1; solvent=-1;  //value -1 means no solvent defined. tag_segment=-1; 
-	rene phibulktot=0;  
+	Real phibulktot=0;  
 	success= In[0]->CheckParameters("sys",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		success=CheckChi_values(In[0]->MonList.size()); 	
@@ -187,7 +187,7 @@ if (debug) cout << "CheckInput for system " << endl;
 				for (int i=0; i<length; i++) {
 					string s="guess-"+In[0]->MonList[i];
 					if (GetValue(s).size()>0) {
-						Seg[i]->guess_u=In[0]->Get_rene(GetValue(s),0); 
+						Seg[i]->guess_u=In[0]->Get_Real(GetValue(s),0); 
 						if (Seg[i]->guess_u <-2 || Seg[i]->guess_u >2) {
 							cout << "Suggested 'guess value' for 'u' for mon '" + In[0]->MonList[i] + "' out of range: current range is -2, .., 2. Value ignored. " << endl;
 							Seg[i]->guess_u = 0;
@@ -228,10 +228,10 @@ if (debug) cout << "GetValue " + parameter + " for system " << endl;
 	return "" ; 
 }
 
-void System::push(string s, rene X) {
-if (debug) cout << "push (rene) for system " << endl;
-	renes.push_back(s);
-	renes_value.push_back(X); 
+void System::push(string s, Real X) {
+if (debug) cout << "push (Real) for system " << endl;
+	Reals.push_back(s);
+	Reals_value.push_back(X); 
 }
 void System::push(string s, int X) {
 if (debug) cout << "push (int) for system " << endl;
@@ -254,8 +254,8 @@ if (debug) cout << "PushOutput for system " << endl;
 	strings_value.clear();
 	bools.clear();
 	bools_value.clear();
-	renes.clear();
-	renes_value.clear();
+	Reals.clear();
+	Reals_value.clear();
 	ints.clear();
 	ints_value.clear();  
 	push("e",e);
@@ -281,7 +281,7 @@ if (debug) cout << "PushOutput for system " << endl;
 #endif
 }
 	
-rene* System::GetPointer(string s){
+Real* System::GetPointer(string s){
 if (debug) cout << "GetPointer for system " << endl;
 	vector<string>sub;
 	In[0]->split(s,';',sub);
@@ -292,7 +292,7 @@ if (debug) cout << "GetPointer for system " << endl;
 	return NULL; 
 }
 
-int System::GetValue(string prop,int &int_result,rene &rene_result,string &string_result){
+int System::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
 if (debug) cout << "GetValue (long) for system " << endl;
 	int i=0;
 	int length = ints.size();
@@ -304,10 +304,10 @@ if (debug) cout << "GetValue (long) for system " << endl;
 		i++;
 	}
 	i=0;
-	length = renes.size();
+	length = Reals.size();
 	while (i<length) {
-		if (prop==renes[i]) { 
-			rene_result=renes_value[i];
+		if (prop==Reals[i]) { 
+			Real_result=Reals_value[i];
 			return 2;
 		}
 		i++;
@@ -336,9 +336,9 @@ if (debug) cout << "GetValue (long) for system " << endl;
 bool System::CheckChi_values(int n_seg){
 if (debug) cout << "CheckChi_values for system " << endl;
 	bool success=true;
-	CHI = (rene*) malloc(n_seg*n_seg*sizeof(rene));
+	CHI = (Real*) malloc(n_seg*n_seg*sizeof(Real));
 	for (int i=0; i<n_seg; i++) for (int k=0; k<n_seg; k++) {
-		CHI[i*n_seg+k]=In[0]->Get_rene(Seg[i]->GetValue("chi-"+Seg[k]->name),123);
+		CHI[i*n_seg+k]=In[0]->Get_Real(Seg[i]->GetValue("chi-"+Seg[k]->name),123);
 	}
 	for (int i=0; i<n_seg; i++) for (int k=0; k<n_seg; k++) if (CHI[i*n_seg+k] == 123) CHI[i*n_seg+k] = CHI[k*n_seg+i];
 	for (int i=0; i<n_seg; i++) for (int k=0; k<n_seg; k++) if (CHI[i*n_seg+k] == 123) CHI[i*n_seg+k] = 0;
@@ -355,12 +355,12 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	bool success=true;
 	//success=PrepareForCalculations();
 
-	rene totphibulk=0;		
-	rene norm=0; 
+	Real totphibulk=0;		
+	Real norm=0; 
 	Zero(phitot,M); 
 	int length=FrozenList.size();
 	for (int i=0; i<length; i++) {
-		rene *phi_frozen=Seg[FrozenList[i]]->phi;  
+		Real *phi_frozen=Seg[FrozenList[i]]->phi;  
 		Add(phitot,phi_frozen,M); 
 	}
 
@@ -389,11 +389,11 @@ if(debug) cout <<"ComputePhis in system" << endl;
 		int k=0;
 		Mol[i]->norm=norm; 
 		while (k<length) {
-			rene *phi=Mol[i]->phi+k*M;
-			rene *G1=Seg[Mol[i]->MolMonList[k]]->G1;
+			Real *phi=Mol[i]->phi+k*M;
+			Real *G1=Seg[Mol[i]->MolMonList[k]]->G1;
 			Div(phi,G1,M); if (norm>0) Norm(phi,norm,M);
 if (debug) {
-rene sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << k << ": " << sum << endl; 
+Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << k << ": " << sum << endl; 
 }
 			k++;
 		}
@@ -407,10 +407,10 @@ rene sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << k << ":
 	Mol[solvent]->norm=norm;
 	length = Mol[solvent]->MolMonList.size();
 	while (k<length) {
-		rene *phi=Mol[solvent]->phi+k*M;
+		Real *phi=Mol[solvent]->phi+k*M;
 		if (norm>0) Norm(phi,norm,M);
 if (debug) {
-rene sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << k << ":" << sum << endl; 
+Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << k << ":" << sum << endl; 
 }
 		k++;
 	}
@@ -419,9 +419,9 @@ rene sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << k 
 		int length=Mol[i]->MolMonList.size();
 		int k=0;
 		while (k<length) {
-			rene* phi_mon=Seg[Mol[i]->MolMonList[k]]->phi;
-			rene* mol_phitot=Mol[i]->phitot;
-			rene* phi_molmon = Mol[i]->phi + k*M; 
+			Real* phi_mon=Seg[Mol[i]->MolMonList[k]]->phi;
+			Real* mol_phitot=Mol[i]->phitot;
+			Real* phi_molmon = Mol[i]->phi + k*M; 
 			Add(phi_mon,phi_molmon,M);
 			if (!(Seg[Mol[i]->MolMonList[k]]->freedom == "tagged")) Add(phitot,phi_molmon,M); 
 			Add(mol_phitot,phi_molmon,M);
@@ -453,10 +453,10 @@ if (debug) cout << "CheckResults for system " << endl;
 cout <<"free energy     = " << FreeEnergy << endl; 
 cout <<"grand potential = " << GrandPotential << endl; 
 	int n_mol=In[0]->MolList.size();
-	rene n_times_mu=0;
+	Real n_times_mu=0;
 	for (int i=0; i<n_mol; i++) {
-		rene Mu=Mol[i]->Mu;
-		rene n=Mol[i]->n;
+		Real Mu=Mol[i]->Mu;
+		Real n=Mol[i]->n;
 		n_times_mu +=  n*Mu; 
 	}
 cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl; 
@@ -471,11 +471,11 @@ cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl;
 	return success;  
 }
 
-rene System::GetFreeEnergy(void) {
+Real System::GetFreeEnergy(void) {
 if (debug) cout << "GetFreeEnergy for system " << endl;
 	int M=Lat[0]->M;
-	rene* F=FreeEnergyDensity;
-	rene constant=0;
+	Real* F=FreeEnergyDensity;
+	Real constant=0;
 	int n_mol=In[0]->MolList.size();
 	//for (int i=0; i<n_mol; i++) Lat[0]->remove_bounds(Mol[i]->phitot);
 	int n_mon=In[0]->MonList.size();
@@ -486,26 +486,26 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 
 	Zero(F,M);
 	for (int i=0; i<n_mol; i++){
-		rene n=Mol[i]->n;
-		rene GN=Mol[i]->GN; 
+		Real n=Mol[i]->n;
+		Real GN=Mol[i]->GN; 
 		int N=Mol[i]->chainlength;
 		if (Mol[i]->IsTagged()) N--; //assuming there is just one tagged segment per molecule
-		rene *phi=Mol[i]->phitot; //contains also the tagged segment 
+		Real *phi=Mol[i]->phitot; //contains also the tagged segment 
 		constant = log(N*n/GN)/N; 
 		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M); 
 	}
 
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++) {
-		rene* phi=Seg[SysMonList[j]]->phi;
-		rene* u=Seg[SysMonList[j]]->u;
+		Real* phi=Seg[SysMonList[j]]->phi;
+		Real* u=Seg[SysMonList[j]]->u;
 		Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
 	}
 	for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
-		rene chi;
+		Real chi;
 		if (Seg[k]->freedom=="frozen") chi=CHI[j*n_mon+k]; else  chi = CHI[j*n_mon+k]/2;
-		rene *phi_side = Seg[k]->phi_side;
-		rene *phi = Seg[j]->phi;
+		Real *phi_side = Seg[k]->phi_side;
+		Real *phi = Seg[j]->phi;
 		if (Seg[j]->freedom !="frozen") {Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M);} 
 	}
 
@@ -513,32 +513,32 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 		constant=0;
 		int n_molmon=Mol[i]->MolMonList.size(); 
 		for (int j=0; j<n_molmon; j++) for (int k=0; k<n_molmon; k++) {
-			rene fA=Mol[i]->fraction(Mol[i]->MolMonList[j]);   
-			rene fB=Mol[i]->fraction(Mol[i]->MolMonList[k]); 
+			Real fA=Mol[i]->fraction(Mol[i]->MolMonList[j]);   
+			Real fB=Mol[i]->fraction(Mol[i]->MolMonList[k]); 
 			if (Mol[i]->IsTagged()) {
 				int N=Mol[i]->chainlength; 
 				if (N>1) {fA=fA*N/(N-1); fB=fB*N/(N-1); } else {fA =0; fB=0;}
 			}  
-			rene chi = CHI[Mol[i]->MolMonList[j]*n_mon+Mol[i]->MolMonList[k]]/2;
+			Real chi = CHI[Mol[i]->MolMonList[j]*n_mon+Mol[i]->MolMonList[k]]/2;
 			constant -=fA*fB*chi;
 		}
-		rene* phi=Mol[i]->phitot;
+		Real* phi=Mol[i]->phitot;
 		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
 	}
 	Lat[0]->remove_bounds(F); Times(F,F,KSAM,M); 
 	return Lat[0]->WeightedSum(F);
 }
 
-rene System::GetGrandPotential(void) {
+Real System::GetGrandPotential(void) {
 if (debug) cout << "GetGrandPotential for system " << endl;
 	int M=Lat[0]->M;
-	rene* GP =GrandPotentialDensity;
+	Real* GP =GrandPotentialDensity;
 	int n_mol=In[0]->MolList.size();
 	int n_mon=In[0]->MonList.size();
 	Zero(GP,M);
 	for (int i=0; i<n_mol; i++){
-		rene *phi=Mol[i]->phitot;
-		rene phibulk = Mol[i]->phibulk;
+		Real *phi=Mol[i]->phitot;
+		Real phibulk = Mol[i]->phibulk;
 		int N=Mol[i]->chainlength;
 		if (Mol[i]->IsTagged()) N--; //One segment of the tagged molecule is tagged and then removed from GP through KSAM
 		Cp(TEMP,phi,M); YisAplusC(TEMP,TEMP,-phibulk,M); Norm(TEMP,1.0/N,M); //GP has wrong sign. will be corrected at end of this routine; 
@@ -548,11 +548,11 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++)for (int k=0; k<n_sysmon; k++){
 		if (!(Seg[SysMonList[j]]->freedom=="tagged" || Seg[SysMonList[j]]->freedom=="tagged"  )) { //not sure about this line...
-		rene phibulkA=Seg[SysMonList[j]]->phibulk;
-		rene phibulkB=Seg[SysMonList[k]]->phibulk;
-		rene chi = CHI[SysMonList[j]*n_mon+SysMonList[k]]/2; 
-		rene *phi=Seg[SysMonList[j]]->phi; 
-		rene *phi_side=Seg[SysMonList[k]]->phi_side; 
+		Real phibulkA=Seg[SysMonList[j]]->phibulk;
+		Real phibulkB=Seg[SysMonList[k]]->phibulk;
+		Real chi = CHI[SysMonList[j]*n_mon+SysMonList[k]]/2; 
+		Real *phi=Seg[SysMonList[j]]->phi; 
+		Real *phi_side=Seg[SysMonList[k]]->phi_side; 
 		Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
 	}
 	} 
@@ -565,31 +565,31 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 bool System::CreateMu() {
 if (debug) cout << "CreateMu for system " << endl;
 	bool success=true;
-	rene constant; 
+	Real constant; 
 	int n_mol=In[0]->MolList.size();
 	int n_mon=In[0]->MonList.size();
 	for (int i=0; i<n_mol; i++) {
-		rene Mu=0; 
-		rene NA=Mol[i]->chainlength; 
+		Real Mu=0; 
+		Real NA=Mol[i]->chainlength; 
 		if (Mol[i]->IsTagged()) NA=NA-1;
-		rene n=Mol[i]->n;
-		rene GN=Mol[i]->GN;
+		Real n=Mol[i]->n;
+		Real GN=Mol[i]->GN;
 		Mu=log(NA*n/GN)+1;
 		constant=0;
 		for (int k=0; k<n_mol; k++) {
-			rene NB = Mol[k]->chainlength;
+			Real NB = Mol[k]->chainlength;
 			if (Mol[k]->IsTagged()) NB=NB-1; 
-			rene phibulkB=Mol[k]->phibulk;
+			Real phibulkB=Mol[k]->phibulk;
 			constant +=phibulkB/NB;
 		}
 		Mu = Mu - NA*constant;
 
 		for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
-			rene chi= CHI[j*n_mon+k]/2;
-			rene phibulkA=Seg[j]->phibulk;
-			rene phibulkB=Seg[k]->phibulk;	
-			rene Fa=Mol[i]->fraction(j);
-			rene Fb=Mol[i]->fraction(k); 
+			Real chi= CHI[j*n_mon+k]/2;
+			Real phibulkA=Seg[j]->phibulk;
+			Real phibulkB=Seg[k]->phibulk;	
+			Real Fa=Mol[i]->fraction(j);
+			Real Fb=Mol[i]->fraction(k); 
 			if (Mol[i]->IsTagged()) {Fa=Fa*(NA+1)/(NA); Fb=Fb*(NA+1)/NA;}
 			Mu = Mu-NA*chi*(phibulkA-Fa)*(phibulkB-Fb);
 		}

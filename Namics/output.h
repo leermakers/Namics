@@ -41,12 +41,12 @@ public:
 	void PutParameter(string); 
 	string GetValue(string);
 	bool Load(); 
-	void vtk(string, rene *);
+	void vtk(string, Real *);
 	void density();
 	void printlist();
 	void WriteOutput(int);
-	int GetValue(string, string, string, int&, rene&, string&);
-	rene* GetPointer(string, string, string);
+	int GetValue(string, string, string, int&, Real&, string&);
+	Real* GetPointer(string, string, string);
 
 };
 #endif

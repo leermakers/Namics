@@ -21,36 +21,36 @@ public:
 	int iterations;
 	int print_hessian_at_it;
 	int linesearchlimit;
-	rene smallAlpha;
+	Real smallAlpha;
 	int maxNumSmallAlpha;
 	int numIterationsSinceHessian;
 	int smallAlphaCount; 
 	int reverseDirectionRange;
 	int numReverseDirection;
-	rene maxFrReverseDirection;
-	rene minAccuracyForHessian;
-	rene minAccuracySoFar; 
-	rene resetHessianCriterion;
-	rene trustregion;
-	rene trustfactor;
+	Real maxFrReverseDirection;
+	Real minAccuracyForHessian;
+	Real minAccuracySoFar; 
+	Real resetHessianCriterion;
+	Real trustregion;
+	Real trustfactor;
 	bool newtondirection;
 	bool reset_pseudohessian;
 	bool pseudohessian;
 	bool hessian; 
 	bool samehessian;
-	rene accuracy;
-	rene max_accuracy_for_hessian_scaling;
+	Real accuracy;
+	Real max_accuracy_for_hessian_scaling;
 	int n_iterations_for_hessian; 
-	rene ALPHA;
+	Real ALPHA;
 	bool ignore_newton_direction;
-	rene delta_min;
+	Real delta_min;
 	int nbits;
 	int trouble;
 	int hessianwidth;  
-	rene alphaMax,alphaMin,alphabound,minimum,normg;
+	Real alphaMax,alphaMin,alphabound,minimum,normg;
 //***************************
 	int *reverseDirection; 
-	rene delta_max;
+	Real delta_max;
 	bool e_info;
 	bool s_info;
 	vector<Input*> In; 
@@ -62,9 +62,9 @@ public:
 	int k_diis,it; 
 	int n_tr,n_reset,n_ignore;
 	int start;
-	rene tolerance;
-	rene residual;
-	rene epsilon;
+	Real tolerance;
+	Real residual;
+	Real epsilon;
 	string method;
 	string StoreFileGuess;
 	string ReadFileGuess;  
@@ -72,32 +72,32 @@ public:
 	int iv; 
 
 	vector<string> ints;
-	vector<string> renes;
+	vector<string> Reals;
 	vector<string> bools;
 	vector<string> strings;
-	vector<rene> renes_value;
+	vector<Real> Reals_value;
 	vector<int> ints_value;
 	vector<bool> bools_value;
 	vector<string> strings_value;
-	void push(string,rene);
+	void push(string,Real);
 	void push(string,int);
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	int GetValue(string,int&,rene&,string&);
+	int GetValue(string,int&,Real&,string&);
 
-	rene* xx;
-	rene* x0;
-	rene* g;
-	rene* xR;
-	rene* x_x0;
-	rene* alpha;
-	rene* Aij;
-	rene* Ci;
-	rene* Apij; 
-	rene* p;
-	rene* p0;
-	rene* g0;
+	Real* xx;
+	Real* x0;
+	Real* g;
+	Real* xR;
+	Real* x_x0;
+	Real* alpha;
+	Real* Aij;
+	Real* Ci;
+	Real* Apij; 
+	Real* p;
+	Real* p0;
+	Real* g0;
 	float* h;
 	int* mask;
 		
@@ -111,45 +111,45 @@ public:
 	bool Solve();
 	void AllocateMemory(); 
 	bool PrepareForCalculations(void);
-	void Ax(rene* , rene* , int );
-	void DIIS(rene* , rene* , rene* , rene*, rene* ,rene* , int , int , int );
-	void ComputeG(rene*); 
-	void COMPUTEG(rene*,rene*,int); 
+	void Ax(Real* , Real* , int );
+	void DIIS(Real* , Real* , Real* , Real*, Real* ,Real* , int , int , int );
+	void ComputeG(Real*); 
+	void COMPUTEG(Real*,Real*,int); 
 	void ComputePhis();
 	void ComputeG_ext();
 	bool Iterate_Picard();
 	bool Iterate_DIIS();
-	void Message(int, int,rene, rene); 
+	void Message(int, int,Real, Real); 
 	bool PutU();
 	
 //**********Scheutjens****************
 	
-	void iterate(rene*,int); //there is only one iterate;
-	void newdirection(float*, rene*, rene*, rene*, rene*, rene*, int, rene); //there is only one of this.
-	void inneriteration(float*, rene*,rene*,rene, int);  
-	void direction(float*, rene*, rene*, rene*, rene*, int, rene);
-	void newhessian(float*,rene*,rene*,rene*,rene*,int);
-	void resethessian(float*, rene*, rene*, int);
-	void startderivatives(float*,rene*,rene*,int);
+	void iterate(Real*,int); //there is only one iterate;
+	void newdirection(float*, Real*, Real*, Real*, Real*, Real*, int, Real); //there is only one of this.
+	void inneriteration(float*, Real*,Real*,Real, int);  
+	void direction(float*, Real*, Real*, Real*, Real*, int, Real);
+	void newhessian(float*,Real*,Real*,Real*,Real*,int);
+	void resethessian(float*, Real*, Real*, int);
+	void startderivatives(float*,Real*,Real*,int);
 
-	void newtrustregion(rene*,rene*,rene*,rene*,int); //there is only one. 
-	rene linesearch(rene*,rene*,rene*,rene*,rene*,int, rene);  //there is only one. 
-	rene zero(rene*,rene*,rene*,rene*,rene*,int,rene);
-	rene stepchange(rene*,rene*,rene*,rene*,rene*,rene*,int,rene&);
-	rene linecriterion(rene*, rene*, rene*, rene*,int); 
-	void numhessian(float*, rene*, rene*, int);
-	void findhessian(float* ,rene*,rene*,int);
+	void newtrustregion(Real*,Real*,Real*,Real*,int); //there is only one. 
+	Real linesearch(Real*,Real*,Real*,Real*,Real*,int, Real);  //there is only one. 
+	Real zero(Real*,Real*,Real*,Real*,Real*,int,Real);
+	Real stepchange(Real*,Real*,Real*,Real*,Real*,Real*,int,Real&);
+	Real linecriterion(Real*, Real*, Real*, Real*,int); 
+	void numhessian(float*, Real*, Real*, int);
+	void findhessian(float* ,Real*,Real*,int);
 	void decomposition(float*,int,int&); 
-	rene norm2(rene*,int);
+	Real norm2(Real*,int);
 	void decompos(float*, int, int&);
 	int signdeterminant(float*, int);
-	void multiply(rene*, rene, float*, rene*, int);
-	void updateneg(float* ,rene* , int, rene);
-	void updatpos(float*, rene*, rene*, int, rene);
-	void gausa(float*, rene*, rene*, int);
-	void gausb(float*, rene*, int);	
-	rene newfunction(rene*, rene*, int);	
-	rene residue(rene*, rene*, rene*, int, rene);	
+	void multiply(Real*, Real, float*, Real*, int);
+	void updateneg(float* ,Real* , int, Real);
+	void updatpos(float*, Real*, Real*, int, Real);
+	void gausa(float*, Real*, Real*, int);
+	void gausb(float*, Real*, int);	
+	Real newfunction(Real*, Real*, int);	
+	Real residue(Real*, Real*, Real*, int, Real);	
 //************************************
 };
 #endif

@@ -24,11 +24,11 @@ public:
 	vector<int> bz; 
 	int n_seg; 
 	int seg_nr;  
-	double epsilon;
-	double valence; 
-	double phibulk; 
+	rene epsilon;
+	rene valence; 
+	rene phibulk; 
 	string freedom;
-	double guess_u; 
+	rene guess_u; 
 
 	string filename; 
 	bool block;
@@ -38,32 +38,32 @@ public:
 	int mx,my,mz,m;
 
 	vector<string> ints;
-	vector<string> doubles;
+	vector<string> renes;
 	vector<string> bools;
 	vector<string> strings;
-	vector<double> doubles_value;
+	vector<rene> renes_value;
 	vector<int> ints_value;
 	vector<bool> bools_value;
 	vector<string> strings_value;
-	void push(string,double);
+	void push(string,rene);
 	void push(string,int);
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	double* GetPointer(string); 
-	int GetValue(string,int&,double&,string&);
+	rene* GetPointer(string); 
+	int GetValue(string,int&,rene&,string&);
 
 
 	int* H_P; 
 	int* H_MASK;
-	double* H_u;
-	double* H_phi;
+	rene* H_u;
+	rene* H_phi;
 	int* P; 
 	int* MASK;
-	double* G1;
-	double* phi;
-	double* phi_side;
-	double* u;  
+	rene* G1;
+	rene* phi;
+	rene* phi_side;
+	rene* u;  
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -79,7 +79,7 @@ public:
 	bool IsTagged();
 	bool IsClamp(); 
 	int* GetMASK(); 
-	double* GetPhi(); 
+	rene* GetPhi(); 
 	void AllocateMemory();
 	bool PrepareForCalculations(int*);  
 

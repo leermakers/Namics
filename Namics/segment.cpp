@@ -49,8 +49,8 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	//	H_P = (int*) malloc(n_pos*sizeof(int));
 
 	//}
-	H_u = (double*) malloc(M*sizeof(double));
-	H_phi = (double*) malloc(M*sizeof(double));
+	H_u = (rene*) malloc(M*sizeof(rene));
+	H_phi = (rene*) malloc(M*sizeof(rene));
 	H_Zero(H_u,M); 
 	H_Zero(H_phi,M);
 	if (freedom=="free") {
@@ -61,11 +61,11 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	if (n_pos>0) {
 		Px=(int*)AllIntOnDev(n_pos);
 	}
-	G1=(double*)AllOnDev(M); Zero(G1,M);
-	u=(double*)AllOnDev(M); Zero(u,M); 
+	G1=(rene*)AllOnDev(M); Zero(G1,M);
+	u=(rene*)AllOnDev(M); Zero(u,M); 
 	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
-	phi=(double*)AllOnDev(M); Zero(phi,M);
-	phi_side=(double*)AllOnDev(M); Zero(phi_side,M);
+	phi=(rene*)AllOnDev(M); Zero(phi,M);
+	phi_side=(rene*)AllOnDev(M); Zero(phi_side,M);
 #else
 	if (n_pos>0) {
 		P=H_P;
@@ -73,8 +73,8 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	MASK=H_MASK;  
 	phi =H_phi;
 	u = H_u;
-	G1 = (double*) malloc(M*sizeof(double));
-	phi_side = (double*) malloc(M*sizeof(double));
+	G1 = (rene*) malloc(M*sizeof(rene));
+	phi_side = (rene*) malloc(M*sizeof(rene));
 	Zero(G1,M);
 	Zero(phi_side,M); 	
 #endif
@@ -112,9 +112,9 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	vector<string>options; 
 	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {
-		valence=In[0]->Get_double(GetValue("valence"),0);
+		valence=In[0]->Get_rene(GetValue("valence"),0);
 		if (valence<-5 || valence > 5) cout <<"For mon " + name + " valence value out of range -5 .. 5. Default value used instead" << endl; 
-		epsilon=In[0]->Get_double(GetValue("epsilon"),80);
+		epsilon=In[0]->Get_rene(GetValue("epsilon"),80);
 		if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 255. Default value 80 used instead" << endl;
 
 		options.push_back("free"); 
@@ -308,7 +308,7 @@ if (debug) cout <<"Get Mask for segment" + name << endl;
 	else return MASK; 
 }
 
-double* Segment::GetPhi() {
+rene* Segment::GetPhi() {
 if (debug) cout <<"GetPhi in segment " + name << endl;
 	int M=Lat[0]->M;
 	if (freedom=="frozen") Cp(phi,MASK,M); 
@@ -358,10 +358,10 @@ if (debug) cout <<"GetValue for segment " + name + " for parameter " + parameter
 	return ""; 
 }
 
-void Segment::push(string s, double X) {
-if (debug) cout <<"Push in Segment (double) " + name << endl;
-	doubles.push_back(s);
-	doubles_value.push_back(X); 
+void Segment::push(string s, rene X) {
+if (debug) cout <<"Push in Segment (rene) " + name << endl;
+	renes.push_back(s);
+	renes_value.push_back(X); 
 }
 void Segment::push(string s, int X) {
 if (debug) cout <<"Push in Segment (int) " + name << endl;
@@ -384,8 +384,8 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	strings_value.clear();
 	bools.clear();
 	bools_value.clear();
-	doubles.clear();
-	doubles_value.clear();
+	renes.clear();
+	renes_value.clear();
 	ints.clear();
 	ints_value.clear();  
 	push("freedom",freedom);
@@ -402,7 +402,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 #endif
 }
 
-double* Segment::GetPointer(string s) {
+rene* Segment::GetPointer(string s) {
 if (debug) cout <<"Get Pointer for segment " + name << endl;
 	vector<string> sub;
 	In[0]->split(s,';',sub);
@@ -412,7 +412,7 @@ if (debug) cout <<"Get Pointer for segment " + name << endl;
 	return NULL; 
 }
 
-int Segment::GetValue(string prop,int &int_result,double &double_result,string &string_result){
+int Segment::GetValue(string prop,int &int_result,rene &rene_result,string &string_result){
 if (debug) cout <<"GetValue long for segment " + name << endl;
 	int i=0;
 	int length = ints.size();
@@ -424,10 +424,10 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 		i++;
 	}
 	i=0;
-	length = doubles.size();
+	length = renes.size();
 	while (i<length) {
-		if (prop==doubles[i]) { 
-			double_result=doubles_value[i];
+		if (prop==renes[i]) { 
+			rene_result=renes_value[i];
 			return 2;
 		}
 		i++;
@@ -460,9 +460,9 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 		H_MASK[((H_Px[p]-1)%MX+1)*JX + ((H_Py[p]-1)%MY+1)*JY + (H_Pz[p]-1)%MZ+1]=1;
 	}
 
-	H_mask = new double[M*n_box];
+	H_mask = new rene[M*n_box];
 #ifdef CUDA
-	mask= (double*)AllOnDev(M*n_box);
+	mask= (rene*)AllOnDev(M*n_box);
 #else
 	mask=H_mask;
 #endif

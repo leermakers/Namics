@@ -20,21 +20,21 @@ public:
 	string brand; 
 
 	vector<string> ints;
-	vector<string> doubles;
+	vector<string> renes;
 	vector<string> bools;
 	vector<string> strings;
-	vector<double> doubles_value;
+	vector<rene> renes_value;
 	vector<int> ints_value;
 	vector<bool> bools_value;
 	vector<string> strings_value;
-	void push(string,double);
+	void push(string,rene);
 	void push(string,int);
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	double* GetPointer(string);
+	rene* GetPointer(string);
 	int SubProblemNum();
-	int GetValue(string,int&,double&,string&);
+	int GetValue(string,int&,rene&,string&);
 	
 	std::vector<string> VAR_param;
         std::vector<string> VAR_val;

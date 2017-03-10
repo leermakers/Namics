@@ -46,6 +46,8 @@
 
 #include <iomanip> 
 using namespace std;
+typedef double rene;
+
 #ifdef CUDA
 //#include <cuda.h>
 //#include <cublas_v2.h>

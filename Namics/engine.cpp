@@ -42,9 +42,9 @@ string Engine::GetValue(string parameter){
 	return "" ; 
 }
 
-void Engine::push(string s, double X) {
-	doubles.push_back(s);
-	doubles_value.push_back(X); 
+void Engine::push(string s, rene X) {
+	renes.push_back(s);
+	renes_value.push_back(X); 
 }
 void Engine::push(string s, int X) {
 	ints.push_back(s);
@@ -63,18 +63,18 @@ void Engine::PushOutput() {
 	strings_value.clear();
 	bools.clear();
 	bools_value.clear();
-	doubles.clear();
-	doubles_value.clear();
+	renes.clear();
+	renes_value.clear();
 	ints.clear();
 	ints_value.clear();  
 }
-double* Engine::GetPointer(string s) {
+rene* Engine::GetPointer(string s) {
 	//vector<string> sub;
 	//nothing yet
 	return NULL;
 }
 
-int Engine::GetValue(string prop,int &int_result,double &double_result,string &string_result){
+int Engine::GetValue(string prop,int &int_result,rene &rene_result,string &string_result){
 	int i=0;
 	int length = ints.size();
 	while (i<length) {
@@ -85,10 +85,10 @@ int Engine::GetValue(string prop,int &int_result,double &double_result,string &s
 		i++;
 	}
 	i=0;
-	length = doubles.size();
+	length = renes.size();
 	while (i<length) {
-		if (prop==doubles[i]) { 
-			double_result=doubles_value[i];
+		if (prop==renes[i]) { 
+			rene_result=renes_value[i];
 			return 2;
 		}
 		i++;
@@ -221,9 +221,9 @@ int Engine::SubProblemNum(){
 		}
 		if (success) {
                         
-                        double start = In[0]->Get_double(VAR_val[1],10*Lat[0]->volume);
-                        double end = In[0]->Get_double(VAR_val[2],10*Lat[0]->volume);
-                        double step = In[0]->Get_double(VAR_val[3],10*Lat[0]->volume);
+                        rene start = In[0]->Get_rene(VAR_val[1],10*Lat[0]->volume);
+                        rene end = In[0]->Get_rene(VAR_val[2],10*Lat[0]->volume);
+                        rene step = In[0]->Get_rene(VAR_val[3],10*Lat[0]->volume);
                         len = (end-start)/step +1;
 			 
 		}
@@ -261,9 +261,9 @@ bool Engine::VarMol(int sub){
 	int nmol=In[0]->MolList.size(); int i=sub; int j=0;
 	while (j < nmol) {
 		if(In[0]->MolList[j]==VAR_param[0]){
-		double start = In[0]->Get_double(VAR_val[1],10*Lat[0]->volume);
-		double end = In[0]->Get_double(VAR_val[2],10*Lat[0]->volume);
-		double step = In[0]->Get_double(VAR_val[3],10*Lat[0]->volume);
+		rene start = In[0]->Get_rene(VAR_val[1],10*Lat[0]->volume);
+		rene end = In[0]->Get_rene(VAR_val[2],10*Lat[0]->volume);
+		rene step = In[0]->Get_rene(VAR_val[3],10*Lat[0]->volume);
 		int length = (end-start)/step;
 			if (VAR_val[0] == "theta") {
 				Mol[j]->theta = start +(i)*step; Mol[j]->n=Mol[j]->theta/Mol[j]->chainlength; Lat[0]->GuessVar(New[0]->xx,Mol[j]->theta,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
@@ -296,9 +296,9 @@ bool Engine::VarMon(int sub){
 	for (int k=0; k<nseg; k++) chimon.push_back("chi-"+Seg[k]->name);
         while (j < nseg) {
                 if(chimon[j]==VAR_val[0]){
-                double start = In[0]->Get_double(VAR_val[1],10*Lat[0]->volume);
-		double end = In[0]->Get_double(VAR_val[2],10*Lat[0]->volume);
-                double step = In[0]->Get_double(VAR_val[3],10*Lat[0]->volume);
+                rene start = In[0]->Get_rene(VAR_val[1],10*Lat[0]->volume);
+		rene end = In[0]->Get_rene(VAR_val[2],10*Lat[0]->volume);
+                rene step = In[0]->Get_rene(VAR_val[3],10*Lat[0]->volume);
 		int length = (end-start)/step;
 			for(int r=0; r<nseg; r++) if(r!=j) {Sys[0]->CHI[r*nseg+j]=start+i*step; Sys[0]->CHI[j*nseg+r]=Sys[0]->CHI[r*nseg+j];}
 			New[0]->Guess();

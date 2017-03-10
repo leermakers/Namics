@@ -8,7 +8,7 @@
 //cublasStatus_t stat=cublasCreate(&handle);
 const int block_size = 256;
 /*
-__global__ void distributeg1(double *G1, double *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY)   {
+__global__ void distributeg1(rene *G1, rene *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY)   {
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
@@ -29,7 +29,7 @@ __global__ void distributeg1(double *G1, double *g1, int* Bx, int* By, int* Bz, 
 	}
 } 
 
-__global__ void collectphi(double* phi, double* GN,double* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY)   {
+__global__ void collectphi(rene* phi, rene* GN,rene* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY)   {
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
@@ -52,8 +52,8 @@ __global__ void collectphi(double* phi, double* GN,double* rho, int* Bx, int* By
 }
 */
 
-__global__ void dot(double *X, double *Y, double *Z, int M)   {
-   __shared__ double tmp[MAX_BLOCK_SZ];
+__global__ void dot(rene *X, rene *Y, rene *Z, int M)   {
+   __shared__ rene tmp[MAX_BLOCK_SZ];
    int idx = blockDim.x * blockIdx.x + threadIdx.x;
    int l_idx = threadIdx.x;
    
@@ -67,8 +67,8 @@ __global__ void dot(double *X, double *Y, double *Z, int M)   {
    if (threadIdx.x == 0) Z[threadIdx.x] = tmp[0];
 }
 
-__global__ void sum(double *X, double *Z, int M)   {
-   __shared__ double tmp[block_size];
+__global__ void sum(rene *X, rene *Z, int M)   {
+   __shared__ rene tmp[block_size];
    int idx = blockDim.x * blockIdx.x + threadIdx.x;
    int l_idx = threadIdx.x;
    
@@ -83,31 +83,31 @@ __global__ void sum(double *X, double *Z, int M)   {
 }
 
 
-__global__ void composition(double *phi, double *Gf, double *Gb, double* G1, double C, int M)   {
+__global__ void composition(rene *phi, rene *Gf, rene *Gb, rene* G1, rene C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (G1[idx]>0) phi[idx] += C*Gf[idx]*Gb[idx]/G1[idx];
 }
-__global__ void times(double *P, double *A, double *B, int M)   {
+__global__ void times(rene *P, rene *A, rene *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=A[idx]*B[idx];
 }
-__global__ void times(double *P, double *A, int *B, int M)   {
+__global__ void times(rene *P, rene *A, int *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=A[idx]*B[idx];
 }
-__global__ void addtimes(double *P, double *A, double *B, int M)   {
+__global__ void addtimes(rene *P, rene *A, rene *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx]*B[idx];
 }
-__global__ void norm(double *P, double C, int M)   {
+__global__ void norm(rene *P, rene C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] *= C;
 }
-__global__ void zero(double *P, int M)   {
+__global__ void zero(rene *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0.0;
 }
-__global__ void unity(double *P, int M)   {
+__global__ void unity(rene *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0;
 }
@@ -115,44 +115,44 @@ __global__ void zero(int *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0;
 }
-__global__ void cp (double *P, double *A, int M)   {
+__global__ void cp (rene *P, rene *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = A[idx];
 }
-__global__ void cp (double *P, int *A, int M)   {
+__global__ void cp (rene *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0*A[idx];
 }
 
-__global__ void yisaplusctimesb(double *Y, double *A,double *B, double C, int M)   {
+__global__ void yisaplusctimesb(rene *Y, rene *A,rene *B, rene C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]+ C * B[idx];
 }
-__global__ void yisaminb(double *Y, double *A,double *B, int M)   {
+__global__ void yisaminb(rene *Y, rene *A,rene *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]-B[idx];
 }
-__global__ void yisaplusc(double *Y, double *A, double C, int M)   {
+__global__ void yisaplusc(rene *Y, rene *A, rene C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]+C;
 }
-__global__ void yisaplusb(double *Y, double *A,double *B, int M)   {
+__global__ void yisaplusb(rene *Y, rene *A,rene *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]+B[idx];
 }
-__global__ void yplusisctimesx(double *Y, double *X, double C, int M)   {
+__global__ void yplusisctimesx(rene *Y, rene *X, rene C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] += C*X[idx];
 }
-__global__ void updatealpha(double *Y, double *X, double C, int M)   {
+__global__ void updatealpha(rene *Y, rene *X, rene C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] += C*(X[idx]-1.0);
 }
-__global__ void picard(double *Y, double *X, double C, int M)   {
+__global__ void picard(rene *Y, rene *X, rene C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = C*Y[idx]+(1-C)*X[idx];
 }
-__global__ void add(double *P, double *A, int M)   {
+__global__ void add(rene *P, rene *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
 }
@@ -160,11 +160,11 @@ __global__ void add(int *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
 }
-__global__ void dubble(double *P, double *A, double norm, int M)   {
+__global__ void dubble(rene *P, rene *A, rene norm, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]*=norm/A[idx];
 }
-__global__ void boltzmann(double *P, double *A, int M)   {
+__global__ void boltzmann(rene *P, rene *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=exp(-A[idx]);
 }
@@ -172,41 +172,41 @@ __global__ void invert(int *SKAM, int *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
 }
-__global__ void invert(double *SKAM, double *MASK, int M)   {
+__global__ void invert(rene *SKAM, rene *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
 }
-__global__ void putalpha(double *g,double *phitot,double *phi_side,double chi,double phibulk,int M)   {
+__global__ void putalpha(rene *g,rene *phitot,rene *phi_side,rene chi,rene phibulk,int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (phitot[idx]>0) g[idx] = g[idx] - chi*(phi_side[idx]/phitot[idx]-phibulk);
 }
-__global__ void div(double *P,double *A,int M)   {
+__global__ void div(rene *P,rene *A,int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (A[idx]>0) P[idx] /=A[idx];
 }
-__global__ void oneminusphitot(double *g, double *phitot, int M)   {
+__global__ void oneminusphitot(rene *g, rene *phitot, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) g[idx]= 1/phitot[idx]-1;
 }
-__global__ void addg(double *g, double *phitot, double *alpha, int M)    {
+__global__ void addg(rene *g, rene *phitot, rene *alpha, int M)    {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) {
 		if (phitot[idx]>0) g[idx]= g[idx] -alpha[idx] +1/phitot[idx]-1; else g[idx]=0;
 	}
 }
 
-//__global__ void computegn(double *GN, double* G, int M, int n_box)   {
+//__global__ void computegn(rene *GN, rene* G, int M, int n_box)   {
 //	int p= blockIdx.x*blockDim.x+threadIdx.x;
 //	if (p<n_box){
 //		cublasDasum(handle,M,G+p*M,1,GN+p); //in case of float we need the cublasSasum etcetera.
 //	}
 //}
 
-void TransferDataToHost(double *H, double *D, int M)    {
-	cudaMemcpy(H, D, sizeof(double)*M,cudaMemcpyDeviceToHost);
+void TransferDataToHost(rene *H, rene *D, int M)    {
+	cudaMemcpy(H, D, sizeof(rene)*M,cudaMemcpyDeviceToHost);
 }
-void TransferDataToDevice(double *H, double *D, int M)    {
-	cudaMemcpy(D, H, sizeof(double)*M,cudaMemcpyHostToDevice);
+void TransferDataToDevice(rene *H, rene *D, int M)    {
+	cudaMemcpy(D, H, sizeof(rene)*M,cudaMemcpyHostToDevice);
 }
 void TransferIntDataToHost(int *H, int *D, int M)   {
 	cudaMemcpy(H, D, sizeof(int)*M,cudaMemcpyDeviceToHost);
@@ -217,7 +217,7 @@ void TransferIntDataToDevice(int *H, int *D, int M)     {
 #endif
 
 #ifdef CUDA
-__global__ void bx(double *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+__global__ void bx(rene *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int idx, jx_mmx=jx*mmx, jx_bxm=jx*bxm, bx1_jx=bx1*jx;
 	int yi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (yi<My && zi<Mz) {
@@ -226,7 +226,7 @@ __global__ void bx(double *P, int mmx, int My, int Mz, int bx1, int bxm, int jx,
 		P[jx_mmx+idx]=P[jx_bxm+idx];
 	}
 }
-__global__ void b_x(double *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+__global__ void b_x(rene *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int idx, jx_mmx=jx*mmx;
 	int yi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (yi<My && zi<Mz) {
@@ -235,7 +235,7 @@ __global__ void b_x(double *P, int mmx, int My, int Mz, int bx1, int bxm, int jx
 		P[jx_mmx+idx]=0;
 	}
 }
-__global__ void by(double *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+__global__ void by(rene *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 	int idx, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	int xi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && zi<Mz) {
@@ -244,7 +244,7 @@ __global__ void by(double *P, int Mx, int mmy, int Mz, int by1, int bym, int jx,
 		P[jy_mmy+idx]=P[jy_bym+idx];
 	}
 }
-__global__ void b_y(double *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+__global__ void b_y(rene *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 	int idx, jy_mmy=jy*mmy;
 	int xi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && zi<Mz) {
@@ -253,7 +253,7 @@ __global__ void b_y(double *P, int Mx, int mmy, int Mz, int by1, int bym, int jx
 		P[jy_mmy+idx]=0;
 	}
 }
-__global__ void bz(double *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+__global__ void bz(rene *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && yi<My) {
 		idx=jx*xi+jy*yi;
@@ -261,7 +261,7 @@ __global__ void bz(double *P, int Mx, int My, int mmz, int bz1, int bzm, int jx,
 		P[idx+mmz]=P[idx+bzm];
 	}
 }
-__global__ void b_z(double *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+__global__ void b_z(rene *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && yi<My) {
 		idx=jx*xi+jy*yi;
@@ -322,7 +322,7 @@ __global__ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, i
 	}
 }
 #else
-void bx(double *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+void bx(rene *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int i;
 	int jx_mmx=jx*mmx;
 	int jx_bxm=jx*bxm;
@@ -334,7 +334,7 @@ void bx(double *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   
 		P[jx_mmx+i]=P[jx_bxm+i];
 	}
 }
-void b_x(double *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+void b_x(rene *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int i, jx_mmx=jx*mmx;// jx_bxm=jx*bxm, bx1_jx=bx1*jx;
 	for (int y=0; y<My; y++)
 	for (int z=0; z<Mz; z++){
@@ -343,7 +343,7 @@ void b_x(double *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)  
 		P[jx_mmx+i]=0;
 	}
 }
-void by(double *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+void by(rene *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 	int i, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	for (int x=0; x<Mx; x++)
 	for (int z=0; z<Mz; z++) {
@@ -352,7 +352,7 @@ void by(double *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   
 		P[jy_mmy+i]=P[jy_bym+i];
 	}
 }
-void b_y(double *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+void b_y(rene *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 	int i, jy_mmy=jy*mmy;// jy_bym=jy*bym, jy_by1=jy*by1;
 	for (int x=0; x<Mx; x++)
 	for (int z=0; z<Mz; z++) {
@@ -361,7 +361,7 @@ void b_y(double *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)  
 		P[jy_mmy+i]=0;
 	}
 }
-void bz(double *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+void bz(rene *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 	int i;
 	for (int x=0; x<Mx; x++)
 	for (int y=0; y<My; y++) {
@@ -370,7 +370,7 @@ void bz(double *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   
 		P[i+mmz]=P[i+bzm];
 	}
 }
-void b_z(double *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+void b_z(rene *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 	int i;
 	for (int x=0; x<Mx; x++)
 	for (int y=0; y<My; y++) {
@@ -459,9 +459,9 @@ bool GPU_present()    {
 
 
 #ifdef CUDA
-double *AllOnDev(int N)    {
-	double *X;
-	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(double)*N))
+rene *AllOnDev(int N)    {
+	rene *X;
+	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(rene)*N))
 	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
 	return X;
 }
@@ -472,8 +472,8 @@ int *AllIntOnDev(int N)    {
 	return X;
 }
 #else
-double *AllOnDev(int N)    {
-	double *X=NULL;
+rene *AllOnDev(int N)    {
+	rene *X=NULL;
 	printf("Turn on CUDA\n");
 	return X;
 }
@@ -485,10 +485,10 @@ int *AllIntOnDev(int N)    {
 #endif
 
 #ifdef CUDA
-void Dot(double &result, double *x,double *y, int M)   {
+void Dot(rene &result, rene *x,rene *y, int M)   {
 /**/
-	double *H_XXX=(double*) malloc(M*sizeof(double)); 
-	double *H_YYY=(double*) malloc(M*sizeof(double)); 
+	rene *H_XXX=(rene*) malloc(M*sizeof(rene)); 
+	rene *H_YYY=(rene*) malloc(M*sizeof(rene)); 
 	TransferDataToHost(H_XXX, x, M);
 	TransferDataToHost(H_YYY, y, M);
 	result=H_Dot(H_XXX,H_YYY,M);
@@ -498,9 +498,9 @@ void Dot(double &result, double *x,double *y, int M)   {
 
 
 /*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	double *D_XX=AllOnDev(n_blocks);
+	rene *D_XX=AllOnDev(n_blocks);
 	Zero(D_XX,n_blocks);
-	double *H_XX=(double*) malloc(n_blocks*sizeof(double)); 
+	rene *H_XX=(rene*) malloc(n_blocks*sizeof(rene)); 
 	dot<<<n_blocks,block_size>>>(x,y,D_XX,M);
 	cudaThreadSynchronize();
 	TransferDataToHost(H_XX, D_XX, n_blocks);
@@ -511,17 +511,17 @@ void Dot(double &result, double *x,double *y, int M)   {
 */
 }
 #else
-void Dot(double &result, double *x,double *y, int M)   {
+void Dot(rene &result, rene *x,rene *y, int M)   {
 	result=0.0;
  	for (int i=0; i<M; i++) result +=x[i]*y[i];
 }
 #endif
 
 #ifdef CUDA
-void Sum(double &result, double *x, int M)   {
+void Sum(rene &result, rene *x, int M)   {
 
 /**/	
-	double *H_XXX=(double*) malloc(M*sizeof(double)); 
+	rene *H_XXX=(rene*) malloc(M*sizeof(rene)); 
 	TransferDataToHost(H_XXX, x, M);
 	result=H_Sum(H_XXX,M);
 	if (debug) cout <<"Host sum =" << result << endl;	
@@ -530,9 +530,9 @@ void Sum(double &result, double *x, int M)   {
 /**/
 
 /*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	double *D_XX=AllOnDev(n_blocks);
+	rene *D_XX=AllOnDev(n_blocks);
 	Zero(D_XX,n_blocks); 
-	double *H_XX=(double*) malloc(n_blocks*sizeof(double)); 
+	rene *H_XX=(rene*) malloc(n_blocks*sizeof(rene)); 
 	sum<<<n_blocks,block_size>>>(x,D_XX,M);
 	cudaThreadSynchronize();
 	TransferDataToHost(H_XX, D_XX,n_blocks);
@@ -545,7 +545,7 @@ void Sum(double &result, double *x, int M)   {
 */
 }
 #else
-void Sum(double &result, double *x,int M)   {
+void Sum(rene &result, rene *x,int M)   {
 if (debug) cout <<"Sum in absence of cuda" << endl; 
 	result=0;
  	for (int i=0; i<M; i++) result +=x[i];
@@ -553,84 +553,84 @@ if (debug) cout <<"Sum in absence of cuda" << endl;
 #endif
 
 #ifdef CUDA
-void AddTimes(double *P, double *A, double *B, int M)   {
+void AddTimes(rene *P, rene *A, rene *B, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	addtimes<<<n_blocks,block_size>>>(P,A,B,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at AddTimes"<<endl;}
 }
 #else
-void AddTimes(double *P, double *A, double *B, int M)   {
+void AddTimes(rene *P, rene *A, rene *B, int M)   {
 	for (int i=0; i<M; i++) P[i]+=A[i]*B[i];
 }
 #endif
 
 #ifdef CUDA
-void Times(double *P, double *A, double *B, int M)   {
+void Times(rene *P, rene *A, rene *B, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	times<<<n_blocks,block_size>>>(P,A,B,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Times"<<endl;}
 }
 #else
-void Times(double *P, double *A, double *B, int M)   {
+void Times(rene *P, rene *A, rene *B, int M)   {
 	for (int i=0; i<M; i++) P[i]=A[i]*B[i];
 }
 #endif
 #ifdef CUDA
-void Times(double *P, double *A, int *B, int M)   {
+void Times(rene *P, rene *A, int *B, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	times<<<n_blocks,block_size>>>(P,A,B,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Times"<<endl;}
 }
 #else
-void Times(double *P, double *A, int *B, int M)   {
+void Times(rene *P, rene *A, int *B, int M)   {
 	for (int i=0; i<M; i++) P[i]=A[i]*B[i];
 }
 #endif
 
 #ifdef CUDA
-void Norm(double *P, double C, int M)   {
+void Norm(rene *P, rene C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	norm<<<n_blocks,block_size>>>(P,C,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Norm"<<endl;}
 }
 #else
-void Norm(double *P, double C, int M)   {
+void Norm(rene *P, rene C, int M)   {
 	for (int i=0; i<M; i++) P[i] *= C;
 }
 #endif
 
 #ifdef CUDA
-void Composition(double *phi, double *Gf, double *Gb, double* G1, double C, int M)   {
+void Composition(rene *phi, rene *Gf, rene *Gb, rene* G1, rene C, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	composition<<<n_blocks,block_size>>>(phi,Gf,Gb,G1,C,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Zero"<<endl;}
 }
 #else
-void Composition(double *phi, double *Gf, double *Gb, double* G1, double C, int M)   {
+void Composition(rene *phi, rene *Gf, rene *Gb, rene* G1, rene C, int M)   {
 	for (int i=0; i<M; i++) if (G1[i]>0) phi[i]+=C*Gf[i]*Gb[i]/G1[i];
 }
 #endif
 
 #ifdef CUDA
-void Unity(double* P, int M)   {
+void Unity(rene* P, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	unity<<<n_blocks,block_size>>>(P,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Zero"<<endl;}
 }
 #else
-void Unity(double* P, int M)   {
+void Unity(rene* P, int M)   {
 	for (int i=0; i<M; i++) P[i] =1.0;
 }
 #endif
 
 #ifdef CUDA
-void Zero(double* P, int M)   {
+void Zero(rene* P, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	zero<<<n_blocks,block_size>>>(P,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Zero"<<endl;}
 }
 #else
-void Zero(double* P, int M)   {
+void Zero(rene* P, int M)   {
 	for (int i=0; i<M; i++) P[i] =0.0;
 }
 #endif
@@ -648,118 +648,118 @@ void Zero(int* P, int M)   {
 #endif
 
 #ifdef CUDA
-void Cp(double *P,double *A, int M)   {
+void Cp(rene *P,rene *A, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	cp<<<n_blocks,block_size>>>(P,A,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Cp"<<endl;}
 }
 #else
-void Cp(double *P,double *A, int M)   {
+void Cp(rene *P,rene *A, int M)   {
 	for (int i=0; i<M; i++) P[i] = A[i];
 }
 #endif
 
 #ifdef CUDA
-void Cp(double *P,int *A, int M)   {
+void Cp(rene *P,int *A, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	cp<<<n_blocks,block_size>>>(P,A,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Cp"<<endl;}
 }
 #else
-void Cp(double *P,int *A, int M)   {
+void Cp(rene *P,int *A, int M)   {
 	for (int i=0; i<M; i++) P[i] = 1.0*A[i];
 }
 #endif
 
 #ifdef CUDA
-void YisAminB(double *Y, double *A, double *B, int M)   {
+void YisAminB(rene *Y, rene *A, rene *B, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	yisaminb<<<n_blocks,block_size>>>(Y,A,B,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at YisAminB"<<endl;}
 }
 #else
-  void YisAminB(double *Y, double *A, double *B, int M)   {
+  void YisAminB(rene *Y, rene *A, rene *B, int M)   {
 	for (int i=0; i<M; i++) Y[i] = A[i]-B[i];
 }
 #endif
 #ifdef CUDA
-void YisAplusC(double *Y, double *A, double C, int M)   {
+void YisAplusC(rene *Y, rene *A, rene C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	yisaplusc<<<n_blocks,block_size>>>(Y,A,C,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at YisAplusC"<<endl;}
 }
 #else
-void YisAplusC(double *Y, double *A, double C, int M)   {
+void YisAplusC(rene *Y, rene *A, rene C, int M)   {
 	for (int i=0; i<M; i++) Y[i] = A[i]+C;
 }
 #endif
 #ifdef CUDA
-void YisAplusB(double *Y, double *A, double *B, int M)   {
+void YisAplusB(rene *Y, rene *A, rene *B, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	yisaplusb<<<n_blocks,block_size>>>(Y,A,B,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at YisAplusB"<<endl;}
 }
 #else
-void YisAplusB(double *Y, double *A, double *B, int M)   {
+void YisAplusB(rene *Y, rene *A, rene *B, int M)   {
 	for (int i=0; i<M; i++) Y[i] = A[i]+B[i];
 }
 #endif
 
 #ifdef CUDA
-void YplusisCtimesX(double *Y, double *X, double C, int M)   {
+void YplusisCtimesX(rene *Y, rene *X, rene C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	yplusisctimesx<<<n_blocks,block_size>>>(Y,X,C,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Uplusisctimesx"<<endl;}
 }
 #else
-void YplusisCtimesX(double *Y, double *X, double C, int M)    {
+void YplusisCtimesX(rene *Y, rene *X, rene C, int M)    {
 	for (int i=0; i<M; i++) Y[i] += C*X[i];
 }
 #endif
 
 #ifdef CUDA
-void YisAplusCtimesB(double *Y, double *A, double*B, double C, int M)   {
+void YisAplusCtimesB(rene *Y, rene *A, rene*B, rene C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	yisaplusctimesb<<<n_blocks,block_size>>>(Y,A,B,C,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Uplusisctimesx"<<endl;}
 }
 #else
-void YisAplusCtimesB(double *Y, double *A, double*B, double C, int M)   {
+void YisAplusCtimesB(rene *Y, rene *A, rene*B, rene C, int M)   {
 	for (int i=0; i<M; i++) Y[i]=A[i]+C*B[i];
 }
 #endif
 
 #ifdef CUDA
-void UpdateAlpha(double *Y, double *X, double C, int M)   {
+void UpdateAlpha(rene *Y, rene *X, rene C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	updatealpha<<<n_blocks,block_size>>>(Y,X,C,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at UpdateAlpha"<<endl;}
 }
 #else
-void UpdateAlpha(double *Y, double *X, double C, int M)    {
+void UpdateAlpha(rene *Y, rene *X, rene C, int M)    {
 	for (int i=0; i<M; i++) Y[i] += C*(X[i]-1.0);
 }
 #endif
 #ifdef CUDA
-  void Picard(double *Y, double *X, double C, int M)   {
+  void Picard(rene *Y, rene *X, rene C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	picard<<<n_blocks,block_size>>>(Y,X,C,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Picard"<<endl;}
 }
 #else
-void Picard(double *Y, double *X, double C, int M)    {
+void Picard(rene *Y, rene *X, rene C, int M)    {
 	for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
 }
 #endif
 
 #ifdef CUDA
-void Add(double *P, double *A, int M)    {
+void Add(rene *P, rene *A, int M)    {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	add<<<n_blocks,block_size>>>(P,A,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Add"<<endl;}
 }
 #else
-void Add(double *P, double *A, int M)   {
+void Add(rene *P, rene *A, int M)   {
 	for (int i=0; i<M; i++) P[i]+=A[i];
 }
 #endif
@@ -776,36 +776,36 @@ void Add(int *P, int *A, int M)   {
 #endif
 
 #ifdef CUDA
-void Dubble(double *P, double *A, double norm,int M)   {
+void Dubble(rene *P, rene *A, rene norm,int M)   {
        int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	dubble<<<n_blocks,block_size>>>(P,A,norm,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Dubble"<<endl;}
 }
 #else
-void Dubble(double *P, double *A, double norm,int M)   {
+void Dubble(rene *P, rene *A, rene norm,int M)   {
 	for (int i=0; i<M; i++) P[i]*=norm/A[i];
 }
 #endif
 
 #ifdef CUDA
-void Boltzmann(double *P, double *A, int M)   {
+void Boltzmann(rene *P, rene *A, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	boltzmann<<<n_blocks,block_size>>>(P,A,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Boltzmann"<<endl;}
 }
 #else
-void Boltzmann(double *P, double *A, int M)   {
+void Boltzmann(rene *P, rene *A, int M)   {
 	for (int i=0; i<M; i++) P[i]=exp(-A[i]);
 }
 #endif
 #ifdef CUDA
-void Invert(double *KSAM, double *MASK, int M)   {
+void Invert(rene *KSAM, rene *MASK, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	invert<<<n_blocks,block_size>>>(KSAM,MASK,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Invert"<<endl;}
 }
 #else
-void Invert(double *KSAM, double *MASK, int M)   {
+void Invert(rene *KSAM, rene *MASK, int M)   {
 	for (int i=0; i<M; i++) {if (MASK[i]==0) KSAM[i]=1.0; else KSAM[i]=0.0;}
 }
 #endif
@@ -822,60 +822,60 @@ void Invert(int *KSAM, int *MASK, int M)   {
 #endif
 
 #ifdef CUDA
-void PutAlpha(double *g, double *phitot, double *phi_side, double chi, double phibulk, int M)   {
+void PutAlpha(rene *g, rene *phitot, rene *phi_side, rene chi, rene phibulk, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	putalpha<<<n_blocks,block_size>>>(g,phitot,phi_side,chi,phibulk,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at PutAlpha"<<endl;}
 }
 #else
-void PutAlpha(double *g, double *phitot, double *phi_side, double chi, double phibulk, int M)   {
+void PutAlpha(rene *g, rene *phitot, rene *phi_side, rene chi, rene phibulk, int M)   {
 	for (int i=0; i<M; i++) if (phitot[i]>0) g[i] = g[i] - chi*(phi_side[i]/phitot[i]-phibulk);
 }
 #endif
 
 #ifdef CUDA
-void Div(double *P, double *A, int M)   {
+void Div(rene *P, rene *A, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	div<<<n_blocks,block_size>>>(P,A,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at AddDiv"<<endl;}
 }
 #else
-void Div(double *P, double *A, int M)   {
+void Div(rene *P, rene *A, int M)   {
 	for (int i=0; i<M; i++) if (A[i]!=0) P[i]/=A[i]; else P[i]=0;
 }
 #endif
 
 #ifdef CUDA
-void AddG(double *g, double *phitot, double *alpha, int M)   {
+void AddG(rene *g, rene *phitot, rene *alpha, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	addg<<<n_blocks,block_size>>>(g,phitot,alpha,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at AddG"<<endl;}
 }
 #else
-void AddG(double *g, double *phitot, double *alpha, int M)   {
+void AddG(rene *g, rene *phitot, rene *alpha, int M)   {
 	for (int i=0; i<M; i++) if (phitot[i]>0)  g[i]= g[i] -alpha[i] +1/phitot[i]-1.0; else g[i]=0;
 }
 #endif
 
 #ifdef CUDA
-void OneMinusPhitot(double *g, double *phitot, int M)   {
+void OneMinusPhitot(rene *g, rene *phitot, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	oneminusphitot<<<n_blocks,block_size>>>(g,phitot,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at OneMinusPhitot"<<endl;}
 }
 #else
-void OneMinusPhitot(double *g, double *phitot, int M)   {
+void OneMinusPhitot(rene *g, rene *phitot, int M)   {
 	for (int i=0; i<M; i++) g[i]= 1/phitot[i]-1;
 }
 #endif
 
 //#ifdef CUDA
-//void ComputeGN(double *GN, double *G, int M, int n_box)   {
+//void ComputeGN(rene *GN, rene *G, int M, int n_box)   {
 //	int n_blocks=(n_box)/block_size + ((n_box)%block_size == 0 ? 0:1);
 //	computegn<<<n_blocks,block_size>>>(GN,G,M,n_box);
 //}
 //#else
-//void ComputeGN(double* GN, double* G, int M, int n_box)    {
+//void ComputeGN(rene* GN, rene* G, int M, int n_box)    {
 //	for (int p=0; p<n_box; p++) GN[p]=Sum(G+p*M,M); 
 //}
 //#endif
@@ -883,20 +883,20 @@ void OneMinusPhitot(double *g, double *phitot, int M)   {
 void H_Zero(float* H_P, int M)   {//this precedure should act on a host P.
 	for (int i=0; i<M; i++) H_P[i] = 0;
 }
-void H_Zero(double* H_P, int M)   {//this precedure should act on a host P.
+void H_Zero(rene* H_P, int M)   {//this precedure should act on a host P.
 	for (int i=0; i<M; i++) H_P[i] = 0;
 }
 void H_Zero(int* H_P, int M)   {//this precedure should act on a host P.
 	for (int i=0; i<M; i++) H_P[i] = 0;
 }
 
-double H_Sum(double* H, int M){
-	double Sum=0;
+rene H_Sum(rene* H, int M){
+	rene Sum=0;
 	for (int i=0; i<M; i++) Sum+=H[i];
 	return Sum;
 }
-double H_Dot(double* A, double *B, int M){
-	double Sum=0;
+rene H_Dot(rene* A, rene *B, int M){
+	rene Sum=0;
 	for (int i=0; i<M; i++) Sum+=A[i]*B[i];
 	return Sum;
 }
@@ -906,7 +906,7 @@ void H_Invert(int* KSAM, int *MASK, int M)   { //only necessary on CPU
 }
 
 #ifdef CUDA
-void SetBoundaries(double *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
+void SetBoundaries(rene *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
 	dim3 dimBlock(16,16);
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
@@ -917,7 +917,7 @@ void SetBoundaries(double *P, int jx, int jy, int bx1, int bxm, int by1, int bym
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at SetBoundaries"<<endl;}
 }
 #else
-void SetBoundaries(double *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)    {
+void SetBoundaries(rene *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)    {
 	bx(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
 	by(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
 	bz(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
@@ -944,7 +944,7 @@ void SetBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym, i
 
 
 #ifdef CUDA
-void RemoveBoundaries(double *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
+void RemoveBoundaries(rene *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
 	dim3 dimBlock(16,16);
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
@@ -955,7 +955,7 @@ void RemoveBoundaries(double *P, int jx, int jy, int bx1, int bxm, int by1, int 
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at RemoveBoundaries"<<endl;}
 }
 #else
-void RemoveBoundaries(double *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)    {
+void RemoveBoundaries(rene *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)    {
 	b_x(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
 	b_y(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
 	b_z(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
@@ -982,19 +982,19 @@ void RemoveBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym
 
 #define MAX_ITER 100
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-static double maxarg1,maxarg2;
+static rene maxarg1,maxarg2;
 #define FMAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
         (maxarg1) : (maxarg2))
 static int iminarg1,iminarg2;
 #define IMIN(a,b) (iminarg1=(a),iminarg2=(b),(iminarg1) < (iminarg2) ?\
         (iminarg1) : (iminarg2))
-static double sqrarg;
+static rene sqrarg;
 #define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
 
-double pythag(double a, double b)
+rene pythag(rene a, rene b)
 //Computes (a 2 + b 2 ) 1/2 without destructive underflow or overflow.
 {
-    double absa,absb;
+    rene absa,absb;
     absa=fabs(a);
     absb=fabs(b);
     if (absa > absb) return absa*sqrt(1.0+SQR(absb/absa));
@@ -1002,18 +1002,18 @@ double pythag(double a, double b)
 }
 
 
-void svdcmp(double **a, int m, int n, double *w, double **v)
+void svdcmp(rene **a, int m, int n, rene *w, rene **v)
 /**Given a matrix a[1..m][1..n] , this routine computes its singular value decomposition, A =
 U ·W ·V T . The matrix U replaces a on output. The diagonal matrix of singular values W is out-
 put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1..n][1..n] .
 */
 {
-    //double pythag(double a, double b);
+    //rene pythag(rene a, rene b);
     
     int flag,i,its,j,jj,k,l,nm;
-    double anorm,c,f,g,h,s,scale,x,y,z,*rv1;
+    rene anorm,c,f,g,h,s,scale,x,y,z,*rv1;
   
-    rv1 = new double[n+1]; //vector(1,n);
+    rv1 = new rene[n+1]; //vector(1,n);
     
     g=scale=anorm=0.0;
     //Householder reduction to bidiagonal form.
@@ -1103,11 +1103,11 @@ put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1
             flag=1; //Test for splitting.
             for (l=k;l>=1;l--) {
                 nm=l-1; //Note that rv1[1] is always zero.
-                if ((double)(fabs(rv1[l])+anorm) == anorm) {
+                if ((rene)(fabs(rv1[l])+anorm) == anorm) {
                     flag=0;
                     break;
                 }
-                if ((double)(fabs(w[nm])+anorm) == anorm) break;
+                if ((rene)(fabs(w[nm])+anorm) == anorm) break;
             }
             if (flag) {
                 c=0.0; //Cancellation of rv1[l], if l > 1.
@@ -1115,7 +1115,7 @@ put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1
                 for (i=l;i<=k;i++) {
                     f=s*rv1[i];
                     rv1[i]=c*rv1[i];
-                    if ((double)(fabs(f)+anorm) == anorm) break;
+                    if ((rene)(fabs(f)+anorm) == anorm) break;
                     g=w[i];
                     h=pythag(f,g);
                     w[i]=h;

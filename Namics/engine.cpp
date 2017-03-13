@@ -348,7 +348,6 @@ bool Engine::VarMon(int sub){
 
 bool Engine::Search(int id){
 	bool success=true; int m=id;
-	cout << "inside the search routine before loading" << endl;
 	success = In[0]->LoadItems(brand,VAR_key,VAR_param,VAR_val);
 	Real value = In[0]->Get_Real(VAR_val[1],10*Lat[0]->volume);
 	Real tolerance = pow(10.0 ,-3.0);

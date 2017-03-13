@@ -44,7 +44,7 @@ bool Engine::CheckInput(int start) {
 		if(brand=="var"){
 		success = In[0]->LoadItems(brand, VAR_key, VAR_param, VAR_val);
 		vector<string> varkeys;
-		varkeys.push_back("mol"); varkeys.push_back("sys"); varkeys.push_back("mon");
+		varkeys.push_back("mol"); varkeys.push_back("lat"); varkeys.push_back("mon"); varkeys.push_back("alias");
 		int keylength = VAR_key.size();
 		for(int i=0; i<keylength-1; i++) {
 			if(VAR_key[i+1] != VAR_key[i]){
@@ -97,9 +97,23 @@ bool Engine::CheckInput(int start) {
 // Checks should be implemented to notify unreasonable values given as starting and ending values.
 // Omitted right now. And the code doesn't check them.
 			}
-            			if (VAR_key[0] == "sys") {
+            		if (VAR_key[0] == "lat") {
                         vector<string> var_param;
-                        var_param.push_back("null"); 
+			switch (Lat[0]->gradients){
+				case 1:
+					var_param.push_back("n_layers");
+					break;
+				case 2:
+					var_param.push_back("n_layers_x");
+					var_param.push_back("n_layers_y");
+					break;
+
+				case 3:
+					var_param.push_back("n_layers_x");
+					var_param.push_back("n_layers_y");
+					var_param.push_back("n_layers_z");
+					break;
+			}
                         bool parameterfound=false; int paramlength = var_param.size();
                                 for(int i=0; i<paramlength; i++){
                                         if(VAR_val[0] == var_param[i]) { parameterfound=true; break;
@@ -261,8 +275,9 @@ bool Engine::Doit(int sub){
 		if (success) {
                         int i=sub;
 			New[0]->AllocateMemory();
-                        if(VAR_key[0]=="mol") success=VarMol(i); 
+                        if(VAR_key[0]=="lat") success=VarLat(i); 
 			if(VAR_key[0]=="mon") success=VarMon(i);
+			if(VAR_key[0]=="mol") success=VarMol(i);
 			if(!success) {cout << "failure" <<endl; return 0;}
 	                New[0]->Solve(); i++; 
                 } else {
@@ -346,7 +361,45 @@ bool Engine::VarMon(int sub){
                 success=false;
                 }j++;
         }
-	for(int r=0; r<nseg; r++) for(int s=0; s<nseg; s++) cout<< r*nseg+s <<" : " <<Sys[0]->CHI[r*nseg+s] << endl;
+        return success;
+}
+
+
+bool Engine::VarLat(int sub){
+        bool success = true;
+        int i=sub; 	
+        Real start = In[0]->Get_Real(VAR_val[1],10*Lat[0]->volume);
+        Real step = In[0]->Get_Real(VAR_val[3],10*Lat[0]->volume);
+	if(Lat[0]->name!=VAR_param[0]) {
+		success=false; return 0;
+	} else {
+		switch(Lat[0]->gradients){
+			case 1:
+				Lat[0]->MX=start+i*step;
+				Lat[0]->AllocateMemory();
+				New[0]->AllocateMemory();
+				New[0]->Guess();
+				break;
+			case 2:
+				
+				Lat[0]->Mx=start+i*step;
+				Lat[0]->AllocateMemory();
+				New[0]->AllocateMemory();
+				New[0]->Guess();
+				break;
+
+			case 3: 
+				Lat[0]->Mx=start+i*step;
+				Lat[0]->AllocateMemory();
+				New[0]->AllocateMemory();
+				New[0]->Guess();
+				break;
+
+			default :
+
+				break;
+		}
+	}
         return success;
 }
 

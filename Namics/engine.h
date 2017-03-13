@@ -49,6 +49,7 @@ public:
 	bool Doit(int); 
 	bool VarMol(int);
 	bool VarMon(int);
+	bool VarLat(int);
 	bool Search(int);
 };
 #endif

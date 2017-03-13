@@ -91,8 +91,8 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 bool Lattice::PutM() {
 	bool success=true;
 	switch(gradients) {
-		case 1: 
-			JX=1; JY=0; M=MX+2; 
+		case 1:
+			JX=1; JY=0; M=MX+2;
 			if (geometry=="cylindrical") {
 				volume = PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));
 			} else if (geometry=="spherical") { 

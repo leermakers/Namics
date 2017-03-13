@@ -97,7 +97,7 @@ bool Engine::CheckInput(int start) {
 // Checks should be implemented to notify unreasonable values given as starting and ending values.
 // Omitted right now. And the code doesn't check them.
 			}
-                        if (VAR_key[0] == "sys") {
+            			if (VAR_key[0] == "sys") {
                         vector<string> var_param;
                         var_param.push_back("null"); 
                         bool parameterfound=false; int paramlength = var_param.size();
@@ -116,11 +116,11 @@ bool Engine::CheckInput(int start) {
                         }
                         if (VAR_key[0] == "mon") {
                         vector<string> var_param;
-			int n_seg = In[0]->MonList.size();
+						int n_seg = In[0]->MonList.size();
 			
-			for (int i=0; i<n_seg; i++) {
+						for (int i=0; i<n_seg; i++) {
                         	var_param.push_back("chi-"+Seg[i]->name);
-			}
+						}
  
                         bool parameterfound=false; int paramlength = var_param.size();
                                 for(int i=0; i<paramlength; i++){
@@ -135,8 +135,7 @@ bool Engine::CheckInput(int start) {
                                                 success=false;
                                         }
                                 }
-                        }
-			
+                        }	
 		}
 
 	}

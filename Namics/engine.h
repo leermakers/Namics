@@ -49,6 +49,6 @@ public:
 	bool Doit(int); 
 	bool VarMol(int);
 	bool VarMon(int);
-	bool search(void);
+	bool Search(int);
 };
 #endif

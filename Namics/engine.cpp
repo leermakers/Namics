@@ -25,7 +25,21 @@ bool Engine::CheckInput(int start) {
 		options.push_back("sfbox"); options.push_back("var"); options.push_back("search");
 		if (GetValue("brand").size()>0) {
                         if (!In[0]->Get_string(GetValue("brand"),brand,options,"In engine " + name + " value of brand " + brand + " is not recognised"));
-		} else brand="sfbox"; 
+		} else brand="sfbox";
+		
+		if(brand=="search"){
+			success=In[0]->LoadItems(brand,VAR_key,VAR_param,VAR_val);	
+			int nmol=In[0]->MolList.size(); bool molfound=false;
+			for(int j=0; j<nmol; j++) {
+				if(VAR_key[0]=="mol" && VAR_param[0]==In[0]->MolList[j]) {
+					cout << "For brand 'search', search will be performed over '"+VAR_param[0]+"'. "+VAR_val[0]+" will be modified."<< endl;	
+					molfound=true; 
+				}
+			}
+			if(VAR_key[0]=="mol" && !molfound) {cout << "Error. Search undefined. Execution stopped." << endl; success=false; return 0;}
+			if(VAR_key[1]=="mol" && VAR_param[1]!="phibulk") {cout << "Target for 'mol' can only be 'phibulk'."<< endl; success=false;}
+			if(VAR_key[1]=="sys" && VAR_param[1]!="GrandPotential") {cout << "Target for 'sys' can only be 'GrandPotential as of now." << endl; success=false;}
+		}
 	}
 	return success; 
 }
@@ -122,6 +136,7 @@ int Engine::SubProblemNum(){
 	bool success = true;
 	bool varkeyfound = false;
 	int len = 0;
+
 	if(brand=="var"){
 		success = In[0]->LoadItems(brand, VAR_key, VAR_param, VAR_val);
 		vector<string> varkeys;
@@ -250,7 +265,25 @@ bool Engine::Doit(int sub){
                 cout << "There is a problem in loading the 'var' parameters" << endl;  return 0;
                 }
 
-	} else  {
+	} else if (brand == "search") {
+		//search just searches, doesn't print output anything during loops. 
+		//search procedure is called n times until success, if n exceeds 2000 problem is stopped.
+		int searchlimit=2000; int i=0; 
+		success = In[0]->LoadItems(brand,VAR_key,VAR_param,VAR_val);
+		int nmol=In[0]->MolList.size();int id=0;
+		for(int i=0; i<nmol; i++){if(VAR_param[0]==In[0]->MolList[i]) {id=i;}}
+		New[0]->AllocateMemory();
+		while (i<searchlimit) {
+			if(VAR_param[1]=="GrandPotential"){
+				success=Search(id);
+				if(success) {cout << "search is successfull" << endl; break;}
+			} else if (VAR_param[1]=="phibulk"){
+				//To be implemented when necessary.
+			}
+			i++;
+		}
+
+	} else {
 		cout <<"Sorry to date only 'sfbox' & 'var' only are implemented.." << endl; return 0; 
 	}
 	return success;
@@ -313,10 +346,31 @@ bool Engine::VarMon(int sub){
         return success;
 }
 
-bool Engine::search(){
-	bool success=true;
+bool Engine::Search(int id){
+	bool success=true; int m=id;
+	cout << "inside the search routine before loading" << endl;
+	success = In[0]->LoadItems(brand,VAR_key,VAR_param,VAR_val);
+	Real value = In[0]->Get_Real(VAR_val[1],10*Lat[0]->volume);
+	Real tolerance = pow(10.0 ,-3.0);
+	Real ll=value-tolerance; Real ul=value+tolerance;
+	New[0]->Guess(); New[0]->Solve();
+	Real lower; Real upper; Real mean;
+	if(Sys[0]->GrandPotential < ll || Sys[0]->GrandPotential > ul) {
+		Mol[m]->theta=Mol[m]->theta+0.1*Mol[m]->theta;	
+		Mol[m]->n=Mol[m]->theta/Mol[m]->chainlength;
+		cout << Sys[0]->GrandPotential << " : " << Mol[m]->theta << endl;
+		success=false;
+	} else {
+		lower=Mol[m]->theta; upper=Mol[m]->theta+0.1*Mol[m]->theta;
+		for(int i=0; i<100; i++){
+			mean=(upper+lower)/2.0;Mol[m]->theta=mean;Mol[m]->n=Mol[m]->theta/Mol[m]->chainlength;
+			New[0]->Guess(); New[0]->Solve();
+			if(Sys[0]->GrandPotential > value) lower=mean; else upper=mean;
+		}
+		success=true;
+	}
 	
-	return success;
+return success;
 }
 
 /*

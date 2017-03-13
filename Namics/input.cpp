@@ -396,14 +396,14 @@ if (debug) cout <<"LoadItems in Input " << endl;
 					switch (j-1) {
 						case 0:
 							if (set[3]=="*") set[3]=SysList[0];
-							if (set[1]=="var") name_found=true;
-							if (SysList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl; 
+							if (set[1]=="var" || set[1]=="search") name_found=true;
+							if (SysList[0]!=set[3] && !name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl; 
 								PrintList(SysList); name_found=false;} 
 							break;
 						case 1:
 							name_found=false;
 							if (set[3]=="*") { name_found = true; wild_mollist=true;}
-							if (set[1]=="var") name_found=true;
+							if (set[1]=="var" || set[1]=="search") name_found=true;
 							k=0; name_length=MolList.size();  
 							while (k<name_length && !name_found) {
 								if (MolList[k]==set[3]) name_found=true; 
@@ -574,17 +574,21 @@ bool Input:: CheckInput(void) {
 
                 }
 
-		if (set[1]=="search"){
+/*		if (set[1]=="search"){
 			vector<string> options;
 			options.push_back("sys"); options.push_back("mol");
 			string option;
 			if (!Get_string(set[2],option,options, "Cannot search in ' " +set[2]+"'. Choose from options.")) {success=false;}
 			else { 
-				if (set[2]==options[0]) {if (set[3]!="grandpotential") {cout << "In 'sys' I can only search for grandpotential and not '"+set[3]+"'. Execution stopped." << endl; success=false; return 0;} }
-				else if (set[2]==options[1]){if(set[3]!="phibulk"){cout << "In 'mol' I can only serach for 'phibulk' and not '"+set[3]+"'. Executions stopped." << endl; success=false; return 0;}}
+				cout << "checking input" << endl; 
+				key_length=MolList.size(); bool molfound=false;
+				cout << key_length << endl;
+				for (int j=0; j<key_length; j++) {cout << set[3]<<":" <<MolList[j] << endl; if(set[3]==MolList[j]) {cout << "Molecule '"+MolList[j]+"' value of '"+set[4]+"' will be searched to find target" << endl; molfound=true;}}
+				if (set[2]==options[0] && !molfound) {cout << "check1" << endl; if (set[3]!="GrandPotential") {cout << "In 'sys' I can only search for GrandPotential(case sensitive) and not '"+set[3]+"'. Execution stopped." << endl; success=false; return 0;} }
+				else if (set[2]==options[1] && !molfound){if(set[3]!="phibulk"){cout << "In 'mol' I can only serach for 'phibulk' and not '"+set[3]+"'. Executions stopped." << endl; success=false; return 0;}}
 			}
 		}
-
+*/
 
 
 		i++;

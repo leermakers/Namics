@@ -11,7 +11,12 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("n");
 	KEYS.push_back("save_memory"); 
 }
+
 Molecule::~Molecule() {
+	DeAllocateMemory();
+}
+
+void Molecule :: DeAllocateMemory(){
 if (debug) cout <<"Destructor for Mol " + name << endl;
 	free(H_phi);
 	free(H_phitot);

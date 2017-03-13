@@ -9,6 +9,7 @@ public:
 	Alias(vector<Input*>,vector<Lattice*>,string);
 
 ~Alias();
+	void DeAllocateMemory();
 	void AllocateMemory();
 	vector<Lattice*> Lat; 
 	int value;

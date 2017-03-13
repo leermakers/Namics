@@ -16,27 +16,20 @@ if (debug) cout <<"Segment constructor" + name << endl;
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
-	if (n_pos>0) {
-		free(H_P);
-	}
-	if (freedom !="free") free(r);
-	free(H_u);
-	free(H_phi);
-	free(H_MASK);
+	DeAllocateMemory();
+}
+
+void Segment::DeAllocateMemory(void){
+if (debug) cout << "In Segment, Deallocating memory"<< endl;
+	if(n_pos>0) free(H_P);
+	if (freedom != "free") free(r);
+	free(H_u); free(H_phi); free(H_MASK);
 #ifdef CUDA
-	if (n_pos>0) {
-		cudaFree(P);
-	}
-	cudaFree(u);
-	cudaFree(phi);
-	cudaFree(G1);
-	cudaFree(MASK);
-	cudaFree(phi_side);
+	if(n_pos>0) cudaFree(P);
+	cudaFree(u); cudaFree(phi); cudaFree(G1); cudaFree(MASK); cudaFree(phi_side);
 #else
-	free(G1);
-	free(phi_side);
+	free(G1); free(phi_side);
 #endif
-	
 }
 
 void Segment::AllocateMemory() {

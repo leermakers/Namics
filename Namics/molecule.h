@@ -90,6 +90,7 @@ public:
 	bool IsPinned(void);
 	bool IsTagged(void); 
 	bool IsCharged(void); 
+	void DeAllocateMemory(void);
 	void AllocateMemory(void);
 	bool PrepareForCalculations(int*); 
 	bool ComputePhi(); 

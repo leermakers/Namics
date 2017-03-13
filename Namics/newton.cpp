@@ -21,6 +21,10 @@ if(debug) cout <<"Constructor in Newton " << endl;
 }
 
 Newton::~Newton() {
+	DeAllocateMemory();
+}
+
+void Newton :: DeAllocateMemory(){
 if(debug) cout <<"Destructor in Newton " << endl; 
 	free(Aij);
 	free(Ci);

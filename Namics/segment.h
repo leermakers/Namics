@@ -80,6 +80,7 @@ public:
 	bool IsClamp(); 
 	int* GetMASK(); 
 	Real* GetPhi(); 
+	void DeAllocateMemory();
 	void AllocateMemory();
 	bool PrepareForCalculations(int*);  
 

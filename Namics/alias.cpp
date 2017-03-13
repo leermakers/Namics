@@ -5,6 +5,9 @@ Alias::Alias(vector<Input*> In_,vector<Lattice*> Lat_, string name_) {
 	KEYS.push_back("value"); 
 }
 Alias::~Alias() {
+	DeAllocateMemory();
+}
+void Alias::DeAllocateMemory(){
 if (debug) cout <<"Destructor for alias " + name << endl; 
 	free(H_phi);
 #ifdef CUDA

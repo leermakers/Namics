@@ -109,6 +109,7 @@ public:
 	string GetValue(string); 
 	bool Guess();
 	bool Solve();
+	void DeAllocateMemory();
 	void AllocateMemory(); 
 	bool PrepareForCalculations(void);
 	void Ax(Real* , Real* , int );

@@ -409,8 +409,9 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	vector<int> open;
 	vector<int> close;
 	vector<string>sub;
-	while (aliases) {
+	while (aliases && success) {
 		loopnr++;
+		sub.clear();
 		In[0]->split(s,'#',sub);
 		aliases=(s!=sub[0]);
 		if (aliases) ExpandAlias(sub,s);

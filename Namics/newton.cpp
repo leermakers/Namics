@@ -921,7 +921,7 @@ if(debug) cout <<"PutU in  Newton " << endl;
 	return success;
 }
 
-/*
+
 void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton " << endl;
 	double* U = new double[N*N];
@@ -962,13 +962,13 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	delete S;
 	delete VT;
 }
-*/
+/*
 
 void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	
-    double **U = new double*[N + 1];
-    double **V = new double*[N + 1];
+    double **U = new double*[N+1];
+    double **V = new double*[N+1];
     double *S = new double[N + 1];
     for (int i=0; i < N + 1; i++) {
         U[i] = new double[N + 1];
@@ -993,6 +993,7 @@ if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	delete S;
 	delete V;
 }
+*/
 
 void Newton::DIIS(double* xx, double* x_x0, double* xR, double* Aij, double* Apij,double* Ci, int k, int m, int iv) {
 if(debug) cout <<"DIIS in  Newton " << endl;

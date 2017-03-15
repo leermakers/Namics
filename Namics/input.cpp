@@ -18,10 +18,9 @@ Input::Input(string name_) {
 			In_line.erase(std::remove(In_line.begin(), In_line.end(), ' '), In_line.end());
 			if (In_line.length()==0) add = false;
 			if (In_line.length()>2) {if (In_line.substr(0,2) == "//") {add = false;}}
-			if (add) {In_buffer.append(SSTR(line_nr)).append(":").append(In_line).append("#");} else {add = true;} 
+			if (add) elems.push_back(SSTR(line_nr).append(":").append(In_line)); else add=true;
 		}
 		in_file.close();
-		split(In_buffer,'#',elems);
 		if (!CheckInput()) Input_error=true;
 	} else {cout <<  "Inputfile " << name << " is not found. " << endl; Input_error=true; }
 
@@ -520,7 +519,10 @@ bool Input:: CheckInput(void) {
 	while (i<length) { 
 		vector<std::string> set;
 		split(elems[i],':',set); 
-		if (set.size() !=5) {if (set[1]!="start") {cout << " Line number " << set[0] << " does not contain 4 items" << endl; success=false; return false;}}
+		if (set.size() !=5) {if (set[1]!="start") {
+			cout <<elems[i] << endl; 
+			cout << " Line number " << set[0] << " does not contain 4 items" << endl; success=false; return false;}
+		}
 		i++;
 	}
 	i=0;

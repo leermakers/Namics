@@ -925,13 +925,12 @@ if(debug) cout <<"PutU in  Newton " << endl;
 	return success;
 }
 
-<<<<<<< HEAD
-/*
-void Newton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
-=======
 
-void Newton::Ax(double* A, double* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
->>>>>>> local
+void Newton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
+
+
+
+
 if(debug) cout <<"Ax in  Newton " << endl;
 	Real* U = new Real[N*N];
 	Real* S = new Real[N];
@@ -971,20 +970,21 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	delete S;
 	delete VT;
 }
+
 /*
 
 void Newton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	
-<<<<<<< HEAD
+
     Real **U = new Real*[N + 1];
     Real **V = new Real*[N + 1];
     Real *S = new Real[N + 1];
-=======
-    double **U = new double*[N+1];
-    double **V = new double*[N+1];
-    double *S = new double[N + 1];
->>>>>>> local
+
+
+
+
+
     for (int i=0; i < N + 1; i++) {
         U[i] = new Real[N + 1];
         V[i] = new Real[N + 1];

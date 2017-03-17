@@ -46,7 +46,7 @@
 
 #include <iomanip> 
 using namespace std;
-typedef double Real;
+typedef float Real;
 #ifdef CUDA
 //#include <cuda.h>
 //#include <cublas_v2.h>
@@ -57,17 +57,17 @@ typedef double Real;
 //I.V. Ionova, E.A. Carter, "Error vector choice in direct inversion in the iterative subspace method, J. Compt. Chem. 17, 1836-1847, 1996.
 
 #ifndef MAINxH //here define global variables. 
-extern double* BlasResult;
+extern Real* BlasResult;
 extern string version;
-extern double e;
-extern double T;
-extern double k_B;  
-extern double k_BT;
-extern double PIE; 
-extern double eps0;
-extern double eps;
+extern Real e;
+extern Real T;
+extern Real k_B;  
+extern Real k_BT;
+extern Real PIE; 
+extern Real eps0;
+extern Real eps;
 extern bool debug;
-//extern double factor;
+//extern Real factor;
 #endif
 
 enum MoleculeType {monomer, linear, branched};

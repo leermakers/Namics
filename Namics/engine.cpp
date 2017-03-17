@@ -382,14 +382,14 @@ bool Engine::VarLat(int sub){
 				break;
 			case 2:
 				
-				Lat[0]->Mx=start+i*step;
+				Lat[0]->MX=start+i*step;
 				Lat[0]->AllocateMemory();
 				New[0]->AllocateMemory();
 				New[0]->Guess();
 				break;
 
 			case 3: 
-				Lat[0]->Mx=start+i*step;
+				Lat[0]->MX=start+i*step;
 				Lat[0]->AllocateMemory();
 				New[0]->AllocateMemory();
 				New[0]->Guess();

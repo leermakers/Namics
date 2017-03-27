@@ -6,10 +6,11 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("geometry"); 
 	KEYS.push_back("n_layers_x");   KEYS.push_back("n_layers_y"); KEYS.push_back("n_layers_z");
 	KEYS.push_back("lowerbound"); KEYS.push_back("upperbound");
-	KEYS.push_back("lowerbound_x"); KEYS.push_back("upperbound_x");
+	KEYS.push_back("lowerbound_x"); KEYS.push_back("upperbound_x"); 
 	KEYS.push_back("lowerbound_y"); KEYS.push_back("upperbound_y");
 	KEYS.push_back("lowerbound_z"); KEYS.push_back("upperbound_z");
- 	KEYS.push_back("bond_length");  KEYS.push_back("lattice_type");  
+ 	KEYS.push_back("bond_length");  KEYS.push_back("lattice_type"); 
+	sub_box_on=0;
 }
 
 Lattice::~Lattice() {
@@ -150,18 +151,32 @@ bool Lattice::PutM() {
 	}
 	return success; 
 }
+bool Lattice::PutSub_box(int mx_, int my_, int mz_,int n_box_) {
+	bool success = true;
+	if (mx_<1 || my_<1 || mz_<1 || mx_>MX || my_>MY || mz_>MZ) {cout <<"subbox size out of bound: mx= " << mx_ << " my = " << my_ << " mz = " << mz_ << ", while MX = " << MX << " MY = " << MY << " MZ = " << MZ  << endl; success=false; } 
+	mx.push_back(mx_); my.push_back(my_); mz.push_back(mz_); 
+	m.push_back((mx_+2)*(my_+2)*(mz_+2)); 
+	jx.push_back((mx_+2)*(my_+2)); jy.push_back(my_+2);
+	n_box.push_back(n_box_); 
+	return success;
+}
 
 bool Lattice::CheckInput(int start) {
 if (debug) cout <<"CheckInput in lattice " << endl; 
 	bool success;
+	sub_box_on=0;
+	mx.push_back(0); my.push_back(0); mz.push_back(0); jx.push_back(0); jy.push_back(0); m.push_back(0); n_box.push_back(0);
 	string Value;
 	string VALUE1,VALUE2,VALUE3,VALUE4,VALUE5,VALUE6;
 
 	vector<string> options;
 	success = In[0]->CheckParameters("lat",name,start,KEYS,PARAMETERS,VALUES);
 	if (success){
-		bond_length =  In[0]->Get_int(GetValue("bond_length"),5e-10);
-		if (bond_length < 0 || bond_length > 1e-8) {cout <<" bond_length out of range 0..1e-8 " << endl; success=false;}
+		bond_length=0;
+		if (GetValue("bond_length").size()>0) {
+			bond_length =  In[0]->Get_int(GetValue("bond_length"),5e-10);
+			if (bond_length < 0 || bond_length > 1e-8) {cout <<" bond_length out of range 0..1e-8 " << endl; success=false;}
+		}
 		options.push_back("simple_cubic"); options.push_back("FCC");
 		Value=GetValue("lattice_type"); 
 		if (Value.length()>0) {
@@ -339,8 +354,6 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (!In[0]->Get_int(GetValue("n_layers_z"),MZ,1,1e6,"In 'lat' the parameter 'n_layers_z' is required")) {success=false;}
 				volume=MX*MY*MZ;
 				JX=(MX+2)*(MY+2); JY=(MY+2); M = (MX+2)*(MY+2)*(MZ+2);   
-				Mx=In[0]->Get_int(GetValue("sub_box_size"),MX/2);
-				if (Mx>MX) {cout << "'sub_box_size' can not exceed the size of the main box." << endl; success=false;} else My=Mz=Mx;
 				
 				options.clear(); 
 				options.push_back("mirror"); //options.push_back("mirror_2"); 
@@ -649,12 +662,9 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	ints_value.clear(); 
 	string mirror="mirror"; 
 	string periodic="periodic";
-	//string mirror2="mirror_2";
 	string surface="surface"; 
-	//string s;
 	push("gradients",gradients);
 	if (offset_first_layer>0) push("offset_first_layer",offset_first_layer);
-
 	push("volume",volume); 
 	push("lattice_type",lattice_type);
 	push("bond_length",bond_length); 
@@ -663,8 +673,6 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 			push("n_layers",MX);
 			if (BX1==1) push("lowerbound",mirror);
 			if (BXM==MX-1) push("upperbound",mirror);
-			//if (BX1==2) push("lowerbound",mirror_2);
-			//if (BXM==MX-2) push("upperbound",mirror_2);
 			if (BX1==0) push("lowerbound",surface);
 			if (BXM==MX+1) push("upperbound",surface);
 			break;
@@ -673,14 +681,10 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 			push("n_layers_y",MY);
 			if (BX1==1) push("lowerbound_x",mirror);
 			if (BXM==MX-1) push("upperbound_x",mirror);
-			//if (BX1==2) push("lowerbound_x",mirror_2);
-			//if (BXM==MX-2) push("upperbound_x",mirror_2);
 			if (BX1==0) push("lowerbound_x",surface);
 			if (BXM==MX+1) push("upperbound_x",surface);
 			if (BY1==1) push("lowerbound_x",mirror);
 			if (BYM==MY-1) push("upperbound_x",mirror);
-			//if (BY1==2) push("lowerbound_x",mirror_2);
-			//if (BYM==MY-2) push("upperbound_x",mirror_2);
 			if (BY1==0) push("lowerbound_x",surface);
 			if (BYM==MY+1) push("upperbound_x",surface);
 			break;
@@ -690,20 +694,14 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 			push("n_layers_z",MZ);	
 			if (BX1==1) push("lowerbound_x",mirror);
 			if (BXM==MX-1) push("upperbound_x",mirror);
-			//if (BX1==2) push("lowerbound_x",mirror_2);
-			//if (BXM==MX-2) push("upperbound_x",mirror_2);
 			if (BX1==MX) push("lowerbound_x",periodic);
 			if (BXM==1) push("upperbound_x",periodic);
 			if (BY1==1) push("lowerbound_y",mirror);
 			if (BYM==MY-1) push("upperbound_y",mirror);
-			//if (BY1==2) push("lowerbound_y",mirror_2);
-			//if (BYM==MY-2) push("upperbound_y",mirror_2);
 			if (BY1==MY) push("lowerbound_y",periodic);
 			if (BYM==1) push("upperbound_y",periodic);	
 			if (BZ1==1) push("lowerbound_z",mirror);
 			if (BZM==MZ-1) push("upperbound_z",mirror);
-			//if (BZ1==2) push("lowerbound_z",mirror_2);
-			//if (BZM==MZ-2) push("upperbound_z",mirror_2);
 			if (BZ1==MZ) push("lowerbound_z",periodic);
 			if (BZM==1) push("upperbound_z",periodic);
 			break;
@@ -836,9 +834,11 @@ if (debug) cout <<" Side in lattice " << endl;
 	}
 }
 
-void Lattice::propagate(Real *G, Real *G1, int s_from, int s_to) { //this procedure should function on simple cubic lattice. 
+void Lattice::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice. 
 if (debug) cout <<" propagate in lattice " << endl; 
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
+	int JX_=JX, JY_=JY;
+	int k=sub_box_on; 
 	switch(gradients) {
 		case 1:
 			Zero(gs,M); set_bounds(gs_1);
@@ -846,7 +846,6 @@ if (debug) cout <<" propagate in lattice " << endl;
 				Add(gs+1,gs_1,M-1); Add(gs,gs_1+1,M-1);	
 				YplusisCtimesX(gs,gs_1,4.0,M);
 				Norm(gs,lambda,M); Times(gs,gs,G1,M);
-//cout <<" from - to " << s_from << " - " << s_to << endl; 
 			} else {
 				AddTimes(gs,gs_1,lambda0,M);
 				AddTimes(gs+1,gs_1,lambda_1+1,M-1);
@@ -874,9 +873,10 @@ if (debug) cout <<" propagate in lattice " << endl;
 			}
 			break;
 		case 3:
+			if (k>0) JX_=jx[k]; JY_=jy[k];
 			Zero(gs,M); set_bounds(gs_1);
-			Add(gs+JX,gs_1,M-JX); Add(gs,gs_1+JX,M-JX);
-			Add(gs+JY,gs_1,M-JY); Add(gs,gs_1+JY,M-JY);
+			Add(gs+JX_,gs_1,M-JX_); Add(gs,gs_1+JX_,M-JX_);
+			Add(gs+JY_,gs_1,M-JY_); Add(gs,gs_1+JY_,M-JY_);
 			Add(gs+1,gs_1,M-1);  Add(gs,gs_1+1, M-1);
 			Norm(gs,1.0/6.0,M); Times(gs,gs,G1,M);
 			break;
@@ -907,6 +907,10 @@ if (debug) cout <<" remove_bounds (Real) in lattice " << endl;
 			X[(MX+1)*JX+MY+1]=0;	
 			break;
 		case 3: 
+			if (sub_box_on!=0) {int k=sub_box_on;
+				for (int i=0; i<n_box[k]; i++)
+				RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
+			} else
 			RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 			break;
 		default:
@@ -938,7 +942,11 @@ if (debug) cout <<" remove_bounds (int) in lattice " << endl;
 
 			break;
 		case 3:
-			RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			if (sub_box_on!=0) { int k=sub_box_on; 
+				for (int i=0; i<n_box[k]; i++)
+				RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
+			}else
+				RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 			break;
 		default:
 			break;
@@ -967,7 +975,11 @@ if (debug) cout <<"set_bounds (Reals) in lattice " << endl;
 			X[(MX+1)*JX+MY+1]=X[MX*JX+MY+1]*X[(MX+1)*JX+MY]; if (X[(MX+1)*JX+MY+1]>0) X[(MX+1)*JX+MY+1]=sqrt(X[(MX+1)*JX+MY+1]);						
 			break;
 		case 3:
-			SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			if (sub_box_on!=0) {int k=sub_box_on; 
+				for (int i=0; i<n_box[k]; i++)
+				SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
+			} else
+				SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 			break;
 		default:
 			break;
@@ -996,7 +1008,11 @@ if (debug) cout <<"set_bounds (int) in lattice " << endl;
 			X[(MX+1)*JX+MY+1]=X[MX*JX+MY+1]*X[(MX+1)*JX+MY]; if (X[(MX+1)*JX+MY+1]>0) X[(MX+1)*JX+MY+1]=sqrt(X[(MX+1)*JX+MY+1]);			
 			break;
 		case 3: 
-			SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			if (sub_box_on!=0) { int k=sub_box_on; 
+				for (int i=0; i<n_box[k]; i++)
+				SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
+			} else
+				SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 			break;
 		default:
 			break;
@@ -1588,10 +1604,6 @@ if (debug) cout << "GuessVar in Lattice " << endl;
 	return success;
 }
 
-
-
-
-
 bool Lattice::ReadGuess(string filename,Real *xx) {
 cout <<"ReadGuess not yet implemented in lattice" << endl; 
 	bool success=true;
@@ -1604,6 +1616,24 @@ cout <<"StoreGuess not yet implemented in lattice" << endl;
 	return success; 
 }
 
+void Lattice::DistributeG1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int n_box) {
+	int k=sub_box_on;
+	DisG1(G1, g1, Bx, By, Bz, M, m[k], n_box, mx[k], my[k], mz[k], MX, MY, MZ, jx[k], jy[k], JX, JY);
+}
+
+void Lattice::CollectPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int n_box) {
+	int k=sub_box_on;
+	ColPhi(phi, GN, rho, Bx, By, Bz, M, m[k], n_box, mx[k], my[k], mz[k], MX, MY, MZ, jx[k], jy[k], JX, JY);
+}
+
+void Lattice::ComputeGN(Real* GN, Real* Gg_f, int* H_Bx, int* H_By, int* H_Bz, int* H_Px2, int* H_Py2, int* H_Pz2, int N, int n_box) {
+	int k=sub_box_on;
+	for (int p=0; p<n_box; p++) Cp(GN+p,Gg_f+n_box*m[k]*N +p*m[k]+ jx[k]*(H_Px2[p]-H_Bx[p])+jy[k]*(H_Py2[p]-H_By[p])+(H_Pz2[p]-H_Bz[p]),1);
+
+#ifdef CUDA //this transfer can go away when all is on GPU.
+	TransferDataToHost(H_GN,GN,n_box);
+#endif
+}
 /* 
 
 All below is commented out. This is stored here to recover from earlier program. 

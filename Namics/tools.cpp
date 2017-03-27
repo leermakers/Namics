@@ -45,7 +45,7 @@ __global__ void collectphi(Real* phi, Real* GN,Real* rho, int* Bx, int* By, int*
 			if (By[p]+j > MYm1)  jj=(By[p]+j-MY)*JY; else jj=(By[p]+j)*JY;
 			if (Bz[p]+k > MZm1)  kk=(Bz[p]+k-MZ); else kk=(Bz[p]+k);
 
-			atomicAdd(&phi[pos_r+ii+jj+kk], rho[pM]/GN[p]); //This needs af fix*****************************
+			atomicAdd(&phi[ii+jj+kk], rho[pM]/GN[p]); //This needs af fix*****************************
 			pM+=M;
 		}
 	}
@@ -868,6 +868,64 @@ void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 	for (int i=0; i<M; i++) g[i]= 1/phitot[i]-1;
 }
 #endif
+
+
+#ifdef CUDA
+void DisG1(Real* G1, Real* g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+	//int n_blocks=(n_box)/block_size + ((n_box)%block_size == 0 ? 0:1);
+	//distributeg1<<<n_blocks,block_size>>>(G1,g1,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+        dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
+        dim3 blockdim(8,8,8);
+        distributeg1<<<blocks,blockdim>>>(G1,g1,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+
+}
+#else
+void DisG1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+	int pos_l=-M;
+	int pos_x,pos_y,pos_z;
+	int Bxp,Byp,Bzp;
+	int ii=0,jj=0,kk=0;
+
+	for (int p=0; p<n_box; p++) { pos_l +=M; ii=0; Bxp=Bx[p]; Byp=By[p]; Bzp=Bz[p];
+		for (int i=1; i<Mx+1; i++) { ii+=jx; jj=0; if (Bxp+i>MX) pos_x=(Bxp+i-MX)*JX; else pos_x = (Bxp+i)*JX;
+			for (int j=1; j<My+1; j++) {jj+=jy;  kk=0; if (Byp+j>MY) pos_y=(Byp+j-MY)*JY; else pos_y = (Byp+j)*JY;
+				for (int k=1; k<Mz+1; k++) { kk++; if (Bzp+k>MZ) pos_z=(Bzp+k-MZ); else pos_z = (Bzp+k);
+					g1[pos_l+ii+jj+kk]=G1[pos_x+pos_y+pos_z];
+				}
+			}
+		}
+	}
+}
+#endif
+
+#ifdef CUDA
+void ColPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+	//int n_blocks=(n_box)/block_size + ((n_box)%block_size == 0 ? 0:1);
+	//collectphi<<<n_blocks,block_size>>>(phi,GN,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+ 	 dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
+        dim3 blockdim(8,8,8);
+        collectphi<<<blocks,blockdim>>>(phi,GN,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
+}
+#else
+void ColPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+	int pos_l=-M;
+	int pos_x,pos_y,pos_z;
+	int Bxp,Byp,Bzp;
+	Real Inv_H_GNp;
+	int ii=0,jj=0,kk=0; 
+	for (int p=0; p<n_box; p++) {pos_l +=M; ii=0; Bxp=Bx[p]; Byp=By[p]; Bzp=Bz[p]; Inv_H_GNp=1.0/GN[p];
+		for (int i=1; i<Mx+1; i++) {ii+=jx; jj=0;  if (Bxp+i>MX) pos_x=(Bxp+i-MX)*JX; else pos_x = (Bxp+i)*JX;
+			for (int j=1; j<My+1; j++) {jj+=jy;  kk=0; if (Byp+j>MY) pos_y=(Byp+j-MY)*JY; else pos_y = (Byp+j)*JY;
+				for (int k=1; k<Mz+1; k++) { kk++; if (Bzp+k>MZ) pos_z=(Bzp+k-MZ); else pos_z = (Bzp+k);
+					phi[pos_x+pos_y+pos_z]+=rho[pos_l+ii+jj+kk]*Inv_H_GNp;
+				}
+			}
+		} 
+	}
+}
+
+#endif
+
 
 //#ifdef CUDA
 //void ComputeGN(Real *GN, Real *G, int M, int n_box)   {

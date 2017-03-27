@@ -14,9 +14,16 @@ public:
 	string name;
 	vector<Input*> In;
 	int MX,MY,MZ;	
-	int Mx,My,Mz;	 
+	vector<int> mx;
+	vector<int> my;
+	vector<int> mz;
+	vector<int> m;
+	vector<int> jx;
+	vector<int> jy;
+	vector<int> n_box; 
 	int BX1,BY1,BZ1,BXM,BYM,BZM;
 	int JX,JY,M;
+	int sub_box_on;
 	int volume;
 	int gradients; 
 	string lattice_type;
@@ -58,12 +65,13 @@ public:
 
 	bool CheckInput(int);
 	bool PutM(void);
+	bool PutSub_box(int,int,int,int); 
 	void PutParameter(string); 
 	string GetValue(string); 
 	void DeAllocateMemory(void); 
 	void AllocateMemory(void); 
 	bool PrepareForCalculations(void); 
-	void propagate(Real*,Real*, int, int);
+	void propagate(Real*,Real*, int, int,int);
 	void remove_bounds(Real*);
 	void remove_bounds(int*);
 	void set_bounds(Real*);
@@ -76,6 +84,9 @@ public:
 	bool GuessVar(Real*, Real, string, Real, Real);
 	bool ReadGuess(string,Real*);
 	bool StoreGuess(string,Real*);
+	void DistributeG1(Real*, Real*, int*, int*, int*, int);
+	void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int);
+	void ComputeGN(Real*, Real*, int*, int*, int*, int*, int*, int*, int, int);
 };
 
 #endif

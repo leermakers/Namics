@@ -10,14 +10,15 @@ public:
 
 ~Alias();
 	void DeAllocateMemory();
-	void AllocateMemory();
+	void AllocateMemory(int,int);
 	vector<Lattice*> Lat; 
 	int value;
 	string composition;
 	bool active;
 	vector<int> frag;
 	Real* H_phi;
-	Real* phi; 
+	Real* phi;
+	Real* rho;  
 	
 	string name; 
 	vector<Input*> In; 

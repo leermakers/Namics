@@ -19,6 +19,7 @@ public:
 	vector<int> SysMonList; 
 	vector<int> FrozenList;
 	vector<int> SysTagList; 
+	vector<int> SysClampList;
 	Real FreeEnergy;
 	Real GrandPotential;
 	Real* phitot;  
@@ -33,6 +34,7 @@ public:
 	bool GPU; 
 	int n_mol; 
 	int solvent; 
+	int neutralizer;
 	int tag_segment; 
 	bool input_error; 
 	bool cuda; 
@@ -65,6 +67,7 @@ public:
 	string GetValue(string); 	
 	string GetMonName(int );
 	bool CheckChi_values(int);
+	bool IsCharged();
 	void AllocateMemory();
 	bool PrepareForCalculations();
 	bool ComputePhis();

@@ -34,7 +34,8 @@
     #   error "Unknown Apple platform"
     #endif
 #elif __linux
-    #include <lapacke.h>
+    //#include <lapacke.h>
+    #include <clapack.h>
 #elif __unix__ // all unices not caught above
     #include <clapack.h>
 
@@ -46,7 +47,7 @@
 
 #include <iomanip> 
 using namespace std;
-typedef float Real;
+typedef double Real;
 #ifdef CUDA
 //#include <cuda.h>
 //#include <cublas_v2.h>

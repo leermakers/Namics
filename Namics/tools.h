@@ -95,6 +95,8 @@ void SetBoundaries(Real*,    int, int, int, int, int, int, int, int, int, int, i
 void RemoveBoundaries(Real*, int, int, int, int, int, int, int, int, int, int, int);
 void SetBoundaries(int*,       int, int, int, int, int, int, int, int, int, int, int);
 void RemoveBoundaries(int*,    int, int, int, int, int, int, int, int, int, int, int);
+void DistributeG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
+void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 #else
 void bx(Real *, int, int, int, int, int, int, int);
 void b_x(Real*, int, int, int, int, int, int, int);
@@ -145,6 +147,9 @@ void SetBoundaries(Real*,    int, int, int, int, int, int, int, int, int, int, i
 void RemoveBoundaries(Real*, int, int, int, int, int, int, int, int, int, int, int);
 void SetBoundaries(int*,       int, int, int, int, int, int, int, int, int, int, int);
 void RemoveBoundaries(int*,    int, int, int, int, int, int, int, int, int, int, int);
+void DisG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
+void ColPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
+
 #endif
 
 void H_Zero(Real*, int);

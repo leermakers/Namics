@@ -21,11 +21,13 @@ public:
 	vector<int> pz2;
 	vector<int> bx;
 	vector<int> by;
-	vector<int> bz; 
+	vector<int> bz;
+	int clamp_nr; 
 	int n_seg; 
 	int seg_nr;  
 	Real epsilon;
 	Real valence; 
+	Real PSI0;
 	Real phibulk; 
 	string freedom;
 	Real guess_u; 

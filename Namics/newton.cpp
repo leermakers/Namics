@@ -927,10 +927,6 @@ if(debug) cout <<"PutU in  Newton " << endl;
 
 
 void Newton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
-
-
-
-
 if(debug) cout <<"Ax in  Newton " << endl;
 	Real* U = new Real[N*N];
 	Real* S = new Real[N];

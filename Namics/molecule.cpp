@@ -1,5 +1,5 @@
 #include "molecule.h"
-#include <sstream>
+#include <sstream> 
 
 Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
 	In=In_; Seg=Seg_; name=name_;  Lat=Lat_; 
@@ -20,23 +20,63 @@ void Molecule :: DeAllocateMemory(){
 if (debug) cout <<"Destructor for Mol " + name << endl;
 	free(H_phi);
 	free(H_phitot);
+	if (freedom=="clamped") {
+		free(H_Bx); 
+		free(H_By);
+		free(H_Bz);
+		free(H_Px1);
+		free(H_Py1);
+		free(H_Pz1);
+		free(H_Px2);
+		free(H_Py2);
+		free(H_Pz2);
+		free(H_mask1);
+		free(H_mask2);
+		free(H_gn);
+	}
 #ifdef CUDA
-	cudaFree(phi);
+	if (freedom=="clamped") {
+		cudaFree(Bx);
+		cudaFree(By);
+		cudaFree(Bz);
+		cudaFree(Px1);
+		cudaFree(Py1);
+		cudaFree(Pz1);
+		cudaFree(Px2);
+		cudaFree(Py2);
+		cudaFree(Pz2);
+		cudaFree(mask1);
+		cudaFree(mask2);
+		cudaFree(gn);
+		cudaFree(Gg_f);
+		cudaFree(Gg_b);
+		cudaFree(g1);
+		cudaFree(rho);	
+		cudaFree(phi);
+	} else {
+		cudaFree(Gg_f);
+		cudaFree(Gg_b);
+		cudaFree(phi);
+	}
 	cudaFree(phitot);
-	cudaFree(Gg_f);
-	cudaFree(Gg_b);
 	if (save_memory) cudaFree(Gs); 
 #else
+	if (freedom=="clamped"){
+		free(rho);
+		free(g1);
+	}
 	free(UNITY);
 	free(Gg_f);
 	free(Gg_b);
-	if (save_memory) free(Gs); 
+	if (save_memory) free(Gs);
 #endif
 }
 
 void Molecule:: AllocateMemory() {
 if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	int M=Lat[0]->M;
+	int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
+
 	if (save_memory) {
 		int length_ = mon_nr.size();
 		for (int i=0; i<length_; i++) last_stored.push_back(0); 
@@ -46,7 +86,6 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 			if (n_mon[i]<60) n++;
 			if (n>n_mon[i]) n=n_mon[i]; //This seems to me to be enough...needs a check though..
 			if (i==0) memory.push_back(n); else memory.push_back(n+memory[i-1]);
- 
 		}
 	}
 	int N; 
@@ -56,35 +95,114 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 
 	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); 
 	H_phitot = (Real*) malloc(M*sizeof(Real)); 
+	if (freedom=="clamped") {
+		H_Bx=(int*) malloc(n_box*sizeof(int));
+		H_By=(int*) malloc(n_box*sizeof(int));
+		H_Bz=(int*) malloc(n_box*sizeof(int));
+		H_Px1=(int*) malloc(n_box*sizeof(int));
+		H_Py1=(int*) malloc(n_box*sizeof(int));
+		H_Pz1=(int*) malloc(n_box*sizeof(int));
+		H_Px2=(int*) malloc(n_box*sizeof(int));
+		H_Py2=(int*) malloc(n_box*sizeof(int));
+		H_Pz2=(int*) malloc(n_box*sizeof(int));
+		H_mask1=(Real*) malloc(n_box*m*sizeof(Real)); H_Zero(H_mask1,m*n_box);
+		H_mask2=(Real*) malloc(n_box*m*sizeof(Real)); H_Zero(H_mask2,m*n_box);
+		H_gn = (Real*) malloc(n_box*sizeof(Real));
+	}
 #ifdef CUDA
-	phi=(Real*)AllOnDev(M*MolMonList.size());
+	if (freedom=="clamped") {
+		Bx=(int*)AllIntOnDev(n_box);
+		By=(int*)AllIntOnDev(n_box);
+		Bz=(int*)AllIntOnDev(n_box);
+		Px1=(int*)AllIntOnDev(n_box);
+		Py1=(int*)AllIntOnDev(n_box);
+		Pz1=(int*)AllIntOnDev(n_box);
+		Px2=(int*)AllIntOnDev(n_box);
+		Py2=(int*)AllIntOnDev(n_box);
+		Pz2=(int*)AllIntOnDev(n_box);
+		mask1=(Real*)AllOnDev(n_box*m);
+		mask2=(Real*)AllOnDev(n_box*m);
+		gn =(Real*)AllOnDev(n_box);
+		Gg_f=(Real*)AllOnDev(m*n_box*N);
+		Gg_b=(Real*)AllOnDev(m*n_box*2);
+		g1=(Real*)AllOnDev(m*n_box);
+		rho=(Real*)AllOnDev(m*n_box*MolMonList.size());
+		phi=(Real*)AllOnDev(M*MolMonList.size());
+		if (save_memory) Gs=(Real*)AllOnDev(m*n_box*2);
+	} else {
+		Gg_f=(Real*)AllOnDev(M*N);
+		Gg_b=(Real*)AllOnDev(M*2);
+		phi=(Real*)AllOnDev(M*MolMonList.size());
+		rho=phi;
+		if (save_memory) Gs =(Real*)AllOnDev(M*2);
+	}
 	phitot=(Real*)AllOnDev(M);
 	UNITY = (Real*)AllonDev(M);
-	Gg_f=(Real*)AllOnDev(M*N); 
-	Gg_b=(Real*)AllOnDev(M*2);
-	if (save_memory) {
-		Gs=(Real*)AllOnDev(M*2);
-	}	
 #else
-	phi = H_phi;
+	if (freedom=="clamped") {
+		gn=H_gn;
+		mask1=H_mask1; mask2=H_mask2;
+		Bx=H_Bx; By=H_By; Bz=H_Bz;
+		Px1=H_Px1; Py1=H_Py1; Pz1=H_Pz2;
+		Px2=H_Px2; Py2=H_Py2; Pz2=H_Pz2;
+cout <<"N " << N << endl; 
+		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real));
+		Gg_b = (Real*) malloc(m*2*n_box*sizeof(Real));
+		g1=(Real*) malloc(m*n_box*sizeof(Real));
+		rho=(Real*)malloc(m*n_box*MolMonList.size()*sizeof(Real));
+		if (save_memory) Gs=(Real*) malloc(m*n_box*2*sizeof(Real));
+		phi=H_phi;
+	} else {
+		Gg_f = (Real*) malloc(M*N*sizeof(Real));
+		Gg_b = (Real*) malloc(M*2*sizeof(Real));
+		phi=H_phi;
+		rho=phi;
+		if (save_memory) Gs=(Real*) malloc(m*n_box*2*sizeof(Real));
+	}		
 	phitot = H_phitot;
 	UNITY = (Real*) malloc(M*sizeof(Real));
-	Gg_f = (Real*) malloc(M*N*sizeof(Real)); 
-	Gg_b = (Real*) malloc(M*2*sizeof(Real)); 
-	if (save_memory) {
-		Gs = (Real*) malloc(M*2*sizeof(Real));
-	}
 #endif
 	Zero(Gg_f,M*N);
 	Zero(Gg_b,2*M);
 	if (save_memory) Zero(Gs,2*M);
 	int length =MolAlList.size();
-	for (int i=0; i<length; i++) Al[i]->AllocateMemory(); 
+	for (int i=0; i<length; i++) Al[i]->AllocateMemory(Seg[mon_nr[0]]->clamp_nr,n_box); 
 }
 
 bool Molecule:: PrepareForCalculations(int *KSAM) {
 if (debug) cout <<"PrepareForCalculations in Mol " + name << endl; 
 	int M=Lat[0]->M;
+	if (freedom=="clamped") {
+		int jx=Lat[0]->jx[Seg[mon_nr[0]]->clamp_nr];
+		int jy=Lat[0]->jy[Seg[mon_nr[0]]->clamp_nr];
+		int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
+		for (int i=0; i<n_box; i++) {
+			H_Bx[i]=Seg[mon_nr[0]]->bx[i];
+			H_By[i]=Seg[mon_nr[0]]->by[i];
+			H_Bz[i]=Seg[mon_nr[0]]->bz[i];
+			H_Px1[i]=Seg[mon_nr[0]]->px1[i];
+			H_Py1[i]=Seg[mon_nr[0]]->py1[i];
+			H_Pz1[i]=Seg[mon_nr[0]]->pz1[i];
+			H_Px2[i]=Seg[mon_nr[0]]->px2[i];
+			H_Py2[i]=Seg[mon_nr[0]]->py2[i];
+			H_Pz2[i]=Seg[mon_nr[0]]->pz2[i];
+			H_mask1[i*m + jx*(Px1[i]-Bx[i])+jy*(Py1[i]-By[i])+(Pz1[i]-Bz[i])]=1;
+			H_mask2[i*m + jx*(Px2[i]-Bx[i])+jy*(Py2[i]-By[i])+(Pz2[i]-Bz[i])]=1;
+		}
+#ifdef CUDA
+		TransferDataToDevice(H_mask1,mask1,m*n_box);
+		TransferDataToDevice(H_mask2,mask2,m*n_box);
+		TransferDataToDevice(H_Bx,Bx,n_box);
+		TransferDataToDevice(H_By,By,n_box);
+		TransferDataToDevice(H_Bz,Bz,n_box);
+		TransferDataToDevice(H_Px1,Px1,n_box);
+		TransferDataToDevice(H_Py1,Py1,n_box);
+		TransferDataToDevice(H_Pz1,Pz1,n_box);
+		TransferDataToDevice(H_Px2,Px2,n_box);
+		TransferDataToDevice(H_Py2,Py2,n_box);
+		TransferDataToDevice(H_Pz2,Pz2,n_box);
+#endif
+	}
 	Cp(UNITY,KSAM,M);
 	int length_al=MolAlList.size();
 	for (int i=0; i<length_al; i++) Al[i]->PrepareForCalculations();
@@ -102,6 +220,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 	if (!In[0]->CheckParameters("mol",name,start,KEYS,PARAMETERS,VALUES)) {
 		success=false; 	
 	} else { 
+		save_memory=false;
 		if (GetValue("save_memory").size()>0) {
 			save_memory=In[0]->Get_bool(GetValue("save_memory"),false); 
 		}
@@ -110,8 +229,32 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			if (!Decomposition(GetValue("composition"))) {cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;}
 
 		}
+		if ( IsClamped()) {
+			freedom="clamped"; 
+			if (GetValue("freedom").size() > 0) freedom = In[0]->Get_string(GetValue("freedom"),"clamped"); 
+			if (freedom !="clamped") { 
+				cout <<"For mol " + name + " the setting for 'freedom' was not equal to 'clamped'; This is not consistent with composition. " << endl;
+				success=false; 
+			} else {
+				n_box=Seg[mon_nr[0]]->n_box;
+				//int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
+				if (GetValue("theta").size() >0) {
+					theta=In[0]->Get_Real(GetValue("theta"),n_box*chainlength); 
+					if (theta!=n_box*chainlength) 
+					cout <<"Input value for 'theta' is ignored for clamped molecule '" + name + "'"  << endl;
+				} theta= n_box*chainlength;
+				if (GetValue("n").size() >0) { n=In[0]->Get_Real(GetValue("n"),n); 
+					if (n!=n_box) 
+					cout <<"Input value for 'n' is ignored for clamped molecule '" + name + "'"  << endl;
+				} n= n_box; 
+				if (GetValue("phibulk").size() >0) {
+					success=false;
+					cout <<"For mol '" + name + "' the value of freedom is 'clamped' and therfore you can not set 'phibulk'. Problem terminated. " << endl; 
+				}
+			}
+		} else 
 		if (GetValue("freedom").size()==0 && !IsTagged()) {
-			cout <<"For mol " + name + " the setting 'freedom' is expected. Problem terminated " << endl; success = false;
+			cout <<"For mol " + name + " the setting 'freedom' is expected: options: 'free' 'restricted' 'solvent' 'neutralizer' . Problem terminated " << endl; success = false;
 			} else { if (!IsTagged()) {
 				vector<string> free_list; 
 				if (!IsPinned()) free_list.push_back("free"); free_list.push_back("restricted"); free_list.push_back("solvent"); 
@@ -122,8 +265,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				}
 				if (freedom == "neutralizer") {
 					if (IsPinned()) {success=false; cout << "Mol '" + name + "' is 'pinned' and therefore this molecule can not be the neutralizer" << endl; } 
+					if (!IsCharged()) {success=false; cout << "Mol '" + name + "' is not 'charged' and therefore this molecule can not be the neutralizer" << endl; } 
+					if (IsClamped()) {success=false; cout <<"Mol '" + name + "' is 'clamped' and therefore this molecule can not be the neutralizer" << endl;}
 				}
-					if (IsCharged()) {success=false; cout << "Mol '" + name + "' is not 'charged' and therefore this molecule can not be the neutralizer" << endl; } 
 				if (freedom == "free") {
 					if (GetValue("theta").size()>0 || GetValue("n").size() > 0) {
 						cout << "In mol " + name + ", the setting of 'freedom = free', can not not be combined with 'theta' or 'n': use 'phibulk' instead." << endl; success=false;  
@@ -131,7 +275,8 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						if (GetValue("phibulk").size() ==0) {
 							cout <<"In mol " + name + ", the setting 'freedom = free' should be combined with a value for 'phibulk'. "<<endl; success=false;
 						} else {
-							phibulk=In[0]->Get_Real(GetValue("phibulk"),-1); 
+		
+					phibulk=In[0]->Get_Real(GetValue("phibulk"),-1); 
 							if (phibulk < 0 || phibulk >1) {
 								cout << "In mol " + name + ", the value of 'phibulk' is out of range 0 .. 1." << endl; success=false;
 							}
@@ -520,6 +665,20 @@ bool Molecule:: MakeMonList(void) {
 	return success;
 } 
 
+bool Molecule::IsClamped() {
+if (debug) cout <<"IsClamped for Mol " + name << endl;
+	bool success=false;
+	int length=mon_nr.size();
+	if (mon_nr[0]==mon_nr[length-1]) {
+		if (Seg[mon_nr[0]]->freedom == "clamp") success=true;
+	}
+	if (success && MolType!=linear) {
+		success=false;
+		cout <<"Sorry, currently clamped molecules should be linear" << endl;
+	} 
+	return success;
+}
+
 bool Molecule::IsPinned() {
 if (debug) cout <<"IsPinned for Mol " + name << endl;
 	bool success=false;
@@ -544,6 +703,15 @@ if (debug) cout <<"IsTagged for Mol " + name << endl;
 	return success;
 }
 
+Real Molecule::Charge() {
+	Real charge=0;
+	int length=mon_nr.size();
+	for (int i=0; i<length; i++) {
+		charge +=Seg[mon_nr[i]]->valence*n_mon[i];
+	} 
+	return charge;
+}
+
 bool Molecule::IsCharged() {
 if (debug) cout <<"IsCharged for Mol " + name << endl;
 	Real charge =0;
@@ -553,7 +721,7 @@ if (debug) cout <<"IsCharged for Mol " + name << endl;
 		charge +=n_mon[i]*Seg[mon_nr[i]]->valence; 
 		i++;
 	}
-	return charge<-1e-5 || charge > 1e-5; 
+	return charge<-1e-6 || charge > 1e-6; 
 }
 
 void Molecule::PutParameter(string new_param) {
@@ -709,13 +877,18 @@ if (debug) cout <<"fraction for Mol " + name << endl;
 bool Molecule::ComputePhi(){
 if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	bool success=true;
+	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition 
 	switch (MolType) {
 		case monomer:
 			success=ComputePhiMon();
 			break;
 		case linear:			
-			//success=ComputePhiLin();
-			success=ComputePhiBra();
+			if (freedom == "clamped") {
+				Lat[0]->sub_box_on=Seg[mon_nr[0]]->clamp_nr; //slecting sub_box boundary conditions.
+				//success=ComputePhiLin();
+				success=ComputeClampLin();
+				Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition 
+			} else success=ComputePhiBra();
 			break;
 		case branched:
 			success=ComputePhiBra();
@@ -746,10 +919,10 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	return success;
 }
 
-Real* Molecule::propagate_forward(int &s, int block, int generation) {
+Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int M) {
 if (debug) cout <<"propagate_forward for Mol " + name << endl;
-	int M=Lat[0]->M;
-	Real* G1 = Seg[mon_nr[block]]->G1;
+	
+	// Real* G1 = Seg[mon_nr[block]]->G1;
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t;
@@ -758,7 +931,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 		if (s==first_s[generation]) { s++;
 			Cp(Gs+M,G1,M); Cp(Gs,G1,M); Cp(Gg_f+n0*M,Gs+M,M); last_stored[block]=n0;
 		} else {
-			Lat[0] ->propagate(Gs,G1,0,1); //assuming Gs contains previous end-point distribution on pos zero; 
+			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero; 
 			Cp(Gg_f+n0*M,Gs+M,M); s++;
 			last_stored[block]=n0;
 		} 
@@ -766,7 +939,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 		v0=t0=k0=0;
 		for (k=2; k<=N; k++) {
 			t++; s++;
-			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2);
+			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2,M);
 			if (t>n) {
 				t0++;
 				if (t0 == n) t0 = ++v0;
@@ -787,7 +960,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s>first_s[generation]) {
-				Lat[0] ->propagate(Gg_f,G1,s-1,s); 
+				Lat[0] ->propagate(Gg_f,G1,s-1,s,M); 
 			} else {
 				Cp(Gg_f+first_s[generation]*M,G1,M);
 			}
@@ -800,9 +973,9 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 }
 
 
-void Molecule::propagate_forward(Real* Gg_f, Real* G1,int &s, int N, int block) {
+void Molecule::propagate_forward(Real* Gg_f, Real* G1,int &s, int N, int block, int M) {
 if (debug) cout <<"propagate_forward for Mol " + name << endl;
-	int M=Lat[0]->M;
+	//int M=Lat[0]->M;
 	if (save_memory) {
 		int k,k0,t0,v0,t;
 		int n=memory[block]; if (block>0) n-=memory[block-1];
@@ -810,14 +983,14 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 		if (s==0) {
 			Cp(Gs+M,G1,M);Cp(Gg_f,Gs+M,M);
 		} else {
-			Lat[0] ->propagate(Gs,G1,0,1); //assuming Gs contains previous end-point distribution on pos zero; 
+			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero; 
 			Cp(Gg_f+n0*M,Gs+M,M); s++;
 		} 
 		t=1; 
 		v0=t0=k0=0;
 		for (k=2; k<=N; k++) {
 			t++; s++;
-			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2);
+			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2,M);
 			if (t>n) {
 				t0++;
 				if (t0 == n) t0 = ++v0;
@@ -834,13 +1007,14 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 			Cp(Gs,Gs+M,M); //make sure that Gs has last end-point distribution on spot zero.
 		} 
 	} else
-	for (int k=0; k<N; k++) {if (s>0) Lat[0] ->propagate(Gg_f,G1,s-1,s); s++;} 	
+	for (int k=0; k<N; k++) {
+		if (s>0) Lat[0] ->propagate(Gg_f,G1,s-1,s,M); s++;
+	} 	
 }
 
-void Molecule::propagate_backward(int &s, int block, int generation) {
+void Molecule::propagate_backward(Real* G1, int &s, int block, int generation, int M) {
 if (debug) cout <<"propagate_backward for Mol " + name << endl;
-	int M = Lat[0]->M; 
-	Real *G1=Seg[mon_nr[block]]->G1;
+	//Real *G1=Seg[mon_nr[block]]->G1;
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t,rk1;
@@ -855,10 +1029,10 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				if (s==chainlength-1) {
 					Cp(Gg_b+(k%2)*M,G1,M);
 				} else {
-					Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2);
+					Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
 				}
 			} else {
-				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2);
+				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
 			}
 			t = k - k0;
 			if (t == t0) {
@@ -873,7 +1047,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,M); 
 				for (rk1=k0+t0+2; rk1<=k; rk1++) {
 					t++;
-					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2);
+					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2,M);
 					if (t == t0+1 || k0+n == k) {
 						Cp(Gg_f+(n0+t-1)*M,Gs+(t%2)*M,M);
 					}
@@ -884,12 +1058,12 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				}
 				t = n;
 			}
-			AddTimes(phi+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M); 
+			AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M); 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
-						Composition(Al[i]->phi,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
+						Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
 					}
 				}
 			}
@@ -898,14 +1072,14 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
 	} else {
 		for (int k=0; k<N; k++) {
-			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2); else Cp(Gg_b+(s%2)*M,G1,M);
+			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M); else Cp(Gg_b+(s%2)*M,G1,M);
  
-			AddTimes(phi+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
+			AddTimes(rho+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
-						Composition(Al[i]->phi,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
+						Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
 					}
 				}
 			}
@@ -914,10 +1088,8 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	}	
 }
 
-
-void Molecule::propagate_backward(Real* Gg_f, Real* Gg_b, Real* G1, int &s, int N, int block) {
+void Molecule::propagate_backward(Real* Gg_f, Real* Gg_b, Real* G1, int &s, int N, int block, int M) {
 if (debug) cout <<"propagate_backward for Mol " + name << endl;
-	int M = Lat[0]->M; 
 	if (save_memory) {
 		int k,k0,t0,v0,t,rk1;
 		int n=memory[block]; if (block>0) n-=memory[block-1];
@@ -931,10 +1103,10 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				if (s==chainlength-1) {
 					Cp(Gg_b+(k%2)*M,G1,M);
 				} else {
-					Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2);
+					Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
 				}
 			} else {
-				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2);
+				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
 			}
 			t = k - k0;
 			if (t == t0) {
@@ -949,7 +1121,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,M);
 				for (rk1=k0+t0+2; rk1<=k; rk1++) {
 					t++;
-					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2);
+					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2,M);
 					if (t == t0+1 || k0+n == k) {
 						Cp(Gg_f+(n0+t-1)*M,Gs+(t%2)*M,M);
 					}
@@ -960,12 +1132,12 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				}
 				t = n;
 			}
-			AddTimes(phi+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M); 
+			AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M); 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
-					if (Al[i]->frag[k]==1) {
-						Composition(Al[i]->phi,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
+					if (Al[i]->frag[k]==1) { //alias is not yet read for clamp
+						Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
 					}
 				}
 			}
@@ -974,13 +1146,13 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
 	} else {
 		for (int k=0; k<N; k++) {
-			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2);
-			AddTimes(phi+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
+			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
+			AddTimes(rho+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
-					if (Al[i]->frag[k]==1) {
-						Composition(Al[i]->phi,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
+					if (Al[i]->frag[k]==1) { //alias is not yet ready for clamp
+						Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
 					}
 				}
 			}
@@ -989,15 +1161,59 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	}	
 }
 
+bool Molecule::ComputeClampLin(){
+	if (debug) cout <<"ComputeClampLin for Mol " + name << endl;
+	bool success=true;
+	int M=Lat[0]->M;
+	int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];	
+	int blocks=mon_nr.size();
+	Zero(rho,m*n_box*MolMonList.size()); 
+	int s=1; 
+	if (save_memory) {
+		Cp(Gs,mask1,m*n_box); 
+	} else {
+		Cp(Gg_f,mask1,m*n_box); //first block just contains the clamp
+	}
+	for (int i=1; i<blocks-1; i++) { 
+		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);
+		//propagate_forward(Gg_f,g1,s,n_mon[i],i,m*n_box);
+		propagate_forward(g1,s,i,0,m*n_box);
+	}
+	if (save_memory) {
+		int k=last_stored[blocks-2]; 
+		int N=memory[n_mon.size()-1]; 
+		Lat[0]->propagate(Gg_f,mask2,k,N-1,m*n_box); 
+		Lat[0]->ComputeGN(gn,Gg_f,H_Bx,H_By,H_Bz,H_Px2,H_Py2,H_Pz2,N-1,n_box); 
+	} else {
+		Lat[0]->propagate(Gg_f,mask2,s-1,s,m*n_box); 
+		Lat[0]->ComputeGN(gn,Gg_f,H_Bx,H_By,H_Bz,H_Px2,H_Py2,H_Pz2,chainlength-1,n_box); 
+	}
+	s=chainlength-1; //for last segment (clamp) no densities computed
+	Cp(Gg_b+(s%2)*m*n_box,mask2,m*n_box); //last block just contains the clamp;
+	if (save_memory) Cp(Gg_b+((s-1)%2)*m*n_box,Gg_b+(s%2)*m*n_box,m*n_box);
+	s--;
+	for (int i=blocks-2; i>0; i--) {
+		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);	
+		//propagate_backward(Gg_f,Gg_b,g1,s,n_mon[i],i,m*n_box);	
+		propagate_backward(g1,s,i,0,m*n_box);
+	} //for first segment (clamp) no densities computed. 
+	int length=MolMonList.size();
+	for (int i=1; i<length; i++) {
+		Lat[0]->CollectPhi(phi+M*i,gn,rho+m*n_box*i,Bx,By,Bz,n_box);
+	}
+
+	return success;
+}
+
 bool Molecule::ComputePhiLin(){
 	if (debug) cout <<"ComputePhiLin for Mol " + name << endl;
 	int M=Lat[0]->M;
 	bool success=true;
 	int blocks=mon_nr.size(); 
 	int s=0; Cp(Gg_f,Seg[mon_nr[0]]->G1,M); 
-	for (int i=0; i<blocks; i++) propagate_forward(Gg_f,Seg[mon_nr[i]]->G1,s,n_mon[i],i);
+	for (int i=0; i<blocks; i++) propagate_forward(Gg_f,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
 	s=chainlength-1; Cp(Gg_b+(s%2)*M,Seg[mon_nr[blocks-1]]->G1,M);
-	for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,Seg[mon_nr[i]]->G1,s,n_mon[i],i);
+	for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
 	Lat[0]->remove_bounds(Gg_b);
 	GN=Lat[0]->WeightedSum(Gg_b);
 	return success;
@@ -1033,7 +1249,7 @@ void Molecule::Backward(Real* G_start, int generation, int &s){//not yet robust 
 					for (int j=0; j<length; j++) {
 						if (i !=j) {
 							Cp(GS,GX+j*M,M);
-							Lat[0]->propagate(GS,UNITY,0,1);
+							Lat[0]->propagate(GS,UNITY,0,1,M);
 							Times(GS+2*M,GS+2*M,GS+M,M);
 						}		
 					}
@@ -1042,8 +1258,8 @@ void Molecule::Backward(Real* G_start, int generation, int &s){//not yet robust 
 				}
 				delete GX;
 				k++;
-			} else 	propagate_backward(s,k,generation);
-		} else propagate_backward(s,k,generation);
+			} else 	propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+		} else propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 		k--; 
 	}
 	delete GS;
@@ -1061,7 +1277,7 @@ Real* Molecule::Forward(int generation, int &s) {
 	while (k<=bN) {
 		if (b0<k && k<bN) { 
 			if (Gnr[k]==generation ){
-				Glast=propagate_forward(s,k,generation);	 
+				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);	 
 			} else {
 				Br.clear(); Gb.clear();
 				Cp(GS,Glast,M);
@@ -1071,10 +1287,10 @@ Real* Molecule::Forward(int generation, int &s) {
 					k+=(last_b[Gnr[k]]-first_b[Gnr[k]]+1);
 				} 
 				int length=Br.size();
-				Lat[0]->propagate(GS,Seg[mon_nr[k]]->G1,0,2);
+				Lat[0]->propagate(GS,Seg[mon_nr[k]]->G1,0,2,M);
 				for (int i=0; i<length; i++) {
 					Cp(GS,Gb[i],M);
-					Lat[0]->propagate(GS,UNITY,0,1);
+					Lat[0]->propagate(GS,UNITY,0,1,M);
 					Times(GS+2*M,GS+2*M,GS+M,M);
 				} 
 				if (save_memory) {
@@ -1084,7 +1300,7 @@ Real* Molecule::Forward(int generation, int &s) {
 				s++; 
 			}
 		} else {
-			Glast=propagate_forward(s,k,generation);
+			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 		}
 		k++;
 	}
@@ -1107,4 +1323,31 @@ bool Molecule::ComputePhiBra() {
 	Backward(Seg[mon_nr[last_b[0]]]->G1,generation,s);	
 	return success;
 }
+
+/*   --------------------------------trash-----------------------------------------------------
+void ComputePhi(){
+	Lat[0]->DisG1(G1,g1,Bx,By,Bz,n_box);		
+	Cp(Gg_f,mask1,M*n_box); 
+	for (s=1; s<=N; s++) Propagate(Gg_f,g1,s-1,s); Propagate(Gg_f,mask2,N,N+1);
+	Cp(Gg_b+((N+1)%2)*M*n_box,mask2,M*n_box);
+	Zero(rho,M*n_box);
+	for (int s=N; s>0; s--) {
+		Propagate(Gg_b,g1,((s+1)%2),(s%2));
+		AddTimes(rho,Gg_f+s*M*n_box,Gg_b+(s%2)*M*n_box,M*n_box);
+	}
+	ComputeGN(GN,Gg_f,H_Bx,H_By,H_Bz,H_Px2,H_Py2,H_Pz2,N,M,n_box);
+	Lat[0]->ColPhi(phi,GN,rho,Bx,By,Bz,n_box);	
+	Div(phi+MM,G1,MM);
+	Add(phi+MM,MASK,MM);
+}
+
+void ComputeGN(Real* GN, Real* Gg_f, int* H_Bx, int* H_By, int* H_Bz, int* H_Px2, int* H_Py2, int* H_Pz2, int N, int M, int n_box) {
+	for (int p=0; p<n_box; p++) Cp(GN+p,Gg_f+n_box*M*(N+1) +p*M+ jx*(H_Px2[p]-H_Bx[p])+jy*(H_Py2[p]-H_By[p])+(H_Pz2[p]-H_Bz[p]),1);
+
+#ifdef CUDA //this transfer can go away when all is on GPU.
+	TransferDataToHost(H_GN,GN,n_box);
+#endif
+
+}
+*/
 

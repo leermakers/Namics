@@ -17,14 +17,31 @@ if (debug) cout <<"Destructor for alias " + name << endl;
 #endif	
 }
 
-void Alias::AllocateMemory() {
+void Alias::AllocateMemory(int Clamp_nr, int n_box) {
 int M=Lat[0]->M;
+bool clamp = Clamp_nr>0;
+int m=Lat[0]->m[Clamp_nr];
+
+
 if (debug) cout <<"AllocateMemory in Alias " + name << endl;
+	
 	H_phi = (Real*) malloc(M*sizeof(Real)); H_Zero(H_phi,M);
 #ifdef CUDA
-	phi=(Real*)AllOnDev(M); Zero(phi,M);
+	if (clamp) {
+		rho=(Real*)AllonDev(m*n_box);
+		phi=(Real*)AllOnDev(M); Zero(phi,M);
+	} else {
+		phi=(Real*)AllOnDev(M); Zero(phi,M);
+		rho=phi;
+	}
 #else 
-	phi=H_phi; 
+	if (clamp) {
+		rho=(Real*) malloc(m*n_box*sizeof(Real));
+		phi=H_phi; 
+	} else {
+		phi=H_phi;
+		rho=phi;
+	}
 #endif
 	
 }

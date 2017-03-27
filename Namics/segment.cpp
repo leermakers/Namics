@@ -1,11 +1,12 @@
-#include "segment.h" 
-#include <fstream>
+#include "segment.h"  
+#include <fstream>  
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; 
 if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("freedom"); 
-	KEYS.push_back("valence");
-	KEYS.push_back("epsilon");;
+	KEYS.push_back("valence"); 
+	KEYS.push_back("epsilon");
+	KEYS.push_back("e.psi0/kT");
 	KEYS.push_back("pinned_range");
 	KEYS.push_back("frozen_range");
 	KEYS.push_back("tagged_range");
@@ -13,6 +14,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("frozen_filename");
 	KEYS.push_back("tagged_filename"); 
 	KEYS.push_back("clamp_filename");
+	KEYS.push_back("clamp_info"); 
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -35,7 +37,6 @@ if (debug) cout << "In Segment, Deallocating memory"<< endl;
 void Segment::AllocateMemory() {
 if (debug) cout <<"Allocate Memory in Segment " + name << endl; 
 	int M=Lat[0]->M;
-
 	phibulk =0; //initialisatie van monomer phibulk.
 	//r=(int*) malloc(6*sizeof(int));
 	//if (n_pos>0) {
@@ -105,11 +106,6 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	vector<string>options; 
 	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {
-		valence=In[0]->Get_Real(GetValue("valence"),0);
-		if (valence<-5 || valence > 5) cout <<"For mon " + name + " valence value out of range -5 .. 5. Default value used instead" << endl; 
-		epsilon=In[0]->Get_Real(GetValue("epsilon"),80);
-		if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 255. Default value 80 used instead" << endl;
-
 		options.push_back("free"); 
 		options.push_back("pinned");
 		options.push_back("frozen");
@@ -118,7 +114,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 		
 		freedom = In[0]->Get_string(GetValue("freedom"),"free"); 
-		if (!In[0]->InSet(options,freedom)) cout << "Freedom for mon " + name + " not recognized. Default value 'freedom' is used"<< endl;
+		if (!In[0]->InSet(options,freedom)) {
+			cout << "Freedom: '"<< freedom  <<"' for mon " + name + " not recognized. "<< endl;
+			cout << "Freedom choices: free, pinned, frozen, tagged, clamp " << endl; success=false;
+		}
 
 		if (freedom =="free") {
 			if (GetValue("frozen_range").size()>0||GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 ||
@@ -129,15 +128,78 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			r=(int*) malloc(6*sizeof(int));
 		}
 
-		if (freedom =="clamps" ) {
-			
+		if (freedom =="clamp" ) {
+			n_box=0;
 			if (GetValue("clamp_filename").size()>0) {
 				if (!GetClamp(GetValue("clamp_filename"))) {
-					success=false; cout <<"Failed to read 'clamp_filename'. Problem terminated" << endl; 
+					success=false; cout <<"Failed to read 'clamp_filename'. Problem terminated" << endl;
+					cout <<"Example of structure of clamp_filename is the following:" << endl;
+					cout <<"N : 20 : subbox0 : 15 15 15 pcb:[0. 0. 0.] " << endl;
+					cout <<"-1 -6 -6 " << endl;
+					cout <<"1 1 1 "  << endl; 
+					cout <<"11 1 1 " << endl;
+					cout <<" explanation: 1st line: length of chain fragment (should coinside with the composition) " << endl;
+					cout <<"              followed by subboxnr, Mx, My , Mz (sizes of subbox)" << endl; 
+					cout <<" 	      followed by pcb info. Note that the spaces beween numbers is essential info " << endl ;
+					cout <<"              2nd line: lower coordinate of subbox " << endl; 
+					cout <<"              3rd line: coordinates of clamp point 1 " << endl; 
+					cout <<"              4th line: coordinates of clamp point 2 " << endl; 
+					cout <<" repeat these 4 lines for every sub-box " << endl; 
+					cout <<" note that currently all subboxes should be equal in size " << endl; 
+					cout <<" note as well that the chain lengths should also be the same.(redundent information because inputfile overrules this setting" << endl; 
 				}
-			} else {success=false; cout << "When freedom of segment is 'clamps' we expect to find the quantity 'clamp_filename' which refers to a file that contains the data for the sub_box with clamping coordinates " << endl; } 
+			} else {
+				string s;
+				if (GetValue("clamp_info").size() >0) {
+					s=GetValue("clamp_info");
+					vector<string> sub;
+					vector<string> set;
+					vector<string> coor; 
+					In[0]->split(s,';',sub);
+					n_box=sub.size();
+					for (int i=0; i<n_box; i++) {
+						set.clear();
+						In[0]->split(sub[i],'(',set);
+						int length = set.size(); 
+						if (length!=4) {
+							success=false; cout <<" In 'clamp_info' for segment '"+name+"', for box number " << i << " the expected format (bx,by,bz)(px1,py1,pz1)(px2,py2,pz2) was not found" << endl; 
+						} else {
+							coor.clear();
+							In[0]->split(set[1],',',coor);
+							if (coor.size()!=3) {
+								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (bx,by,bz) not correct format. " << endl; 
+							} else {
+								bx.push_back(In[0]->Get_int(coor[0],-10000));
+								by.push_back(In[0]->Get_int(coor[1],-10000));
+								bz.push_back(In[0]->Get_int(coor[2],-10000));
+							}
+					
+							coor.clear();
+							In[0]->split(set[2],',',coor);
+							if (coor.size()!=3) {
+								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format. " << endl; 
+							} else {
+								px1.push_back(In[0]->Get_int(coor[0],-10000));
+								py1.push_back(In[0]->Get_int(coor[1],-10000));
+								pz1.push_back(In[0]->Get_int(coor[2],-10000));
+							}
+							coor.clear();
+							In[0]->split(set[3],',',coor);
+							if (coor.size()!=3) {
+								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (px2,py2,pz2) not correct format. " << endl; 
+							} else {
+								px2.push_back(In[0]->Get_int(coor[0],-10000));
+								py2.push_back(In[0]->Get_int(coor[1],-10000));
+								pz2.push_back(In[0]->Get_int(coor[2],-10000));
+							}
+						}
+					}
+				} else {
+					success=false;
+					cout<<"Segment " + name + " with 'freedom: clamp' expects input from 'clamp_filename' or 'clamp_info' " << endl; 
+				}
+			} 
 		}
-		
 	
 		if (freedom == "pinned") {
 			phibulk=0;
@@ -225,14 +287,71 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				}
 			} 	
 		}
-	
 		if (freedom!="free") { 
 			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
-			Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block); 
+			if (freedom=="clamp") {
+				int JX=Lat[0]->JX;
+				int JY=Lat[0]->JY;
+				int MX=Lat[0]->MX;
+				int MY=Lat[0]->MY;
+				int MZ=Lat[0]->MZ;
+				for (int i=0; i<n_box; i++) {
+					if (bx[i]<1) {bx[i] +=MX; px1[i] +=MX; px2[i] +=MX;} 
+					if (by[i]<1) {by[i] +=MY; py1[i] +=MY; py2[i] +=MY;} 
+					if (bz[i]<1) {bz[i] +=MZ; pz1[i] +=MZ; pz2[i] +=MZ;} 
+					H_MASK[((px1[i]-1)%MX+1)*JX + ((py1[i]-1)%MY+1)*JY + (pz1[i]-1)%MZ+1]=1;
+					H_MASK[((px2[i]-1)%MX+1)*JX + ((py2[i]-1)%MY+1)*JY + (pz2[i]-1)%MZ+1]=1;
+				}
+				int m_x; 
+				if (GetValue("sub_box_size").size()>0) {
+					m_x=In[0]->Get_int(GetValue("sub_box_size"),-1);
+					if (m_x <1 || m_x > MX) {success=false; cout <<"Value of sub_box_size is out of bounds: 1 ... " << MX << endl; }
+					if (mx>0) {
+						if (m_x!=mx) {
+							cout <<"values for sub_box_size of input " << m_x << " not consistent with value found in clamp_filename " << mx << " input file data is taken " << endl; 
+							mx=m_x; my=m_x; mz=m_x; 
+						}
+					} else { mx=m_x; my=m_x; mz=m_x; }
+				}
+				Lat[0]->PutSub_box(mx,my,mz,n_box);
+				clamp_nr = Lat[0]->m.size()-1; 
+			} else Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block); 
+		}
+		valence =0;
+		if (GetValue("valence").size()>0) {
+			valence=In[0]->Get_Real(GetValue("valence"),0);
+			if (valence<-10 || valence > 10) cout <<"For mon " + name + " valence value out of range -10 .. 10. Default value used instead" << endl;
+		} 
+		epsilon=80;
+		if (GetValue("epsilon").size()>0) {
+			epsilon=In[0]->Get_Real(GetValue("epsilon"),80);
+			if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 250. Default value 80 used instead" << endl;
+		}
+		if (valence !=0) {
+			if (Lat[0]->bond_length <1e-10 || Lat[0]->bond_length > 1e-8) {
+				success=false;
+				if (Lat[0]->bond_length==0) cout << "When there are charged segments, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-10 ... 1e-8 m " << endl; 
+				else cout <<"Bond length is out of range: 1e-10..1e-8 m " << endl; 
+			}
+		}
+		if (GetValue("e.psi0/kT").size()>0) {
+			PSI0=0;
+			PSI0=In[0]->Get_Real(GetValue("e.psi0/kT"),0);
+			if (PSI0!=0 && valence !=0) {
+				success=false;
+				cout <<"You can set only 'valence' or 'e.psi0/kT', but not both " << endl; 
+			}
+			if (PSI0!=0 && freedom!="frozen") {
+				success=false;
+				cout <<"You can not set potential on segment that has not freedom 'frozen' " << endl; 
+			}
+			if (PSI0 <-25 || PSI0 > 25) {
+				success=false;
+				cout <<"Value for dimensionless surface potentials 'e.psi0/kT' is out of range -25 .. 25. Recall the value of 1 at room temperature is equivalent to approximately 25 mV " << endl; 
+			}
 		}
 
 	}
-	
 	return success; 
 }
 
@@ -243,46 +362,50 @@ bool Segment::GetClamp(string filename) {
 	int pos;
 	int N=0;
 	mx=my=mz=0;
-	n_box=0;
+	n_box=-1;
 	int i=0;
 	ifstream in_file;
 	in_file.open(filename.c_str());
 	if (in_file.is_open()) {
 		while (in_file) {
-			n_box++; i++; 
+			i++; 
 			if (i==1) {
-				in_file >> line_ >> NN >> line_ >> X >> Y >> Z ;				
-				if (!In[0]->Get_int(NN,pos,0)) { success=false; cout<<" length of 'fragment' not an integer " << endl; }
+				n_box++; 
+				NN.clear(); 
+				in_file >> line_ >> NN >> line_ >> X >> Y >> Z >> line_ >> line_ >> line_ >> line_;	
+				if (NN.size()>0) {
+				if (!In[0]->Get_int(NN,pos,"")) { success=false; cout<<" length of 'fragment' not an integer " << endl; }
 				else {if (N>0) {if (N!=pos) {cout <<"lengths of fregment are not equal " << endl; success=false;}} else N = pos;}
-				if (!In[0]->Get_int(X,pos,0)) {success=false; cout <<"X-value for sub_box size is not integer " << endl;  } 
+				if (!In[0]->Get_int(X,pos,"")) {success=false; cout <<"X-value for sub_box size is not integer " << endl;  } 
 				else {if (mx>0) {if (mx !=pos) {success=false; cout <<"We can deal with only one sub-box size" << endl;}} else mx=pos; }
-				if (!In[0]->Get_int(Y,pos,0)) {success=false; cout <<"Y-value for sub_box size is not integer " << endl;  } 
+				if (!In[0]->Get_int(Y,pos,"")) {success=false; cout <<"Y-value for sub_box size is not integer " << endl;  } 
 				else {if (my>0) {if (my !=pos) {success=false; cout <<"We can deal with only one sub-box size" << endl;}} else my=pos; }
-				if (!In[0]->Get_int(Z,pos,0)) {success=false; cout <<"Z-value for sub_box size is not integer " << endl;  } 
+				if (!In[0]->Get_int(Z,pos,"")) {success=false; cout <<"Z-value for sub_box size is not integer " << endl;  } 
 				else {if (mz>0) {if (mz !=pos) {success=false; cout <<"We can deal with only one sub-box size" << endl;}} else mz=pos; }
+				}
 			}
 			if (i==2) {in_file>>X>>Y>>Z;
-				if (!In[0]->Get_int(X,pos,0)) {success =false; cout << " X-pos of particle sub_box nr " << n_box << " not integer"  << endl; }
+				if (!In[0]->Get_int(X,pos,"")) {success =false; cout << " X-pos of particle sub_box nr " << n_box << " not integer"  << endl; }
 				else bx.push_back(pos);
-				if (!In[0]->Get_int(Y,pos,0)) {success =false; cout << " Y-pos of particle sub_box nr " << n_box << " not integer"  << endl; }
+				if (!In[0]->Get_int(Y,pos,"")) {success =false; cout << " Y-pos of particle sub_box nr " << n_box << " not integer"  << endl; }
 				else by.push_back(pos);
-				if (!In[0]->Get_int(Z,pos,0)) {success =false; cout << " Z-pos of particle sub_box nr " << n_box << " not integer"  << endl; }
+				if (!In[0]->Get_int(Z,pos,"")) {success =false; cout << " Z-pos of particle sub_box nr " << n_box << " not integer"  << endl; }
 				else bz.push_back(pos);
 			}
 			if (i==3) {in_file>>X>>Y>>Z;
-				if (!In[0]->Get_int(X,pos,0)) {success =false; cout << " X-pos of particle pos 1 of sub_box nr " << n_box << " not integer"  << endl; }
+				if (!In[0]->Get_int(X,pos,"")) {success =false; cout << " X-pos of particle pos 1 of sub_box nr " << n_box << " not integer"  << endl; }
 				else px1.push_back(pos);
-				if (!In[0]->Get_int(Y,pos,0)) {success =false; cout << " Y-pos of particle pos 1 of sub_box nr " << n_box << " not integer"  << endl; }
+				if (!In[0]->Get_int(Y,pos,"")) {success =false; cout << " Y-pos of particle pos 1 of sub_box nr " << n_box << " not integer"  << endl; }
 				else py1.push_back(pos);
-				if (!In[0]->Get_int(Z,pos,0)) {success =false; cout << " Z-pos of particle pos 1 of sub_box nr " << n_box << " not integer"  << endl; }
+				if (!In[0]->Get_int(Z,pos,"")) {success =false; cout << " Z-pos of particle pos 1 of sub_box nr " << n_box << " not integer"  << endl; }
 				else pz1.push_back(pos);
 			}
 			if (i==4) {i=0;in_file>>X>>Y>>Z;
-				if (!In[0]->Get_int(X,pos,0)) {success =false; cout << " X-pos of particle pos 2 of sub_box nr " << n_box << " not integer"  << endl; }
+				if (!In[0]->Get_int(X,pos,"")) {success =false; cout << " X-pos of particle pos 2 of sub_box nr " << n_box << " not integer"  << endl; }
 				else px2.push_back(pos);
-				if (!In[0]->Get_int(Y,pos,0)) {success =false; cout << " Y-pos of particle pos 2 of sub_box nr " << n_box << " not integer"  << endl; }
+				if (!In[0]->Get_int(Y,pos,"")) {success =false; cout << " Y-pos of particle pos 2 of sub_box nr " << n_box << " not integer"  << endl; }
 				else py2.push_back(pos);
-				if (!In[0]->Get_int(Z,pos,0)) {success =false; cout << " Z-pos of particle pos 2 of sub_box nr " << n_box << " not integer"  << endl; }
+				if (!In[0]->Get_int(Z,pos,"")) {success =false; cout << " Z-pos of particle pos 2 of sub_box nr " << n_box << " not integer"  << endl; }
 				else pz2.push_back(pos);
 			}
 		}

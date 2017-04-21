@@ -493,6 +493,9 @@ if (debug) cout <<"LoadItems in Input " << endl;
 				for (int i=0; i<length; i++) {Out_key.push_back(set[2]); Out_name.push_back(MonList[i]); Out_prop.push_back(set[4]); }
 			}
 			if (!(wild_monlist || wild_mollist ||wild_aliaslist)) {Out_key.push_back(set[2]); Out_name.push_back(set[3]); Out_prop.push_back(set[4]);}
+			wild_aliaslist=false;
+			wild_mollist=false;
+			wild_monlist=false;
 			
 			if (set[1]=="vtk" && Out_key.size()>1) {
 				cout << "vtk output can have only one entry: the following entries were found:" << endl; success =false; 

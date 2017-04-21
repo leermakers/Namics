@@ -86,6 +86,7 @@ public:
 	void PushOutput();
 	int GetValue(string,int&,Real&,string&);
 
+	
 	Real* xx;
 	Real* x0;
 	Real* g;
@@ -100,6 +101,10 @@ public:
 	Real* g0;
 	float* h;
 	int* mask;
+	Real* r;
+	Real* d;
+	Real* q; 
+	Real* s; 
 		
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -118,6 +123,8 @@ public:
 	void COMPUTEG(Real*,Real*,int); 
 	void ComputePhis();
 	void ComputeG_ext();
+	void MinvTimesQ(Real*, Real*, int);
+	bool SolvePsi(Real*, Real*, Real*);
 	bool Iterate_Picard();
 	bool Iterate_DIIS();
 	void Message(int, int,Real, Real); 

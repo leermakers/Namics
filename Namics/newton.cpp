@@ -30,6 +30,12 @@ if(debug) cout <<"Destructor in Newton " << endl;
 	free(Ci);
 	free(Apij); 
 	free(mask);
+	if (Sys[0]->charged) {
+		free(r);
+		free(d);
+		free(q); 
+		free(s);
+	}
 #ifdef CUDA
 	cudaFree(xx);
 	cudaFree(x0);
@@ -42,24 +48,37 @@ if(debug) cout <<"Destructor in Newton " << endl;
 	free(g);
 	free(xR);
 	free(x_x0);
-#endif
+#endif 
 }
 
 void Newton::AllocateMemory() {
 if(debug) cout <<"AllocateMemeory in Newton " << endl; 
 	int M=Lat[0]->M;
-	iv = Sys[0]->SysMonList.size() * M;	
+	iv = Sys[0]->SysMonList.size() * M;
+	if (Sys[0]->charged) iv +=M; 	
 	if (method=="DIIS-ext") iv +=M;
 	Aij  =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
 	Ci   =(Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
 	Apij =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
 	mask= (int*) malloc(iv*sizeof(int));
+	if (Sys[0]->charged) {
+		r=(Real*) malloc(M*sizeof(Real));
+		d=(Real*) malloc(M*sizeof(Real));
+		q=(Real*) malloc(M*sizeof(Real)); 
+		s=(Real*) malloc(M*sizeof(Real));		
+	}
 #ifdef CUDA
 	xx  = (Real*)AllOnDev(iv); 
 	x0  = (Real*)AllOnDev(iv);
 	g   = (Real*)AllOnDev(iv);
 	xR  = (Real*)AllOnDev(m*iv);
 	x_x0= (Real*)AllOnDev(m*iv);
+	if (Sys[0]->charged) {
+		r=(Real*)AllOnDev(M);
+		d=(Real*)AllOnDev(M);
+		q=(Real*)AllOnDev(M); 
+		s=(Real*)AllOnDev(M);		
+	}
 #else
 	xx   =(Real*) malloc(iv*sizeof(Real)); 
 	x0   =(Real*) malloc(iv*sizeof(Real)); 
@@ -862,10 +881,12 @@ if(debug) cout <<"iterate in Newton" << endl;
 	reverseDirection = new int [reverseDirectionRange]; H_Zero(reverseDirection,reverseDirectionRange);
 	resetHessianCriterion = 1e5; reset_pseudohessian = false; 
 	trustregion=delta_max;
-	trustfactor =1; 
-	for (int i=0; i<nvar; i++) x[i]+=1e-10;
+	trustfactor =1; 	
+	srand (1);
+	for (int i=0; i<nvar; i++) x[i]+=1e-10*(Real)rand() / (Real)((unsigned)RAND_MAX + 1);
 	ComputeG(g);
 	int xxx=0;
+
 	for (int i=0; i<nvar; i++) {if (g[i]==0) mask[i]=0; else {xxx++;  mask[i]=1;}}
 	nvar=xxx;
 	p = new Real[nvar]; H_Zero(p,nvar); 
@@ -873,7 +894,6 @@ if(debug) cout <<"iterate in Newton" << endl;
 	p0 = new Real[nvar]; H_Zero(p0,nvar);
 	h = new float [nvar*nvar]; H_Zero(h,nvar*nvar);
 	 
-
 	if (e_info) {cout <<"NEWTON has been notified."<< endl; 
 		cout << "Your guess:"; 
 	}
@@ -1034,15 +1054,15 @@ if(debug) cout <<"DIIS in  Newton " << endl;
 }
 
 bool Newton::Guess(void){
-if(debug) cout << "guess in Newton" << endl;
+if (debug) cout << "Guess in Newton" << endl;
 	bool success=true;
-        if (start==1) {
+        if (start==1) { 
                 if (ReadFileGuess!="") {
                         Lat[0]->ReadGuess(ReadFileGuess,xx);
-                } else {
-                        Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
+                } else { 
+                       Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
                 }
-        }
+        } 
 	return success;
 }
 
@@ -1061,6 +1081,7 @@ if(debug) cout <<"Solve in  Newton " << endl;
 	if (method=="pseudohessian" || method=="hessian") {iterate(xx,iv);} else 
 
 */
+	
 	if (method=="pseudohessian") {iterate(xx,iv);} else 
 
 	if (method=="Picard") {success=Iterate_Picard();} else success=Iterate_DIIS(); 
@@ -1078,6 +1099,115 @@ if(debug) cout <<"Messiage in  Newton " << endl;
 		if (residual < tolerance/10) cout <<"I almost made it..." << endl;
 	}
 }
+
+/*
+void Newton::MinvTimesQ(Real* d, Real* q, int M){
+	Zero(d,M);
+	int k,i;
+	int N; 
+	int psi0=0,psim=0;
+	int gradients=Lat[0]->gradients;
+	switch (gradients) {
+		case 1:
+			N=M-2;
+			//for (i=1; i<=N; i++) {
+			//	psi0 +=(N-i+1)*q[i]; 
+			//	psim +=i*q[i];
+			//}
+			//q[1]-=psi0;
+			//q[N]-=psim;
+			
+			for (k=1; k<=N; k++) {
+				for (i=1; i<=k; i++) d[k]+=i*q[i];
+				d[k]*=(N-k+1);
+				for (i=k+1; i<=N; i++) d[i]+=k*(N-(i-1))*q[i];
+				d[k]*=-1.0; 
+			}
+
+			for (i=1; i<M-2; i++) {
+				q[0]=(M-i)*q[i]; d[0]=-q[0];
+				//q[M-1]=i*q[i]; d[M-1]=-q[M-1];
+			}
+			for (i=1; i<M-1; i++){
+				for (j=i; j<M-1; j++) {
+					d[i] -= (M-j)*(j+1)*q[j];
+				}
+				for (j=i+1; j<M-1; j++) {
+					d[j] -= (M-j)*(i+1)*q[i];
+				}
+
+				d[i]/=(M+1);
+//cout << " d " << d[i] << endl; 
+			}
+			//q[1]+=psi0;
+			//q[N]+=psim;
+
+
+			
+			break;
+		case 2:
+			cout <<" MinvTimesQ not implemented in 2D" << endl;
+			break;
+		case 3: 
+			cout <<" MinvTimesQ not implemented in 3D" << endl;
+			break;
+		default:
+			cout <<" MinvTimesQ wrongly implemented" << endl;
+			break;
+	}
+}
+
+
+bool Newton::SolvePsi(Real* psi, Real* Q, Real* eps){
+	bool success=true;
+	Real pf=-e*e/(eps0*80*k_BT*Lat[0]->bond_length);
+//cout <<"pf " << pf << endl; 
+	int M=Lat[0]->M;
+	Real *e_min = new Real[M];
+	Real *e_plus = new Real[M];
+	int i=0; 
+	Norm(Q,pf,M);
+	MinvTimesQ(psi,Q,M);//beginschatting
+	Lat[0]->set_bounds(psi);
+	//Div(Q,e_plus,M);
+	//if (it==0) Cp(psi,Q,M);
+	Real tolerance = 1e-7;
+	Real alpha,beta,result;
+	Lat[0]->DivGradPsi(q,psi,eps,e_min,e_plus);
+	YisAminB(r,Q,q,M);
+	MinvTimesQ(d,r,M);
+	Dot(result,r,d,M);
+	Real delta_n = result; 
+	Real delta_0 = delta_n;
+	while (i<10 && delta_n > tolerance) {
+		Lat[0]->DivGradPsi(q,d,eps,e_min,e_plus);
+		Dot(result,d,q,M);
+		alpha=delta_n/result;
+		YplusisCtimesX(psi,d,alpha,M);
+		Lat[0]->set_bounds(psi);
+		if (i%50==0) {
+			Lat[0]->DivGradPsi(q,psi,eps,e_min,e_plus);
+			YisAminB(r,Q,q,M);
+		} else {
+			YplusisCtimesX(r,q,-alpha,M);
+		}
+		MinvTimesQ(s,r,M);
+		delta_0=delta_n;
+		Dot(result,r,s,M);
+		delta_n=result; 
+		beta=delta_n/delta_0;
+		YisAplusCtimesB(d,s,d,beta,M); 
+		i++;
+	}
+	cout <<i << "subs. Error-psi " << sqrt(delta_n) << endl; 
+	//Times(Q,Q,e_plus,M);
+	Norm(Q,1.0/pf,M);
+	Lat[0]->remove_bounds(Q);
+	delete e_min;
+	delete e_plus; 
+	return success; 
+}
+*/
 
 bool Newton::Iterate_Picard() {
 if(debug) cout <<"Iterate_Picard in  Newton " << endl;
@@ -1168,10 +1298,14 @@ void Newton::ComputeG(Real* g){
 if(debug) cout <<"ComputeG in  Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi; 
+	int sysmon_length = Sys[0]->SysMonList.size(); 
+	int mon_length = In[0]->MonList.size(); //also frozen segments
 	ComputePhis();
 
-	int sysmon_length = Sys[0]->SysMonList.size(); 
-	int mon_length = In[0]->MonList.size(); //also frozen segments	
+	if (Sys[0]->charged) {
+		Sys[0]->DoElectrostatics(g+sysmon_length*M,xx+sysmon_length*M);
+		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
+	}
 
 	Cp(g,xx,iv); Zero(alpha,M);
 	for (int i=0; i<sysmon_length; i++) {
@@ -1180,19 +1314,33 @@ if(debug) cout <<"ComputeG in  Newton " << endl;
 			if (chi!=0) {
 				PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 			}
-
+		}
+		if (Sys[0]->charged){
+			YplusisCtimesX(g+i*M,Sys[0]->EE,Seg[Sys[0]->SysMonList[i]]->epsilon,M);
+			if (Seg[Sys[0]->SysMonList[i]]->valence !=0)
+			YplusisCtimesX(g+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMonList[i]]->valence,M);	
 		}
 	}
-	for (int i=0; i<sysmon_length; i++) {
-		Add(alpha,g+i*M,M);
-	}
-
+	for (int i=0; i<sysmon_length; i++) Add(alpha,g+i*M,M);
 	Norm(alpha,1.0/sysmon_length,M);
 	for (int i=0; i<sysmon_length; i++) {
 		AddG(g+i*M,Sys[0]->phitot,alpha,M);
 		Lat[0]->remove_bounds(g+i*M);
 		//Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
 	} 
+
+	if (Sys[0]->charged) { 
+		Lat[0]->set_bounds(Sys[0]->psi);
+		Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
+
+
+	//	Cp(g+sysmon_length*M,Sys[0]->psi,M);
+	//	Lat[0]->UpdatePsi(Sys[0]->psi,Sys[0]->q,Sys[0]->eps);
+	//	Lat[0]->set_bounds(Sys[0]->psi);
+	//	//Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
+	//	//YisAminB(g+sysmon_length*M,g+sysmon_length*M,Sys[0]->psi,M);
+	//	YplusisCtimesX(g+sysmon_length*M,Sys[0]->psi,-1.0,M);
+	}
 }
 
 void Newton::ComputeG_ext(){ 

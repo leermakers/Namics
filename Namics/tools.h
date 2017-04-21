@@ -37,11 +37,14 @@ __global__ void dubble(Real*, Real*, Real, int);
 __global__ void boltzmann(Real*, Real*, int);
 __global__ void invert(int*, int*, int);
 __global__ void invert(Real*, Real*, int);
+__global__ void addgradsquare(Real*, Real*,Real*,Real* int);
 __global__ void putalpha(Real*,Real*,Real*,Real,Real,int);
 __global__ void div(Real*,Real*,int);
 __global__ void oneminusphitot(Real*, Real*, int);
 __global__ void addg(Real*, Real*, Real*, int);
 __global__ void computegn(Real*, Real*, int, int);
+__global__ void overwritec(Real*, int*, Real; int);
+__global__ void overwritea(Real*, int*, Real*; int);
 void TransferDataToHost(Real*, Real*, int);
 void TransferDataToDevice(Real*, Real*, int);
 void TransferIntDataToHost(int*, int*, int);
@@ -86,6 +89,7 @@ void Dubble(Real*, Real*, Real,int);
 void Boltzmann(Real*, Real*, int);
 void Invert(int*, int*, int);
 void Invert(Real*, Real*, int);
+void AddGradSquare(Real*, Real*,Real*,Real* int);
 void PutAlpha(Real*, Real*, Real*, Real, Real, int);
 void Div(Real*, Real*, int);
 void AddG(Real*, Real*, Real*, int);
@@ -97,6 +101,9 @@ void SetBoundaries(int*,       int, int, int, int, int, int, int, int, int, int,
 void RemoveBoundaries(int*,    int, int, int, int, int, int, int, int, int, int, int);
 void DistributeG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
+void OverwriteC(Real*, int*, Real,int); 
+void OverwriteA(Real*, int*, Real* ,int); 
+
 #else
 void bx(Real *, int, int, int, int, int, int, int);
 void b_x(Real*, int, int, int, int, int, int, int);
@@ -138,6 +145,7 @@ void Dubble(Real*, Real*, Real,int);
 void Boltzmann(Real*, Real*, int);
 void Invert(int*, int*, int);
 void Invert(Real*, Real*, int);
+void AddGradSquare(Real*, Real*,Real*,Real*, int);
 void PutAlpha(Real*, Real*, Real*, Real, Real, int);
 void Div(Real*, Real*, int);
 void AddG(Real*, Real*, Real*, int);
@@ -149,7 +157,8 @@ void SetBoundaries(int*,       int, int, int, int, int, int, int, int, int, int,
 void RemoveBoundaries(int*,    int, int, int, int, int, int, int, int, int, int, int);
 void DisG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void ColPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
-
+void OverwriteC(Real*, int*, Real,int); 
+void OverwriteA(Real*, int*, Real* ,int); 
 #endif
 
 void H_Zero(Real*, int);

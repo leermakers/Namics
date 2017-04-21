@@ -1,4 +1,4 @@
-#include "system.h"
+#include "system.h" 
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,string name_) {
 	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; 
 if (debug) cout << "Constructor for system " << endl;
@@ -13,6 +13,10 @@ if (debug) cout << "Destructor for system " << endl;
 	free(H_GrandPotentialDensity);
 	free(H_FreeEnergyDensity);
 	free(H_alpha);
+	if (charged) {
+		free(H_q);
+		free(H_psi);	
+	}
 #ifdef CUDA
 	cudaFree(phitot);
 	cudaFree(alpha);
@@ -20,11 +24,23 @@ if (debug) cout << "Destructor for system " << endl;
 	cudaFree(FreeEnergyDensity);
 	cudaFree(TEMP);
 	cudaFree(KSAM);
+	if (charged) {
+		cudaFree(psi);
+		cudaFree(eps);
+		cudaFree(q);
+		cudaFree(EE);
+		cudeFree(psiMask);
+	}
 #else	
 	free(phitot); 
 	free(TEMP);
 	free(KSAM);
 	free(CHI);
+	if (charged) {
+		free(EE);
+		free(psiMask);
+		free(eps); 
+	}
 #endif
 }
 
@@ -37,6 +53,11 @@ if (debug) cout << "AllocateMemory in system " << endl;
 	H_GrandPotentialDensity = (Real*) malloc(M*sizeof(Real));
 	H_FreeEnergyDensity = (Real*) malloc(M*sizeof(Real));
 	H_alpha = (Real*) malloc(M*sizeof(Real));
+	if (charged) {
+		H_q=(Real*) malloc(M*sizeof(Real));
+		H_psi=(Real*) malloc(M*sizeof(Real));
+		
+	}
 #ifdef CUDA
 	phitot = (Real*)AllOnDev(M); 
 	alpha=(Real*)AllOnDev(M);	
@@ -44,15 +65,32 @@ if (debug) cout << "AllocateMemory in system " << endl;
 	FreeEnergyDensity=(Real*)AllOnDev(M);
 	TEMP =(Real*)AllOnDev(M);	
 	KSAM =(int*)AllOnDev(M);
+	if (charged) {
+		psi=(Real*)AllOnDev(M);
+		q=(Real*)AllOnDev(M);
+		eps=(Real*)AllOnDev(M);
+		EE=(Real*)AllOnDev(M);
+		psiMask=(int*)AllOnDev(M);
+	}
 #else
 	phitot = (Real*) malloc(M*sizeof(Real));
 	alpha= H_alpha;
+	if (charged) {
+		psi=H_psi; q=H_q;
+		eps=(Real*) malloc(M*sizeof(Real));
+		EE=(Real*) malloc(M*sizeof(Real));
+		psiMask = (int*) malloc(M*sizeof(int));
+	}
 	KSAM = (int*) malloc(M*sizeof(int));
 	FreeEnergyDensity=H_FreeEnergyDensity;
 	GrandPotentialDensity = H_GrandPotentialDensity;
 	TEMP = (Real*) malloc(M*sizeof(Real));
 #endif
 	Zero(KSAM,M);
+	if (charged) {
+		Zero(psi,M);
+		Zero(EE,M);
+	}
 	n_mol = In[0]->MolList.size(); 
 	int i=0;
 	Lat[0]->AllocateMemory(); 
@@ -101,6 +139,17 @@ if (debug) cout <<"PrepareForCalculations in System " << endl;
 	int n_mon=In[0]->MonList.size();
 	for (int i=0; i<n_mon; i++) {success=Seg[i]->PrepareForCalculations(KSAM);}
 	for (int i=0; i<n_mol; i++) {success=Mol[i]->PrepareForCalculations(KSAM);}
+	if (charged) {
+		length=FrozenList.size();
+		i=0; Zero(psiMask,M); fixedPsi0=false; 
+		while (i<length) {
+			if (Seg[FrozenList[i]]->fixedPsi0) {
+				fixedPsi0=true;
+				Add(psiMask,Seg[FrozenList[i]]->MASK,M);
+			}
+			i++;
+		}
+	}	
 	return success; 
 }
 
@@ -159,8 +208,9 @@ if (debug) cout << "CheckInput for system " << endl;
 			cout << "In system '" + name + "' the 'solvent' was not found, while the volume fractions of the bulk do not add up to unity. " << endl;  
 			success=false; 
 		}
-		
+		charged=false;
 		if (IsCharged()) {
+			charged=true;
 			bool neutralizer_needed=false;
 			bool neutralizer_found=false;
 			Real phibulk=0;
@@ -184,8 +234,6 @@ if (debug) cout << "CheckInput for system " << endl;
 			} 
 		}
 		
-		//find neutralizer when the charge in the bulk does not add to zero.
-
 		vector<string> options;
 		options.push_back("micro_emulsion"); options.push_back("micro_phasesegregation");
 		CalculationType="";
@@ -218,6 +266,7 @@ if (debug) cout << "CheckInput for system " << endl;
 		}
 		options.clear();
 		options.push_back("lamellae"); options.push_back("Im3m"); 
+		GuessType=""; MonA=0; MonB=0;
 		if (GetValue("generate_guess").size()>0) {
 			if (!In[0]->Get_string(GetValue("generate_guess"),GuessType,options," Info about 'generate_guess' rejected") ) {success=false;};
 			if (GuessType=="lamellae" || GuessType=="Im3m") {
@@ -319,7 +368,11 @@ if (debug) cout << "PushOutput for system " << endl;
 	string s="profile;0"; push("alpha",s);
 	s="profile;1"; push("GrandPotentialDensity",s);
 	s="profile;2"; push("FreeEnergyDensity",s);
-	//"profile;3"; push("KSAM",s);
+	if (charged) {
+		s="profile;3"; push("psi",s);
+		s="profile;4"; push("q",s);
+		s="profile;5"; push("eps",s);
+	}
 #ifdef CUDA
 	TransferDataToHost(H_alpha, alpha, M);
 	TransferDataToHost(H_GrandPotentialDensity, GrandPotentialDensity, M);
@@ -334,7 +387,11 @@ if (debug) cout << "GetPointer for system " << endl;
 	if (sub[1]=="0") return H_alpha; 
 	if (sub[1]=="1") return H_GrandPotentialDensity;
 	if (sub[1]=="2") return H_FreeEnergyDensity;
-	// (sub[1]=="3") return H_KSAM;
+	if (sub[1]=="3") return psi;
+	if (sub[1]=="4") return q;
+	if (sub[1]=="5") return eps;
+	
+	
 	return NULL; 
 }
 
@@ -395,6 +452,27 @@ if (debug) cout << "CheckChi_values for system " << endl;
  	return success; 
 }
 
+void System::DoElectrostatics(Real* g, Real* x) {
+	int M=Lat[0]->M;
+	int n_seg=In[0]->MonList.size();
+	Zero(q,M);
+	Zero(eps,M);
+	for (int i=0; i<n_seg; i++) {
+		YplusisCtimesX(q,Seg[i]->phi,Seg[i]->valence,M);
+		YplusisCtimesX(eps,Seg[i]->phi,Seg[i]->epsilon,M);
+	}
+	Div(q,phitot,M);
+	Div(eps,phitot,M);
+	Lat[0]->set_bounds(eps);
+	Cp(psi,x,M); Cp(g,psi,M);
+	if (fixedPsi0) {
+		int length=FrozenList.size();
+		for (int i=0; i<length; i++) {
+			Seg[FrozenList[i]]->UpdateValence(g,psi,q,eps);
+		}
+	}
+}
+
 bool System::ComputePhis(){
 if(debug) cout <<"ComputePhis in system" << endl;
 	int M= Lat[0]->M;
@@ -448,12 +526,26 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]-
 		}
 
 	}
+
+	if (charged) {
+		Real phib=0;
+		for (int i=0; i<n_mol; i++) {
+			if (i!=neutralizer && i!=solvent) phib+=Mol[i]->phibulk*Mol[i]->Charge();
+		}	
+		Mol[neutralizer]->phibulk = -phib/Mol[neutralizer]->Charge();
+		totphibulk+=Mol[neutralizer]->phibulk; 
+		norm = Mol[neutralizer]->phibulk/Mol[neutralizer]->chainlength; 
+		Mol[neutralizer]->n = norm*Mol[neutralizer]->GN;
+		Mol[neutralizer]->theta = Mol[neutralizer]->n*Mol[neutralizer]->chainlength; 
+		Mol[neutralizer]->norm=norm;
+	}
+
 	Mol[solvent]->phibulk=1.0-totphibulk; 
 	norm=Mol[solvent]->phibulk/Mol[solvent]->chainlength;
 	Mol[solvent]->n=norm*Mol[solvent]->GN;
-	Mol[solvent]->theta=Mol[solvent]->n*Mol[solvent]->chainlength;  
+	Mol[solvent]->theta=Mol[solvent]->n*Mol[solvent]->chainlength; 
+	Mol[solvent]->norm=norm; 
 	int k=0;
-	Mol[solvent]->norm=norm;
 	length = Mol[solvent]->MolMonList.size();
 	while (k<length) {
 		Real *phi=Mol[solvent]->phi+k*M;
@@ -463,6 +555,19 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << k 
 }
 		k++;
 	}
+	if (charged) {
+		k=0;
+		length = Mol[neutralizer]->MolMonList.size();
+		while (k<length) {
+			Real *phi=Mol[neutralizer]->phi+k*M;
+			if (Mol[neutralizer]->norm>0) Norm(phi,Mol[neutralizer]->norm,M);
+if (debug) {
+Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << neutralizer << "for mon " << k << ":" << sum << endl; 
+}
+			k++;
+		}
+	}
+
 	for (int i=0; i<n_mol; i++) {
 
 		int length=Mol[i]->MolMonList.size();
@@ -495,7 +600,6 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << k 
 		if (Seg[i]->freedom !="frozen") Lat[0]->set_bounds(Seg[i]->phi); 
 		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M);
 	}
-	
 	return success;  
 }
 
@@ -505,8 +609,8 @@ if (debug) cout << "CheckResults for system " << endl;
 	FreeEnergy=GetFreeEnergy();
 	GrandPotential=GetGrandPotential();
 	CreateMu();
-cout <<"free energy     = " << FreeEnergy << endl; 
-cout <<"grand potential = " << GrandPotential << endl; 
+	cout <<"free energy                 = " << FreeEnergy << endl; 
+	cout <<"grand potential             = " << GrandPotential << endl; 
 	int n_mol=In[0]->MolList.size();
 	Real n_times_mu=0;
 	for (int i=0; i<n_mol; i++) {
@@ -514,8 +618,8 @@ cout <<"grand potential = " << GrandPotential << endl;
 		Real n=Mol[i]->n;
 		n_times_mu +=  n*Mu; 
 	}
-cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl; 
-cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
+	cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl; 
+	cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
 	
 	for (int i=0; i<n_mol; i++) {
 		if (Mol[i]->MolAlList.size()>0) {
@@ -536,11 +640,16 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 	//for (int i=0; i<n_mol; i++) Lat[0]->remove_bounds(Mol[i]->phitot);
 	int n_mon=In[0]->MonList.size();
 	for (int i=0; i<n_mon; i++) {
-		//Lat[0]->remove_bounds(Seg[i]->phi); 
 		Lat[0]->remove_bounds(Seg[i]->phi_side);
 	}
 
 	Zero(F,M);
+	if (charged) {
+		Times(F,EE,eps,M); Norm(F,-2.0,M); //EE bevat een deling door 2 en de norm met -2 is two pre-correct de latere deling door 2. 
+		AddTimes(F,q,psi,M); 
+		Norm(F,0.5,M);
+	}
+
 	for (int i=0; i<n_mol; i++){
 		if (Mol[i]->freedom =="clamped") {
 			int n_box=Mol[i]->n_box;
@@ -599,6 +708,7 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 	int n_mol=In[0]->MolList.size();
 	int n_mon=In[0]->MonList.size();
 	Zero(GP,M);
+	if (charged) {Times(GP,q,psi,M); Norm(GP,0.5,M);}
 	for (int i=0; i<n_mol; i++){
 		Real *phi=Mol[i]->phitot;
 		Real phibulk = Mol[i]->phibulk;
@@ -682,28 +792,5 @@ if (debug) cout << "CreateMu for system " << endl;
 //TODO //make sure that the tagged positions are not in frozen range. 
 
 
-//
-//#ifdef CUDA
-//TransferDataToHost(H_GN_A,GN_A,n_box);
-//TransferDataToHost(H_GN_B,GN_B,n_box);
-//#endif
-//}
-
-//#ifdef CUDA
-//	TransferDataToDevice(H_mask, mask, M*n_box);
-//	TransferDataToDevice(H_MASK, MASK, MM);
-//	TransferDataToDevice(H_KSAM, KSAM, MM);
-//	TransferDataToDevice(H_u, u, MM*n_seg);
-//	TransferIntDataToDevice(H_Bx, Bx, n_box);
-//	TransferIntDataToDevice(H_By, By, n_box);
-//	TransferIntDataToDevice(H_Bz, Bz, n_box);
-//	TransferIntDataToDevice(H_Px, Px, n_box);
-//	TransferIntDataToDevice(H_Py, Py, n_box);
-//	TransferIntDataToDevice(H_Pz, Pz, n_box);
-//	if (charges) TransferDataToDevice(H_psi,psi,MM);
-//#else
-//	Cp(u,H_u,MM*n_seg);
-//	if (charges) Cp(psi,H_psi,MM);
-//#endif
 
  

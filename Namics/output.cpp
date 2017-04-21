@@ -129,7 +129,13 @@ if (debug) cout << "GetPointer in output " << endl;
 
 	switch(choice) {
 		case 1:
-			return Sys[0]->GetPointer(prop); 
+			listlength=Sys[0]->strings.size();
+			j=0;	
+			while (j<listlength) {
+				if (prop==Sys[0]->strings[j]) return Sys[0]->GetPointer(Sys[0]->strings_value[j]);
+				j++;
+			}
+			//return Sys[0]->GetPointer(prop); 
 			break;
 		case 2:
 			i=0;
@@ -375,7 +381,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 //segment parameters
 		int length_A=In[0]->MonList.size();
 		for (int j=0; j<length_A; j++) {
-			s="seg : " + Seg[j]->name + " :";  
+			s="mon : " + Seg[j]->name + " :";  
 			length = Seg[j]->ints.size();
 			for (int i=0; i<length; i++) 
 				fprintf(fp,"%s %s : %i \n",s.c_str(),Seg[j]->ints[i].c_str(),Seg[j]->ints_value[i]);

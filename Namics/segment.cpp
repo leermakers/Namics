@@ -104,6 +104,8 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	bool success;
 	string s; 
 	vector<string>options; 
+	guess_u=0;
+	fixedPsi0=false;
 	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {
 		options.push_back("free"); 
@@ -336,6 +338,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		}
 		if (GetValue("e.psi0/kT").size()>0) {
 			PSI0=0;
+			fixedPsi0=true;
 			PSI0=In[0]->Get_Real(GetValue("e.psi0/kT"),0);
 			if (PSI0!=0 && valence !=0) {
 				success=false;
@@ -350,7 +353,6 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				cout <<"Value for dimensionless surface potentials 'e.psi0/kT' is out of range -25 .. 25. Recall the value of 1 at room temperature is equivalent to approximately 25 mV " << endl; 
 			}
 		}
-
 	}
 	return success; 
 }
@@ -505,6 +507,8 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	ints.clear();
 	ints_value.clear();  
 	push("freedom",freedom);
+	push("valence",valence);
+	if (fixedPsi0) push("Psi0",PSI0);
 	if (freedom=="pinned") push("range",GetValue("pinned_range"));
 	if (freedom=="frozen") push("range",GetValue("frozen_range"));
 	if (freedom=="tagged") push("range",GetValue("tagged_range"));
@@ -568,35 +572,12 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 	}
 	return 0; 
 }
-
-
-/*
-	for (int p=0; p<n_box; p++){
-		H_mask[p*M + jx*(H_Px[p]-H_Bx[p])+jy*(H_Py[p]-H_By[p])+(H_Pz[p]-H_Bz[p])]=1;
-		H_MASK[((H_Px[p]-1)%MX+1)*JX + ((H_Py[p]-1)%MY+1)*JY + (H_Pz[p]-1)%MZ+1]=1;
+void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps) {
+	int M=Lat[0]->M;
+	if (fixedPsi0) {
+		OverwriteC(psi,MASK,PSI0,M);
+		Lat[0]->set_bounds(psi);
+		Lat[0]->UpdateQ(g,psi,q,eps,MASK);
 	}
-
-	H_mask = new Real[M*n_box];
-#ifdef CUDA
-	mask= (Real*)AllOnDev(M*n_box);
-#else
-	mask=H_mask;
-#endif
-
-	H_Zero(H_mask,M*n_box);
-	H_Bx  = new int[n_box];  H_By  = new int[n_box];   H_Bz  = new int[n_box];
-	H_Px = new int[n_box];  H_Py = new int[n_box];   H_Pz = new int[n_box];
-#ifdef CUDA
-	Bx=(int*)AllIntOnDev(n_box);
-	By=(int*)AllIntOnDev(n_box);
-	Bz=(int*)AllIntOnDev(n_box);
-	Px=(int*)AllIntOnDev(n_box);
-	Py=(int*)AllIntOnDev(n_box);
-	Pz=(int*)AllIntOnDev(n_box);
-
-#else
-	Bx=H_Bx; By=H_By; Bz=H_Bz;
-	Px=H_Px; Py=H_Py; Pz=H_Pz;
-
-#endif
-*/
+	
+}

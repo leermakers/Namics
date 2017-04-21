@@ -145,7 +145,6 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Bx=H_Bx; By=H_By; Bz=H_Bz;
 		Px1=H_Px1; Py1=H_Py1; Pz1=H_Pz2;
 		Px2=H_Px2; Py2=H_Py2; Pz2=H_Pz2;
-cout <<"N " << N << endl; 
 		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real));
 		Gg_b = (Real*) malloc(m*2*n_box*sizeof(Real));
 		g1=(Real*) malloc(m*n_box*sizeof(Real));
@@ -157,7 +156,7 @@ cout <<"N " << N << endl;
 		Gg_b = (Real*) malloc(M*2*sizeof(Real));
 		phi=H_phi;
 		rho=phi;
-		if (save_memory) Gs=(Real*) malloc(m*n_box*2*sizeof(Real));
+		if (save_memory) Gs=(Real*) malloc(2*M*sizeof(Real));
 	}		
 	phitot = H_phitot;
 	UNITY = (Real*) malloc(M*sizeof(Real));

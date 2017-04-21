@@ -24,6 +24,14 @@ public:
 	Real GrandPotential;
 	Real* phitot;  
 	int* KSAM;
+	Real* eps;
+	Real* H_psi;
+	Real* H_q;
+	Real* psi;
+	Real* EE;
+	int* psiMask;
+	bool fixedPsi0;
+	Real* q; 
 	Real* H_GrandPotentialDensity;
 	Real* H_FreeEnergyDensity;
 	Real* H_alpha;
@@ -38,6 +46,7 @@ public:
 	int tag_segment; 
 	bool input_error; 
 	bool cuda; 
+	bool charged;
 
 	int MonA,MonB; 
 
@@ -71,6 +80,7 @@ public:
 	void AllocateMemory();
 	bool PrepareForCalculations();
 	bool ComputePhis();
+	void DoElectrostatics(Real*,Real*);
 	bool CheckResults();
 	Real GetFreeEnergy();
 	Real GetGrandPotential();

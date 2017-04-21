@@ -168,6 +168,14 @@ __global__ void boltzmann(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=exp(-A[idx]);
 }
+__global__ void overwritec(Real* P, int Mask, Real X,int M) {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) if (Mask[idx]==1) P[idx] = X ;
+}
+__global__ void overwritea(Real* P, int Mask, Real* A,int M) {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) if (Mask[idx]==1) P[idx] = A[idx] ;
+}
 __global__ void invert(int *SKAM, int *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
@@ -175,6 +183,10 @@ __global__ void invert(int *SKAM, int *MASK, int M)   {
 __global__ void invert(Real *SKAM, Real *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
+}
+__global__ void addgradsquare(Real *EE, Real* X,  Real* Y, Real* Z, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) EE[idx]+=pow(X[idx]-Y[idx],2)+pow(Y[idx]-Z[idx],2);
 }
 __global__ void putalpha(Real *g,Real *phitot,Real *phi_side,Real chi,Real phibulk,int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -799,6 +811,28 @@ void Boltzmann(Real *P, Real *A, int M)   {
 }
 #endif
 #ifdef CUDA
+void OverwriteC(Real *P, int *Mask, Real C, int M)   {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	overwritec<<<n_blocks,block_size>>>(P,Mask,C,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Overwrite"<<endl;}
+}
+#else
+void OverwriteC(Real *P, int *Mask,Real C,int M) {
+	for (int i=0; i<M; i++) if (Mask[i]==1) P[i]=C;
+}
+#endif
+#ifdef CUDA
+void OverwriteA(Real *P, int *Mask, Real* A, int M)   {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	overwritea<<<n_blocks,block_size>>>(P,Mask,A,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Overwrite"<<endl;}
+}
+#else
+void OverwriteA(Real *P, int *Mask,Real* A,int M) {
+	for (int i=0; i<M; i++) if (Mask[i]==1) P[i]=A[i];
+}
+#endif
+#ifdef CUDA
 void Invert(Real *KSAM, Real *MASK, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	invert<<<n_blocks,block_size>>>(KSAM,MASK,M);
@@ -818,6 +852,17 @@ void Invert(int *KSAM, int *MASK, int M)   {
 #else
 void Invert(int *KSAM, int *MASK, int M)   {
 	for (int i=0; i<M; i++) {if (MASK[i]==0) KSAM[i]=1.0; else KSAM[i]=0.0;}
+}
+#endif
+#ifdef CUDA
+void AddGradSquare(Real* EE, Real* X, Real* Y, Real* Z, int M)   {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	addgradsquare<<<n_blocks,block_size>>>(EE,X,Y,Z,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at AddGradSquare"<<endl;}
+}
+#else
+void AddGradSquare(Real* EE, Real* X, Real* Y, Real* Z, int M)    {
+	for (int i=0; i<M; i++) EE[i] += pow(X[i]-Y[i],2)+pow(Y[i]-Z[i],2);
 }
 #endif
 

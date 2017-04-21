@@ -28,8 +28,7 @@ Real k_B=1.38065e-23;
 Real k_BT=k_B*T;
 Real eps0=8.85418e-12;
 Real PIE=3.14159265; 
-Real eps=80;
-bool debug = false;
+bool debug =false;
 //Real factor=e*e/(eps*eps0*b_length*k_BT); 
 
 int main(int argc, char *argv[]) {

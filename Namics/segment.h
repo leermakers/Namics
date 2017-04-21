@@ -28,6 +28,7 @@ public:
 	Real epsilon;
 	Real valence; 
 	Real PSI0;
+	bool fixedPsi0;
 	Real phibulk; 
 	string freedom;
 	Real guess_u; 
@@ -85,7 +86,7 @@ public:
 	void DeAllocateMemory();
 	void AllocateMemory();
 	bool PrepareForCalculations(int*);  
-
+	void UpdateValence(Real*,Real*,Real*,Real*);
 };
 
 #endif

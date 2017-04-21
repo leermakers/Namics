@@ -66,7 +66,6 @@ extern Real k_B;
 extern Real k_BT;
 extern Real PIE; 
 extern Real eps0;
-extern Real eps;
 extern bool debug;
 //extern Real factor;
 #endif

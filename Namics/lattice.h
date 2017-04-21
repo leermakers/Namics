@@ -87,6 +87,9 @@ public:
 	void DistributeG1(Real*, Real*, int*, int*, int*, int);
 	void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int);
 	void ComputeGN(Real*, Real*, int*, int*, int*, int*, int*, int*, int, int);
+	void UpdateEE(Real*, Real*, Real*); 
+	void UpdatePsi(Real*, Real*, Real* , Real*, int*); 
+	void UpdateQ(Real*,Real*,Real*,Real*,int*);
 };
 
 #endif

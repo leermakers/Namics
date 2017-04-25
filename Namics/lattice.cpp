@@ -27,6 +27,9 @@ void Lattice::DeAllocateMemory(void) {
 		if (lambda0) delete [] lambda0; 
 		if (L) delete [] L; 
 	}
+#ifdef CUDA
+		if (gradients==3) X=(Real*)AllonDev(M);
+#endif
 }
 
 void Lattice::AllocateMemory(void) {
@@ -48,17 +51,17 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 				for (i=1; i<MX+1; i++) {
 					r=offset_first_layer + i; 
 					L[i]=PIE*(pow(r,2)-pow(r-1,2));
-					lambda1[i]=2*PIE*r/L[i];
-					lambda_1[i]=2*PIE*(r-1)/L[i];
+					lambda1[i]=2.0*PIE*r/L[i];
+					lambda_1[i]=2.0*PIE*(r-1)/L[i];
 					lambda0[i]=one_over_lambda_min_two;
 				}
 			}
 			if (geometry=="spherical") {
 				for (i=1; i<MX+1; i++) {
 					r=offset_first_layer + i; 
-					L[i]=4/3*PIE*(pow(r,3)-pow(r-1,3));
+					L[i]=4.0/3.0*PIE*(pow(r,3)-pow(r-1,3));
 					lambda1[i]=4*PIE*pow(r,2)/L[i];
-					lambda_1[i]=4*PIE*pow((r-1),2)/L[i];
+					lambda_1[i]=4*PIE*pow(r-1,2)/L[i];
 					lambda0[i]=1.0/lambda-lambda1[i]-lambda_1[i];
 				}
 			}
@@ -75,8 +78,8 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 				for (j=1; j<MY+1; j++) {
 					r=offset_first_layer + i; 
 					L[i*JX+j]=PIE*(pow(r,2)-pow(r-1,2));
-					lambda1[i*JX+j]=2*PIE*r/L[i*JX+j];
-					lambda_1[i*JX+j]=2*PIE*(r-1)/L[i*JX+j];
+					lambda1[i*JX+j]=2.0*PIE*r/L[i*JX+j];
+					lambda_1[i*JX+j]=2.0*PIE*(r-1)/L[i*JX+j];
 					lambda0[i*JX+j]=one_over_lambda_min_two;
 				}
 			
@@ -87,6 +90,9 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 		default:
 			break;
 	}
+#ifdef CUDA
+		if (gradients==3) X=(Real*)AllonDev(M);
+#endif
 }
 
 bool Lattice::PutM() {
@@ -164,6 +170,7 @@ bool Lattice::PutSub_box(int mx_, int my_, int mz_,int n_box_) {
 bool Lattice::CheckInput(int start) {
 if (debug) cout <<"CheckInput in lattice " << endl; 
 	bool success;
+	MX=MY=MZ=0;
 	sub_box_on=0;
 	mx.push_back(0); my.push_back(0); mz.push_back(0); jx.push_back(0); jy.push_back(0); m.push_back(0); n_box.push_back(0);
 	string Value;
@@ -1605,17 +1612,7 @@ if (debug) cout << "GuessVar in Lattice " << endl;
 	return success;
 }
 
-bool Lattice::ReadGuess(string filename,Real *xx) {
-cout <<"ReadGuess not yet implemented in lattice" << endl; 
-	bool success=true;
-	return success;
-}
 
-bool Lattice::StoreGuess(string filename,Real *xx) {
-cout <<"StoreGuess not yet implemented in lattice" << endl;
-	bool success=true;
-	return success; 
-}
 
 void Lattice::DistributeG1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int n_box) {
 	int k=sub_box_on;
@@ -1635,6 +1632,86 @@ void Lattice::ComputeGN(Real* GN, Real* Gg_f, int* H_Bx, int* H_By, int* H_Bz, i
 	TransferDataToHost(H_GN,GN,n_box);
 #endif
 }
+
+bool Lattice::ReadGuess(string filename, Real *x ,string &method, vector<string> &monlist, bool &charged, int &mx, int &my, int &mz, int readx) {
+if (debug) cout <<"ReadGuess in output" << endl; 
+	bool success=true;
+	ifstream in_file; 
+	string s_charge;
+	int num;
+	string name;
+	in_file.open(filename.c_str());
+	if (in_file.is_open()) { 
+		while (in_file && readx>-1) {
+			in_file>>method;
+			in_file>>mx>>my>>mz;		
+			in_file>>s_charge;
+			if (s_charge=="true") charged=true; else charged=false;
+			in_file>>num;
+			for (int i=0; i<num; i++) {in_file >> name;
+				 monlist.push_back(name);
+			}
+//if (readx==1) cout <<"again..."<< endl; 
+//cout <<"method " << method << endl; 
+//cout <<"mx , my , mz " << mx <<" , " << my << " , " << mz << endl; 
+//if (charged) cout <<"charged" << endl; else cout <<"not charged" << endl; 
+//for (int i=0; i<num; i++) cout << monlist[i] << endl;
+			if (readx==0) readx=-2; else {
+				int m;
+				if (my==0) {m=(mx+2);} else {if (mz==0) m=(mx+2)*(my+2); else {m=(mx+2)*(my+2)*(mz+2);}} 
+				int iv=num*m;
+				if (charged) iv +=m;
+				for (int i=0; i<iv; i++) {
+					in_file >> x[i];  //cout <<"R i " << i << " " << x[i] << endl; 
+				}
+				readx=-3; 
+			}
+		}
+		in_file.close();
+//if (readx==-3) for (int i=0; i<M; i++) cout <<"lat i " << i << " " << x[3*M+i] << endl; 
+	} else {
+		cout <<"inputfile " << filename << "is not found. Read guess for initial guess failed" << endl;
+		success=false;
+	}
+	return success;
+}
+
+bool Lattice::StoreGuess(string Filename,Real *x,string method, vector<string> monlist, bool charged, int start) {
+if (debug) cout <<"StoreGuess in output" << endl;
+	bool success=true;
+	
+	string s;
+	int length = monlist.size(); 
+	string filename;
+	string outfilename;
+	vector<string> sub;
+	if (Filename == "") {
+		outfilename=In[0]->name;
+		In[0]->split(outfilename,'.',sub);
+		char numc[2];
+       	sprintf(numc,"%d",start);
+		filename=sub[0].append("_").append(numc).append(".").append("outiv");
+	} else {
+		outfilename = Filename;
+		In[0]->split(outfilename,'.',sub);
+		char numc[2];
+       	sprintf(numc,"%d",start);
+		filename=sub[0].append("_").append(numc).append(".").append(sub[1]);
+	}
+	FILE *fp;
+	fp=fopen(filename.c_str(),"w");	
+	fprintf(fp,"%s \n",method.c_str());
+	fprintf(fp," %i \t %i \t %i \n" ,MX,MY,MZ);
+	if (charged) fprintf(fp,"%s \n" ,"true"); else  fprintf(fp,"%s \n" ,"false");
+	fprintf(fp,"%i \n",length); 
+	for (int i=0; i<length; i++) fprintf(fp,"%s \n",monlist[i].c_str());
+	int iv=length*M;
+	if (charged) iv +=M;
+	for (int i=0; i<iv; i++) fprintf(fp,"%e \n",x[i]);
+	fclose(fp);	
+	return success; 
+}
+
 
 void Lattice::UpdateEE(Real* EE, Real* psi, Real* eps) {
 	int x,y; 
@@ -1696,7 +1773,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask) { //n
 	switch (gradients) {
 		case 1: 
 			C*=2;
-			epsXplus=eps[0]+eps[1];
+			epsXplus=(eps[0]+eps[1]);
 			for (x=1; x<M-1; x++) {
 				epsXmin=epsXplus;
 				epsXplus=eps[x]+eps[x+1];
@@ -1704,7 +1781,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask) { //n
 					if (geometry == "planar" ) {
 						psi[x] = (epsXmin*psi[x-1]+epsXplus*psi[x+1]+C*q[x])/(epsXplus+epsXmin);
 					} else {
-						psi[x] = (lambda_1[x]*epsXmin*psi[x-1]+lambda1[x]*epsXplus*psi[x+1]+C*q[x])/(epsXplus+epsXmin);
+						psi[x] = (lambda_1[x]*epsXmin*psi[x-1]+lambda1[x]*epsXplus*psi[x+1]+C*q[x])/(lambda_1[x]*epsXplus+lambda1[x]*epsXmin);
 					}
 				}
 			}
@@ -1716,7 +1793,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask) { //n
 					if (geometry=="planar") {
 						psi[x] = (epsXmin*psi[x-1]+epsXplus*psi[x+1]+C*q[x])/(epsXplus+epsXmin);
 					} else {
-						psi[x] = (lambda_1[x]*epsXmin*psi[x-1]+lambda1[x]*epsXplus*psi[x+1]+C*q[x])/(epsXplus+epsXmin);
+						psi[x] = (lambda_1[x]*epsXmin*psi[x-1]+lambda1[x]*epsXplus*psi[x+1]+C*q[x])/(lambda_1[x]*epsXplus+lambda1[x]*epsXmin);
 					}
 					g[x]-=psi[x];
 				}
@@ -1739,7 +1816,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask) { //n
 						} else {
 							psi[x*JX+y]= (lambda_1[x*JX+y]*epsXmin*psi[(x-1)*JX+y]+lambda1[x*JX+y]*epsXplus*psi[(x+1)*JX+y]+
 								      epsYmin*psi[x*JX+y-1]+epsYplus*psi[x*JX+y+1]+C*q[x*JX+y])/
-								     (epsXmin+epsXplus+epsYmin+epsYplus);					
+								     (lambda_1[x*JX+y]*epsXmin+lambda1[x*JX+y]*epsXplus+epsYmin+epsYplus);					
 						}
 					}
 				}
@@ -1759,7 +1836,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask) { //n
 						} else {
 							psi[x*JX+y]= (lambda_1[x*JX+y]*epsXmin*psi[(x-1)*JX+y]+lambda1[x*JX+y]*epsXplus*psi[(x+1)*JX+y]+
 								      epsYmin*psi[x*JX+y-1]+epsYplus*psi[x*JX+y+1]+C*q[x*JX+y])/
-							             (epsXmin+epsXplus+epsYmin+epsYplus);					
+							             (lambda_1[x*JX+y]*epsXmin+lambda1[x*JX+y]*epsXplus+epsYmin+epsYplus);					
 						}
 						g[x*JX+y] -=psi[x*JX+y];
 					}
@@ -1767,10 +1844,12 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask) { //n
 			}			
 			break;
 		case 3: //Do not know how to do Jacobi trick in CUDA.
-#ifdef CUDA 
-			cout <<"In Cuda psi update is not yet implemented" << endl; 
-#else
 			C*=6;
+#ifdef CUDA 
+			Cp(X,psi,M);
+			UpPsi(g+JX+JY+1,psi+JX+JY+1,X+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1)); 
+#else
+
 			for (x=1; x<MX+1; x++) {
 				for (y=1; y<MY+1; y++) {
 					epsZplus=eps[x*JX+y*JY]+eps[x*JX+y*JY+1];
@@ -1833,7 +1912,7 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask) {//Not 
 					if (geometry=="planar") {	
 						q[x] = (epsXmin*psi[x-1]+epsXplus*psi[x+1]-(epsXplus+epsXmin)*psi[x])/C;
 					} else {
-						q[x] = (lambda_1[x]*epsXmin*psi[x-1]+lambda1[x]*epsXplus*psi[x+1]-(epsXplus+epsXmin)*psi[x])/C;
+						q[x] = (lambda_1[x]*epsXmin*psi[x-1]+lambda1[x]*epsXplus*psi[x+1]-(lambda1[x]*epsXplus+lambda_1[x]*epsXmin)*psi[x])/C;
 
 					}
 					g[x]=-q[x];
@@ -1857,7 +1936,7 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask) {//Not 
 						} else {
 							q[x*JX+y]= (lambda_1[x*JX+y]*epsXmin*psi[(x-1)*JX+y]+lambda1[x*JX+y]*epsXplus*psi[(x+1)*JX+y]+
 							 	epsYmin*psi[x*JX+y-1]+epsYplus*psi[x*JX+y+1]-
-								(epsXmin+epsXplus+epsYmin+epsYplus)*psi[x*JX+y])/C;					
+								(lambda_1[x*JX+y]*epsXmin+lambda1[x*JX+y]*epsXplus+epsYmin+epsYplus)*psi[x*JX+y])/C;					
 						}
 						g[x*JX+y]=-q[x*JX+y];
 					}
@@ -1865,10 +1944,10 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask) {//Not 
 			}
 			break;
 		case 3: 
-#ifdef CUDA 
-			cout <<"In Cuda psi update is not yet inplemented" << endl; 
-#else
 			C *=6.0;
+#ifdef CUDA 
+			UpQ(g+JX+JY+1,q+JX+JY+1,psi+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1));
+#else
 			for (x=1; x<MX; x++) {
 				for (y=1; y<MY; y++) {
 					epsZplus=eps[x*JX+y*JY]+eps[x*JX+y*JY+1];

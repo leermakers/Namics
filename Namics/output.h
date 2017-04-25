@@ -48,5 +48,7 @@ public:
 	int GetValue(string, string, string, int&, Real&, string&);
 	Real* GetPointer(string, string, string);
 
+
+
 };
 #endif

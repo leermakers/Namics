@@ -45,6 +45,8 @@ __global__ void addg(Real*, Real*, Real*, int);
 __global__ void computegn(Real*, Real*, int, int);
 __global__ void overwritec(Real*, int*, Real; int);
 __global__ void overwritea(Real*, int*, Real*; int);
+__global__ void upq(Real*,Real*,Real*,Real*,int,int,Real,int*,int);
+__global__ void uppsi(Real*,Real*,Real*,Real*,int,int,Real,int*;int);
 void TransferDataToHost(Real*, Real*, int);
 void TransferDataToDevice(Real*, Real*, int);
 void TransferIntDataToHost(int*, int*, int);
@@ -103,7 +105,8 @@ void DistributeG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, 
 void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void OverwriteC(Real*, int*, Real,int); 
 void OverwriteA(Real*, int*, Real* ,int); 
-
+void UpQ(Real*,Real*,Real*,Real*,int,int,Real,int*,int);
+void UpPsi(Real*,Real*,Real*,Real*,int,int,Real,int*;int);
 #else
 void bx(Real *, int, int, int, int, int, int, int);
 void b_x(Real*, int, int, int, int, int, int, int);
@@ -159,6 +162,8 @@ void DisG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, in
 void ColPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void OverwriteC(Real*, int*, Real,int); 
 void OverwriteA(Real*, int*, Real* ,int); 
+void UpQ(Real*,Real*,Real*,Real*,int,int,Real,int*,int);
+void UpPsi(Real*,Real*,Real*,Real*,int,int,Real,int*,int);
 #endif
 
 void H_Zero(Real*, int);

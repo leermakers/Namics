@@ -47,6 +47,10 @@ public:
 	bool input_error; 
 	bool cuda; 
 	bool charged;
+	string initial_guess;
+	string guess_inputfile;
+	string final_guess;
+	string guess_outputfile;
 
 	int MonA,MonB; 
 

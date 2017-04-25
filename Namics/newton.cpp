@@ -121,8 +121,8 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 		if (GetValue("method").size()==0) {method="DIIS";} else {
 			vector<string>method_options; 
 			method_options.push_back("DIIS");
-			method_options.push_back("DIIS-ext"); 
-			method_options.push_back("Picard");
+			//method_options.push_back("DIIS-ext"); //can be included again wehn adjusted for charges and guess
+			//method_options.push_back("Picard"); //can be included again when adjusted for charges and guess
 			method_options.push_back("pseudohessian"); 
 			method_options.push_back("hessian"); 
 			if (!In[0]->Get_string(GetValue("method"),method,method_options,"In 'newton' the entry for 'method' not recognized: choose from:")) success=false;
@@ -853,6 +853,7 @@ if(debug) cout <<"stepchange in Newton" << endl;
 	}
 	return change;
 }
+
 void Newton::COMPUTEG(Real *x, Real *g, int nvar) {
 	int pos=nvar;
 	for (int i=iv-1; i>=0; i--) {
@@ -865,6 +866,16 @@ void Newton::COMPUTEG(Real *x, Real *g, int nvar) {
 	pos=0;
 	for (int i=0; i<iv; i++) {
 		if (mask[i]==1) {x[pos]=x[i]; g[pos]=g[i];pos++;}
+	}
+}
+
+void Newton::ResetX(Real* x,int nvar) {
+	int pos=nvar;
+	for (int i=iv-1; i>=0; i--) {
+		if (mask[i]==1) { 
+			pos--;
+			x[i]=x[pos];
+		} else x[i]=0;
 	}
 }
 
@@ -883,11 +894,13 @@ if(debug) cout <<"iterate in Newton" << endl;
 	trustregion=delta_max;
 	trustfactor =1; 	
 	srand (1);
+	Cp(x0,x,iv);
 	for (int i=0; i<nvar; i++) x[i]+=1e-10*(Real)rand() / (Real)((unsigned)RAND_MAX + 1);
 	ComputeG(g);
+	Cp(x,x0,iv);
 	int xxx=0;
-
 	for (int i=0; i<nvar; i++) {if (g[i]==0) mask[i]=0; else {xxx++;  mask[i]=1;}}
+
 	nvar=xxx;
 	p = new Real[nvar]; H_Zero(p,nvar); 
 	g0 = new Real[nvar]; H_Zero(g0,nvar); 
@@ -921,11 +934,12 @@ if(debug) cout <<"iterate in Newton" << endl;
 		ALPHA = linesearch(g,g0,p,x,x0,nvar,alphabound);
 		trustfactor *= stepchange(g,g0,p,p0,x,x0,nvar,ALPHA); // alpha is modified as well!
 		trustfactor *= ALPHA/alphabound;
-		if (it==1) {newhessian(h,g,g0,x,p,nvar);}
+		//if (it==1) {newhessian(h,g,g0,x,p,nvar);}
 		newdirection(h,p,p0,g,g0,x,nvar,alphabound);
 		normg=sqrt(minimum); 
 		if (print_hessian_at_it==it) print_hessian(h,nvar);
 	}
+	ResetX(xx,nvar);
 	delete p; delete g0 ; delete p0; 
 	delete h; delete reverseDirection;  
 }
@@ -1053,16 +1067,98 @@ if(debug) cout <<"DIIS in  Newton " << endl;
 	}
 }
 
-bool Newton::Guess(void){
+string Newton::GetNewtonInfo(int &IV) {
+	IV=iv;
+	return method; 
+}
+
+void Newton::Copy(Real* x, Real* X, int MX, int MY, int MZ) {
+	int mx=Lat[0]->MX;
+	int my=Lat[0]->MY;
+	int mz=Lat[0]->MZ;
+	int jx=Lat[0]->JX;	
+	int jy=Lat[0]->JY;
+	int i,j,k;
+	int pos_i,pos_o;
+	int JX=(MY+2)*(MZ+2);
+	int JY=(MZ+2);
+
+
+	switch (Lat[0]->gradients) {
+		case 1:
+			if (MY>0||MZ>0) {
+				cout <<" Copy from more than one gradient to one gradient: (i) =(1,i) or (1,1,i) is used "<< endl;
+			} 
+			if (MZ>0) { pos_i=JX+JY; pos_o=MZ+2;} else {if (MY>0) {pos_i=JX; pos_o=MY+2; } else { pos_i=0; pos_o=MX+2; } }
+			for (i=0; i<mx+2; i++)  if (i<pos_o) x[i]=X[pos_i+i];	
+			break;
+		case 2: 
+			if (MY==0) { 
+				cout <<" Copy from one-gradient to two gradients: one-gradient (x,i)=(i) is used for all x " << endl;  
+				for (i=0; i<mx+2; i++)
+				for (j=0; j<my+2; j++) if (j<MX+2) x[i*jx+j]=X[j];
+			} else {
+				if (MZ>0) {
+					cout <<" Copy from three gradients to two gradients: (i,j)=(1,i,j) is used " <<endl;
+					JX=(MY+2)*(MZ+2); 
+					JY=(MZ+2); 
+					for (i=0; i<mx+2; i++)
+					for (j=0; j<my+2; j++) if (i<MY+2 && j<MZ+2) x[i*jx+j]=X[JX+i*JY+j];
+				} else {
+					JX=(MY+2);  
+					for (i=0; i<mx+2; i++)
+					for (j=0; j<my+2; j++) if (i<MX+2 && j<MY+2) x[i*jx+j]=X[i*JX+j];
+				}
+			}
+			break;
+		case 3:
+			if (MY==0) {
+				cout <<"Copy from one gradient to three gradients: (x,y,i) = (i) is used for all x,y " << endl; 
+				for (i=0; i<mx+2; i++)
+				for (j=0; j<my+2; j++)
+				for (k=0; k<mz+2; k++) if (k<MX+2) x[i*jx+j*jy+k]=X[k];
+			} else {
+				if (MZ==0) {
+					cout <<"Copy form two gradients to three: (x,i,j) = (i,j) for all x " << endl; 
+					JX=(MY+2);
+					for (i=0; i<mx+2; i++)
+					for (j=0; j<my+2; j++)
+					for (k=0; k<mz+2; k++) if (j<MX+2 && k<MY+2) x[i*jx+j*jy+k]=X[j*JX+k];
+				} else {
+					JX=(MY+2)*(MZ+2);
+					JY=(MZ+2);
+					for (i=0; i<mx+2; i++)
+					for (j=0; j<my+2; j++)
+					for (k=0; k<mz+2; k++) if (i<MX+2 && j<MY+2 && k<MZ+2) x[i*jx+j*jy+k]=X[i*JX+j*JY+k];
+				}
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+bool Newton::Guess(Real *X, string METHOD, vector<string> MONLIST, bool CHARGED, int MX, int MY, int MZ){
 if (debug) cout << "Guess in Newton" << endl;
+	int M=Lat[0]->M;
 	bool success=true;
-        if (start==1) { 
-                if (ReadFileGuess!="") {
-                        Lat[0]->ReadGuess(ReadFileGuess,xx);
-                } else { 
-                       Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
-                }
-        } 
+
+	if (start ==1 && Sys[0]->GuessType != "")  {                      
+		Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
+	} else {
+		int m; 
+		if (MZ>0) {m=(MX+2)*(MY+2)*(MZ+2); } else { if (MY>0) { m=(MX+2)*(MY+2); } else {  m=(MX+2);}}
+		int length_old_mon=MONLIST.size();
+		int length_new_mon=Sys[0]->SysMonList.size();
+		for (int i = 0; i<length_old_mon; i++) {
+			for (int j=0; j<length_new_mon; j++) {
+				if (MONLIST[i]==Seg[Sys[0]->SysMonList[j]]->name) {
+					Copy(xx+M*j,X+i*m,MX,MY,MZ);
+				}
+			}
+		}
+		if (CHARGED && Sys[0]->charged) {cout <<"both charged" << endl;  Copy(xx+length_new_mon*M,X+length_old_mon*m,MX,MY,MZ); }
+	}
 	return success;
 }
 
@@ -1086,7 +1182,6 @@ if(debug) cout <<"Solve in  Newton " << endl;
 
 	if (method=="Picard") {success=Iterate_Picard();} else success=Iterate_DIIS(); 
 	Sys[0]->CheckResults();
-	if (StoreFileGuess!="") Lat[0]->StoreGuess(StoreFileGuess,xx); 
 	return success; 
 }
 
@@ -1100,114 +1195,6 @@ if(debug) cout <<"Messiage in  Newton " << endl;
 	}
 }
 
-/*
-void Newton::MinvTimesQ(Real* d, Real* q, int M){
-	Zero(d,M);
-	int k,i;
-	int N; 
-	int psi0=0,psim=0;
-	int gradients=Lat[0]->gradients;
-	switch (gradients) {
-		case 1:
-			N=M-2;
-			//for (i=1; i<=N; i++) {
-			//	psi0 +=(N-i+1)*q[i]; 
-			//	psim +=i*q[i];
-			//}
-			//q[1]-=psi0;
-			//q[N]-=psim;
-			
-			for (k=1; k<=N; k++) {
-				for (i=1; i<=k; i++) d[k]+=i*q[i];
-				d[k]*=(N-k+1);
-				for (i=k+1; i<=N; i++) d[i]+=k*(N-(i-1))*q[i];
-				d[k]*=-1.0; 
-			}
-
-			for (i=1; i<M-2; i++) {
-				q[0]=(M-i)*q[i]; d[0]=-q[0];
-				//q[M-1]=i*q[i]; d[M-1]=-q[M-1];
-			}
-			for (i=1; i<M-1; i++){
-				for (j=i; j<M-1; j++) {
-					d[i] -= (M-j)*(j+1)*q[j];
-				}
-				for (j=i+1; j<M-1; j++) {
-					d[j] -= (M-j)*(i+1)*q[i];
-				}
-
-				d[i]/=(M+1);
-//cout << " d " << d[i] << endl; 
-			}
-			//q[1]+=psi0;
-			//q[N]+=psim;
-
-
-			
-			break;
-		case 2:
-			cout <<" MinvTimesQ not implemented in 2D" << endl;
-			break;
-		case 3: 
-			cout <<" MinvTimesQ not implemented in 3D" << endl;
-			break;
-		default:
-			cout <<" MinvTimesQ wrongly implemented" << endl;
-			break;
-	}
-}
-
-
-bool Newton::SolvePsi(Real* psi, Real* Q, Real* eps){
-	bool success=true;
-	Real pf=-e*e/(eps0*80*k_BT*Lat[0]->bond_length);
-//cout <<"pf " << pf << endl; 
-	int M=Lat[0]->M;
-	Real *e_min = new Real[M];
-	Real *e_plus = new Real[M];
-	int i=0; 
-	Norm(Q,pf,M);
-	MinvTimesQ(psi,Q,M);//beginschatting
-	Lat[0]->set_bounds(psi);
-	//Div(Q,e_plus,M);
-	//if (it==0) Cp(psi,Q,M);
-	Real tolerance = 1e-7;
-	Real alpha,beta,result;
-	Lat[0]->DivGradPsi(q,psi,eps,e_min,e_plus);
-	YisAminB(r,Q,q,M);
-	MinvTimesQ(d,r,M);
-	Dot(result,r,d,M);
-	Real delta_n = result; 
-	Real delta_0 = delta_n;
-	while (i<10 && delta_n > tolerance) {
-		Lat[0]->DivGradPsi(q,d,eps,e_min,e_plus);
-		Dot(result,d,q,M);
-		alpha=delta_n/result;
-		YplusisCtimesX(psi,d,alpha,M);
-		Lat[0]->set_bounds(psi);
-		if (i%50==0) {
-			Lat[0]->DivGradPsi(q,psi,eps,e_min,e_plus);
-			YisAminB(r,Q,q,M);
-		} else {
-			YplusisCtimesX(r,q,-alpha,M);
-		}
-		MinvTimesQ(s,r,M);
-		delta_0=delta_n;
-		Dot(result,r,s,M);
-		delta_n=result; 
-		beta=delta_n/delta_0;
-		YisAplusCtimesB(d,s,d,beta,M); 
-		i++;
-	}
-	cout <<i << "subs. Error-psi " << sqrt(delta_n) << endl; 
-	//Times(Q,Q,e_plus,M);
-	Norm(Q,1.0/pf,M);
-	Lat[0]->remove_bounds(Q);
-	delete e_min;
-	delete e_plus; 
-	return success; 
-}
-*/
 
 bool Newton::Iterate_Picard() {
 if(debug) cout <<"Iterate_Picard in  Newton " << endl;
@@ -1332,6 +1319,7 @@ if(debug) cout <<"ComputeG in  Newton " << endl;
 	if (Sys[0]->charged) { 
 		Lat[0]->set_bounds(Sys[0]->psi);
 		Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
+		//Lat[0]->remove_bounds(g+sysmon_length*M);
 
 
 	//	Cp(g+sysmon_length*M,Sys[0]->psi,M);

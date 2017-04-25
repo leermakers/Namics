@@ -265,11 +265,11 @@ int Engine::SubProblemNum(){
 	return len;
 }
 
-bool Engine::Doit(int sub){
+bool Engine::Doit(int sub, Real* X, string METHOD, vector<string> MONLIST, bool CHARGED, int MX, int MY, int MZ){
 	bool success=true;
 	if (brand=="sfbox") {
 		New[0]->AllocateMemory();
-		New[0]->Guess();
+		New[0]->Guess(X,METHOD,MONLIST,CHARGED,MX,MY,MZ);
 		New[0]->Solve();
 	} else if (brand == "var"){
 		if (success) {
@@ -322,15 +322,18 @@ bool Engine::VarMol(int sub){
 				cout << "Subproblem number: " << i << " out of " << length <<"; Paramter varied is 'theta' of Molecule: " <<In[0]->MolList[j] << "; current value is: "<< Mol[j]->theta << endl;
 				success=true; break;
 			} else if (VAR_val[0]=="n") {
-                	       	Mol[j]->n = start +(i)*step; Mol[j]->theta=Mol[j]->n*Mol[j]->chainlength;New[0]->Guess();
+                	       	Mol[j]->n = start +(i)*step; Mol[j]->theta=Mol[j]->n*Mol[j]->chainlength;
+				//New[0]->Guess();
 				cout << "Subproblem number: " << i << " out of " << length <<"; Paramter varied is 'n' of Molecule: " <<In[0]->MolList[j] << "; current value is: "<< Mol[j]->n << endl; 
 				success=true; break;
 			} else if (VAR_val[0]=="chainlength") { 
-        	               	Mol[j]->chainlength = start +(i)*step; Mol[j]->n=Mol[j]->theta/Mol[j]->chainlength;New[0]->Guess();
+        	               	Mol[j]->chainlength = start +(i)*step; Mol[j]->n=Mol[j]->theta/Mol[j]->chainlength;
+				//New[0]->Guess();
 				cout << "Subproblem number: " << i << " out of " << length <<"; Paramter varied is 'chainlenth' of Molecule: " <<In[0]->MolList[j] << "; current value is: "<< Mol[j]->chainlength << endl;
 				success=true; break;
 			} else if (VAR_val[0] == "phibulk"){
-        	               	Mol[j]->phibulk = start +(i)*step;New[0]->Guess();
+        	               	Mol[j]->phibulk = start +(i)*step;
+				//New[0]->Guess();
 				cout << "Subproblem number: " << i << " out of " << length <<"; Paramter varied is 'phibulk' of Molecule: " <<In[0]->MolList[j] << "; current value is: "<< Mol[j]->phibulk << endl;
 				success=true;
 			}
@@ -353,7 +356,7 @@ bool Engine::VarMon(int sub){
                 Real step = In[0]->Get_Real(VAR_val[3],10*Lat[0]->volume);
 		int length = (end-start)/step;
 			for(int r=0; r<nseg; r++) if(r!=j) {Sys[0]->CHI[r*nseg+j]=start+i*step; Sys[0]->CHI[j*nseg+r]=Sys[0]->CHI[r*nseg+j];}
-			New[0]->Guess();
+			//New[0]->Guess();
 			cout << "Subproblem number: " << i << " out of " << length <<"; Paramter varied is '" + VAR_val[0] + "' of Monomer: " <<VAR_param[0] << endl; 
 			success=true;
 			break;
@@ -378,21 +381,21 @@ bool Engine::VarLat(int sub){
 				Lat[0]->MX=start+i*step;
 				Lat[0]->AllocateMemory();
 				New[0]->AllocateMemory();
-				New[0]->Guess();
+				//New[0]->Guess();
 				break;
 			case 2:
 				
 				Lat[0]->MX=start+i*step;
 				Lat[0]->AllocateMemory();
 				New[0]->AllocateMemory();
-				New[0]->Guess();
+				//New[0]->Guess();
 				break;
 
 			case 3: 
 				Lat[0]->MX=start+i*step;
 				Lat[0]->AllocateMemory();
 				New[0]->AllocateMemory();
-				New[0]->Guess();
+				//New[0]->Guess();
 				break;
 
 			default :
@@ -409,7 +412,8 @@ bool Engine::Search(int id){
 	Real value = In[0]->Get_Real(VAR_val[1],10*Lat[0]->volume);
 	Real tolerance = pow(10.0 ,-3.0);
 	Real ll=value-tolerance; Real ul=value+tolerance;
-	New[0]->Guess(); New[0]->Solve();
+	//New[0]->Guess(); 
+	New[0]->Solve();
 	Real lower; Real upper; Real mean;
 	if(Sys[0]->GrandPotential < ll || Sys[0]->GrandPotential > ul) {
 		Mol[m]->theta=Mol[m]->theta+0.1*Mol[m]->theta;	
@@ -420,7 +424,8 @@ bool Engine::Search(int id){
 		lower=Mol[m]->theta; upper=Mol[m]->theta+0.1*Mol[m]->theta;
 		for(int i=0; i<100; i++){
 			mean=(upper+lower)/2.0;Mol[m]->theta=mean;Mol[m]->n=Mol[m]->theta/Mol[m]->chainlength;
-			New[0]->Guess(); New[0]->Solve();
+			//New[0]->Guess(); 
+			New[0]->Solve();
 			if(Sys[0]->GrandPotential > value) lower=mean; else upper=mean;
 		}
 		success=true;

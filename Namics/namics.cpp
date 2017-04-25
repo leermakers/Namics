@@ -29,7 +29,7 @@ Real k_BT=k_B*T;
 Real eps0=8.85418e-12;
 Real PIE=3.14159265; 
 bool debug =false;
-//Real factor=e*e/(eps*eps0*b_length*k_BT); 
+
 
 int main(int argc, char *argv[]) {
 	string fname;
@@ -49,19 +49,26 @@ int main(int argc, char *argv[]) {
 	vector<Input*> In; 
 	vector<Lattice*> Lat; 
 	vector<Segment*> Seg; 
-	//vector<Alias*> Al;
 	vector<Molecule*> Mol;
 	vector<System*> Sys; 
-	vector<Newton*> New; 
+	vector<Newton*> New;
 	vector<Engine*> Eng;
  	vector<Output*> Out;
 
-	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;} //argc counts no. of input arguments ./namics fname(2 arguments).... and makes fname from argv[1] else shows error and stops.
+	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;} 
+	//argc counts no. of input arguments ./namics fname(2 arguments).... and makes fname from argv[1] else shows error and stops.
 	filename = fname + ".in";
 	In.push_back(new Input(filename)); if (In[0]->Input_error) {return 0;}
  	n_starts=In[0]->GetNumStarts(); if (n_starts==0) n_starts++; 
-
-// Loop begins for more than one starts in input.
+//---------------------------------
+	string initial_guess;
+	string final_guess;
+	string METHOD="";
+	Real *X=NULL;
+	int MX=0,MY=0,MZ=0;
+	bool CHARGED=false;
+	vector<string> MONLIST;	
+//----------------------------------
 
 	while (start<n_starts) { start++;
 		cout <<"Problem nr " << start << " out of " << n_starts << endl; 	
@@ -74,7 +81,10 @@ int main(int argc, char *argv[]) {
 			if (!Seg[i]->CheckInput(start)) return 0;
 		}
 		int n_mol = In[0]->MolList.size();  
-		for (int i=0; i<n_mol; i++) {Mol.push_back(new Molecule(In,Lat,Seg,In[0]->MolList[i])); if (!Mol[i]->CheckInput(start)) return 0;}
+		for (int i=0; i<n_mol; i++) {
+			Mol.push_back(new Molecule(In,Lat,Seg,In[0]->MolList[i])); 
+			if (!Mol[i]->CheckInput(start)) return 0;
+		}
 
 		Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0])); Sys[0]->cuda=cuda;  
 		if (!Sys[0]->CheckInput(start)) {return 0;} if (!Sys[0]->CheckChi_values(n_seg)) return 0; 
@@ -90,8 +100,27 @@ int main(int argc, char *argv[]) {
 		}
 		int substart=0; int subloop=0;
 		substart = Eng[0]->SubProblemNum();
+
+		if (Sys[0]->initial_guess=="file") {
+			MONLIST.clear();
+			if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile,X,METHOD,MONLIST,CHARGED,MX,MY,MZ,0)) { //last argument 0 is to first checkout sizes of system.
+			return 0;
+			}
+
+			int nummon=MONLIST.size();
+			int m;
+			if (MY==0) {m=MX+2;} else {if (MZ==0) {m=(MX+2)*(MY+2);} else {m=(MX+2)*(MY+2)*(MZ+2);} }
+			int IV=nummon*m;
+			if (CHARGED) IV +=m;
+			if (X) delete X;
+			X=(Real*) malloc(IV*sizeof(Real)); 
+			MONLIST.clear();
+			Lat[0]->ReadGuess(Sys[0]->guess_inputfile,X,METHOD,MONLIST,CHARGED,MX,MY,MZ,1); //last argument 1 is to read guess in X. 
+		}
+		
+
 		while(subloop < substart){
-	 		if(!Eng[0]->Doit(subloop)) break;
+	 		if(!Eng[0]->Doit(subloop,X,METHOD,MONLIST,CHARGED,MX,MY,MZ)) break;
  
 			Lat[0]->PushOutput();
 			New[0]->PushOutput();
@@ -113,6 +142,31 @@ int main(int argc, char *argv[]) {
 			for (int i=0; i<n_out; i++) {Out[i]->WriteOutput(subloop);}
 		subloop ++;
 		} 
+cout <<Sys[0]->initial_guess << endl; 
+			if (Sys[0]->initial_guess=="previous_result") {
+				int IV;
+				METHOD=New[0]->GetNewtonInfo(IV);
+				MX=Lat[0]->MX;
+				MY=Lat[0]->MY;
+				MZ=Lat[0]->MZ;
+				CHARGED=Sys[0]->charged;
+				if (X) delete X;
+				X=(Real*) malloc(IV*sizeof(Real));
+				for (int i=0; i<IV; i++) X[i]=New[0]->xx[i];
+				int length=Sys[0]->SysMonList.size();
+				MONLIST.clear();
+				for (int i=0; i<length; i++) {
+					MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
+				}
+			}
+			if (Sys[0]->final_guess=="file") {
+				MONLIST.clear();
+				int length=Sys[0]->SysMonList.size();
+				for (int i=0; i<length; i++) {
+					MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
+				}
+				Lat[0]->StoreGuess(Sys[0]->guess_outputfile,New[0]->xx,New[0]->method,MONLIST,Sys[0]->charged,start);
+			}
 			for (int i=0; i<n_out; i++) delete Out[i]; Out.clear();
 			delete Eng[0]; Eng.clear(); 
 			delete New[0]; New.clear();

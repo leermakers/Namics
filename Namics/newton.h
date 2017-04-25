@@ -112,7 +112,9 @@ public:
 	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string); 
-	bool Guess();
+	void Copy(Real*,Real*,int,int,int);
+	bool Guess(Real*,string,vector<string>,bool,int,int,int);
+	string GetNewtonInfo(int&);
 	bool Solve();
 	void DeAllocateMemory();
 	void AllocateMemory(); 
@@ -121,6 +123,7 @@ public:
 	void DIIS(Real* , Real* , Real* , Real*, Real* ,Real* , int , int , int );
 	void ComputeG(Real*); 
 	void COMPUTEG(Real*,Real*,int); 
+	void ResetX(Real*,int);
 	void ComputePhis();
 	void ComputeG_ext();
 	void MinvTimesQ(Real*, Real*, int);

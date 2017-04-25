@@ -176,6 +176,54 @@ __global__ void overwritea(Real* P, int Mask, Real* A,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (Mask[idx]==1) P[idx] = A[idx] ;
 }
+
+__global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	Real* Px=psi+jx;
+	Real* P_x=psi-jx;
+	Real* Py=psi+jy;
+	Real* P_y=psi-jy;
+	Real* Pz=psi+1;
+	Real* P_z=psi-1;	
+	Real* ex=eps+jx;
+	Real* e_x=eps-jx;
+	Real* ey=eps+jy;
+	Real* e_y=eps-jy;
+	Real* ez=eps+1;
+	Real* e_z=eps-1;
+	Real* e=eps;
+	if (idx<M && Mask[idx]==1)  {
+		q[idx]=(((e_x[idx]+e[idx])*P_x[idx] + (ex[idx]+e[idx])*Px[idx] + 
+			(e_y[idx]+e[idx])*P_y[idx] + (ey[idx]+e[idx])*Py[idx] +
+			(e_z[idx]+e[idx])*P_z[idx] + (ez[idx]+e[idx])*Pz[idx]) -
+			(e_x[idx]+ex[idx]+e_y[idx]+ey[idx]+e_z[idx]+ez[idx]+6*e[idx])*psi[idx])/C;
+		g[idx] -=q[idx];
+	}
+}
+__global__ void uppsi(Real* g, Real* psi, Real* X, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	Real* Px=X+jx;
+	Real* P_x=X-jx;
+	Real* Py=X+jy;
+	Real* P_y=x-jy;
+	Real* Pz=X+1;
+	Real* P_z=X-1;	
+	Real* ex=eps+jx;
+	Real* e_x=eps-jx;
+	Real* ey=eps+jy;
+	Real* e_y=eps-jy;
+	Real* ez=eps+1;
+	Real* e_z=eps-1;
+	Real* e=eps;
+	if (idx<M && Mask[idx]==0)  {
+		psi[idx]=((e_x[idx]+e[idx])*P_x[idx] + (ex[idx]+e[idx])*Px[idx] +
+			(e_y[idx]+e[idx])*P_y[idx] + (ey[idx]+e[idx])*Py[idx] +
+			(e_z[idx]+e[idx])*P_z[idx] + (ez[idx]+e[idx])*Pz[idx] +
+			C*q[idx])/(e_x[idx]+ex[idx]+e_y[idx]+ey[idx]+e_z[idx]+ez[idx]+6*e[idx]);
+		g[idx] -=psi[idx];
+	}
+}
+
 __global__ void invert(int *SKAM, int *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
@@ -832,6 +880,32 @@ void OverwriteA(Real *P, int *Mask,Real* A,int M) {
 	for (int i=0; i<M; i++) if (Mask[i]==1) P[i]=A[i];
 }
 #endif
+
+#ifdef CUDA
+void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, int* Mask, int M)  {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	uppsi<<<n_blocks,block_size>>>(g,psi,X,esp,JX,JY,C,Mask,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at UpPsi"<<endl;}
+}
+#else
+void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, int* Mask, int M) {
+	cout <<"UpPsi: program should not get here, becauase when no CUDA-flag is used, the routine in Lattice is used. " << endl; 
+}
+#endif
+
+#ifdef CUDA
+void UpQ(Real* g, Real* q, Real* psi, Real* eps, int JX, int JY, Real C, int* Mask, int M)  {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	upq<<<n_blocks,block_size>>>(g,q,psi,esp,JX,JY,C,Mask,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at UpQ"<<endl;}
+}
+#else
+void UpQ(Real* g, Real* q, Real* psi, Real* eps, int JX, int JY, Real C, int* Mask, int M) {
+	cout <<"UpQ: program should not get here, becauase when no CUDA-flag is used, the routine in Lattice is used. " << endl; 
+}
+#endif
+
+
 #ifdef CUDA
 void Invert(Real *KSAM, Real *MASK, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
@@ -1088,20 +1162,17 @@ void RemoveBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym
 static Real maxarg1,maxarg2;
 #define FMAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
         (maxarg1) : (maxarg2))
-static int iminarg1,iminarg2;
-#define IMIN(a,b) (iminarg1=(a),iminarg2=(b),(iminarg1) < (iminarg2) ?\
-        (iminarg1) : (iminarg2))
-static Real sqrarg;
-#define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
 
 Real pythag(Real a, Real b)
 //Computes (a 2 + b 2 ) 1/2 without destructive underflow or overflow.
 {
-    Real absa,absb;
+    Real absa,absb,c=0;
     absa=fabs(a);
     absb=fabs(b);
-    if (absa > absb) return absa*sqrt(1.0+SQR(absb/absa));
-    else return (absb == 0.0 ? 0.0 : absb*sqrt(1.0+SQR(absa/absb)));
+    if (absa > absb) { c = absb/absa; return absa*sqrt(1.0+c*c);}
+    else { if (absb>0.0) c=absa/absb;
+	return (absb == 0.0 ? 0.0 : absb*sqrt(1.0+c*c));
+    }
 }
 
 
@@ -1120,14 +1191,14 @@ put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1
     
     g=scale=anorm=0.0;
     //Householder reduction to bidiagonal form.
-    for (i=1;i<=n;i++) {
+    for (i=0;i<n;i++) {
         l=i+1;
         rv1[i]=scale*g;
         g=s=scale=0.0;
-        if (i <= m) {
-            for (k=i;k<=m;k++) scale += fabs(a[k][i]);
+        if (i < m) {
+            for (k=i;k<m;k++) scale += fabs(a[k][i]);
             if (scale) {
-                for (k=i;k<=m;k++) {
+                for (k=i;k<m;k++) {
                     a[k][i] /= scale;
                     s += a[k][i]*a[k][i];
                 }
@@ -1135,21 +1206,21 @@ put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1
                 g = -SIGN(sqrt(s),f);
                 h=f*g-s;
                 a[i][i]=f-g;
-                for (j=l;j<=n;j++) {
-                    for (s=0.0,k=i;k<=m;k++) s += a[k][i]*a[k][j];
+                for (j=l;j<n;j++) {
+                    for (s=0.0,k=i;k<m;k++) s += a[k][i]*a[k][j];
                     f=s/h;
-                    for (k=i;k<=m;k++) a[k][j] += f*a[k][i];
+                    for (k=i;k<m;k++) a[k][j] += f*a[k][i];
                 }
-                for (k=i;k<=m;k++) a[k][i] *= scale;
+                for (k=i;k<m;k++) a[k][i] *= scale;
             }
         }
         w[i]=scale *g;
         g=s=scale=0.0;
     
-        if (i <= m && i != n) {
-            for (k=l;k<=n;k++) scale += fabs(a[i][k]);
+        if (i < m && i != n-1) {
+            for (k=l;k<n;k++) scale += fabs(a[i][k]);
             if (scale) {
-                for (k=l;k<=n;k++) {
+                for (k=l;k<n;k++) {
                     a[i][k] /= scale;
                     s += a[i][k]*a[i][k];
                 }
@@ -1157,54 +1228,54 @@ put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1
                 g = -SIGN(sqrt(s),f);
                 h=f*g-s;
                 a[i][l]=f-g;
-                for (k=l;k<=n;k++) rv1[k]=a[i][k]/h;
-                for (j=l;j<=m;j++) {
-                    for (s=0.0,k=l;k<=n;k++) s += a[j][k]*a[i][k];
-                    for (k=l;k<=n;k++) a[j][k] += s*rv1[k];
+                for (k=l;k<n;k++) rv1[k]=a[i][k]/h;
+                for (j=l;j<m;j++) {
+                    for (s=0.0,k=l;k<n;k++) s += a[j][k]*a[i][k];
+                    for (k=l;k<n;k++) a[j][k] += s*rv1[k];
                 }
-                for (k=l;k<=n;k++) a[i][k] *= scale;
+                for (k=l;k<n;k++) a[i][k] *= scale;
             }
         }
         anorm=FMAX(anorm,(fabs(w[i])+fabs(rv1[i])));
     }
-    for (i=n;i>=1;i--) { //Accumulation of right-hand transformations.
-        if (i < n) {
+    for (i=n-1;i>=0;i--) { //Accumulation of right-hand transformations.
+        if (i < n-1) {
             if (g) {
-                for (j=l;j<=n;j++)
+                for (j=l;j<n;j++)
                     //Double division to avoid possible underflow.
                     v[j][i]=(a[i][j]/a[i][l])/g;
-                for (j=l;j<=n;j++) {
-                    for (s=0.0,k=l;k<=n;k++) s += a[i][k]*v[k][j];
-                    for (k=l;k<=n;k++) v[k][j] += s*v[k][i];
+                for (j=l;j<n;j++) {
+                    for (s=0.0,k=l;k<n;k++) s += a[i][k]*v[k][j];
+                    for (k=l;k<n;k++) v[k][j] += s*v[k][i];
                 }
             }
-            for (j=l;j<=n;j++) v[i][j]=v[j][i]=0.0;
+            for (j=l;j<n;j++) v[i][j]=v[j][i]=0.0;
         }
         v[i][i]=1.0;
         g=rv1[i];
         l=i;
     }
         
-    for (i=IMIN(m,n);i>=1;i--) { //Accumulation of left-hand transformations.
+    for (i=n-1;i>=0;i--) { //Accumulation of left-hand transformations.
         l=i+1;
         g=w[i];
-        for (j=l;j<=n;j++) a[i][j]=0.0;
+        for (j=l;j<n;j++) a[i][j]=0.0;
         if (g) {
             g=1.0/g;
-            for (j=l;j<=n;j++) {
-                for (s=0.0,k=l;k<=m;k++) s += a[k][i]*a[k][j];
+            for (j=l;j<n;j++) {
+                for (s=0.0,k=l;k<m;k++) s += a[k][i]*a[k][j];
                 f=(s/a[i][i])*g;
-                for (k=i;k<=m;k++) a[k][j] += f*a[k][i];
+                for (k=i;k<m;k++) a[k][j] += f*a[k][i];
             }
-            for (j=i;j<=m;j++) a[j][i] *= g;
-        } else for (j=i;j<=m;j++) a[j][i]=0.0;
+            for (j=i;j<m;j++) a[j][i] *= g;
+        } else for (j=i;j<m;j++) a[j][i]=0.0;
         ++a[i][i];
     }     
     
-    for (k=n;k>=1;k--) { //Diagonalization of the bidiagonal form: Loop over
-        for (its=1;its<=MAX_ITER;its++) { //singular values, and over allowed iterations.
+    for (k=n-1;k>=0;k--) { //Diagonalization of the bidiagonal form: Loop over
+        for (its=0;its<=MAX_ITER;its++) { //singular values, and over allowed iterations.
             flag=1; //Test for splitting.
-            for (l=k;l>=1;l--) {
+            for (l=k;l>=0;l--) {
                 nm=l-1; //Note that rv1[1] is always zero.
                 if ((Real)(fabs(rv1[l])+anorm) == anorm) {
                     flag=0;
@@ -1225,7 +1296,7 @@ put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1
                     h=1.0/h;
                     c=g*h;
                     s = -f*h;
-                    for (j=1;j<=m;j++) {
+                    for (j=0;j<m;j++) {
                         y=a[j][nm];
                         z=a[j][i];
                         a[j][nm]=y*c+z*s;
@@ -1237,7 +1308,7 @@ put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1
             if (l == k) { //Convergence.
                 if (z < 0.0) { //Singular value is made nonnegative.
                     w[k] = -z;
-                    for (j=1;j<=n;j++) v[j][k] = -v[j][k];
+                    for (j=0;j<n;j++) v[j][k] = -v[j][k];
                 }
                 break;
             }
@@ -1267,7 +1338,7 @@ put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1
                 g = g*c-x*s;
                 h=y*s;
                 y *= c;
-                for (jj=1;jj<=n;jj++) {
+                for (jj=0;jj<n;jj++) {
                     x=v[jj][j];
                     z=v[jj][i];
                     v[jj][j]=x*c+z*s;
@@ -1283,7 +1354,7 @@ put as a vector w[1..n] . The matrix V (not the transpose V T ) is output as v[1
                 }
                 f=c*g+s*y;
                 x=c*y-s*g;
-                for (jj=1;jj<=m;jj++) {
+                for (jj=0;jj<m;jj++) {
                     y=a[jj][j];
                     z=a[jj][i];
                     a[jj][j]=y*c+z*s;

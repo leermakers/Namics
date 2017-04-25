@@ -4,6 +4,10 @@ System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("calculation_type");
 	KEYS.push_back("generate_guess");
+	KEYS.push_back("initial_guess");
+	KEYS.push_back("guess_inputfile");
+	KEYS.push_back("final_guess");
+	KEYS.push_back("guess_outputfile");
 	KEYS.push_back("GPU"); 
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]); 
@@ -293,7 +297,33 @@ if (debug) cout << "CheckInput for system " << endl;
 			} 
 
 		}
-		
+		initial_guess="previous_result";
+		if (GetValue("initial_guess").size()>0) {
+			options.clear();
+			options.push_back("previous_result"); options.push_back("file"); 
+			if (!In[0]->Get_string(GetValue("initial_guess"),initial_guess,options," Info about 'initial_guess' rejected; default: 'previous_result' used.") ) {initial_guess="previous_result";}
+			if (initial_guess=="file") {
+				if (GetValue("guess_inputfile").size()>0) {
+					guess_inputfile=GetValue("guess_inputfile");
+				} else {
+					success=false; cout <<" When 'initial_guess' is set to 'file', you need to supply 'guess_inputfile', but this entry is missing. Problem terminated " << endl; 
+				}
+			}
+		}
+		final_guess="next_problem";
+		if (GetValue("final_guess").size()>0) {
+			options.clear();
+			options.push_back("next_problem"); options.push_back("file"); 
+			if (!In[0]->Get_string(GetValue("final_guess"),final_guess,options," Info about 'final_guess' rejected; default: 'next_problem' used.") ) {final_guess="next_problem";}
+			if (final_guess=="file") {
+				if (GetValue("guess_outputfile").size()>0) {
+					guess_outputfile=GetValue("guess_outputfile");
+				} else {
+					guess_outputfile=""; 
+					cout <<"Filename not found for 'output_guess'. Default with inputfilename and extention '.outiv' is used. " << endl; 
+				}
+			}
+		}
 	}
 	return success; 
 }
@@ -465,6 +495,7 @@ void System::DoElectrostatics(Real* g, Real* x) {
 	Div(eps,phitot,M);
 	Lat[0]->set_bounds(eps);
 	Cp(psi,x,M); Cp(g,psi,M);
+	Lat[0]->set_bounds(psi);
 	if (fixedPsi0) {
 		int length=FrozenList.size();
 		for (int i=0; i<length; i++) {
@@ -609,6 +640,7 @@ if (debug) cout << "CheckResults for system " << endl;
 	FreeEnergy=GetFreeEnergy();
 	GrandPotential=GetGrandPotential();
 	CreateMu();
+	cout <<endl; 
 	cout <<"free energy                 = " << FreeEnergy << endl; 
 	cout <<"grand potential             = " << GrandPotential << endl; 
 	int n_mol=In[0]->MolList.size();

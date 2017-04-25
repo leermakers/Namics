@@ -35,6 +35,7 @@ public:
 	Real *lambda0;
 	Real *lambda_1; 
 	Real *lambda1;
+	Real *X;
 	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput(). 
 
 	std::vector<string> KEYS;
@@ -82,14 +83,14 @@ public:
 	bool CreateMASK(int*, int*, int*, int, bool);
 	bool GenerateGuess(Real*, string, string, Real, Real);
 	bool GuessVar(Real*, Real, string, Real, Real);
-	bool ReadGuess(string,Real*);
-	bool StoreGuess(string,Real*);
 	void DistributeG1(Real*, Real*, int*, int*, int*, int);
 	void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int);
 	void ComputeGN(Real*, Real*, int*, int*, int*, int*, int*, int*, int, int);
 	void UpdateEE(Real*, Real*, Real*); 
 	void UpdatePsi(Real*, Real*, Real* , Real*, int*); 
 	void UpdateQ(Real*,Real*,Real*,Real*,int*);
+	bool ReadGuess(string, Real* ,string&, vector<string>&, bool&, int&, int&, int&, int);
+	bool StoreGuess(string,Real*,string, vector<string>, bool,int);
 };
 
 #endif

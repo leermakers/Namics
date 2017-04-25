@@ -75,7 +75,8 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 void Molecule:: AllocateMemory() {
 if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	int M=Lat[0]->M;
-	int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
+	int m=0;
+	if (freedom=="clamped") m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
 
 	if (save_memory) {
 		int length_ = mon_nr.size();

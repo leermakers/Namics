@@ -219,7 +219,6 @@ if (debug) cout << "GetValue (long) in output " << endl;
 	return 0; 
 }
 
-
 void Output::WriteOutput(int subl) {
 if (debug) cout << "WriteOutput in output " << endl; 
 	int length;
@@ -290,13 +289,13 @@ if (debug) cout << "WriteOutput in output " << endl;
 			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,Real_result,string_result);
 			if (result_nr==0) {fprintf(fp,"\t");}
 			if (result_nr==1) {fprintf(fp,"%i\t",int_result);}
-			if (result_nr==2) {fprintf(fp,"%f\t",Real_result);}
+			if (result_nr==2) {fprintf(fp,"%e\t",Real_result);}
 			if (result_nr==3) {
 				if (sub[0]==OUT_prop[i]) {
 					fprintf(fp,"%s\t",string_result.c_str());
 				} else {
 					Real* X=GetPointer(OUT_key[i],OUT_name[i],sub[0]);
-					fprintf(fp,"%f\t",Lat[0]->GetValue(X,sub[1])); 
+					fprintf(fp,"%e\t",Lat[0]->GetValue(X,sub[1])); 
 				}
 			}
 		}

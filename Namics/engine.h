@@ -46,7 +46,7 @@ public:
 	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string); 
-	bool Doit(int); 
+	bool Doit(int,Real*,string,vector<string>,bool,int,int,int); 
 	bool VarMol(int);
 	bool VarMon(int);
 	bool VarLat(int);

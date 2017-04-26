@@ -325,7 +325,7 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 			n_start++; 
 			int k=0;
 			int k_length=Input.size();  
-			while (k<k_length) { //remove Reals and keep last value
+			while (k<k_length) { //remove doubles and keep last value
 				int l=k+1;
 				int l_length=Input.size();  
 				while (l<l_length) {
@@ -513,20 +513,26 @@ bool Input:: CheckInput(void) {
 	bool Keywordfound; 
 	int key_length=KEYS.size();
 	int length = elems.size();  
-	int j; 
+	int j;
+	bool last_start=false; 
 	
 	string word;
 	
 	if (length==0) {cout << "inputfile is empty " << endl; success=false; } 
 	int i=0;
 	while (i<length) { 
+		last_start=false;
 		vector<std::string> set;
 		split(elems[i],':',set); 
 		if (set.size() !=5) {if (set[1]!="start") {
 			cout <<elems[i] << endl; 
 			cout << " Line number " << set[0] << " does not contain 4 items" << endl; success=false; return false;}
 		}
+		if (set[1]=="start") last_start=true;
 		i++;
+	}
+	if (!last_start) {
+		elems.push_back("0:start"); length++;
 	}
 	i=0;
 	while (success && i<length) {

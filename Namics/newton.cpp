@@ -6,7 +6,8 @@ Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 if(debug) cout <<"Constructor in Newton " << endl;  
 	KEYS.push_back("method"); KEYS.push_back("e_info"); KEYS.push_back("s_info");
 	KEYS.push_back("delta_max"); KEYS.push_back("m"); KEYS.push_back("i_info");
-	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance"); KEYS.push_back("store_guess"); KEYS.push_back("read_guess"); 
+	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance"); 
+	//KEYS.push_back("store_guess"); KEYS.push_back("read_guess"); 
 	KEYS.push_back("stop_criterion"); 
 	KEYS.push_back("delta_min");
 	KEYS.push_back("linesearchlimit");
@@ -959,7 +960,7 @@ if(debug) cout <<"PutU in  Newton " << endl;
 	return success;
 }
 
-
+/*
 void Newton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton " << endl;
 	Real* U = new Real[N*N];
@@ -994,42 +995,35 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	free(WORK);
 	for (int i=0; i<N; i++) X[i]=0;
 	for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[i*N + j];// *B[j];
-	for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is use decause it is no longer needed.
+	for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is used decause it is no longer needed.
 	for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += VT[i*N + j]*S[j];
 	delete U;
 	delete S;
 	delete VT;
 }
-
-/*
+*/
 
 void Newton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	
+	Real **U = new Real*[N];
+	Real **V = new Real*[N];
+	Real *S = new Real[N];
 
-    Real **U = new Real*[N + 1];
-    Real **V = new Real*[N + 1];
-    Real *S = new Real[N + 1];
+	for (int i=0; i < N; i++) {
+		U[i] = new Real[N];
+		V[i] = new Real[N];
+	}
 
-
-
-
-
-    for (int i=0; i < N + 1; i++) {
-        U[i] = new Real[N + 1];
-        V[i] = new Real[N + 1];
-    }
-
-	
-	for (int i=0; i<N; i++) for (int j=0; j<N; j++) U[i+1][j+1] = A[i*N + j];
+	for (int i=0; i<N; i++) for (int j=0; j<N; j++) U[i][j] = A[i*N +j];
     
     	if (N > 1) {
         	svdcmp(U, N, N, S, V);
 
 		for (int i=0; i<N; i++) X[i]=0;
-		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[i+1][j+1];// *B[j];
-		for (int i=0; i<N; i++) {S[i+1] = X[i]/S[i+1]; X[i]=0;} //S is use decause it is no longer needed.
-		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += V[i+1][j+1]*S[j+1];
+		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[j][i];// *B[j];
+		for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is used decause it is no longer needed.
+		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += V[i][j]*S[j];
 	} else {
 		X[0]=1;
 	}
@@ -1038,7 +1032,7 @@ if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	delete S;
 	delete V;
 }
-*/
+
 
 void Newton::DIIS(Real* xx, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* Ci, int k, int m, int iv) {
 if(debug) cout <<"DIIS in  Newton " << endl;

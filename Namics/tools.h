@@ -177,7 +177,7 @@ void H_Invert(Real*, Real*, int);
 #endif
 
 Real pythag(Real, Real);
-void svdcmp(Real **, int , int , Real *, Real **);
+int svdcmp(Real **, int , int , Real *, Real **);
 
 
 

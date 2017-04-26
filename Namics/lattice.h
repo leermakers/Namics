@@ -31,6 +31,7 @@ public:
 	Real offset_first_layer; 
 	Real bond_length; 
 	Real *L;
+	int Z; 
 	Real lambda; 
 	Real *lambda0;
 	Real *lambda_1; 

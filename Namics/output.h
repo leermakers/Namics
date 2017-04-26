@@ -24,6 +24,7 @@ public:
 	vector<Newton*> New;
 	vector<Engine*> Eng;
 	int n_output; 
+	int start;
 	int output_nr; 
 	bool write_bounds;
 	bool append; 

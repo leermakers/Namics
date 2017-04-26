@@ -114,6 +114,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		options.push_back("tagged");
 		options.push_back("clamp"); 
 
+
 		
 		freedom = In[0]->Get_string(GetValue("freedom"),"free"); 
 		if (!In[0]->InSet(options,freedom)) {
@@ -124,7 +125,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		if (freedom =="free") {
 			if (GetValue("frozen_range").size()>0||GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 ||
 			GetValue("frozen_filename").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tagged_filename").size()>0) {
-				success=false; cout <<"In mon " + name + " you should not combine 'freedom : free' with 'frozen_range' or 'pinned_range' or 'tagged_range' or corresponding filenames." << endl; 
+				if (start==1) cout <<"In mon " + name + " value of 'freedom : free' is combined with 'frozen_range' or 'pinned_range' or 'tagged_range' or corresponding filenames: value ignored. " << endl; 
 			}
 		} else {
 			r=(int*) malloc(6*sizeof(int));

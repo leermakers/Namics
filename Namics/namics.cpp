@@ -11,16 +11,16 @@
 #include "engine.h"
 #include "output.h"
 
-string version="0.0.0.0.0.0.0.0";
+string version="1.1.1.1.1.1.1.1";
 //meaning:
-// engine version number =0
-// newton version number =0
-// system version number =0
-// lattice version number =0
-// molecule version number =0
-// segment version number =0
-// alias version number =0
-// output version number =0
+// engine version number =1
+// newton version number =1
+// system version number =1
+// lattice version number =1
+// molecule version number =1
+// segment version number =1
+// alias version number =1
+// output version number =1
 Real check = 0.4534345;
 Real e=1.60217e-19;
 Real T=298.15;
@@ -103,7 +103,8 @@ int main(int argc, char *argv[]) {
 
 		if (Sys[0]->initial_guess=="file") {
 			MONLIST.clear();
-			if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile,X,METHOD,MONLIST,CHARGED,MX,MY,MZ,0)) { //last argument 0 is to first checkout sizes of system.
+			if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile,X,METHOD,MONLIST,CHARGED,MX,MY,MZ,0)) {
+			//last argument 0 is to first checkout sizes of system.
 			return 0;
 			}
 
@@ -115,7 +116,8 @@ int main(int argc, char *argv[]) {
 			if (X) delete X;
 			X=(Real*) malloc(IV*sizeof(Real)); 
 			MONLIST.clear();
-			Lat[0]->ReadGuess(Sys[0]->guess_inputfile,X,METHOD,MONLIST,CHARGED,MX,MY,MZ,1); //last argument 1 is to read guess in X. 
+			Lat[0]->ReadGuess(Sys[0]->guess_inputfile,X,METHOD,MONLIST,CHARGED,MX,MY,MZ,1); 
+			//last argument 1 is to read guess in X. 
 		}
 		
 
@@ -140,47 +142,45 @@ int main(int argc, char *argv[]) {
 			Sys[0]->PushOutput(); //needs to be after pushing output for seg.
 	
 			for (int i=0; i<n_out; i++) {Out[i]->WriteOutput(subloop);}
-		subloop ++;
+			subloop ++;
 		} 
-cout <<Sys[0]->initial_guess << endl; 
-			if (Sys[0]->initial_guess=="previous_result") {
-				int IV;
-				METHOD=New[0]->GetNewtonInfo(IV);
-				MX=Lat[0]->MX;
-				MY=Lat[0]->MY;
-				MZ=Lat[0]->MZ;
-				CHARGED=Sys[0]->charged;
-				if (X) delete X;
-				X=(Real*) malloc(IV*sizeof(Real));
-				for (int i=0; i<IV; i++) X[i]=New[0]->xx[i];
-				int length=Sys[0]->SysMonList.size();
-				MONLIST.clear();
-				for (int i=0; i<length; i++) {
-					MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
-				}
+		if (Sys[0]->initial_guess=="previous_result") {
+			int IV;
+			METHOD=New[0]->GetNewtonInfo(IV);
+			MX=Lat[0]->MX;
+			MY=Lat[0]->MY;
+			MZ=Lat[0]->MZ;
+			CHARGED=Sys[0]->charged;
+			if (X) delete X;
+			X=(Real*) malloc(IV*sizeof(Real));
+			for (int i=0; i<IV; i++) X[i]=New[0]->xx[i];
+			int length=Sys[0]->SysMonList.size();
+			MONLIST.clear();
+			for (int i=0; i<length; i++) {
+				MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
 			}
-			if (Sys[0]->final_guess=="file") {
-				MONLIST.clear();
-				int length=Sys[0]->SysMonList.size();
-				for (int i=0; i<length; i++) {
-					MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
-				}
-				Lat[0]->StoreGuess(Sys[0]->guess_outputfile,New[0]->xx,New[0]->method,MONLIST,Sys[0]->charged,start);
+		}
+		if (Sys[0]->final_guess=="file") {
+			MONLIST.clear();
+			int length=Sys[0]->SysMonList.size();
+			for (int i=0; i<length; i++) {
+				MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
 			}
-			for (int i=0; i<n_out; i++) delete Out[i]; Out.clear();
-			delete Eng[0]; Eng.clear(); 
-			delete New[0]; New.clear();
-			delete Sys[0]; Sys.clear();
- 			for (int i=0; i<n_mol; i++) {
-				int length_al = Mol[i]->MolAlList.size();
-				for (int k=0; k<length_al; k++) {
-					delete Mol[i]->Al[k]; Mol[i]->Al.clear(); 
-				}
-				delete Mol[i]; Mol.clear();
+			Lat[0]->StoreGuess(Sys[0]->guess_outputfile,New[0]->xx,New[0]->method,MONLIST,Sys[0]->charged,start);
+		}
+		for (int i=0; i<n_out; i++) delete Out[i]; Out.clear();
+		delete Eng[0]; Eng.clear(); 
+		delete New[0]; New.clear();
+		delete Sys[0]; Sys.clear();
+ 		for (int i=0; i<n_mol; i++) {
+			int length_al = Mol[i]->MolAlList.size();
+			for (int k=0; k<length_al; k++) {
+				delete Mol[i]->Al[k]; Mol[i]->Al.clear(); 
 			}
-			//for (int i=0; i<n_al; i++)  delete Al[i]; Al.clear();
-			for (int i=0; i<n_seg; i++) delete Seg[i]; Seg.clear();	
-			delete Lat[0]; Lat.clear();
+			delete Mol[i]; Mol.clear();
+		}
+		for (int i=0; i<n_seg; i++) delete Seg[i]; Seg.clear();	
+		delete Lat[0]; Lat.clear();
 	}	
 	return 0;
 }

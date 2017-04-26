@@ -9,7 +9,9 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("lowerbound_x"); KEYS.push_back("upperbound_x"); 
 	KEYS.push_back("lowerbound_y"); KEYS.push_back("upperbound_y");
 	KEYS.push_back("lowerbound_z"); KEYS.push_back("upperbound_z");
- 	KEYS.push_back("bondlength");  KEYS.push_back("lattice_type"); 
+ 	KEYS.push_back("bondlength");  KEYS.push_back("lattice_type");
+	KEYS.push_back("lambda"); 
+	KEYS.push_back("Z"); 
 	sub_box_on=0;
 }
 
@@ -184,15 +186,50 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 			bond_length =  In[0]->Get_Real(GetValue("bondlength"),5e-10);
 			if (bond_length < 1e-10 || bond_length > 1e-8) {cout <<" bondlength out of range 1e-10..1e-8 " << endl; success=false;}
 		}
-		options.push_back("simple_cubic"); options.push_back("FCC");
+		
+		lambda=0;
+		lattice_type=""; 
+		options.push_back("simple_cubic"); options.push_back("FCC"); options.push_back("hexagonal");
 		Value=GetValue("lattice_type"); 
 		if (Value.length()>0) {
-			if (!In[0]->Get_string(Value,lattice_type,options,"Input for 'lattice_type' not recognized.")) success = false; else {
-				if (lattice_type == "simple_cubic") lambda=1.0/6.0;
-				if (lattice_type == "FCC") lambda = 1.0/3.0; 
+			if (!In[0]->Get_string(Value,lattice_type,options,"Input for 'lattice_type' not recognized. 'Simple_cubic': lambda=1/6; Z=6; FCC: lambda=1/3; Z=3; 'hexagonal': lambda=1/4; Z=4;")) success = false; else {
+				if (lattice_type == "simple_cubic") {lambda=1.0/6.0; Z=6;}
+				if (lattice_type == "FCC") {lambda = 1.0/3.0; Z=3;}			
+				if (lattice_type == "hexagonal") {lambda=1.0/4.0; Z=4;}
 			} 
 		} else {
-			lattice_type  = "simple_cubic"; lambda=1.0/6.0;
+			if (lambda>0) {
+				if (GetValue("lambda").size()>0) cout <<"'lattice_type' has been set: 'lambda'-value is ignored" << endl;
+				if (GetValue("Z").size()>0) cout <<"'lattice_type' has been set: 'Z' (coordination number) is ignored" << endl; 
+			} else {
+				if (GetValue("lambda").size()>0) {
+					lambda=In[0]->Get_Real(GetValue("lambda"),1.0/6.0);
+					if (lambda < 0.0 || lambda > 1.0/3.0) {lattice_type="simple_cubic"; lambda = 1.0/6.0; cout <<"'lambda'-value out of bounds 0..1/3. Default 1/6 is used instead" << endl; }
+					else {
+						if (lambda>0.33 && lambda <0.34) {lattice_type="FCC"; lambda=1.0/3.0;}
+						if (lambda>0.16 && lambda < 0.167) {lattice_type="simple_cubic"; lambda = 1.0/6.0;}
+						if (lambda>0.24 && lambda < 0.26) {lattice_type="hexagonal"; lambda = 1.0/4.0;}
+					}
+					Z=In[0]->Get_int(GetValue("Z"),6);
+					if (Z<3 || Z>12) {lattice_type="simple_cubic"; lambda = 1.0/6.0; cout <<"coordination number 'Z' is out of bounds 3 .. 12. Default Z=6 is used instead"<<endl; }
+				}
+				if (lambda>0) {
+					if (GetValue("Z").size()>0) {
+						Z=In[0]->Get_int(GetValue("Z"),6);
+						if (Z<3 || Z>12) {lattice_type="simple_cubic"; lambda = 1.0/6.0; cout <<"coordination number 'Z' is out of bounds 3 .. 12. Default Z=6 is used instead"<<endl; }
+						else {
+							lambda = 1.0/Z;
+							if (Z==3) lattice_type="FCC";
+							if (Z==6) lattice_type="simple_cubic";
+							if (Z==4) lattice_type="hexagonal";
+						}
+					}
+				} 
+				if (lambda==0) {
+					cout<<"'lattice_type'-info is missing. 'lambda'-info is missing. 'Z'-info is missing. Default values; lambda=1/6, Z=6, lattice_type='simple cubic' used instead. " << endl; 
+					lattice_type  = "simple_cubic"; lambda=1.0/6.0; Z=0;
+				}
+			}
 		} 
 		offset_first_layer =0;
 		gradients=In[0]->Get_int(GetValue("gradients"),1);
@@ -260,6 +297,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				
 				break;
 			case 2: 
+				if (lattice_type == "") {success=false; cout <<" in two gradient calculations, you should set lattice type to either 'simple_cubic' or 'FCC'"<<endl;  }
+				if (Z==0) {lattice_type  = "FCC"; lambda=1.0/3.0; Z=3; cout <<"Correction: in two-gradient case the default of the lattice is 'FCC'. " << endl; }
 				MX = In[0]->Get_int(GetValue("n_layers_x"),-123);
 				if (MX==-123) {success=false; cout <<"In 'lat' the parameter 'n_layers_x' is required. Problem terminated" << endl;} 
 				else {
@@ -759,7 +798,7 @@ if (debug) cout <<"GetValue (long)  in lattice " << endl;
 }
 
 
-void Lattice::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to lattice_type;
+void Lattice::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in lattice " << endl; 
 	Real* SIDE;
 	switch(gradients) {

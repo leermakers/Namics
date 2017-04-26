@@ -84,8 +84,9 @@ if (debug) cout <<"Load in output " << endl;
 	return success; 
 }
 
-bool Output::CheckInput(int start) {
+bool Output::CheckInput(int start_) {
 if (debug) cout << "CheckInput in output " << endl; 
+	start=start_;
 	bool success=true;
 	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
@@ -185,7 +186,6 @@ if (debug) cout << "GetValue (long) in output " << endl;
 	int choice;
 	int i; 
 	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="newton") choice=4; if  (key=="lat") choice=5;if  (key=="engine") choice=6;
-
 	switch(choice) {
 		case 1:
 			return Sys[0]->GetValue(prop,int_result,Real_result,string_result); 
@@ -230,7 +230,12 @@ if (debug) cout << "WriteOutput in output " << endl;
 	string key;
 	char numc[2];
         sprintf(numc,"%d",subl);
-	filename=sub[0].append("_").append(numc).append(".").append(name); 
+	char numcc[2];
+	sprintf(numcc,"%d",start);
+	if (name=="kal") 
+		filename=sub[0].append(".").append(name); 
+	else 
+		filename=sub[0].append("_").append(numcc).append("_").append(numc).append(".").append(name); 
   	
 	if (name=="pro") {
 		vector<Real*> pointer;
@@ -273,7 +278,8 @@ if (debug) cout << "WriteOutput in output " << endl;
 			fp=fopen(filename.c_str(),"w");
 			int length = OUT_key.size();
 			for (int i=0; i<length; i++) {
-				string s=OUT_key[i].append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]); 
+				string key = OUT_key[i];
+				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]); 
 				fprintf(fp,"%s \t",s.c_str()); 
 			}
 			fprintf(fp,"\n"); append=true; 

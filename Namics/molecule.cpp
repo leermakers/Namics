@@ -774,6 +774,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();  
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
+	n=norm*GN;
+	theta=n*chainlength;
 	push("theta",theta);
 	push("theta exc",theta-phibulk*Lat[0]->volume);
 	push("n",n);

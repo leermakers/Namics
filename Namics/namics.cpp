@@ -8,6 +8,7 @@
 #include "molecule.h"
 #include "system.h"
 #include "newton.h"
+#include "variate.h"
 #include "engine.h"
 #include "output.h"
 
@@ -54,6 +55,7 @@ int main(int argc, char *argv[]) {
 	vector<Newton*> New;
 	vector<Engine*> Eng;
  	vector<Output*> Out;
+	vector<Variate*> Var;
 
 	if (argc == 2) fname = argv[1]; else {printf("Use: namics filename -without extension- \n"); return 1;} 
 	//argc counts no. of input arguments ./namics fname(2 arguments).... and makes fname from argv[1] else shows error and stops.
@@ -71,6 +73,7 @@ int main(int argc, char *argv[]) {
 //----------------------------------
 
 	while (start<n_starts) { start++;
+		In[0]->MakeLists(start);
 		cout <<"Problem nr " << start << " out of " << n_starts << endl; 	
 		Lat.push_back(new Lattice(In,In[0]->LatList[0])); if (!Lat[0]->CheckInput(start)) {return 0;}
 
@@ -89,7 +92,29 @@ int main(int argc, char *argv[]) {
 		Sys.push_back(new System(In,Lat,Seg,Mol,In[0]->SysList[0])); Sys[0]->cuda=cuda;  
 		if (!Sys[0]->CheckInput(start)) {return 0;} if (!Sys[0]->CheckChi_values(n_seg)) return 0; 
 
-		New.push_back(new Newton(In,Lat,Seg,Mol,Sys,In[0]->NewtonList[0])); if (!New[0]->CheckInput(start)) {return 0;}
+		int n_var=In[0]->VarList.size();
+		int n_search=0;
+		int n_scan=0;
+		int n_target=0;
+		int search_nr=-1,scan_nr=-1,target_nr=-1;
+		int c_search=-1,c_scan=-2,c_target=-3;
+		for (int k=0; k<n_var; k++) {
+			Var.push_back(new Variate(In,Lat,Seg,Mol,Sys,In[0]->VarList[k]));
+			if (!Var[k]->CheckInput(start)) {return 0;}
+			if (Var[k]->scanning>-1) {scan_nr=k; n_scan++; c_scan=(Var[k]->scanning+1)*10+Var[k]->scan_nr;}
+			if (Var[k]->searching>-1) {search_nr=k; n_search++; c_search=(Var[k]->searching+1)*10+Var[k]->search_nr;} 
+			if (Var[k]->targeting>-1) {target_nr=k; n_target++; c_target=(Var[k]->targeting+1)*10+Var[k]->target_nr;}
+		}
+		if (n_search>1) {cout << "too many 'search'es in var statements. The limit is 1 " << endl; return 0;}
+		if (n_scan>1) {cout << "too man 'scan's in var statements. The limit is 1 " << endl; return 0;}
+		if (n_target>1) {cout << "too many 'target's in var statements. The limit is 1 " << endl; return 0;}
+		if (n_search>0 && n_target==0) {cout <<"lonely search. Please specify in 'var' a target function, e.g. 'var : sys-NN : grand_potential : 0'" << endl;  return 0 ;}
+		if (n_target>0 && n_search==0) {cout <<"lonely target. Please specify in 'var' a search function, e.g. 'var : mol-lipid : search : theta' " << endl; return 0;}
+		if (c_scan==c_search) {cout <<"conflicting scan and search variables. Same quantity is used for both. This is not allowed." << endl; return 0; }
+		if (c_scan==c_target) {cout <<"conflicting scan and target variables. Same quantity is used for both. This is not allowed." << endl; return 0; }
+		if (c_search==c_target) {cout <<"conflicting search and target variables. Same quantity is used for both. This is not allowed." << endl; return 0; }
+		
+		New.push_back(new Newton(In,Lat,Seg,Mol,Sys,Var,In[0]->NewtonList[0])); if (!New[0]->CheckInput(start)) {return 0;}
 		Eng.push_back(new Engine(In,Lat,Seg,Mol,Sys,New,In[0]->EngineList[0])); if (!Eng[0]->CheckInput(start)) {return 0;} 
 		int n_out = In[0]->OutputList.size(); 
 		if (n_out ==0) cout <<"Warning: no output defined" << endl; 
@@ -99,7 +124,8 @@ int main(int argc, char *argv[]) {
 			if (!Out[i]->CheckInput(start)) {cout << "input_error in output " << endl; return 0;} 
 		}
 		int substart=0; int subloop=0;
-		substart = Eng[0]->SubProblemNum();
+		if (scan_nr<0) substart=0; else substart = Var[scan_nr]->num_of_cals;
+		if (substart<0) substart=0;
 
 		if (Sys[0]->initial_guess=="file") {
 			MONLIST.clear();
@@ -121,8 +147,13 @@ int main(int argc, char *argv[]) {
 		}
 		
 
-		while(subloop < substart){
-	 		if(!Eng[0]->Doit(subloop,X,METHOD,MONLIST,CHARGED,MX,MY,MZ)) break;
+		while(subloop <= substart){
+			if (scan_nr >-1) Var[scan_nr]->PutVarScan(subloop);
+		
+			New[0]->AllocateMemory();
+			New[0]->Guess(X,METHOD,MONLIST,CHARGED,MX,MY,MZ);
+			
+			if (search_nr<0) New[0]->Solve(true); else New[0]->Solve(search_nr,target_nr);
  
 			Lat[0]->PushOutput();
 			New[0]->PushOutput();
@@ -143,7 +174,8 @@ int main(int argc, char *argv[]) {
 	
 			for (int i=0; i<n_out; i++) {Out[i]->WriteOutput(subloop);}
 			subloop ++;
-		} 
+		} 	
+		if (scan_nr>-1) Var[scan_nr]->ResetScanValue();
 		if (Sys[0]->initial_guess=="previous_result") {
 			int IV;
 			METHOD=New[0]->GetNewtonInfo(IV);
@@ -179,6 +211,7 @@ int main(int argc, char *argv[]) {
 			}
 			delete Mol[i]; Mol.clear();
 		}
+		//for (int i=0; i<n_al; i++)  delete Al[i]; Al.clear();
 		for (int i=0; i<n_seg; i++) delete Seg[i]; Seg.clear();	
 		delete Lat[0]; Lat.clear();
 	}	

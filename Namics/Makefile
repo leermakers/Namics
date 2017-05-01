@@ -41,7 +41,7 @@ endif
 %.o: %.cu
 	$(NVCC) $(NVCCFLAGS) -c $< -o $@
    
-OBJECTS = namics.o tools.o input.o lattice.o segment.o alias.o molecule.o newton.o engine.o output.o system.o
+OBJECTS = namics.o tools.o input.o lattice.o segment.o alias.o molecule.o newton.o engine.o output.o variate.o system.o
 
 #namics : namics.o
 #	g++ -o namics namics.o -L$(LIB_DIR) $(LIBS)

@@ -44,7 +44,6 @@ extern bool debug;
 enum MoleculeType {monomer, linear, branched};
 
 #endif
-
 /*
 #ifdef _WIN32
     //define lapack for Windows (32-bit and 64-bit, this part is common)
@@ -74,6 +73,6 @@ enum MoleculeType {monomer, linear, branched};
     // POSIX
 #else
 #   error "Unknown compiler"
-#endi
+#endif
 */
 

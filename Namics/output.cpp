@@ -232,10 +232,8 @@ if (debug) cout << "WriteOutput in output " << endl;
         sprintf(numc,"%d",subl);
 	char numcc[2];
 	sprintf(numcc,"%d",start);
-	if (name=="kal") 
-		filename=sub[0].append(".").append(name); 
-	else 
-		filename=sub[0].append("_").append(numcc).append("_").append(numc).append(".").append(name); 
+	if (name=="kal") filename=sub[0].append(".").append(name); else
+	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name); 
   	
 	if (name=="pro") {
 		vector<Real*> pointer;
@@ -278,7 +276,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 			fp=fopen(filename.c_str(),"w");
 			int length = OUT_key.size();
 			for (int i=0; i<length; i++) {
-				string key = OUT_key[i];
+				key=OUT_key[i];
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]); 
 				fprintf(fp,"%s \t",s.c_str()); 
 			}

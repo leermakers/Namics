@@ -1158,7 +1158,7 @@ void RemoveBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym
 #endif 
 
 #define MAX_ITER 100
-#define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
+#define SIGN(a, b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
 #define MAX(x,y) ((x)>(y)?(x):(y))
 
 Real PYTHAG(Real a, Real b)
@@ -1171,8 +1171,7 @@ Real PYTHAG(Real a, Real b)
     return(result);
 }
 
-
-int svdcmp(Real** a, int m, int n, Real* w, Real** v)
+int svdcmp(Real** a, int m, int n, Real *w, Real** v)
 {
     int flag, i, its, j, jj, k, l, nm;
     Real c, f, h, s, x, y, z;
@@ -1202,13 +1201,13 @@ int svdcmp(Real** a, int m, int n, Real* w, Real** v)
             {
                 for (k = i; k < m; k++) 
                 {
-                    a[k][i] = (float)((Real)a[k][i]/scale);
+                    a[k][i] = (Real)((Real)a[k][i]/scale);
                     s += ((Real)a[k][i] * (Real)a[k][i]);
                 }
                 f = (Real)a[i][i];
                 g = -SIGN(sqrt(s), f);
                 h = f * g - s;
-                a[i][i] = (float)(f - g);
+                a[i][i] = (Real)(f - g);
                 if (i != n - 1) 
                 {
                     for (j = l; j < n; j++) 
@@ -1236,7 +1235,7 @@ int svdcmp(Real** a, int m, int n, Real* w, Real** v)
             {
                 for (k = l; k < n; k++) 
                 {
-                    a[i][k] = (float)((Real)a[i][k]/scale);
+                    a[i][k] = (Real)((Real)a[i][k]/scale);
                     s += ((Real)a[i][k] * (Real)a[i][k]);
                 }
                 f = (Real)a[i][l];
@@ -1252,7 +1251,7 @@ int svdcmp(Real** a, int m, int n, Real* w, Real** v)
                         for (s = 0.0, k = l; k < n; k++) 
                             s += ((Real)a[j][k] * (Real)a[i][k]);
                         for (k = l; k < n; k++) 
-                            a[j][k] += (float)(s * rv1[k]);
+                            a[j][k] += (Real)(s * rv1[k]);
                     }
                 }
                 for (k = l; k < n; k++) 
@@ -1271,7 +1270,7 @@ int svdcmp(Real** a, int m, int n, Real* w, Real** v)
             {
                 for (j = l; j < n; j++)
                     v[j][i] = (Real)(((Real)a[i][j] / (Real)a[i][l]) / g);
-                    /* double division to avoid underflow */
+                    /* Real division to avoid underflow */
                 for (j = l; j < n; j++) 
                 {
                     for (s = 0.0, k = l; k < n; k++) 
@@ -1376,7 +1375,7 @@ int svdcmp(Real** a, int m, int n, Real* w, Real** v)
             }
             if (its >= 30) {
                 free((void*) rv1);
-                fprintf(stderr, "No convergence after 30,000! iterations \n");
+                fprintf(stderr, "No convergence after 30! iterations \n");
                 return(0);
             }
     
@@ -1411,11 +1410,11 @@ int svdcmp(Real** a, int m, int n, Real* w, Real** v)
                 {
                     x = (Real)v[jj][j];
                     z = (Real)v[jj][i];
-                    v[jj][j] = (float)(x * c + z * s);
-                    v[jj][i] = (float)(z * c - x * s);
+                    v[jj][j] = (Real)(x * c + z * s);
+                    v[jj][i] = (Real)(z * c - x * s);
                 }
                 z = PYTHAG(f, h);
-                w[j] = (float)z;
+                w[j] = (Real)z;
                 if (z) 
                 {
                     z = 1.0 / z;
@@ -1440,3 +1439,4 @@ int svdcmp(Real** a, int m, int n, Real* w, Real** v)
     free((void*) rv1);
     return(1);
 }
+

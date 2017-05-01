@@ -29,7 +29,6 @@ public:
 	bool write_bounds;
 	bool append; 
 	bool input_error; 
-	int start;
 		
 
 	std::vector<string> OUT_key;

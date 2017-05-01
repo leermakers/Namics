@@ -124,7 +124,8 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		if (freedom =="free") {
 			if (GetValue("frozen_range").size()>0||GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 ||
 			GetValue("frozen_filename").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tagged_filename").size()>0) {
-				success=false; cout <<"In mon " + name + " you should not combine 'freedom : free' with 'frozen_range' or 'pinned_range' or 'tagged_range' or corresponding filenames." << endl; 
+					if (start==1) {success=false; cout <<"In mon " + name + " you should not combine 'freedom : free' with 'frozen_range' or 'pinned_range' or 'tagged_range' or corresponding filenames." << endl; 
+				}
 			}
 		} else {
 			r=(int*) malloc(6*sizeof(int));
@@ -356,6 +357,139 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	}
 	return success; 
 }
+
+bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
+	bool success=true;
+	Var_target=-1;
+	Var_type="";
+	if (Var_type_=="scan"){
+		Var_type="scan";
+		if (Var_target_=="valence") {Var_target=0; Var_start_value=valence;}
+		if (Var_target_=="ePsi0/kT") {Var_target=1; Var_start_value=PSI0;}
+	}
+	if (Var_type_=="search") {
+		Var_type="search";
+		if (Var_target_=="valence") {Var_target=0; Var_start_value=valence;}
+		if (Var_target_=="ePsi0/kT") {Var_target=1; Var_start_value=PSI0;}
+	}
+	if (Var_type=="") {success=false; cout <<"In var: for segment we expect either 'scan' or 'search'" << endl;}
+	if (Var_target<0) {success=false; cout <<"In var: for segment we can 'scan' or 'search' values for 'valence' and 'ePsi0/kT'"<<endl; }
+	return success; 
+}
+
+int Segment::PutVarScan(Real step, Real end_value, int steps, string scale_) {
+	num_of_steps=-1;
+	scale=scale_;
+	Var_end_value=end_value;
+	if (scale=="exponential") {
+		Var_steps=steps; Var_step = 0;
+		if (steps==0) {
+			cout <<"In var scan: the value of 'steps' is zero, this is not allowed" << endl; 
+			return -1;
+		}
+		if (Var_end_value*Var_start_value <0) {
+			cout <<"In var scan: the product end_value*start_value < 0. This is not allowed. " << endl; 
+			return -1;
+		}
+		if (Var_end_value > Var_start_value) 
+			num_of_steps= steps* log10 (Var_end_value/Var_start_value); 
+		else 
+			num_of_steps= steps* log10 (Var_start_value/Var_end_value); 
+
+	} else {
+		Var_steps=0; Var_step=step;
+		if (step==0) {
+			cout <<"In var scan : of segment variable, the value of step can not be zero" << endl;
+			return -1;
+		} 	
+		num_of_steps=(Var_end_value-Var_start_value)/step;
+
+		if (num_of_steps<0) {
+			cout<<"In var scan : (end_value-start_value)/step is negative. This is not allowed. Try changing the sign of the 'step'." << endl; 
+			return -1;
+		}
+	}
+
+	return num_of_steps;
+}
+
+bool Segment::UpdateVarInfo(int step_nr) {
+	bool success=true;
+	switch(Var_target) {
+		case 0: 
+			if (scale=="exponential") {
+				if (valence <0)	{
+					valence=-pow(10,(1-step_nr/num_of_steps)*log10(-Var_start_value)+ (step_nr/num_of_steps)*log10(-Var_end_value));
+				} else {
+					valence= pow(10,(1-step_nr/num_of_steps)*log10( Var_start_value)+ (step_nr/num_of_steps)*log10( Var_end_value));
+				}	
+			} else {
+				valence=Var_start_value+step_nr*Var_step;
+			}
+			break;
+		case 1:
+			if (scale=="exponential") {
+				if (PSI0 <0)	{
+					PSI0=-pow(10,(1-step_nr/num_of_steps)*log10(-Var_start_value)+ (step_nr/num_of_steps)*log10(-Var_end_value));
+				} else {
+					PSI0= pow(10,(1-step_nr/num_of_steps)*log10( Var_start_value)+ (step_nr/num_of_steps)*log10( Var_end_value));
+				}	
+			} else {
+				PSI0=Var_start_value+step_nr*Var_step;
+			}
+			break;
+		default:
+			break;
+	}
+	return success;
+}
+
+bool Segment::ResetInitValue() {
+	bool success=true;
+	switch(Var_target) {
+		case 0:
+			valence=Var_start_value;
+			break;
+		case 1: 
+			PSI0=Var_start_value;
+			break;
+		default:
+			cout <<"program error in Seg:ResetInitValue "<<endl; 
+			break;
+	}
+	return success;
+}
+
+void Segment::PutValue(Real X) {
+	switch(Var_target) {
+		case 0:
+			valence=X;
+			break;
+		case 1: 
+			PSI0=X;
+			break;
+		default:
+			cout <<"program error in Seg:ResetInitValue "<<endl; 
+			break;
+	}
+}
+
+Real Segment::GetValue() {
+	Real X=0;
+	switch(Var_target) {
+		case 0:
+			X=valence;
+			break;
+		case 1: 
+			X=PSI0;
+			break;
+		default:
+			cout <<"program error in Seg:ResetInitValue "<<endl; 
+			break;
+	}
+	return X;
+}
+
 
 bool Segment::GetClamp(string filename) {
 	bool success=true;

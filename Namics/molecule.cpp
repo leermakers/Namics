@@ -313,6 +313,195 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 	return success; 
 }
 
+bool Molecule::PutVarInfo(string Var_type_,string Var_target_,Real Var_target_value_){
+	bool success=true;
+	Var_target=-1;
+	Var_type="";
+	if (Var_type_=="scan") {
+		Var_type="scan";
+		if (Var_target_=="theta") {Var_target=0; Var_start_value=theta;}
+		if (Var_target_=="n") {Var_target=1; Var_start_value = n;}
+		if (Var_target_=="phibulk") {Var_target=2; Var_start_value = phibulk;}
+	}
+	if (Var_type_=="search") {
+		Var_type="search";
+		if (Var_target_=="theta") Var_target=0;
+		if (Var_target_=="n") Var_target=1;
+		if (Var_target_=="phibulk") Var_target=2;
+	}
+	if (Var_type_=="target") {
+		Var_type="target";
+		Var_target_value=Var_target_value_;
+		if (Var_target_=="theta") {
+			Var_target=0;
+			if (Var_target_value <0 || Var_target_value>Lat[0]->volume){
+				cout <<"In var: target value 'theta' out of range" << endl;
+				return false;
+			}
+		}
+		if (Var_target_=="n") {
+			Var_target=1;
+			if (Var_target_value <0 || Var_target_value*chainlength>Lat[0]->volume){
+			 
+				cout <<"In var: target value 'n' out of range" << endl;
+				return false;
+			}
+				
+		}
+		if (Var_target_=="phibulk") {
+			Var_target=2;
+			if (Var_target_value <0 || Var_target_value>1) {
+				cout <<"in var: target value 'phibulk' out of range" << endl; 
+				return false;
+			}
+		}
+		if (Var_target_=="mu") Var_target=3;
+	}
+	return success;
+			
+}
+
+int Molecule::PutVarScan(Real step, Real end_value, int steps, string scale_) {
+	num_of_steps = -1;
+	scale=scale_;
+	Var_end_value=end_value;
+	if (scale=="exponential") {
+		Var_steps=steps; Var_step=0;
+		if (steps==0) {
+			cout <<"In var scan: the value of 'steps' is zero, this is not allowed" << endl; return -1;
+		}
+		if (Var_end_value*Var_start_value<0) {
+			cout <<"In var scan: the product end_value*start_value <0. This is not allowed. " << endl; return -1;
+		}
+		if (Var_end_value > Var_start_value)
+			num_of_steps=steps*log10(Var_end_value/Var_start_value);
+		else
+			num_of_steps=steps*log10(Var_start_value/Var_end_value);
+	} else {
+		Var_steps=0; Var_step=step;
+		if (step==0) {
+			cout <<"In var san: of molecule variable, the value of step can not be zero" << endl; return -1;
+		}
+		num_of_steps=(Var_end_value-Var_start_value)/step;
+
+		if (num_of_steps<0) {
+			cout <<"In var scan : (end_value-start_value)/step is negative. This is not allowed. Try changing the sign of 'step'. " << endl; 
+			return -1;
+		}
+
+	}
+	return num_of_steps;
+}
+
+bool Molecule::ResetInitValue() {
+	bool success=true; 
+	switch (Var_target) {
+		case 0:
+			theta=Var_start_value;
+			n=theta/chainlength;
+			break;
+		case 1:
+			n=Var_start_value;
+			theta=n*chainlength;
+			break;
+		case 2:
+			phibulk=Var_start_value;
+			break;
+		default:
+			cout <<"program error in Molecule::GetValError" << endl;
+			break;
+	}
+	return success;
+}
+
+bool Molecule::UpdateVarInfo(int step_nr) {
+	bool success=true;
+	switch(Var_target) {
+		case 0:
+			if (scale=="exponential") {
+				theta=pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
+			} else {
+				theta=Var_start_value+step_nr*Var_step;
+			}
+			n=theta/chainlength;
+			break;
+		case 1: 
+			if (scale=="exponential") {
+				n=pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
+			} else {
+				n=Var_start_value+step_nr*Var_step;
+			}
+			theta=n*chainlength;
+			break;
+		case 2: 
+			if (scale=="exponential") {
+				phibulk=pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
+			} else {
+				phibulk=Var_start_value+step_nr*Var_step;
+			}
+			break;
+		default:
+			cout <<"program error in Molecule::UpdateInfo " << endl;
+			break;
+	}
+	return success;
+}
+
+Real Molecule::GetError() {
+	Real Error=0;
+	switch (Var_target) {
+		case 0:
+			if (Var_target_value>0) Error=theta/Var_target_value-1.0;
+			break;
+		case 1:
+			if (Var_target_value>0) Error=n/Var_target_value-1.0;
+			break;
+		case 2:
+			if (Var_target_value>0) Error=phibulk/Var_target_value-1.0;
+			break;
+		case 3: 
+			if (Var_target_value>0) Error=Mu/Var_target_value-1.0;
+			break;
+		default:
+			cout <<"program error in Molecule::GetError" << endl;
+	}
+	
+	return Error;
+}
+
+Real Molecule::GetValue(){
+	Real X=0;
+	switch (Var_target) {
+		case 0:
+			X=theta;
+			break;
+		case 1:
+			X=n;
+			break;
+		case 2:
+			X=phibulk;
+			break;
+		default:
+			cout <<"program error in Molecule::GetValue" << endl;
+	}
+	return X;
+}
+void Molecule::PutValue(Real X){
+	switch (Var_target) {
+		case 0:
+			theta=X; n=theta/chainlength;
+			break;
+		case 1:
+			n=X; theta=n*chainlength;
+			break;
+		case 2:
+			phibulk=X;
+			break;
+		default:
+			cout <<"program error in Molecule::GetValue" << endl;
+	}
+}
+
 int Molecule::GetAlNr(string s){
 if (debug) cout <<"GetAlNr for Mol " + name << endl;
 	int n_als=MolAlList.size();

@@ -3,7 +3,8 @@ Input::Input(string name_) {
 	name=name_;
 	KEYS.push_back("start"); 
 	KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); KEYS.push_back("alias"); 	
- 	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("output");   
+ 	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("output"); 
+	KEYS.push_back("var");    
 	
 
 	in_file.open(name.c_str()); Input_error=false; 
@@ -217,7 +218,7 @@ bool Input:: Get_Real(string s, Real &ss, Real low, Real high, const  std::strin
 }
 
 bool Input:: Get_bool(string s, bool ss) {
-	bool success=false;
+	bool success=true;
 	bool sss; 
 	if (s =="true" || s =="True" || s =="TRUE") {sss=true; success=true;} else 
 	if (s =="false" ||  s =="False" || s =="FALSE") sss=false; else success=false; 
@@ -239,7 +240,7 @@ bool Input:: TestNum(std::vector<std::string> &S, string c,int num_low, int num_
 	int n_starts=0;
 	while (i<length) {  
 		std::vector<std::string> set;
-	       split(elems[i],':',set);
+	       	split(elems[i],':',set);
 		if (set[1]=="start") n_starts++; 
 		if (c==set[1] && n_starts<UptoStartNumber ){
 			InList=false;
@@ -395,14 +396,14 @@ if (debug) cout <<"LoadItems in Input " << endl;
 					switch (j-1) {
 						case 0:
 							if (set[3]=="*") set[3]=SysList[0];
-							if (set[1]=="var" || set[1]=="search") name_found=true;
+							//if (set[1]=="var" || set[1]=="search") name_found=true;
 							if (SysList[0]!=set[3] && !name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl; 
 								PrintList(SysList); name_found=false;} 
 							break;
 						case 1:
 							name_found=false;
 							if (set[3]=="*") { name_found = true; wild_mollist=true;}
-							if (set[1]=="var" || set[1]=="search") name_found=true;
+							//if (set[1]=="var" || set[1]=="search") name_found=true;
 							k=0; name_length=MolList.size();  
 							while (k<name_length && !name_found) {
 								if (MolList[k]==set[3]) name_found=true; 
@@ -415,7 +416,7 @@ if (debug) cout <<"LoadItems in Input " << endl;
 						case 2:
 							name_found=false;
 							if (set[3]=="*") {name_found=true; wild_monlist=true;} 
-							if (set[1]=="var") name_found=true;
+							//if (set[1]=="var") name_found=true;
 							k=0; name_length=MonList.size();  
 							while (k<name_length && !name_found) {
 								if (MonList[k]==set[3]) name_found=true; 
@@ -429,7 +430,7 @@ if (debug) cout <<"LoadItems in Input " << endl;
 							name_found=false;
 							k=0; name_length=AliasList.size(); 
 							if (set[3]=="*") {name_found=true; wild_aliaslist=true;}
-                                                        if (set[1]=="var") name_found=true;
+                                                        //if (set[1]=="var") name_found=true;
 
 							while (k<name_length && !name_found) {
 								if (AliasList[k]==set[3]) name_found=true; 
@@ -441,31 +442,47 @@ if (debug) cout <<"LoadItems in Input " << endl;
 							break;
 						case 4:
 							if (set[3]=="*") set[3]=LatList[0];
-							if (LatList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							if (LatList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+
+							//if (LatList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(LatList); name_found=false;
 							}
 							break;
 						case 5:
 							if (set[3]=="*") set[3]=NewtonList[0];
-							if (NewtonList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							if (NewtonList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+
+							//if (NewtonList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(NewtonList); name_found=false;
 							}
 							break;
 						case 6:
 							if (set[3]=="*") set[3]=EngineList[0];
-							if (EngineList[0]!=set[3] && set[1]!= "var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							if (EngineList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							//if (EngineList[0]!=set[3] && set[1]!= "var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(EngineList); name_found=false;
 							}
 							break;
 						case 7:
 							k=0; name_length=OutputList.size(); name_found=false;
-                                                        if (set[1]=="var") name_found=true; 
+                                                        //if (set[1]=="var") name_found=true; 
 							while (k<name_length) {
 								if (OutputList[k]==set[3]) name_found=true; 
 								k++;
 							}
 							if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
 								PrintList(OutputList); 
+							}
+							break;
+						case 8:
+							name_found=false;
+							k=0; name_length=VarList.size();  
+							while (k<name_length && !name_found) {
+								if (VarList[k]==set[3]) name_found=true; 
+								k++;
+							}
+							if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+								PrintList(MonList); 
 							}
 							break;
 						default:
@@ -478,8 +495,7 @@ if (debug) cout <<"LoadItems in Input " << endl;
 			if (!key_found) {cout<< "In line " << set[0] << " the keyword '" << set[2] << "' not recognized. Choose keywords from: " << endl; 
 				for (int k=1; k<7; k++) cout << KEYS[k] << endl; return false; 
 			} 
-			if (!name_found) {return false; 
-			}   
+			if (!name_found) {return false;}   
 			if (wild_aliaslist) {
 				int length =AliasList.size();
 				for (int i=0; i<length; i++) {Out_key.push_back(set[2]); Out_name.push_back(AliasList[i]); Out_prop.push_back(set[4]); }
@@ -555,10 +571,10 @@ bool Input:: CheckInput(void) {
 			
 		}
 
-
+/*
                 if (set[1]=="engine") {
                         vector<string> options;
-                        options.push_back("var"); options.push_back("sfbox"); options.push_back("search"); 
+                        options.push_back("sfbox"); 
                         string option;
                         if (!Get_string(set[4],option,options,"Value for Engine brand '" + set[4] + "' not allowed. ")) {success=false;}
                         else {
@@ -578,8 +594,11 @@ bool Input:: CheckInput(void) {
                         }
 
                 }
+*/
 
-/*		if (set[1]=="search"){
+
+/*
+			if (set[1]=="search"){
 			vector<string> options;
 			options.push_back("sys"); options.push_back("mol");
 			string option;
@@ -614,21 +633,37 @@ bool Input:: CheckInput(void) {
 			for( int k=0; k<key_length; k++) cout << KEYS[k] << endl;  success=false;}
 		i++; 
 	}
+	MakeLists(1);
 	
-	if (!TestNum(SysList,"sys",0,1,1)) {cout << "There can be no more than 1 'sys name' in the input" << endl; }
+	return success;
+}
+
+bool Input::MakeLists(int start) {
+	bool success=true;
+	SysList.clear();
+	LatList.clear();
+	NewtonList.clear();
+	MonList.clear();
+	MolList.clear();
+	OutputList.clear();
+	EngineList.clear();
+	VarList.clear();
+
+	if (!TestNum(SysList,"sys",0,1,start)) {cout << "There can be no more than 1 'sys name' in the input" << endl; }
 	if (SysList.size()==0) SysList.push_back("noname"); 
-	if (!TestNum(LatList,"lat",1,1,1)) {cout << "There must be exactly one 'lat name' in the input" << endl; success=false;}
-	if (!TestNum(NewtonList,"newton",0,1,1)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
+	if (!TestNum(LatList,"lat",1,1,start)) {cout << "There must be exactly one 'lat name' in the input" << endl; success=false;}
+	if (!TestNum(NewtonList,"newton",0,1,start)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
 	if (NewtonList.size()==0) NewtonList.push_back("noname");
-	if (!TestNum(NewtonList,"newton",0,1,1)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
-	if (!TestNum(MonList,"mon",1,1000,1)) {cout << "There must be at least one 'mon name' in input" << endl; success=false;}
-	TestNum(AliasList,"alias",0,1000,1); 
+	if (!TestNum(NewtonList,"newton",0,1,start)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
+	if (!TestNum(MonList,"mon",1,1000,start)) {cout << "There must be at least one 'mon name' in input" << endl; success=false;}
+	TestNum(AliasList,"alias",0,1000,start); 
 	if (AliasList.size()==0) AliasList.push_back("noname"); 
-	if (!TestNum(MolList,"mol",1,1000,1)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}
-	if (!TestNum(OutputList,"output",1,1000,1)) {cout << "No output defined! " << endl;}
-	if (!TestNum(EngineList,"engine",0,1,1)) {cout << "There can be no more than 1 'engine' name in the input " << endl; success=false;}
+	if (!TestNum(MolList,"mol",1,1000,start)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}
+	if (!TestNum(OutputList,"output",1,1000,start)) {cout << "No output defined! " << endl;}
+	if (!TestNum(EngineList,"engine",0,1,start)) {cout << "There can be no more than 1 'engine' name in the input " << endl; success=false;}
 	if (EngineList.size()==0) EngineList.push_back("noname");
-	
+	if (!TestNum(VarList,"var",0,10,start)) 
+	if (VarList.size()==0) VarList.push_back("noname");
 	return success;
 }
 

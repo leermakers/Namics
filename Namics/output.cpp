@@ -84,8 +84,9 @@ if (debug) cout <<"Load in output " << endl;
 	return success; 
 }
 
-bool Output::CheckInput(int start) {
+bool Output::CheckInput(int start_) {
 if (debug) cout << "CheckInput in output " << endl; 
+	start=start_;
 	bool success=true;
 	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
@@ -230,7 +231,10 @@ if (debug) cout << "WriteOutput in output " << endl;
 	string key;
 	char numc[2];
         sprintf(numc,"%d",subl);
-	filename=sub[0].append("_").append(numc).append(".").append(name); 
+	char numcc[2];
+	sprintf(numcc,"%d",start);
+	if (name=="kal") filename=sub[0].append(".").append(name); else
+	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name); 
   	
 	if (name=="pro") {
 		vector<Real*> pointer;
@@ -273,7 +277,8 @@ if (debug) cout << "WriteOutput in output " << endl;
 			fp=fopen(filename.c_str(),"w");
 			int length = OUT_key.size();
 			for (int i=0; i<length; i++) {
-				string s=OUT_key[i].append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]); 
+				key=OUT_key[i];
+				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]); 
 				fprintf(fp,"%s \t",s.c_str()); 
 			}
 			fprintf(fp,"\n"); append=true; 

@@ -15,35 +15,6 @@
 #include <iterator>
 #include <algorithm>
 #include <f2c.h>
-#ifdef _WIN32
-    //define lapack for Windows (32-bit and 64-bit, this part is common)
-   #ifdef _WIN64
-      //define lapack for Windows (64-bit only)
-   #else
-      //define lapack for Windows (32-bit only)
-   #endif
-#elif __APPLE__
-    //define lapack for apple
-    #if TARGET_IPHONE_SIMULATOR
-         // iOS Simulator
-    #elif TARGET_OS_IPHONE
-        // iOS device
-    #elif TARGET_OS_MAC
-        // Other kinds of Mac OS
-    #else
-    #   error "Unknown Apple platform"
-    #endif
-#elif __linux
-    //#include <lapacke.h>
-    #include <clapack.h>
-#elif __unix__ // all unices not caught above
-    #include <clapack.h>
-
-#elif defined(_POSIX_VERSION)
-    // POSIX
-#else
-#   error "Unknown compiler"
-#endif
 
 #include <iomanip> 
 using namespace std;
@@ -73,3 +44,35 @@ extern bool debug;
 enum MoleculeType {monomer, linear, branched};
 
 #endif
+/*
+#ifdef _WIN32
+    //define lapack for Windows (32-bit and 64-bit, this part is common)
+   #ifdef _WIN64
+      //define lapack for Windows (64-bit only)
+   #else
+      //define lapack for Windows (32-bit only)
+   #endif
+#elif __APPLE__
+    //define lapack for apple
+    #if TARGET_IPHONE_SIMULATOR
+         // iOS Simulator
+    #elif TARGET_OS_IPHONE
+        // iOS device
+    #elif TARGET_OS_MAC
+        // Other kinds of Mac OS
+    #else
+    #   error "Unknown Apple platform"
+    #endif
+#elif __linux
+    //#include <lapacke.h>
+    #include <clapack.h>
+#elif __unix__ // all unices not caught above
+    #include <clapack.h>
+
+#elif defined(_POSIX_VERSION)
+    // POSIX
+#else
+#   error "Unknown compiler"
+#endif
+*/
+

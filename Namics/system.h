@@ -51,6 +51,12 @@ public:
 	string guess_inputfile;
 	string final_guess;
 	string guess_outputfile;
+	int Var_target; //0 = 'free_energy'; 1='grand_potential'
+	Real Var_target_value;
+	int Var_step;
+	int Var_end_value;
+	string Var_type;
+	
 
 	int MonA,MonB; 
 
@@ -85,10 +91,12 @@ public:
 	bool PrepareForCalculations();
 	bool ComputePhis();
 	void DoElectrostatics(Real*,Real*);
-	bool CheckResults();
+	bool CheckResults(bool);
 	Real GetFreeEnergy();
 	Real GetGrandPotential();
-	bool CreateMu();	
+	bool CreateMu();
+	bool PutVarInfo(string,string,Real);
+	Real GetError(); 
 };
 #endif
 

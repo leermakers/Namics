@@ -80,6 +80,15 @@ public:
 	Real *Gs; 
 	Real *UNITY;
 	int tag_segment; 
+	int Var_steps;
+	Real Var_step;
+	Real Var_end_value;
+	Real Var_start_value;
+	int num_of_steps;
+	int Var_target;
+	string Var_type;
+	string scale;
+	Real Var_target_value;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -96,7 +105,13 @@ public:
 	void PushOutput();
 	Real* GetPointer(string);
 	int GetValue(string,int&,Real&,string&);
-		
+	bool PutVarInfo(string,string,Real);
+	int PutVarScan(Real,Real,int,string);
+	bool ResetInitValue();
+	bool UpdateVarInfo(int);
+	Real GetError();
+	Real GetValue();
+	void PutValue(Real);		
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;

@@ -39,6 +39,14 @@ public:
 	int n_box;
 	int* r;
 	int mx,my,mz,m;
+	string scale;
+	int Var_steps;
+	Real Var_step;
+	Real Var_end_value;
+	Real Var_start_value; 
+	int num_of_steps;
+	int Var_target;
+	string Var_type;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -87,6 +95,12 @@ public:
 	void AllocateMemory();
 	bool PrepareForCalculations(int*);  
 	void UpdateValence(Real*,Real*,Real*,Real*);
+	bool PutVarInfo(string,string,Real);
+	int PutVarScan(Real,Real,int,string);
+	bool ResetInitValue() ;
+	bool UpdateVarInfo(int);
+	void PutValue(Real);
+	Real GetValue();
 };
 
 #endif

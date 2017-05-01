@@ -16,7 +16,6 @@ public:
 	string string_value;
 	bool Input_error; 
 	string filename; 
-
 	
 	std::vector<string> KEYS;
 	std::vector<string> SysList;
@@ -27,8 +26,8 @@ public:
 	std::vector<string> NewtonList;
 	std::vector<string> OutputList; 
 	std::vector<string> EngineList;
+	std::vector<string> VarList;
 	std::vector<std::string> elems;
-
 	 
 	void PrintList(std::vector<std::string>);
 	std::vector<std::string>& split( std::string , char, std::vector<std::string>&); 
@@ -57,6 +56,7 @@ public:
 	bool ArePair(char ,char ); 
 	bool EvenBrackets(string,vector<int> &, vector<int>&); 
 	bool EvenSquareBrackets(string,vector<int> &, vector<int>&); 
+	bool MakeLists(int);
 
 };
 #endif

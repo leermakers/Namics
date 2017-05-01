@@ -7,10 +7,11 @@
 #include "lattice.h"
 #include "molecule.h"
 #include "tools.h"
+#include "variate.h"
 
 class Newton {
 public:
-	Newton(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,string);
+	Newton(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Variate*>,string);
 
 ~Newton();
 
@@ -53,16 +54,21 @@ public:
 	Real delta_max;
 	bool e_info;
 	bool s_info;
+	bool super_e_info;
+	bool super_s_info;
 	vector<Input*> In; 
 	vector<System*> Sys;
 	vector<Segment*> Seg;
 	vector<Lattice*> Lat;  
 	vector<Molecule*> Mol;
+	vector<Variate*> Var;
 	int iterationlimit,m,i_info;
+	int super_iterationlimit;
 	int k_diis,it; 
 	int n_tr,n_reset,n_ignore;
 	int start;
 	Real tolerance;
+	Real super_tolerance;
 	Real residual;
 	Real epsilon;
 	string method;
@@ -115,12 +121,14 @@ public:
 	void Copy(Real*,Real*,int,int,int);
 	bool Guess(Real*,string,vector<string>,bool,int,int,int);
 	string GetNewtonInfo(int&);
-	bool Solve();
+	bool Solve(bool);
+	bool Solve(int,int);
+	bool SuperIterate(int,int);
 	void DeAllocateMemory();
 	void AllocateMemory(); 
 	bool PrepareForCalculations(void);
 	void Ax(Real* , Real* , int );
-	void DIIS(Real* , Real* , Real* , Real*, Real* ,Real* , int , int , int );
+	void DIIS(Real* , Real* , Real* , Real*, Real* ,Real* , int ,int, int , int );
 	void ComputeG(Real*); 
 	void COMPUTEG(Real*,Real*,int); 
 	void ResetX(Real*,int);
@@ -130,7 +138,7 @@ public:
 	bool SolvePsi(Real*, Real*, Real*);
 	bool Iterate_Picard();
 	bool Iterate_DIIS();
-	void Message(int, int,Real, Real); 
+	void Message(bool,bool,int, int,Real, Real,string); 
 	bool PutU();
 	
 //**********Scheutjens****************

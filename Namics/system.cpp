@@ -328,6 +328,35 @@ if (debug) cout << "CheckInput for system " << endl;
 	return success; 
 }
 
+bool System::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
+	bool success=true;
+	Var_target=-1;
+	Var_type=Var_type_; 	
+	if (Var_type !="target") success=false;
+	if (Var_target_=="free_energy") Var_target=0;
+	if (Var_target_=="grand_potential") Var_target=1;
+	if (Var_target<0 || Var_target>1) {success=false; cout <<"Var target " + Var_target_ + " rejected in PutVarInfo in System " << endl; }
+	Var_target_value=Var_target_value_;
+	if (Var_target_value < -1e4 || Var_target_value > 1e4) success=false;
+	return success; 
+}
+
+Real System::GetError() {
+	Real Error=0;
+	switch (Var_target) {
+		case 0:
+			Error = FreeEnergy - Var_target_value;
+			break;
+		case 1:
+			Error = GrandPotential- Var_target_value;
+			break;
+		default:
+			cout <<"Program error in GetVarError" <<endl; 
+			break;
+	}
+	return Error;
+}
+
 bool System::IsCharged() {
 	bool success=false;
 	int length = In[0]->MolList.size(); 
@@ -634,15 +663,17 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << neutralizer << "for mon " <
 	return success;  
 }
 
-bool System::CheckResults() {
+bool System::CheckResults(bool e_info) {
 if (debug) cout << "CheckResults for system " << endl;
 	bool success=true;	
 	FreeEnergy=GetFreeEnergy();
 	GrandPotential=GetGrandPotential();
 	CreateMu();
-	cout <<endl; 
-	cout <<"free energy                 = " << FreeEnergy << endl; 
-	cout <<"grand potential             = " << GrandPotential << endl; 
+	if (e_info) cout <<endl;
+	if (e_info) { 
+		cout <<"free energy                 = " << FreeEnergy << endl; 
+		cout <<"grand potential             = " << GrandPotential << endl; 
+	}
 	int n_mol=In[0]->MolList.size();
 	Real n_times_mu=0;
 	for (int i=0; i<n_mol; i++) {
@@ -650,8 +681,10 @@ if (debug) cout << "CheckResults for system " << endl;
 		Real n=Mol[i]->n;
 		n_times_mu +=  n*Mu; 
 	}
-	cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl; 
-	cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
+	if (e_info) {
+		cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl; 
+		cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
+	}
 	
 	for (int i=0; i<n_mol; i++) {
 		if (Mol[i]->MolAlList.size()>0) {

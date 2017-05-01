@@ -36,6 +36,11 @@ public:
 	Real *lambda_1; 
 	Real *lambda1;
 	Real *X;
+	int VarInitValue;
+	string Var_type;
+	int Var_target;
+	int Var_step;
+	int Var_end_value;
 	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput(). 
 
 	std::vector<string> KEYS;
@@ -91,6 +96,10 @@ public:
 	void UpdateQ(Real*,Real*,Real*,Real*,int*);
 	bool ReadGuess(string, Real* ,string&, vector<string>&, bool&, int&, int&, int&, int);
 	bool StoreGuess(string,Real*,string, vector<string>, bool,int);
+	bool PutVarInfo(string,string,Real);
+	bool UpdateVarInfo(int);
+	bool ResetInitValue();
+	int PutVarScan(int, int);
 };
 
 #endif

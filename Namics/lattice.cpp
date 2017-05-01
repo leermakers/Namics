@@ -447,6 +447,108 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 	return success;
 }
 
+bool Lattice::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
+	bool success=true;
+	Var_target = -1;
+	Var_type=Var_type_; 	
+	if (Var_type !="scan") {success=false; cout <<"Var type is not 'scan' and therefore var info rejected " << endl; }
+	if (Var_target_=="n_layers") {
+		Var_target=0;VarInitValue=MX;
+		if (gradients>1) {success=false; cout <<"Var target 'n_layers' rejected because the number of gradients >1 " << endl; }
+	} 
+	if (Var_target_=="n_layers_x") {
+		Var_target=1; VarInitValue=MX;
+		if (gradients==0) {success=false; cout <<"Var target 'n_layers_x' rejected because the number of gradients =1 " << endl; }
+	}
+	if (Var_target_=="n_layers_y") {
+		Var_target=2; VarInitValue=MY;
+		if (gradients==0) {success=false; cout <<"Var target 'n_layers_y' rejected because the number of gradients =1 " << endl; }
+	}
+	if (Var_target_=="n_layers_z") {
+		Var_target=3; VarInitValue=MZ;
+		if (gradients==0) {success=false; cout <<"Var target 'n_layers_z' rejected because the number of gradients =1 " << endl; }
+	}
+	if (Var_target_=="offset_firstlayer") {
+		Var_target=4;VarInitValue=offset_first_layer;
+		if (gradients>1) {success=false; cout <<"Var target 'offset_firstlayer' rejected because the number of gradients >1 " << endl; }
+		if (geometry == "planar") {success=false; cout <<"Var target 'offset_firstlayer' rejected because 'geometry' is 'planar' " << endl; }
+	}
+	if (Var_target_=="offset_firstlayer_x") {
+		Var_target=5; VarInitValue=offset_first_layer;
+		if (gradients!=2) {success=false; cout <<"Var target 'offset_firstlayer_x' rejected because the number of gradients !=2 " << endl; }
+		if (geometry != "cylindrical") {success=false; cout <<"Var target 'offset_firstlayer_x' rejected because 'geometry' not 'cylindrical' " << endl; }
+	}
+	return success; 
+}
+
+bool Lattice::UpdateVarInfo(int step_nr) {
+	bool success=true;
+	switch(Var_target) {
+		case 0:
+			MX=VarInitValue+step_nr*Var_step;
+			break;
+		case 1: 
+			MX=VarInitValue+step_nr*Var_step;
+			break;
+		case 2: 
+			MY=VarInitValue+step_nr*Var_step;
+			break;
+		case 3: 
+			MZ=VarInitValue+step_nr*Var_step;
+			break;
+		case 4: 
+			offset_first_layer=VarInitValue+step_nr*Var_step;
+			break;
+		case 5: 
+			offset_first_layer=VarInitValue+step_nr*Var_step;
+			break;
+		default:
+			cout <<"program error in UpdateVarInfo "<<endl; 
+			break;
+	}
+	return success;
+}
+
+int Lattice::PutVarScan(int step, int end_value) {
+	int num_of_steps=-1;
+	Var_step=step; if (step==0) cout <<"In var scan : of lattice variable, the value of step can not be negative" << endl; 
+	Var_end_value=end_value;
+	if (Var_end_value <0) cout <<"In var: scan : of lattice variable, it is impossible to have a negative value for the end_value" << endl; 
+	if (step!=0) { 
+		num_of_steps = (end_value-VarInitValue)/step;
+		if (num_of_steps<0) cout <<"in var : scan : of lattice variable, end_value and step are not consistent, try changing sign of step " << endl; 
+	}
+	return num_of_steps;
+}
+
+bool Lattice::ResetInitValue() {
+	bool success=true;
+	switch(Var_target) {
+		case 0:
+			MX=VarInitValue;
+			break;
+		case 1: 
+			MX=VarInitValue;
+			break;
+		case 2: 
+			MY=VarInitValue;
+			break;
+		case 3: 
+			MZ=VarInitValue;
+			break;
+		case 4: 
+			offset_first_layer=VarInitValue;
+			break;
+		case 5: 
+			offset_first_layer=VarInitValue;
+			break;
+		default:
+			cout <<"program error in ResetInitValue "<<endl; 
+			break;
+	}
+	return success;
+}
+
 void Lattice::PutParameter(string new_param) {
 if (debug) cout <<"PutParameters in lattice " << endl;
 	KEYS.push_back(new_param); 

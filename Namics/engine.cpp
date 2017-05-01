@@ -270,7 +270,7 @@ bool Engine::Doit(int sub, Real* X, string METHOD, vector<string> MONLIST, bool 
 	if (brand=="sfbox") {
 		New[0]->AllocateMemory();
 		New[0]->Guess(X,METHOD,MONLIST,CHARGED,MX,MY,MZ);
-		New[0]->Solve();
+		New[0]->Solve(true);
 	} else if (brand == "var"){
 		if (success) {
                         int i=sub;
@@ -279,7 +279,7 @@ bool Engine::Doit(int sub, Real* X, string METHOD, vector<string> MONLIST, bool 
 			if(VAR_key[0]=="mon") success=VarMon(i);
 			if(VAR_key[0]=="mol") success=VarMol(i);
 			if(!success) {cout << "failure" <<endl; return 0;}
-	                New[0]->Solve(); i++; 
+	                New[0]->Solve(true); i++; 
                 } else {
                 cout << "There is a problem in loading the 'var' parameters" << endl;  return 0;
                 }
@@ -413,7 +413,7 @@ bool Engine::Search(int id){
 	Real tolerance = pow(10.0 ,-3.0);
 	Real ll=value-tolerance; Real ul=value+tolerance;
 	//New[0]->Guess(); 
-	New[0]->Solve();
+	New[0]->Solve(true);
 	Real lower; Real upper; Real mean;
 	if(Sys[0]->GrandPotential < ll || Sys[0]->GrandPotential > ul) {
 		Mol[m]->theta=Mol[m]->theta+0.1*Mol[m]->theta;	
@@ -425,7 +425,7 @@ bool Engine::Search(int id){
 		for(int i=0; i<100; i++){
 			mean=(upper+lower)/2.0;Mol[m]->theta=mean;Mol[m]->n=Mol[m]->theta/Mol[m]->chainlength;
 			//New[0]->Guess(); 
-			New[0]->Solve();
+			New[0]->Solve(true);
 			if(Sys[0]->GrandPotential > value) lower=mean; else upper=mean;
 		}
 		success=true;

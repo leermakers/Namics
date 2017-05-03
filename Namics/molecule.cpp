@@ -1,5 +1,5 @@
-#include "molecule.h"
-#include <sstream> 
+#include "molecule.h" 
+#include <sstream>   
 
 Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
 	In=In_; Seg=Seg_; name=name_;  Lat=Lat_; 
@@ -70,6 +70,28 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 	free(Gg_b);
 	if (save_memory) free(Gs);
 #endif
+}
+
+bool Molecule::DeleteAl() {
+	bool success = true;
+	int length_al = MolAlList.size();
+	if (length_al>0) {
+		for (int k=0; k<length_al; k++) delete Al[k];
+		Al.clear(); 
+	}
+	Gnr.clear();
+	first_s.clear();
+	last_s.clear();
+	first_b.clear();
+	last_b.clear();
+	mon_nr.clear();
+	n_mon.clear();
+	molmon_nr.clear();
+	memory.clear();
+	last_stored.clear();
+	MolAlList.clear();
+	MolMonList.clear();
+	return success;
 }
 
 void Molecule:: AllocateMemory() {
@@ -166,7 +188,8 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	Zero(Gg_b,2*M);
 	if (save_memory) Zero(Gs,2*M);
 	int length =MolAlList.size();
-	for (int i=0; i<length; i++) Al[i]->AllocateMemory(Seg[mon_nr[0]]->clamp_nr,n_box); 
+	if (freedom!="clamped") Seg[mon_nr[0]]->clamp_nr=0;
+	for (int i=0; i<length; i++) Al[i]->AllocateMemory(Seg[mon_nr[0]]->clamp_nr,n_box);
 }
 
 bool Molecule:: PrepareForCalculations(int *KSAM) {
@@ -214,7 +237,9 @@ if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 }
 
 bool Molecule::CheckInput(int start_) {
+if (debug) cout <<"Molecule:: CheckInput" << endl;
 start=start_;
+var_al_nr=-1;
 if (debug) cout <<"CheckInput for Mol " + name << endl;
 	bool success=true;
 	if (!In[0]->CheckParameters("mol",name,start,KEYS,PARAMETERS,VALUES)) {
@@ -314,20 +339,50 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 }
 
 bool Molecule::PutVarInfo(string Var_type_,string Var_target_,Real Var_target_value_){
+if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 	bool success=true;
+
+	vector<string>sub;
 	Var_target=-1;
 	Var_type="";
-	if (Var_type_=="scan") {
+	if (Var_type_=="scan") {	
+		var_al_nr=-1;
 		Var_type="scan";
-		if (Var_target_=="theta") {Var_target=0; Var_start_value=theta;}
-		if (Var_target_=="n") {Var_target=1; Var_start_value = n;}
-		if (Var_target_=="phibulk") {Var_target=2; Var_start_value = phibulk;}
+		In[0]->split(Var_target_,'-',sub);
+		if (sub.size()==1) {
+			if (Var_target_=="theta") {Var_scan_value=0; Var_start_value=theta;}
+			if (Var_target_=="n") {Var_scan_value=1; Var_start_value = n;}
+			if (Var_target_=="phibulk") {Var_scan_value=2; Var_start_value = phibulk;}
+			if (Var_scan_value==-1) {
+				cout <<"In var: scanning value for molecule is not recognized. Choose from {theta, n, phibulk}. You can also ask for 'aliasname-value'. " << endl; 
+				return false;
+			}
+		} else {
+			Var_scan_value=3;
+			int length=MolAlList.size();
+			for (int k=0; k<length; k++) {
+				if (Al[k]->name==sub[0] && "value" ==sub[1]) {
+					if (Al[k]->value >0) {
+						var_al_nr=k;
+						Var_start_value=Al[k]->value;  
+					}	
+				}		
+			}	
+			if (var_al_nr==-1) {
+				cout <<"In var: scanning value for molecule, the scanning value 'aliasname-value' was not recognised. The first element should contain a valid aliasname; the second element must contain the keyword 'value' " << endl; 
+			}
+		}
+		
 	}
 	if (Var_type_=="search") {
 		Var_type="search";
-		if (Var_target_=="theta") Var_target=0;
-		if (Var_target_=="n") Var_target=1;
-		if (Var_target_=="phibulk") Var_target=2;
+		if (Var_target_=="theta") {Var_search_value=0; Var_start_search_value=theta;}
+		if (Var_target_=="n") {Var_search_value=1; Var_start_search_value=n;}
+		if (Var_target_=="phibulk") {Var_search_value=2; Var_start_search_value=phibulk;}
+		if (Var_search_value == -1) {
+			cout <<"In var: searching value for molecule was not recognized. Choose from {theta, n, phibulk}. " << endl; 
+			return false; 
+		}
 	}
 	if (Var_type_=="target") {
 		Var_type="target";
@@ -342,7 +397,6 @@ bool Molecule::PutVarInfo(string Var_type_,string Var_target_,Real Var_target_va
 		if (Var_target_=="n") {
 			Var_target=1;
 			if (Var_target_value <0 || Var_target_value*chainlength>Lat[0]->volume){
-			 
 				cout <<"In var: target value 'n' out of range" << endl;
 				return false;
 			}
@@ -356,12 +410,17 @@ bool Molecule::PutVarInfo(string Var_type_,string Var_target_,Real Var_target_va
 			}
 		}
 		if (Var_target_=="mu") Var_target=3;
+		if (Var_target==-1) {
+			cout <<"In var: molecule target should be selected from {theta, n, phibulk, mu}. " << endl;  
+			success = false;
+		} 
 	}
 	return success;
 			
 }
 
 int Molecule::PutVarScan(Real step, Real end_value, int steps, string scale_) {
+if (debug) cout <<"Molecule:: PutVarScan" << endl;
 	num_of_steps = -1;
 	scale=scale_;
 	Var_end_value=end_value;
@@ -382,7 +441,7 @@ int Molecule::PutVarScan(Real step, Real end_value, int steps, string scale_) {
 		if (step==0) {
 			cout <<"In var san: of molecule variable, the value of step can not be zero" << endl; return -1;
 		}
-		num_of_steps=(Var_end_value-Var_start_value)/step;
+		num_of_steps=(Var_end_value-Var_start_value)/step+1;
 
 		if (num_of_steps<0) {
 			cout <<"In var scan : (end_value-start_value)/step is negative. This is not allowed. Try changing the sign of 'step'. " << endl; 
@@ -394,29 +453,70 @@ int Molecule::PutVarScan(Real step, Real end_value, int steps, string scale_) {
 }
 
 bool Molecule::ResetInitValue() {
+if (debug) cout <<"Molecule:: ResetInitValue" << endl;
 	bool success=true; 
-	switch (Var_target) {
+	switch (Var_scan_value) {
 		case 0:
 			theta=Var_start_value;
 			n=theta/chainlength;
+			cout <<"mol : " + name + " : theta : " << theta << endl;
 			break;
 		case 1:
 			n=Var_start_value;
 			theta=n*chainlength;
+			cout <<"mol : " + name + " : n : " << n << endl; 
 			break;
 		case 2:
 			phibulk=Var_start_value;
+			cout <<"mol : " + name + " : phibulk " << phibulk << endl; 
+			break;
+		case 3:
+			Gnr.clear();
+			first_s.clear();
+			last_s.clear();
+			first_b.clear();
+			last_b.clear();
+			mon_nr.clear();
+			n_mon.clear();
+			molmon_nr.clear();
+			memory.clear();
+			last_stored.clear();
+			//MolAlList.clear();
+			MolMonList.clear();
+			Al[var_al_nr]->value=Var_start_value;
+			Decomposition(GetValue("composition")); 	
+			cout <<"alias : " + Al[var_al_nr]->name + " : value : " << Al[var_al_nr]->value << endl; 
 			break;
 		default:
-			cout <<"program error in Molecule::GetValError" << endl;
 			break;
 	}
+
+	switch (Var_search_value) {
+		case 0:
+			theta=Var_start_search_value;
+			n=theta/chainlength;
+			cout <<"mol : " + name + " : theta : " << theta << endl;
+			break;
+		case 1:
+			n=Var_start_search_value;
+			theta=n*chainlength;
+			cout <<"mol : " + name + " : n : " << n << endl; 
+			break;
+		case 2:
+			phibulk=Var_start_search_value;
+			cout <<"mol : " + name + " : phibulk " << phibulk << endl; 
+			break;
+		default:
+			break;
+	}
+
 	return success;
 }
 
 bool Molecule::UpdateVarInfo(int step_nr) {
+if (debug) cout <<"Molecule:: UpdateVarInfo" << endl;
 	bool success=true;
-	switch(Var_target) {
+	switch(Var_scan_value) {
 		case 0:
 			if (scale=="exponential") {
 				theta=pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
@@ -424,6 +524,7 @@ bool Molecule::UpdateVarInfo(int step_nr) {
 				theta=Var_start_value+step_nr*Var_step;
 			}
 			n=theta/chainlength;
+			cout <<"mol : " + name + " : theta : " << theta << endl;
 			break;
 		case 1: 
 			if (scale=="exponential") {
@@ -431,6 +532,7 @@ bool Molecule::UpdateVarInfo(int step_nr) {
 			} else {
 				n=Var_start_value+step_nr*Var_step;
 			}
+			cout <<"mol : " + name + " : n : " << n << endl; 
 			theta=n*chainlength;
 			break;
 		case 2: 
@@ -439,6 +541,28 @@ bool Molecule::UpdateVarInfo(int step_nr) {
 			} else {
 				phibulk=Var_start_value+step_nr*Var_step;
 			}
+			cout <<"mol : " + name + " : phibulk " << phibulk << endl; 
+			break;
+		case 3:
+			if (scale=="exponential") {
+				Al[var_al_nr]->value =(int)pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value) + (step_nr/num_of_steps)*log10(Var_end_value));
+			} else {
+				Gnr.clear();
+				first_s.clear();
+				last_s.clear();
+				first_b.clear();
+				last_b.clear();
+				mon_nr.clear();
+				n_mon.clear();
+				molmon_nr.clear();
+				memory.clear();
+				last_stored.clear();
+				//MolAlList.clear();
+				MolMonList.clear();
+				Al[var_al_nr]->value =(int) (Var_start_value+step_nr*Var_step);
+				Decomposition(GetValue("composition")); 
+			}
+			cout <<"alias : " + Al[var_al_nr]->name + " : value : " << Al[var_al_nr]->value << endl; 
 			break;
 		default:
 			cout <<"program error in Molecule::UpdateInfo " << endl;
@@ -448,19 +572,20 @@ bool Molecule::UpdateVarInfo(int step_nr) {
 }
 
 Real Molecule::GetError() {
+if (debug) cout <<"Molecule:: GetError" << endl;
 	Real Error=0;
 	switch (Var_target) {
 		case 0:
-			if (Var_target_value>0) Error=theta/Var_target_value-1.0;
+			if (Var_target_value!=0) Error=theta/Var_target_value-1.0; else Error = theta;
 			break;
 		case 1:
-			if (Var_target_value>0) Error=n/Var_target_value-1.0;
+			if (Var_target_value!=0) Error=n/Var_target_value-1.0; else Error = n; 
 			break;
 		case 2:
-			if (Var_target_value>0) Error=phibulk/Var_target_value-1.0;
+			if (Var_target_value!=0) Error=phibulk/Var_target_value-1.0; else Error = phibulk;
 			break;
 		case 3: 
-			if (Var_target_value>0) Error=Mu/Var_target_value-1.0;
+			if (Var_target_value!=0) Error=Mu/Var_target_value-1.0; else Error = Mu;
 			break;
 		default:
 			cout <<"program error in Molecule::GetError" << endl;
@@ -470,8 +595,9 @@ Real Molecule::GetError() {
 }
 
 Real Molecule::GetValue(){
+if (debug) cout <<"Molecule:: GetValue" << endl;
 	Real X=0;
-	switch (Var_target) {
+	switch (Var_search_value) {
 		case 0:
 			X=theta;
 			break;
@@ -487,7 +613,8 @@ Real Molecule::GetValue(){
 	return X;
 }
 void Molecule::PutValue(Real X){
-	switch (Var_target) {
+if (debug) cout <<"Molecule:: PutValue" << endl;
+	switch (Var_search_value) {
 		case 0:
 			theta=X; n=theta/chainlength;
 			break;
@@ -527,6 +654,7 @@ if (debug) cout <<"GetMonNr for Mol " + name << endl;
 }
 
 bool Molecule::ExpandAlias(vector<string> sub, string &s) {
+if (debug) cout <<"Molecule:: ExpandAlias" << endl;
 	bool success=true;
 	vector<int> open;
 	vector<int> close;
@@ -578,6 +706,7 @@ bool Molecule::ExpandAlias(vector<string> sub, string &s) {
 }
 
 bool Molecule::ExpandBrackets(string &s) {
+if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 	bool success=true;
 	vector<int> open;
 	vector<int> close;
@@ -631,6 +760,7 @@ bool Molecule::ExpandBrackets(string &s) {
 }
 
 bool Molecule::Interpret(string s,int generation){
+if (debug) cout <<"Molecule:: Interpret" << endl;
 	bool success=true;
 	vector<string>sub; 
 	vector<int>open;
@@ -687,6 +817,7 @@ bool Molecule::Interpret(string s,int generation){
 }
 
 bool Molecule::GenerateTree(string s,int generation,int &pos, vector<int> open,vector<int> close) {
+if (debug) cout <<"Molecule:: GenerateTree" << endl;
 	bool success=true;
 	string ss;
 	int i=0;
@@ -829,6 +960,7 @@ if (debug) cout <<"GetChainlength for Mol " + name << endl;
 } 
 
 bool Molecule:: MakeMonList(void) {
+if (debug) cout <<"Molecule:: MakeMonList" << endl;
 	bool success=true;
 	int length = mon_nr.size();
 	int i=0;
@@ -893,6 +1025,7 @@ if (debug) cout <<"IsTagged for Mol " + name << endl;
 }
 
 Real Molecule::Charge() {
+if (debug) cout <<"Molecule:: Charge" << endl;
 	Real charge=0;
 	int length=mon_nr.size();
 	for (int i=0; i<length; i++) {
@@ -1356,7 +1489,8 @@ bool Molecule::ComputeClampLin(){
 	if (debug) cout <<"ComputeClampLin for Mol " + name << endl;
 	bool success=true;
 	int M=Lat[0]->M;
-	int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];	
+	int m=0;
+	if (freedom=="clamped") m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];	
 	int blocks=mon_nr.size();
 	Zero(rho,m*n_box*MolMonList.size()); 
 	int s=1; 
@@ -1447,13 +1581,13 @@ void Molecule::Backward(Real* G_start, int generation, int &s){//not yet robust 
 					Cp(Gg_b,GS+2*M,M); Cp(Gg_b+M,GS+2*M,M);
 					if (i<length-1) Backward(Gg_b,Br[i],s);
 				}
-				delete GX;
+				delete [] GX;
 				k++;
 			} else 	propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 		} else propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 		k--; 
 	}
-	delete GS;
+	delete [] GS;
 }
 
 Real* Molecule::Forward(int generation, int &s) { 
@@ -1495,7 +1629,7 @@ Real* Molecule::Forward(int generation, int &s) {
 		}
 		k++;
 	}
-	delete GS; 
+	delete [] GS; 
 	return Glast;
 }
 

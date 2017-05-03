@@ -23,14 +23,15 @@ if (debug) cout <<"lattice destructor " << endl;
 }
 
 void Lattice::DeAllocateMemory(void) {
-	if (gradients!=3 && geometry !="planar" ) {
-		if (lambda_1) delete [] lambda_1;
-		if (lambda1) delete [] lambda1;
-		if (lambda0) delete [] lambda0; 
-		if (L) delete [] L; 
+	if ((gradients==1 || gradients==2) && geometry !="planar" ) {
+		delete [] lambda_1;
+		delete [] lambda1;
+		delete [] lambda0; 
+		delete [] L; 
 	}
 #ifdef CUDA
-		if (gradients==3) X=(Real*)AllonDev(M);
+	//if (gradients==3) X=(Real*)AllonDev(M);
+	if (gradients==3) cudaFree(X);
 #endif
 }
 

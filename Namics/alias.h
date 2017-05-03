@@ -19,6 +19,7 @@ public:
 	Real* H_phi;
 	Real* phi;
 	Real* rho;  
+	bool clamp;
 	
 	string name; 
 	vector<Input*> In; 

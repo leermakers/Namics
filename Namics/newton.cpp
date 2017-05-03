@@ -35,12 +35,6 @@ if(debug) cout <<"Destructor in Newton " << endl;
 	free(Ci);
 	free(Apij); 
 	free(mask);
-	if (Sys[0]->charged) {
-		free(r);
-		free(d);
-		free(q); 
-		free(s);
-	}
 #ifdef CUDA
 	cudaFree(xx);
 	cudaFree(x0);
@@ -66,24 +60,12 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	Ci   =(Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
 	Apij =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
 	mask= (int*) malloc(iv*sizeof(int));
-	if (Sys[0]->charged) {
-		r=(Real*) malloc(M*sizeof(Real));
-		d=(Real*) malloc(M*sizeof(Real));
-		q=(Real*) malloc(M*sizeof(Real)); 
-		s=(Real*) malloc(M*sizeof(Real));		
-	}
 #ifdef CUDA
 	xx  = (Real*)AllOnDev(iv); 
 	x0  = (Real*)AllOnDev(iv);
 	g   = (Real*)AllOnDev(iv);
 	xR  = (Real*)AllOnDev(m*iv);
 	x_x0= (Real*)AllOnDev(m*iv);
-	if (Sys[0]->charged) {
-		r=(Real*)AllOnDev(M);
-		d=(Real*)AllOnDev(M);
-		q=(Real*)AllOnDev(M); 
-		s=(Real*)AllOnDev(M);		
-	}
 #else
 	xx   =(Real*) malloc(iv*sizeof(Real)); 
 	x0   =(Real*) malloc(iv*sizeof(Real)); 
@@ -950,8 +932,8 @@ if(debug) cout <<"iterate in Newton" << endl;
 	}
 	Message(e_info,s_info,it,iterationlimit,accuracy,tolerance,"");
 	ResetX(xx,nvar);
-	delete p; delete g0 ; delete p0; 
-	delete h; delete reverseDirection;  
+	delete [] p; delete [] g0 ; delete [] p0; 
+	delete [] h; delete [] reverseDirection;  
 }
 
 bool Newton::PutU() {
@@ -1006,9 +988,9 @@ if(debug) cout <<"Ax in  Newton " << endl;
 	for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[i*N + j];// *B[j];
 	for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is used decause it is no longer needed.
 	for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += VT[i*N + j]*S[j];
-	delete U;
-	delete S;
-	delete VT;
+	delete [] U;
+	delete [] S;
+	delete [] VT;
 }
 */
 
@@ -1036,10 +1018,11 @@ if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	} else {
 		X[0]=1;
 	}
-	
-	delete U;
-	delete S;
-	delete V;
+
+for (int i=0; i<N; i++) {delete [] U[i]; delete [] V[i];}	
+	delete [] U;
+	delete [] S;
+	delete [] V;
 }
 
 void Newton::DIIS(Real* xx, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* Ci, int k, int k_diis, int m, int iv) {
@@ -1184,7 +1167,7 @@ void Newton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real r
 if (debug) cout <<"Message in  Newton " << endl;
 	if (it == iterationlimit) cout <<"Warning: "<<s<<"iteration not solved. Residual error= " << residual << endl;
 	if (e_info || s_info) {
-		cout <<" " <<s<<" problem solved" << endl;
+		cout <<" " <<s<<"problem solved" << endl;
 		if (e_info) {
 			if (it < iterationlimit/10) cout <<" That was easy." << endl;
 			if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
@@ -1277,18 +1260,30 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	return it<iterationlimit+1;
 } 
 
+/*
+bool Newton::SuperIterate(int search, int target) {
+if(debug) cout <<"SuperIteration in  Newton " << endl;
+	Real X = Var[search]->GetValue();
+	Solve(false);
+	Var[search]->PutValue(X);
+	Real Y=Var[target]->GetError();
+	cout <<"error " << Y << endl; 
+	return true;
+}
+*/
+
 
 bool Newton::SuperIterate(int search, int target) {
 if(debug) cout <<"SuperIteration in  Newton " << endl;
-	Real* x=new Real [1]; x[0]=Var[search]->GetValue();
 	int m=10;
-	Real* x_x0=new Real [m];
-	Real* xR=new Real [m];
-	Real* g=new Real [1];
-	Real* x0=new Real [1]; x0[0]=0;
-	Real* Aij=new Real [m*m];
-	Real* Apij=new Real [m*m];
-	Real* Ci=new Real [m];
+	Real* x = (Real*)malloc(sizeof(Real)); x[0] = Var[search]->GetValue();
+	Real* x_x0 = (Real*)malloc(m*sizeof(Real));
+	Real* xR = (Real*)malloc(m*sizeof(Real));
+	Real* g = (Real*)malloc(sizeof(Real));	
+	Real* x0 = (Real*)malloc(sizeof(Real)); x0[0]=0;
+	Real* Aij = (Real*)malloc(m*m*sizeof(Real));
+	Real* Apij = (Real*)malloc(m*m*sizeof(Real));
+	Real* Ci = (Real*)malloc(m*sizeof(Real));
 	Real delta_max=0.5;
 	Real residual;
 	Real tol=super_tolerance;
@@ -1323,15 +1318,18 @@ if(debug) cout <<"SuperIteration in  Newton " << endl;
 	}
 	Message(super_e_info,super_s_info,it,iterationlimit,residual,tol,"super"); 
 
-	delete x_x0;
-	delete xR;
-	delete g;
-	delete x0;
-	delete Aij;
-	delete Apij;
-	delete Ci;
+	//delete [] x;
+	//delete [] x_x0;
+	//delete [] xR;
+	//delete [] g;
+	//delete [] x0;
+	//delete [] Aij;
+	//delete [] Apij;
+	//delete [] Ci;
+free(x); free(x_x0); free(xR); free(g); free(x0); free(Aij); free(Apij); free(Ci);
 	return it<iterationlimit+1;
 } 
+
 
 void Newton::ComputePhis() {
 if(debug) cout <<"ComputPhis in  Newton " << endl;

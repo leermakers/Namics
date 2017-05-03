@@ -260,6 +260,16 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 			if (GetValue("end_value").size()>0) { cout <<"In var: the 'scan' property is not set and therefore the 'end_value'-variable is ignored. " << endl; }
 			if (GetValue("scale").size()>0) { cout <<"In var: the 'scan' property is not set and therefore the 'scale'-variable is ignored. " << endl; }
 		}
+		if (scanning>0 && searching>0) {
+			if (scanning==2 && searching==2) {
+				if (scan_nr==search_nr) {
+					if (Mol[scan_nr]->Var_scan_value==Mol[search_nr]->Var_search_value) {
+						cout <<"In var: The search quantity can not be equal to the scan quantity " << endl; 
+						success=false;
+					}
+				}
+			}
+		}
 		
 	}
 	return success;
@@ -374,7 +384,7 @@ bool Variate::ResetScanValue(void) {
 }
 
 string Variate::GetValue(string parameter){
-if (debug) cout <<"GetValue in Variate " + name << endl;
+if (debug) cout <<"GetValue in Variate " + name << " " <<parameter << endl;
 	int i=0;
 	int length = PARAMETERS.size();
 	while (i<length) {

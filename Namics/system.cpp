@@ -329,12 +329,12 @@ if (debug) cout << "CheckInput for system " << endl;
 }
 
 bool System::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
+if (debug) cout << "System::PutVarInfo " << endl;
 	bool success=true;
 	Var_target=-1;
-	Var_type=Var_type_; 	
-	if (Var_type !="target") success=false;
+	if (Var_type_ !="target") success=false;
 	if (Var_target_=="free_energy") Var_target=0;
-	if (Var_target_=="grand_potential") Var_target=1;
+	if (Var_target_=="grand_potential") {Var_target=1; }
 	if (Var_target<0 || Var_target>1) {success=false; cout <<"Var target " + Var_target_ + " rejected in PutVarInfo in System " << endl; }
 	Var_target_value=Var_target_value_;
 	if (Var_target_value < -1e4 || Var_target_value > 1e4) success=false;
@@ -342,6 +342,7 @@ bool System::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_va
 }
 
 Real System::GetError() {
+if (debug) cout << "System::GetError " << endl;
 	Real Error=0;
 	switch (Var_target) {
 		case 0:
@@ -358,6 +359,7 @@ Real System::GetError() {
 }
 
 bool System::IsCharged() {
+if (debug) cout << "System::IsCharged " << endl;
 	bool success=false;
 	int length = In[0]->MolList.size(); 
 	for (int i=0; i<length; i++) {if (Mol[i]->IsCharged()) success=true; }	

@@ -22,6 +22,7 @@ public:
 	int n_mol; 
 	int mol_nr; 
 	int n_box; 
+	int var_al_nr;
 	Real Mu; 
 	Real theta;
 	Real phibulk;
@@ -84,8 +85,11 @@ public:
 	Real Var_step;
 	Real Var_end_value;
 	Real Var_start_value;
+	Real Var_start_search_value;
 	int num_of_steps;
 	int Var_target;
+	int Var_scan_value;
+	int Var_search_value;
 	string Var_type;
 	string scale;
 	Real Var_target_value;
@@ -103,6 +107,7 @@ public:
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
+	bool DeleteAl();
 	Real* GetPointer(string);
 	int GetValue(string,int&,Real&,string&);
 	bool PutVarInfo(string,string,Real);

@@ -44,10 +44,11 @@ endif
 OBJECTS = namics.o tools.o input.o lattice.o segment.o alias.o molecule.o newton.o engine.o output.o variate.o system.o
 
 #namics : namics.o
-#	g++ -o namics namics.o -L$(LIB_DIR) $(LIBS)
+#	g++  -o namics namics.o -L$(LIB_DIR) $(LIBS)
 
 
 namics : $(OBJECTS)
 	g++ -o namics $(OBJECTS) -L$(LIB_DIR) $(LIBS)
+#	g++ -o namics $(OBJECTS) -L$(LIB_DIR) $(LIBS)
 clean : 
 	rm *.o

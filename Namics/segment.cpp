@@ -22,10 +22,17 @@ if (debug) cout <<"Segment destructor " + name << endl;
 }
 
 void Segment::DeAllocateMemory(void){
-if (debug) cout << "In Segment, Deallocating memory"<< endl;
+if (debug) cout << "In Segment, Deallocating memory " + name << endl;
+if (n_pos>0) cout <<"problem for n_pos " <<endl; 
 	if(n_pos>0) free(H_P);
-	if (freedom != "free") free(r);
-	free(H_u); free(H_phi); free(H_MASK);
+	if (freedom != "free"){
+if (r==NULL) cout <<"problem for r" << endl; 
+		 free(r);
+	}
+	free(H_u); free(H_phi);
+	if (freedom =="free") {
+		free(H_MASK);
+	}
 #ifdef CUDA
 	if(n_pos>0) cudaFree(P);
 	cudaFree(u); cudaFree(phi); cudaFree(G1); cudaFree(MASK); cudaFree(phi_side);
@@ -70,7 +77,8 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	G1 = (Real*) malloc(M*sizeof(Real));
 	phi_side = (Real*) malloc(M*sizeof(Real));
 	Zero(G1,M);
-	Zero(phi_side,M); 	
+	Zero(phi_side,M);
+	 	
 #endif
 }
 bool Segment::PrepareForCalculations(int* KSAM) {
@@ -105,6 +113,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	string s; 
 	vector<string>options; 
 	guess_u=0;
+	n_pos=0;
 	fixedPsi0=false;
 	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {

@@ -10,21 +10,23 @@ Alias::~Alias() {
 void Alias::DeAllocateMemory(){
 if (debug) cout <<"Destructor for alias " + name << endl; 
 	free(H_phi);
+	if (clamp) free(rho); 
 #ifdef CUDA
 	cudaFree(phi);
+	if (clamp) {
+		cudaFree(rho);
+		cudaFree(phi);
+	} else cudaFree(phi);
 #else
-
 #endif	
 }
 
 void Alias::AllocateMemory(int Clamp_nr, int n_box) {
-int M=Lat[0]->M;
-bool clamp = Clamp_nr>0;
-int m=Lat[0]->m[Clamp_nr];
-
-
 if (debug) cout <<"AllocateMemory in Alias " + name << endl;
-	
+	int M=Lat[0]->M;  
+	clamp = Clamp_nr>0;
+	int m=0;
+	if (clamp) m=Lat[0]->m[Clamp_nr];
 	H_phi = (Real*) malloc(M*sizeof(Real)); H_Zero(H_phi,M);
 #ifdef CUDA
 	if (clamp) {

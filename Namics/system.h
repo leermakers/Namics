@@ -51,13 +51,9 @@ public:
 	string guess_inputfile;
 	string final_guess;
 	string guess_outputfile;
-	int Var_target; //0 = 'free_energy'; 1='grand_potential'
+	int Var_target;         
 	Real Var_target_value;
-	int Var_step;
-	int Var_end_value;
-	string Var_type;
 	
-
 	int MonA,MonB; 
 
 	vector<string> ints;

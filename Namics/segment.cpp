@@ -371,19 +371,25 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
 	bool success=true;
 	Var_target=-1;
+	chi_var_seg=-1;
 	Var_type="";
 	if (Var_type_=="scan"){
 		Var_type="scan";
 		if (Var_target_=="valence") {Var_target=0; Var_start_value=valence;}
 		if (Var_target_=="ePsi0/kT") {Var_target=1; Var_start_value=PSI0;}
+		if (Var_target ==-1) {
+			vector<string>sub;
+			In[0]->split(Var_target_,'-',sub);
+			if (sub.size()==2) {
+				if (sub[0]=="chi") { 
+					if (In[0]->InSet(In[0]->MonList,chi_var_seg,sub[1])) {
+						Var_target=2; Var_start_value=In[0]->Get_Real(GetValue(Var_target_),0);
+					} else {cout <<"In var: trying to read " + Var_target_ + " failed, because Seg " + sub[1] + "was not found" << endl;}
+				}
+			}
+		}
 	}
-	if (Var_type_=="search") {
-		Var_type="search";
-		if (Var_target_=="valence") {Var_target=0; Var_start_value=valence;}
-		if (Var_target_=="ePsi0/kT") {Var_target=1; Var_start_value=PSI0;}
-	}
-	if (Var_type=="") {success=false; cout <<"In var: for segment we expect either 'scan' or 'search'" << endl;}
-	if (Var_target<0) {success=false; cout <<"In var: for segment we can 'scan' or 'search' values for 'valence' and 'ePsi0/kT'"<<endl; }
+	if (Var_target<0) {success=false; cout <<"In var: for segment you can 'scan' {valence, ePsi0/kT, or a chi-value 'chi-X' with 'X' valid mon : name} "<<endl; }
 	return success; 
 }
 
@@ -447,6 +453,13 @@ bool Segment::UpdateVarInfo(int step_nr) {
 			} else {
 				PSI0=Var_start_value+step_nr*Var_step;
 			}
+			break;
+		case 2: 
+			if (scale=="exponential") {
+				cout <<"In var of chi-parameter, only linear scale is implemented" << endl; success=false; 
+			} else {
+				chi_value = Var_start_value+step_nr*Var_step; 
+			}	
 			break;
 		default:
 			break;

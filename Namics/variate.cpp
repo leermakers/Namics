@@ -178,9 +178,9 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 				if (!In[0]->InSet(In[0]->MonList,pos,sub[1])) {
 					cout <<"in 'var' mon name " + sub[1] + " not found" << endl; success=false;
 				} else {
-					if (GetValue("scan").size()==0 && GetValue("search").size() == 0) {
+					if (GetValue("scan").size()==0) {
 						success=false;
-						cout <<"In var:" + name + ", we need either 'scan' or 'search' as third parameter." << endl;
+						cout <<"In var:" + name + ", we need a 'scan' parameter." << endl;
 					} else {
 						if (GetValue("scan").size()>0) {
 							scanning=3; scan_nr=pos;
@@ -188,12 +188,6 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl; 
 							} 
 						} 
-						if (GetValue("search").size()>0) {
-							searching=3; search_nr=pos;
-							if (!Seg[pos]->PutVarInfo("search",GetValue("search"),0)) {
-								success=false; cout <<"In var:" + name + ":search, the target is rejected " << endl; 
-							} 
-						}
 					}
 				}
 				break;
@@ -238,13 +232,13 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						cout <<"programming error in variate" <<endl;
 						break;
 					case 1:
-						num_of_cals=Seg[scan_nr]->PutVarScan(step,end_value,steps,scale);
+						num_of_cals=Lat[0]->PutVarScan(step,end_value);
 						break;
 					case 2: 
 						num_of_cals=Mol[scan_nr]->PutVarScan(step,end_value,steps,scale);
 						break;
 					case 3: 
-						num_of_cals=Lat[0]->PutVarScan(step,end_value);
+						num_of_cals=Seg[scan_nr]->PutVarScan(step,end_value,steps,scale);
 						break;
 					default: 
 						cout <<"progamming error in variate " << endl;
@@ -283,13 +277,18 @@ bool Variate::PutVarScan(int cal_nr) {
 			cout <<"programming error in PutVarScan" << endl; 
 			break;
 		case 1: 
-			Seg[scan_nr]->UpdateVarInfo(cal_nr);
+			Lat[scan_nr]->UpdateVarInfo(cal_nr);
 			break;
 		case 2:
 			Mol[scan_nr]->UpdateVarInfo(cal_nr);
 			break;
 		case 3:
-			Lat[scan_nr]->UpdateVarInfo(cal_nr);
+			Seg[scan_nr]->UpdateVarInfo(cal_nr);
+			if (Seg[scan_nr]->chi_var_seg>0) {
+				int n_seg=In[0]->MonList.size();
+				Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg] = Seg[scan_nr]->chi_value;
+				Sys[0]->CHI[scan_nr+n_seg*Seg[scan_nr]->chi_var_seg] =Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg];
+			} else Seg[scan_nr]->ResetInitValue();
 			break;
 		default:
 			break;
@@ -368,13 +367,17 @@ bool Variate::ResetScanValue(void) {
 			cout <<"programming error in ResetVarScan" << endl; 
 			break;
 		case 1: 
-			Seg[scan_nr]->ResetInitValue();
+			Lat[scan_nr]->ResetInitValue();
 			break;
 		case 2:
 			Mol[scan_nr]->ResetInitValue();
 			break;
 		case 3:
-			Lat[scan_nr]->ResetInitValue();
+			if (Seg[scan_nr]->chi_var_seg>0) {
+				int n_seg=In[0]->MonList.size();
+				Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg] = Seg[scan_nr]->Var_start_value;
+				Sys[0]->CHI[scan_nr+n_seg*Seg[scan_nr]->chi_var_seg] =Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg];
+			} else Seg[scan_nr]->ResetInitValue();
 			break;
 		default:
 			cout <<"programming error in ResetVarScan" << endl; 

@@ -47,6 +47,8 @@ public:
 	int num_of_steps;
 	int Var_target;
 	string Var_type;
+	int chi_var_seg;
+	Real chi_value;
 
 	vector<string> ints;
 	vector<string> Reals;

@@ -25,6 +25,7 @@ public:
 	int var_al_nr;
 	Real Mu; 
 	Real theta;
+	Real thata_in_range;
 	Real phibulk;
 	Real fraction(int); 
 	string freedom;

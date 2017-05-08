@@ -68,6 +68,8 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 		scanning =-1;
 		targeting =-1;
 		searching=-1;
+		eq_to_solvating=-1;
+		ets_nr=-1;
 		scan_nr=0;
 		search_nr=0;
 		if (sub[0]=="sys") choice=0;
@@ -169,7 +171,14 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						if (GetValue("search").size()>0) {
 							if (!Mol[pos]->PutVarInfo("search",GetValue("search"),0)) {
 								success=false; cout <<"In var:" + name + ":search, the target is rejected " << endl; 
-							} else {searching=2; search_nr=pos;}
+							} else {
+								if (Mol[pos]->Var_search_value==3) {
+									eq_to_solvating=2; ets_nr=pos;
+								} else {
+									searching=2; search_nr=pos;
+								}
+							}
+
 						}
 					}
 				}
@@ -311,9 +320,9 @@ void Variate::PutValue(Real X) {
 			cout <<"programming error in PutValue" << endl; 
 			break;
 		default:
-			cout <<"programming error in PutValue" << endl; 
 			break;
 	}
+	if (ets_nr>-1) {Mol[ets_nr]->theta=X; Mol[ets_nr]->n=X/Mol[ets_nr]->chainlength;}
 }
 Real Variate::GetValue(void) {
 	Real X=0;
@@ -331,9 +340,9 @@ Real Variate::GetValue(void) {
 			cout <<"programming error in GetValue" << endl; 
 			break;
 		default:
-			cout <<"programming error in GetValue" << endl; 
 			break;
 	}
+	if (ets_nr>-1) X=Mol[ets_nr]->theta;
 	return X;
 }
 
@@ -347,15 +356,15 @@ Real Variate::GetError(void) {
 			cout <<"programming error in GetError" << endl; 
 			break;
 		case 2:
-			X=Mol[target_nr]->GetError();
+			if (target_nr>-1) X=Mol[target_nr]->GetError();
 			break;
 		case 3:
 			cout <<"programming error in GetError" << endl; 
 			break;
 		default:
-			cout <<"programming error in GetError" << endl; 
 			break;
 	}
+	if (ets_nr>-1) X=-(Mol[ets_nr]->theta/Sys[0]->Mol[Sys[0]->solvent]->theta-1.0);
 	return X;
 }
 

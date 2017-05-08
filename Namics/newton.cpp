@@ -4,12 +4,12 @@
 Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) {
 	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;Var=Var_;
 if(debug) cout <<"Constructor in Newton " << endl;  
-	KEYS.push_back("method"); KEYS.push_back("e_info"); KEYS.push_back("s_info");
-	KEYS.push_back("delta_max"); KEYS.push_back("m"); KEYS.push_back("i_info");
+	KEYS.push_back("method");  KEYS.push_back("m"); 
+	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");
+	
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance"); 
-	//KEYS.push_back("store_guess"); KEYS.push_back("read_guess"); 
 	KEYS.push_back("stop_criterion"); 
-	KEYS.push_back("delta_min");
+	KEYS.push_back("deltamin");KEYS.push_back("deltamax");
 	KEYS.push_back("linesearchlimit");
 	//KEYS.push_back("samehessian");   
 	KEYS.push_back("max_accuracy_for_hessian_scaling");
@@ -103,9 +103,12 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),s_info); 
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
 		
-		delta_max=In[0]->Get_Real(GetValue("delta_max"),0.1); 
-		if (delta_max < 0 || delta_max>100) {delta_max = 0.1;  cout << "Value of delta_max out of range 0..100, and value set to default value 0.1" <<endl; } 
+		delta_max=In[0]->Get_Real(GetValue("deltamax"),0.1); 
+		if (delta_max < 0 || delta_max>100) {delta_max = 0.1;  cout << "Value of deltamax out of range 0..100, and value set to default value 0.1" <<endl; } 
 		delta_min=delta_max/100000;
+		delta_min=In[0]->Get_Real(GetValue("deltamin"),delta_min); 
+		if (delta_min < 0 || delta_min>100) {delta_min = delta_max/100000;  cout << "Value of deltamin out of range 0..100, and value set to default value deltamax/100000" <<endl; } 
+
 		tolerance=In[0]->Get_Real(GetValue("tolerance"),1e-7);
 		super_tolerance=In[0]->Get_Real(GetValue("super_tolerance"),tolerance*10);
 		if (tolerance < 1e-12 ||tolerance>10) {tolerance = 1e-5;  cout << "Value of tolerance out of range 1e-12..10 Value set to default value 1e-5" <<endl; }  
@@ -1157,9 +1160,9 @@ if(debug) cout <<"Solve in  Newton " << endl;
 	return success; 
 }
 
-bool Newton::Solve(int search, int target) {
+bool Newton::Solve(int search, int target, int ets) {
 if (debug) cout <<"Solve towards superiteration " << endl; 
-	return SuperIterate(search,target);
+	return SuperIterate(search,target,ets);
 }
 
 
@@ -1260,27 +1263,16 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	return it<iterationlimit+1;
 } 
 
-/*
-bool Newton::SuperIterate(int search, int target) {
+bool Newton::SuperIterate(int search, int target,int ets) {
 if(debug) cout <<"SuperIteration in  Newton " << endl;
-	Real X = Var[search]->GetValue();
-	Solve(false);
-	Var[search]->PutValue(X);
-	Real Y=Var[target]->GetError();
-	cout <<"error " << Y << endl; 
-	return true;
-}
-*/
-
-
-bool Newton::SuperIterate(int search, int target) {
-if(debug) cout <<"SuperIteration in  Newton " << endl;
+	int iv=1; 
 	int m=10;
-	Real* x = (Real*)malloc(sizeof(Real)); x[0] = Var[search]->GetValue();
+	Real* x = (Real*)malloc(iv*sizeof(Real)); 
+	if (ets==-1) x[0] =Var[search]->GetValue(); else  x[0] = Var[ets]->GetValue();
 	Real* x_x0 = (Real*)malloc(m*sizeof(Real));
 	Real* xR = (Real*)malloc(m*sizeof(Real));
-	Real* g = (Real*)malloc(sizeof(Real));	
-	Real* x0 = (Real*)malloc(sizeof(Real)); x0[0]=0;
+	Real* g = (Real*)malloc(iv*sizeof(Real));	
+	Real* x0 = (Real*)malloc(iv*sizeof(Real)); x0[0]=0;
 	Real* Aij = (Real*)malloc(m*m*sizeof(Real));
 	Real* Apij = (Real*)malloc(m*m*sizeof(Real));
 	Real* Ci = (Real*)malloc(m*sizeof(Real));
@@ -1291,26 +1283,26 @@ if(debug) cout <<"SuperIteration in  Newton " << endl;
 	int it=0; 
 	int k_diis=1; 
 	int k=0;
-	Solve(false);
-	g[0]=Var[target]->GetError();
-	YplusisCtimesX(x,g,delta_max,1);
-	YisAminB(x_x0,x,x0,1);
-	Cp(xR,x,1);
-	Dot(residual,g,g,1);
+	if (ets==-1 ||  search<0) Solve(false); else SuperIterate(search,target,-1);
+	if (ets==-1) g[0]=Var[target]->GetError(); else g[0]=Var[ets]->GetError();
+	YplusisCtimesX(x,g,delta_max,iv);
+	YisAminB(x_x0,x,x0,iv);
+	Cp(xR,x,iv);
+	Dot(residual,g,g,iv);
 	residual=sqrt(residual); 
 	if (super_e_info) printf("Super DIIS has been notified\n");
 	if (super_e_info) printf("Your guess = %1e \n",residual);
 	while (residual > tol && it < iterationlimit) {
 		it++;
-		Cp(x0,x,1);
-		Var[search]->PutValue(x[0]);
-		Solve(false);
-		g[0]=Var[target]->GetError();
+		Cp(x0,x,iv);
+		if (ets==-1) Var[search]->PutValue(x[0]); else Var[ets]->PutValue(x[0]);
+		if (ets==-1||search<0) Solve(false); else SuperIterate(search,target,-1);
+		if (ets==-1) g[0]=Var[target]->GetError(); else g[0]=Var[ets]->GetError();
 		k=it % m; k_diis++; //plek voor laatste opslag
-		YplusisCtimesX(x,g,-delta_max,1);
-		Cp(xR+k,x,1); YisAminB(x_x0+k,x,x0,1);
-		DIIS(x,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,1);
-		Dot(residual,g,g,1);
+		YplusisCtimesX(x,g,-delta_max,iv);
+		Cp(xR+k,x,1); YisAminB(x_x0+k,x,x0,iv);
+		DIIS(x,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,iv);
+		Dot(residual,g,g,iv);
 		residual=sqrt(residual);
 		if(super_e_info){
 			printf("super-it = %i g = %1e \n",it,residual);

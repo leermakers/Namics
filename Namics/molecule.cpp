@@ -10,6 +10,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("phibulk");
 	KEYS.push_back("n");
 	KEYS.push_back("save_memory"); 
+	KEYS.push_back("range_restricted");
 }
 
 Molecule::~Molecule() {
@@ -244,7 +245,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 	bool success=true;
 	if (!In[0]->CheckParameters("mol",name,start,KEYS,PARAMETERS,VALUES)) {
 		success=false; 	
-	} else { 
+	} else {
 		save_memory=false;
 		if (GetValue("save_memory").size()>0) {
 			save_memory=In[0]->Get_bool(GetValue("save_memory"),false); 
@@ -254,6 +255,10 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			if (!Decomposition(GetValue("composition"))) {cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;}
 
 		}
+		if (GetValue("range_restricted").size()>0) {
+			if (GetValue("freedom")!="restricted_range") cout <<"For mol '" + name + "' freedom is not set to 'restricted_range' and therefore  the value of 'range_restricted' is ignored" << endl;   
+		}
+	
 		if ( IsClamped()) {
 			freedom="clamped"; 
 			if (GetValue("freedom").size() > 0) freedom = In[0]->Get_string(GetValue("freedom"),"clamped"); 
@@ -279,13 +284,19 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			}
 		} else 
 		if (GetValue("freedom").size()==0 && !IsTagged()) {
-			cout <<"For mol " + name + " the setting 'freedom' is expected: options: 'free' 'restricted' 'solvent' 'neutralizer' . Problem terminated " << endl; success = false;
+			cout <<"For mol " + name + " the setting 'freedom' is expected: options: 'free' 'restricted' 'solvent' 'neutralizer' 'range_restricted' 'clamped' 'tagged' . Problem terminated " << endl; success = false;
 			} else { if (!IsTagged()) {
 				vector<string> free_list; 
-				if (!IsPinned()) free_list.push_back("free"); free_list.push_back("restricted"); free_list.push_back("solvent"); 
-				free_list.push_back("neutralizer");
+				if (!IsPinned()) {
+					free_list.push_back("free"); 
+					free_list.push_back("solvent"); 
+					free_list.push_back("neutralizer"); 
+					free_list.push_back("range_restricted"); 
+				}
+				free_list.push_back("restricted"); 
 				if (!In[0]->Get_string(GetValue("freedom"),freedom,free_list,"In mol " + name + " the value for 'freedom' is not recognised ")) success=false;
 				if (freedom == "solvent") {
+					if (IsCharged()) {success=false; cout <<"mol '" + name + "' can not be a solvent when it carries charges. " << endl; }
 					if (IsPinned()) {success=false; cout << "Mol '" + name + "' is 'pinned' and therefore this molecule can not be the solvent" << endl; } 
 				}
 				if (freedom == "neutralizer") {
@@ -308,7 +319,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						} 
 					}
 				}
-				if (freedom == "restricted") {
+				if (freedom == "restricted" ) {
 					if (GetValue("phibulk").size()>0) {
 						cout << "In mol " + name + ", the setting of 'freedom = restricted', can not not be combined with 'phibulk'  use 'theta' or 'n'  instead." << endl; success=false;  
 					} else {
@@ -328,6 +339,21 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 							}
 						} 
 					}
+				}
+				if (freedom =="restricted_range" ) {
+					if (GetValue("range_restricted").size() ==0) {
+						success=false; 
+						cout<<"In mol '" + name + "', freedom is set to 'restricted_range'. In this case we expect the setting for 'range_restricted'. This setting was not found. Problem terminated. " << endl; 
+					} else { //read range;
+					}
+					if (GetValue("theta").size() ==0) {
+						success=false; 
+						cout<<"In mol '" + name + "' freedom is set to 'restricted_range'. Value for theta (for the restricted range) is expected. This setting was not found. Problem terminated. " << endl; 
+					} else {
+						//read theta;
+					}
+					cout <<"restricted_range not yet implemented " << endl; 
+					success=false; 
 				}
  
 			} else {
@@ -379,8 +405,19 @@ if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 		if (Var_target_=="theta") {Var_search_value=0; Var_start_search_value=theta;}
 		if (Var_target_=="n") {Var_search_value=1; Var_start_search_value=n;}
 		if (Var_target_=="phibulk") {Var_search_value=2; Var_start_search_value=phibulk;}
+		if (Var_target_=="equate_to_solvent") {
+			Var_search_value=3; Var_start_search_value=theta;
+			if (freedom=="solvent") {
+				cout <<"in var: searching for theta to equate to solvent can not be done for a molecule with 'freedom' solvent " << endl; 
+				success=false;
+			}
+			if (freedom!="restricted") {
+				success=false;
+				cout <<"In var: searching for theta to equate to solvent can only be done for a molecule with 'freedom' restricted" << endl; 
+			}
+		}
 		if (Var_search_value == -1) {
-			cout <<"In var: searching value for molecule was not recognized. Choose from {theta, n, phibulk}. " << endl; 
+			cout <<"In var: searching value for molecule was not recognized. Choose from {theta, n, phibulk, equate_to_solvent}. " << endl; 
 			return false; 
 		}
 	}
@@ -506,6 +543,8 @@ if (debug) cout <<"Molecule:: ResetInitValue" << endl;
 			phibulk=Var_start_search_value;
 			cout <<"mol : " + name + " : phibulk " << phibulk << endl; 
 			break;
+		case 3: theta=Var_start_search_value;
+			cout <<"mol : " + name + " : theta " << theta << endl; 
 		default:
 			break;
 	}
@@ -588,9 +627,13 @@ if (debug) cout <<"Molecule:: GetError" << endl;
 			if (Var_target_value!=0) Error=Mu/Var_target_value-1.0; else Error = Mu;
 			break;
 		default:
-			cout <<"program error in Molecule::GetError" << endl;
+			//cout <<"program error in Molecule::GetError" << endl;
+			break;
 	}
-	
+
+	if (Var_search_value==3) {
+		Error=theta;
+	}
 	return Error;
 }
 
@@ -606,6 +649,9 @@ if (debug) cout <<"Molecule:: GetValue" << endl;
 			break;
 		case 2:
 			X=phibulk;
+			break;
+		case 3:
+			X=theta;
 			break;
 		default:
 			cout <<"program error in Molecule::GetValue" << endl;
@@ -623,6 +669,9 @@ if (debug) cout <<"Molecule:: PutValue" << endl;
 			break;
 		case 2:
 			phibulk=X;
+			break;
+		case 3:
+			theta=X;
 			break;
 		default:
 			cout <<"program error in Molecule::GetValue" << endl;
@@ -1103,7 +1152,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	push("n",n);
 	push("chainlength",chainlength);
 	push("phibulk",phibulk);
-	push("Mu",Mu);
+	push("mu",Mu);
 	push("GN",GN);
 	push("norm",norm);
 	string s="profile;0"; push("phi",s);

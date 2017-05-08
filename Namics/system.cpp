@@ -108,6 +108,7 @@ bool System::PrepareForCalculations() {
 if (debug) cout <<"PrepareForCalculations in System " << endl; 
 	int M=Lat[0]->M;
 	bool success=true;
+
 	FrozenList.clear();
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) {if (Seg[i]->freedom == "frozen") FrozenList.push_back(i); }
@@ -135,12 +136,12 @@ if (debug) cout <<"PrepareForCalculations in System " << endl;
 		Add(KSAM,MASK,M);
 		i++;
 	}
-	
 
 	Invert(KSAM,KSAM,M); 
 	n_mol = In[0]->MolList.size();
 	success=Lat[0]->PrepareForCalculations(); 
 	int n_mon=In[0]->MonList.size();
+
 	for (int i=0; i<n_mon; i++) {success=Seg[i]->PrepareForCalculations(KSAM);}
 	for (int i=0; i<n_mol; i++) {success=Mol[i]->PrepareForCalculations(KSAM);}
 	if (charged) {
@@ -561,7 +562,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 			Mol[i]->n=norm*Mol[i]->GN;
 		}
 
-		if (Mol[i]->freedom=="restricted") {
+		if (Mol[i]->freedom=="restricted" ) {
 			if (Mol[i]->GN>0) {
 			norm = Mol[i]->n/Mol[i]->GN; 
 			if (Mol[i]->IsPinned()) Mol[i]->phibulk = 0; else Mol[i]->phibulk=Mol[i]->chainlength*norm;  totphibulk +=Mol[i]->phibulk; 
@@ -607,6 +608,7 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]-
 	Mol[solvent]->n=norm*Mol[solvent]->GN;
 	Mol[solvent]->theta=Mol[solvent]->n*Mol[solvent]->chainlength; 
 	Mol[solvent]->norm=norm; 
+
 	int k=0;
 	length = Mol[solvent]->MolMonList.size();
 	while (k<length) {

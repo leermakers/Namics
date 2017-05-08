@@ -291,7 +291,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 			vector<string> sub;
 			In[0] -> split(OUT_prop[i],'(',sub);
 			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,Real_result,string_result);
-			if (result_nr==0) {fprintf(fp,"\t");}
+			if (result_nr==0) {fprintf(fp,"NiN\t");}
 			if (result_nr==1) {fprintf(fp,"%i\t",int_result);}
 			if (result_nr==2) {fprintf(fp,"%e\t",Real_result);}
 			if (result_nr==3) {

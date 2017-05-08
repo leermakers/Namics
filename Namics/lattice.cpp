@@ -555,7 +555,7 @@ int Lattice::PutVarScan(int step, int end_value) {
 	Var_end_value=end_value;
 	if (Var_end_value <0) cout <<"In var: scan : of lattice variable, it is impossible to have a negative value for the end_value" << endl; 
 	if (step!=0) { 
-		num_of_steps = (end_value-VarInitValue)/step;
+		num_of_steps = (end_value-VarInitValue)/step+1;
 		if (num_of_steps<0) cout <<"in var : scan : of lattice variable, end_value and step are not consistent, try changing sign of step " << endl; 
 	}
 	return num_of_steps;

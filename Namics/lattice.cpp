@@ -24,10 +24,10 @@ if (debug) cout <<"lattice destructor " << endl;
 
 void Lattice::DeAllocateMemory(void) {
 	if ((gradients==1 || gradients==2) && geometry !="planar" ) {
-		delete [] lambda_1;
-		delete [] lambda1;
-		delete [] lambda0; 
-		delete [] L; 
+		free(lambda_1);
+		free(lambda1);
+		free(lambda0); 
+		free(L); 
 	}
 #ifdef CUDA
 	//if (gradients==3) X=(Real*)AllonDev(M);
@@ -42,14 +42,14 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	int i,j;
 	PutM();
 	DeAllocateMemory();
+	if (geometry!="planar" && gradients<3) {
+		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
+		lambda_1=(Real*)malloc(M*sizeof(Real)); Zero(lambda_1,M);
+		lambda1=(Real*)malloc(M*sizeof(Real)); Zero(lambda1,M);
+		lambda0=(Real*)malloc(M*sizeof(Real)); Zero(lambda0,M);
+	}
 	switch (gradients) {
 		case 1:
-			if (geometry!="planar") {
-				L = new Real[M]; Zero(L,M);
-				lambda_1 = new Real[M]; Zero(lambda_1,M);
-				lambda1 = new Real[M]; Zero(lambda1,M);
-				lambda0 = new Real[M]; Zero(lambda0,M);
-			}
 			if (geometry=="cylindrical") {
 				for (i=1; i<MX+1; i++) {
 					r=offset_first_layer + i; 
@@ -70,12 +70,6 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 			}
 			break;
 		case 2:
-			if (geometry!="planar") {
-				L=new Real[M]; Zero(L,M); 
-				lambda_1 = new Real[M]; Zero(lambda_1,M);
-				lambda1 = new Real[M]; Zero(lambda1,M);
-				lambda0 = new Real[M]; Zero(lambda0,M);				
-			}
 			if (geometry=="cylindrical") {
 				for (i=1; i<MX+1; i++) 
 				for (j=1; j<MY+1; j++) {
@@ -949,15 +943,15 @@ if (debug) cout <<" Side in lattice " << endl;
 				}	
 			} else {
 				if (lattice_type =="simple_cubic") {
+					YplusisCtimesX(X_side,X,2.0,M);
 					Add(X_side,X+1,M-1);      
 					Add(X_side+1,X,M-1);
-					Add(X_side,X,M);
-					AddTimes(X_side,X,lambda0,M);
-					AddTimes(X_side+JX,X,lambda_1+JX,M);
-					AddTimes(X_side,X+JX,lambda1,M);
-					Norm(X_side,lambda*lambda,M);
+					AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
+					AddTimes(X_side,X+JX,lambda1,M-JX);
+					Norm(X_side,lambda,M);
 					
 				} else {
+cout <<"side is not correctly implemented " << endl; 
 					SIDE=new Real[M];
 					Zero(SIDE,M);
 					Add(SIDE,X+1,M-1);      
@@ -1014,11 +1008,10 @@ if (debug) cout <<" propagate in lattice " << endl;
 			} else {
 				Add(gs,gs_1+1,M-1);      
 				Add(gs+1,gs_1,M-1);
-				Add(gs,gs_1,M);
-				AddTimes(gs,gs_1,lambda0,M);
-				AddTimes(gs+JX,gs_1,lambda_1+JX,M);
-				AddTimes(gs,gs_1+JX,lambda1,M);
-				Norm(gs,lambda*lambda,M);Times(gs,gs,G1,M);
+				YplusisCtimesX(gs,gs_1,2.0,M);
+				AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
+				AddTimes(gs,gs_1+JX,lambda1,M-JX);
+				Norm(gs,lambda,M);Times(gs,gs,G1,M);
 			}
 			break;
 		case 3:
@@ -1042,18 +1035,18 @@ if (debug) cout <<" remove_bounds (Real) in lattice " << endl;
 			X[0]=0; X[MX+1]=0;
 			break;
 		case 2: 
-			for (x=1; x<MX+1; x++) {
+			for (x=0; x<MX+2; x++) {
 				X[x*JX+0] = 0;
 				X[x*JX+MY+1]=0;
 			}
-			for (y=1; y<MY+1; x++) {
+			for (y=0; y<MY+2; y++) {
 				X[0+y] = 0;
 				X[(MX+1)*JX+y]=0;
 			}
-			X[0]             =0;
-			X[(MX+1)*JX]     =0;
-			X[0+MY+1]        =0;
-			X[(MX+1)*JX+MY+1]=0;	
+			//X[0]             =0;
+			//X[(MX+1)*JX]     =0;
+			//X[0+MY+1]        =0;
+			//X[(MX+1)*JX+MY+1]=0;	
 			break;
 		case 3: 
 			if (sub_box_on!=0) {int k=sub_box_on;
@@ -1076,18 +1069,18 @@ if (debug) cout <<" remove_bounds (int) in lattice " << endl;
 			X[0]=0; X[MX+1]=0;
 			break;
 		case 2: 
-			for (x=1; x<MX+1; x++) {
+			for (x=0; x<MX+2; x++) {
 				X[x*JX+0] =0;
 				X[x*JX+MY+1]=0;
 			}
-			for (y=1; y<MY+1; x++) {
+			for (y=0; y<MY+2; y++) {
 				X[0+y] = 0;
 				X[(MX+1)*JX+y]=0;
 			}
-			X[0]             =0;
-			X[(MX+1)*JX]     =0;
-			X[0+MY+1]        =0;
-			X[(MX+1)*JX+MY+1]=0;			
+			//X[0]             =0;
+			//X[(MX+1)*JX]     =0;
+			//X[0+MY+1]        =0;
+			//X[(MX+1)*JX+MY+1]=0;			
 
 			break;
 		case 3:
@@ -1114,7 +1107,7 @@ if (debug) cout <<"set_bounds (Reals) in lattice " << endl;
 				X[x*JX+0] = X[x*JX+BY1];
 				X[x*JX+MY+1]=X[x*JX+BYM];
 			}
-			for (y=1; y<MY+1; x++) {
+			for (y=1; y<MY+1; y++) {
 				X[0+y] = X[BX1*JX+y];
 				X[(MX+1)*JX+y]=X[BXM*JX+y];
 			}
@@ -1147,7 +1140,7 @@ if (debug) cout <<"set_bounds (int) in lattice " << endl;
 				X[x*JX+0] = X[x*JX+BY1];
 				X[x*JX+MY+1]=X[x*JX+BYM];
 			}
-			for (y=1; y<MY+1; x++) {
+			for (y=1; y<MY+1; y++) {
 				X[0+y] = X[BX1*JX+y];
 				X[(MX+1)*JX+y]=X[BXM*JX+y];
 			}
@@ -1256,33 +1249,33 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 				if (coor.size()!=2) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of two: 'x,y'" << endl; success=false;}
 				else {
 					diggit=coor[0].substr(0,1);
-					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
+					if (In[0]->IsDigit(diggit)) r[2]=In[0]->Get_int(coor[0],0); else {
 						recognize_keyword=false; 
-						if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
-						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
-						//if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
-						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[3] = MX;}
+						if (coor[0]=="firstlayer") {recognize_keyword=true; r[2] = 1;}
+						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[2] = 0;}
+						//if (coor[0]=="upperbound") {recognize_keyword=true; r[2] = MX+1;}
+						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[2] = MX;}
 						if (!recognize_keyword) {
 							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
 							success=false;
 						}
 					}
-					if (r[3] <1-a || r[3] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds: " << 1-a << " .. " << MX+a<< endl; success=false;} 
+					if (r[2] <1-a || r[2] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds: " << 1-a << " .. " << MX+a<< endl; success=false;} 
 					diggit=coor[1].substr(0,1);
-					if (In[0]->IsDigit(diggit)) r[4]=In[0]->Get_int(coor[1],0); else {
+					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[1],0); else {
 						recognize_keyword=false;
-						if (coor[1]=="firstlayer") {recognize_keyword=true; r[4] = 1;}
-						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[4] = 0;}
-						//if (coor[1]=="upperbound") {recognize_keyword=true; r[4] = MY+1;}
-						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[4] = MY;}
+						if (coor[1]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
+						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
+						//if (coor[1]=="upperbound") {recognize_keyword=true; r[3] = MY+1;}
+						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[3] = MY;}
 						if (!recognize_keyword) {
 							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
 							success=false; 
 						}
 					}
-					if (r[4] < 1-a || r[4] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MY+a << endl; success =false;}
-					if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-					if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+					if (r[3] < 1-a || r[3] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MY+a << endl; success =false;}
+					if (r[0] > r[2]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+					if (r[1] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
 				}
 				break;
 			case 3:
@@ -1648,7 +1641,7 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 		case 1:
 			H_Zero(H_MASK,M);
 			if (block) {
-				for (x=r[0]; x<r[3]+1; x++)  H_MASK[x]=1;
+				for (x=r[0]; x<r[1]+1; x++)  H_MASK[x]=1;
 			} else {
 				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}
@@ -1656,7 +1649,7 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 		case 2:
 			H_Zero(H_MASK,M);
 			if (block) {
-				for (x=r[0]; x<r[3]+1; x++) for (y=r[1]; y<r[4]+1; y++) H_MASK[x*JX+y]=1;
+				for (x=r[0]; x<r[2]+1; x++) for (y=r[1]; y<r[3]+1; y++) H_MASK[x*JX+y]=1;
 			} else {
 				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}

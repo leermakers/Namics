@@ -30,9 +30,9 @@ if (r==NULL) cout <<"problem for r" << endl;
 		 free(r);
 	}
 	free(H_u); free(H_phi);
-	if (freedom =="free") {
+	//if (freedom =="free") {
 		free(H_MASK);
-	}
+	//}
 #ifdef CUDA
 	if(n_pos>0) cudaFree(P);
 	cudaFree(u); cudaFree(phi); cudaFree(G1); cudaFree(MASK); cudaFree(phi_side);
@@ -54,7 +54,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	H_phi = (Real*) malloc(M*sizeof(Real));
 	H_Zero(H_u,M); 
 	H_Zero(H_phi,M);
-	if (freedom=="free") {
+	if (freedom=="free") { //when free it is already made in checkinput.
 		H_MASK = (int*) malloc(M*sizeof(int));
 		H_Zero(H_MASK,M); 
 	}
@@ -241,6 +241,11 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
+//cout << " r0 " << r[0] << endl; 
+//cout << " r1 " << r[1] << endl; 
+//cout << " r2 " << r[2] << endl; 
+//cout << " r3 " << r[3] << endl; 
+
 		}
 
 		if (freedom == "frozen") {

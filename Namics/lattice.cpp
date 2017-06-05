@@ -24,10 +24,10 @@ if (debug) cout <<"lattice destructor " << endl;
 
 void Lattice::DeAllocateMemory(void) {
 	if ((gradients==1 || gradients==2) && geometry !="planar" ) {
-		delete [] lambda_1;
-		delete [] lambda1;
-		delete [] lambda0; 
-		delete [] L; 
+		free(lambda_1);
+		free(lambda1);
+		free(lambda0); 
+		free(L); 
 	}
 #ifdef CUDA
 	//if (gradients==3) X=(Real*)AllonDev(M);
@@ -42,14 +42,14 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	int i,j;
 	PutM();
 	DeAllocateMemory();
+	if (geometry !="planar" && gradients<3) {
+		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
+		lambda_1=(Real*)malloc(M*sizeof(Real)); Zero(lambda_1,M);
+		lambda1=(Real*)malloc(M*sizeof(Real)); Zero(lambda1,M);
+		lambda0=(Real*)malloc(M*sizeof(Real)); Zero(lambda0,M);
+	}
 	switch (gradients) {
 		case 1:
-			if (geometry!="planar") {
-				L = new Real[M]; Zero(L,M);
-				lambda_1 = new Real[M]; Zero(lambda_1,M);
-				lambda1 = new Real[M]; Zero(lambda1,M);
-				lambda0 = new Real[M]; Zero(lambda0,M);
-			}
 			if (geometry=="cylindrical") {
 				for (i=1; i<MX+1; i++) {
 					r=offset_first_layer + i; 
@@ -70,12 +70,6 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 			}
 			break;
 		case 2:
-			if (geometry!="planar") {
-				L=new Real[M]; Zero(L,M); 
-				lambda_1 = new Real[M]; Zero(lambda_1,M);
-				lambda1 = new Real[M]; Zero(lambda1,M);
-				lambda0 = new Real[M]; Zero(lambda0,M);				
-			}
 			if (geometry=="cylindrical") {
 				for (i=1; i<MX+1; i++) 
 				for (j=1; j<MY+1; j++) {
@@ -951,13 +945,12 @@ if (debug) cout <<" Side in lattice " << endl;
 				if (lattice_type =="simple_cubic") {
 					Add(X_side,X+1,M-1);      
 					Add(X_side+1,X,M-1);
-					Add(X_side,X,M);
-					AddTimes(X_side,X,lambda0,M);
-					AddTimes(X_side+JX,X,lambda_1+JX,M);
-					AddTimes(X_side,X+JX,lambda1,M);
-					Norm(X_side,lambda*lambda,M);
+					YplusisCtimesX(X_side,X,2.0,M);
+					AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
+					AddTimes(X_side,X+JX,lambda1,M-JX);
+					Norm(X_side,lambda,M);
 					
-				} else {
+				} else { cout <<"Warning: In FCC the function side is not correctly implemented" << endl; 
 					SIDE=new Real[M];
 					Zero(SIDE,M);
 					Add(SIDE,X+1,M-1);      
@@ -1014,11 +1007,10 @@ if (debug) cout <<" propagate in lattice " << endl;
 			} else {
 				Add(gs,gs_1+1,M-1);      
 				Add(gs+1,gs_1,M-1);
-				Add(gs,gs_1,M);
-				AddTimes(gs,gs_1,lambda0,M);
-				AddTimes(gs+JX,gs_1,lambda_1+JX,M);
-				AddTimes(gs,gs_1+JX,lambda1,M);
-				Norm(gs,lambda*lambda,M);Times(gs,gs,G1,M);
+				YplusisCtimesX(gs,gs_1,2.0,M);
+				AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
+				AddTimes(gs,gs_1+JX,lambda1,M-JX);
+				Norm(gs,lambda,M);Times(gs,gs,G1,M);
 			}
 			break;
 		case 3:
@@ -1046,7 +1038,7 @@ if (debug) cout <<" remove_bounds (Real) in lattice " << endl;
 				X[x*JX+0] = 0;
 				X[x*JX+MY+1]=0;
 			}
-			for (y=1; y<MY+1; x++) {
+			for (y=1; y<MY+1; y++) {
 				X[0+y] = 0;
 				X[(MX+1)*JX+y]=0;
 			}
@@ -1080,7 +1072,7 @@ if (debug) cout <<" remove_bounds (int) in lattice " << endl;
 				X[x*JX+0] =0;
 				X[x*JX+MY+1]=0;
 			}
-			for (y=1; y<MY+1; x++) {
+			for (y=1; y<MY+1; y++) {
 				X[0+y] = 0;
 				X[(MX+1)*JX+y]=0;
 			}
@@ -1114,7 +1106,7 @@ if (debug) cout <<"set_bounds (Reals) in lattice " << endl;
 				X[x*JX+0] = X[x*JX+BY1];
 				X[x*JX+MY+1]=X[x*JX+BYM];
 			}
-			for (y=1; y<MY+1; x++) {
+			for (y=1; y<MY+1; y++) {
 				X[0+y] = X[BX1*JX+y];
 				X[(MX+1)*JX+y]=X[BXM*JX+y];
 			}
@@ -1147,7 +1139,7 @@ if (debug) cout <<"set_bounds (int) in lattice " << endl;
 				X[x*JX+0] = X[x*JX+BY1];
 				X[x*JX+MY+1]=X[x*JX+BYM];
 			}
-			for (y=1; y<MY+1; x++) {
+			for (y=1; y<MY+1; y++) {
 				X[0+y] = X[BX1*JX+y];
 				X[(MX+1)*JX+y]=X[BXM*JX+y];
 			}
@@ -1664,7 +1656,7 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 		case 3: 	
 			H_Zero(H_MASK,M);
 			if (block) {
-				for (x=r[1]; x<r[3]+1; x++) for (y=r[1]; y<r[4]+1; y++) for (z=r[2]; z<r[5]+1; z++) H_MASK[x*JX+y*JY+z]=1;
+				for (x=r[0]; x<r[3]+1; x++) for (y=r[1]; y<r[4]+1; y++) for (z=r[2]; z<r[5]+1; z++) H_MASK[x*JX+y*JY+z]=1;
 			} else {
 				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}

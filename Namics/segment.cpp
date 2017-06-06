@@ -26,7 +26,6 @@ if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 if (n_pos>0) cout <<"problem for n_pos " <<endl; 
 	if(n_pos>0) free(H_P);
 	if (freedom != "free"){
-if (r==NULL) cout <<"problem for r" << endl; 
 		 free(r);
 	}
 	free(H_u); free(H_phi);
@@ -74,11 +73,10 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	MASK=H_MASK;  
 	phi =H_phi;
 	u = H_u;
-	G1 = (Real*) malloc(M*sizeof(Real));
-	phi_side = (Real*) malloc(M*sizeof(Real));
+	G1 = (Real*)malloc(M*sizeof(Real));
+	phi_side = (Real*)malloc(M*sizeof(Real));
 	Zero(G1,M);
 	Zero(phi_side,M);
-	 	
 #endif
 }
 bool Segment::PrepareForCalculations(int* KSAM) {

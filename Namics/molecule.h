@@ -25,6 +25,7 @@ public:
 	int var_al_nr;
 	Real Mu; 
 	Real theta;
+	Real theta_range,n_range;
 	Real thata_in_range;
 	Real phibulk;
 	Real fraction(int); 
@@ -73,6 +74,7 @@ public:
 	Real *H_gn;
 	Real *mask1;
 	Real *mask2;
+	int *R_mask;
 	Real *gn;
 	Real *g1;
 	Real *phitot;

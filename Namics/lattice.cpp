@@ -23,7 +23,8 @@ if (debug) cout <<"lattice destructor " << endl;
 }
 
 void Lattice::DeAllocateMemory(void) {
-	if ((gradients==1 || gradients==2) && geometry !="planar" ) {
+if (debug) cout <<"DeAllocateMemory in lattice " << endl; 
+	if (all_lattice) {
 		free(lambda_1);
 		free(lambda1);
 		free(lambda0); 
@@ -32,6 +33,7 @@ void Lattice::DeAllocateMemory(void) {
 #ifdef CUDA
 	//if (gradients==3) X=(Real*)AllonDev(M);
 	if (gradients==3) cudaFree(X);
+	all_lattice=false;
 #endif
 }
 
@@ -42,7 +44,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	int i,j;
 	PutM();
 	DeAllocateMemory();
-	if (geometry!="planar" && gradients<3) {
+	if (geometry !="planar" && gradients<3) {
 		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
 		lambda_1=(Real*)malloc(M*sizeof(Real)); Zero(lambda_1,M);
 		lambda1=(Real*)malloc(M*sizeof(Real)); Zero(lambda1,M);
@@ -90,6 +92,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 #ifdef CUDA
 		if (gradients==3) X=(Real*)AllonDev(M);
 #endif
+		all_lattice=(gradients<2 && geometry!="planar");
 }
 
 bool Lattice::PutM() {
@@ -112,7 +115,7 @@ bool Lattice::PutM() {
 			break;
 		case 2: 
 			if (geometry=="cylindrical") {volume = MY*PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));} else volume = MX*MY; 
-			JX=(MX+2); JY=1; M=(MX+2)*(MY+2); 
+			JX=(MY+2); JY=1; M=(MX+2)*(MY+2); 
 			//if (BC[0]=="surface") BX1=0;
 			if (BC[0]=="mirror") BX1=1;
 			if (BC[0]=="periodic") BX1=MX;
@@ -128,7 +131,7 @@ bool Lattice::PutM() {
 			break;
 		case 3: 
 			volume = MX*MY*MZ;
-			JX=(MX+2)*(MY+2); JY=(MY+2); M = (MX+2)*(MY+2)*(MZ+2);   
+			JX=(MZ+2)*(MY+2); JY=(MZ+2); M = (MX+2)*(MY+2)*(MZ+2);   
 
 			//if (BC[0]=="surface") BX1=0;
 			if (BC[0]=="mirror") BX1=1;
@@ -167,6 +170,7 @@ bool Lattice::PutSub_box(int mx_, int my_, int mz_,int n_box_) {
 bool Lattice::CheckInput(int start) {
 if (debug) cout <<"CheckInput in lattice " << endl; 
 	bool success;
+	all_lattice=false;
 	MX=MY=MZ=0;
 	sub_box_on=0;
 	mx.push_back(0); my.push_back(0); mz.push_back(0); jx.push_back(0); jy.push_back(0); m.push_back(0); n_box.push_back(0);
@@ -323,7 +327,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				}
 
 				if (geometry=="cylindrical") {volume = MY*PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));}
-				JX=(MX+2); JY=1; M=(MX+2)*(MY+2); 
+				JX=(MY+2); JY=1; M=(MX+2)*(MY+2); 
 
 				options.clear(); 
 				options.push_back("mirror"); //options.push_back("mirror_2"); 
@@ -394,7 +398,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (!In[0]->Get_int(GetValue("n_layers_y"),MY,1,1e6,"In 'lat' the parameter 'n_layers_y' is required")) {success=false;}
 				if (!In[0]->Get_int(GetValue("n_layers_z"),MZ,1,1e6,"In 'lat' the parameter 'n_layers_z' is required")) {success=false;}
 				volume=MX*MY*MZ;
-				JX=(MX+2)*(MY+2); JY=(MY+2); M = (MX+2)*(MY+2)*(MZ+2);   
+				JX=(MZ+2)*(MY+2); JY=(MZ+2); M = (MX+2)*(MY+2)*(MZ+2);   
 				
 				options.clear(); 
 				options.push_back("mirror"); //options.push_back("mirror_2"); 
@@ -950,8 +954,7 @@ if (debug) cout <<" Side in lattice " << endl;
 					AddTimes(X_side,X+JX,lambda1,M-JX);
 					Norm(X_side,lambda,M);
 					
-				} else {
-cout <<"side is not correctly implemented " << endl; 
+				} else { cout <<"Warning: In FCC the function side is not correctly implemented" << endl; 
 					SIDE=new Real[M];
 					Zero(SIDE,M);
 					Add(SIDE,X+1,M-1);      
@@ -1039,7 +1042,7 @@ if (debug) cout <<" remove_bounds (Real) in lattice " << endl;
 				X[x*JX+0] = 0;
 				X[x*JX+MY+1]=0;
 			}
-			for (y=0; y<MY+2; y++) {
+			for (y=1; y<MY+1; y++) {
 				X[0+y] = 0;
 				X[(MX+1)*JX+y]=0;
 			}
@@ -1073,7 +1076,7 @@ if (debug) cout <<" remove_bounds (int) in lattice " << endl;
 				X[x*JX+0] =0;
 				X[x*JX+MY+1]=0;
 			}
-			for (y=0; y<MY+2; y++) {
+			for (y=1; y<MY+1; y++) {
 				X[0+y] = 0;
 				X[(MX+1)*JX+y]=0;
 			}
@@ -1636,14 +1639,14 @@ if (debug) cout <<"ReadRangeFile in lattice " << endl;
 bool Lattice::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {
 if (debug) cout <<"CreateMask for lattice " + name << endl;
 	bool success=true;
-	int x,y,z;
+	int x,y,z; int i;
 	switch(gradients) {
 		case 1:
 			H_Zero(H_MASK,M);
 			if (block) {
 				for (x=r[0]; x<r[1]+1; x++)  H_MASK[x]=1;
 			} else {
-				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
+				for (i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}
 			break;
 		case 2:
@@ -1651,15 +1654,15 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 			if (block) {
 				for (x=r[0]; x<r[2]+1; x++) for (y=r[1]; y<r[3]+1; y++) H_MASK[x*JX+y]=1;
 			} else {
-				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
+				for (i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}
 			break;
 		case 3: 	
 			H_Zero(H_MASK,M);
 			if (block) {
-				for (x=r[1]; x<r[3]+1; x++) for (y=r[1]; y<r[4]+1; y++) for (z=r[2]; z<r[5]+1; z++) H_MASK[x*JX+y*JY+z]=1;
+				for (x=r[0]; x<r[3]+1; x++) for (y=r[1]; y<r[4]+1; y++) for (z=r[2]; z<r[5]+1; z++) H_MASK[x*JX+y*JY+z]=1;
 			} else {
-				for (int i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
+				for (i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}
 			break;
 		default:
@@ -1766,6 +1769,12 @@ void Lattice::ComputeGN(Real* GN, Real* Gg_f, int* H_Bx, int* H_By, int* H_Bz, i
 #ifdef CUDA //this transfer can go away when all is on GPU.
 	TransferDataToHost(H_GN,GN,n_box);
 #endif
+}
+
+Real Lattice::ComputeTheta(Real* phi) {
+	Real result=0;
+	if (gradients<3 && geometry !="planar") Dot(result,phi,L,M); else Sum(result,phi,M); 
+	return result;
 }
 
 bool Lattice::ReadGuess(string filename, Real *x ,string &method, vector<string> &monlist, bool &charged, int &mx, int &my, int &mz, int readx) {

@@ -1,5 +1,5 @@
 #include "molecule.h" 
-#include <sstream>   
+
 
 Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
 	In=In_; Seg=Seg_; name=name_;  Lat=Lat_; 
@@ -10,7 +10,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("phibulk");
 	KEYS.push_back("n");
 	KEYS.push_back("save_memory"); 
-	KEYS.push_back("range_restricted");
+	KEYS.push_back("restricted_range");
 }
 
 Molecule::~Molecule() {
@@ -255,10 +255,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			if (!Decomposition(GetValue("composition"))) {cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;}
 
 		}
-		if (GetValue("range_restricted").size()>0) {
-			if (GetValue("freedom")!="restricted_range") cout <<"For mol '" + name + "' freedom is not set to 'restricted_range' and therefore  the value of 'range_restricted' is ignored" << endl;   
+		if (GetValue("restricted_range").size()>0) {
+			if (GetValue("freedom")!="range_restricted") cout <<"For mol '" + name + "' freedom is not set to 'range_restricted' and therefore  the value of 'restricted_range' is ignored" << endl;   
 		}
-	
 		if ( IsClamped()) {
 			freedom="clamped"; 
 			if (GetValue("freedom").size() > 0) freedom = In[0]->Get_string(GetValue("freedom"),"clamped"); 
@@ -319,15 +318,15 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						} 
 					}
 				}
-				if (freedom == "restricted" ) {
+				if (freedom == "restricted" || freedom=="range_restricted") {
 					if (GetValue("phibulk").size()>0) {
-						cout << "In mol " + name + ", the setting of 'freedom = restricted', can not not be combined with 'phibulk'  use 'theta' or 'n'  instead." << endl; success=false;  
+						cout << "In mol " + name + ", the setting of 'freedom = restricted' or 'freedom = range_restricted', can not not be combined with 'phibulk'  use 'theta' or 'n'  instead." << endl; success=false;  
 					} else {
 						if (GetValue("theta").size() ==0 && GetValue("n").size()==0) {
-							cout <<"In mol " + name + ", the setting 'freedom = restricted' should be combined with a value for 'theta' or 'n'; do not use both settings! "<<endl; success=false;
+							cout <<"In mol " + name + ", the setting 'freedom = restricted' or 'freedom = range_restricted',should be combined with a value for 'theta' or 'n'; do not use both settings! "<<endl; success=false;
 						} else {
 							if (GetValue("theta").size() >0 && GetValue("n").size()>0) {
-							cout <<"In mol " + name + ", the setting 'freedom = restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
+							cout <<"In mol " + name + ", the setting 'freedom = restricted' of 'freedom = range_restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
 							} else {
 
 								if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*Lat[0]->volume);theta=n*chainlength;}
@@ -340,20 +339,27 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						} 
 					}
 				}
-				if (freedom =="restricted_range" ) {
-					if (GetValue("range_restricted").size() ==0) {
+				if (freedom =="range_restricted" ) {
+					if (GetValue("restricted_range").size() ==0) {
 						success=false; 
-						cout<<"In mol '" + name + "', freedom is set to 'restricted_range'. In this case we expect the setting for 'range_restricted'. This setting was not found. Problem terminated. " << endl; 
+						cout<<"In mol '" + name + "', freedom is set to 'range_restricted'. In this case we expect the setting for 'restricted_range'. This setting was not found. Problem terminated. " << endl; 
 					} else { //read range;
+						int *HP=NULL;
+						int M=Lat[0]->M;
+						int npos=0;
+						bool block;
+						R_mask=(int*)malloc(M*sizeof(int)); 
+						string s="restricted_range";
+						int *r=(int*) malloc(6*sizeof(int));
+						success=Lat[0]->ReadRange(r,HP,npos,block,GetValue("restricted_range"),name,s);
+						Lat[0]->CreateMASK(R_mask,r,HP,npos,block);
+						theta_range = theta;
+						n_range = theta_range/chainlength;
+						free(r);
 					}
-					if (GetValue("theta").size() ==0) {
-						success=false; 
-						cout<<"In mol '" + name + "' freedom is set to 'restricted_range'. Value for theta (for the restricted range) is expected. This setting was not found. Problem terminated. " << endl; 
-					} else {
-						//read theta;
-					}
-					cout <<"restricted_range not yet implemented " << endl; 
-					success=false; 
+
+					//cout <<"restricted_range not yet implemented " << endl; 
+					//success=false; 
 				}
  
 			} else {
@@ -691,7 +697,7 @@ if (debug) cout <<"GetAlNr for Mol " + name << endl;
 }
 
 int Molecule::GetMonNr(string s){
-if (debug) cout <<"GetMonNr for Mol " + name << endl;
+if (debug) cout <<"GetMonNr for Mon " + name << endl;
 	int n_segments=In[0]->MonList.size();
 	int found=-1;
 	int i=0;
@@ -827,6 +833,7 @@ if (debug) cout <<"Molecule:: Interpret" << endl;
 		} else {
 			int k=0;
 			int length=open.size();
+ 
 			while (k<length) {
 				string segname=sub[i].substr(open[k]+1,close[k]-open[k]-1); 
 				int mnr=GetMonNr(segname); 
@@ -851,7 +858,7 @@ if (debug) cout <<"Molecule:: Interpret" << endl;
 					last_b[generation]=mon_nr.size()-1;
 					for (int i=0; i<AlListLength; i++) {if (Al[i]->active) Al[i]->frag.push_back(1); else Al[i]->frag.push_back(0);}
 				}
-				int nn = In[0]->Get_int(sub[i].substr(close[k]+1,s.size()-close[k]),0); 
+				int nn = In[0]->Get_int(sub[i].substr(close[k]+1,s.size()-close[k]-1),0); 
 				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity " << endl; success=false;
 				} else {
 					n_mon.push_back(nn); 

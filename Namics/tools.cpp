@@ -170,11 +170,11 @@ __global__ void boltzmann(Real *P, Real *A, int M)   {
 }
 __global__ void overwritec(Real* P, int Mask, Real X,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) if (Mask[idx]==1) P[idx] = X ;
+	if (idx<M) if (Mask[idx]==1) P[idx] = X ; else P[idx]=0;
 }
 __global__ void overwritea(Real* P, int Mask, Real* A,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) if (Mask[idx]==1) P[idx] = A[idx] ;
+	if (idx<M) if (Mask[idx]==1) P[idx] = A[idx] ; else P[idx]=0;
 }
 
 __global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
@@ -866,7 +866,7 @@ void OverwriteC(Real *P, int *Mask, Real C, int M)   {
 }
 #else
 void OverwriteC(Real *P, int *Mask,Real C,int M) {
-	for (int i=0; i<M; i++) if (Mask[i]==1) P[i]=C;
+	for (int i=0; i<M; i++) if (Mask[i]==1) P[i]=C; else P[i]=0;
 }
 #endif
 #ifdef CUDA
@@ -877,7 +877,7 @@ void OverwriteA(Real *P, int *Mask, Real* A, int M)   {
 }
 #else
 void OverwriteA(Real *P, int *Mask,Real* A,int M) {
-	for (int i=0; i<M; i++) if (Mask[i]==1) P[i]=A[i];
+	for (int i=0; i<M; i++) if (Mask[i]==1) P[i]=A[i]; else P[i]=0;
 }
 #endif
 

@@ -23,6 +23,7 @@ public:
 	vector<int> n_box; 
 	int BX1,BY1,BZ1,BXM,BYM,BZM;
 	int JX,JY,M;
+	bool all_lattice;
 	int sub_box_on;
 	int volume;
 	int gradients; 
@@ -92,6 +93,7 @@ public:
 	void DistributeG1(Real*, Real*, int*, int*, int*, int);
 	void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int);
 	void ComputeGN(Real*, Real*, int*, int*, int*, int*, int*, int*, int, int);
+	Real ComputeTheta(Real*);
 	void UpdateEE(Real*, Real*, Real*); 
 	void UpdatePsi(Real*, Real*, Real* , Real*, int*); 
 	void UpdateQ(Real*,Real*,Real*,Real*,int*);

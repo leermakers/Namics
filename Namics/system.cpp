@@ -570,7 +570,6 @@ if(debug) cout <<"ComputePhis in system" << endl;
 		}
 		if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {
 			if (Mol[i]->GN>0) norm=Mol[i]->n/Mol[i]->GN; else {norm=0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
-	
 		}
 		if (Mol[i]->IsClamped() ) {
 			norm=1;
@@ -587,7 +586,33 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]-
 }
 			k++;
 		}
-
+		if (Mol[i]->freedom=="range_restricted") {
+			Real *phit=Mol[i]->phitot; Zero(phit,M);
+			int k=0; 
+			while (k<length) {
+				Real *phi=Mol[i]->phi+k*M;
+				Add(phit,phi,M);
+				k++;
+			}
+			OverwriteA(phit,Mol[i]->R_mask,phit,M);
+			//Lat[0]->remove_bounds(phit);
+			Real theta=Lat[0]->ComputeTheta(phit);
+			norm=Mol[i]->theta_range/theta;
+			Mol[i]->norm = norm;
+			Mol[i]->phibulk=Mol[i]->chainlength*norm; totphibulk +=Mol[i]->phibulk;
+			Mol[i]->n=norm*Mol[i]->GN;
+			Mol[i]->theta=Mol[i]->n*Mol[i]->chainlength;
+			Zero(phit,M);
+			k=0;
+			while (k<length) {
+				Real *phi=Mol[i]->phi+k*M;
+				Norm(phi,norm,M); 
+if (!debug) {
+Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]->MolMonList[k] << ": " << sum << endl; 
+}
+				k++;
+			}
+		}
 	}
 
 	if (charged) {

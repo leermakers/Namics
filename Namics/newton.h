@@ -122,8 +122,8 @@ public:
 	bool Guess(Real*,string,vector<string>,bool,int,int,int);
 	string GetNewtonInfo(int&);
 	bool Solve(bool);
-	bool Solve(int,int,int);
-	bool SuperIterate(int,int,int);
+	bool Solve(int,int,int,int);
+	bool SuperIterate(int,int,int,int);
 	void DeAllocateMemory();
 	void AllocateMemory(); 
 	bool PrepareForCalculations(void);

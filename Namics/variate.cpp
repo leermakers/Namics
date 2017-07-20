@@ -69,6 +69,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 		targeting =-1;
 		searching=-1;
 		eq_to_solvating=-1;
+		eq_to_mu =-1;
 		ets_nr=-1;
 		scan_nr=0;
 		search_nr=0;
@@ -125,10 +126,22 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 				} else {
 					if (GetValue("scan").size()==0 && GetValue("search").size() ==0) {
 						if (GetValue("mu").size()>0) {
-							R_target=In[0]->Get_Real(GetValue("mu"),0); targeting=2; target_nr=pos;
-							if (!Mol[pos]->PutVarInfo("target","mu",R_target)) {
-								success=false; cout <<"In var:"+name+":mu, Target value rejected" << endl; 
+							string s = GetValue("mu");
+							vector<string>sub_;
+							In[0]->split(s,'-',sub_);
+							if (sub_[0]==s) {
+								R_target=In[0]->Get_Real(GetValue("mu"),0); targeting=2; target_nr=pos;
+								if (!Mol[pos]->PutVarInfo("target","mu",R_target)) {
+									success=false; cout <<"In var:"+name+":mu, Target value rejected" << endl; 
+								}
+							} else {
+//cout <<"punt 1 "<< endl; 
+								target_nr = pos; R_target=12345.0;
+								if (sub_[0]!="mol") {success=false; cout <<"in var:"+name+":mu, target should be specified as mol-'name'. " << endl; }
+								if (!In[0]->InSet(In[0]->MolList,eq_to_mu,sub_[1])) { success=false; cout <<"In 'var:"+name+":mu: mol-'name', 'name' is not valid mol-name. " << endl; }
+								if (success) Mol[pos]->PutVarInfo("target","mu",R_target); 
 							}
+//cout <<"punt 2 " << endl; 
 						}
 						if (GetValue("theta").size()>0) {
 							if (R_target ==-123.0) {
@@ -323,6 +336,7 @@ void Variate::PutValue(Real X) {
 			break;
 	}
 	if (ets_nr>-1) {Mol[ets_nr]->theta=X; Mol[ets_nr]->n=X/Mol[ets_nr]->chainlength;}
+	if (eq_to_mu>-1) {Mol[eq_to_mu]->theta=X; Mol[eq_to_mu]->n=X/Mol[eq_to_mu]->chainlength;}
 }
 Real Variate::GetValue(void) {
 	Real X=0;
@@ -334,6 +348,7 @@ Real Variate::GetValue(void) {
 			X=Seg[search_nr]->GetValue();
 			break;
 		case 2:
+			if (eq_to_mu>-1) X=Mol[eq_to_mu]->GetValue(); else
 			X=Mol[search_nr]->GetValue();
 			break;
 		case 3:
@@ -343,12 +358,14 @@ Real Variate::GetValue(void) {
 			break;
 	}
 	if (ets_nr>-1) X=Mol[ets_nr]->theta;
+	if (eq_to_mu>-1) X=Mol[eq_to_mu]->theta;
 	return X;
 }
 
 Real Variate::GetError(void) {
 	Real X=0;
 	switch(targeting) {
+
 		case 0:
 			X=Sys[target_nr]->GetError();
 			break;
@@ -365,6 +382,7 @@ Real Variate::GetError(void) {
 			break;
 	}
 	if (ets_nr>-1) X=-(Mol[ets_nr]->theta/Sys[0]->Mol[Sys[0]->solvent]->theta-1.0);
+	if (eq_to_mu>-1) X=(Mol[eq_to_mu]->Mu-Mol[target_nr]->Mu)*-1.0;
 	return X;
 }
 

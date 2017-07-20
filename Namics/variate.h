@@ -27,6 +27,7 @@ public:
 	int searching;
 	int targeting;
 	int eq_to_solvating;
+	int eq_to_mu;
 	int ets_nr;
 	int steps;
 	Real step;

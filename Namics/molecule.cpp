@@ -452,7 +452,7 @@ if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 				return false;
 			}
 		}
-		if (Var_target_=="mu") Var_target=3;
+		if (Var_target_=="mu") {Var_target=3; if (Var_target_value==12345.0) Var_target_value=0;}
 		if (Var_target==-1) {
 			cout <<"In var: molecule target should be selected from {theta, n, phibulk, mu}. " << endl;  
 			success = false;
@@ -947,15 +947,34 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		}
 	}
 	if (!ExpandBrackets(s)) success=false;
-
-	//test dendrimer
-	//test asymmetric dendrimer
-	//test ring
-	//test comb
-	//test star
+	
+	sub.clear();
+	In[0]->split(s,'@',sub);
+	if (s!=sub[0]) {
+		bool keyfound=false;
+		vector<string>SUB;
+		In[0]->split(sub[1],'(',SUB);
+		if (SUB[0]=="dend") {MolType=dendrimer; keyfound=true;}
+		if (SUB[0]=="asym_dend") {MolType=asym_dendrimer; keyfound=true;}
+		if (SUB[0]=="star") {MolType=star; keyfound=true;}
+		if (SUB[0]=="comb") {MolType=comb; keyfound=true;}
+		if (SUB[0]=="ring") {MolType=ring; keyfound=true;}
+		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @asym_den, @star, @comb, @ring. Problem terminated "<< endl ;
+			return false;	
+		 }	
+	}
 
 	if (!In[0]->EvenSquareBrackets(s,open,close)) {cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl; success=false;  }
-	if (open.size()>0) MolType=branched;
+
+	if (open.size()>0) {
+		if (MolType==linear) { //overwrite default.
+			MolType=branched; 
+		} else {
+			success=false;
+			cout <<" In 'composition' you can not combine special keywords such as 'dend, asym_dend, star, comb or ring' with branched compositions. This implies that square brackets are not allowed. " <<endl ;
+			return success;
+		}
+	}
 
 	int generation=0;
 	int pos=0;
@@ -967,10 +986,31 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	last_s.push_back(-1);
 	first_b.push_back(-1);
 	last_b.push_back(-1);
-	GenerateTree(s,generation,pos,open,close); 
+	
+	switch(MolType) {
+		case linear:
+			GenerateTree(s,generation,pos,open,close); 
+			break;
+		case branched:
+			GenerateTree(s,generation,pos,open,close); 
+			break;
+		case star:
+			cout <<"star polymers not implemented" << endl;
+			break;
+		case dendrimer: 
+			cout <<"dendrimer polymers not implemented" <<endl;
+			break;
+		case asym_dendrimer:
+			cout <<"asym_dendrimer polymers not implemented" << endl; 
+			break;
+		case ring:
+			cout <<"ring polymers not implemented" << endl; 	
+			break;	
+		default:
+			break;
+	}
 
-	//invert nubers;
-	if (MolType==branched) {
+	if (MolType==branched) { //invert numbers;
 		int g_length=first_s.size();
 		int length = n_mon.size(); 
 		int ss;

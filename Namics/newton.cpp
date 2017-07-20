@@ -1160,9 +1160,9 @@ if(debug) cout <<"Solve in  Newton " << endl;
 	return success; 
 }
 
-bool Newton::Solve(int search, int target, int ets) {
+bool Newton::Solve(int search, int target, int ets, int etm) {
 if (debug) cout <<"Solve towards superiteration " << endl; 
-	return SuperIterate(search,target,ets);
+	return SuperIterate(search,target,ets,etm);
 }
 
 
@@ -1263,12 +1263,12 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	return it<iterationlimit+1;
 } 
 
-bool Newton::SuperIterate(int search, int target,int ets) {
+bool Newton::SuperIterate(int search, int target,int ets,int etm) {
 if(debug) cout <<"SuperIteration in  Newton " << endl;
 	int iv=1; 
 	int m=10;
 	Real* x = (Real*)malloc(iv*sizeof(Real)); 
-	if (ets==-1) x[0] =Var[search]->GetValue(); else  x[0] = Var[ets]->GetValue();
+	if (ets==-1 && etm==-1) x[0] =Var[search]->GetValue(); else {if (ets>-1) x[0] = Var[ets]->GetValue(); else x[0]=Var[etm]->GetValue();}
 	Real* x_x0 = (Real*)malloc(m*sizeof(Real));
 	Real* xR = (Real*)malloc(m*sizeof(Real));
 	Real* g = (Real*)malloc(iv*sizeof(Real));	
@@ -1283,8 +1283,8 @@ if(debug) cout <<"SuperIteration in  Newton " << endl;
 	int it=0; 
 	int k_diis=1; 
 	int k=0;
-	if (ets==-1 ||  search<0) Solve(false); else SuperIterate(search,target,-1);
-	if (ets==-1) g[0]=Var[target]->GetError(); else g[0]=Var[ets]->GetError();
+	if (ets==-1 ||  search<0 || etm>-1) Solve(false); else SuperIterate(search,target,-1,-1);
+	if (ets==-1 && etm==-1) g[0]=Var[target]->GetError(); else {if (ets>-1) g[0]=Var[ets]->GetError(); else g[0]=Var[etm]->GetError();}
 	YplusisCtimesX(x,g,delta_max,iv);
 	YisAminB(x_x0,x,x0,iv);
 	Cp(xR,x,iv);
@@ -1295,9 +1295,9 @@ if(debug) cout <<"SuperIteration in  Newton " << endl;
 	while (residual > tol && it < iterationlimit) {
 		it++;
 		Cp(x0,x,iv);
-		if (ets==-1) Var[search]->PutValue(x[0]); else Var[ets]->PutValue(x[0]);
-		if (ets==-1||search<0) Solve(false); else SuperIterate(search,target,-1);
-		if (ets==-1) g[0]=Var[target]->GetError(); else g[0]=Var[ets]->GetError();
+		if (ets==-1 && etm==-1) Var[search]->PutValue(x[0]); else {if (ets>-1) Var[ets]->PutValue(x[0]); else Var[etm]->PutValue(x[0]);}
+		if (ets==-1||search<0 || etm>-1) Solve(false); else SuperIterate(search,target,-1,-1);
+		if (ets==-1 && etm==-1) g[0]=Var[target]->GetError(); else {if (ets>-1) g[0]=Var[ets]->GetError(); else g[0]=Var[etm]->GetError();}
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(x,g,-delta_max,iv);
 		Cp(xR+k,x,1); YisAminB(x_x0+k,x,x0,iv);
@@ -1310,15 +1310,7 @@ if(debug) cout <<"SuperIteration in  Newton " << endl;
 	}
 	Message(super_e_info,super_s_info,it,iterationlimit,residual,tol,"super"); 
 
-	//delete [] x;
-	//delete [] x_x0;
-	//delete [] xR;
-	//delete [] g;
-	//delete [] x0;
-	//delete [] Aij;
-	//delete [] Apij;
-	//delete [] Ci;
-free(x); free(x_x0); free(xR); free(g); free(x0); free(Aij); free(Apij); free(Ci);
+	free(x); free(x_x0); free(xR); free(g); free(x0); free(Aij); free(Apij); free(Ci);
 	return it<iterationlimit+1;
 } 
 

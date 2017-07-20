@@ -14,7 +14,7 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
-#include <f2c.h>
+//#include <f2c.h>
 
 #include <iomanip> 
 using namespace std;
@@ -41,7 +41,7 @@ extern bool debug;
 //extern Real factor;
 #endif
 
-enum MoleculeType {monomer, linear, branched};
+enum MoleculeType {monomer, linear, branched, dendrimer, star, comb, asym_dendrimer, ring};
 
 #endif
 /*
@@ -67,7 +67,7 @@ enum MoleculeType {monomer, linear, branched};
     //#include <lapacke.h>
     #include <clapack.h>
 #elif __unix__ // all unices not caught above
-    #include <clapack.h>
+    #include <clapack.h> 
 
 #elif defined(_POSIX_VERSION)
     // POSIX

@@ -19,7 +19,8 @@ endif
 
 	INC_DIR = /usr/local/include
 	LIB_DIR = /usr/local/lib
-	MATRIXLIB = -llapack -lblas -lf2c -lm -lpthread
+#	MATRIXLIB = -llapack -lblas -lf2c -lm -lpthread
+	MATRIXLIB = -lm -lpthread
 
 
 CPPFLAGS = -I$(INC_DIR) $(DEBUG_STR) -Wall

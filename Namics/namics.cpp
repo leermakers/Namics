@@ -95,8 +95,9 @@ int main(int argc, char *argv[]) {
 		int n_search=0;
 		int n_scan=0;
 		int n_ets=0;
+		int n_etm=0;
 		int n_target=0;
-		int search_nr=-1,scan_nr=-1,target_nr=-1,ets_nr=-1;
+		int search_nr=-1,scan_nr=-1,target_nr=-1,ets_nr=-1,etm_nr=-1;
 		for (int k=0; k<n_var; k++) {
 			Var.push_back(new Variate(In,Lat,Seg,Mol,Sys,In[0]->VarList[k]));
 			if (!Var[k]->CheckInput(start)) {return 0;}
@@ -105,8 +106,10 @@ int main(int argc, char *argv[]) {
 			if (Var[k]->searching>-1) {search_nr=k; n_search++;} 
 			if (Var[k]->targeting>-1) {target_nr=k; n_target++;} 
 			if (Var[k]->eq_to_solvating>-1) {ets_nr=k; n_ets++;}
+			if (Var[k]->eq_to_mu>-1) {etm_nr=k; n_etm++;}
 		}
-		if (n_ets>1) {cout <<"too many equate_to_solvent'es in var statements. The lmit is 1 " << endl; return 0;}
+		if (n_etm>1) {cout <<"too many equate_to_mu's in var statements. The limit is 1 " << endl; return 0;}
+		if (n_ets>1) {cout <<"too many equate_to_solvent's in var statements. The liZZmit is 1 " << endl; return 0;}
 		if (n_search>1) {cout << "too many 'search'es in var statements. The limit is 1 " << endl; return 0;}
 		if (n_scan>1) {cout << "too man 'scan's in var statements. The limit is 1 " << endl; return 0;}
 		if (n_target>1) {cout << "too many 'target's in var statements. The limit is 1 " << endl; return 0;}
@@ -150,8 +153,8 @@ int main(int argc, char *argv[]) {
 			New[0]->AllocateMemory();
 			New[0]->Guess(X,METHOD,MONLIST,CHARGED,MX,MY,MZ);
 			
-			if (search_nr<0 && ets_nr < 0 ) New[0]->Solve(true); else {
-				New[0]->Solve(search_nr,target_nr,ets_nr);
+			if (search_nr<0 && ets_nr < 0 && etm_nr <0) New[0]->Solve(true); else {
+				New[0]->Solve(search_nr,target_nr,ets_nr,etm_nr);
 			}
  
 			Lat[0]->PushOutput();

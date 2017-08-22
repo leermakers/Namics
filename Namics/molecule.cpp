@@ -714,44 +714,42 @@ if (debug) cout <<"Molecule:: ExpandAlias" << endl;
 	vector<int> open;
 	vector<int> close;
 	int length_al=sub.size();
-	for (int i=0; i<length_al; i++) {
-		open.clear(); close.clear();
+	int i=0;
+	while (i<length_al-1) {
 		string sA;
-		In[0]->EvenBrackets(sub[i],open,close); 
-		if (open.size() ==0) sA=sub[i]; else sA=sub[i].substr(0,open[0]); 
-		if (i==0 && sA=="") { //the 'composition' does not start with an alias. This should not be a problem.
+		sA=sub[i+1];
+		if (!In[0]->InSet(In[0]->AliasList,sA)) {
+			cout <<"In composition of mol '" + name + "' Alias '" + sA + "' was not found"<<endl; success=false;
 		} else {
-			if (!In[0]->InSet(In[0]->AliasList,sA)) {
-				cout <<"In composition of mol '" + name + "' Alias '" + sA + "' was not found"<<endl; success=false;
+			int Alnr =GetAlNr(sA);
+			if (Alnr<0) {
+				Al.push_back(new Alias(In,Lat,sA));
+				Alnr=Al.size();
+				if (!Al[Alnr-1]->CheckInput(start)) {cout <<"Alias '" + sA + "' in composition not recognised " << endl; return false;} 
+				MolAlList.push_back(Alnr);
+			}
+			Alnr =GetAlNr(sA);
+			int iv = Al[Alnr]->value;
+			string al_comp=Al[Alnr]->composition;
+			if (iv < 0) {
+				string si;
+				stringstream sstm;
+				sstm << Alnr;
+				si = sstm.str();
+				string ssub="";
+				sub[i+1]=":"+si+":"+al_comp+":"+si+":";
+												
 			} else {
-				int Alnr =GetAlNr(sA);
-				if (Alnr<0) {
-					Al.push_back(new Alias(In,Lat,sA));
-					Alnr=Al.size();
-					if (!Al[Alnr-1]->CheckInput(start)) {return false;} 
-					MolAlList.push_back(Alnr);
-				}
-				Alnr =GetAlNr(sA);
-				int iv = Al[Alnr]->value;
-				string al_comp=Al[Alnr]->composition;
-				if (iv < 0) {
-					string si;
-					stringstream sstm;
-					sstm << Alnr;
-					si = sstm.str();
-					string ssub="";
-					if (open[0]!=0) ssub=sub[i].substr(open[0]);
-					sub[i]=":"+si+":"+al_comp+":"+si+":"+ssub;
-				} else {
-					string sss;
-					stringstream sstm;
-					sstm << iv;
-					sss = sstm.str();
-					sub[i]=sss+sub[i].substr(open[0]);
-				}
-			} 
-		}		
+				string sss;
+				stringstream sstm;
+				sstm << iv;
+				sss = sstm.str();
+				sub[i+1]=sss;			
+			}
+		}
+		i+=2;
 	}
+
 	string ss;
 	for (int i=0; i<length_al; i++) {
 		ss=ss.append(sub[i]);
@@ -759,6 +757,8 @@ if (debug) cout <<"Molecule:: ExpandAlias" << endl;
 	s=ss; 
 	return success; 
 }
+
+
 
 bool Molecule::ExpandBrackets(string &s) {
 if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
@@ -775,8 +775,8 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 		int length=open.size();
 		int pos_open;
 		int pos_close;
-		int pos_low=0;
-		int i_open=0; pos_open=open[0]; 
+		int pos_low=0; 
+		int i_open=0; {pos_open=open[0]; pos_low=open[0];}
 		int i_close=0; pos_close=close[0];
 		if (pos_open > pos_close) {cout << "Brackets open in composition not correct" << endl; return false;}
 		while (i_open < length-1 && done) {
@@ -897,7 +897,6 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 		if (pos_close<pos_open) {
 			ss=s.substr(pos,pos_close-pos);
 			if (ss.substr(0,1)=="[") {
-//cout <<"string ss IN ][ " << ss << "and new_generation " << new_generation << endl; 
 				pos=pos+1; 
 				first_s.push_back(-1);
 				last_s.push_back(-1);
@@ -907,13 +906,11 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 				pos_close=pos_open+1;
 			} else {
 				pos=pos_close;
-//cout <<"go to interpret ] " << ss << " and generation " << generation << " pos " << pos <<  endl;
 				Interpret(ss,generation);
 			}
 		} else {
 			ss=s.substr(pos,pos_open-pos);
 			pos=pos_open;
-//cout <<"go to interpret [ " << ss << " and generation " << generation << " pos " << pos << " new generation " << newgeneration << endl; 
 			Interpret(ss,generation);
 			first_s.push_back(-1);
 			last_s.push_back(-1);
@@ -925,9 +922,16 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 	return success; 
 }
 
+bool Molecule::GenerateDend(string s, int generation) {
+if (debug) cout <<"Molecule:: GenerateDend" << endl;
+return true; 
+}
+
+
 
 bool Molecule::Decomposition(string s){
 if (debug) cout <<"Decomposition for Mol " + name << endl;
+
 	bool success = true;
 	bool aliases = true;
 	MolType=linear;//default; 
@@ -935,10 +939,35 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	vector<int> open;
 	vector<int> close;
 	vector<string>sub;
+	sub.clear(); 
+	In[0]->split(s,'@',sub);
+ 
+	if (s!=sub[0]) {
+		bool keyfound=false;
+		vector<string>SUB;
+		In[0]->split(sub[1],'(',SUB);
+		if (SUB[0]=="dend") {
+			MolType=dendrimer; keyfound=true;
+			s=s.substr(6,s.length()-7);
+		}
+		if (SUB[0]=="comb") {
+			MolType=comb; keyfound=true;
+			s=s.substr(6,s.length()-7);
+		}
+		if (SUB[0]=="ring") {
+			MolType=ring; keyfound=true;
+			s=s.substr(6,s.length()-7);
+		}
+		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb, @ring. Problem terminated "<< endl ;
+			return false;	
+		 }	
+	}
+
 	while (aliases && success) {
 		loopnr++;
 		sub.clear();
 		In[0]->split(s,'#',sub);
+		if (sub.size()%2!=1) {cout << " Alias in composition should be bracketed on both sides by '#'. For example, (A)10#alias_name#(B)3, when e.g., 'alias : alias_name : value : (X)5' is defined, so that you oubtain (A)10(X)5(B)3 " << endl; success=false; }
 		aliases=(s!=sub[0]);
 		if (aliases) ExpandAlias(sub,s);
 		if (loopnr == 20) {
@@ -946,65 +975,209 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			success=false; 
 		}
 	}
-	if (!ExpandBrackets(s)) success=false;
-	
 	sub.clear();
-	In[0]->split(s,'@',sub);
-	if (s!=sub[0]) {
-		bool keyfound=false;
-		vector<string>SUB;
-		In[0]->split(sub[1],'(',SUB);
-		if (SUB[0]=="dend") {MolType=dendrimer; keyfound=true;}
-		if (SUB[0]=="asym_dend") {MolType=asym_dendrimer; keyfound=true;}
-		if (SUB[0]=="star") {MolType=star; keyfound=true;}
-		if (SUB[0]=="comb") {MolType=comb; keyfound=true;}
-		if (SUB[0]=="ring") {MolType=ring; keyfound=true;}
-		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @asym_den, @star, @comb, @ring. Problem terminated "<< endl ;
-			return false;	
-		 }	
+	In[0]->split(s,',',sub);
+	int length=sub.size();
+	int length_open;
+	int i,j,k,a,f,dd; 
+	string ss;
+	switch(MolType) {
+		case dendrimer:
+			for (i=0; i<length; i++) {
+				open.clear(); close.clear();
+				In[0]->EvenBrackets(sub[i],open,close);
+				length_open=open.size();
+				//if (sub[i].substr(0,1)=="(") {
+				if (length_open>0) {
+					if (!ExpandBrackets(sub[i])) cout <<"brackets '(' ')' not well positioned in "+sub[i] << endl; success=false;
+				}			
+			}
+			for (i=0; i<length; i++) {
+				ss.append(sub[i]);
+				if (i<length-1) ss.append(",");
+			}
+			s=ss;
+		break;
+		case comb:
+			success=false;
+		break;
+		default:
+			if (!ExpandBrackets(s)) success=false;
+		break;
 	}
-
-	if (!In[0]->EvenSquareBrackets(s,open,close)) {cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl; success=false;  }
+	
+	if (!In[0]->EvenSquareBrackets(s,open,close)) {
+		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl; 
+		success=false;  
+	}
 
 	if (open.size()>0) {
 		if (MolType==linear) { //overwrite default.
 			MolType=branched; 
 		} else {
 			success=false;
-			cout <<" In 'composition' you can not combine special keywords such as 'dend, asym_dend, star, comb or ring' with branched compositions. This implies that square brackets are not allowed. " <<endl ;
+			cout <<" In 'composition' you can not combine special keywords such as 'dend, comb or ring' with branched compositions. This implies that square brackets are not allowed. " <<endl ;
 			return success;
 		}
 	}
-
 	int generation=0;
 	int pos=0;
-	chainlength=0;
+	
 	MolMonList.clear();
 	int AlListLength=MolAlList.size();
 	for (int i=0;i<AlListLength; i++) Al[i]->active=false; 
-	first_s.push_back(-1);
-	last_s.push_back(-1);
-	first_b.push_back(-1);
-	last_b.push_back(-1);
-	
+	vector<string>sub_gen;
+	vector<string>sub_dd;
+	int length_g,length_dd,mnr,nn,arm=-1,degeneracy=1,arms=0;  
+	string segname;
+	int N;
+
 	switch(MolType) {
 		case linear:
+			first_s.push_back(-1);
+			last_s.push_back(-1);
+			first_b.push_back(-1);
+			last_b.push_back(-1);
 			GenerateTree(s,generation,pos,open,close); 
 			break;
 		case branched:
+			first_s.push_back(-1);
+			last_s.push_back(-1);
+			first_b.push_back(-1);
+			last_b.push_back(-1);
 			GenerateTree(s,generation,pos,open,close); 
 			break;
-		case star:
-			cout <<"star polymers not implemented" << endl;
-			break;
 		case dendrimer: 
-			cout <<"dendrimer polymers not implemented" <<endl;
+			first_a.clear();
+			last_a.clear();
+			first_b.clear();
+			last_b.clear();
+			first_s.clear();
+			last_s.clear();
+			n_arm.clear();
+			mon_nr.clear();
+			n_mon.clear();
+			cout <<" s is " << s << endl; 
+			In[0]->split(s,';',sub_gen);
+			n_generations=sub_gen.size(); 
+			sym_dend=true; //default. 
+			cout <<"n_generations " << n_generations << endl; 
+			N=chainlength=0; 
+			for (i=0; i<n_generations; i++) {
+				sub.clear();	arms=0;
+				In[0]->split(sub_gen[i],',',sub);
+				if (sub.size()%2==0) {success=false; cout << "In composition of dend for generation " << i << " that is, in " + sub_gen[i] + " the number of arguments is not odd; use @dend(?) for help. " << endl; }
+				if (sub.size()<2) { success=false;
+					
+					cout<<" ------Dendrimer language:------ " << endl; 
+					cout<<" example 1: consider segment name 'A' for the branch points and spacers (B)2 with functionality 3 and 4 generations: " << endl;
+					cout<<" @dend(A,(B)2,3; A,(B)2,3; A,(B)2,3; A,(B)2,3)  " << endl;
+					cout<<" hence generations are seperated by ';', branch points are 'monomer_names' without '(', ')'. Each generation can have unique numbers and structures. " << endl; 
+					cout<<" expample 2: asymmetric dendrimers, with asymmetry in branches of first generation:" << endl; 
+					cout <<" @dend(A,(B)2,3,(B)4,1; A,(B)2,3,(B)2,2; A,(B)2,3; A,(B)2,3)  " << endl;
+					cout <<" example 3: star with 10 arms " << endl; 
+					cout <<" @dend(A,(B)100,10) " << endl; 
+					cout <<" example 4: 10 arm star end-grafted by one arm to a surface by way of segment 'X' " << endl; 
+					cout <<" @dend(A,(B)100,9,(B)99(X)1,1)" << endl; 
+					cout<<" ------Dendrimer language:------ " << endl; 
+				}
+
+
+				length_g = sub.size(); //check nr generations
+				if (length_g != 3) sym_dend=false;
+				sub_dd.clear(); 
+				In[0]->split(sub[0],':',sub_dd);
+				length_dd =sub_dd.size(); 
+//cout <<"length_dd: " << length_dd << endl;
+			
+				if (length_dd==4) {
+					mnr=GetMonNr(sub_dd[2]); 
+					a=In[0]->Get_int(sub_dd[2],0);
+					if (Al[a]->active) Al[a]->active=false; else Al[a]->active=true;
+
+				} else mnr=GetMonNr(sub[0]); 
+				if (mnr <0)  {success=false; cout <<"In composition of mol '" + name + "', segment name '" + sub_dd[0] + "' is not recognised"  << endl; success=false; }
+//cout <<"mon_nr is " << mnr << endl;
+				for (a=0; a<AlListLength; a++) {if (Al[a]->active) Al[a]->frag.push_back(1); else Al[a]->frag.push_back(0);}
+
+				n_mon.push_back(1); 
+				mon_nr.push_back(mnr);
+				d_mon.push_back(degeneracy); 
+				first_a.push_back(-1);
+				last_a.push_back(-1);
+				k=1; chainlength+=degeneracy; N++; 
+
+				while (k<length_g-1) {
+					arm++; 
+//cout <<"arm " << arm << endl; 
+					first_s.push_back(chainlength);
+                        		last_s.push_back(-1);
+                        		first_b.push_back(-1);
+                        		last_b.push_back(-1);
+					if (first_a[first_a.size()-1]==-1) first_a[first_a.size()-1]=arm;
+					last_a[last_a.size()-1]=arm;
+					
+					f=In[0]->Get_int(sub[k+1],0); //should not contain double dots....
+					if (f<1) {
+						success=false; cout <<"In dendrimer-composition, in generation "<<i << " an integer number is expected at argument " << k+1 << " problem terminated" << endl; 
+					}
+					n_arm.push_back(f); arms+=f; 
+
+					
+					sub_dd.clear();
+					In[0]->split(sub[k],':',sub_dd);
+					dd=0; length_dd=sub_dd.size();
+//cout <<"length _dd = " <<length_dd << endl; 
+					while (dd<length_dd) {
+						open.clear(); close.clear();
+               				In[0]->EvenBrackets(sub_dd[dd],open,close);
+						if (open.size()==0) {
+							a=In[0]->Get_int(sub_dd[dd],-1);
+							if (a==-1) {
+								cout <<"No integer found. Possibly you have a segment name in composition that is not surrounded by brackets " << endl; success=false;
+							} else {if (Al[a]->active) Al[a]->active=false; else Al[a]->active=true;}
+						} else {			
+							j=0; length=open.size();
+//cout <<"sub[k] " << sub[k] << endl; 
+							while (j<length) {
+								segname=sub_dd[dd].substr(open[j]+1,close[j]-open[j]-1);
+								mnr=GetMonNr(segname);
+								if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; this occurs at generation " <<i << " arm " << k << "."  << endl; success=false;}
+								mon_nr.push_back(mnr);
+								nn=In[0]->Get_int(sub_dd[dd].substr(close[j]+1,s.size()-close[j]-1),0);
+								if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; this occurs at generation " <<i << " arm " <<k <<"."<< endl; success=false;} 
+								n_mon.push_back(nn); N+=nn;
+								d_mon.push_back(degeneracy*f);
+								chainlength +=degeneracy*nn*f; 
+                                  				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
+                                  				last_b[first_b.size()-1]=mon_nr.size()-1;
+								last_s[last_s.size()-1]=N;
+								for (a=0; a<AlListLength; a++) {if (Al[a]->active) Al[a]->frag.push_back(1); else Al[a]->frag.push_back(0);}
+								j++;
+							}
+						}
+						dd++;
+					}
+					k=k+2;
+				}
+				degeneracy*=arms;  
+			}
+
+//for (i=0; i<n_generations; i++) cout<<"generation " << i << " first_a " << first_a[i] << " last_a " << last_a[i] << endl; 
+//length=n_arm.size();
+//for (i=0; i<length; i++) cout <<"arm " << i << " first_b " << first_b[i] << " last_b " << last_b[i] << endl; 
+//for (i=0; i<length; i++) cout <<"arm " << i << " first_s " << first_s[i] << " last_s " << last_s[i] << endl; 
+//for (i=0; i<length; i++) cout <<"arm " << i << " n_arm " << n_arm[i] << endl; 
+//length=n_mon.size();
+//for (i=0; i<length; i++) cout <<"mon_nr " << mon_nr[i] << " n_mon " << n_mon[i] <<" degeneracy " << d_mon[i]<<endl;
+
+			success=false;
 			break;
-		case asym_dendrimer:
-			cout <<"asym_dendrimer polymers not implemented" << endl; 
-			break;
+		case comb:
+			cout <<"comb polymers not implemented" << endl; 	success=false;
+			break;	
 		case ring:
-			cout <<"ring polymers not implemented" << endl; 	
+			cout <<"ring polymers not implemented" << endl; 	success=false;
 			break;	
 		default:
 			break;
@@ -1312,6 +1485,9 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 			break;
 		case branched:
 			success=ComputePhiBra();
+			break;
+		case dendrimer:
+			success=ComputePhiDendrimer();
 			break;
 		default:
 			cout << "Programming error " << endl; 
@@ -1745,6 +1921,22 @@ bool Molecule::ComputePhiBra() {
 	return success;
 }
 
+bool Molecule::ComputePhiDendrimer() {
+	int M=Lat[0]->M;
+	if (debug) cout <<"ComputePhiDendrimer for Mol " + name << endl; 
+	bool success=true;
+	int generation=0;
+	int s=0; 
+	Real* G=Forward(generation,s);
+	Lat[0]->remove_bounds(G);
+	GN=Lat[0]->WeightedSum(G);
+	s--;
+	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);}
+	Backward(Seg[mon_nr[last_b[0]]]->G1,generation,s);	
+	return success;
+}
+
+
 /*   --------------------------------trash-----------------------------------------------------
 void ComputePhi(){
 	Lat[0]->DisG1(G1,g1,Bx,By,Bz,n_box);		
@@ -1772,3 +1964,74 @@ void ComputeGN(Real* GN, Real* Gg_f, int* H_Bx, int* H_By, int* H_Bz, int* H_Px2
 }
 */
 
+/*
+bool Molecule::ExpandAlias(vector<string> sub, string &s) {
+if (debug) cout <<"Molecule:: ExpandAlias" << endl;
+	bool success=true;
+	int correction=0;
+	vector<int> open;
+	vector<int> close;
+	int length_al=sub.size();
+	for (int i=0; i<length_al; i++) {
+		open.clear(); close.clear();
+		string sA;
+		In[0]->EvenBrackets(sub[i],open,close); 
+		if (open.size() ==0) sA=sub[i]; else sA=sub[i].substr(0,open[0]); 
+		if (i==0 && sA=="") { //the 'composition' does not start with an alias. This should not be a problem.
+		} else {
+			
+			if (sA[sA.length()-1]==',') {sA=sA.substr(0,sA.length()-1); correction=1;}
+			if (sA[sA.length()-1]==';') {sA=sA.substr(0,sA.length()-1); correction=2;}
+
+			if (!In[0]->InSet(In[0]->AliasList,sA)) {
+				cout <<"In composition of mol '" + name + "' Alias '" + sA + "' was not found"<<endl; success=false;
+			} else {
+				int Alnr =GetAlNr(sA);
+				if (Alnr<0) {
+					Al.push_back(new Alias(In,Lat,sA));
+					Alnr=Al.size();
+					if (!Al[Alnr-1]->CheckInput(start)) {return false;} 
+					MolAlList.push_back(Alnr);
+				}
+				Alnr =GetAlNr(sA);
+				int iv = Al[Alnr]->value;
+				string al_comp=Al[Alnr]->composition;
+				if (iv < 0) {
+					string si;
+					stringstream sstm;
+					sstm << Alnr;
+					si = sstm.str();
+					string ssub="";
+					if (open[0]!=0) ssub=sub[i].substr(open[0]);
+					switch(correction) {
+						case 0:
+							sub[i]=":"+si+":"+al_comp+":"+si+":"+ssub;
+							break;
+						case 1:
+							sub[i]=":"+si+":"+al_comp+",:"+si+":"+ssub;
+							break;
+						case 2: 
+							sub[i]=":"+si+":"+al_comp+";:"+si+":"+ssub;
+							break;
+						default:
+							break; 
+						
+					}
+				} else {
+					string sss;
+					stringstream sstm;
+					sstm << iv;
+					sss = sstm.str();
+					sub[i]=sss+sub[i].substr(open[0]);
+				}
+			} 
+		}		
+	}
+	string ss;
+	for (int i=0; i<length_al; i++) {
+		ss=ss.append(sub[i]);
+	}
+	s=ss; 
+	return success; 
+}
+*/

@@ -37,14 +37,19 @@ public:
 	int chainlength;
 	bool save_memory; 
 	bool compute_phi_alias; 
+	bool sym_dend; 
 	string composition;
-	vector<int> Gnr;
+	vector<int> Gnr; //generation-number
 	vector<int> first_s;
 	vector<int> last_s;
 	vector<int> first_b;
 	vector<int> last_b;
+	vector<int> first_a;
+	vector<int> last_a;
+	vector<int> n_arm;
 	vector<int> mon_nr;
 	vector<int> n_mon; 
+	vector<int> d_mon; //degeneracy of mon : for dendrimer case.
 	vector<int> molmon_nr; 
 	vector<int> memory;
 	vector<int> last_stored;
@@ -96,6 +101,7 @@ public:
 	string Var_type;
 	string scale;
 	Real Var_target_value;
+	int n_generations;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -130,6 +136,7 @@ public:
 	bool ExpandBrackets(string&);
 	bool Interpret(string,int);
 	bool GenerateTree(string,int,int&,vector<int>,vector<int>);
+	bool GenerateDend(string,int);
 	bool Decomposition(string); 
 	int GetChainlength(void); 
 	Real Theta(void);
@@ -156,6 +163,7 @@ public:
 	bool ComputeClampLin();
 	bool ComputePhiLin();
 	bool ComputePhiBra();
+	bool ComputePhiDendrimer(); 
 };
 
 #endif

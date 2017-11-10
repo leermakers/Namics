@@ -112,10 +112,15 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 			if (i==0) memory.push_back(n); else memory.push_back(n+memory[i-1]);
 		}
 	}
-	int N; 
+	N=0; 
 	if (save_memory) {
 		N=memory[n_mon.size()-1]; 
-	} else N=chainlength;
+	} else {
+		int length_ = mon_nr.size();
+		for (int i=0; i<length_; i++) {N+=n_mon[i];}
+		//cout <<"allocate memory for " << N << " EPD" << endl; 
+		//N=chainlength; //in case of dendrimers this is not correct. Way fewer EDF needed in this case.
+	}
 
 	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); 
 	H_phitot = (Real*) malloc(M*sizeof(Real)); 
@@ -1030,7 +1035,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	vector<string>sub_dd;
 	int length_g,length_dd,mnr,nn,arm=-1,degeneracy=1,arms=0;  
 	string segname;
-	int N;
+	int N=0;
 
 	switch(MolType) {
 		case linear:
@@ -1062,7 +1067,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			n_generations=sub_gen.size(); 
 			sym_dend=true; //default. 
 			cout <<"n_generations " << n_generations << endl; 
-			N=chainlength=0; 
+			chainlength=0; N=-1;
 			for (i=0; i<n_generations; i++) {
 				sub.clear();	arms=0;
 				In[0]->split(sub_gen[i],',',sub);
@@ -1110,7 +1115,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				while (k<length_g-1) {
 					arm++; 
 //cout <<"arm " << arm << endl; 
-					first_s.push_back(chainlength);
+					first_s.push_back(N+1); 
                         		last_s.push_back(-1);
                         		first_b.push_back(-1);
                         		last_b.push_back(-1);
@@ -1163,15 +1168,17 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				degeneracy*=arms;  
 			}
 
-//for (i=0; i<n_generations; i++) cout<<"generation " << i << " first_a " << first_a[i] << " last_a " << last_a[i] << endl; 
+//for (int i=0; i<n_generations; i++) cout<<"generation " << i << " first_a " << first_a[i] << " last_a " << last_a[i] << endl; 
 //length=n_arm.size();
-//for (i=0; i<length; i++) cout <<"arm " << i << " first_b " << first_b[i] << " last_b " << last_b[i] << endl; 
-//for (i=0; i<length; i++) cout <<"arm " << i << " first_s " << first_s[i] << " last_s " << last_s[i] << endl; 
-//for (i=0; i<length; i++) cout <<"arm " << i << " n_arm " << n_arm[i] << endl; 
+//for (int i=0; i<length; i++) cout <<"arm " << i << " first_b " << first_b[i] << " last_b " << last_b[i] << endl; 
+//for (int i=0; i<length; i++) cout <<"arm " << i << " first_s " << first_s[i] << " last_s " << last_s[i] << endl; 
+//for (int i=0; i<length; i++) cout <<"arm " << i << " n_arm " << n_arm[i] << endl; 
 //length=n_mon.size();
-//for (i=0; i<length; i++) cout <<"mon_nr " << mon_nr[i] << " n_mon " << n_mon[i] <<" degeneracy " << d_mon[i]<<endl;
+//for (int i=0; i<length; i++) cout <<"block " << i << " n_mon " << n_mon[i] << " mon_nr " << mon_nr[i] << " d_mon " << d_mon[i] << endl;   
 
-			success=false;
+
+
+			//success=false;
 			break;
 		case comb:
 			cout <<"comb polymers not implemented" << endl; 	success=false;
@@ -1186,19 +1193,18 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	if (MolType==branched) { //invert numbers;
 		int g_length=first_s.size();
 		int length = n_mon.size(); 
-		int ss;
-		chainlength=last_s[0]; 	
+		int xxx;
+		int ChainLength=last_s[0]; 	
 
 		for (int i=0; i<g_length; i++) { 
-			first_s[i] = chainlength-first_s[i]-1;
-			last_s[i] = chainlength-last_s[i]-1;
-			ss=first_s[i]; first_s[i]=last_s[i]+1; last_s[i]=ss;
+			first_s[i] = ChainLength-first_s[i]-1;
+			last_s[i] = ChainLength-last_s[i]-1;
+			xxx=first_s[i]; first_s[i]=last_s[i]+1; last_s[i]=xxx;
 			first_b[i]=length-first_b[i]-1;
 			last_b[i]=length-last_b[i]-1;
-			ss=first_b[i]; first_b[i]=last_b[i]; last_b[i]=ss; 
+			xxx=first_b[i]; first_b[i]=last_b[i]; last_b[i]=xxx; 
 		}
 		
-		int xxx;
 		for (int i=0; i<length/2; i++) {
 			xxx=Gnr[i]; Gnr[i]=Gnr[length-1-i]; Gnr[length-1-i]=xxx;
 			xxx=n_mon[i]; n_mon[i]=n_mon[length-1-i]; n_mon[length-1-i]=xxx;
@@ -1207,19 +1213,75 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				xxx=Al[j]->frag[i]; Al[j]->frag[i]=Al[j]->frag[length-1-i]; Al[j]->frag[length-1-i]=xxx;	
 			} 
 		}
+
+//	int length=Gnr.size();
+//	for (int i=0; i<length; i++) 
+//		cout << "segnr " << mon_nr[i] << " nn " << n_mon[i] << " Gnr " << Gnr[i] << endl;  
+//	length=last_s.size();
+//	for (int i=0; i<length; i++) 
+//		cout << "Gen " << i  << " first_s " << first_s[i] << " last_s " << last_s[i] << " first_b " << first_b[i] << " last_b " <<  last_b[i] << endl; 
+
+
 	}
+
+	if (MolType==dendrimer){
+		int ChainLength=N;
+		int length_a=first_b.size();
+		int xxx;
+		int length=mon_nr.size();
+		
+		for (int i=0; i<length_a; i++) {
+			first_s[i] = ChainLength-first_s[i];
+			last_s[i] = ChainLength-last_s[i];
+			xxx=first_s[i]; first_s[i]=last_s[i]; last_s[i]=xxx;
+			first_b[i]=length-first_b[i]-1;
+			last_b[i]=length-last_b[i]-1;
+			xxx=first_b[i]; first_b[i]=last_b[i]; last_b[i]=xxx; 			
+			 
+		}
+		for (int i=0; i<(length_a)/2; i++) {
+			xxx=n_arm[i]; n_arm[i]=n_arm[length_a-i-1]; n_arm[length_a-i-1]=xxx; 
+			xxx=first_s[i]; first_s[i]=first_s[length_a-i-1]; first_s[length_a-i-1]=xxx; 
+			xxx=last_s[i]; last_s[i]=last_s[length_a-i-1]; last_s[length_a-i-1]=xxx; 
+			xxx=first_b[i]; first_b[i]=first_b[length_a-i-1]; first_b[length_a-i-1]=xxx; 
+			xxx=last_b[i]; last_b[i]=last_b[length_a-i-1]; last_b[length_a-i-1]=xxx;
+		}
+		length_a=first_a.size();
+		length=first_b.size();
+		for (int i=0; i<length_a; i++) {
+			first_a[i]=length-first_a[i]-1;
+			last_a[i]=length-last_a[i]-1;
+			xxx=first_a[i]; first_a[i]=last_a[i]; last_a[i]=xxx; 
+		}
+		for (int i=0; i<(length_a)/2; i++) {
+			xxx=first_a[i]; first_a[i]=first_a[length_a-i-1]; first_a[length_a-i-1]=xxx;
+			xxx=last_a[i]; last_a[i]=last_a[length_a-i-1]; last_a[length_a-i-1]=xxx;  
+		}
+		length=n_mon.size();
+		for (int i=0; i<length/2; i++) {
+			xxx=n_mon[i]; n_mon[i]=n_mon[length-1-i]; n_mon[length-1-i]=xxx;
+			xxx=mon_nr[i]; mon_nr[i]=mon_nr[length-1-i]; mon_nr[length-1-i]=xxx; 
+			xxx=d_mon[i]; d_mon[i]=d_mon[length-1-i]; d_mon[length-1-i]=xxx;
+			for (int j=0; j<AlListLength; j++) {
+				xxx=Al[j]->frag[i]; Al[j]->frag[i]=Al[j]->frag[length-1-i]; Al[j]->frag[length-1-i]=xxx;	
+			} 
+		}
+
+
+//for (int i=0; i<n_generations; i++) cout<<"generation " << i << " first_a " << first_a[i] << " last_a " << last_a[i] << endl; 
+//length=n_arm.size();
+//for (int i=0; i<length; i++) cout <<"arm " << i << " first_b " << first_b[i] << " last_b " << last_b[i] << endl; 
+//for (int i=0; i<length; i++) cout <<"arm " << i << " first_s " << first_s[i] << " last_s " << last_s[i] << endl; 
+//for (int i=0; i<length; i++) cout <<"arm " << i << " n_arm " << n_arm[i] << endl;
+//length=n_mon.size();
+//for (int i=0; i<length; i++) cout <<"block " << i << " n_mon " << n_mon[i] << " mon_nr " << mon_nr[i] << " d_mon " << d_mon[i] << endl;   
+	}
+
 
 	success=MakeMonList();
 	if (chainlength==1) MolType=monomer;	
 
-//	if (MolType==branched) {
-//		int length=Gnr.size();
-//		for (int i=0; i<length; i++) 
-//			cout << "segnr " << mon_nr[i] << " nn " << n_mon[i] << " Gnr " << Gnr[i] << endl;  
-//		length=last_s.size();
-//		for (int i=0; i<length; i++) 
-//			cout << "Gen " << i  << " first_s " << first_s[i] << " last_s " << last_s[i] << " first_b " << first_b[i] << " last_b " <<  last_b[i] << endl; 
-//	}
+
 	return success; 
 }
 
@@ -1518,7 +1580,6 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int M) {
 if (debug) cout <<"propagate_forward for Mol " + name << endl;
 	
-	// Real* G1 = Seg[mon_nr[block]]->G1;
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t;
@@ -1569,48 +1630,10 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 }
 
 
-void Molecule::propagate_forward(Real* Gg_f, Real* G1,int &s, int N, int block, int M) {
-if (debug) cout <<"propagate_forward for Mol " + name << endl;
-	//int M=Lat[0]->M;
-	if (save_memory) {
-		int k,k0,t0,v0,t;
-		int n=memory[block]; if (block>0) n-=memory[block-1];
-		int n0=0; if (block>0) n0=memory[block-1];
-		if (s==0) {
-			Cp(Gs+M,G1,M);Cp(Gg_f,Gs+M,M);
-		} else {
-			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero; 
-			Cp(Gg_f+n0*M,Gs+M,M); s++;
-		} 
-		t=1; 
-		v0=t0=k0=0;
-		for (k=2; k<=N; k++) {
-			t++; s++;
-			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2,M);
-			if (t>n) {
-				t0++;
-				if (t0 == n) t0 = ++v0;
-				t = t0 + 1;
-				k0 = k - t0 - 1;
-			}
-			if ((t == t0+1 && t0 == v0)
-		  	 || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(k0+t0)))
-		  	 || (2*(n-t+k) >= N-1)) 
-				Cp(Gg_f+(n0+t-1)*M,Gs+(k%2)*M,M);
-
-		}
-		if ((N)%2!=0) {
-			Cp(Gs,Gs+M,M); //make sure that Gs has last end-point distribution on spot zero.
-		} 
-	} else
-	for (int k=0; k<N; k++) {
-		if (s>0) Lat[0] ->propagate(Gg_f,G1,s-1,s,M); s++;
-	} 	
-}
 
 void Molecule::propagate_backward(Real* G1, int &s, int block, int generation, int M) {
 if (debug) cout <<"propagate_backward for Mol " + name << endl;
-	//Real *G1=Seg[mon_nr[block]]->G1;
+
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t,rk1;
@@ -1682,6 +1705,381 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			s--;
 		} 
 	}	
+}
+
+
+
+bool Molecule::ComputeClampLin(){
+	if (debug) cout <<"ComputeClampLin for Mol " + name << endl;
+	bool success=true;
+	int M=Lat[0]->M;
+	int m=0;
+	if (freedom=="clamped") m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];	
+	int blocks=mon_nr.size();
+	Zero(rho,m*n_box*MolMonList.size()); 
+	int s=1; 
+	if (save_memory) {
+		Cp(Gs,mask1,m*n_box); 
+	} else {
+		Cp(Gg_f,mask1,m*n_box); //first block just contains the clamp
+	}
+	for (int i=1; i<blocks-1; i++) { 
+		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);
+		//propagate_forward(Gg_f,g1,s,n_mon[i],i,m*n_box);
+		propagate_forward(g1,s,i,0,m*n_box);
+	}
+	if (save_memory) {
+		int k=last_stored[blocks-2]; 
+		int N=memory[n_mon.size()-1]; 
+		Lat[0]->propagate(Gg_f,mask2,k,N-1,m*n_box); 
+		Lat[0]->ComputeGN(gn,Gg_f,H_Bx,H_By,H_Bz,H_Px2,H_Py2,H_Pz2,N-1,n_box); 
+	} else {
+		Lat[0]->propagate(Gg_f,mask2,s-1,s,m*n_box); 
+		Lat[0]->ComputeGN(gn,Gg_f,H_Bx,H_By,H_Bz,H_Px2,H_Py2,H_Pz2,chainlength-1,n_box); 
+	}
+	s=chainlength-1; //for last segment (clamp) no densities computed
+	Cp(Gg_b+(s%2)*m*n_box,mask2,m*n_box); //last block just contains the clamp;
+	if (save_memory) Cp(Gg_b+((s-1)%2)*m*n_box,Gg_b+(s%2)*m*n_box,m*n_box);
+	s--;
+	for (int i=blocks-2; i>0; i--) {
+		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);	
+		//propagate_backward(Gg_f,Gg_b,g1,s,n_mon[i],i,m*n_box);	
+		propagate_backward(g1,s,i,0,m*n_box);
+	} //for first segment (clamp) no densities computed. 
+	int length=MolMonList.size();
+	for (int i=1; i<length; i++) {
+		Lat[0]->CollectPhi(phi+M*i,gn,rho+m*n_box*i,Bx,By,Bz,n_box);
+	}
+
+	return success;
+}
+
+
+
+void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU 
+	int b0 = first_b[generation];
+	int bN = last_b[generation];
+	vector<int> Br;
+	vector<Real*> Gb;	
+	int M=Lat[0]->M;
+	Real* GS = new Real[4*M];
+	int k=bN;
+	int ss=0; 
+	while (k>=b0){
+		if (k>b0 && k<bN) {
+			if (Gnr[k]!=generation) {
+				Br.clear(); Gb.clear(); 
+				while (Gnr[k] != generation){
+					Br.push_back(Gnr[k]);
+					if (save_memory) Gb.push_back(Gg_f+last_stored[k]*M); else Gb.push_back(Gg_f+last_s[Gnr[k]]*M); 
+					ss=first_s[Gnr[k]];
+					k-=(last_b[Gnr[k]]-first_b[Gnr[k]]+1) ; 	
+				} 
+				Br.push_back(generation); ss--; 
+				if (save_memory) Gb.push_back(Gg_f+last_stored[k]*M); else Gb.push_back(Gg_f+ss*M); 
+				int length = Br.size();
+				Real *GX = new Real[length*M];
+				for (int i=0; i<length; i++) Cp(GX+i*M,Gb[i],M);
+				Cp(GS+3*M,Gg_b,M); 
+				for (int i=0; i<length; i++) {
+					Cp(GS+2*M,GS+3*M,M);
+					for (int j=0; j<length; j++) {
+						if (i !=j) {
+							Cp(GS,GX+j*M,M);
+							Lat[0]->propagate(GS,UNITY,0,1,M);
+							Times(GS+2*M,GS+2*M,GS+M,M);
+						}		
+					}
+					Cp(Gg_b,GS+2*M,M); Cp(Gg_b+M,GS+2*M,M);
+					if (i<length-1) BackwardBra(Gg_b,Br[i],s);
+				}
+				delete [] GX;
+				k++;
+			} else 	propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+		} else propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+		k--; 
+	}
+	delete [] GS;
+}
+
+Real* Molecule::ForwardBra(int generation, int &s) { 
+	int b0 = first_b[generation];
+	int bN = last_b[generation];
+	vector<int> Br;
+	vector<Real*> Gb;
+	int M=Lat[0]->M;
+	Real* GS = new Real[3*M]; 
+	Real* Glast=NULL;   
+	int k=b0; 
+	while (k<=bN) {
+		if (b0<k && k<bN) { 
+			if (Gnr[k]==generation ){
+				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);	 
+			} else {
+				Br.clear(); Gb.clear();
+				Cp(GS,Glast,M);
+				while (Gnr[k] !=generation) {
+					Br.push_back(Gnr[k]);
+					Gb.push_back(ForwardBra(Gnr[k],s));
+					k+=(last_b[Gnr[k]]-first_b[Gnr[k]]+1);
+				} 
+				int length=Br.size();
+				Lat[0]->propagate(GS,Seg[mon_nr[k]]->G1,0,2,M);
+				for (int i=0; i<length; i++) {
+					Cp(GS,Gb[i],M);
+					Lat[0]->propagate(GS,UNITY,0,1,M);
+					Times(GS+2*M,GS+2*M,GS+M,M);
+				} 
+				if (save_memory) {
+					Cp(Gs,GS+2*M,M); Cp(Gs+M,GS+2*M,M); 
+					Cp(Gg_f+(memory[k]-1)*M,GS+2*M,M); //correct because in this block there is just one segment. 
+				} else Cp(Gg_f+s*M,GS+2*M,M);			
+				s++; 
+			}
+		} else {
+			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+		}
+		k++;
+	}
+	delete [] GS; 
+	return Glast;
+}
+
+bool Molecule::ComputePhiBra() {
+	if (debug) cout <<"ComputePhiBra for Mol " + name << endl; 	
+	int M=Lat[0]->M;
+	bool success=true;
+	int generation=0;
+	int s=0; 
+	Real* G=ForwardBra(generation,s);
+	Lat[0]->remove_bounds(G);
+	GN=Lat[0]->WeightedSum(G);
+	s--;
+	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);} //toggle; initialize on both spots the same G1, so that we always get proper start.
+	BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);	
+	return success;
+}
+
+Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int arm, int M) { \\for dendrimer
+if (debug) cout <<"propagate_forward for Mol " + name << endl;
+	
+	int N= n_mon[block];
+	if (save_memory) {
+		int k,k0,t0,v0,t;
+		int n=memory[block]; if (block>0) n-=memory[block-1];
+		int n0=0; if (block>0) n0=memory[block-1];
+		if (s==first_s[arm] && generation ==0) { s++;
+			Cp(Gs+M,G1,M); Cp(Gs,G1,M); Cp(Gg_f+n0*M,Gs+M,M); last_stored[block]=n0;
+		} else {
+			if (s==first_s[arm]) {
+				Cp(Gs,last_stored[last_b[last_a[generation-1]]+1]*M,M); //Cp(Gs+M,Gs,M);			
+			} 
+			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero; 
+			Cp(Gg_f+n0*M,Gs+M,M); s++;
+			last_stored[block]=n0;
+		} 
+		t=1;
+		v0=t0=k0=0;
+		for (k=2; k<=N; k++) {
+			t++; s++;
+			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2,M);
+			if (t>n) {
+				t0++;
+				if (t0 == n) t0 = ++v0;
+				t = t0 + 1;
+				k0 = k - t0 - 1;
+			}
+			if ((t == t0+1 && t0 == v0)
+		  	 || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(k0+t0)))
+		  	 || (2*(n-t+k) >= N-1)) {
+				Cp(Gg_f+(n0+t-1)*M,Gs+(k%2)*M,M);
+				last_stored[block]=n0+t-1; 
+			}
+		}
+		if ((N)%2!=0) {
+			Cp(Gs,Gs+M,M); //make sure that Gs has last end-point distribution on spot zero.
+			//return Gs;
+		}  
+	} else {
+		for (int k=0; k<N; k++) {
+
+			if (s==first_s[arm] && generation==0) {
+				Cp(Gg_f+first_s[generation]*M,G1,M);
+			} else {
+				if (s==first_s[arm])
+					Lat[0] ->propagate(Gg_f,G1,last_s[last_a[generation-1]]+1,s,M);  
+				else Lat[0] ->propagate(Gg_f,G1,s-1,s,M); 
+			}
+			 s++;
+		} 
+	}
+	if (save_memory) {
+		return Gg_f+last_stored[block]*M;
+	} else return Gg_f+(s-1)*M;	
+}
+
+
+void Molecule::propagate_backward(Real* G1, int &s, int block, int generation, int arm, int M) { //this one is for the dendrimer molecules.
+if (debug) cout <<"propagate_backward for Mol " + name << endl;
+
+	int N= n_mon[block];
+	if (save_memory) {
+		int k,k0,t0,v0,t,rk1;
+		int n=memory[block]; if (block>0) n-=memory[block-1];
+		int n0=0; if (block>0) n0=memory[block-1];
+
+		t=1;
+		v0=t0=k0=0;
+		for (k=2; k<=N; k++) {t++; if (t>n) { t0++; if (t0 == n) t0 = ++v0; t = t0 + 1; k0 = k - t0 - 1;}}
+		for (k=N; k>=1; k--) {
+			if (k==N) {
+				if (s==chainlength-1) {
+					Cp(Gg_b+(k%2)*M,G1,M);
+				} else {
+					Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
+				}
+			} else {
+				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
+			}
+			t = k - k0;
+			if (t == t0) {
+				k0 += - n + t0;
+				if (t0 == v0 ) {
+					k0 -= ((n - t0)*(n - t0 + 1))/2;
+				}
+				t0 --;
+				if (t0 < v0) {
+					v0 = t0;
+				}
+				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,M); 
+				for (rk1=k0+t0+2; rk1<=k; rk1++) {
+					t++;
+					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2,M);
+					if (t == t0+1 || k0+n == k) {
+						Cp(Gg_f+(n0+t-1)*M,Gs+(t%2)*M,M);
+					}
+					if (t == n && k0+n < k) {
+						t  = ++t0;
+						k0 += n - t0;
+					}
+				}
+				t = n;
+			}
+			AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M); 
+			if (compute_phi_alias) {
+				int length = MolAlList.size();
+				for (int i=0; i<length; i++) {
+					if (Al[i]->frag[k]==1) {
+						Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
+					}
+				}
+			}
+			s--;
+		}
+		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
+	} else {
+		for (int k=0; k<N; k++) {
+			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M); else Cp(Gg_b+(s%2)*M,G1,M);
+ 
+			AddTimes(rho+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M); 
+			if (compute_phi_alias) {
+				int length = MolAlList.size();
+				for (int i=0; i<length; i++) {
+					if (Al[i]->frag[k]==1) {
+						Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
+					}
+				}
+			}
+			s--;
+		} 
+	}	
+}
+
+void Molecule::BackwardDen(Real* GBr, int generation, int &s,int deg){//not yet robust for GPU computations: GS and GX need to be available on GPU 
+	int a0 = first_a[generation];
+	int aN = last_a[generation];
+	
+	vector<int> Br;
+	vector<Real*> Gb;	
+	int M=Lat[0]->M;
+	Real* GS = new Real[3*M];
+	int n_arms;
+	propagate_backward(GBr+(generation-1)*M,s,last_b[aN]+1,generation,deg,M); //this should compute phi for first central segment in dendrimer s=N
+	for (int a=aN; a>=a0; a--) {
+		Cp(GS+2*M,GBr+(generation-1)*M,M);
+		for (int aa=aN; aa>=a0; a--) {
+			n_arms=n_arm[aa]; if (aa==a) n_arms--;
+			Cp(Gs,Gg_f+last_stored[last_b[aa]],M);
+			Lat[0]->propagate(GS,UNITY,0,1,M); 
+			for (int k=0; k<n_arms; k++) {Times(GS+2*M,GS+2*M,GS+M,M);}
+		}
+		//cp to GS
+		int b0=first_b[a];
+		int bN=last_b[a];
+		for (int k=bN; k>=b0; k--) 	propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,a,M);
+		//goto branch
+		//bookkeep GBr
+		//call BackwardDen for previous generation when generation still larger than 0
+	}
+
+	delete [] GS;
+}
+
+
+bool Molecule::ComputePhiDendrimer() {
+	if (debug) cout <<"ComputePhiDendrimer for Mol " + name << endl; 	
+	int M=Lat[0]->M;
+	Real* GS = new Real[3*M];
+	int s=0;
+	Real* Glast;
+	bool success=true;
+	int n_g=first_a.size();
+	for (int g=0; g<n_g; g++) {
+		int n_a=first_b.size();
+		int a0=first_a[g],aN=last_a[g];
+		for (int a=a0; a<=aN; a++) {
+			Cp(GS+2*M,UNITY,M);
+			int b0=first_b[a], bN=last_b[a];
+			for (b=b0; b<=bN; b++) {
+				Glast=propagate_forward(Seg[mon_nr[b]]->G1,s,b,g,a,M);
+			}
+			Cp(GS,Glast,M);
+			Lat[0] ->propagate(GS,UNITY,0,1,M);
+			for (int k=0; k<n_arm[a]; a++) Times(Gs+2*M,Gs+2*M,Gs+M,M);
+		}
+		Times(Gs+2*M,Gs+2*M,Seg[mon_nr[last_b[aN]+1]]->G1,M);
+		Glast=Gg_f+memory[last_b[aN]]; Cp(Glast,Gs+2*M,M); 
+		s++;
+	} 
+	
+	Lat[0]->remove_bounds(Glast);
+	GN=Lat[0]->WeightedSum(Glast);
+	s=N;
+	if (save_memory) {Cp(Gg_b,Seg[mon_nr[mon_nr.size()-1]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[mon_nr.size()-1]]->G1,M);}
+	Real* GBr=new Real[n_g*M];
+	Cp(GBr+(n_g-1)*M,Seg[mon_nr[mon_nr.size()-1]]->G1,M);
+	BackwardDen(GBr,n_g,s,1);
+	delete [] GBr;
+	delete [] GS;	
+	return success;
+}
+
+
+/*   --------------------------------trash-----------------------------------------------------
+
+
+bool Molecule::ComputePhiLin(){
+	if (debug) cout <<"ComputePhiLin for Mol " + name << endl;
+	int M=Lat[0]->M;
+	bool success=true;
+	int blocks=mon_nr.size(); 
+	int s=0; Cp(Gg_f,Seg[mon_nr[0]]->G1,M); 
+	for (int i=0; i<blocks; i++) propagate_forward(Gg_f,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
+	s=chainlength-1; Cp(Gg_b+(s%2)*M,Seg[mon_nr[blocks-1]]->G1,M);
+	for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
+	Lat[0]->remove_bounds(Gg_b);
+	GN=Lat[0]->WeightedSum(Gg_b);
+	return success;
 }
 
 void Molecule::propagate_backward(Real* Gg_f, Real* Gg_b, Real* G1, int &s, int N, int block, int M) {
@@ -1757,187 +2155,48 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	}	
 }
 
-bool Molecule::ComputeClampLin(){
-	if (debug) cout <<"ComputeClampLin for Mol " + name << endl;
-	bool success=true;
-	int M=Lat[0]->M;
-	int m=0;
-	if (freedom=="clamped") m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];	
-	int blocks=mon_nr.size();
-	Zero(rho,m*n_box*MolMonList.size()); 
-	int s=1; 
+
+void Molecule::propagate_forward(Real* Gg_f, Real* G1,int &s, int N, int block, int M) {
+if (debug) cout <<"propagate_forward for Mol " + name << endl;
+	//int M=Lat[0]->M;
 	if (save_memory) {
-		Cp(Gs,mask1,m*n_box); 
-	} else {
-		Cp(Gg_f,mask1,m*n_box); //first block just contains the clamp
-	}
-	for (int i=1; i<blocks-1; i++) { 
-		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);
-		//propagate_forward(Gg_f,g1,s,n_mon[i],i,m*n_box);
-		propagate_forward(g1,s,i,0,m*n_box);
-	}
-	if (save_memory) {
-		int k=last_stored[blocks-2]; 
-		int N=memory[n_mon.size()-1]; 
-		Lat[0]->propagate(Gg_f,mask2,k,N-1,m*n_box); 
-		Lat[0]->ComputeGN(gn,Gg_f,H_Bx,H_By,H_Bz,H_Px2,H_Py2,H_Pz2,N-1,n_box); 
-	} else {
-		Lat[0]->propagate(Gg_f,mask2,s-1,s,m*n_box); 
-		Lat[0]->ComputeGN(gn,Gg_f,H_Bx,H_By,H_Bz,H_Px2,H_Py2,H_Pz2,chainlength-1,n_box); 
-	}
-	s=chainlength-1; //for last segment (clamp) no densities computed
-	Cp(Gg_b+(s%2)*m*n_box,mask2,m*n_box); //last block just contains the clamp;
-	if (save_memory) Cp(Gg_b+((s-1)%2)*m*n_box,Gg_b+(s%2)*m*n_box,m*n_box);
-	s--;
-	for (int i=blocks-2; i>0; i--) {
-		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);	
-		//propagate_backward(Gg_f,Gg_b,g1,s,n_mon[i],i,m*n_box);	
-		propagate_backward(g1,s,i,0,m*n_box);
-	} //for first segment (clamp) no densities computed. 
-	int length=MolMonList.size();
-	for (int i=1; i<length; i++) {
-		Lat[0]->CollectPhi(phi+M*i,gn,rho+m*n_box*i,Bx,By,Bz,n_box);
-	}
-
-	return success;
-}
-
-bool Molecule::ComputePhiLin(){
-	if (debug) cout <<"ComputePhiLin for Mol " + name << endl;
-	int M=Lat[0]->M;
-	bool success=true;
-	int blocks=mon_nr.size(); 
-	int s=0; Cp(Gg_f,Seg[mon_nr[0]]->G1,M); 
-	for (int i=0; i<blocks; i++) propagate_forward(Gg_f,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
-	s=chainlength-1; Cp(Gg_b+(s%2)*M,Seg[mon_nr[blocks-1]]->G1,M);
-	for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
-	Lat[0]->remove_bounds(Gg_b);
-	GN=Lat[0]->WeightedSum(Gg_b);
-	return success;
-}
-
-void Molecule::Backward(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU 
-	int b0 = first_b[generation];
-	int bN = last_b[generation];
-	vector<int> Br;
-	vector<Real*> Gb;	
-	int M=Lat[0]->M;
-	Real* GS = new Real[4*M];
-	int k=bN;
-	int ss=0; 
-	while (k>=b0){
-		if (k>b0 && k<bN) {
-			if (Gnr[k]!=generation) {
-				Br.clear(); Gb.clear(); 
-				while (Gnr[k] != generation){
-					Br.push_back(Gnr[k]);
-					if (save_memory) Gb.push_back(Gg_f+last_stored[k]*M); else Gb.push_back(Gg_f+last_s[Gnr[k]]*M); 
-					ss=first_s[Gnr[k]];
-					k-=(last_b[Gnr[k]]-first_b[Gnr[k]]+1) ; 	
-				} 
-				Br.push_back(generation); ss--; 
-				if (save_memory) Gb.push_back(Gg_f+last_stored[k]*M); else Gb.push_back(Gg_f+ss*M); 
-				int length = Br.size();
-				Real *GX = new Real[length*M];
-				for (int i=0; i<length; i++) Cp(GX+i*M,Gb[i],M);
-				Cp(GS+3*M,Gg_b,M); 
-				for (int i=0; i<length; i++) {
-					Cp(GS+2*M,GS+3*M,M);
-					for (int j=0; j<length; j++) {
-						if (i !=j) {
-							Cp(GS,GX+j*M,M);
-							Lat[0]->propagate(GS,UNITY,0,1,M);
-							Times(GS+2*M,GS+2*M,GS+M,M);
-						}		
-					}
-					Cp(Gg_b,GS+2*M,M); Cp(Gg_b+M,GS+2*M,M);
-					if (i<length-1) Backward(Gg_b,Br[i],s);
-				}
-				delete [] GX;
-				k++;
-			} else 	propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
-		} else propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
-		k--; 
-	}
-	delete [] GS;
-}
-
-Real* Molecule::Forward(int generation, int &s) { 
-	int b0 = first_b[generation];
-	int bN = last_b[generation];
-	vector<int> Br;
-	vector<Real*> Gb;
-	int M=Lat[0]->M;
-	Real* GS = new Real[3*M]; 
-	Real* Glast=NULL;   
-	int k=b0; 
-	while (k<=bN) {
-		if (b0<k && k<bN) { 
-			if (Gnr[k]==generation ){
-				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);	 
-			} else {
-				Br.clear(); Gb.clear();
-				Cp(GS,Glast,M);
-				while (Gnr[k] !=generation) {
-					Br.push_back(Gnr[k]);
-					Gb.push_back(Forward(Gnr[k],s));
-					k+=(last_b[Gnr[k]]-first_b[Gnr[k]]+1);
-				} 
-				int length=Br.size();
-				Lat[0]->propagate(GS,Seg[mon_nr[k]]->G1,0,2,M);
-				for (int i=0; i<length; i++) {
-					Cp(GS,Gb[i],M);
-					Lat[0]->propagate(GS,UNITY,0,1,M);
-					Times(GS+2*M,GS+2*M,GS+M,M);
-				} 
-				if (save_memory) {
-					Cp(Gs,GS+2*M,M); Cp(Gs+M,GS+2*M,M); 
-					Cp(Gg_f+(memory[k]-1)*M,GS+2*M,M); //correct becuse in this block there is just one segment. 
-				} else Cp(Gg_f+s*M,GS+2*M,M);			
-				s++; 
-			}
+		int k,k0,t0,v0,t;
+		int n=memory[block]; if (block>0) n-=memory[block-1];
+		int n0=0; if (block>0) n0=memory[block-1];
+		if (s==0) {
+			Cp(Gs+M,G1,M);Cp(Gg_f,Gs+M,M);
 		} else {
-			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero; 
+			Cp(Gg_f+n0*M,Gs+M,M); s++;
+		} 
+		t=1; 
+		v0=t0=k0=0;
+		for (k=2; k<=N; k++) {
+			t++; s++;
+			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2,M);
+			if (t>n) {
+				t0++;
+				if (t0 == n) t0 = ++v0;
+				t = t0 + 1;
+				k0 = k - t0 - 1;
+			}
+			if ((t == t0+1 && t0 == v0)
+		  	 || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(k0+t0)))
+		  	 || (2*(n-t+k) >= N-1)) 
+				Cp(Gg_f+(n0+t-1)*M,Gs+(k%2)*M,M);
+
 		}
-		k++;
-	}
-	delete [] GS; 
-	return Glast;
+		if ((N)%2!=0) {
+			Cp(Gs,Gs+M,M); //make sure that Gs has last end-point distribution on spot zero.
+		} 
+	} else
+	for (int k=0; k<N; k++) {
+		if (s>0) Lat[0] ->propagate(Gg_f,G1,s-1,s,M); s++;
+	} 	
 }
 
 
-bool Molecule::ComputePhiBra() {
-	int M=Lat[0]->M;
-	if (debug) cout <<"ComputePhiBra for Mol " + name << endl; 
-	bool success=true;
-	int generation=0;
-	int s=0; 
-	Real* G=Forward(generation,s);
-	Lat[0]->remove_bounds(G);
-	GN=Lat[0]->WeightedSum(G);
-	s--;
-	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);}
-	Backward(Seg[mon_nr[last_b[0]]]->G1,generation,s);	
-	return success;
-}
 
-bool Molecule::ComputePhiDendrimer() {
-	int M=Lat[0]->M;
-	if (debug) cout <<"ComputePhiDendrimer for Mol " + name << endl; 
-	bool success=true;
-	int generation=0;
-	int s=0; 
-	Real* G=Forward(generation,s);
-	Lat[0]->remove_bounds(G);
-	GN=Lat[0]->WeightedSum(G);
-	s--;
-	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);}
-	Backward(Seg[mon_nr[last_b[0]]]->G1,generation,s);	
-	return success;
-}
-
-
-/*   --------------------------------trash-----------------------------------------------------
 void ComputePhi(){
 	Lat[0]->DisG1(G1,g1,Bx,By,Bz,n_box);		
 	Cp(Gg_f,mask1,M*n_box); 

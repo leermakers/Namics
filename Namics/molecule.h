@@ -34,7 +34,7 @@ public:
 	Real n; 
 	Real GN,GN1,GN2; 
 	Real norm;
-	int chainlength;
+	int chainlength,N;
 	bool save_memory; 
 	bool compute_phi_alias; 
 	bool sym_dend; 
@@ -153,15 +153,19 @@ public:
 	void AllocateMemory(void);
 	bool PrepareForCalculations(int*); 
 	bool ComputePhi(); 
-	void propagate_forward(Real*, Real*, int&, int,int, int);
-	Real* propagate_forward(Real*,int&,int,int,int);
-	void propagate_backward(Real*, Real*, Real*,int&,int,int,int);
-	void propagate_backward(Real*,int&,int,int,int);
-	Real* Forward(int, int&);
-	void Backward(Real*, int, int&);
+	//void propagate_forward(Real*, Real*, int&, int,int, int);
+	Real* propagate_forward(Real*,int&,int,int,int); //for branched
+	Real* propagate_forward(Real*,int&,int,int,int,int);//for dendrimer
+
+	//void propagate_backward(Real*, Real*, Real*,int&,int,int,int);
+	void propagate_backward(Real*,int&,int,int,int); /for branched
+	void propagate_backward(Real*,int&,int,int,int,int); //for dendrimer
+	Real* ForwardBra(int, int&);
+	void BackwardBra(Real*, int, int&);
+	void BackwardDen(Real*, int, int&,int);
 	bool ComputePhiMon();
 	bool ComputeClampLin();
-	bool ComputePhiLin();
+	//bool ComputePhiLin();
 	bool ComputePhiBra();
 	bool ComputePhiDendrimer(); 
 };

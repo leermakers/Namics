@@ -1,0 +1,2 @@
+sys : noname : grand potential	sys : noname : free energy	mol : A : phibulk	mol : A : theta	mol : A : theta excess	mol : B : phibulk	mol : B : theta	mol : B : theta excess	mol : pol : phibulk	mol : pol : theta	mol : pol : theta excess	chi list : A : chi - B
+-3.067953e-012	-3.314789e+003	5.000000e-001	6.250000e+004	0.000000e+000	4.905601e-001	6.132001e+004	0.000000e+000	9.439920e-003	1.179990e+003	0.000000e+000	6.000000e-001

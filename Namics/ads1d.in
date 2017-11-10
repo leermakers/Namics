@@ -1,0 +1,34 @@
+lat : flat : gradients : 1
+lat : flat : n_layers : 200
+lat : flat : lattice_type : simple_cubic
+mon : S : freedom : frozen
+mon : S : frozen_range : firstlayer 
+mon : A : freedom : free
+mon : B : freedom : free
+mon : C : freedom : free
+mon : D : freedom : free
+mon : W : freedom : free
+mon : A : chi - S : -6
+mon : B : chi - S : -6
+mon : C : chi - S : -6
+mon : D : chi - S : -6
+mol : pol : composition : (A)10[(B)9[(C)8](D)7][(D)6](C)5[(B)4](A)3 
+//mol : pol : composition : (A)10[(B)7][(C)9](D)8 
+//mol : pol : composition : (A)10[(B)9[(C)8](D)7](C)5[(B)4](A)3 
+//mol : pol : composition :  (A)10[(B)10](C)10(A)10[(B)10](C)10
+//mol : pol : composition : (A)10[(B)10](C)10
+//mol : pol : composition : (A)10(B)10(C)10
+mol : pol : save_memory : true
+mol : W : composition : (W)1
+mol : W : freedom : solvent
+mol : pol : freedom : free
+mol : pol : phibulk : 0.01
+output : pro : append : false
+pro : mon : * : phi
+//kal : sys : * : grand_potential
+newton : isaac : method : pseudohessian
+newton : isaac : i_info : 1
+//newton : isaac : m : 64
+newton : isaac : deltamax : 0.1
+newton : isaac : iterationlimit : 1000
+newton : isaac : tolerance : 1e-7

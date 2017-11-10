@@ -1,0 +1,29 @@
+lat : hex : n_layers_x : 51
+lat : hex : n_layers_y : 51
+lat : hex : n_layers_z : 51
+lat : hex : lowerbound_x : periodic
+lat : hex : upperbound_x : periodic
+lat : hex : lowerbound_y : periodic
+lat : hex : upperbound_y : periodic
+lat : hex : lowerbound_z : mirror
+lat : hex : upperbound_z : mirror
+mon : S : freedom : frozen
+mon : S : frozen_range : 1,1,1;51,51,1
+mon : A : freedom : free
+mon : W : freedom : free
+//mon : A : chi-S : -1
+mol : pol : composition : (A)20
+mol : pol : freedom : free
+mol : pol : phibulk : 0.01
+mol : water : composition : (W)1 
+mol : water : freedom : solvent
+newton :isaac : method : DIIS
+newton : isaac : i_info : 1
+newton : isaac : m : 10
+newton : isaac : delta_max : 0.1
+newton : isaac : iterationlimit : 10
+newton : isaac : tolerance : 1e-6
+newton : isaac : read_guess : false
+
+
+

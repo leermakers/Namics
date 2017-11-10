@@ -1,0 +1,78 @@
+lat : flat :  n_layers_x : 100
+lat : flat :  n_layers_y : 100
+lat : flat :  latticetype : standard
+lat : flat : geometry : cylindrical
+lat : flat : gradients : 2
+lat : flat : lowerbound_x : mirror1
+lat : flat : upperbound_x : mirror1
+lat : flat : lowerbound_y : mirror1
+lat : flat : upperbound_y : mirror1
+
+mon : Ap : freedom : pinned
+mon : Ap : pinned_range : 30,30;75,75
+mon : B : freedom : free
+
+mon : A : chi - B : 0.6
+mon : Ap : chi - B : 0.6
+
+mol : A : composition : (Ap)4
+mol : A : freedom : restricted
+mol : A : theta : 5e5
+
+mol : B : composition : (B)4
+mol : B : freedom : solvent 
+
+mol : pol : composition : (A)20(B)20
+mol : pol : freedom : free
+mol : pol : phibulk : 0.00000943992
+
+newton : isaac : method : SD
+newton : isaac : DIIS : 4
+newton : isaac : m : 4
+newton : isaac : e_info : true
+newton : isaac : s_info : true
+newton : isaac : deltamax : 0.1
+newton : isaac : iterationlimit : 500
+newton : isaac : print_iteration_info : 25
+
+
+output : filename.pro : type : profiles
+output : filename.pro : template : temp.pro
+output : filename.kal : type : kal
+output : filename.kal : template : temp.kal
+output : filename.vtk : type : vtk
+output : filename.vtk : template : temp.vtk
+output : filenameOmega.vtk : type : vtk
+output : filenameOmega.vtk : template : tempOmega.vtk
+
+start
+mon : Ap : freedom : free
+mol : A : theta : 1.1e6
+mol : pol : phibulk : 0.000943992
+start
+mol : pol : phibulk : 0.00943992
+start
+newton : isaac : iterationlimit : 1000
+newton : isaac : deltamax : 1
+start
+start
+start
+start
+start
+start
+start
+start
+lat : flat : offset_first_layer_x : 0
+var : lat : flat : offset_first_layer_x
+var : lat : step : 1
+var : lat : end_value : 20
+var : lat : type : integer
+
+
+
+
+
+
+
+
+

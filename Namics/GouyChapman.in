@@ -1,0 +1,37 @@
+lat : hex : n_layers : 100
+lat : hex : bondlength : 5e-10
+mon : S : freedom : frozen
+mon : S : frozen_range : firstlayer
+//mon : S : valence : -0.1
+mon : S : e.psi0/kT : -3
+mon : Na : freedom : free
+mon : Na : valence : 1
+mon : Cl : freedom : free
+mon : Cl : valence : -1
+mon : W : freedom : free
+mol : na : composition : (Na)1
+mol : na : freedom : neutralizer
+mol : cl : composition : (Cl)1
+mol : cl : freedom : free
+mol : cl : phibulk : 0.001
+mol : water : composition : (W)1 
+mol : water : freedom : solvent
+newton :isaac : method : pseudohessian
+newton : isaac : i_info : 1
+//newton : isaac : m : 64
+newton : isaac : deltamax : 1
+newton : isaac : iterationlimit : 1000
+newton : isaac : tolerance : 1e-6
+//newton : isaac : read_guess : false
+output : pro : append : false
+output : ana : append : false
+pro : mon : * : phi
+pro : sys : noname : psi
+pro : sys : noname : q 
+sys : frans : final_guess : file
+//sys : frans : initial_guess : file
+//sys : frans : guess_inputfile : X.outiv
+start
+lat : hex : n_layers : 100
+start
+

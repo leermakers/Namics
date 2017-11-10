@@ -1,0 +1,46 @@
+lat : hex : n_layers_x : 51
+lat : hex : n_layers_y : 51
+lat : hex : n_layers_z : 51
+lat : hex : gradients : 3
+lat : hex : lattice_type : simple_cubic
+lat : hex : lowerbound_x : periodic
+lat : hex : upperbound_x : periodic
+lat : hex : lowerbound_y : periodic
+lat : hex : upperbound_y : periodic
+lat : hex : lowerbound_z : mirror
+lat : hex : upperbound_z : mirror
+//sys : ram : calculation_type : micro-emulsion
+//engine : nice : MC : true
+//sys : ram : variation : 1
+mon : A : freedom : free
+mon : B : freedom : free
+mon : A : chi-B : 0.6
+//mon : X : freedom : tagged
+//mon : X : tagged_range : (26,26,26)
+
+mol : A : composition : (A)4
+mol : B : composition : (B)4
+//mol : AB : composition : (A)20(X)1(B)20
+//mol : AX : composition : (A)20(X)1
+//mol : XB : composition : (X)1(B)20
+mol : A : freedom : restricted
+mol : A : theta : 66325.5
+mol : B : freedom : solvent
+//mol : A : save_memory : true
+output : ana : append : true
+//pro : mol : * : phi
+//kal : sys : * : grand_potential
+newton :isaac : method : DIIS
+newton : isaac : i_info : 25
+newton : isaac : m : 60
+newton : isaac : deltamax : 0.1
+newton : isaac : iterationlimit : 100
+newton : isaac : tolerance : 1e-5
+//newton : isaac : read_guess : true
+//sys : frans : GPU : true
+alias : N : value : 10
+start
+//mol : A : theta : 66360
+//start
+//mol : A : theta : 66361
+//start

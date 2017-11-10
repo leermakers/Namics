@@ -41,7 +41,7 @@ extern bool debug;
 //extern Real factor;
 #endif
 
-enum MoleculeType {monomer, linear, branched, dendrimer, star, comb, asym_dendrimer, ring};
+enum MoleculeType {monomer, linear, branched, dendrimer, comb, ring};
 
 #endif
 /*

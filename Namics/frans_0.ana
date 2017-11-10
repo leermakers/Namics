@@ -1,0 +1,132 @@
+version: 0.0.0.0.0.0.0.0 Tue Mar 28 11:41:56 2017
+sys : frans : e : 1.602170e-19 
+sys : frans : k_B : 1.380650e-23 
+sys : frans : eps0 : 8.854180e-12 
+sys : frans : temperature : 2.981500e+02 
+sys : frans : free_energy : nan 
+sys : frans : grand_potential : nan 
+sys : frans : calculation_type :  
+sys : frans : guess_type :  
+sys : frans : solvent : B 
+sys : frans : alpha : profile;0 
+sys : frans : GrandPotentialDensity : profile;1 
+sys : frans : FreeEnergyDensity : profile;2 
+lat : hex : gradients : 3 
+lat : hex : volume : 132651 
+lat : hex : n_layers_x : 51 
+lat : hex : n_layers_y : 51 
+lat : hex : n_layers_z : 51 
+lat : hex : bond_length : 0.000000e+00 
+lat : hex : lattice_type : simple_cubic 
+lat : hex : lowerbound_x : periodic 
+lat : hex : upperbound_x : periodic 
+lat : hex : lowerbound_y : mirror 
+lat : hex : upperbound_y : periodic 
+lat : hex : lowerbound_z : periodic 
+newton : isaac : m : 60 
+newton : isaac : iterations : 51 
+newton : isaac : iterationlimit : 100 
+newton : isaac : delta_max : 1.000000e-01 
+newton : isaac : residual : 0.000000e+00 
+newton : isaac : tolerance : 1.000000e-05 
+newton : isaac : method : DIIS 
+newton : isaac : stop_criterion :  
+seg : A : chi-B : 6.000000e-01 
+seg : A : freedom : free 
+seg : A : phi : profile;0 
+seg : A : u : profile;1 
+seg : B : chi-A : 6.000000e-01 
+seg : B : freedom : free 
+seg : B : phi : profile;0 
+seg : B : u : profile;1 
+mol : A : chainlength : 4 
+mol : A : theta : 6.632550e+04 
+mol : A : theta exc : 6.632550e+04 
+mol : A : n : 1.658138e+04 
+mol : A : phibulk : 2.164891e-13 
+mol : A : Mu : nan 
+mol : A : GN : nan 
+mol : A : norm : 0.000000e+00 
+mol : A : composition : (A)4 
+mol : A : freedom : restricted 
+mol : A : phi : profile;0 
+mol : A : phi-A : profile;1 
+mol : B : chainlength : 4 
+mol : B : theta : nan 
+mol : B : theta exc : nan 
+mol : B : n : nan 
+mol : B : phibulk : 1.000000e+00 
+mol : B : Mu : nan 
+mol : B : GN : nan 
+mol : B : norm : 2.500000e-01 
+mol : B : composition : (B)4 
+mol : B : freedom : solvent 
+mol : B : phi : profile;0 
+mol : B : phi-B : profile;1 
+system delimiter 
+version: 0.0.0.0.0.0.0.0 Tue Mar 28 12:50:42 2017
+sys : noname : e : 1.602170e-19 
+sys : noname : k_B : 1.380650e-23 
+sys : noname : eps0 : 8.854180e-12 
+sys : noname : temperature : 2.981500e+02 
+sys : noname : free_energy : -3.089017e+03 
+sys : noname : grand_potential : 0.000000e+00 
+sys : noname : calculation_type :  
+sys : noname : guess_type :  
+sys : noname : solvent : B 
+sys : noname : alpha : profile;0 
+sys : noname : GrandPotentialDensity : profile;1 
+sys : noname : FreeEnergyDensity : profile;2 
+lat : hex : gradients : 3 
+lat : hex : volume : 132651 
+lat : hex : n_layers_x : 51 
+lat : hex : n_layers_y : 51 
+lat : hex : n_layers_z : 51 
+lat : hex : bond_length : 0.000000e+00 
+lat : hex : lattice_type : simple_cubic 
+lat : hex : lowerbound_x : periodic 
+lat : hex : upperbound_x : periodic 
+lat : hex : lowerbound_y : mirror 
+lat : hex : upperbound_y : periodic 
+lat : hex : lowerbound_z : periodic 
+newton : isaac : m : 60 
+newton : isaac : iterations : 0 
+newton : isaac : iterationlimit : 100 
+newton : isaac : delta_max : 1.000000e-01 
+newton : isaac : residual : 0.000000e+00 
+newton : isaac : tolerance : 1.000000e-05 
+newton : isaac : method : DIIS 
+newton : isaac : stop_criterion :  
+seg : A : chi-B : 6.000000e-01 
+seg : A : freedom : free 
+seg : A : phi : profile;0 
+seg : A : u : profile;1 
+seg : B : chi-A : 6.000000e-01 
+seg : B : freedom : free 
+seg : B : phi : profile;0 
+seg : B : u : profile;1 
+mol : A : chainlength : 4 
+mol : A : theta : 6.632550e+04 
+mol : A : theta exc : 0.000000e+00 
+mol : A : n : 1.658138e+04 
+mol : A : phibulk : 5.000000e-01 
+mol : A : Mu : -9.314718e-02 
+mol : A : GN : 1.326510e+05 
+mol : A : norm : 1.250000e-01 
+mol : A : composition : (A)4 
+mol : A : freedom : restricted 
+mol : A : phi : profile;0 
+mol : A : phi-A : profile;1 
+mol : B : chainlength : 4 
+mol : B : theta : 6.632550e+04 
+mol : B : theta exc : 0.000000e+00 
+mol : B : n : 1.658138e+04 
+mol : B : phibulk : 5.000000e-01 
+mol : B : Mu : -9.314718e-02 
+mol : B : GN : 1.326510e+05 
+mol : B : norm : 1.250000e-01 
+mol : B : composition : (B)4 
+mol : B : freedom : solvent 
+mol : B : phi : profile;0 
+mol : B : phi-B : profile;1 
+system delimiter 

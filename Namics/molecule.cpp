@@ -800,7 +800,7 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 					string sA,sB,sC;
 					sA=s.substr(0,pos_low);
 					sB=s.substr(pos_low+1,pos_close-pos_low-1);
-					sC=s.substr(pos_open,s.size()-pos_open);  
+					sC=s.substr(pos_open-1,s.size()-pos_open+1);  
 					s=sA;for (int k=0; k<x; k++) s.append(sB); s.append(sC);
 				}
 			}
@@ -940,6 +940,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	bool success = true;
 	bool aliases = true;
 	MolType=linear;//default; 
+	chainlength=0;
 	int loopnr=0;
 	vector<int> open;
 	vector<int> close;
@@ -981,7 +982,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		}
 	}
 	sub.clear();
-	In[0]->split(s,',',sub);
+	In[0]->split(s,',',sub); 
 	int length=sub.size();
 	int length_open;
 	int i,j,k,a,f,dd; 
@@ -1012,6 +1013,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	}
 	
 	if (!In[0]->EvenSquareBrackets(s,open,close)) {
+
 		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl; 
 		success=false;  
 	}
@@ -1039,11 +1041,11 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 
 	switch(MolType) {
 		case linear:
-			first_s.push_back(-1);
+			first_s.push_back(-1); 
 			last_s.push_back(-1);
 			first_b.push_back(-1);
 			last_b.push_back(-1);
-			GenerateTree(s,generation,pos,open,close); 
+			GenerateTree(s,generation,pos,open,close);
 			break;
 		case branched:
 			first_s.push_back(-1);
@@ -1276,8 +1278,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 //length=n_mon.size();
 //for (int i=0; i<length; i++) cout <<"block " << i << " n_mon " << n_mon[i] << " mon_nr " << mon_nr[i] << " d_mon " << d_mon[i] << endl;   
 	}
-
-
 	success=MakeMonList();
 	if (chainlength==1) MolType=monomer;	
 
@@ -1622,8 +1622,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 				Cp(Gg_f+first_s[generation]*M,G1,M);
 			}
 			 s++;
-		} 
-	}
+		} 	}
 	if (save_memory) {
 		return Gg_f+last_stored[block]*M;
 	} else return Gg_f+(s-1)*M;	
@@ -1860,9 +1859,8 @@ bool Molecule::ComputePhiBra() {
 	return success;
 }
 
-Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int arm, int M) { \\for dendrimer
-if (debug) cout <<"propagate_forward for Mol " + name << endl;
-	
+Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int arm, int M) { //for dendrimer
+if (debug) cout <<"propagate_forward for Molecule " + name << endl;
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t;
@@ -1872,7 +1870,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 			Cp(Gs+M,G1,M); Cp(Gs,G1,M); Cp(Gg_f+n0*M,Gs+M,M); last_stored[block]=n0;
 		} else {
 			if (s==first_s[arm]) {
-				Cp(Gs,last_stored[last_b[last_a[generation-1]]+1]*M,M); //Cp(Gs+M,Gs,M);			
+				//Nog niet af: Cp(Gs,last_stored[last_b[last_a[generation-1]]+1]*M,M); //Cp(Gs+M,Gs,M);			
 			} 
 			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero; 
 			Cp(Gg_f+n0*M,Gs+M,M); s++;
@@ -2031,16 +2029,16 @@ bool Molecule::ComputePhiDendrimer() {
 	int M=Lat[0]->M;
 	Real* GS = new Real[3*M];
 	int s=0;
-	Real* Glast;
+	Real* Glast=NULL;
 	bool success=true;
 	int n_g=first_a.size();
 	for (int g=0; g<n_g; g++) {
-		int n_a=first_b.size();
+		//int n_a=first_b.size();
 		int a0=first_a[g],aN=last_a[g];
 		for (int a=a0; a<=aN; a++) {
 			Cp(GS+2*M,UNITY,M);
 			int b0=first_b[a], bN=last_b[a];
-			for (b=b0; b<=bN; b++) {
+			for (int b=b0; b<=bN; b++) {
 				Glast=propagate_forward(Seg[mon_nr[b]]->G1,s,b,g,a,M);
 			}
 			Cp(GS,Glast,M);

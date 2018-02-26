@@ -9,7 +9,7 @@ mon : C : pinned_range : 1;4
 mon : O : freedom : free
 mon : W : freedom : free
 
-mol : lipid : composition : (C)#N((O)1(C)2)5[(O)1](O)1
+mol : lipid : composition : (C)#N#((O)1(C)2)5[(O)1](O)1
 mol : lipid : freedom : restricted
 mol : lipid : theta : 2.5
 

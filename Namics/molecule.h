@@ -158,7 +158,7 @@ public:
 	Real* propagate_forward(Real*,int&,int,int,int,int);//for dendrimer
 
 	//void propagate_backward(Real*, Real*, Real*,int&,int,int,int);
-	void propagate_backward(Real*,int&,int,int,int); /for branched
+	void propagate_backward(Real*,int&,int,int,int); //for branched
 	void propagate_backward(Real*,int&,int,int,int,int); //for dendrimer
 	Real* ForwardBra(int, int&);
 	void BackwardBra(Real*, int, int&);

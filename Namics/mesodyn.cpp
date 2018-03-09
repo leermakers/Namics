@@ -1,41 +1,39 @@
-#include "engine.h"
+#include "mesodyn.h"
 
-Engine::Engine(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_, string name_) {
+Mesodyn::Mesodyn(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_, string name_) {
 	In=In_; name=name_;   Lat=Lat_; Mol=Mol_; Seg = Seg_; Sys=Sys_; New=New_; 
-	KEYS.push_back("brand");  
+	KEYS.push_back("timesteps"); 
+	KEYS.push_back("timebetweensaves");
 }
-Engine::~Engine() {
-}
-
-void Engine::AllocateMemory() {
-	if (debug) cout <<"nothing to allocate in Engine" << endl; 
+Mesodyn::~Mesodyn() {
 }
 
+void Mesodyn::AllocateMemory() {
+	if (debug) cout <<"nothing to allocate in Mesodyn" << endl; 
+}
 
-void Engine::PutParameter(string new_param) {
+
+void Mesodyn::PutParameter(string new_param) {
 	KEYS.push_back(new_param); 
 }
 
-bool Engine::CheckInput(int start) {
-if (debug) cout <<"Check Engine" << endl;
+bool Mesodyn::CheckInput(int start) {
+if (debug) cout <<"Check Mesodyn" << endl;
 	bool success=true;
 //right now all the checks for engine are done in input.cpp. could be move back here.
-	success=In[0]->CheckParameters("engine",name,start,KEYS,PARAMETERS,VALUES);
+	success=In[0]->CheckParameters("mesodyn",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		vector<string> options;
-		options.push_back("mesodyn"); options.push_back("MC"); options.push_back("MD"); 
-		if (GetValue("brand").size()>0) {
-                   if (!In[0]->Get_string(GetValue("brand"),brand,options,"In engine " + name + " value of brand " + brand + " is not recognised"));
-		} ;
-		if (brand=="mesodyn") {
-			Mdyn.push_back(new Mesodyn(In,Lat,Seg,Mol,Sys,New,In[0]->MesodynList[0])); success=Mdyn[0]->CheckInput(start);
-		}
+		if (GetValue("timesteps").size()>0) {
+                   success=In[0]->Get_int(GetValue("timesteps"),timesteps, 1, 10000, "The number of timesteps should be between 1 and 10000");
+		} 
+	cout <<"timesteps is " << timesteps << endl;
 
 	}
 	return success; 
 }
  
-string Engine::GetValue(string parameter){
+string Mesodyn::GetValue(string parameter){
 	int i=0;
 	int length = PARAMETERS.size();
 	while (i<length) {
@@ -47,23 +45,23 @@ string Engine::GetValue(string parameter){
 	return "" ; 
 }
 
-void Engine::push(string s, Real X) {
+void Mesodyn::push(string s, Real X) {
 	Reals.push_back(s);
 	Reals_value.push_back(X); 
 }
-void Engine::push(string s, int X) {
+void Mesodyn::push(string s, int X) {
 	ints.push_back(s);
 	ints_value.push_back(X); 
 }
-void Engine::push(string s, bool X) {
+void Mesodyn::push(string s, bool X) {
 	bools.push_back(s);
 	bools_value.push_back(X); 
 }
-void Engine::push(string s, string X) {
+void Mesodyn::push(string s, string X) {
 	strings.push_back(s);
 	strings_value.push_back(X); 	
 }
-void Engine::PushOutput() {
+void Mesodyn::PushOutput() {
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -73,13 +71,13 @@ void Engine::PushOutput() {
 	ints.clear();
 	ints_value.clear();  
 }
-Real* Engine::GetPointer(string s) {
+Real* Mesodyn::GetPointer(string s) {
 	//vector<string> sub;
 	//nothing yet
 	return NULL;
 }
 
-int Engine::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
+int Mesodyn::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
 	int i=0;
 	int length = ints.size();
 	while (i<length) {

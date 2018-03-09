@@ -1,15 +1,14 @@
-#ifndef ENGINExH
-#define ENGINExH
+#ifndef MESODYNxH
+#define MESODYNxH
 #include "namics.h"
 #include "input.h"
 #include "system.h"
 #include "newton.h"
-#include "mesodyn.h"
-class Engine {
+class Mesodyn {
 public:
-	Engine(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,string);
+	Mesodyn(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,string);
 
-~Engine();
+~Mesodyn();
 	void AllocateMemory(); 
 	string name; 
 	vector<Input*> In; 
@@ -17,8 +16,7 @@ public:
 	vector<Segment*> Seg;
 	vector<Molecule*> Mol;
 	vector<System*> Sys; 	
-	vector<Newton*> New;
-	vector<Mesodyn*> Mdyn;  	
+	vector<Newton*> New; 	
 	string brand; 
 
 	vector<string> ints;
@@ -36,6 +34,8 @@ public:
 	void PushOutput();
 	Real* GetPointer(string);
 	int GetValue(string,int&,Real&,string&);
+	int timesteps;
+	int timebetweensaves;
 	
 
 	std::vector<string> KEYS;

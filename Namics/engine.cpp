@@ -23,13 +23,16 @@ if (debug) cout <<"Check Engine" << endl;
 	success=In[0]->CheckParameters("engine",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		vector<string> options;
-		options.push_back("mesodyn"); options.push_back("MC"); options.push_back("MD"); 
+		options.push_back("mesodyn"); options.push_back("monte"); options.push_back("MD"); 
 		if (GetValue("brand").size()>0) {
                    if (!In[0]->Get_string(GetValue("brand"),brand,options,"In engine " + name + " value of brand " + brand + " is not recognised"));
 		} ;
 		if (brand=="mesodyn") {
 			Mdyn.push_back(new Mesodyn(In,Lat,Seg,Mol,Sys,New,In[0]->MesodynList[0])); success=Mdyn[0]->CheckInput(start);
 		}
+		if (brand=="monte") {
+                        Mont.push_back(new Monte(In,Lat,Seg,Mol,Sys,New,In[0]->MonteList[0])); success=Mont[0]->CheckInput(start);
+                }
 
 	}
 	return success; 

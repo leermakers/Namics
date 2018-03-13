@@ -3,7 +3,7 @@ Input::Input(string name_) {
 	name=name_;
 	KEYS.push_back("start"); 
 	KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); KEYS.push_back("alias"); 	
- 	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("mesodyn"); KEYS.push_back("output"); 
+ 	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("mesodyn"); KEYS.push_back("monte"); KEYS.push_back("output"); 
 	KEYS.push_back("var");    
 	
 
@@ -654,6 +654,7 @@ bool Input::MakeLists(int start) {
 	OutputList.clear();
 	EngineList.clear();
 	MesodynList.clear();
+	MonteList.clear();
 	VarList.clear();
 
 	if (!TestNum(SysList,"sys",0,1,start)) {cout << "There can be no more than 1 'sys name' in the input" << endl; }
@@ -668,7 +669,8 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(MolList,"mol",1,1000,start)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}
 	if (!TestNum(OutputList,"output",1,1000,start)) {cout << "No output defined! " << endl;}
 	if (!TestNum(EngineList,"engine",0,1,start)) {cout << "There can be no more than 1 'engine' name in the input " << endl; success=false;}
-	if (!TestNum(MesodynList,"mesodyn",0,1,start)) {cout << "There can be no more than 1 'engine' name in the input " << endl; success=false;}
+	if (!TestNum(MesodynList,"mesodyn",0,1,start)) {cout << "There can be no more than 1 'mesodyn' engine brand name in the input " << endl; success=false;}
+	if (!TestNum(MonteList,"monte",0,1,start)) {cout << "There can be no more than 1 'Monte carlo' engine brand name in the input " << endl; success=false;}
 	if (EngineList.size()==0) EngineList.push_back("noname");
 	if (!TestNum(VarList,"var",0,10,start)) 
 	if (VarList.size()==0) VarList.push_back("noname");

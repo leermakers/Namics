@@ -27,7 +27,7 @@ public:
 	vector<int> ints_value;
 	vector<bool> bools_value;
 	vector<string> strings_value;
-	int Positions1Dto3D(int, int);
+	int Positions1Dto3D(int*, int, int, int);
 	void push(string,Real);
 	void push(string,int);
 	void push(string,bool);
@@ -37,7 +37,7 @@ public:
 	int GetValue(string,int&,Real&,string&);
 	int timesteps;
 	int timebetweensaves;
-	
+
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -45,6 +45,7 @@ public:
 	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string); 
+
 
 };
 #endif

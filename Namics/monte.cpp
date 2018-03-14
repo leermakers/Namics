@@ -20,7 +20,6 @@ void Monte::PutParameter(string new_param) {
 bool Monte::CheckInput(int start) {
 if (debug) cout <<"Check Monte" << endl;
 	bool success=true;
-//right now all the checks for engine are done in input.cpp. could be move back here.
 	success=In[0]->CheckParameters("monte",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		vector<string> options;
@@ -33,11 +32,16 @@ if (debug) cout <<"Check Monte" << endl;
 	return success; 
 }
 
-int Monte::Positions1Dto3D(int H_P, int n_pos){
+int Monte::Positions1Dto3D(int* H_P, int n_pos, int JX, int JY){
 // Usually position is flattened into 1D. To make monte carlo moves we need particle co-ordinates in 3D
 // This procedure converts flattend array into expanded 3D array. 
+	int pos_x[n_pos];
+	int pos_y[n_pos];
+	int pos_z[n_pos];
 	for(int i=0; i<n_pos; i++){
-	//convert
+	pos_x[i]=H_P[i]/JX;
+	pos_y[i]=(H_P[i]-pos_x[i]*JX)/JY;
+	pos_z[i]=(H_P[i]-pos_x[i]*JX)%JY;
 	}
 	return 0;
 }

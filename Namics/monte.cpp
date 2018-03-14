@@ -2,7 +2,7 @@
 
 Monte::Monte(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_, string name_) {
 	In=In_; name=name_;   Lat=Lat_; Mol=Mol_; Seg = Seg_; Sys=Sys_; New=New_; 
-	KEYS.push_back("timesteps"); 
+	KEYS.push_back("timesteps"); KEYS.push_back("walks"); 
 	KEYS.push_back("timebetweensaves");
 }
 Monte::~Monte() {
@@ -32,7 +32,23 @@ if (debug) cout <<"Check Monte" << endl;
 	}
 	return success; 
 }
- 
+
+int Monte::Positions1Dto3D(int H_P, int n_pos){
+// Usually position is flattened into 1D. To make monte carlo moves we need particle co-ordinates in 3D
+// This procedure converts flattend array into expanded 3D array. 
+	for(int i=0; i<n_pos; i++){
+	//convert
+	}
+	return 0;
+}
+
+
+
+
+
+
+
+
 string Monte::GetValue(string parameter){
 	int i=0;
 	int length = PARAMETERS.size();

@@ -115,7 +115,8 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 		if (GetValue("method").size()==0) {method="DIIS";} else {
 			vector<string>method_options; 
 			method_options.push_back("DIIS");
-			//method_options.push_back("DIIS-ext"); //can be included again wehn adjusted for charges and guess
+			method_options.push_back("DIIS-mesodyn");
+			//method_options.push_back("DIIS-ext"); //can be included again when adjusted for charges and guess
 			//method_options.push_back("Picard"); //can be included again when adjusted for charges and guess
 			method_options.push_back("pseudohessian"); 
 			method_options.push_back("hessian"); 
@@ -1236,7 +1237,10 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	Zero(x0,iv);
 	it=0; k_diis=1; 
 	int k=0;
-	if (method=="DIIS-ext") ComputeG_ext(); else ComputeG(g);
+	// Commented in CheckInput(): if (method=="DIIS-ext") ComputeG_ext();
+	// BTW, this next line seems redundant, given the loop below? Can we maybe unify these into 1 loop?
+	if (method=="DIIS-mesodyn") ComputeG_mesodyn();
+	else ComputeG(g);
 	YplusisCtimesX(xx,g,delta_max,iv);
 	YisAminB(x_x0,xx,x0,iv);
 	Cp(xR,xx,iv);
@@ -1247,7 +1251,7 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
 		Cp(x0,xx,iv);
-		if (method=="DIIS-ext") ComputeG_ext(); else ComputeG(g);
+		if (method=="DIIS-mesodyn") ComputeG_mesodyn(); else ComputeG(g);
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(xx,g,-delta_max,iv);
 		Cp(xR+k*iv,xx,iv); YisAminB(x_x0+k*iv,xx,x0,iv);
@@ -1397,4 +1401,14 @@ if(debug) cout <<"CompueG_est() in  Newton " << endl;
 	Norm(g+sysmon_length*M,-1,M);//you can improve ......
 	//Norm(g,-1,sysmon_length*M);
 	
+}
+
+void Newton::ComputeG_mesodyn(Real* g) {
+	if (debug) cout << "ComputeG_mesodyn in  Newton " << endl;
+	int M = Lat[0]->M;
+	Real chi;
+	int sysmon_length = Sys[0]->SysMonList.size();
+	int mon_length = In[0]->MonList.size();
+	ComputePhis();
+	//Target function: (phi - rho) == 0
 }

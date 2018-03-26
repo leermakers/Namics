@@ -129,11 +129,13 @@ public:
 	bool PrepareForCalculations(void);
 	void Ax(Real* , Real* , int );
 	void DIIS(Real* , Real* , Real* , Real*, Real* ,Real* , int ,int, int , int );
-	void ComputeG(Real*); 
-	void COMPUTEG(Real*,Real*,int); 
+
+	void COMPUTEG(Real*,Real*,int);
 	void ResetX(Real*,int);
 	void ComputePhis();
+	void ComputeG(Real*);
 	void ComputeG_ext();
+	void ComputeG_mesodyn(Real*);
 	void MinvTimesQ(Real*, Real*, int);
 	bool SolvePsi(Real*, Real*, Real*);
 	bool Iterate_Picard();

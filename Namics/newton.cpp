@@ -1250,7 +1250,7 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	int k=0;
 	// computeG_ext() has been ommented in CheckInput():
 	// if (method=="DIIS-ext") ComputeG_ext();
-	if (method=="DIIS-mesodyn") ComputeG_mesodyn(); // Start mesodyn
+	if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); //* commented function call, to prevent compilition error. 
 	else ComputeG(g); // Or fall back to the classical method.
 	YplusisCtimesX(xx,g,delta_max,iv);
 	YisAminB(x_x0,xx,x0,iv);
@@ -1262,7 +1262,7 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
 		Cp(x0,xx,iv);
-		if (method=="DIIS-mesodyn") ComputeG_mesodyn(); else ComputeG(g);
+		if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); else ComputeG(g);
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(xx,g,-delta_max,iv);
 		Cp(xR+k*iv,xx,iv); YisAminB(x_x0+k*iv,xx,x0,iv);

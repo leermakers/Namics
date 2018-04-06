@@ -13,22 +13,22 @@ public:
 
 ~Newton();
 
-	string name; 
-	vector<Input*> In; 
+	string name;
+	vector<Input*> In;
 	vector<System*> Sys;
 	vector<Segment*> Seg;
-	vector<Lattice*> Lat;  
+	vector<Lattice*> Lat;
 	vector<Molecule*> Mol;
 	int iterationlimit,m,i_info;
-	int k_diis,it; 
+	int k_diis,it;
 	double tolerance,delta_max;
 	double residual;
-	bool e_info,s_info; 
+	bool e_info,s_info;
 	string method;
 	bool store_guess;
-	bool read_guess;  
+	bool read_guess;
 	string stop_criterion;
-	int iv; 
+	int iv;
 	int M,MX,MY,MZ,JX,JY;
 
 	vector<string> ints;
@@ -54,27 +54,27 @@ public:
 	double* alpha;
 	double* Aij;
 	double* Ci;
-	double* Apij; 
-//if properties are added, also read them form input and/or set the default. See CheckInput() below. 
-		
+	double* Apij;
+//if properties are added, also read them form input and/or set the default. See CheckInput() below.
+
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
 	bool CheckInput(int);
-	void PutParameter(string); 
-	string GetValue(string); 
-	bool Solve();
-	void AllocateMemory(); 
+	void PutParameter(string);
+	string GetValue(string);
+	bool Solve(bool);
+	void AllocateMemory();
 	bool PrepareForCalculations(void);
 	void Ax(double* , double* , int );
 	void DIIS(double* , double* , double* , double*, double* ,double* , int , int , int );
-	void ComputeG(); 
+	void ComputeG();
 	void ComputePhis();
 	void ComputeG_ext();
 	bool Iterate_Picard();
 	bool Iterate_DIIS();
-	void Message(int, int,double, double); 
+	void Message(int, int,double, double);
 	bool PutU();
 
 };

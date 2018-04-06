@@ -1130,7 +1130,7 @@ void Newton::Copy(Real* x, Real* X, int MX, int MY, int MZ) {
 }
 
 bool Newton::Guess(Real *X, string METHOD, vector<string> MONLIST, bool CHARGED, int MX, int MY, int MZ){
-if (debug) cout << "Guess in Newton" << endl;
+	if (debug) cout << "Guess in Newton" << endl;
 	int M=Lat[0]->M;
 	bool success=true;
 
@@ -1155,29 +1155,21 @@ if (debug) cout << "Guess in Newton" << endl;
 
 /* 	Decides which computation method to use, depending on the method variable.
 		Iterate_DIIS supports mesodyn and the classic way.
-		Called by SuperIterate()
+		Called by main
 */
 bool Newton::Solve(bool report_errors) {
-if(debug) cout <<"Solve in  Newton " << endl;
+	if(debug) cout <<"Solve in  Newton " << endl;
 	bool success=true;
-	if (method=="pseudohessian") {iterate(xx,iv);} else
-	if (method=="Picard") {success=Iterate_Picard();} else success=Iterate_DIIS();
+	if (method=="pseudohessian") {iterate(xx,iv);}
+	else if (method=="Picard") {success=Iterate_Picard();}
+	else success=Iterate_DIIS();
 	Sys[0]->CheckResults(report_errors);
 	return success;
 }
 
-/*	Some code left over from debugging?
-		TODO: Why not implement this in main instead of overloading Solve?
-		Called from main()
-*/
-bool Newton::Solve(int search, int target, int ets, int etm) {
-if (debug) cout <<"Solve towards superiteration " << endl;
-	return SuperIterate(search,target,ets,etm);
-}
-
 
 void Newton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real residual, Real tolerance, string s) {
-if (debug) cout <<"Message in  Newton " << endl;
+	if (debug) cout <<"Message in  Newton " << endl;
 	if (it == iterationlimit) cout <<"Warning: "<<s<<"iteration not solved. Residual error= " << residual << endl;
 	if (e_info || s_info) {
 		cout <<" " <<s<<"problem solved" << endl;
@@ -1250,7 +1242,7 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	int k=0;
 	// computeG_ext() has been ommented in CheckInput():
 	// if (method=="DIIS-ext") ComputeG_ext();
-	if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); //* commented function call, to prevent compilition error. 
+	if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); //* commented function call, to prevent compilition error.
 	else ComputeG(g); // Or fall back to the classical method.
 	YplusisCtimesX(xx,g,delta_max,iv);
 	YisAminB(x_x0,xx,x0,iv);
@@ -1278,8 +1270,8 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	return it<iterationlimit+1;
 }
 
-/* 	The entry point that handles every solve method.
-		Called by solve(int int int int)
+/* 	The entry point that handles DIIS.
+		Called by main if success = false for pseudohessian, Iterate_Picard or iterate_DIIS.
 */
 bool Newton::SuperIterate(int search, int target,int ets,int etm) {
 if(debug) cout <<"SuperIteration in  Newton " << endl;

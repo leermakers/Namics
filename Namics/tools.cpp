@@ -240,6 +240,12 @@ __global__ void putalpha(Real *g,Real *phitot,Real *phi_side,Real chi,Real phibu
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (phitot[idx]>0) g[idx] = g[idx] - chi*(phi_side[idx]/phitot[idx]-phibulk);
 }
+
+__global__ void putalpha(Real *g,Real *phi_side,Real chi,Real phibulk,int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) g[idx] = g[idx] - chi*(phi_side[idx]-phibulk);
+}
+
 __global__ void div(Real *P,Real *A,int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (A[idx]>0) P[idx] /=A[idx];
@@ -949,6 +955,18 @@ void PutAlpha(Real *g, Real *phitot, Real *phi_side, Real chi, Real phibulk, int
 #else
 void PutAlpha(Real *g, Real *phitot, Real *phi_side, Real chi, Real phibulk, int M)   {
 	for (int i=0; i<M; i++) if (phitot[i]>0) g[i] = g[i] - chi*(phi_side[i]/phitot[i]-phibulk);
+}
+#endif
+
+#ifdef CUDA
+void PutAlpha(Real *g, Real *phi_side, Real chi, Real phibulk, int M)   {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	putalpha<<<n_blocks,block_size>>>(g,phi_side,chi,phibulk,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at PutAlpha"<<endl;}
+}
+#else
+void PutAlpha(Real *g, Real *phi_side, Real chi, Real phibulk, int M)   {
+	for (int i=0; i<M; i++) g[i] = g[i] - chi*(phi_side[i]-phibulk);
 }
 #endif
 

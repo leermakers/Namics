@@ -122,6 +122,7 @@ public:
 	bool Guess(Real*,string,vector<string>,bool,int,int,int);
 	string GetNewtonInfo(int&);
 	bool Solve(bool);
+	bool Solve(Real*,Real*); //first argument should contain rho, second argument must contain the alpha
 	bool SuperIterate(int,int,int,int);
 	void DeAllocateMemory();
 	void AllocateMemory();
@@ -138,6 +139,7 @@ public:
 	void MinvTimesQ(Real*, Real*, int);
 	bool SolvePsi(Real*, Real*, Real*);
 	bool Iterate_Picard();
+	bool Iterate_DIIS(Real*);
 	bool Iterate_DIIS();
 	void Message(bool,bool,int, int,Real, Real,string);
 	bool PutU();

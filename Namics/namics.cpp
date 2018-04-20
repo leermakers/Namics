@@ -176,14 +176,12 @@ int main(int argc, char *argv[]) {
 
     // Error code for faulty variate class creation
     if (n_etm > 1) {
-      cout << "too many equate_to_mu's in var statements. The limit is 1 "
-           << endl;
+      cout << "too many equate_to_mu's in var statements. The limit is 1 " << endl;
       return 0;
     }
     if (n_ets > 1) {
       cout
-          << "too many equate_to_solvent's in var statements. The liZZmit is 1 "
-          << endl;
+          << "too many equate_to_solvent's in var statements. The liZZmit is 1 " << endl;
       return 0;
     }
     if (n_search > 1) {
@@ -199,28 +197,22 @@ int main(int argc, char *argv[]) {
       return 0;
     }
     if (n_search > 0 && n_target == 0) {
-      cout << "lonely search. Please specify in 'var' a target function, e.g. "
-              "'var : sys-NN : grand_potential : 0'"
-           << endl;
+      cout << "lonely search. Please specify in 'var' a target function, e.g. 'var : sys-NN : grand_potential : 0'" << endl;
       return 0;
     }
     if (n_target > 0 && n_search == 0) {
-      cout << "lonely target. Please specify in 'var' a search function, e.g. "
-              "'var : mol-lipid : search : theta' "
-           << endl;
+      cout << "lonely target. Please specify in 'var' a search function, e.g. 'var : mol-lipid : search : theta'" << endl;
       return 0;
     }
 
     // Create newton class instance and check inputs (reference above)
-    New.push_back(
-        new Newton(In, Lat, Seg, Mol, Sys, Var, In[0]->NewtonList[0]));
+    New.push_back( new Newton(In, Lat, Seg, Mol, Sys, Var, In[0]->NewtonList[0]) );
     if (!New[0]->CheckInput(start)) {
       return 0;
     }
 
     // Create engine class instance and check inputs (reference above)
-    Eng.push_back(
-        new Engine(In, Lat, Seg, Mol, Sys, New, In[0]->EngineList[0]));
+    Eng.push_back( new Engine(In, Lat, Seg, Mol, Sys, New, In[0]->EngineList[0]) );
     if (!Eng[0]->CheckInput(start)) {
       return 0;
     }
@@ -232,8 +224,7 @@ int main(int argc, char *argv[]) {
 
     // Create output class instance and check inputs (reference above)
     for (int i = 0; i < n_out; i++) {
-      Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, Eng,
-                               In[0]->OutputList[i], i, n_out));
+      Out.push_back( new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out) );
       if (!Out[i]->CheckInput(start)) {
         cout << "input_error in output " << endl;
         return 0;
@@ -243,13 +234,12 @@ int main(int argc, char *argv[]) {
     // TODO: 1. sys.initial_guess is set to "previous_result" by default at
     // system.cpp:301
     //	2. What does this block do, exactly? It seems to handle some code for
-    //charged molecules.
+    // charged molecules.
     //	3. Can we move this to the system class bit?
 
     if (Sys[0]->initial_guess == "file") {
       MONLIST.clear();
-      if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST,
-                             CHARGED, MX, MY, MZ, 0)) {
+      if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, 0)) {
         // last argument 0 is to first checkout sizes of system.
         return 0;
       }
@@ -269,10 +259,9 @@ int main(int argc, char *argv[]) {
         IV += m;
       if (start > 1)
         free(X);
-      X = (Real*) malloc(IV * sizeof(Real));
+      X = (Real *)malloc(IV * sizeof(Real));
       MONLIST.clear();
-      Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED,
-                        MX, MY, MZ, 1);
+      Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, 1);
       // last argument 1 is to read guess in X.
     }
 
@@ -293,7 +282,8 @@ int main(int argc, char *argv[]) {
       New[0]->AllocateMemory();
       New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ);
 
-      // This is the starting point of all calculations. Solve provides the flow through computation schemes.
+      // This is the starting point of all calculations. Solve provides the flow
+      // through computation schemes.
       if (search_nr < 0 && ets_nr < 0 && etm_nr < 0)
         New[0]->Solve(true);
       else {
@@ -340,7 +330,7 @@ int main(int argc, char *argv[]) {
       CHARGED = Sys[0]->charged;
       if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
         free(X);
-      X = (Real*) malloc(IV * sizeof(Real));
+      X = (Real *)malloc(IV * sizeof(Real));
       for (int i = 0; i < IV; i++)
         X[i] = New[0]->xx[i];
       int length = Sys[0]->SysMonList.size();
@@ -355,8 +345,7 @@ int main(int argc, char *argv[]) {
       for (int i = 0; i < length; i++) {
         MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
       }
-      Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->method,
-                         MONLIST, Sys[0]->charged, start);
+      Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->method, MONLIST, Sys[0]->charged, start);
     }
     for (int i = 0; i < n_out; i++)
       delete Out[i];

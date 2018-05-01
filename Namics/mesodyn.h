@@ -12,10 +12,20 @@ public:
 
   ~Mesodyn();
   void AllocateMemory();
+
+
   void gaussianNoise(Real, Real, unsigned long);
-  void langevinFlux();
+  int findComponentNo();
+  int findComponentIndices();
+  void abort();
+  Real langevinFluxTwo(Real&, Real&, Real&, Real&);
+  Real langevinFluxThree(Real&, Real&, Real&, Real&, Real&, Real&);
+  Real langevinFluxFour(Real&, Real&, Real&, Real&, Real&, Real&, Real&, Real&);
+  void updateDensity();
 
   vector<Real> noise;
+  int componentNo;
+  Real D; //diffusion constant
 
   string name;
   vector<Input*> In;

@@ -11,6 +11,7 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   New = New_;
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
+  componentNo = findComponentNo();
 }
 Mesodyn::~Mesodyn() {
 }
@@ -60,14 +61,68 @@ void Mesodyn::gaussianNoise(Real mean, Real stdev, unsigned long count) {
     this->noise[i] = dist(prng);
   }
 
-/* Debugging code (output value in all elements):
+  /* Debugging code (output value in all elements):
 for (auto const &element: mesodyn.thisNoise)
 				std::cout << element << ' ';
 */
 }
 
-void Mesodyn::langevinFlux() {
+int Mesodyn::findComponentNo() {
+  return In[0]->MolList.size();
+}
+
+int Mesodyn::findComponentIndices() {
+  switch (componentNo) {
+    case 1:
+      cout << "WARNING: Only one component found, aborting!";
+      abort();
+    case 2:
+      return 2; //TODO: return indices
+    case 3:
+      return 2; //TODO: return indices
+    case 4:
+      return 2; //TODO: return indices
+    default:
+      cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!";
+      abort();
+      return 1; //error return code
+  }
+  return 1; //errror return code
+}
+
+void Mesodyn::abort()
+{
+  //TODO: What to do when something goes wrong?
+  // Abort in case of error
+}
+
+//Two components
+Real Mesodyn::langevinFluxTwo(Real &phiA, Real &phiB, Real &alphaA, Real &alphaB) {
   //Flux + gaussianNoise(Real, Real, unsigned long);
+  return 1; //some J
+}
+
+//Three components
+Real Mesodyn::langevinFluxThree(Real &phiA, Real &phiB, Real &phiC, Real &alphaA, Real &alphaB, Real &alphaC) {
+  //Real L1 = phiA*phiB;
+  //Real L2 = phiA*phiC;
+  //Real L3 = phiB*phiC;
+
+//  Real u1 = alphaC - alphaB;
+  //Real u2 = alphaC - alphaA;
+  //Real u3 = alphaB - alphaC;
+  //Real u4 = alphaB - alphaA;
+
+  return 1; // some J
+}
+
+//Four components
+Real Mesodyn::langevinFluxFour(Real &phiA, Real &phiB, Real &phiC, Real &phiD, Real &alphaA, Real &alphaB, Real &alphaC, Real &alphaD) {
+ return 1; // some J
+}
+
+void Mesodyn::updateDensity(){
+  //old density + langevinFluxTwo
 }
 
 string Mesodyn::GetValue(string parameter) {

@@ -13,19 +13,30 @@ public:
   ~Mesodyn();
   void AllocateMemory();
 
+  bool success {true};
+  string location;
 
   void gaussianNoise(Real, Real, unsigned long);
+  void pepareForCalculations();
   int findComponentNo();
   int findComponentIndices();
   void abort();
-  Real langevinFluxTwo(Real&, Real&, Real&, Real&);
-  Real langevinFluxThree(Real&, Real&, Real&, Real&, Real&, Real&);
-  Real langevinFluxFour(Real&, Real&, Real&, Real&, Real&, Real&, Real&, Real&);
+  void langevinFlux(vector<Real>&, vector<Real>&, vector<Real>&, vector<Real>&);
   void updateDensity();
+  bool mesodyn();
 
   vector<Real> noise;
   int componentNo;
-  Real D; //diffusion constant
+
+  //dummy variables
+  //real variables
+  Real D {0.5}; //diffusion constant
+  int size {10};
+  vector<Real> J;
+  //delete when done
+  Real dummyMean {1};
+  Real dummyStdev {1};
+  vector<Real> dummyVector {1,2,3,4,5};
 
   string name;
   vector<Input*> In;

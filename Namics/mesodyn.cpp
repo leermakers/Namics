@@ -1,6 +1,6 @@
 #include "mesodyn.h"
-#include <random>
 
+//Constructor
 Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Newton*> New_, string name_) {
   In = In_;
   name = name_;
@@ -11,7 +11,6 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   New = New_;
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
-  componentNo = findComponentNo();
 }
 Mesodyn::~Mesodyn() {
 }
@@ -19,10 +18,6 @@ Mesodyn::~Mesodyn() {
 void Mesodyn::AllocateMemory() {
   if (debug)
     cout << "nothing to allocate in Mesodyn" << endl;
-}
-
-void Mesodyn::PutParameter(string new_param) {
-  KEYS.push_back(new_param);
 }
 
 bool Mesodyn::CheckInput(int start) {
@@ -39,6 +34,82 @@ bool Mesodyn::CheckInput(int start) {
     cout << "timesteps is " << timesteps << endl;
   }
   return success;
+}
+
+/******** Flow control ********/
+
+void Mesodyn::pepareForCalculations() {
+  componentNo = findComponentNo();
+
+  //find the index ranges where each component / dimension is located in the matrix
+  if (componentNo == 1) {
+    //TODO: Not sure if this is already done in molecule.
+    cout << "WARNING: Only one component found, aborting!";
+    abort();
+  }
+  if (componentNo > 1 && componentNo < 3)
+    findComponentIndices();
+  else {
+    cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!";
+    abort();
+  }
+  J.resize(size);
+}
+
+bool Mesodyn::mesodyn() {
+  //TODO: How to get here from main.
+  pepareForCalculations();
+  if (success) {
+    //start loop from Newton, update using:
+    langevinFlux(dummyVector, dummyVector, dummyVector, dummyVector);
+    updateDensity();
+    //and loop untill we are done.
+    }
+  return success;
+}
+
+int Mesodyn::findComponentNo() {
+  return In[0]->MolList.size();
+}
+
+int Mesodyn::findComponentIndices() {
+  //TODO: implement this
+  // give me the means to find how large the lattice is!
+  // eg. 1-1000 is x,0,0 1001-2000 is x,1,0 etc.
+  // in essence I would like to know how to read it like a three dimensional matrix..
+  return 1; //errror return code
+}
+
+void Mesodyn::abort() {
+  //Once false is returned, Mesodyn automatically quits to main.
+  success = false;
+}
+
+/******** Calculations ********/
+
+//Two components
+void Mesodyn::langevinFlux(vector<Real>& phiA, vector<Real>& phiB, vector<Real>& alphaA, vector<Real>& alphaB) {
+  vector<Real> L(size);          //onsager coefficient
+  vector<Real> u(size);          //segment potential A
+
+  //TODO: boundary condition in lattice?
+
+  for (int z = 1; z < size; z++) {
+    L[z] = phiA[z] * phiA[z];
+  }
+
+  for (int z = 1; z < size; z++) {
+    gaussianNoise(dummyMean, dummyStdev, 2);
+    //segment "chemical potential" gradient
+    u[z] = alphaA[z] - alphaB[z];
+    J[z] = (-D * (((L[z] + L[z + 1]) * (u[z + 1] - u[z])) - ((L[z - 1] + L[z]) * (u[z] - u[z - 1]))) + noise[0]);
+    J[size+z] = (-D * (((L[z] + L[z + 1]) * (-u[z + 1] - -u[z])) - ((L[z - 1] + L[z]) * (-u[z] - -u[z - 1]))) + noise[1]);
+  }
+}
+
+void Mesodyn::updateDensity() {
+  //old density + langevinFluxTwo
+  //then call on Newton again.
 }
 
 /* Generates a vector of length count, contianing gaussian noise of given mean, standard deviation.
@@ -67,64 +138,11 @@ for (auto const &element: mesodyn.thisNoise)
 */
 }
 
-int Mesodyn::findComponentNo() {
-  return In[0]->MolList.size();
+/******* Tools ********/
+
+void Mesodyn::PutParameter(string new_param) {
+  KEYS.push_back(new_param);
 }
-
-int Mesodyn::findComponentIndices() {
-  switch (componentNo) {
-    case 1:
-      cout << "WARNING: Only one component found, aborting!";
-      abort();
-    case 2:
-      return 2; //TODO: return indices
-    case 3:
-      return 2; //TODO: return indices
-    case 4:
-      return 2; //TODO: return indices
-    default:
-      cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!";
-      abort();
-      return 1; //error return code
-  }
-  return 1; //errror return code
-}
-
-void Mesodyn::abort()
-{
-  //TODO: What to do when something goes wrong?
-  // Abort in case of error
-}
-
-//Two components
-Real Mesodyn::langevinFluxTwo(Real &phiA, Real &phiB, Real &alphaA, Real &alphaB) {
-  //Flux + gaussianNoise(Real, Real, unsigned long);
-  return 1; //some J
-}
-
-//Three components
-Real Mesodyn::langevinFluxThree(Real &phiA, Real &phiB, Real &phiC, Real &alphaA, Real &alphaB, Real &alphaC) {
-  //Real L1 = phiA*phiB;
-  //Real L2 = phiA*phiC;
-  //Real L3 = phiB*phiC;
-
-//  Real u1 = alphaC - alphaB;
-  //Real u2 = alphaC - alphaA;
-  //Real u3 = alphaB - alphaC;
-  //Real u4 = alphaB - alphaA;
-
-  return 1; // some J
-}
-
-//Four components
-Real Mesodyn::langevinFluxFour(Real &phiA, Real &phiB, Real &phiC, Real &phiD, Real &alphaA, Real &alphaB, Real &alphaC, Real &alphaD) {
- return 1; // some J
-}
-
-void Mesodyn::updateDensity(){
-  //old density + langevinFluxTwo
-}
-
 string Mesodyn::GetValue(string parameter) {
   int i = 0;
   int length = PARAMETERS.size();
@@ -136,7 +154,6 @@ string Mesodyn::GetValue(string parameter) {
   }
   return "";
 }
-
 void Mesodyn::push(string s, Real X) {
   Reals.push_back(s);
   Reals_value.push_back(X);
@@ -168,7 +185,6 @@ Real* Mesodyn::GetPointer(string s) {
   //nothing yet
   return NULL;
 }
-
 int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result, string& string_result) {
   int i = 0;
   int length = ints.size();

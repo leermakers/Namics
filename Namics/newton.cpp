@@ -1158,11 +1158,15 @@ bool Newton::Guess(Real *X, string METHOD, vector<string> MONLIST, bool CHARGED,
 		Called by main
 */
 bool Newton::Solve(bool report_errors) {
-	if(debug) cout <<"Solve in  Newton " << endl;
+if(debug) cout <<"Solve in  Newton " << endl;
 	bool success=true;
-	if (method=="pseudohessian") {iterate(xx,iv);}
+	if (method=="pseudohessian") {
+		iterate(xx,iv);
+	}
 	else if (method=="Picard") {success=Iterate_Picard();}
-	else success=Iterate_DIIS();
+	else {
+		success=Iterate_DIIS();
+	}
 	Sys[0]->CheckResults(report_errors);
 	return success;
 }
@@ -1275,7 +1279,9 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	// computeG_ext() has been ommented in CheckInput():
 	// if (method=="DIIS-ext") ComputeG_ext();
 	if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); //* commented function call, to prevent compilition error.
-	else ComputeG(g); // Or fall back to the classical method.
+	else {
+		ComputeG(g); // Or fall back to the classical method.
+	}
 	YplusisCtimesX(xx,g,delta_max,iv);
 	YisAminB(x_x0,xx,x0,iv);
 	Cp(xR,xx,iv);

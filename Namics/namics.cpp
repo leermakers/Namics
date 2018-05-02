@@ -207,8 +207,9 @@ int main(int argc, char *argv[]) {
 			New[0]->Guess(X,METHOD,MONLIST,CHARGED,MX,MY,MZ);
 
 			// This is the starting point of all calculations. Solve provides the flow through computatin schemes.
-			if (search_nr<0 && ets_nr < 0 && etm_nr <0) New[0]->Solve(true);
-			else {
+			if (search_nr<0 && ets_nr < 0 && etm_nr <0) {
+				New[0]->Solve(true);
+			} else {
 				if (debug) cout <<"Solve towards superiteration " << endl;
 				New[0]->SuperIterate(search_nr,target_nr,ets_nr,etm_nr);
 			}

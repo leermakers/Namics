@@ -1,7 +1,9 @@
-lat : flat : n_layers : 100
+lat : flat : n_layers : 10
 lat : flat : geometry : planar
 lat : flat : bondlength : 5e-10
 lat : flat : lattice_type : simple_cubic
+//lat : flat : FJCchoices : 11
+
 
 mon : C : freedom : pinned
 mon : C : pinned_range : 1;4
@@ -35,8 +37,8 @@ newton : isaac : e_info : true
 newton : isaac : s_info : false
 newton : isaac : super_e_info : true
 newton : isaac : super_s_info : true
-newton : isaac : method : DIIS
-newton : isaac : m : 12
+newton : isaac : method : pseudohessian 
+//newton : isaac : m : 12
 start
 mon : C : freedom : free
 //var : mol-lipid : scan : N-value 

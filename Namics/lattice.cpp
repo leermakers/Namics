@@ -947,9 +947,9 @@ if (debug) cout <<" Side in lattice " << endl;
 				}	
 			} else {
 				if (lattice_type =="simple_cubic") {
-					YplusisCtimesX(X_side,X,2.0,M);
 					Add(X_side,X+1,M-1);      
 					Add(X_side+1,X,M-1);
+					YplusisCtimesX(X_side,X,2.0,M);
 					AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
 					AddTimes(X_side,X+JX,lambda1,M-JX);
 					Norm(X_side,lambda,M);
@@ -1038,7 +1038,7 @@ if (debug) cout <<" remove_bounds (Real) in lattice " << endl;
 			X[0]=0; X[MX+1]=0;
 			break;
 		case 2: 
-			for (x=0; x<MX+2; x++) {
+			for (x=1; x<MX+1; x++) {
 				X[x*JX+0] = 0;
 				X[x*JX+MY+1]=0;
 			}
@@ -1046,10 +1046,10 @@ if (debug) cout <<" remove_bounds (Real) in lattice " << endl;
 				X[0+y] = 0;
 				X[(MX+1)*JX+y]=0;
 			}
-			//X[0]             =0;
-			//X[(MX+1)*JX]     =0;
-			//X[0+MY+1]        =0;
-			//X[(MX+1)*JX+MY+1]=0;	
+			X[0]             =0;
+			X[(MX+1)*JX]     =0;
+			X[0+MY+1]        =0;
+			X[(MX+1)*JX+MY+1]=0;	
 			break;
 		case 3: 
 			if (sub_box_on!=0) {int k=sub_box_on;
@@ -1072,7 +1072,7 @@ if (debug) cout <<" remove_bounds (int) in lattice " << endl;
 			X[0]=0; X[MX+1]=0;
 			break;
 		case 2: 
-			for (x=0; x<MX+2; x++) {
+			for (x=1; x<MX+1; x++) {
 				X[x*JX+0] =0;
 				X[x*JX+MY+1]=0;
 			}
@@ -1080,10 +1080,10 @@ if (debug) cout <<" remove_bounds (int) in lattice " << endl;
 				X[0+y] = 0;
 				X[(MX+1)*JX+y]=0;
 			}
-			//X[0]             =0;
-			//X[(MX+1)*JX]     =0;
-			//X[0+MY+1]        =0;
-			//X[(MX+1)*JX+MY+1]=0;			
+			X[0]             =0;
+			X[(MX+1)*JX]     =0;
+			X[0+MY+1]        =0;
+			X[(MX+1)*JX+MY+1]=0;			
 
 			break;
 		case 3:
@@ -1252,33 +1252,33 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 				if (coor.size()!=2) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of two: 'x,y'" << endl; success=false;}
 				else {
 					diggit=coor[0].substr(0,1);
-					if (In[0]->IsDigit(diggit)) r[2]=In[0]->Get_int(coor[0],0); else {
+					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
 						recognize_keyword=false; 
-						if (coor[0]=="firstlayer") {recognize_keyword=true; r[2] = 1;}
-						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[2] = 0;}
-						//if (coor[0]=="upperbound") {recognize_keyword=true; r[2] = MX+1;}
-						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[2] = MX;}
+						if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
+						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
+						//if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
+						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[3] = MX;}
 						if (!recognize_keyword) {
 							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
 							success=false;
 						}
 					}
-					if (r[2] <1-a || r[2] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds: " << 1-a << " .. " << MX+a<< endl; success=false;} 
+					if (r[3] <1-a || r[3] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds: " << 1-a << " .. " << MX+a<< endl; success=false;} 
 					diggit=coor[1].substr(0,1);
-					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[1],0); else {
+					if (In[0]->IsDigit(diggit)) r[4]=In[0]->Get_int(coor[1],0); else {
 						recognize_keyword=false;
-						if (coor[1]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
-						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
-						//if (coor[1]=="upperbound") {recognize_keyword=true; r[3] = MY+1;}
-						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[3] = MY;}
+						if (coor[1]=="firstlayer") {recognize_keyword=true; r[4] = 1;}
+						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[4] = 0;}
+						//if (coor[1]=="upperbound") {recognize_keyword=true; r[4] = MY+1;}
+						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[4] = MY;}
 						if (!recognize_keyword) {
 							cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
 							success=false; 
 						}
 					}
-					if (r[3] < 1-a || r[3] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MY+a << endl; success =false;}
-					if (r[0] > r[2]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-					if (r[1] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+					if (r[4] < 1-a || r[4] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MY+a << endl; success =false;}
+					if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+					if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
 				}
 				break;
 			case 3:
@@ -1644,7 +1644,7 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 		case 1:
 			H_Zero(H_MASK,M);
 			if (block) {
-				for (x=r[0]; x<r[1]+1; x++)  H_MASK[x]=1;
+				for (x=r[0]; x<r[3]+1; x++)  H_MASK[x]=1;
 			} else {
 				for (i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}
@@ -1652,7 +1652,7 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 		case 2:
 			H_Zero(H_MASK,M);
 			if (block) {
-				for (x=r[0]; x<r[2]+1; x++) for (y=r[1]; y<r[3]+1; y++) H_MASK[x*JX+y]=1;
+				for (x=r[0]; x<r[3]+1; x++) for (y=r[1]; y<r[4]+1; y++) H_MASK[x*JX+y]=1;
 			} else {
 				for (i=0; i<n_pos; i++) H_MASK[H_P[i]]=1; 	
 			}

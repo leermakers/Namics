@@ -121,8 +121,10 @@ void Mesodyn::gaussianNoise(Real mean, Real stdev, unsigned long count) {
 
   random_device generator;
 
+  seed_seq seed ("something","something else");
+
   //Mersenne Twister 19937 bit state size PRNG
-  mt19937 prng(generator());
+  mt19937 prng(seed);
 
   normal_distribution<> dist(mean, stdev);
 

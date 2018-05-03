@@ -487,16 +487,11 @@ if (debug) cout <<"LoadItems in Input " << endl;
 							break;
 						case 9:
 //TODO:CHECK IF THIS IS CORRECT AND DOESN'T SCREW UP EVERYTHING
-								name_found=false;
-								k=0; name_length=MesodynList.size();
-								while (k<name_length && !name_found) {
-									if (MesodynList[k]==set[3]) name_found=true;
-									k++;
-								}
-								if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-									PrintList(MesodynList);
-								}
-								break;
+							if (set[3]=="*") set[3]=MesodynList[0];
+							if (MesodynList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							PrintList(MesodynList); name_found=false;
+							}
+							break;
 						default:
 							key_found=false;
 						}

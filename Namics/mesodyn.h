@@ -24,7 +24,7 @@ public:
   void langevinFlux(vector<Real>&, vector<Real>&, vector<Real>&, vector<Real>&);
   void updateDensity();
   bool mesodyn();
-  int findComponentVectorSize();
+  int findDensityVectorSize();
   void setComponentStartIndices (vector<int>&);
 
   vector<Real> noise;

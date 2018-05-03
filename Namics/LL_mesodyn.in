@@ -20,7 +20,7 @@ mol : C : composition : (A)10(B)10
 mol : C : freedom : restricted
 mol : C : theta : 12.2
 
-newton : isaac : method : DIIS
+newton : isaac : method : DIIS-mesodyn
 
 start
 

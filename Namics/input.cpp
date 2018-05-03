@@ -485,19 +485,19 @@ if (debug) cout <<"LoadItems in Input " << endl;
 								PrintList(MonList);
 							}
 							break;
-						default:
-						//TODO:CHECK IF THIS IS CORRECT AND DOESN'T SCREW UP EVERYTHING
 						case 9:
-							name_found=false;
-							k=0; name_length=MesodynList.size();
-							while (k<name_length && !name_found) {
-								if (MesodynList[k]==set[3]) name_found=true;
-								k++;
-							}
-							if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-								PrintList(MesodynList);
-							}
-							break;
+//TODO:CHECK IF THIS IS CORRECT AND DOESN'T SCREW UP EVERYTHING
+								name_found=false;
+								k=0; name_length=MesodynList.size();
+								while (k<name_length && !name_found) {
+									if (MesodynList[k]==set[3]) name_found=true;
+									k++;
+								}
+								if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+									PrintList(MesodynList);
+								}
+								break;
+						default:
 							key_found=false;
 						}
 

@@ -1176,7 +1176,7 @@ bool Newton::Solve(Real* rho, Real* alpha) {
 
 	bool success=true;
 	success=Iterate_DIIS(rho);
-	Cp(alpha,xx,iv); 
+	Cp(alpha,xx,iv);
 	if (Sys[0]->charged) {
 		Sys[0]->DoElectrostatics(alpha+sysmon_length*M,xx+sysmon_length*M);
 		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
@@ -1264,8 +1264,7 @@ if(debug) cout <<"Iterate_Picard in  Newton " << endl;
 	return success;
 }
 
-/*	Direct inversion in iterative subspace. Supports mesodyn and the classic method.
-		Called from Solve(bool)
+/*	Direct inversion in iterative subspace. Called from Solve(bool)
 */
 bool Newton::Iterate_DIIS() {
 if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
@@ -1274,8 +1273,7 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	int k=0;
 	// computeG_ext() has been ommented in CheckInput():
 	// if (method=="DIIS-ext") ComputeG_ext();
-	if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); //* commented function call, to prevent compilition error.
-	else ComputeG(g); // Or fall back to the classical method.
+	ComputeG(g); // Or fall back to the classical method.
 	YplusisCtimesX(xx,g,delta_max,iv);
 	YisAminB(x_x0,xx,x0,iv);
 	Cp(xR,xx,iv);
@@ -1286,7 +1284,7 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
 		Cp(x0,xx,iv);
-		if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); else ComputeG(g);
+		ComputeG(g);
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(xx,g,-delta_max,iv);
 		Cp(xR+k*iv,xx,iv); YisAminB(x_x0+k*iv,xx,x0,iv);

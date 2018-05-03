@@ -47,7 +47,7 @@ bool Mesodyn::mesodyn() {
   pepareForCalculations();
   if (success) {
     for (int t = 0; t < timesteps; t++) {
-      //TODO: start loop from Newton (or call again after updating densities)
+      New[0]->Solve(&dummyVector[0], &dummyVector[0]);
       langevinFlux(dummyVector, dummyVector, dummyVector, dummyVector);
       updateDensity();
     }
@@ -56,23 +56,29 @@ bool Mesodyn::mesodyn() {
 }
 
 void Mesodyn::pepareForCalculations() {
-  componentNo = findComponentNo();
-  size = findComponentVectorSize();
+  componentNo = findComponentNo();    //find how many compontents there are (e.g. head, tail, solvent)
+  size = findDensityVectorSize();     //find out how large the density vector is (needed for sizing the flux vector)
+                                      //which will be 1 flux per lattice site per component per dimension
 
   //find the index ranges where each component / dimension is located in the vector that
-  //contains phi's and u's (3D lattice mapped onto 1D vector (Row-major))
+  //contains phi's and u's (which is a 3D lattice mapped onto 1D vector (Row-major))
   if (componentNo <= 1) {
-    //TODO: Not sure if this is already done in molecule.
-    cout << "WARNING: Not enough components found for Mesodyn, aborting!";
-    abort();
+      cout << "WARNING: Not enough components found for Mesodyn, aborting!";
+      abort();
   } else if (componentNo > 1 && componentNo < 3) {
-    setNeighborIndices(xNeighbors, yNeighbors, zNeighbors);
-    setComponentStartIndices(component);
+      setNeighborIndices(xNeighbors, yNeighbors, zNeighbors);
+      setComponentStartIndices(component);
   } else {
-    cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!";
-    abort();
+      cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!";
+      abort();
   }
+  //alocate memory for the fluxes of all components in all dimensions
   J.resize(size);
+}
+
+void Mesodyn::abort() {
+  //Once false is returned, Mesodyn automatically quits to main.
+  success = false;
 }
 
 /****** Functions for handling indices in a 1D vector that contains a 3D lattice with multiple components *******/
@@ -82,12 +88,13 @@ int Mesodyn::findComponentNo() {
   return In[0]->MolList.size();
 }
 
-int Mesodyn::findComponentVectorSize() {
+int Mesodyn::findDensityVectorSize() {
+  //  TODO: boundary conditions
   return componentNo * Lat[0]->MX * Lat[0]->MY * Lat[0]->MZ;
 }
 
 void Mesodyn::setNeighborIndices(vector<int>& xNeighbors, vector<int>& yNeighbors, vector<int>& zNeighbors) {
-
+  //  TODO: boundary conditions
   xNeighbors[0] = -1;
   xNeighbors[1] = 1;
 
@@ -110,10 +117,6 @@ void Mesodyn::setComponentStartIndices(vector<int>& component) {
   }
 }
 
-void Mesodyn::abort() {
-  //Once false is returned, Mesodyn automatically quits to main.
-  success = false;
-}
 
 /******** Calculations ********/
 

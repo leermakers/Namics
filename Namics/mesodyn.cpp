@@ -11,6 +11,10 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   New = New_;
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
+  xNeighbors.reserve(2);
+  yNeighbors.reserve(2);
+  zNeighbors.reserve(2);
+  componentNo = 0;
 }
 Mesodyn::~Mesodyn() {
 }
@@ -38,46 +42,72 @@ bool Mesodyn::CheckInput(int start) {
 
 /******** Flow control ********/
 
+bool Mesodyn::mesodyn() {
+  //TODO: How to get here from main.
+  pepareForCalculations();
+  if (success) {
+    for (int t = 0; t < timesteps; t++) {
+      //TODO: start loop from Newton (or call again after updating densities)
+      langevinFlux(dummyVector, dummyVector, dummyVector, dummyVector);
+      updateDensity();
+    }
+  }
+  return success;
+}
+
 void Mesodyn::pepareForCalculations() {
   componentNo = findComponentNo();
+  size = findComponentVectorSize();
 
-  //find the index ranges where each component / dimension is located in the matrix
-  if (componentNo == 1) {
+  //find the index ranges where each component / dimension is located in the vector that
+  //contains phi's and u's (3D lattice mapped onto 1D vector (Row-major))
+  if (componentNo <= 1) {
     //TODO: Not sure if this is already done in molecule.
-    cout << "WARNING: Only one component found, aborting!";
+    cout << "WARNING: Not enough components found for Mesodyn, aborting!";
     abort();
-  }
-  if (componentNo > 1 && componentNo < 3)
-    findComponentIndices();
-  else {
+  } else if (componentNo > 1 && componentNo < 3) {
+    setNeighborIndices(xNeighbors, yNeighbors, zNeighbors);
+    setComponentStartIndices(component);
+  } else {
     cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!";
     abort();
   }
   J.resize(size);
 }
 
-bool Mesodyn::mesodyn() {
-  //TODO: How to get here from main.
-  pepareForCalculations();
-  if (success) {
-    //start loop from Newton, update using:
-    langevinFlux(dummyVector, dummyVector, dummyVector, dummyVector);
-    updateDensity();
-    //and loop untill we are done.
-    }
-  return success;
-}
+/****** Functions for handling indices in a 1D vector that contains a 3D lattice with multiple components *******/
 
 int Mesodyn::findComponentNo() {
+  component.reserve(In[0]->MolList.size());
   return In[0]->MolList.size();
 }
 
-int Mesodyn::findComponentIndices() {
-  //TODO: implement this
-  // give me the means to find how large the lattice is!
-  // eg. 1-1000 is x,0,0 1001-2000 is x,1,0 etc.
-  // in essence I would like to know how to read it like a three dimensional matrix..
-  return 1; //errror return code
+int Mesodyn::findComponentVectorSize() {
+  return componentNo * Lat[0]->MX * Lat[0]->MY * Lat[0]->MZ;
+}
+
+void Mesodyn::setNeighborIndices(vector<int>& xNeighbors, vector<int>& yNeighbors, vector<int>& zNeighbors) {
+
+  xNeighbors[0] = -1;
+  xNeighbors[1] = 1;
+
+  yNeighbors[0] = -Lat[0]->MX;
+  yNeighbors[1] = Lat[0]->MX;
+
+  zNeighbors[0] = -Lat[0]->MX * Lat[0]->MY;
+  zNeighbors[1] = Lat[0]->MX * Lat[0]->MY;
+}
+
+void Mesodyn::setComponentStartIndices(vector<int>& component) {
+  if (componentNo == 2) {
+    component[0] = 0;
+    component[1] = Lat[0]->MX * Lat[0]->MY * Lat[0]->MZ;
+  }
+  //unless, for whatever reason componentNo changed
+  else {
+    cout << "Component number changed, this should definitely not have happened and the programmer messed up.";
+    abort();
+  }
 }
 
 void Mesodyn::abort() {
@@ -89,8 +119,8 @@ void Mesodyn::abort() {
 
 //Two components
 void Mesodyn::langevinFlux(vector<Real>& phiA, vector<Real>& phiB, vector<Real>& alphaA, vector<Real>& alphaB) {
-  vector<Real> L(size);          //onsager coefficient
-  vector<Real> u(size);          //segment potential A
+  vector<Real> L(size); //onsager coefficient
+  vector<Real> u(size); //segment potential A
 
   //TODO: boundary condition in lattice?
 
@@ -103,13 +133,12 @@ void Mesodyn::langevinFlux(vector<Real>& phiA, vector<Real>& phiB, vector<Real>&
     //segment "chemical potential" gradient
     u[z] = alphaA[z] - alphaB[z];
     J[z] = (-D * (((L[z] + L[z + 1]) * (u[z + 1] - u[z])) - ((L[z - 1] + L[z]) * (u[z] - u[z - 1]))) + noise[0]);
-    J[size+z] = (-D * (((L[z] + L[z + 1]) * (-u[z + 1] - -u[z])) - ((L[z - 1] + L[z]) * (-u[z] - -u[z - 1]))) + noise[1]);
+    J[size + z] = (-D * (((L[z] + L[z + 1]) * (-u[z + 1] - -u[z])) - ((L[z - 1] + L[z]) * (-u[z] - -u[z - 1]))) + noise[1]);
   }
 }
 
 void Mesodyn::updateDensity() {
   //old density + langevinFluxTwo
-  //then call on Newton again.
 }
 
 /* Generates a vector of length count, contianing gaussian noise of given mean, standard deviation.
@@ -121,7 +150,7 @@ void Mesodyn::gaussianNoise(Real mean, Real stdev, unsigned long count) {
 
   random_device generator;
 
-  seed_seq seed ("something","something else");
+  seed_seq seed("something", "something else");
 
   //Mersenne Twister 19937 bit state size PRNG
   mt19937 prng(seed);

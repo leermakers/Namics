@@ -19,24 +19,34 @@ public:
   void gaussianNoise(Real, Real, unsigned long);
   void pepareForCalculations();
   int findComponentNo();
-  int findComponentIndices();
+  void setNeighborIndices(vector<int>&, vector<int>&, vector<int>&);
   void abort();
   void langevinFlux(vector<Real>&, vector<Real>&, vector<Real>&, vector<Real>&);
   void updateDensity();
   bool mesodyn();
+  int findComponentVectorSize();
+  void setComponentStartIndices (vector<int>&);
 
   vector<Real> noise;
   int componentNo;
+  int size;
+  vector<Real> J;
+  vector<int> xNeighbors;
+  vector<int> yNeighbors;
+  vector<int> zNeighbors;
+  vector<int> component;
 
   //dummy variables
   //real variables
   Real D {0.5}; //diffusion constant
-  int size {10};
-  vector<Real> J;
+
   //delete when done
   Real dummyMean {1};
   Real dummyStdev {1};
   vector<Real> dummyVector {1,2,3,4,5};
+  int latticeX;
+  int latticeY;
+  int latticeZ;
 
   string name;
   vector<Input*> In;

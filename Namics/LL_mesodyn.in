@@ -20,21 +20,20 @@ mol : C : composition : (A)10(B)10
 mol : C : freedom : restricted
 mol : C : theta : 12.2
 
-newton : isaac : method : DIIS-mesodyn
-
 start
 
 mon : A : freedom : free
+newton : isaac : method : DIIS-mesodyn
 
-output : kal : append : false
-kal : mol : * : theta
-kal : sys : noname : grand_potential
-//output : pro : append : false
-//pro : mol : * : phi
+//output : kal : append : false
+//kal : mol : * : theta
+//kal : sys : noname : grand_potential
+output : pro : append : false
+pro : mol : * : phi
 
 start
-mol : A : theta : 43
-var : mol-A : search : equate_to_solvent
-var : mol-C : search : theta
-var : sys-noname : grand_potential : 0
+//mol : A : theta : 43
+//var : mol-A : search : equate_to_solvent
+//var : mol-C : search : theta
+//var : sys-noname : grand_potential : 0
 start

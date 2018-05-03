@@ -221,16 +221,18 @@ int main(int argc, char* argv[]) {
     // Prepare, catch errors for output class creation
     int n_out = In[0]->OutputList.size();
     if (n_out == 0)
-      cout << "Warning: no output defined" << endl;
+      cout << "Warning: no output defined!" << endl;
 
     // Create output class instance and check inputs (reference above)
     for (int i = 0; i < n_out; i++) {
+
       Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out));
       if (!Out[i]->CheckInput(start)) {
         cout << "input_error in output " << endl;
         return 0;
       }
     }
+
 
     // TODO: 1. sys.initial_guess is set to "previous_result" by default at
     // system.cpp:301
@@ -286,12 +288,13 @@ int main(int argc, char* argv[]) {
   /********* This is the starting point of all calculations. *********/
 
       //If mesodyn is to be used, go through this loop
-      if (New[0]->method == "DIIS-Mesodyn") {
+      if (New[0]->method == "DIIS-mesodyn") {
         // Create mesodyn class instance and check inputs (reference above)
         Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
         if (!Mes[0]->CheckInput(start)) {
           return 0;
         }
+        Mes[0]->mesodyn();
       }
 
       //Otherwise, go through the classic function solve.

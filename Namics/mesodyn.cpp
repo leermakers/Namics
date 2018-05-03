@@ -46,6 +46,7 @@ bool Mesodyn::mesodyn() {
   //TODO: How to get here from main.
   pepareForCalculations();
   if (success) {
+    cout << "Mesodyn is all set, starting calculations.." << endl;
     for (int t = 0; t < timesteps; t++) {
       New[0]->Solve(&dummyVector[0], &dummyVector[0]);
       langevinFlux(dummyVector, dummyVector, dummyVector, dummyVector);
@@ -63,13 +64,13 @@ void Mesodyn::pepareForCalculations() {
   //find the index ranges where each component / dimension is located in the vector that
   //contains phi's and u's (which is a 3D lattice mapped onto 1D vector (Row-major))
   if (componentNo <= 1) {
-      cout << "WARNING: Not enough components found for Mesodyn, aborting!";
+      cout << "WARNING: Not enough components found for Mesodyn, aborting!" << endl;;
       abort();
-  } else if (componentNo > 1 && componentNo < 3) {
+  } else if (componentNo > 1 && componentNo < 4) {
       setNeighborIndices(xNeighbors, yNeighbors, zNeighbors);
       setComponentStartIndices(component);
   } else {
-      cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!";
+      cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!" << endl;;
       abort();
   }
   //alocate memory for the fluxes of all components in all dimensions
@@ -106,15 +107,8 @@ void Mesodyn::setNeighborIndices(vector<int>& xNeighbors, vector<int>& yNeighbor
 }
 
 void Mesodyn::setComponentStartIndices(vector<int>& component) {
-  if (componentNo == 2) {
     component[0] = 0;
     component[1] = Lat[0]->MX * Lat[0]->MY * Lat[0]->MZ;
-  }
-  //unless, for whatever reason componentNo changed
-  else {
-    cout << "Component number changed, this should definitely not have happened and the programmer messed up.";
-    abort();
-  }
 }
 
 

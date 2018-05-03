@@ -21,9 +21,9 @@ mol : C : freedom : restricted
 mol : C : theta : 12.2
 
 start
-
 mon : A : freedom : free
 newton : isaac : method : DIIS-mesodyn
+mesodyn : something : timesteps : 1000.0
 
 //output : kal : append : false
 //kal : mol : * : theta

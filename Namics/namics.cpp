@@ -32,7 +32,7 @@ Real PIE = 3.14159265;
 
 bool debug = false;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 
   string fname;
   string filename;
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   string initial_guess;
   string final_guess;
   string METHOD = "";
-  Real *X = NULL;
+  Real* X = NULL;
   int MX = 0, MY = 0, MZ = 0;
   bool CHARGED = false;
   vector<string> MONLIST;
@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
   vector<System*> Sys;
   vector<Engine*> Eng;
   vector<Variate*> Var;
+  vector<Mesodyn*> Mes;
 
   // Create input class instance and handle errors(reference above)
   In.push_back(new Input(filename));
@@ -90,15 +91,15 @@ int main(int argc, char *argv[]) {
   if (n_starts == 0)
     n_starts++; // Default to 1 start..
 
-/******** This while loop basically contains the rest of main, initializes all classes and performs  ********/
-/******** calculations for a given number (start) of cycles ********/
+  /******** This while loop basically contains the rest of main, initializes all classes and performs  ********/
+  /******** calculations for a given number (start) of cycles ********/
   while (start < n_starts) {
 
     start++;
     In[0]->MakeLists(start);
     cout << "Problem nr " << start << " out of " << n_starts << endl;
 
-/******** Class creation starts here ********/
+    /******** Class creation starts here ********/
 
     // Create lattice class instance and check inputs (reference above)
     Lat.push_back(new Lattice(In, In[0]->LatList[0]));
@@ -206,13 +207,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Create newton class instance and check inputs (reference above)
-    New.push_back( new Newton(In, Lat, Seg, Mol, Sys, Var, In[0]->NewtonList[0]) );
+    New.push_back(new Newton(In, Lat, Seg, Mol, Sys, Var, In[0]->NewtonList[0]));
     if (!New[0]->CheckInput(start)) {
       return 0;
     }
 
     // Create engine class instance and check inputs (reference above)
-    Eng.push_back( new Engine(In, Lat, Seg, Mol, Sys, New, In[0]->EngineList[0]) );
+    Eng.push_back(new Engine(In, Lat, Seg, Mol, Sys, New, In[0]->EngineList[0]));
     if (!Eng[0]->CheckInput(start)) {
       return 0;
     }
@@ -224,7 +225,7 @@ int main(int argc, char *argv[]) {
 
     // Create output class instance and check inputs (reference above)
     for (int i = 0; i < n_out; i++) {
-      Out.push_back( new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out) );
+      Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out));
       if (!Out[i]->CheckInput(start)) {
         cout << "input_error in output " << endl;
         return 0;
@@ -259,13 +260,13 @@ int main(int argc, char *argv[]) {
         IV += m;
       if (start > 1)
         free(X);
-      X = (Real *)malloc(IV * sizeof(Real));
+      X = (Real*)malloc(IV * sizeof(Real));
       MONLIST.clear();
       Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, 1);
       // last argument 1 is to read guess in X.
     }
 
-/********** All classes have been created and input gathered, time to start some calculations *********/
+    /********** All classes have been created and input gathered, time to start some calculations *********/
     int substart = 0;
     int subloop = 0;
 
@@ -282,17 +283,28 @@ int main(int argc, char *argv[]) {
       New[0]->AllocateMemory();
       New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ);
 
-      // This is the starting point of all calculations. Solve provides the flow
-      // through computation schemes.
-      if (search_nr < 0 && ets_nr < 0 && etm_nr < 0)
-        New[0]->Solve(true);
-      else {
-        if (debug)
-          cout << "Solve towards superiteration " << endl;
-        New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
+  /********* This is the starting point of all calculations. *********/
+
+      //If mesodyn is to be used, go through this loop
+      if (New[0]->method == "DIIS-Mesodyn") {
+        // Create mesodyn class instance and check inputs (reference above)
+        Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
+        if (!Mes[0]->CheckInput(start)) {
+          return 0;
+        }
       }
 
-/********** Output information about all classes to file *********/
+      //Otherwise, go through the classic function solve.
+      else {
+        if (search_nr < 0 && ets_nr < 0 && etm_nr < 0)
+          New[0]->Solve(true);
+        else {
+          if (debug)
+            cout << "Solve towards superiteration " << endl;
+          New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
+        }
+      }
+      /********** Output information about all classes to file *********/
       Lat[0]->PushOutput();
       New[0]->PushOutput();
       Eng[0]->PushOutput();
@@ -317,7 +329,7 @@ int main(int argc, char *argv[]) {
       subloop++;
     }
 
-/******** Clear all class instances ********/
+    /******** Clear all class instances ********/
     // TODO: Again some code for ..charged molecules?
     if (scan_nr > -1)
       Var[scan_nr]->ResetScanValue();
@@ -330,7 +342,7 @@ int main(int argc, char *argv[]) {
       CHARGED = Sys[0]->charged;
       if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
         free(X);
-      X = (Real *)malloc(IV * sizeof(Real));
+      X = (Real*)malloc(IV * sizeof(Real));
       for (int i = 0; i < IV; i++)
         X[i] = New[0]->xx[i];
       int length = Sys[0]->SysMonList.size();

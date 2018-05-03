@@ -5,6 +5,7 @@
 #include "lattice.h"
 #include "molecule.h"
 #include "namics.h"
+#include "mesodyn.h"
 #include "newton.h"
 #include "output.h"
 #include "segment.h"
@@ -233,13 +234,7 @@ int main(int argc, char* argv[]) {
       }
     }
 
-
-    // TODO: 1. sys.initial_guess is set to "previous_result" by default at
-    // system.cpp:301
-    //	2. What does this block do, exactly? It seems to handle some code for
-    // charged molecules.
-    //	3. Can we move this to the system class bit?
-
+    //Guesses geometry
     if (Sys[0]->initial_guess == "file") {
       MONLIST.clear();
       if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, 0)) {

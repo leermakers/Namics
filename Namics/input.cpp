@@ -687,6 +687,7 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(MesodynList,"mesodyn",0,1,start)) {cout << "There can be no more than 1 'mesodyn' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(MonteList,"monte",0,1,start)) {cout << "There can be no more than 1 'Monte carlo' engine brand name in the input " << endl; success=false;}
 	if (EngineList.size()==0) EngineList.push_back("noname");
+	if (MesodynList.size()==0) MesodynList.push_back("noname");
 	if (!TestNum(VarList,"var",0,10,start))
 	if (VarList.size()==0) VarList.push_back("noname");
 	return success;

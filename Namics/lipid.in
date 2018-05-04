@@ -1,19 +1,17 @@
-lat : flat : n_layers : 10
+lat : flat : n_layers : 20
 lat : flat : geometry : planar
 lat : flat : bondlength : 5e-10
-lat : flat : lattice_type : simple_cubic
-//lat : flat : FJCchoices : 11
-
+lat : flat : lattice_type : hexagonal
+lat : flat : FJCchoices : 11
 
 mon : C : freedom : pinned
-mon : C : pinned_range : 1;4
-
+mon : C : pinned_range : 1;5
 mon : O : freedom : free
 mon : W : freedom : free
 
 mol : lipid : composition : (C)#N#((O)1(C)2)5[(O)1](O)1
 mol : lipid : freedom : restricted
-mol : lipid : theta : 2.5
+mol : lipid : theta : 3.5
 
 alias: N : value : 16
 
@@ -23,8 +21,10 @@ mol : water : freedom : solvent
 mon : C : chi-W : 1.6
 mon : C : chi-O : 1.6
 mon : W : chi-O : -0.5
-//output : pro : append : false
-//pro : mol : * : phi
+output : pro : append : false
+pro : mol : * : phi
+pro : mon : * : phi
+pro : mon : * : u
 output : kal : append : false
 kal : sys : noname : grand_potential
 kal : mol : lipid : theta
@@ -32,19 +32,22 @@ kal : lat : flat : n_layers
 kal : mol : lipid : chainlength 
 kal : mon : C : chi-O
 kal : mol : lipid : mu
+kal : mol : lipid : phibulk
 newton : isaac : i_info : 10
 newton : isaac : e_info : true
 newton : isaac : s_info : false
 newton : isaac : super_e_info : true
 newton : isaac : super_s_info : true
 newton : isaac : method : pseudohessian 
+newton : isaac : iterationlimit : 1000
 //newton : isaac : m : 12
-start
+start 
 mon : C : freedom : free
-//var : mol-lipid : scan : N-value 
-var : lat-flat : scan : n_layers 
-var : lat-flat : step : -1
-var : lat-flat : end_value : 5
-var : mol-lipid : search : theta
-var : sys-noname: grand_potential : 0
+newton : isaac : iterationlimit : 1000
+newton : isaac : deltamax : 0.1
+//var : lat-flat : scan : n_layers 
+//var : lat-flat : step : -1
+//var : lat-flat : end_value : 5
+//var : mol-lipid : search : theta
+//var : sys-noname: grand_potential : 0
 start

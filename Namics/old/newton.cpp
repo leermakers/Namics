@@ -1173,6 +1173,7 @@ if(debug) cout <<"ComputeG in  Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi; 
 	ComputePhis();
+cout <<"iv " << iv << endl;
 
 	int sysmon_length = Sys[0]->SysMonList.size(); 
 	int mon_length = In[0]->MonList.size(); //also frozen segments	

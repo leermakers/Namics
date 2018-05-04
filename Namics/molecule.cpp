@@ -1,5 +1,5 @@
 #include "molecule.h" 
-
+ 
 
 Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
 	In=In_; Seg=Seg_; name=name_;  Lat=Lat_; 
@@ -21,7 +21,9 @@ void Molecule :: DeAllocateMemory(){
 if (debug) cout <<"Destructor for Mol " + name << endl;
 	free(H_phi);
 	free(H_phitot);
-	if (freedom=="clamped") {
+	free(G1);//Tobe fixed when working with cuda.
+	free(u);
+	if (freedom=="clamped") { 
 		free(H_Bx); 
 		free(H_By);
 		free(H_Bz);
@@ -123,6 +125,8 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	}
 
 	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); 
+	u = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); //tobe fixed when working with cuda.
+	G1 = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); 
 	H_phitot = (Real*) malloc(M*sizeof(Real)); 
 	if (freedom=="clamped") {
 		H_Bx=(int*) malloc(n_box*sizeof(int));
@@ -237,6 +241,20 @@ if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 	for (int i=0; i<length_al; i++) Al[i]->PrepareForCalculations();
 	bool success=true;
 	Zero(phitot,M);
+	int length = MolMonList.size();
+	int i=0;
+	while (i<length) {
+		if (Seg[MolMonList[i]]->freedom=="tagged") Zero(u+i*M,M);
+		Lat[0]->set_bounds(u+i*M);
+		if (Lat[0]->fjc >1) Lat[0]->Edis(Seg[MolMonList[i]]->phi_side,u+i*M,M);
+		Boltzmann(G1+i*M,u+i*M,M);
+if (Seg[i]->freedom=="pinned") cout <<" freedom " << i << "in molecule " + name << endl; 
+		if (Seg[MolMonList[i]]->freedom=="pinned") Times(G1+i*M,G1+i*M,Seg[MolMonList[i]]->MASK,M);
+		if (Seg[MolMonList[i]]->freedom=="tagged") Cp(G1+i*M,Seg[MolMonList[i]]->MASK,M);
+		Lat[0]->set_bounds(G1+i*M);
+		if (!(Seg[MolMonList[i]]->freedom ==" frozen" || Seg[MolMonList[i]]->freedom =="tagged")) Times(G1+i*M,G1+i*M,KSAM,M); 
+		i++;
+	}
 	Zero(phi,M*MolMonList.size()); 
 	compute_phi_alias=false;
 	return success;
@@ -1216,7 +1234,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			} 
 		}
 
-//	int length=Gnr.size();
+//	length=Gnr.size();
 //	for (int i=0; i<length; i++) 
 //		cout << "segnr " << mon_nr[i] << " nn " << n_mon[i] << " Gnr " << Gnr[i] << endl;  
 //	length=last_s.size();
@@ -1562,7 +1580,8 @@ bool Molecule::ComputePhiMon(){
 if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	int M=Lat[0]->M; 
 	bool success=true;
-	Cp(phi,Seg[mon_nr[0]]->G1,M);
+	//Cp(phi,Seg[mon_nr[0]]->G1,M);
+	Cp(phi,G1,M);
 	Lat[0]->remove_bounds(phi);
 	GN=Lat[0]->WeightedSum(phi);
 	if (compute_phi_alias) {
@@ -1573,7 +1592,8 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 			}
 		}
 	}
-	Times(phi,phi,Seg[mon_nr[0]]->G1,M);
+	//Times(phi,phi,Seg[mon_nr[0]]->G1,M);
+	Times(phi,phi,G1,M);
 	return success;
 }
 
@@ -1616,7 +1636,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 		}  
 	} else {
 		for (int k=0; k<N; k++) {
-			if (s>first_s[generation]) {
+			if (s>first_s[generation]) { 
 				Lat[0] ->propagate(Gg_f,G1,s-1,s,M); 
 			} else {
 				Cp(Gg_f+first_s[generation]*M,G1,M);
@@ -1723,7 +1743,8 @@ bool Molecule::ComputeClampLin(){
 		Cp(Gg_f,mask1,m*n_box); //first block just contains the clamp
 	}
 	for (int i=1; i<blocks-1; i++) { 
-		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);
+		//Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box); //nakijken.
+		Lat[0]->DistributeG1(G1+molmon_nr[i]*M,g1,Bx,By,Bz,n_box);
 		//propagate_forward(Gg_f,g1,s,n_mon[i],i,m*n_box);
 		propagate_forward(g1,s,i,0,m*n_box);
 	}
@@ -1741,7 +1762,8 @@ bool Molecule::ComputeClampLin(){
 	if (save_memory) Cp(Gg_b+((s-1)%2)*m*n_box,Gg_b+(s%2)*m*n_box,m*n_box);
 	s--;
 	for (int i=blocks-2; i>0; i--) {
-		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);	
+		//Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);
+		Lat[0]->DistributeG1(G1+molmon_nr[i]*M,g1,Bx,By,Bz,n_box);	
 		//propagate_backward(Gg_f,Gg_b,g1,s,n_mon[i],i,m*n_box);	
 		propagate_backward(g1,s,i,0,m*n_box);
 	} //for first segment (clamp) no densities computed. 
@@ -1794,8 +1816,12 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 				}
 				delete [] GX;
 				k++;
-			} else 	propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
-		} else propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+			} else 	//propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+				propagate_backward(G1+molmon_nr[k]*M,s,k,generation,M);
+
+		} else //propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+			propagate_backward(G1+molmon_nr[k]*M,s,k,generation,M);
+
 		k--; 
 	}
 	delete [] GS;
@@ -1810,10 +1836,11 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 	Real* GS = new Real[3*M]; 
 	Real* Glast=NULL;   
 	int k=b0; 
-	while (k<=bN) {
+	while (k<=bN) { 
 		if (b0<k && k<bN) { 
 			if (Gnr[k]==generation ){
-				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);	 
+				//Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+				Glast=propagate_forward(G1+molmon_nr[k]*M,s,k,generation,M);	 
 			} else {
 				Br.clear(); Gb.clear();
 				Cp(GS,Glast,M);
@@ -1823,7 +1850,9 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 					k+=(last_b[Gnr[k]]-first_b[Gnr[k]]+1);
 				} 
 				int length=Br.size();
-				Lat[0]->propagate(GS,Seg[mon_nr[k]]->G1,0,2,M);
+				//Lat[0]->propagate(GS,Seg[mon_nr[k]]->G1,0,2,M);
+				Lat[0]->propagate(GS,G1+molmon_nr[k]*M,0,2,M);
+
 				for (int i=0; i<length; i++) {
 					Cp(GS,Gb[i],M);
 					Lat[0]->propagate(GS,UNITY,0,1,M);
@@ -1836,7 +1865,9 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 				s++; 
 			}
 		} else {
-			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+			//Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+			Glast=propagate_forward(G1+molmon_nr[k]*M,s,k,generation,M);
+
 		}
 		k++;
 	}
@@ -1853,9 +1884,12 @@ bool Molecule::ComputePhiBra() {
 	Real* G=ForwardBra(generation,s);
 	Lat[0]->remove_bounds(G);
 	GN=Lat[0]->WeightedSum(G);
+//cout << "GN " << GN << endl; 
 	s--;
-	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);} //toggle; initialize on both spots the same G1, so that we always get proper start.
-	BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);	
+	//if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);} //toggle; initialize on both spots the same G1, so that we always get proper start.
+	if (save_memory) {Cp(Gg_b,G1+molmon_nr[last_b[0]]*M,M); Cp(Gg_b+M,G1+molmon_nr[last_b[0]]*M,M);} //toggle; initialize on both spots the same G1, so that we always get proper start.
+	//BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
+	BackwardBra(G1+molmon_nr[last_b[0]]*M,generation,s);	
 	return success;
 }
 
@@ -1994,6 +2028,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 }
 
 void Molecule::BackwardDen(Real* GBr, int generation, int &s,int deg){//not yet robust for GPU computations: GS and GX need to be available on GPU 
+if (debug) cout << "BackwardDen in Molecule " << endl; 
 	int a0 = first_a[generation];
 	int aN = last_a[generation];
 	
@@ -2014,7 +2049,8 @@ void Molecule::BackwardDen(Real* GBr, int generation, int &s,int deg){//not yet 
 		//cp to GS
 		int b0=first_b[a];
 		int bN=last_b[a];
-		for (int k=bN; k>=b0; k--) 	propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,a,M);
+		for (int k=bN; k>=b0; k--) 	//propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,a,M);
+		propagate_backward(G1+molmon_nr[k]*M,s,k,generation,a,M);
 		//goto branch
 		//bookkeep GBr
 		//call BackwardDen for previous generation when generation still larger than 0
@@ -2039,13 +2075,15 @@ bool Molecule::ComputePhiDendrimer() {
 			Cp(GS+2*M,UNITY,M);
 			int b0=first_b[a], bN=last_b[a];
 			for (int b=b0; b<=bN; b++) {
-				Glast=propagate_forward(Seg[mon_nr[b]]->G1,s,b,g,a,M);
-			}
+				//Glast=propagate_forward(Seg[mon_nr[b]]->G1,s,b,g,a,M);
+				Glast=propagate_forward(G1+molmon_nr[b]*M,s,b,g,a,M);			}
 			Cp(GS,Glast,M);
 			Lat[0] ->propagate(GS,UNITY,0,1,M);
 			for (int k=0; k<n_arm[a]; a++) Times(Gs+2*M,Gs+2*M,Gs+M,M);
 		}
-		Times(Gs+2*M,Gs+2*M,Seg[mon_nr[last_b[aN]+1]]->G1,M);
+		//Times(Gs+2*M,Gs+2*M,Seg[mon_nr[last_b[aN]+1]]->G1,M);
+		Times(Gs+2*M,Gs+2*M,G1+molmon_nr[last_b[aN]+1]*M,M);
+
 		Glast=Gg_f+memory[last_b[aN]]; Cp(Glast,Gs+2*M,M); 
 		s++;
 	} 
@@ -2053,9 +2091,11 @@ bool Molecule::ComputePhiDendrimer() {
 	Lat[0]->remove_bounds(Glast);
 	GN=Lat[0]->WeightedSum(Glast);
 	s=N;
-	if (save_memory) {Cp(Gg_b,Seg[mon_nr[mon_nr.size()-1]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[mon_nr.size()-1]]->G1,M);}
+	//if (save_memory) {Cp(Gg_b,Seg[mon_nr[mon_nr.size()-1]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[mon_nr.size()-1]]->G1,M);}
+	if (save_memory) {Cp(Gg_b,G1+molmon_nr[mon_nr.size()-1]*M,M); Cp(Gg_b+M,G1+molmon_nr[mon_nr.size()-1]*M,M);}
 	Real* GBr=new Real[n_g*M];
-	Cp(GBr+(n_g-1)*M,Seg[mon_nr[mon_nr.size()-1]]->G1,M);
+	//Cp(GBr+(n_g-1)*M,Seg[mon_nr[mon_nr.size()-1]]->G1,M);
+	Cp(GBr+(n_g-1)*M,G1+molmon_nr[mon_nr.size()-1]*M,M);
 	BackwardDen(GBr,n_g,s,1);
 	delete [] GBr;
 	delete [] GS;	
@@ -2071,10 +2111,17 @@ bool Molecule::ComputePhiLin(){
 	int M=Lat[0]->M;
 	bool success=true;
 	int blocks=mon_nr.size(); 
-	int s=0; Cp(Gg_f,Seg[mon_nr[0]]->G1,M); 
-	for (int i=0; i<blocks; i++) propagate_forward(Gg_f,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
-	s=chainlength-1; Cp(Gg_b+(s%2)*M,Seg[mon_nr[blocks-1]]->G1,M);
-	for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
+	int s=0; 
+	//Cp(Gg_f,Seg[mon_nr[0]]->G1,M); 
+	Cp(Gg_f,G1+molmon_nr[0]]*M,M); 
+	//for (int i=0; i<blocks; i++) propagate_forward(Gg_f,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
+	for (int i=0; i<blocks; i++) propagate_forward(Gg_f,G1+molmon_nr[i]*M,s,n_mon[i],i,M);
+
+	s=chainlength-1; 
+	//Cp(Gg_b+(s%2)*M,Seg[mon_nr[blocks-1]]->G1,M);
+	Cp(Gg_b+(s%2)*M,G1+molmon_nr[blocks-1]*M,M);
+	//for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
+	for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,G1+molmon_nr[i]*M,s,n_mon[i],i,M);
 	Lat[0]->remove_bounds(Gg_b);
 	GN=Lat[0]->WeightedSum(Gg_b);
 	return success;

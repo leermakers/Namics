@@ -72,6 +72,8 @@ public:
 	int *H_Py2;
 	int *H_Pz2;	
 	Real *phi;
+	Real *G1;
+	Real *u;
 	Real *rho;
 	Real *H_phi;
 	Real *H_mask1;

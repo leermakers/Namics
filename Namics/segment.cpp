@@ -96,8 +96,10 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	if (freedom=="frozen") {
 		Cp(phi,MASK,M); 
 	} else Zero(phi,M); 
-	if (freedom=="tagged") Zero(u,M); 
-	Boltzmann(G1,u,M);
+	if (freedom=="tagged") Zero(u,M);
+	Lat[0]->set_bounds(u);
+	if (Lat[0]->fjc >1) Lat[0]->Edis(phi_side,u,M); //phi_side is used temporarily... 
+	Boltzmann(G1,u,M); //See also molecule equivalent.....
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
 	if (freedom=="tagged") Cp(G1,MASK,M);
 	Lat[0]->set_bounds(G1);

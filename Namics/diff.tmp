@@ -1,0 +1,140 @@
+> 
+908,916c909,913
+< 				if (geometry=="planar") {
+< 					Add(X_side+1,X,M-1); Add(X_side,X+1,M-1);
+< 					if (lattice_type=="simple_cubic")  {
+< 						YplusisCtimesX(X_side,X,4.0,M);
+< 						Norm(X_side,lambda,M); 
+< 					} else {
+< 						Add(X_side,X,M); 
+< 						Norm(X_side,lambda,M); 
+< 					}
+---
+> 			if (geometry=="planar") {
+> 				Add(X_side+1,X,M-1); Add(X_side,X+1,M-1);
+> 				if (lattice_type=="simple_cubic")  {
+> 					YplusisCtimesX(X_side,X,4.0,M);
+> 					Norm(X_side,lambda,M); 
+918,920c915
+< 					AddTimes(X_side,X,lambda0,M);
+< 					AddTimes(X_side+1,X,lambda_1+1,M-1);
+< 					AddTimes(X_side,X+1,lambda1,M-1);
+---
+> 					Add(X_side,X,M); 
+922a918,923
+> 			} else {
+> 				AddTimes(X_side,X,lambda0,M);
+> 				AddTimes(X_side+1,X,lambda_1+1,M-1);
+> 				AddTimes(X_side,X+1,lambda1,M-1);
+> 				Norm(X_side,lambda,M); 
+> 			}
+949d949
+< 					YplusisCtimesX(X_side,X,2.0,M);
+951a952
+> 					YplusisCtimesX(X_side,X,2.0,M);
+990,999c991,1000
+< 				if (geometry=="planar") {
+< 					Add(gs+1,gs_1,M-1); Add(gs,gs_1+1,M-1);	
+< 					YplusisCtimesX(gs,gs_1,4.0,M);
+< 					Norm(gs,lambda,M); Times(gs,gs,G1,M);
+< 				} else {
+< 					AddTimes(gs,gs_1,lambda0,M);
+< 					AddTimes(gs+1,gs_1,lambda_1+1,M-1);
+< 					AddTimes(gs,gs_1+1,lambda1,M-1);
+< 					Norm(gs,lambda,M); Times(gs,gs,G1,M);
+< 				}
+---
+> 			if (geometry=="planar") {
+> 				Add(gs+1,gs_1,M-1); Add(gs,gs_1+1,M-1);	
+> 				YplusisCtimesX(gs,gs_1,4.0,M);
+> 				Norm(gs,lambda,M); Times(gs,gs,G1,M);
+> 			} else {
+> 				AddTimes(gs,gs_1,lambda0,M);
+> 				AddTimes(gs+1,gs_1,lambda_1+1,M-1);
+> 				AddTimes(gs,gs_1+1,lambda1,M-1);
+> 				Norm(gs,lambda,M); Times(gs,gs,G1,M);
+> 			}
+1040c1041
+< 			for (x=0; x<MX+2; x++) {
+---
+> 			for (x=1; x<MX+1; x++) {
+1048,1051c1049,1052
+< 			//X[0]             =0;
+< 			//X[(MX+1)*JX]     =0;
+< 			//X[0+MY+1]        =0;
+< 			//X[(MX+1)*JX+MY+1]=0;	
+---
+> 			X[0]             =0;
+> 			X[(MX+1)*JX]     =0;
+> 			X[0+MY+1]        =0;
+> 			X[(MX+1)*JX+MY+1]=0;	
+1074c1075
+< 			for (x=0; x<MX+2; x++) {
+---
+> 			for (x=1; x<MX+1; x++) {
+1082,1085c1083,1086
+< 			//X[0]             =0;
+< 			//X[(MX+1)*JX]     =0;
+< 			//X[0+MY+1]        =0;
+< 			//X[(MX+1)*JX+MY+1]=0;			
+---
+> 			X[0]             =0;
+> 			X[(MX+1)*JX]     =0;
+> 			X[0+MY+1]        =0;
+> 			X[(MX+1)*JX+MY+1]=0;			
+1102c1103
+< 	int x,y;
+---
+> 	int x,y; 
+1135c1136
+< 	int x,y; 
+---
+> 	int x,y; 	
+1254c1255
+< 					if (In[0]->IsDigit(diggit)) r[2]=In[0]->Get_int(coor[0],0); else {
+---
+> 					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
+1256,1259c1257,1260
+< 						if (coor[0]=="firstlayer") {recognize_keyword=true; r[2] = 1;}
+< 						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[2] = 0;}
+< 						//if (coor[0]=="upperbound") {recognize_keyword=true; r[2] = MX+1;}
+< 						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[2] = MX;}
+---
+> 						if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
+> 						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
+> 						//if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
+> 						if (coor[0]=="lastlayer")  {recognize_keyword=true; r[3] = MX;}
+1265c1266
+< 					if (r[2] <1-a || r[2] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds: " << 1-a << " .. " << MX+a<< endl; success=false;} 
+---
+> 					if (r[3] <1-a || r[3] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds: " << 1-a << " .. " << MX+a<< endl; success=false;} 
+1267c1268
+< 					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[1],0); else {
+---
+> 					if (In[0]->IsDigit(diggit)) r[4]=In[0]->Get_int(coor[1],0); else {
+1269,1272c1270,1273
+< 						if (coor[1]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
+< 						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
+< 						//if (coor[1]=="upperbound") {recognize_keyword=true; r[3] = MY+1;}
+< 						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[3] = MY;}
+---
+> 						if (coor[1]=="firstlayer") {recognize_keyword=true; r[4] = 1;}
+> 						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[4] = 0;}
+> 						//if (coor[1]=="upperbound") {recognize_keyword=true; r[4] = MY+1;}
+> 						if (coor[1]=="lastlayer")  {recognize_keyword=true; r[4] = MY;}
+1278,1280c1279,1281
+< 					if (r[3] < 1-a || r[3] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MY+a << endl; success =false;}
+< 					if (r[0] > r[2]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+< 					if (r[1] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+---
+> 					if (r[4] < 1-a || r[4] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MY+a << endl; success =false;}
+> 					if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+> 					if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+1646c1647
+< 				for (x=r[0]; x<r[1]+1; x++)  H_MASK[x]=1;
+---
+> 				for (x=r[0]; x<r[3]+1; x++)  H_MASK[x]=1;
+1654c1655
+< 				for (x=r[0]; x<r[2]+1; x++) for (y=r[1]; y<r[3]+1; y++) H_MASK[x*JX+y]=1;
+---
+> 				for (x=r[0]; x<r[3]+1; x++) for (y=r[1]; y<r[4]+1; y++) H_MASK[x*JX+y]=1;

@@ -53,7 +53,9 @@ if(debug) cout <<"Destructor in Newton " << endl;
 void Newton::AllocateMemory() {
 if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	int M=Lat[0]->M;
-	iv = Sys[0]->SysMonList.size() * M;
+	if (method == "DIIS-mesodyn") {
+		iv = Sys[0]->SysMolMonList.size()*M;
+	} else iv = Sys[0]->SysMonList.size() * M;
 	if (Sys[0]->charged) iv +=M;
 	if (method=="DIIS-ext") iv +=M;
 	Aij  =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
@@ -948,11 +950,30 @@ if(debug) cout <<"PutU in  Newton " << endl;
 	bool success=true;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	alpha=Sys[0]->alpha;
-	for (int i=0; i<sysmon_length; i++) {
-		Real *u=Seg[Sys[0]->SysMonList[i]]->u;
-		Cp(u,xx+i*M,M);
-		if (method == "Picard") Add(u,alpha,M);
-		if (method == "DIIS-ext") Add(u,xx+sysmon_length*M,M);
+	if (method=="DIIS-mesodyn") {
+		int i=0; int k=0;
+		int length = In[0]->MolList.size(); 
+		while (i<length) {
+			int j=0; 
+			int LENGTH=Mol[i]->MolMonList.size(); 
+			while (j<LENGTH) {Cp(Mol[i]->u+j*M,xx+k*M,M); k++; j++;}
+			i++;
+		}
+	} else {
+		for (int i=0; i<sysmon_length; i++) {
+			Real *u=Seg[Sys[0]->SysMonList[i]]->u;
+			Cp(u,xx+i*M,M);
+			if (method == "Picard") Add(u,alpha,M);
+			if (method == "DIIS-ext") Add(u,xx+sysmon_length*M,M);
+		}
+		int i=0; 
+		int length = In[0]->MolList.size(); 
+		while (i<length) {
+			int j=0; 
+			int LENGTH=Mol[i]->MolMonList.size(); 
+			while (j<LENGTH) {Cp(Mol[i]->u+j*M,Seg[Mol[i]->MolMonList[j]]->u,M); j++;} 
+			i++;
+		}
 	}
 	return success;
 }
@@ -1158,11 +1179,15 @@ bool Newton::Guess(Real *X, string METHOD, vector<string> MONLIST, bool CHARGED,
 		Called by main
 */
 bool Newton::Solve(bool report_errors) {
-	if(debug) cout <<"Solve in  Newton " << endl;
+if(debug) cout <<"Solve in  Newton " << endl;
 	bool success=true;
-	if (method=="pseudohessian") {iterate(xx,iv);}
+	if (method=="pseudohessian") {
+		iterate(xx,iv);
+	}
 	else if (method=="Picard") {success=Iterate_Picard();}
-	else success=Iterate_DIIS();
+	else {
+		success=Iterate_DIIS();
+	}
 	Sys[0]->CheckResults(report_errors);
 	return success;
 }
@@ -1273,7 +1298,14 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	int k=0;
 	// computeG_ext() has been ommented in CheckInput():
 	// if (method=="DIIS-ext") ComputeG_ext();
+<<<<<<< HEAD
 	ComputeG(g); // Or fall back to the classical method.
+=======
+	if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); //* commented function call, to prevent compilition error.
+	else {
+		ComputeG(g); // Or fall back to the classical method.
+	}
+>>>>>>> local
 	YplusisCtimesX(xx,g,delta_max,iv);
 	YisAminB(x_x0,xx,x0,iv);
 	Cp(xR,xx,iv);
@@ -1478,10 +1510,16 @@ if(debug) cout <<"CompueG_ext() in  Newton " << endl;
 void Newton::ComputeG_mesodyn(Real* rho) {
 	if (debug) cout << "ComputeG_mesodyn in  Newton " << endl;
 	int M = Lat[0]->M;
-	int sysmon_length = Sys[0]->SysMonList.size();
+	//int sysmolmon_length = Sys[0]->SysMolMonList.size();
 	ComputePhis();
 	Cp(g,rho,iv);
-	for (int i=0; i<sysmon_length; i++) {
-		YplusisCtimesX(g,Seg[Sys[0]->SysMonList[i]]->phi,-1.0,M);
-	}
+	int i=0; int k=0;
+	int length = In[0]->MolList.size(); 
+	while (i<length) {
+		int j=0; 
+		int LENGTH=Mol[i]->MolMonList.size(); 
+		while (j<LENGTH) {YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M); k++; j++;}
+		i++;
+	}	
 }
+

@@ -263,6 +263,7 @@ int main(int argc, char* argv[]) {
       // last argument 1 is to read guess in X.
     }
 
+<<<<<<< HEAD
     /********** All classes have been created and input gathered, time to start some calculations *********/
     int substart = 0;
     int subloop = 0;
@@ -291,6 +292,27 @@ int main(int argc, char* argv[]) {
         }
         Mes[0]->mesodyn();
       }
+=======
+/********** All classes have been created and input gathered, time to start some calculations *********/
+		int substart=0; int subloop=0;
+
+		if (scan_nr<0) substart=0;
+		else substart = Var[scan_nr]->num_of_cals;
+		if (substart<1) substart=1; // Default to 1 substart
+
+		while(subloop < substart){
+			if (scan_nr >-1) Var[scan_nr]->PutVarScan(subloop);
+			New[0]->AllocateMemory();
+			New[0]->Guess(X,METHOD,MONLIST,CHARGED,MX,MY,MZ);
+
+			// This is the starting point of all calculations. Solve provides the flow through computatin schemes.
+			if (search_nr<0 && ets_nr < 0 && etm_nr <0) {
+				New[0]->Solve(true);
+			} else {
+				if (debug) cout <<"Solve towards superiteration " << endl;
+				New[0]->SuperIterate(search_nr,target_nr,ets_nr,etm_nr);
+			}
+>>>>>>> local
 
       //Otherwise, go through the classic function solve.
       else {

@@ -1,5 +1,6 @@
 lat : flat : n_layers : 100
 lat : flat : lattice_type : simple_cubic
+//lat : flat : FJC_choices :7 
 lat : flat : gradients : 1
 
 mon : A : freedom : pinned
@@ -11,28 +12,29 @@ mon : A : chi - B : 0.6
 
 mol : A : composition : (A)4
 mol : A : freedom : restricted
-mol : A : theta : 43.9
+mol : A : theta : 50
 
 mol : B : composition : (B)4
 mol : B : freedom : solvent
 
-mol : C : composition : (A)10(B)10
-mol : C : freedom : restricted
-mol : C : theta : 12.2
-
+//mol : C : composition : (A)10(B)10
+//mol : C : freedom : restricted
+//mol : C : theta : 12.2
+newton : isaac : method : pseudohessian
+newton : isaac : deltamax : 0.1
+output : pro : append : false 
+pro : mon : * : phi
+pro : mol : * : phi
 start
-
 mon : A : freedom : free
-
 output : kal : append : false
 kal : mol : * : theta
 kal : sys : noname : grand_potential
-//output : pro : append : false 
-//pro : mol : * : phi
+kal : lat : flat : FJC_choices
 
 start
-mol : A : theta : 43
-var : mol-A : search : equate_to_solvent
-var : mol-C : search : theta
-var : sys-noname : grand_potential : 0
-start
+//mol : A : theta : 43
+//var : mol-A : search : equate_to_solvent
+//var : mol-C : search : theta
+//var : sys-noname : grand_potential : 0
+//start

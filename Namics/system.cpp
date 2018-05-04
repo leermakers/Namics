@@ -2,7 +2,7 @@
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,string name_) {
 	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; 
 if (debug) cout << "Constructor for system " << endl;
-	KEYS.push_back("calculation_type");
+	KEYS.push_back("calculation_type"); 
 	KEYS.push_back("generate_guess");
 	KEYS.push_back("initial_guess");
 	KEYS.push_back("guess_inputfile");
@@ -183,6 +183,7 @@ if (debug) cout << "CheckInput for system " << endl;
 			int j=0; 
 			int LENGTH=Mol[i]->MolMonList.size(); 
 			while (j<LENGTH) {
+				SysMolMonList.push_back(Mol[i]->MolMonList[j]);
 				if (!In[0]->InSet(SysMonList,Mol[i]->MolMonList[j])) {
 					if (Seg[Mol[i]->MolMonList[j]]->freedom!="tagged") SysMonList.push_back(Mol[i]->MolMonList[j]);				
 				}
@@ -579,7 +580,8 @@ if(debug) cout <<"ComputePhis in system" << endl;
 		Mol[i]->norm=norm; 
 		while (k<length) {
 			Real *phi=Mol[i]->phi+k*M;
-			Real *G1=Seg[Mol[i]->MolMonList[k]]->G1;
+			//Real *G1=Seg[Mol[i]->MolMonList[k]]->G1;
+			Real *G1=Mol[i]->G1+k*M;
 			Div(phi,G1,M); if (norm>0) Norm(phi,norm,M);
 if (debug) {
 Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]->MolMonList[k] << ": " << sum << endl; 
@@ -687,7 +689,8 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << neutralizer << "for mon " <
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++) {
 		if (Seg[i]->freedom !="frozen") Lat[0]->set_bounds(Seg[i]->phi); 
-		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M);
+		if (Lat[0]->fjc>1) Lat[0]->Edis(Seg[i]->phi_side,Seg[i]->phi,M);
+		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M); 
 	}
 	return success;  
 }

@@ -374,6 +374,7 @@ double sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << 
 	}
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++) {
+		Lat[0]->Edis(Seg[i]->phi_side,Seg[i]->phi,M);
 		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M);
 	}
 	return success;  

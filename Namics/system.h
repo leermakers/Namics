@@ -17,6 +17,7 @@ public:
 	vector<Molecule*> Mol;
 	vector<Lattice*> Lat; 
 	vector<int> SysMonList; 
+	vector<int> SysMolMonList;
 	vector<int> FrozenList;
 	vector<int> SysTagList; 
 	vector<int> SysClampList;

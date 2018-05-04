@@ -37,6 +37,9 @@ public:
 	Real *lambda0;
 	Real *lambda_1; 
 	Real *lambda1;
+	Real *LAMBDA;
+	Real *VL;
+	int fjc,FJC;
 	Real *X;
 	int VarInitValue;
 	string Var_type;
@@ -85,6 +88,7 @@ public:
 	void set_bounds(Real*);
 	void set_bounds(int*); 
 	void Side(Real *, Real *, int);
+	void Edis(Real *, Real *, int);
 	bool ReadRange(int*, int*, int&, bool&, string, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
 	bool CreateMASK(int*, int*, int*, int, bool);

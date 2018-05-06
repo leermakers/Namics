@@ -952,10 +952,10 @@ if(debug) cout <<"PutU in  Newton " << endl;
 	alpha=Sys[0]->alpha;
 	if (method=="DIIS-mesodyn") {
 		int i=0; int k=0;
-		int length = In[0]->MolList.size(); 
+		int length = In[0]->MolList.size();
 		while (i<length) {
-			int j=0; 
-			int LENGTH=Mol[i]->MolMonList.size(); 
+			int j=0;
+			int LENGTH=Mol[i]->MolMonList.size();
 			while (j<LENGTH) {Cp(Mol[i]->u+j*M,xx+k*M,M); k++; j++;}
 			i++;
 		}
@@ -966,12 +966,12 @@ if(debug) cout <<"PutU in  Newton " << endl;
 			if (method == "Picard") Add(u,alpha,M);
 			if (method == "DIIS-ext") Add(u,xx+sysmon_length*M,M);
 		}
-		int i=0; 
-		int length = In[0]->MolList.size(); 
+		int i=0;
+		int length = In[0]->MolList.size();
 		while (i<length) {
-			int j=0; 
-			int LENGTH=Mol[i]->MolMonList.size(); 
-			while (j<LENGTH) {Cp(Mol[i]->u+j*M,Seg[Mol[i]->MolMonList[j]]->u,M); j++;} 
+			int j=0;
+			int LENGTH=Mol[i]->MolMonList.size();
+			while (j<LENGTH) {Cp(Mol[i]->u+j*M,Seg[Mol[i]->MolMonList[j]]->u,M); j++;}
 			i++;
 		}
 	}
@@ -1298,14 +1298,12 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	int k=0;
 	// computeG_ext() has been ommented in CheckInput():
 	// if (method=="DIIS-ext") ComputeG_ext();
-<<<<<<< HEAD
-	ComputeG(g); // Or fall back to the classical method.
-=======
+
 	if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); //* commented function call, to prevent compilition error.
 	else {
 		ComputeG(g); // Or fall back to the classical method.
 	}
->>>>>>> local
+
 	YplusisCtimesX(xx,g,delta_max,iv);
 	YisAminB(x_x0,xx,x0,iv);
 	Cp(xR,xx,iv);
@@ -1514,12 +1512,11 @@ void Newton::ComputeG_mesodyn(Real* rho) {
 	ComputePhis();
 	Cp(g,rho,iv);
 	int i=0; int k=0;
-	int length = In[0]->MolList.size(); 
+	int length = In[0]->MolList.size();
 	while (i<length) {
-		int j=0; 
-		int LENGTH=Mol[i]->MolMonList.size(); 
+		int j=0;
+		int LENGTH=Mol[i]->MolMonList.size();
 		while (j<LENGTH) {YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M); k++; j++;}
 		i++;
-	}	
+	}
 }
-

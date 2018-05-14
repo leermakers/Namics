@@ -21,16 +21,23 @@ public:
   int findComponentNo();
   void setNeighborIndices(vector<int>&, vector<int>&, vector<int>&);
   void abort();
-  void langevinFlux(vector<Real>&, vector<Real>&, vector<Real>&, vector<Real>&);
+  void langevinFlux();
   void updateDensity();
   bool mesodyn();
   int findDensityVectorSize();
   void setComponentStartIndices (vector<int>&);
+  void buildRho();
+  int factorial (int);
+  void onsagerCoefficient();
+  int combinations (int, int);
 
+  vector<Real*> phi;    //densities used in langevinFlux
   vector<Real> noise;
   int componentNo;
   int size;
   vector<Real> J;
+  vector<Real> rho;
+  vector<Real> L;
   vector<int> xNeighbors;
   vector<int> yNeighbors;
   vector<int> zNeighbors;

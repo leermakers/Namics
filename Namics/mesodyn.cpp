@@ -43,13 +43,13 @@ bool Mesodyn::CheckInput(int start) {
 /******** Flow control ********/
 
 bool Mesodyn::mesodyn() {
-  //TODO: How to get here from main.
   pepareForCalculations();
   if (success) {
     cout << "Mesodyn is all set, starting calculations.." << endl;
-    for (int t = 0; t < timesteps; t++) {
-      New[0]->Solve(&dummyVector[0], &dummyVector[0]);
-      langevinFlux(dummyVector, dummyVector, dummyVector, dummyVector);
+    for (int t = 0; t < timesteps; t++) {      // get segment potentials by iteration so that they match the given rho.
+      New[0]->Solve(&rho[0], &dummyVector[0]); // get segment potentials by iteration so that they match the given rho.
+      onsagerCoefficient();
+      langevinFlux();
       updateDensity();
     }
   }
@@ -57,26 +57,42 @@ bool Mesodyn::mesodyn() {
 }
 
 void Mesodyn::pepareForCalculations() {
-  componentNo = findComponentNo();    //find how many compontents there are (e.g. head, tail, solvent)
-  size = findDensityVectorSize();     //find out how large the density vector is (needed for sizing the flux vector)
-                                      //which will be 1 flux per lattice site per component per dimension
+  componentNo = findComponentNo(); //find how many compontents there are (e.g. head, tail, solvent)
+  size = findDensityVectorSize();  //find out how large the density vector is (needed for sizing the flux vector)
+                                   //which will be 1 flux per lattice site per component per dimension
+  buildRho();
 
   //find the index ranges where each component / dimension is located in the vector that
   //contains phi's and u's (which is a 3D lattice mapped onto 1D vector (Row-major))
   if (componentNo <= 1) {
-      cout << "WARNING: Not enough components found for Mesodyn, aborting!" << endl;;
-      abort();
+    cout << "WARNING: Not enough components found for Mesodyn, aborting!" << endl;
+    ;
+    abort();
   } else if (componentNo > 1 && componentNo < 4) {
-      setNeighborIndices(xNeighbors, yNeighbors, zNeighbors);
-      setComponentStartIndices(component);
+    setNeighborIndices(xNeighbors, yNeighbors, zNeighbors);
+    setComponentStartIndices(component);
   } else {
-      cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!" << endl;;
-      abort();
+    cout << "Unable to do Mesodyn for " << componentNo << " components, aborting!" << endl;
+    ;
+    abort();
   }
   //alocate memory for the fluxes of all components in all dimensions
   J.resize(size);
 }
 
+//defaults to homogeneous system for now
+void Mesodyn::buildRho() {
+  rho.reserve(size);
+  for (int i = 0; i < size; ++i) {
+    rho[i] = 0.5;
+  }
+
+  int steps = size / Lat[0]->MX;
+
+  for (int i = 1; i < componentNo; ++i) {
+    phi.push_back(&rho[steps * i]);
+  }
+}
 void Mesodyn::abort() {
   //Once false is returned, Mesodyn automatically quits to main.
   success = false;
@@ -96,42 +112,62 @@ int Mesodyn::findDensityVectorSize() {
 
 void Mesodyn::setNeighborIndices(vector<int>& xNeighbors, vector<int>& yNeighbors, vector<int>& zNeighbors) {
   //  TODO: boundary conditions
-  xNeighbors[0] = -1;
-  xNeighbors[1] = 1;
+  zNeighbors[0] = -1;
+  zNeighbors[1] = 1;
 
   yNeighbors[0] = -Lat[0]->MX;
   yNeighbors[1] = Lat[0]->MX;
 
-  zNeighbors[0] = -Lat[0]->MX * Lat[0]->MY;
-  zNeighbors[1] = Lat[0]->MX * Lat[0]->MY;
+  xNeighbors[0] = -Lat[0]->MX * Lat[0]->MY;
+  xNeighbors[1] = Lat[0]->MX * Lat[0]->MY;
 }
 
 void Mesodyn::setComponentStartIndices(vector<int>& component) {
-    component[0] = 0;
-    component[1] = Lat[0]->MX * Lat[0]->MY * Lat[0]->MZ;
+  component[0] = 0;
+  component[1] = Lat[0]->MX * Lat[0]->MY * Lat[0]->MZ;
 }
 
-
 /******** Calculations ********/
+void Mesodyn::onsagerCoefficient() {
 
-//Two components
-void Mesodyn::langevinFlux(vector<Real>& phiA, vector<Real>& phiB, vector<Real>& alphaA, vector<Real>& alphaB) {
-  vector<Real> L(size); //onsager coefficient
+  //TODO: maybe do this inline to preserve memory
+  //TODO: optimize by doing all reserves once in Malloc.
+  L.reserve(combinations(componentNo, 2) * Lat[0]->M);
+
+  vector<Real>::iterator lIterator;
+  lIterator = L.begin();
+
+  //TODO: Untested code
+  //all combinations of phi multiplications
+  for (unsigned int i = 0; i < phi.size() - 1; ++i) {
+    for (unsigned int j = i + 1; j < phi.size(); ++j) {
+      //at every coordinate (pointer arithmatic)
+      for (int xyz = 0; xyz < (Lat[0]->M); ++xyz) {
+        *lIterator = (*(phi[i] + xyz) * *(phi[j] + xyz));
+        lIterator++;
+      }
+    }
+  }
+}
+
+void Mesodyn::langevinFlux() {
   vector<Real> u(size); //segment potential A
 
   //TODO: boundary condition in lattice?
+  int z = 1;
+  u[z] = New[0]->xx[z]; //which alphas? component a & b or one component at two sites?
 
-  for (int z = 1; z < size; z++) {
-    L[z] = phiA[z] * phiA[z];
+  for (int i; i < componentNo; ++i) {
+    J[z] = -D * L[z] + L[z + xNeighbors[0]];
   }
 
-  for (int z = 1; z < size; z++) {
+  /*for (int z = 1; z < size; z++) {
     gaussianNoise(dummyMean, dummyStdev, 2);
     //segment "chemical potential" gradient
     u[z] = alphaA[z] - alphaB[z];
     J[z] = (-D * (((L[z] + L[z + 1]) * (u[z + 1] - u[z])) - ((L[z - 1] + L[z]) * (u[z] - u[z - 1]))) + noise[0]);
     J[size + z] = (-D * (((L[z] + L[z + 1]) * (-u[z + 1] - -u[z])) - ((L[z - 1] + L[z]) * (-u[z] - -u[z - 1]))) + noise[1]);
-  }
+  }*/
 }
 
 void Mesodyn::updateDensity() {
@@ -167,6 +203,16 @@ for (auto const &element: mesodyn.thisNoise)
 }
 
 /******* Tools ********/
+int Mesodyn::factorial(int n) {
+  if (n > 1) {
+    return n * factorial(n - 1);
+  } else
+    return 1;
+}
+
+int Mesodyn::combinations(int n, int k) {
+  return factorial(n) / (factorial(n - k) * factorial(k));
+}
 
 void Mesodyn::PutParameter(string new_param) {
   KEYS.push_back(new_param);

@@ -21,7 +21,7 @@ void Molecule :: DeAllocateMemory(){
 if (debug) cout <<"Destructor for Mol " + name << endl;
 	free(H_phi);
 	free(H_phitot);
-	free(G1);//Tobe fixed when working with cuda.
+	free(G1);//TODO: fix when working with cuda.
 	free(u);
 	if (freedom=="clamped") {
 		free(H_Bx);
@@ -125,7 +125,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	}
 
 	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
-	u = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); //tobe fixed when working with cuda.
+	u = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); //TODO: fix when working with cuda.
 	G1 = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
 	H_phitot = (Real*) malloc(M*sizeof(Real));
 	if (freedom=="clamped") {
@@ -1475,7 +1475,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 }
 
 Real* Molecule::GetPointer(string s) {
-  if (debug) cout <<"GetPointer for Mol " + name << endl;
+if (debug) cout <<"GetPointer for Mol " + name << endl;
   vector<string> sub;
 	int M= Lat[0]->M;
 	In[0]->split(s,';',sub);

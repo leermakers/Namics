@@ -1131,7 +1131,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 			break;
 		case 3:
 			if (k>0) JX_=jx[k];
-			JY_=jy[k];
+			JY_=jy[k]; //TODO: Doesn't this belong to the if statement?
 			Zero(gs,M); set_bounds(gs_1);
 			Add(gs+JX_,gs_1,M-JX_); Add(gs,gs_1+JX_,M-JX_);
 			Add(gs+JY_,gs_1,M-JY_); Add(gs,gs_1+JY_,M-JY_);

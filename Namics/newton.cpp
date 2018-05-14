@@ -1192,11 +1192,12 @@ if(debug) cout <<"Solve in  Newton " << endl;
 	return success;
 }
 
+//TODO: this form of function calling loses bounds checking in vectors.
 bool Newton::Solve(Real* rho, Real* alpha) {
 	if(debug) cout <<"Solve (mesodyn) in  Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi;
-	int sysmon_length = Sys[0]->SysMonList.size();
+	int sysmon_length = Sys[0]->SysMolMonList.size();
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 
 	bool success=true;
@@ -1208,15 +1209,15 @@ bool Newton::Solve(Real* rho, Real* alpha) {
 	}
 	for (int i=0; i<sysmon_length; i++) {
 		for (int k=0; k<mon_length; k++) {
-                        chi= Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];
+                        chi= Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
 			if (chi!=0) {
 				PutAlpha(alpha+i*M,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 			}
 		}
 		if (Sys[0]->charged){
-			YplusisCtimesX(alpha+i*M,Sys[0]->EE,Seg[Sys[0]->SysMonList[i]]->epsilon,M);
-			if (Seg[Sys[0]->SysMonList[i]]->valence !=0)
-			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMonList[i]]->valence,M);
+			YplusisCtimesX(alpha+i*M,Sys[0]->EE,Seg[Sys[0]->SysMolMonList[i]]->epsilon,M);
+			if (Seg[Sys[0]->SysMolMonList[i]]->valence !=0)
+			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMolMonList[i]]->valence,M);
 		}
 	}
 

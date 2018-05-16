@@ -7,62 +7,54 @@
 #include <random>
 
 class Mesodyn {
+private:
+  const string name;
+  const vector<Input*> In;
+  const vector<Lattice*> Lat;
+  const vector<Molecule*> Mol;
+  const vector<Segment*> Seg;
+  const vector<System*> Sys;
+  const vector<Newton*> New;
+  const string brand;
+  Real D; //diffusionconstant
+  void updateDensity();
+  Real mean;
+  Real stdev;
+  Real seed;
+  int timesteps;
+  int timebetweensaves;
+  const int zNeighbor;
+  const int yNeighbor;
+  const int xNeighbor;
+  const int cNeighbor;
+  const int componentNo;
+  const int size;
+  Real initRho;
+  const int dimensions;
+  bool success {true};
+
 public:
   Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
-
   ~Mesodyn();
   void AllocateMemory();
 
-  bool success {true};
-  string location;
-
-  void gaussianNoise(Real, Real, unsigned long);
-  void pepareForCalculations();
-  int findComponentNo();
-  void setNeighborIndices(vector<int>&, vector<int>&, vector<int>&);
+  void gaussianNoise(Real, Real, unsigned long);;
   void abort();
   void langevinFlux();
-  void updateDensity();
   bool mesodyn();
-  int findDensityVectorSize();
-  void setComponentStartIndices (vector<int>&);
-  void buildRho();
+  void fillRho(Real);
   int factorial (int);
   void onsagerCoefficient();
   int combinations (int, int);
+  inline Real at(int, int, int, int);
 
-  vector<Real*> phi;    //densities used in langevinFlux
+  vector<Real*> ptrComponentStart;    //densities used in langevinFlux
   vector<Real> noise;
-  int componentNo;
-  int size;
   vector<Real> J;
   vector<Real> rho;
   vector<Real> L;
-  vector<int> xNeighbors;
-  vector<int> yNeighbors;
-  vector<int> zNeighbors;
-  vector<int> component;
 
-  //dummy variables
-  //real variables
-  Real D {0.5}; //diffusion constant
-
-  //delete when done
-  Real dummyMean {1};
-  Real dummyStdev {1};
   vector<Real> dummyVector {1,2,3,4,5};
-  int latticeX;
-  int latticeY;
-  int latticeZ;
-
-  string name;
-  vector<Input*> In;
-  vector<Lattice*> Lat;
-  vector<Segment*> Seg;
-  vector<Molecule*> Mol;
-  vector<System*> Sys;
-  vector<Newton*> New;
-  string brand;
 
   vector<string> ints;
   vector<string> Reals;
@@ -79,8 +71,6 @@ public:
   void PushOutput();
   Real* GetPointer(string);
   int GetValue(string, int&, Real&, string&);
-  int timesteps;
-  int timebetweensaves;
 
   std::vector<string> KEYS;
   std::vector<string> PARAMETERS;

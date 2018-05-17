@@ -1,6 +1,6 @@
-lat : flat : n_layers : 100
-lat : flat : lattice_type : simple_cubic
-lat : flat : gradients : 1
+lat : cube : n_layers : 100
+lat : cube : lattice_type : simple_cubic
+lat : cube : gradients : 1
 
 mon : A : freedom : pinned
 mon : A : pinned_range : 1;60
@@ -21,19 +21,19 @@ mol : C : freedom : restricted
 mol : C : theta : 12.2
 
 start
+
+lat : cube : n_layers_x : 100
+lat : cube : n_layers_y : 100
+lat : cube : n_layers_z : 100
+lat : cube : lattice_type : simple_cubic
+lat : cube : gradients : 1
+
 mon : A : freedom : free
 newton : isaac : method : DIIS-mesodyn
 mesodyn : something : timesteps : 1000.0
 
-//output : kal : append : false
-//kal : mol : * : theta
-//kal : sys : noname : grand_potential
+output : kal : append : false
+kal : mol : * : theta
+kal : sys : noname : grand_potential
 output : pro : append : false
 pro : mol : * : phi
-
-start
-//mol : A : theta : 43
-//var : mol-A : search : equate_to_solvent
-//var : mol-C : search : theta
-//var : sys-noname : grand_potential : 0
-start

@@ -13,6 +13,7 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       D{0.5},
       mean{1},
       stdev{1},
+      seed{1},
       timesteps{0},
       timebetweensaves{0},
       zNeighbor{1}, // Usage for e.g. layer z: foo[z]+foo[z+1] becomes foo[z] + foo[z+xNeighbor]
@@ -20,7 +21,7 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       xNeighbor{Lat[0]->MZ * Lat[0]->MY},
       cNeighbor{Lat[0]->M},                                     // Neighboring component
       componentNo{(int)In[0]->MolList.size()},                  //find how many compontents there are (e.g. head, tail, solvent)
-      size{componentNo * Lat[0]->MX * Lat[0]->MY * Lat[0]->MZ}, //find out how large the density vector is (needed for sizing the flux vector)
+      size{componentNo * Lat[0]->M}, //find out how large the density vector is (needed for sizing the flux vector)
                                                                 //which will be 1 flux per lattice site per component per dimension
       initRho{0.5},                                             // default is a homogeneous system.
       dimensions{3}                                             //TODO: Get this number from somewhere
@@ -31,12 +32,15 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   KEYS.push_back("seed");
   KEYS.push_back("mean");
   KEYS.push_back("stdev");
+  cout << "Mesodyn initialized." << endl;
 }
 
 Mesodyn::~Mesodyn() {
 }
 
 void Mesodyn::AllocateMemory() {
+  cout << "Allocating Memory.." << endl;
+
   //alocate memory for the fluxes of all components in all dimensions
   try {
     J.resize(dimensions * size);
@@ -52,7 +56,7 @@ void Mesodyn::AllocateMemory() {
 
 bool Mesodyn::CheckInput(int start) {
   if (debug)
-    cout << "Check Mesodyn" << endl;
+    cout << "CheckInput in Mesodyn" << endl;
   bool success = true;
 
   success = In[0]->CheckParameters("mesodyn", name, start, KEYS, PARAMETERS, VALUES);
@@ -61,32 +65,32 @@ bool Mesodyn::CheckInput(int start) {
     if (GetValue("timesteps").size() > 0) {
       success = In[0]->Get_int(GetValue("timesteps"), timesteps, 1, 10000, "The number of timesteps should be between 1 and 10000");
     }
-    cout << "Timesteps is " << timesteps << endl;
+    if(debug) cout << "Timesteps is " << timesteps << endl;
 
     if (GetValue("timebetweensaves").size() > 0) {
       success = In[0]->Get_int(GetValue("timebetweensaves"), timebetweensaves);
     }
-    cout << "Timesteps is " << timesteps << endl;
+    if(debug) cout << "Time bewteen saves is " << timebetweensaves << endl;
 
     if (GetValue("diffusionconstant").size() > 0) {
       success = In[0]->Get_Real(GetValue("diffusionconstant"), D);
     }
-    cout << "Diffusion const is " << D << endl;
+    if(debug) cout << "Diffusion const is " << D << endl;
 
     if (GetValue("seed").size() > 0) {
       success = In[0]->Get_Real(GetValue("seed"), seed);
     }
-    cout << "Seed is " << seed << endl;
+    if(debug) cout << "Seed is " << seed << endl;
 
-    if (GetValue("seed").size() > 0) {
+    if (GetValue("mean").size() > 0) {
       success = In[0]->Get_Real(GetValue("mean"), mean);
     }
-    cout << "Mean is " << mean << endl;
+    if(debug) cout << "Mean is " << mean << endl;
 
-    if (GetValue("seed").size() > 0) {
+    if (GetValue("stdev").size() > 0) {
       success = In[0]->Get_Real(GetValue("stdev"), stdev);
     }
-    cout << "Stdev is " << stdev << endl;
+    if(debug) cout << "Stdev is " << stdev << endl;
   }
 
   return success;
@@ -95,13 +99,16 @@ bool Mesodyn::CheckInput(int start) {
 /******** Flow control ********/
 
 bool Mesodyn::mesodyn() {
+  if (debug) cout << "mesodyn in Mesodyn." << endl;
   AllocateMemory(); //this HAS to be done before fillRho
   fillRho(initRho);
   if (success) {
     cout << "Mesodyn is all set, starting calculations.." << endl;
-    //TODO: GUESS FOR U?
-    for (int t = 0; t < timesteps; t++) {      // get segment potentials by iteration so that they match the given rho.
-      New[0]->Solve(&rho[0], &dummyVector[0]); // TODO: DUMMY VECTOR!
+    for (int t = 0; t < timesteps; t++) { // get segment potentials by iteration so that they match the given rho.
+      //debug = true;
+      New[0]->Solve(rho[0]);
+      cout << "We're back!" << endl;
+      debug = true;
       onsagerCoefficient();
       langevinFlux();
       updateDensity();
@@ -112,6 +119,8 @@ bool Mesodyn::mesodyn() {
 
 //defaults to homogeneous system for now
 void Mesodyn::fillRho(Real givenDensity) {
+  if (debug) cout << "fillRho in Mesodyn." << endl;
+
   for (int i = 0; i < size; ++i) {
     rho[i] = givenDensity;
   }
@@ -121,12 +130,14 @@ void Mesodyn::fillRho(Real givenDensity) {
 }
 
 void Mesodyn::abort() {
+  if (debug) cout << "abort in Mesodyn." << endl;
   //Once false is returned, Mesodyn automatically quits to main.
   success = false;
 }
 
 /******** Calculations ********/
 void Mesodyn::onsagerCoefficient() {
+  if (debug) cout << "onsagerCoefficient in Mesodyn." << endl;
 
   //TODO: maybe do this inline / per J calculation to preserve memory
   vector<Real>::iterator lIterator;
@@ -146,6 +157,8 @@ void Mesodyn::onsagerCoefficient() {
 }
 
 void Mesodyn::langevinFlux() {
+  if (debug) cout << "langevinFlux in Mesodyn." << endl;
+
   //TODO: safer to change size calculation to xx.size()?
   vector<Real> u(size); //segment potential A
 
@@ -158,29 +171,31 @@ void Mesodyn::langevinFlux() {
 
   for (int i = 0; i <= componentNo; ++i) {
     for (int z = 0; z <= Lat[0]->M; ++z) {
-      gaussianNoise(dummyMean, dummyStdev, 1);
+      gaussianNoise(mean, stdev, 1);
       //something like: for the number of onsager's coefficients, calculate flux according to x, y and z.
-      *jIterator = -D * ((L[z] + L[z + xNeighbor]) * (u[z + xNeighbor] - u[z])) - ((L[z - xNeighbor] + L[z]) * (u[z] - u[z - xNeighbor])) + noise[0];
+      *jIterator = -D * ((L[z + i * cNeighbor] + L[z + i * cNeighbor + xNeighbor]) * (u[z + i * cNeighbor + xNeighbor] - u[z + i * cNeighbor])) - ((L[z + i * cNeighbor - xNeighbor] + L[z + i * cNeighbor]) * (u[z + i * cNeighbor] - u[z + i * cNeighbor - xNeighbor])) + noise[0];
       ++jIterator;
     }
     for (int z = 0; z <= Lat[0]->M; ++z) {
-      gaussianNoise(dummyMean, dummyStdev, 1);
-      *jIterator = -D * ((L[z] + L[z + yNeighbor]) * (u[z + yNeighbor] - u[z])) - ((L[z - yNeighbor] + L[z]) * (u[z] - u[z - yNeighbor])) + noise[0];
+      gaussianNoise(mean, stdev, 1);
+      *jIterator = -D * ((L[z + i * cNeighbor] + L[z + i * cNeighbor + yNeighbor]) * (u[z + i * cNeighbor + yNeighbor] - u[z + i * cNeighbor])) - ((L[z + i * cNeighbor - yNeighbor] + L[z + i * cNeighbor]) * (u[z + i * cNeighbor] - u[z + i * cNeighbor - yNeighbor])) + noise[0];
       ++jIterator;
     }
     for (int z = 0; z <= Lat[0]->M; ++z) {
-      gaussianNoise(dummyMean, dummyStdev, 1);
-      *jIterator = -D * ((L[z] + L[z + zNeighbor]) * (u[z + zNeighbor] - u[z])) - ((L[z - zNeighbor] + L[z]) * (u[z] - u[z - zNeighbor])) + noise[0];
+      gaussianNoise(mean, stdev, 1);
+      *jIterator = -D * ((L[z + i * cNeighbor] + L[z + i * cNeighbor + zNeighbor]) * (u[z + i * cNeighbor + zNeighbor] - u[z + i * cNeighbor])) - ((L[z + i * cNeighbor - zNeighbor] + L[z + i * cNeighbor]) * (u[z + i * cNeighbor] - u[z + i * cNeighbor - zNeighbor])) + noise[0];
       ++jIterator;
     }
   }
 }
 
 inline Real Mesodyn::at(int x, int y, int z, int c) {
+  if (debug) cout << "at in Mesodyn." << endl;
   return 1; //[ z*Lat[0]->MZ*Lat[0]->MY + y*Lat[0]->MX + x ];
 }
 
 void Mesodyn::updateDensity() {
+  if (debug) cout << "updateDensity in Mesodyn." << endl;
   //old density + langevinFluxTwo
 }
 
@@ -189,7 +204,8 @@ void Mesodyn::updateDensity() {
 	 Possible errors: What if count > sizeof(unsinged long)?
 	 Called by langevinFlux()
 */
-void Mesodyn::gaussianNoise(Real mean, Real stdev, unsigned long count) {
+void Mesodyn::gaussianNoise(Real mean, Real stdev, unsigned int count) {
+  if (debug) cout << "gaussianNoise in Mesodyn." << endl;
 
   random_device generator;
 
@@ -214,6 +230,7 @@ for (auto const &element: mesodyn.thisNoise)
 
 /******* Tools ********/
 int Mesodyn::factorial(int n) {
+  if (debug) cout << "factorial in Mesodyn." << endl;
   if (n > 1) {
     return n * factorial(n - 1);
   } else
@@ -221,6 +238,7 @@ int Mesodyn::factorial(int n) {
 }
 
 int Mesodyn::combinations(int n, int k) {
+  if (debug) cout << "combinations in Mesodyn." << endl;
   return factorial(n) / (factorial(n - k) * factorial(k));
 }
 

@@ -38,7 +38,7 @@ public:
   ~Mesodyn();
   void AllocateMemory();
 
-  void gaussianNoise(Real, Real, unsigned long);;
+  void gaussianNoise(Real, Real, unsigned int);
   void abort();
   void langevinFlux();
   bool mesodyn();

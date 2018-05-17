@@ -1034,10 +1034,8 @@ if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	}
 
 	for (int i=0; i<N; i++) for (int j=0; j<N; j++) U[j][i] = A[i*N + j];
-
-    	if (N > 1) {
-
-        	svdcmp(U, N, N, S, V);
+  if (N > 1) {
+  	svdcmp(U, N, N, S, V);
 		for (int i=0; i<N; i++) X[i]=0;
 		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[j][i];// *B[j];
 		for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is use because it is no longer needed.
@@ -1193,7 +1191,7 @@ if(debug) cout <<"Solve in  Newton " << endl;
 }
 
 //TODO: this form of function calling loses bounds checking in vectors.
-bool Newton::Solve(Real* rho, Real* alpha) {
+bool Newton::Solve(Real* rho) {
 	if(debug) cout <<"Solve (mesodyn) in  Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi;
@@ -1350,7 +1348,8 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 		ComputeG_mesodyn(rho);
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(xx,g,-delta_max,iv);
-		Cp(xR+k*iv,xx,iv); YisAminB(x_x0+k*iv,xx,x0,iv);
+		Cp(xR+k*iv,xx,iv);
+		YisAminB(x_x0+k*iv,xx,x0,iv);
 		DIIS(xx,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,iv);
 		Dot(residual,g,g,iv);
 		residual=sqrt(residual);
@@ -1358,7 +1357,6 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 			printf("it = %i g = %1e \n",it,residual);
 		}
 	}
-
 	Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
 	return it<iterationlimit+1;
 }

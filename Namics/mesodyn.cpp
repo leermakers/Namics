@@ -16,10 +16,10 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       seed{1},
       timesteps{0},
       timebetweensaves{0},
-      zNeighbor{Lat[0]->JZ}, // Usage for e.g. layer z: foo[z]+foo[z+1] becomes foo[z] + foo[z+xNeighbor]
-      yNeighbor{Lat[0]->JY},
-      xNeighbor{Lat[0]->JX},
-      cNeighbor{Lat[0]->M},                    // Neighboring component
+      JZ{Lat[0]->JZ}, // Usage for e.g. layer z: foo[z]+foo[z+1] becomes foo[z] + foo[z+JX]
+      JY{Lat[0]->JY},
+      JX{Lat[0]->JX},
+      M{Lat[0]->M},                    // Neighboring component
       componentNo{(int)In[0]->MolList.size()}, //find how many compontents there are (e.g. head, tail, solvent)
       size{componentNo * Lat[0]->M},           //find out how large the density vector is (needed for sizing the flux vector)
                                                //which will be 1 flux per lattice site per component per dimension
@@ -209,39 +209,39 @@ void Mesodyn::langevinFlux() {
       }
     }
 
-    for (int z = 0; z <= Lat[0]->M; ++z) {
+    for (int z = 0; z < Lat[0]->M; ++z) {
       gaussianNoise(mean, stdev, 1);
       int l = 0;
       //something like: for the number of onsager's coefficients, calculate flux according to x, y and z.
-      *jIterator = -D * ((L[z + cCombinations[l] * cNeighbor] + L[z + cCombinations[l] + xNeighbor]) * (u[z + i * cNeighbor + xNeighbor] - u[z + i * cNeighbor])) - ((L[z + cCombinations[l] - xNeighbor] + L[z + cCombinations[l]]) * (u[z + i * cNeighbor] - u[z + i * cNeighbor - xNeighbor])) + noise[0];
+      *jIterator = -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JX]) * (u[z + i * M + JX] - u[z + i * M])) - ((L[z + cCombinations[l] * M - JX] + L[z + cCombinations[l] * M]) * (u[z + i * M] - u[z + i * M - JX])) + noise[0];
       if (componentNo > 2) {
         for (int l = 1; l < componentNo - 1; ++l) {
-          *jIterator += -D * ((L[z + cCombinations[l] * cNeighbor] + L[z + cCombinations[l] + xNeighbor]) * (u[z + i * cNeighbor + xNeighbor] - u[z + i * cNeighbor])) - ((L[z + cCombinations[l] - xNeighbor] + L[z + cCombinations[l]]) * (u[z + i * cNeighbor] - u[z + i * cNeighbor - xNeighbor])) + noise[0];
+          *jIterator += -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JX]) * (u[z + i * M + JX] - u[z + i * M])) - ((L[z + cCombinations[l] * M - JX] + L[z + cCombinations[l] * M]) * (u[z + i * M] - u[z + i * M - JX])) + noise[0];
         }
       }
       ++jIterator;
     }
     if (dimensions > 1) {
-      for (int z = 0; z <= Lat[0]->M; ++z) {
+      for (int z = 0; z < Lat[0]->M; ++z) {
         int l = 0;
         gaussianNoise(mean, stdev, 1);
-        *jIterator = -D * ((L[z + cCombinations[l]] + L[z + cCombinations[l] + yNeighbor]) * (u[z + i * cNeighbor + yNeighbor] - u[z + i * cNeighbor])) - ((L[z + cCombinations[l] - yNeighbor] + L[z + cCombinations[l]]) * (u[z + i * cNeighbor] - u[z + i * cNeighbor - yNeighbor])) + noise[0];
+        *jIterator = -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JY]) * (u[z + i * M + JY] - u[z + i * M])) - ((L[z + cCombinations[l] * M - JY] + L[z + cCombinations[l] * M]) * (u[z + i * M] - u[z + i * M - JY])) + noise[0];
         if (componentNo > 2) {
           for (int l = 1; l < componentNo - 1; ++l) {
-            *jIterator = -D * ((L[z + cCombinations[l]] + L[z + cCombinations[l] + yNeighbor]) * (u[z + i * cNeighbor + yNeighbor] - u[z + i * cNeighbor])) - ((L[z + cCombinations[l] - yNeighbor] + L[z + cCombinations[l]]) * (u[z + i * cNeighbor] - u[z + i * cNeighbor - yNeighbor])) + noise[0];
+            *jIterator = -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JY]) * (u[z + i * M + JY] - u[z + i * M])) - ((L[z + cCombinations[l] * M - JY] + L[z + cCombinations[l] * M]) * (u[z + i * M] - u[z + i * M - JY])) + noise[0];
           }
         }
         ++jIterator;
       }
     }
     if (dimensions > 2) {
-      for (int z = 0; z <= Lat[0]->M; ++z) {
+      for (int z = 0; z < Lat[0]->M; ++z) {
         int l = 0;
         gaussianNoise(mean, stdev, 1);
-        *jIterator = -D * ((L[z + cCombinations[l]] + L[z + cCombinations[l] + zNeighbor]) * (u[z + i * cNeighbor + zNeighbor] - u[z + i * cNeighbor])) - ((L[z + cCombinations[l] - zNeighbor] + L[z + cCombinations[l]]) * (u[z + i * cNeighbor] - u[z + i * cNeighbor - zNeighbor])) + noise[0];
+        *jIterator = -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JZ]) * (u[z + i * M + JZ] - u[z + i * M])) - ((L[z + cCombinations[l] * M - JZ] + L[z + cCombinations[l] * M]) * (u[z + i * M] - u[z + i * M - JZ])) + noise[0];
         if (componentNo > 2) {
           for (int l = 1; l < componentNo - 1; ++l) {
-            *jIterator = -D * ((L[z + cCombinations[l]] + L[z + cCombinations[l] + zNeighbor]) * (u[z + i * cNeighbor + zNeighbor] - u[z + i * cNeighbor])) - ((L[z + cCombinations[l] - zNeighbor] + L[z + cCombinations[l]]) * (u[z + i * cNeighbor] - u[z + i * cNeighbor - zNeighbor])) + noise[0];
+            *jIterator = -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JZ]) * (u[z + i * M + JZ] - u[z + i * M])) - ((L[z + cCombinations[l] * M - JZ] + L[z + cCombinations[l] * M]) * (u[z + i * M] - u[z + i * M - JZ])) + noise[0];
           }
         }
         ++jIterator;
@@ -257,7 +257,18 @@ inline Real Mesodyn::val(vector<Real>& v, int c, int x, int y, int z) {
 void Mesodyn::updateDensity() {
   if (debug)
     cout << "updateDensity in Mesodyn." << endl;
-  //old density + langevinFluxTwo
+
+  // J looks like: Jx1 - Jy1 - Jz1 - Jx2 - Jy2 - Jz2 etc.
+  // Each J has size Lat[0]->M
+/*
+  for (int j = 0; j <= componentNo; ++j) {
+    for (int i = 0; i < Lat[0]->M; ++i) {
+      rho[i+j*M] += J[i       +j*M];
+      rho[i+j*M] += J[i * M   +j*M];
+      rho[i+j*M] += J[i * 2*M +j*M];
+    }
+  }
+  */
 }
 
 /* Generates a vector of length count, contianing gaussian noise of given mean, standard deviation.

@@ -23,10 +23,10 @@ private:
   Real seed;
   int timesteps;
   int timebetweensaves;
-  int zNeighbor;
-  int yNeighbor;
-  int xNeighbor;
-  int cNeighbor;
+  const int JZ;
+  const int JY;
+  const int JX;
+  const int M;
   const int componentNo;
   const int size;
   Real initRho;

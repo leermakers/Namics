@@ -152,7 +152,7 @@ bool Lattice::PutM() {
 	bool success=true;
 	switch(gradients) {
 		case 1:
-			JX=1; JY=0; M=MX+2;if (fjc>1) M *=fjc;
+			JX=1; JY=0; JZ=0; M=MX+2;if (fjc>1) M *=fjc;
 			if (geometry=="cylindrical") {
 				volume = PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));
 			} else if (geometry=="spherical") {
@@ -168,7 +168,7 @@ bool Lattice::PutM() {
 			break;
 		case 2:
 			if (geometry=="cylindrical") {volume = MY*PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));} else volume = MX*MY;
-			JX=(MY+2); JY=1; M=(MX+2)*(MY+2);
+			JX=(MY+2); JY=1; JZ=0; M=(MX+2)*(MY+2);
 			//if (BC[0]=="surface") BX1=0;
 			if (BC[0]=="mirror") BX1=1;
 			if (BC[0]=="periodic") BX1=MX;
@@ -184,7 +184,7 @@ bool Lattice::PutM() {
 			break;
 		case 3:
 			volume = MX*MY*MZ;
-			JX=(MZ+2)*(MY+2); JY=(MZ+2); M = (MX+2)*(MY+2)*(MZ+2);
+			JX=(MZ+2)*(MY+2); JY=(MZ+2); JZ=1; M = (MX+2)*(MY+2)*(MZ+2);
 
 			//if (BC[0]=="surface") BX1=0;
 			if (BC[0]=="mirror") BX1=1;

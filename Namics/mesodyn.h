@@ -23,10 +23,10 @@ private:
   Real seed;
   int timesteps;
   int timebetweensaves;
-  const int zNeighbor;
-  const int yNeighbor;
-  const int xNeighbor;
-  const int cNeighbor;
+  int zNeighbor;
+  int yNeighbor;
+  int xNeighbor;
+  int cNeighbor;
   const int componentNo;
   const int size;
   Real initRho;
@@ -46,15 +46,15 @@ public:
   int factorial (int);
   void onsagerCoefficient();
   int combinations (int, int);
-  inline Real at(int, int, int, int);
+  inline Real val(vector<Real>&, int, int, int, int);
+  inline Real val(vector<Real>&, int);
+  int findDimensions();
 
   vector<Real*> ptrComponentStart;    //densities used in langevinFlux
   vector<Real> noise;
   vector<Real> J;
   vector<Real> rho;
   vector<Real> L;
-
-  vector<Real> dummyVector {1,2,3,4,5};
 
   vector<string> ints;
   vector<string> Reals;

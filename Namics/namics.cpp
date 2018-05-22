@@ -285,21 +285,18 @@ int main(int argc, char* argv[]) {
       //If mesodyn is to be used, go through this loop
       if (New[0]->method == "DIIS-mesodyn") {
         // Create mesodyn class instance and check inputs (reference above)
+        if (debug) cout << "Creating mesodyn" << endl;
         Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
         if (!Mes[0]->CheckInput(start)) {
           return 0;
         }
         Mes[0]->mesodyn();
-      }
-
-
       //Otherwise, go through the classic function solve.
-      else {
-        if (search_nr < 0 && ets_nr < 0 && etm_nr < 0)
+      } else {
+        if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
           New[0]->Solve(true);
-        else {
-          if (debug)
-            cout << "Solve towards superiteration " << endl;
+        } else {
+          if (debug) cout << "Solve towards superiteration " << endl;
           New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
         }
       }
@@ -329,7 +326,6 @@ int main(int argc, char* argv[]) {
     }
 
     /******** Clear all class instances ********/
-    // TODO: Again some code for ..charged molecules?
     if (scan_nr > -1)
       Var[scan_nr]->ResetScanValue();
     if (Sys[0]->initial_guess == "previous_result") {

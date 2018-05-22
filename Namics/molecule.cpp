@@ -248,7 +248,7 @@ if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 		Lat[0]->set_bounds(u+i*M);
 		if (Lat[0]->fjc >1) Lat[0]->Edis(Seg[MolMonList[i]]->phi_side,u+i*M,M);
 		Boltzmann(G1+i*M,u+i*M,M);
-if (Seg[i]->freedom=="pinned") cout <<" freedom " << i << "in molecule " + name << endl;
+if (Seg[i]->freedom=="pinned") cout <<" freedom " << i << " in molecule " + name << endl;
 		if (Seg[MolMonList[i]]->freedom=="pinned") Times(G1+i*M,G1+i*M,Seg[MolMonList[i]]->MASK,M);
 		if (Seg[MolMonList[i]]->freedom=="tagged") Cp(G1+i*M,Seg[MolMonList[i]]->MASK,M);
 		Lat[0]->set_bounds(G1+i*M);
@@ -1586,6 +1586,7 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	Cp(phi,G1,M);
 	Lat[0]->remove_bounds(phi);
 	GN=Lat[0]->WeightedSum(phi);
+	cout << GN << endl;
 	if (compute_phi_alias) {
 		int length = MolAlList.size();
 		for (int i=0; i<length; i++) {

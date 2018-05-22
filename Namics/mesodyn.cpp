@@ -20,11 +20,12 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       JY{Lat[0]->JY},
       JX{Lat[0]->JX},
       M{Lat[0]->M},                    // Neighboring component
-      componentNo{(int)In[0]->MolList.size()}, //find how many compontents there are (e.g. head, tail, solvent)
+      componentNo{(int)Sys[0]->SysMolMonList.size()}, //find how many compontents there are (e.g. head, tail, solvent)
       size{componentNo * Lat[0]->M},           //find out how large the density vector is (needed for sizing the flux vector)
                                                //which will be 1 flux per lattice site per component per dimension
       initRho{1 / (Real)componentNo},          // default is a homogeneous system.
-      dimensions{findDimensions()}             // used to decide which fluxes to calculate
+      dimensions{findDimensions()},             // used to decide which fluxes to calculate
+      ptrComponentStart{nullptr}
 {
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
@@ -54,9 +55,10 @@ void Mesodyn::AllocateMemory() {
 
   //alocate memory for the fluxes of all components in all dimensions
   try {
-    J.resize(dimensions * size);
+    J.reserve(dimensions * size);
     L.reserve(combinations(componentNo, 2) * Lat[0]->M);
     rho.reserve(size);
+    ptrComponentStart.reserve(componentNo);
   } catch (...) {
     cout << "Failed to reserve enough memory. System too large for RAM?";
     abort();
@@ -120,11 +122,9 @@ bool Mesodyn::mesodyn() {
   fillRho(initRho);
   if (success) {
     cout << "Mesodyn is all set, starting calculations.." << endl;
-    for (int t = 0; t < timesteps; t++) { // get segment potentials by iteration so that they match the given rho.
-      //debug = true;
-      New[0]->Solve(rho[0]);
-      cout << "We're back!" << endl;
-      //debug = true;
+    for (int t = 0; t < 100; t++) { // get segment potentials by iteration so that they match the given rho.
+      New[0]->SolveMesodyn(&rho[0]);
+      cout << "We're back in Mesodyn!" << endl;
       onsagerCoefficient();
       langevinFlux();
       updateDensity();
@@ -135,8 +135,7 @@ bool Mesodyn::mesodyn() {
 
 //defaults to homogeneous system for now
 void Mesodyn::fillRho(Real givenDensity) {
-  if (debug)
-    cout << "fillRho in Mesodyn." << endl;
+  if (debug) cout << "fillRho in Mesodyn." << endl;
 
   for (int i = 0; i < size; ++i) {
     rho[i] = givenDensity;

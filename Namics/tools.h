@@ -5,11 +5,12 @@
 #include <cuda.h>
 //#include <cublas_v2.h>
 #include <cuda_runtime.h>
+#include <memory>
 
 //extern cublasStatus_t stat;
 //extern cublasHandle_t handle;
 extern const int block_size;
- 
+
 __global__ void distributeg1(Real, Real, int*,  int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int );
 __global__ void collectphi(Real*, Real*,Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 __global__ void sum(Real*, Real*, int);
@@ -105,8 +106,8 @@ void SetBoundaries(int*,       int, int, int, int, int, int, int, int, int, int,
 void RemoveBoundaries(int*,    int, int, int, int, int, int, int, int, int, int, int);
 void DistributeG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
-void OverwriteC(Real*, int*, Real,int); 
-void OverwriteA(Real*, int*, Real* ,int); 
+void OverwriteC(Real*, int*, Real,int);
+void OverwriteA(Real*, int*, Real* ,int);
 void UpQ(Real*,Real*,Real*,Real*,int,int,Real,int*,int);
 void UpPsi(Real*,Real*,Real*,Real*,int,int,Real,int*;int);
 #else
@@ -163,8 +164,8 @@ void SetBoundaries(int*,       int, int, int, int, int, int, int, int, int, int,
 void RemoveBoundaries(int*,    int, int, int, int, int, int, int, int, int, int, int);
 void DisG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void ColPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
-void OverwriteC(Real*, int*, Real,int); 
-void OverwriteA(Real*, int*, Real* ,int); 
+void OverwriteC(Real*, int*, Real,int);
+void OverwriteA(Real*, int*, Real* ,int);
 void UpQ(Real*,Real*,Real*,Real*,int,int,Real,int*,int);
 void UpPsi(Real*,Real*,Real*,Real*,int,int,Real,int*,int);
 #endif
@@ -181,8 +182,4 @@ void H_Invert(Real*, Real*, int);
 
 Real pythag(Real, Real);
 int svdcmp(Real **, int , int , Real *, Real **);
-
-
-
-
-
+int modern_svdcmp(Real**, int, int, Real *, Real**);

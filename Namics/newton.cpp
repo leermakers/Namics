@@ -1033,9 +1033,13 @@ if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 		V[i] = new Real[N];
 	}
 
-	for (int i=0; i<N; i++) for (int j=0; j<N; j++) U[j][i] = A[i*N + j];
+	for (int i=0; i<N; i++)
+		for (int j=0; j<N; j++) 
+			U[j][i] = A[i*N + j];
   if (N > 1) {
-  	svdcmp(U, N, N, S, V);
+		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
+  	modern_svdcmp(U, N, N, S, V);
+		if (debug) cout << "SVCDMP done, continuing.." << endl;
 		for (int i=0; i<N; i++) X[i]=0;
 		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[j][i];// *B[j];
 		for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is use because it is no longer needed.
@@ -1191,7 +1195,7 @@ if(debug) cout <<"Solve in  Newton " << endl;
 }
 
 //TODO: this form of function calling loses bounds checking in vectors.
-bool Newton::Solve(Real* rho) {
+bool Newton::SolveMesodyn(Real* rho) {
 	if(debug) cout <<"Solve (mesodyn) in  Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi;
@@ -1298,10 +1302,8 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	// computeG_ext() has been ommented in CheckInput():
 	// if (method=="DIIS-ext") ComputeG_ext();
 
-	if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); //* commented function call, to prevent compilition error.
-	else {
-		ComputeG(g); // Or fall back to the classical method.
-	}
+	ComputeG(g); // Or fall back to the classical method.
+
 
 	YplusisCtimesX(xx,g,delta_max,iv);
 	YisAminB(x_x0,xx,x0,iv);
@@ -1330,7 +1332,7 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 }
 
 bool Newton::Iterate_DIIS(Real* rho) {
-if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
+if(debug) cout <<"Iterate_DIIS for mesodyn in Newton " << endl;
 	Zero(x0,iv);
 	it=0; k_diis=1;
 	int k=0;
@@ -1424,7 +1426,7 @@ if(debug) cout <<"ComputPhis in  Newton " << endl;
 }
 
 void Newton::ComputeG(Real* g){
-if(debug) cout <<"ComputeG in  Newton " << endl;
+ cout <<"ComputeG in Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi;
 	int sysmon_length = Sys[0]->SysMonList.size();
@@ -1502,7 +1504,7 @@ if(debug) cout <<"CompueG_ext() in  Newton " << endl;
 
 
 /*  Entry point for the mesodyn iteration. Contains the target function.
-		Called by Solve(bool)
+		Called by Solve(Real* )
 */
 void Newton::ComputeG_mesodyn(Real* rho) {
 	if (debug) cout << "ComputeG_mesodyn in  Newton " << endl;

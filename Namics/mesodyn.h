@@ -32,6 +32,7 @@ private:
   Real initRho;
   const int dimensions;
   bool success {true};
+  vector<Real*> ptrComponentStart;    //densities used in langevinFlux
 
 public:
   Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
@@ -50,7 +51,6 @@ public:
   inline Real val(vector<Real>&, int);
   int findDimensions();
 
-  vector<Real*> ptrComponentStart;    //densities used in langevinFlux
   vector<Real> noise;
   vector<Real> J;
   vector<Real> rho;

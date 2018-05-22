@@ -1034,7 +1034,7 @@ if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 	}
 
 	for (int i=0; i<N; i++)
-		for (int j=0; j<N; j++) 
+		for (int j=0; j<N; j++)
 			U[j][i] = A[i*N + j];
   if (N > 1) {
 		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
@@ -1426,7 +1426,7 @@ if(debug) cout <<"ComputPhis in  Newton " << endl;
 }
 
 void Newton::ComputeG(Real* g){
- cout <<"ComputeG in Newton " << endl;
+ if (debug) cout <<"ComputeG in Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi;
 	int sysmon_length = Sys[0]->SysMonList.size();

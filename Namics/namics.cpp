@@ -33,24 +33,39 @@ Real PIE = 3.14159265;
 
 bool debug = false;
 
+//Output when the user malforms input. Update when adding new command line switches.
+void improperInput() {
+  cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;
+  cerr << "-d Enables debugging mode." << endl;
+}
+
 int main(int argc, char* argv[]) {
 
-  string fname;
-  string filename;
-  if (argc == 2)
-    fname = argv[1];
-  else {
-    printf("Use: namics filename -without extension- \n");
+
+  vector<string> args(argv, argv+argc);
+
+  //Output error if no filename has been specified.
+  if (argc == 1) {
+    improperInput();
     return 1;
   }
-  // argc counts no. of input arguments ./namics fname(2 arguments).... and
-  // makes fname from argv[1] else shows error and stops.
-  filename = fname + ".in";
+  //Output error if user starts with a commandline switch. (Also catches combination with forgotten filename)
+  if ( (args[1])[0] == '-' ) {
+    improperInput();
+    return 1;
+  }
 
-  // TODO: I think these two are no longer used, but I'm too scared to delete
-  // them now - Daniel
-  string line;
-  ofstream out_file;
+  // If the specified filename has no extension: add the extension specified below.
+  string extension = ".in";
+  ostringstream filename;
+  filename << argv[1];
+  bool hasNoExtension = (filename.str().substr(filename.str().find_last_of(".") + 1) != "in");
+  if (hasNoExtension) filename << extension;
+
+  //If the switch -d is given, enable debug. Add new switches by copying and replacing -d and debug = true.
+  if ( find(args.begin(), args.end(), "-d") != args.end() ) {
+    debug = true;
+  }
 
   bool cuda;
   int start = 0;
@@ -84,7 +99,7 @@ int main(int argc, char* argv[]) {
   vector<Mesodyn*> Mes;
 
   // Create input class instance and handle errors(reference above)
-  In.push_back(new Input(filename));
+  In.push_back(new Input(filename.str()) );
   if (In[0]->Input_error) {
     return 0;
   }
@@ -290,7 +305,7 @@ int main(int argc, char* argv[]) {
         if (!Mes[0]->CheckInput(start)) {
           return 0;
         }
-        Mes[0]->mesodyn();
+        Mes[start-1]->mesodyn();
       //Otherwise, go through the classic function solve.
       } else {
         if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {

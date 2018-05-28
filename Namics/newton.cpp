@@ -1194,21 +1194,24 @@ if(debug) cout <<"Solve in  Newton " << endl;
 	return success;
 }
 
-//TODO: this form of function calling loses bounds checking in vectors.
-bool Newton::SolveMesodyn(Real* rho) {
+bool Newton::SolveMesodyn(vector<Real>& rho) {
 	if(debug) cout <<"Solve (mesodyn) in  Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi;
 	int sysmon_length = Sys[0]->SysMolMonList.size();
+	cout << "1" << endl;
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 
 	bool success=true;
-	success=Iterate_DIIS(rho);
+
+	success=Iterate_DIIS(&rho.at(0));
+
 	Cp(alpha,xx,iv);
 	if (Sys[0]->charged) {
 		Sys[0]->DoElectrostatics(alpha+sysmon_length*M,xx+sysmon_length*M);
 		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
 	}
+
 	for (int i=0; i<sysmon_length; i++) {
 		for (int k=0; k<mon_length; k++) {
                         chi= Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
@@ -1221,6 +1224,7 @@ bool Newton::SolveMesodyn(Real* rho) {
 			if (Seg[Sys[0]->SysMolMonList[i]]->valence !=0)
 			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMolMonList[i]]->valence,M);
 		}
+
 	}
 
 

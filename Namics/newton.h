@@ -122,7 +122,7 @@ public:
 	bool Guess(Real*,string,vector<string>,bool,int,int,int);
 	string GetNewtonInfo(int&);
 	bool Solve(bool);
-	bool SolveMesodyn(Real*); //first argument should contain rho
+	bool SolveMesodyn(vector<Real>&); //first argument should contain rho
 	bool SuperIterate(int,int,int,int);
 	void DeAllocateMemory();
 	void AllocateMemory();

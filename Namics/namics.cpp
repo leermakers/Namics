@@ -31,12 +31,15 @@ Real k_BT = k_B * T;
 Real eps0 = 8.85418e-12;
 Real PIE = 3.14159265;
 
+//Used for command line switches
 bool debug = false;
+bool suppress = false;
 
 //Output when the user malforms input. Update when adding new command line switches.
 void improperInput() {
   cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;
   cerr << "-d Enables debugging mode." << endl;
+  cerr << "-s Suppresses newton's extra output." << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -56,15 +59,19 @@ int main(int argc, char* argv[]) {
   }
 
   // If the specified filename has no extension: add the extension specified below.
-  string extension = ".in";
+  string extension = "in";
   ostringstream filename;
   filename << argv[1];
-  bool hasNoExtension = (filename.str().substr(filename.str().find_last_of(".") + 1) != "in");
-  if (hasNoExtension) filename << extension;
+  bool hasNoExtension = (filename.str().substr(filename.str().find_last_of(".")+1) != extension);
+  if (hasNoExtension) filename << "." << extension;
 
   //If the switch -d is given, enable debug. Add new switches by copying and replacing -d and debug = true.
   if ( find(args.begin(), args.end(), "-d") != args.end() ) {
     debug = true;
+  }
+
+  if ( find(args.begin(), args.end(), "-s") != args.end() ) {
+    suppress = true;
   }
 
   bool cuda;
@@ -227,6 +234,7 @@ int main(int argc, char* argv[]) {
     if (!New[0]->CheckInput(start)) {
       return 0;
     }
+    if (suppress == true) New[0]->e_info = false;
 
     // Create engine class instance and check inputs (reference above)
     Eng.push_back(new Engine(In, Lat, Seg, Mol, Sys, New, In[0]->EngineList[0]));

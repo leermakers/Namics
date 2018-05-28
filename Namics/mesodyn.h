@@ -4,7 +4,12 @@
 #include "namics.h"
 #include "newton.h"
 #include "system.h"
-#include <random>
+#include <random> //For noise in langevinFlux()
+//#include <ctime> //To append timestamp to filename.
+#include <map>  //For generating the output of settings
+#include <ctime>
+#include <cassert>
+
 
 class Mesodyn {
 private:
@@ -28,33 +33,37 @@ private:
   const int JX;
   const int M;
   const int componentNo;
-  const int size;
-  Real initRho;
+  const unsigned int size;
   const int dimensions;
-  bool success {true};
+  vector<Real> J;
+  vector<Real> L;
+  vector<Real> rho;
   vector<Real*> ptrComponentStart;    //densities used in langevinFlux
+  vector<Real> U;
+
+  ofstream mesFile;
+  void prepareOutputFile();
+  void writeRho(int);
+  map<string,Real> settings;
 
 public:
   Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
   ~Mesodyn();
-  void AllocateMemory();
 
   void gaussianNoise(Real, Real, unsigned int);
-  void abort();
+  void quit();
   void langevinFlux();
   bool mesodyn();
-  void fillRho(Real);
+  void initRho();
   int factorial (int);
   void onsagerCoefficient();
+  void potentialDifference();
   int combinations (int, int);
   inline Real val(vector<Real>&, int, int, int, int);
   inline Real val(vector<Real>&, int);
   int findDimensions();
 
   vector<Real> noise;
-  vector<Real> J;
-  vector<Real> rho;
-  vector<Real> L;
 
   vector<string> ints;
   vector<string> Reals;
@@ -69,7 +78,6 @@ public:
   void push(string, bool);
   void push(string, string);
   void PushOutput();
-  Real* GetPointer(string);
   int GetValue(string, int&, Real&, string&);
 
   std::vector<string> KEYS;

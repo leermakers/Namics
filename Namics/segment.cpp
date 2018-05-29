@@ -14,6 +14,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("frozen_filename");
 	KEYS.push_back("tagged_filename"); 
 	KEYS.push_back("clamp_filename");
+	KEYS.push_back("sub_box_size");
 	KEYS.push_back("clamp_info"); 
 }
 Segment::~Segment() {
@@ -34,9 +35,12 @@ if (n_pos>0) cout <<"problem for n_pos " <<endl;
 	}
 #ifdef CUDA
 	if(n_pos>0) cudaFree(P);
-	cudaFree(u); cudaFree(phi); cudaFree(G1); cudaFree(MASK); cudaFree(phi_side);
+	cudaFree(u); cudaFree(phi); 
+	//cudaFree(G1); 
+	cudaFree(MASK); cudaFree(phi_side);
 #else
-	free(G1); free(phi_side);
+	//free(G1); 
+	free(phi_side);
 #endif
 }
 
@@ -61,7 +65,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	if (n_pos>0) {
 		Px=(int*)AllIntOnDev(n_pos);
 	}
-	G1=(Real*)AllOnDev(M); Zero(G1,M);
+	//G1=(Real*)AllOnDev(M); //Zero(G1,M);
 	u=(Real*)AllOnDev(M); Zero(u,M); 
 	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
@@ -73,9 +77,9 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	MASK=H_MASK;  
 	phi =H_phi;
 	u = H_u;
-	G1 = (Real*)malloc(M*sizeof(Real));
+	//G1 = (Real*)malloc(M*sizeof(Real));
 	phi_side = (Real*)malloc(M*sizeof(Real));
-	Zero(G1,M);
+	//Zero(G1,M);
 	Zero(phi_side,M);
 #endif
 }
@@ -96,14 +100,13 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	if (freedom=="frozen") {
 		Cp(phi,MASK,M); 
 	} else Zero(phi,M); 
-	if (freedom=="tagged") Zero(u,M);
-	Lat[0]->set_bounds(u);
-	if (Lat[0]->fjc >1) Lat[0]->Edis(phi_side,u,M); //phi_side is used temporarily... 
-	Boltzmann(G1,u,M); //See also molecule equivalent.....
-	if (freedom=="pinned") Times(G1,G1,MASK,M);
-	if (freedom=="tagged") Cp(G1,MASK,M);
-	Lat[0]->set_bounds(G1);
-	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M); 
+	//if (freedom=="tagged") Zero(u,M);
+	//Lat[0]->set_bounds(u);
+	//Boltzmann(G1,u,M); //See also molecule equivalent.....
+	//if (freedom=="pinned") Times(G1,G1,MASK,M);
+	//if (freedom=="tagged") Cp(G1,MASK,M);
+	//Lat[0]->set_bounds(G1);
+	//if (!(freedom ==" frozen" || freedom =="tagged" )) Times(G1,G1,KSAM,M); 
 	return success;
 }
 

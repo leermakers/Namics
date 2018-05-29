@@ -78,6 +78,7 @@ public:
 	Real *H_phi;
 	Real *H_mask1;
 	Real *H_mask2;
+	Real* H_u;
 	Real *H_gn;
 	Real *mask1;
 	Real *mask2;

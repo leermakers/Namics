@@ -126,7 +126,7 @@ if (debug) cout << "GetPointer in output " << endl;
 	int listlength; 
 	int choice;
 	int i,j; 
-	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="engine") choice=4;
+	if  (key=="sys") choice=1; if  (key=="mol") choice=2; if  (key=="mon") choice=3; if  (key=="engine") choice=4; if (key=="lat") choice=5;
 
 	switch(choice) {
 		case 1:
@@ -171,6 +171,14 @@ if (debug) cout << "GetPointer in output " << endl;
 			j=0;
 			while (j<listlength) {
 				if (prop==Eng[0]->strings[j]) return Eng[0]->GetPointer(Eng[0]->strings_value[j]); 
+				j++;
+			}
+			break;
+		case 5:
+			listlength= Lat[0]->strings.size();
+			j=0;
+			while (j<listlength) {
+				if (prop==Lat[0]->strings[j]) return Lat[0]->GetPointer(Lat[0]->strings_value[j]); 
 				j++;
 			}
 			break;

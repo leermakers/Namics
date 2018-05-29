@@ -1,17 +1,17 @@
-lat : flat : n_layers : 20
+lat : flat : n_layers : 50
 lat : flat : geometry : planar
 lat : flat : bondlength : 5e-10
 lat : flat : lattice_type : hexagonal
-lat : flat : FJCchoices : 11
+lat : flat : FJC_choices : 3
 
 mon : C : freedom : pinned
-mon : C : pinned_range : 1;5
+mon : C : pinned_range : 1;6
 mon : O : freedom : free
 mon : W : freedom : free
 
-mol : lipid : composition : (C)#N#((O)1(C)2)5[(O)1](O)1
+mol : lipid : composition : (C)16((O)1(C)2)5[(O)1](O)1
 mol : lipid : freedom : restricted
-mol : lipid : theta : 3.5
+mol : lipid : theta : 4
 
 alias: N : value : 16
 
@@ -25,10 +25,14 @@ output : pro : append : false
 pro : mol : * : phi
 pro : mon : * : phi
 pro : mon : * : u
+pro : mol : lipid : phi-C
+pro : mol : lipid : phi-O
 output : kal : append : false
 kal : sys : noname : grand_potential
 kal : mol : lipid : theta
+kal : mol : lipid : theta_exc
 kal : lat : flat : n_layers
+kal : lat : flat : FJC_choices
 kal : mol : lipid : chainlength 
 kal : mon : C : chi-O
 kal : mol : lipid : mu
@@ -43,11 +47,12 @@ newton : isaac : iterationlimit : 1000
 //newton : isaac : m : 12
 start 
 mon : C : freedom : free
-newton : isaac : iterationlimit : 1000
-newton : isaac : deltamax : 0.1
+newton : isaac : iterationlimit : 5000
+newton : isaac : deltamax : 0.05
 //var : lat-flat : scan : n_layers 
 //var : lat-flat : step : -1
 //var : lat-flat : end_value : 5
 //var : mol-lipid : search : theta
 //var : sys-noname: grand_potential : 0
 start
+lat : flat : FJC_choices : 7

@@ -136,6 +136,8 @@ if (debug) cout <<"PrepareForCalculations in System " << endl;
 		Add(KSAM,MASK,M);
 		i++;
 	}
+//int resultaat=0;
+//for (int z=0; z<M; z++) resultaat +=KSAM[z]; cout <<"resultaat" << resultaat << endl; 
 
 	Invert(KSAM,KSAM,M); 
 	n_mol = In[0]->MolList.size();
@@ -185,7 +187,7 @@ if (debug) cout << "CheckInput for system " << endl;
 			while (j<LENGTH) {
 				SysMolMonList.push_back(Mol[i]->MolMonList[j]);
 				if (!In[0]->InSet(SysMonList,Mol[i]->MolMonList[j])) {
-					if (Seg[Mol[i]->MolMonList[j]]->freedom!="tagged") SysMonList.push_back(Mol[i]->MolMonList[j]);				
+					if (Seg[Mol[i]->MolMonList[j]]->freedom!="tagged" && Seg[Mol[i]->MolMonList[j]]->freedom!="clamp") SysMonList.push_back(Mol[i]->MolMonList[j]);				
 				}
 				if (Seg[Mol[i]->MolMonList[j]]->freedom=="tagged"){
 					if (In[0]->InSet(SysTagList,Mol[i]->MolMonList[j])) {
@@ -689,7 +691,6 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << neutralizer << "for mon " <
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++) {
 		if (Seg[i]->freedom !="frozen") Lat[0]->set_bounds(Seg[i]->phi); 
-		if (Lat[0]->fjc>1) Lat[0]->Edis(Seg[i]->phi_side,Seg[i]->phi,M);
 		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M); 
 	}
 	return success;  
@@ -718,12 +719,24 @@ if (debug) cout << "CheckResults for system " << endl;
 		cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
 	}
 	
-	for (int i=0; i<n_mol; i++) {
+	for (int i=0; i<n_mol; i++) { //NEED FIX . densities are not yet computed correctly that is why it is turned off.....!!!
 		if (Mol[i]->MolAlList.size()>0) {
-			Mol[i]->compute_phi_alias=true;
-			Mol[i]->ComputePhi(); 
+		//	Mol[i]->compute_phi_alias=true;
+			//Mol[i]->ComputePhi(); 
+		}
+		//ComputePhis();
+	}
+	int M=Lat[0]->M;
+	for (int i=0; i<n_mol; i++) {
+		int n_molmon=Mol[i]->MolMonList.size();
+		Real theta_tot=Mol[i]->n*Mol[i]->chainlength; 
+		for (int j=0; j<n_molmon; j++) {
+			Real FRACTION=Mol[i]->fraction(Mol[i]->MolMonList[j]);
+			Real THETA=Lat[0]->WeightedSum(Mol[i]->phi+j*M);
+			cout <<"Fraction: " << FRACTION << "=?=" << THETA/theta_tot << " or " << THETA << " of " << theta_tot <<  endl; 
 		}
 	}
+
 	return success;  
 }
 

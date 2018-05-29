@@ -1,6 +1,6 @@
 lat : flat : n_layers : 100
-lat : flat : lattice_type : simple_cubic
-//lat : flat : FJC_choices :7 
+lat : flat : lattice_type : hexagonal
+lat : flat : FJC_choices : 19
 lat : flat : gradients : 1
 
 mon : A : freedom : pinned
@@ -21,7 +21,7 @@ mol : B : freedom : solvent
 //mol : C : freedom : restricted
 //mol : C : theta : 12.2
 newton : isaac : method : pseudohessian
-newton : isaac : deltamax : 0.1
+//newton : isaac : deltamax : 0.1
 output : pro : append : false 
 pro : mon : * : phi
 pro : mol : * : phi

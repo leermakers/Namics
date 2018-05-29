@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
   string METHOD = "";
   Real *X = NULL;
   int MX = 0, MY = 0, MZ = 0;
+  int fjc_old; 
   bool CHARGED = false;
   vector<string> MONLIST;
 
@@ -83,9 +84,7 @@ int main(int argc, char *argv[]) {
 
   // Create input class instance and handle errors(reference above)
   In.push_back(new Input(filename));
-  if (In[0]->Input_error) {
-    return 0;
-  }
+  if (In[0]->Input_error) return 0;
   n_starts = In[0]->GetNumStarts();
   if (n_starts == 0)
     n_starts++; // Default to 1 start..
@@ -181,7 +180,7 @@ int main(int argc, char *argv[]) {
     }
     if (n_ets > 1) {
       cout
-          << "too many equate_to_solvent's in var statements. The liZZmit is 1 " << endl;
+          << "too many equate_to_solvent's in var statements. The limit is 1 " << endl;
       return 0;
     }
     if (n_search > 1) {
@@ -189,7 +188,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
     if (n_scan > 1) {
-      cout << "too man 'scan's in var statements. The limit is 1 " << endl;
+      cout << "too many 'scan's in var statements. The limit is 1 " << endl;
       return 0;
     }
     if (n_target > 1) {
@@ -239,7 +238,7 @@ int main(int argc, char *argv[]) {
 
     if (Sys[0]->initial_guess == "file") {
       MONLIST.clear();
-      if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, 0)) {
+      if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, fjc_old, 0)) {
         // last argument 0 is to first checkout sizes of system.
         return 0;
       }
@@ -253,15 +252,16 @@ int main(int argc, char *argv[]) {
         } else {
           m = (MX + 2) * (MY + 2) * (MZ + 2);
         }
-      }
+      }      
       int IV = nummon * m;
+
       if (CHARGED)
         IV += m;
       if (start > 1)
         free(X);
       X = (Real *)malloc(IV * sizeof(Real));
       MONLIST.clear();
-      Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, 1);
+      Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, fjc_old, 1);
       // last argument 1 is to read guess in X.
     }
 
@@ -275,13 +275,12 @@ int main(int argc, char *argv[]) {
 		while(subloop < substart){
 			if (scan_nr >-1) Var[scan_nr]->PutVarScan(subloop);
 			New[0]->AllocateMemory();
-			New[0]->Guess(X,METHOD,MONLIST,CHARGED,MX,MY,MZ);
+			New[0]->Guess(X,METHOD,MONLIST,CHARGED,MX,MY,MZ,fjc_old);
 
-			// This is the starting point of all calculations. Solve provides the flow through computatin schemes.
+			// This is the starting point of all calculations. Solve provides the flow through computation schemes.
 			if (search_nr<0 && ets_nr < 0 && etm_nr <0) {
 				New[0]->Solve(true);
 			} else {
-				if (debug) cout <<"Solve towards superiteration " << endl;
 				New[0]->SuperIterate(search_nr,target_nr,ets_nr,etm_nr);
 			}
 
@@ -315,17 +314,17 @@ int main(int argc, char *argv[]) {
     if (scan_nr > -1)
       Var[scan_nr]->ResetScanValue();
     if (Sys[0]->initial_guess == "previous_result") {
-      int IV;
-      METHOD = New[0]->GetNewtonInfo(IV);
+      int IV_new;
+      METHOD = New[0]->GetNewtonInfo(IV_new);
       MX = Lat[0]->MX;
       MY = Lat[0]->MY;
       MZ = Lat[0]->MZ;
       CHARGED = Sys[0]->charged;
       if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
         free(X);
-      X = (Real *)malloc(IV * sizeof(Real));
-      for (int i = 0; i < IV; i++)
-        X[i] = New[0]->xx[i];
+      X = (Real *)malloc(IV_new * sizeof(Real));
+      for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
+      fjc_old=Lat[0]->fjc; 
       int length = Sys[0]->SysMonList.size();
       MONLIST.clear();
       for (int i = 0; i < length; i++) {

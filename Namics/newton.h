@@ -118,8 +118,8 @@ public:
 	bool CheckInput(int);
 	void PutParameter(string);
 	string GetValue(string);
-	void Copy(Real*,Real*,int,int,int);
-	bool Guess(Real*,string,vector<string>,bool,int,int,int);
+	void Copy(Real*,Real*,int,int,int,int);
+	bool Guess(Real*,string,vector<string>,bool,int,int,int,int);
 	string GetNewtonInfo(int&);
 	bool Solve(bool);
 	bool Solve(Real*,Real*); //first argument should contain rho, second argument must contain the alpha

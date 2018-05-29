@@ -21,8 +21,7 @@ void Molecule :: DeAllocateMemory(){
 if (debug) cout <<"Destructor for Mol " + name << endl;
 	free(H_phi);
 	free(H_phitot);
-	free(G1);//Tobe fixed when working with cuda.
-	free(u);
+	free(H_u);
 	if (freedom=="clamped") { 
 		free(H_Bx); 
 		free(H_By);
@@ -57,6 +56,8 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 		cudaFree(rho);	
 		cudaFree(phi);
 	} else {
+		cudaFree(u); 
+		cudaFree(G1);
 		cudaFree(Gg_f);
 		cudaFree(Gg_b);
 		cudaFree(phi);
@@ -68,6 +69,7 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 		free(rho);
 		free(g1);
 	}
+	free(G1); 
 	free(UNITY);
 	free(Gg_f);
 	free(Gg_b);
@@ -124,9 +126,9 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		//N=chainlength; //in case of dendrimers this is not correct. Way fewer EDF needed in this case.
 	}
 
-	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); 
-	u = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); //tobe fixed when working with cuda.
-	G1 = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); 
+	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
+//cout <<"molmonlist.size in mol" << MolMonList.size() << endl;  
+	H_u = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
 	H_phitot = (Real*) malloc(M*sizeof(Real)); 
 	if (freedom=="clamped") {
 		H_Bx=(int*) malloc(n_box*sizeof(int));
@@ -165,6 +167,8 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	} else {
 		Gg_f=(Real*)AllOnDev(M*N);
 		Gg_b=(Real*)AllOnDev(M*2);
+		u=(Real*)AllOnDev(M*MolMonList.size()); Zero(u,M);
+		G1=(Real*)AllOnDev(M*MolMonList.size()); Zero(G1,M);
 		phi=(Real*)AllOnDev(M*MolMonList.size());
 		rho=phi;
 		if (save_memory) Gs =(Real*)AllOnDev(M*2);
@@ -172,6 +176,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	phitot=(Real*)AllOnDev(M);
 	UNITY = (Real*)AllonDev(M);
 #else
+	
 	if (freedom=="clamped") {
 		gn=H_gn;
 		mask1=H_mask1; mask2=H_mask2;
@@ -180,6 +185,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Px2=H_Px2; Py2=H_Py2; Pz2=H_Pz2;
 		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real));
 		Gg_b = (Real*) malloc(m*2*n_box*sizeof(Real));
+		u = H_u;
 		g1=(Real*) malloc(m*n_box*sizeof(Real));
 		rho=(Real*)malloc(m*n_box*MolMonList.size()*sizeof(Real));
 		if (save_memory) Gs=(Real*) malloc(m*n_box*2*sizeof(Real));
@@ -188,6 +194,8 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Gg_f = (Real*) malloc(M*N*sizeof(Real));
 		Gg_b = (Real*) malloc(M*2*sizeof(Real));
 		phi=H_phi;
+		u = H_u;
+		G1 = (Real*)malloc(M*MolMonList.size()*sizeof(Real));
 		rho=phi;
 		if (save_memory) Gs=(Real*) malloc(2*M*sizeof(Real));
 	}		
@@ -246,9 +254,7 @@ if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 	while (i<length) {
 		if (Seg[MolMonList[i]]->freedom=="tagged") Zero(u+i*M,M);
 		Lat[0]->set_bounds(u+i*M);
-		if (Lat[0]->fjc >1) Lat[0]->Edis(Seg[MolMonList[i]]->phi_side,u+i*M,M);
 		Boltzmann(G1+i*M,u+i*M,M);
-if (Seg[i]->freedom=="pinned") cout <<" freedom " << i << "in molecule " + name << endl; 
 		if (Seg[MolMonList[i]]->freedom=="pinned") Times(G1+i*M,G1+i*M,Seg[MolMonList[i]]->MASK,M);
 		if (Seg[MolMonList[i]]->freedom=="tagged") Cp(G1+i*M,Seg[MolMonList[i]]->MASK,M);
 		Lat[0]->set_bounds(G1+i*M);
@@ -1448,7 +1454,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	n=norm*GN;
 	theta=n*chainlength;
 	push("theta",theta);
-	push("theta exc",theta-phibulk*Lat[0]->volume);
+	Real thetaexc=theta-phibulk*Lat[0]->volume;
+	push("theta_exc",thetaexc);
 	push("n",n);
 	push("chainlength",chainlength);
 	push("phibulk",phibulk);

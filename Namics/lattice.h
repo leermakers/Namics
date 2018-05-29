@@ -38,7 +38,6 @@ public:
 	Real *lambda_1; 
 	Real *lambda1;
 	Real *LAMBDA;
-	Real *VL;
 	int fjc,FJC;
 	Real *X;
 	int VarInitValue;
@@ -66,6 +65,8 @@ public:
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
+	Real* GetPointer(string);
+
 	int GetValue(string,int&,Real&,string&);
 	Real GetValue(Real*,string);
 	Real WeightedSum(Real*); 
@@ -88,7 +89,6 @@ public:
 	void set_bounds(Real*);
 	void set_bounds(int*); 
 	void Side(Real *, Real *, int);
-	void Edis(Real *, Real *, int);
 	bool ReadRange(int*, int*, int&, bool&, string, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
 	bool CreateMASK(int*, int*, int*, int, bool);
@@ -101,7 +101,7 @@ public:
 	void UpdateEE(Real*, Real*, Real*); 
 	void UpdatePsi(Real*, Real*, Real* , Real*, int*); 
 	void UpdateQ(Real*,Real*,Real*,Real*,int*);
-	bool ReadGuess(string, Real* ,string&, vector<string>&, bool&, int&, int&, int&, int);
+	bool ReadGuess(string, Real* ,string&, vector<string>&, bool&, int&, int&, int&, int&, int);
 	bool StoreGuess(string,Real*,string, vector<string>, bool,int);
 	bool PutVarInfo(string,string,Real);
 	bool UpdateVarInfo(int);

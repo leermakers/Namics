@@ -13,7 +13,7 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("lambda"); 
 	KEYS.push_back("Z"); 
 	KEYS.push_back("FJC_choices"); 
-	sub_box_on=0;
+	sub_box_on=0; 
 }
 
 Lattice::~Lattice() {
@@ -31,7 +31,7 @@ if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 			free(lambda1);
 			free(lambda0); 
 			free(L); 
-		} else {free(L); free(LAMBDA); free(VL);}
+		} else {free(L); free(LAMBDA); }
 	}
 #ifdef CUDA
 	//if (gradients==3) X=(Real*)AllonDev(M);
@@ -42,9 +42,10 @@ if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 
 void Lattice::AllocateMemory(void) {
 if (debug) cout <<"AllocateMemory in lattice " << endl; 
-	Real r,r_,v,v_;
+	Real r,VL,LS;
+	Real rlow,rhigh; 
 	Real one_over_lambda_min_two=1.0/lambda-2.0;
-	int i,j;
+	int i,j,k;
 	PutM();
 	DeAllocateMemory();
 	if (fjc==1) {
@@ -56,9 +57,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	}
 	} else {
 		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
-		LAMBDA =(Real*)malloc(FJC*M*sizeof(Real)); 
-		VL=(Real*)malloc(fjc*M*sizeof(Real));  Zero(VL,fjc*M);
-
+		LAMBDA =(Real*)malloc(FJC*M*sizeof(Real)); Zero(LAMBDA,FJC*M);
 	}
 
 	switch (gradients) {
@@ -95,31 +94,90 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 							LAMBDA[i+(FJC-j-1)*M]=1.0/(FJC-1);
 							//LAMBDA[i+(FJC-1)/2*M]=LAMBDA[i+(FJC-1)/2*M]-LAMBDA[i+j*M]-LAMBDA[i+(FJC-j-1)*M];
 						}
-						v=0;
-						for (j=1; j<=fjc/2; j++) {
-							v_=v; v=((2.0*j)/fjc)*((2.0*j)/fjc)*(3.0-(2.0*j)/fjc)/4.0;
-							VL[i+(j-1)*M]=VL[i+(fjc-j)*M] = v-v_;
-						}
-						v_=v; v=0.5;
-						VL[i+((fjc+1)/2-1)*M]=(v-v_)*2.0;
 					}
-//for (int j=0; j<fjc; j++) { for (int i=0; i<M; i++) cout << "i " << i << " j " << j << " : " << VL[i+j*M] << endl; }	
-				}
-				if (geometry =="cylindrical") {
-					r=offset_first_layer;
-					for (i=1; i<M; i++) {
-						r_=r; r=r+1.0/fjc;
-						L[i]=PIE*(pow(r,2)-pow(r_,2));
-						cout <<"TODO fjc>1"<< endl; 
 
+				} 
+				if (geometry =="cylindrical") {
+										
+					for (i=fjc; i<M-fjc; i++) {
+						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc; 
+						rlow=r-0.5;
+						rhigh=r+0.5;
+						L[i]=PIE*(2.0*r)/fjc;
+						VL=L[i]/PIE*fjc;
+						if ((rlow-r)*2+r>0.0) LAMBDA[i]+=0.5/(1.0*FJC-1.0)*2.0*rlow/VL;
+						if ((rhigh-r)*2+r<MX) LAMBDA[i+(FJC-1)*M]+=0.5/(1.0*FJC-1.0)*2.0*rhigh/VL;
+						else {
+							if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001) {
+								LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*2.0*rhigh/VL;
+							}
+							for (j=1; j<=fjc; j++) {
+								if (2*rhigh-r-MX > 0.99*j/fjc && 2*rhigh-r-MX < 1.01*j/fjc) {
+									LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*2.0*(rhigh-1.0*j/fjc)/VL;
+								} 
+							}
+						}
+						for (j=1; j<fjc; j++) {
+							rlow += 0.5/(fjc);
+							rhigh -= 0.5/(fjc);
+							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*2.0*rlow/VL; 
+							if ((rhigh-r)*2+r < offset_first_layer+MX) LAMBDA[i+(FJC-1-j)*M]+=1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
+							else {
+								if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001 ) {
+									LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
+								}
+								for (k=1; k<=fjc; k++) {
+									if (2*rhigh-r-MX > 0.99*k/fjc && 2*rhigh-r-MX < 1.01*k/fjc) {
+										LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*2.0*(rhigh-1.0*k/fjc)/VL;
+									} 
+								}
+							}
+						}
+						LS=0;
+						for (j=0; j<FJC; j++) LS+=LAMBDA[i+j*M];
+						LAMBDA[i+(FJC/2)*M]+=1.0-LS;
 					}
 				}
-				if (geometry =="spherical") {
-					r=offset_first_layer;
-					for (i=1; i<M; i++) {
-						r_=r; r=r+1.0/fjc;
-						L[i]=4.0/3.0*PIE*(pow(r,3)-pow(r-1,3));
-						cout <<"TODO fjc>1"<< endl;
+
+
+				if (geometry =="spherical") {//todo : test 
+					for (i=fjc; i<M-fjc; i++) {
+						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc; 
+						rlow=r-0.5;
+						rhigh=r+0.5;
+						L[i]=PIE*4.0/3.0*(rhigh*rhigh*rhigh-rlow*rlow*rlow)/fjc;
+						VL=L[i]/PIE*fjc;
+						if ((rlow-r)*2+r>0.0) LAMBDA[i]+=0.5/(1.0*FJC-1.0)*4.0*rlow*rlow/VL;
+						if ((rhigh-r)*2+r<MX) LAMBDA[i+(FJC-1)*M]+=0.5/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
+						else {
+							if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001) {
+								LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
+							}
+							for (j=1; j<=fjc; j++) {
+								if (2*rhigh-r-MX > 0.99*j/fjc && 2*rhigh-r-MX < 1.01*j/fjc) {
+									LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*4.0*(rhigh-1.0*j/fjc)*(rhigh-1.0*j/fjc)/VL;
+								} 
+							}
+						}
+						for (j=1; j<fjc; j++) {
+							rlow += 0.5/(fjc);
+							rhigh -= 0.5/(fjc);
+							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*4.0*rlow*rlow/VL; 
+							if ((rhigh-r)*2+r < offset_first_layer+MX) LAMBDA[i+(FJC-1-j)*M]+=1.0/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
+							else {
+								if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001 ) {
+									LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
+								}
+								for (k=1; k<=fjc; k++) {
+									if (2*rhigh-r-MX > 0.99*k/fjc && 2*rhigh-r-MX < 1.01*k/fjc) {
+										LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*4.0*(rhigh-1.0*k/fjc)*(rhigh-1.0*k/fjc)/VL;
+									} 
+								}
+							}
+						}
+						LS=0;
+						for (j=0; j<FJC; j++) LS+=LAMBDA[i+j*M];
+						LAMBDA[i+(FJC/2)*M]+=1.0-LS;
 					}
 				}
 			}
@@ -542,9 +600,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 			}
 			if (success && (gradients>1)) {cout << "FJC_choices can only be used in combination with 'gradients == planar' " << endl; success=false;}
 			if (success && (lattice_type != "hexagonal")) {cout << "FJC_choices can only be used in combination with 'lattice_type == hexagonal' "<<endl; success=false;} 
-			cout <<FJC <<"FJC_choices" << endl; 
-			fjc=(FJC-3)/2+1; 
-			cout <<fjc <<"divisions per segment" << endl;
+			//cout <<FJC <<"FJC_choices" << endl; 
+			fjc=(FJC-1)/2; 
+			//cout <<fjc <<"divisions per segment" << endl;
 			M *=fjc;
 		}
 		
@@ -751,6 +809,7 @@ Real Lattice::WeightedSum(Real* X){
 	Real sum;
 	switch(gradients) {
 		case 1:
+			remove_bounds(X);
 			if (fjc==1) {
 				if (geometry=="planar") {
 					Sum(sum,X,M); return sum;
@@ -815,7 +874,7 @@ if (debug) cout <<"PutProfiles in lattice " << endl;
 	switch(gradients) {
 		case 1:			
 			for (x=0; x<M; x++){
-				if (fjc==1) fprintf(pf,"%i \t",x); else fprintf(pf,"%f \t",1.0*x/fjc-1.0);
+				if (fjc==1) fprintf(pf,"%i \t",x); else fprintf(pf,"%f \t",1.0*(x+1)/fjc-1.0);
 				for (i=0; i<length; i++) fprintf(pf,"%f \t",X[i][x]);
 				fprintf(pf,"\n");
 			}
@@ -887,6 +946,8 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	push("lattice_type",lattice_type);
 	push("bond_length",bond_length);
 	push("FJC_choices",FJC); 
+	string s="profile;0"; push("L",s);
+
 	switch (gradients) {
 		case 1:
 			push("n_layers",MX);
@@ -927,6 +988,13 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 		default:
 			break;
 	} 
+}
+
+Real* Lattice::GetPointer(string s) {
+if (debug) cout <<"GetPointer for Mol " + name << endl;	vector<string> sub;
+	In[0]->split(s,';',sub);
+	if (sub[1]=="0") return L;
+	return NULL;
 }
 
 int Lattice::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
@@ -970,20 +1038,7 @@ if (debug) cout <<"GetValue (long)  in lattice " << endl;
 	return 0; 
 }
 
-void Lattice::Edis(Real *X_side, Real *X, int M) { //operation opposite to Side ;-) ....careful it distroys info in X_side. 
-if (debug) cout <<"Edis in lattice " << endl; 
-	int j;
-	Zero(X_side,M); set_bounds(X);
-	if (fjc==1) {
-	} else {
-		for (j=0; j<fjc/2; j++) {	
-			AddTimes(X_side+j,X,VL+j*M+j,M-j);
-			AddTimes(X_side,X+j,VL+(fjc-j-1)*M,M-j);
-		}
-		AddTimes(X_side,X,VL+((fjc-1)/2)*M,M);
-	}
-	Cp(X,X_side,M);
-}
+
 
 void Lattice::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in lattice " << endl; 
@@ -1099,16 +1154,13 @@ if (debug) cout <<" propagate in lattice " << endl;
 					Norm(gs,lambda,M); Times(gs,gs,G1,M);
 				}
 			} else {
-				if (geometry=="planar") {
-					for (j=0; j<FJC/2; j++) {
-						kk=(FJC-1)/2-j;
-						AddTimes(gs+kk,gs_1,LAMBDA+j*M+kk,M-kk);
-						AddTimes(gs,gs_1+kk,LAMBDA+(FJC-j-1)*M,M-kk);
-					}
-					AddTimes(gs,gs_1,LAMBDA+(FJC-1)/2*M,M); 
-					Times(gs,gs,G1,M);
-
-				} else {cout << "in propagate non-planar FJC>3 not -yet- implemented" << endl; }
+				for (j=0; j<FJC/2; j++) {
+					kk=(FJC-1)/2-j;
+					AddTimes(gs+kk,gs_1,LAMBDA+j*M+kk,M-kk);
+					AddTimes(gs,gs_1+kk,LAMBDA+(FJC-j-1)*M,M-kk);
+				}
+				AddTimes(gs,gs_1,LAMBDA+(FJC-1)/2*M,M); 
+				Times(gs,gs,G1,M);
 			}
 			break;
 		case 2:
@@ -1926,7 +1978,7 @@ Real Lattice::ComputeTheta(Real* phi) {
 	return result;
 }
 
-bool Lattice::ReadGuess(string filename, Real *x ,string &method, vector<string> &monlist, bool &charged, int &mx, int &my, int &mz, int readx) {
+bool Lattice::ReadGuess(string filename, Real *x ,string &method, vector<string> &monlist, bool &charged, int &mx, int &my, int &mz, int &fjc, int readx) {
 if (debug) cout <<"ReadGuess in output" << endl; 
 	bool success=true;
 	ifstream in_file; 
@@ -1937,7 +1989,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 	if (in_file.is_open()) { 
 		while (in_file && readx>-1) {
 			in_file>>method;
-			in_file>>mx>>my>>mz;		
+			in_file>>mx>>my>>mz>>fjc;		
 			in_file>>s_charge;
 			if (s_charge=="true") charged=true; else charged=false;
 			in_file>>num;
@@ -1994,7 +2046,7 @@ if (debug) cout <<"StoreGuess in output" << endl;
 	FILE *fp;
 	fp=fopen(filename.c_str(),"w");	
 	fprintf(fp,"%s \n",method.c_str());
-	fprintf(fp," %i \t %i \t %i \n" ,MX,MY,MZ);
+	fprintf(fp," %i \t %i \t %i \t %i \n" ,MX,MY,MZ, fjc);
 	if (charged) fprintf(fp,"%s \n" ,"true"); else  fprintf(fp,"%s \n" ,"false");
 	fprintf(fp,"%i \n",length); 
 	for (int i=0; i<length; i++) fprintf(fp,"%s \n",monlist[i].c_str());
@@ -2367,4 +2419,19 @@ void PROPAGATE(Real *G, Real *G1, int s_from, int s_to) { //on big box
 	Norm(gs,1.0/6.0,MM); Times(gs,gs,g,MM);
 }
 
+
+void Lattice::Edis(Real *X_side, Real *X, int M) { //operation opposite to Side ;-) ....careful it distroys info in X_side. 
+if (debug) cout <<"Edis in lattice " << endl; 
+	int j;
+	Zero(X_side,M); set_bounds(X);
+	if (fjc==1) {
+	} else {
+		for (j=0; j<fjc/2; j++) {	
+			AddTimes(X_side+j,X,VL+j*M+j,M-j);
+			AddTimes(X_side,X+j,VL+(fjc-j-1)*M,M-j);
+		}
+		AddTimes(X_side,X,VL+((fjc-1)/2)*M,M);
+	}
+	Cp(X,X_side,M);
+}
 */

@@ -1593,7 +1593,6 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	Cp(phi,G1,M);
 	Lat[0]->remove_bounds(phi);
 	GN=Lat[0]->WeightedSum(phi);
-	cout << GN << endl;
 	if (compute_phi_alias) {
 		int length = MolAlList.size();
 		for (int i=0; i<length; i++) {

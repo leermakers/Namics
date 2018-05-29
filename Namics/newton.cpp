@@ -952,10 +952,10 @@ if(debug) cout <<"PutU in  Newton " << endl;
 	alpha=Sys[0]->alpha;
 	if (method=="DIIS-mesodyn") {
 		int i=0; int k=0;
-		int length = In[0]->MolList.size(); 
+		int length = In[0]->MolList.size();
 		while (i<length) {
-			int j=0; 
-			int LENGTH=Mol[i]->MolMonList.size(); 
+			int j=0;
+			int LENGTH=Mol[i]->MolMonList.size();
 			while (j<LENGTH) {Cp(Mol[i]->u+j*M,xx+k*M,M); k++; j++;}
 			i++;
 		}
@@ -966,8 +966,8 @@ if(debug) cout <<"PutU in  Newton " << endl;
 			if (method == "Picard") Add(u,alpha,M);
 			if (method == "DIIS-ext") Add(u,xx+sysmon_length*M,M);
 		}
-		int i=0; 
-		int length = In[0]->MolList.size(); 
+		int i=0;
+		int length = In[0]->MolList.size();
 		while (i<length) {
 			int j=0;
 			int LENGTH=Mol[i]->MolMonList.size(); 
@@ -1035,11 +1035,13 @@ if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 		V[i] = new Real[N];
 	}
 
-	for (int i=0; i<N; i++) for (int j=0; j<N; j++) U[j][i] = A[i*N + j];
-
-    	if (N > 1) {
-
-        	svdcmp(U, N, N, S, V);
+	for (int i=0; i<N; i++)
+		for (int j=0; j<N; j++)
+			U[j][i] = A[i*N + j];
+  if (N > 1) {
+		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
+  	modern_svdcmp(U, N, N, S, V);
+		if (debug) cout << "SVCDMP done, continuing.." << endl;
 		for (int i=0; i<N; i++) X[i]=0;
 		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[j][i];// *B[j];
 		for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is use because it is no longer needed.
@@ -1206,32 +1208,37 @@ if(debug) cout <<"Solve in  Newton " << endl;
 	return success;
 }
 
-bool Newton::Solve(Real* rho, Real* alpha) {
+bool Newton::SolveMesodyn(vector<Real>& rho) {
 	if(debug) cout <<"Solve (mesodyn) in  Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi;
-	int sysmon_length = Sys[0]->SysMonList.size();
+	int sysmon_length = Sys[0]->SysMolMonList.size();
+	cout << "1" << endl;
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 
 	bool success=true;
-	success=Iterate_DIIS(rho);
-	Cp(alpha,xx,iv); 
+
+	success=Iterate_DIIS(&rho.at(0));
+
+	Cp(alpha,xx,iv);
 	if (Sys[0]->charged) {
 		Sys[0]->DoElectrostatics(alpha+sysmon_length*M,xx+sysmon_length*M);
 		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
 	}
+
 	for (int i=0; i<sysmon_length; i++) {
 		for (int k=0; k<mon_length; k++) {
-                        chi= Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];
+                        chi= Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
 			if (chi!=0) {
 				PutAlpha(alpha+i*M,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 			}
 		}
 		if (Sys[0]->charged){
-			YplusisCtimesX(alpha+i*M,Sys[0]->EE,Seg[Sys[0]->SysMonList[i]]->epsilon,M);
-			if (Seg[Sys[0]->SysMonList[i]]->valence !=0)
-			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMonList[i]]->valence,M);
+			YplusisCtimesX(alpha+i*M,Sys[0]->EE,Seg[Sys[0]->SysMolMonList[i]]->epsilon,M);
+			if (Seg[Sys[0]->SysMolMonList[i]]->valence !=0)
+			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMolMonList[i]]->valence,M);
 		}
+
 	}
 
 
@@ -1303,8 +1310,7 @@ if(debug) cout <<"Iterate_Picard in  Newton " << endl;
 	return success;
 }
 
-/*	Direct inversion in iterative subspace. Supports mesodyn and the classic method.
-		Called from Solve(bool)
+/*	Direct inversion in iterative subspace. Called from Solve(bool)
 */
 bool Newton::Iterate_DIIS() {
 if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
@@ -1313,10 +1319,10 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	int k=0;
 	// computeG_ext() has been ommented in CheckInput():
 	// if (method=="DIIS-ext") ComputeG_ext();
-	if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); //* commented function call, to prevent compilition error.
-	else {
-		ComputeG(g); // Or fall back to the classical method.
-	}
+
+	ComputeG(g); // Or fall back to the classical method.
+
+
 	YplusisCtimesX(xx,g,delta_max,iv);
 	YisAminB(x_x0,xx,x0,iv);
 	Cp(xR,xx,iv);
@@ -1327,7 +1333,7 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
 		Cp(x0,xx,iv);
-		if (method=="DIIS-mesodyn") ComputeG_mesodyn(g); else ComputeG(g);
+		ComputeG(g);
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(xx,g,-delta_max,iv);
 		Cp(xR+k*iv,xx,iv); YisAminB(x_x0+k*iv,xx,x0,iv);
@@ -1344,7 +1350,7 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 }
 
 bool Newton::Iterate_DIIS(Real* rho) {
-if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
+if(debug) cout <<"Iterate_DIIS for mesodyn in Newton " << endl;
 	Zero(x0,iv);
 	it=0; k_diis=1;
 	int k=0;
@@ -1362,7 +1368,8 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 		ComputeG_mesodyn(rho);
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(xx,g,-delta_max,iv);
-		Cp(xR+k*iv,xx,iv); YisAminB(x_x0+k*iv,xx,x0,iv);
+		Cp(xR+k*iv,xx,iv);
+		YisAminB(x_x0+k*iv,xx,x0,iv);
 		DIIS(xx,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,iv);
 		Dot(residual,g,g,iv);
 		residual=sqrt(residual);
@@ -1370,7 +1377,6 @@ if(debug) cout <<"Iterate_DIIS in  Newton " << endl;
 			printf("it = %i g = %1e \n",it,residual);
 		}
 	}
-
 	Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
 	return it<iterationlimit+1;
 }
@@ -1438,7 +1444,7 @@ if(debug) cout <<"ComputPhis in  Newton " << endl;
 }
 
 void Newton::ComputeG(Real* g){
-if(debug) cout <<"ComputeG in  Newton " << endl;
+ if (debug) cout <<"ComputeG in Newton " << endl;
 	int M=Lat[0]->M;
 	Real chi;
 	int sysmon_length = Sys[0]->SysMonList.size();
@@ -1516,7 +1522,7 @@ if(debug) cout <<"CompueG_ext() in  Newton " << endl;
 
 
 /*  Entry point for the mesodyn iteration. Contains the target function.
-		Called by Solve(bool)
+		Called by Solve(Real* )
 */
 void Newton::ComputeG_mesodyn(Real* rho) {
 	if (debug) cout << "ComputeG_mesodyn in  Newton " << endl;
@@ -1525,12 +1531,11 @@ void Newton::ComputeG_mesodyn(Real* rho) {
 	ComputePhis();
 	Cp(g,rho,iv);
 	int i=0; int k=0;
-	int length = In[0]->MolList.size(); 
+	int length = In[0]->MolList.size();
 	while (i<length) {
-		int j=0; 
-		int LENGTH=Mol[i]->MolMonList.size(); 
+		int j=0;
+		int LENGTH=Mol[i]->MolMonList.size();
 		while (j<LENGTH) {YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M); k++; j++;}
 		i++;
-	}	
+	}
 }
-

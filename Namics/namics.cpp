@@ -5,6 +5,7 @@
 #include "lattice.h"
 #include "molecule.h"
 #include "namics.h"
+#include "mesodyn.h"
 #include "newton.h"
 #include "output.h"
 #include "segment.h"
@@ -30,26 +31,48 @@ Real k_BT = k_B * T;
 Real eps0 = 8.85418e-12;
 Real PIE = 3.14159265;
 
+//Used for command line switches
 bool debug = false;
+bool suppress = false;
 
-int main(int argc, char *argv[]) {
+//Output when the user malforms input. Update when adding new command line switches.
+void improperInput() {
+  cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;
+  cerr << "-d Enables debugging mode." << endl;
+  cerr << "-s Suppresses newton's extra output." << endl;
+}
 
-  string fname;
-  string filename;
-  if (argc == 2)
-    fname = argv[1];
-  else {
-    printf("Use: namics filename -without extension- \n");
+int main(int argc, char* argv[]) {
+
+
+  vector<string> args(argv, argv+argc);
+
+  //Output error if no filename has been specified.
+  if (argc == 1) {
+    improperInput();
     return 1;
   }
-  // argc counts no. of input arguments ./namics fname(2 arguments).... and
-  // makes fname from argv[1] else shows error and stops.
-  filename = fname + ".in";
+  //Output error if user starts with a commandline switch. (Also catches combination with forgotten filename)
+  if ( (args[1])[0] == '-' ) {
+    improperInput();
+    return 1;
+  }
 
-  // TODO: I think these two are no longer used, but I'm too scared to delete
-  // them now - Daniel
-  string line;
-  ofstream out_file;
+  // If the specified filename has no extension: add the extension specified below.
+  string extension = "in";
+  ostringstream filename;
+  filename << argv[1];
+  bool hasNoExtension = (filename.str().substr(filename.str().find_last_of(".")+1) != extension);
+  if (hasNoExtension) filename << "." << extension;
+
+  //If the switch -d is given, enable debug. Add new switches by copying and replacing -d and debug = true.
+  if ( find(args.begin(), args.end(), "-d") != args.end() ) {
+    debug = true;
+  }
+
+  if ( find(args.begin(), args.end(), "-s") != args.end() ) {
+    suppress = true;
+  }
 
   bool cuda;
   int start = 0;
@@ -58,7 +81,7 @@ int main(int argc, char *argv[]) {
   string initial_guess;
   string final_guess;
   string METHOD = "";
-  Real *X = NULL;
+  Real* X = NULL;
   int MX = 0, MY = 0, MZ = 0;
   int fjc_old; 
   bool CHARGED = false;
@@ -81,23 +104,26 @@ int main(int argc, char *argv[]) {
   vector<System*> Sys;
   vector<Engine*> Eng;
   vector<Variate*> Var;
+  vector<Mesodyn*> Mes;
 
   // Create input class instance and handle errors(reference above)
-  In.push_back(new Input(filename));
-  if (In[0]->Input_error) return 0;
+  In.push_back(new Input(filename.str()) );
+  if (In[0]->Input_error) {
+    return 0;
+  }
   n_starts = In[0]->GetNumStarts();
   if (n_starts == 0)
     n_starts++; // Default to 1 start..
 
-/******** This while loop basically contains the rest of main, initializes all classes and performs  ********/
-/******** calculations for a given number (start) of cycles ********/
+  /******** This while loop basically contains the rest of main, initializes all classes and performs  ********/
+  /******** calculations for a given number (start) of cycles ********/
   while (start < n_starts) {
 
     start++;
     In[0]->MakeLists(start);
     cout << "Problem nr " << start << " out of " << n_starts << endl;
 
-/******** Class creation starts here ********/
+    /******** Class creation starts here ********/
 
     // Create lattice class instance and check inputs (reference above)
     Lat.push_back(new Lattice(In, In[0]->LatList[0]));
@@ -205,13 +231,14 @@ int main(int argc, char *argv[]) {
     }
 
     // Create newton class instance and check inputs (reference above)
-    New.push_back( new Newton(In, Lat, Seg, Mol, Sys, Var, In[0]->NewtonList[0]) );
+    New.push_back(new Newton(In, Lat, Seg, Mol, Sys, Var, In[0]->NewtonList[0]));
     if (!New[0]->CheckInput(start)) {
       return 0;
     }
+    if (suppress == true) New[0]->e_info = false;
 
     // Create engine class instance and check inputs (reference above)
-    Eng.push_back( new Engine(In, Lat, Seg, Mol, Sys, New, In[0]->EngineList[0]) );
+    Eng.push_back(new Engine(In, Lat, Seg, Mol, Sys, New, In[0]->EngineList[0]));
     if (!Eng[0]->CheckInput(start)) {
       return 0;
     }
@@ -219,23 +246,19 @@ int main(int argc, char *argv[]) {
     // Prepare, catch errors for output class creation
     int n_out = In[0]->OutputList.size();
     if (n_out == 0)
-      cout << "Warning: no output defined" << endl;
+      cout << "Warning: no output defined!" << endl;
 
     // Create output class instance and check inputs (reference above)
     for (int i = 0; i < n_out; i++) {
-      Out.push_back( new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out) );
+
+      Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out));
       if (!Out[i]->CheckInput(start)) {
         cout << "input_error in output " << endl;
         return 0;
       }
     }
 
-    // TODO: 1. sys.initial_guess is set to "previous_result" by default at
-    // system.cpp:301
-    //	2. What does this block do, exactly? It seems to handle some code for
-    // charged molecules.
-    //	3. Can we move this to the system class bit?
-
+    //Guesses geometry
     if (Sys[0]->initial_guess == "file") {
       MONLIST.clear();
       if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, fjc_old, 0)) {
@@ -259,32 +282,51 @@ int main(int argc, char *argv[]) {
         IV += m;
       if (start > 1)
         free(X);
-      X = (Real *)malloc(IV * sizeof(Real));
+      X = (Real*)malloc(IV * sizeof(Real));
       MONLIST.clear();
       Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, fjc_old, 1);
       // last argument 1 is to read guess in X.
     }
 
-/********** All classes have been created and input gathered, time to start some calculations *********/
-		int substart=0; int subloop=0;
 
-		if (scan_nr<0) substart=0;
-		else substart = Var[scan_nr]->num_of_cals;
-		if (substart<1) substart=1; // Default to 1 substart
+    /********** All classes have been created and input gathered, time to start some calculations *********/
+    int substart = 0;
+    int subloop = 0;
 
-		while(subloop < substart){
-			if (scan_nr >-1) Var[scan_nr]->PutVarScan(subloop);
-			New[0]->AllocateMemory();
-			New[0]->Guess(X,METHOD,MONLIST,CHARGED,MX,MY,MZ,fjc_old);
+    if (scan_nr < 0)
+      substart = 0;
+    else
+      substart = Var[scan_nr]->num_of_cals;
+    if (substart < 1)
+      substart = 1; // Default to 1 substart
 
-			// This is the starting point of all calculations. Solve provides the flow through computation schemes.
-			if (search_nr<0 && ets_nr < 0 && etm_nr <0) {
-				New[0]->Solve(true);
-			} else {
-				New[0]->SuperIterate(search_nr,target_nr,ets_nr,etm_nr);
-			}
+    while (subloop < substart) {
+      if (scan_nr > -1)
+        Var[scan_nr]->PutVarScan(subloop);
+      New[0]->AllocateMemory();
+      New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ,fjc_old);
 
-/********** Output information about all classes to file *********/
+  /********* This is the starting point of all calculations. *********/
+
+      //If mesodyn is to be used, go through this loop
+      if (New[0]->method == "DIIS-mesodyn") {
+        // Create mesodyn class instance and check inputs (reference above)
+        if (debug) cout << "Creating mesodyn" << endl;
+        Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
+        if (!Mes[0]->CheckInput(start)) {
+          return 0;
+        }
+        Mes[start-1]->mesodyn();
+      //Otherwise, go through the classic function solve.
+      } else {
+        if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
+          New[0]->Solve(true);
+        } else {
+          if (debug) cout << "Solve towards superiteration " << endl;
+          New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
+        }
+      }
+      /********** Output information about all classes to file *********/
       Lat[0]->PushOutput();
       New[0]->PushOutput();
       Eng[0]->PushOutput();
@@ -309,8 +351,7 @@ int main(int argc, char *argv[]) {
       subloop++;
     }
 
-/******** Clear all class instances ********/
-    // TODO: Again some code for ..charged molecules?
+    /******** Clear all class instances ********/
     if (scan_nr > -1)
       Var[scan_nr]->ResetScanValue();
     if (Sys[0]->initial_guess == "previous_result") {

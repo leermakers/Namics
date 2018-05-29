@@ -6,36 +6,36 @@
 #include "tools.h"
 
 class Lattice {
-public: 
+public:
 	Lattice(vector<Input*>,string);
 
 ~Lattice();
 
 	string name;
 	vector<Input*> In;
-	int MX,MY,MZ;	
+	int MX,MY,MZ;
 	vector<int> mx;
 	vector<int> my;
 	vector<int> mz;
 	vector<int> m;
 	vector<int> jx;
 	vector<int> jy;
-	vector<int> n_box; 
+	vector<int> n_box;
 	int BX1,BY1,BZ1,BXM,BYM,BZM;
-	int JX,JY,M;
+	int JX,JY,JZ,M;
 	bool all_lattice;
 	int sub_box_on;
 	int volume;
-	int gradients; 
+	int gradients;
 	string lattice_type;
 	string geometry;
-	Real offset_first_layer; 
-	Real bond_length; 
+	Real offset_first_layer;
+	Real bond_length;
 	Real *L;
-	int Z; 
-	Real lambda; 
+	int Z;
+	Real lambda;
 	Real *lambda0;
-	Real *lambda_1; 
+	Real *lambda_1;
 	Real *lambda1;
 	Real *LAMBDA;
 	int fjc,FJC;
@@ -45,7 +45,7 @@ public:
 	int Var_target;
 	int Var_step;
 	int Var_end_value;
-	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput(). 
+	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput().
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -69,7 +69,7 @@ public:
 
 	int GetValue(string,int&,Real&,string&);
 	Real GetValue(Real*,string);
-	Real WeightedSum(Real*); 
+	Real WeightedSum(Real*);
 	void TimesL(Real*);
 	void DivL(Real*);
 	void vtk(string, Real*,string);
@@ -77,17 +77,17 @@ public:
 
 	bool CheckInput(int);
 	bool PutM(void);
-	bool PutSub_box(int,int,int,int); 
-	void PutParameter(string); 
-	string GetValue(string); 
-	void DeAllocateMemory(void); 
-	void AllocateMemory(void); 
-	bool PrepareForCalculations(void); 
+	bool PutSub_box(int,int,int,int);
+	void PutParameter(string);
+	string GetValue(string);
+	void DeAllocateMemory(void);
+	void AllocateMemory(void);
+	bool PrepareForCalculations(void);
 	void propagate(Real*,Real*, int, int,int);
 	void remove_bounds(Real*);
 	void remove_bounds(int*);
 	void set_bounds(Real*);
-	void set_bounds(int*); 
+	void set_bounds(int*);
 	void Side(Real *, Real *, int);
 	bool ReadRange(int*, int*, int&, bool&, string, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
@@ -98,8 +98,8 @@ public:
 	void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int);
 	void ComputeGN(Real*, Real*, int*, int*, int*, int*, int*, int*, int, int);
 	Real ComputeTheta(Real*);
-	void UpdateEE(Real*, Real*, Real*); 
-	void UpdatePsi(Real*, Real*, Real* , Real*, int*); 
+	void UpdateEE(Real*, Real*, Real*);
+	void UpdatePsi(Real*, Real*, Real* , Real*, int*);
 	void UpdateQ(Real*,Real*,Real*,Real*,int*);
 	bool ReadGuess(string, Real* ,string&, vector<string>&, bool&, int&, int&, int&, int&, int);
 	bool StoreGuess(string,Real*,string, vector<string>, bool,int);

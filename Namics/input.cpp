@@ -485,6 +485,13 @@ if (debug) cout <<"LoadItems in Input " << endl;
 								PrintList(MonList);
 							}
 							break;
+						case 9:
+//TODO:CHECK IF THIS IS CORRECT AND DOESN'T SCREW UP EVERYTHING
+							if (set[3]=="*") set[3]=MesodynList[0];
+							if (MesodynList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							PrintList(MesodynList); name_found=false;
+							}
+							break;
 						default:
 							key_found=false;
 						}
@@ -675,6 +682,7 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(MesodynList,"mesodyn",0,1,start)) {cout << "There can be no more than 1 'mesodyn' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(MonteList,"monte",0,1,start)) {cout << "There can be no more than 1 'Monte carlo' engine brand name in the input " << endl; success=false;}
 	if (EngineList.size()==0) EngineList.push_back("noname");
+	if (MesodynList.size()==0) MesodynList.push_back("noname");
 	if (!TestNum(VarList,"var",0,10,start))
 	if (VarList.size()==0) VarList.push_back("noname");
 	return success;

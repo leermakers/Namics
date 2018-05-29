@@ -4,37 +4,66 @@
 #include "namics.h"
 #include "newton.h"
 #include "system.h"
-#include <random>
+#include <random> //For noise in langevinFlux()
+//#include <ctime> //To append timestamp to filename.
+#include <map>  //For generating the output of settings
+#include <ctime>
+#include <cassert>
+
 
 class Mesodyn {
+private:
+  const string name;
+  const vector<Input*> In;
+  const vector<Lattice*> Lat;
+  const vector<Molecule*> Mol;
+  const vector<Segment*> Seg;
+  const vector<System*> Sys;
+  const vector<Newton*> New;
+  const string brand;
+  Real D; //diffusionconstant
+  void updateDensity();
+  Real mean;
+  Real stdev;
+  Real seed;
+  int timesteps;
+  int timebetweensaves;
+  const int JZ;
+  const int JY;
+  const int JX;
+  const int M;
+  const int componentNo;
+  const unsigned int size;
+  const int dimensions;
+  vector<Real> J;
+  vector<Real> L;
+  vector<Real> rho;
+  vector<Real*> ptrComponentStart;    //densities used in langevinFlux
+  vector<Real> U;
+
+  ofstream mesFile;
+  void prepareOutputFile();
+  void writeRho(int);
+  map<string,Real> settings;
+
 public:
   Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
-
   ~Mesodyn();
-  void AllocateMemory();
 
-
-  void gaussianNoise(Real, Real, unsigned long);
-  int findComponentNo();
-  int findComponentIndices();
-  void abort();
-  Real langevinFluxTwo(Real&, Real&, Real&, Real&);
-  Real langevinFluxThree(Real&, Real&, Real&, Real&, Real&, Real&);
-  Real langevinFluxFour(Real&, Real&, Real&, Real&, Real&, Real&, Real&, Real&);
-  void updateDensity();
+  void gaussianNoise(Real, Real, unsigned int);
+  void quit();
+  void langevinFlux();
+  bool mesodyn();
+  void initRho();
+  int factorial (int);
+  void onsagerCoefficient();
+  void potentialDifference();
+  int combinations (int, int);
+  inline Real val(vector<Real>&, int, int, int, int);
+  inline Real val(vector<Real>&, int);
+  int findDimensions();
 
   vector<Real> noise;
-  int componentNo;
-  Real D; //diffusion constant
-
-  string name;
-  vector<Input*> In;
-  vector<Lattice*> Lat;
-  vector<Segment*> Seg;
-  vector<Molecule*> Mol;
-  vector<System*> Sys;
-  vector<Newton*> New;
-  string brand;
 
   vector<string> ints;
   vector<string> Reals;
@@ -49,10 +78,7 @@ public:
   void push(string, bool);
   void push(string, string);
   void PushOutput();
-  Real* GetPointer(string);
   int GetValue(string, int&, Real&, string&);
-  int timesteps;
-  int timebetweensaves;
 
   std::vector<string> KEYS;
   std::vector<string> PARAMETERS;

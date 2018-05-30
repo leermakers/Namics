@@ -31,9 +31,11 @@ private:
   const int JZ;
   const int JY;
   const int JX;
+  const int MZ;
+  const int MY;
+  const int MX;
   const int M;
   const int componentNo;
-  const unsigned int size;
   const int dimensions;
   vector<Real> J;
   vector<Real> L;
@@ -45,6 +47,7 @@ private:
   void prepareOutputFile();
   void writeRho(int);
   map<string,Real> settings;
+  void boundaryConditions();
 
 public:
   Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
@@ -60,7 +63,7 @@ public:
   void potentialDifference();
   int combinations (int, int);
   inline Real val(vector<Real>&, int, int, int, int);
-  inline Real val(vector<Real>&, int);
+  inline Real* valPtr(vector<Real>&, int, int, int, int);
   int findDimensions();
 
   vector<Real> noise;

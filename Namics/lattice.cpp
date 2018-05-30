@@ -376,12 +376,12 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				options.clear();
 				options.push_back("mirror"); //options.push_back("mirror_2");
 				//options.push_back("surface");
-				if (GetValue("lowerbound_x").size()>0) {cout << "lowerbond_x is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("lowerbound_y").size()>0) {cout << "lowerbond_y is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbond_z is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("upperbound_x").size()>0) {cout << "upperbond_x is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("upperbound_y").size()>0) {cout << "upperbond_y is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("upperbound_z").size()>0) {cout << "upperbond_z is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_x").size()>0) {cout << "lowerbound_x is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_y").size()>0) {cout << "lowerbound_y is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbound_z is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_x").size()>0) {cout << "upperbound_x is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_y").size()>0) {cout << "upperbound_y is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_z").size()>0) {cout << "upperbound_z is not allowed in 1-gradient calculations" << endl; success=false;}
 
 				Value.clear();
 				Value=GetValue("lowerbound");
@@ -444,8 +444,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				options.push_back("mirror"); //options.push_back("mirror_2");
 				//options.push_back("surface");
 				if (geometry=="planar") options.push_back("periodic");
-				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbond_z is not allowed in 2-gradient calculations" << endl; success=false;}
-				if (GetValue("upperbound_z").size()>0) {cout << "upperbond_z is not allowed in 2-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbound_z is not allowed in 2-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_z").size()>0) {cout << "upperbound_z is not allowed in 2-gradient calculations" << endl; success=false;}
 
 				Value.clear();
 				Value=GetValue("lowerbound_x");

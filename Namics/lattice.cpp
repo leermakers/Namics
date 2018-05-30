@@ -10,10 +10,10 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("lowerbound_y"); KEYS.push_back("upperbound_y");
 	KEYS.push_back("lowerbound_z"); KEYS.push_back("upperbound_z");
  	KEYS.push_back("bondlength");  KEYS.push_back("lattice_type");
-	KEYS.push_back("lambda"); 
-	KEYS.push_back("Z"); 
-	KEYS.push_back("FJC_choices"); 
-	sub_box_on=0; 
+	KEYS.push_back("lambda");
+	KEYS.push_back("Z");
+	KEYS.push_back("FJC_choices");
+	sub_box_on=0;
 }
 
 Lattice::~Lattice() {
@@ -29,8 +29,8 @@ if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 	       if (fjc==1) {
 			free(lambda_1);
 			free(lambda1);
-			free(lambda0); 
-			free(L); 
+			free(lambda0);
+			free(L);
 		} else {free(L); free(LAMBDA); }
 	}
 #ifdef CUDA
@@ -41,9 +41,9 @@ if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 }
 
 void Lattice::AllocateMemory(void) {
-if (debug) cout <<"AllocateMemory in lattice " << endl; 
+if (debug) cout <<"AllocateMemory in lattice " << endl;
 	Real r,VL,LS;
-	Real rlow,rhigh; 
+	Real rlow,rhigh;
 	Real one_over_lambda_min_two=1.0/lambda-2.0;
 	int i,j,k;
 	PutM();
@@ -96,11 +96,11 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 						}
 					}
 
-				} 
+				}
 				if (geometry =="cylindrical") {
-										
+
 					for (i=fjc; i<M-fjc; i++) {
-						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc; 
+						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc;
 						rlow=r-0.5;
 						rhigh=r+0.5;
 						L[i]=PIE*(2.0*r)/fjc;
@@ -114,13 +114,13 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 							for (j=1; j<=fjc; j++) {
 								if (2*rhigh-r-MX > 0.99*j/fjc && 2*rhigh-r-MX < 1.01*j/fjc) {
 									LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*2.0*(rhigh-1.0*j/fjc)/VL;
-								} 
+								}
 							}
 						}
 						for (j=1; j<fjc; j++) {
 							rlow += 0.5/(fjc);
 							rhigh -= 0.5/(fjc);
-							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*2.0*rlow/VL; 
+							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*2.0*rlow/VL;
 							if ((rhigh-r)*2+r < offset_first_layer+MX) LAMBDA[i+(FJC-1-j)*M]+=1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
 							else {
 								if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001 ) {
@@ -129,7 +129,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 								for (k=1; k<=fjc; k++) {
 									if (2*rhigh-r-MX > 0.99*k/fjc && 2*rhigh-r-MX < 1.01*k/fjc) {
 										LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*2.0*(rhigh-1.0*k/fjc)/VL;
-									} 
+									}
 								}
 							}
 						}
@@ -140,9 +140,9 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 				}
 
 
-				if (geometry =="spherical") {//todo : test 
+				if (geometry =="spherical") {//todo : test
 					for (i=fjc; i<M-fjc; i++) {
-						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc; 
+						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc;
 						rlow=r-0.5;
 						rhigh=r+0.5;
 						L[i]=PIE*4.0/3.0*(rhigh*rhigh*rhigh-rlow*rlow*rlow)/fjc;
@@ -156,13 +156,13 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 							for (j=1; j<=fjc; j++) {
 								if (2*rhigh-r-MX > 0.99*j/fjc && 2*rhigh-r-MX < 1.01*j/fjc) {
 									LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*4.0*(rhigh-1.0*j/fjc)*(rhigh-1.0*j/fjc)/VL;
-								} 
+								}
 							}
 						}
 						for (j=1; j<fjc; j++) {
 							rlow += 0.5/(fjc);
 							rhigh -= 0.5/(fjc);
-							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*4.0*rlow*rlow/VL; 
+							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*4.0*rlow*rlow/VL;
 							if ((rhigh-r)*2+r < offset_first_layer+MX) LAMBDA[i+(FJC-1-j)*M]+=1.0/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
 							else {
 								if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001 ) {
@@ -171,7 +171,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 								for (k=1; k<=fjc; k++) {
 									if (2*rhigh-r-MX > 0.99*k/fjc && 2*rhigh-r-MX < 1.01*k/fjc) {
 										LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*4.0*(rhigh-1.0*k/fjc)*(rhigh-1.0*k/fjc)/VL;
-									} 
+									}
 								}
 							}
 						}
@@ -599,9 +599,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (FJC %4 != 3) {cout << "FJC_choices can adopt only few integer values: 3 + i*4, with i = 1, 2, 3, 4, ...." <<endl; success=false;}
 			}
 			if (success && (gradients>1)) {cout << "FJC_choices can only be used in combination with 'gradients == planar' " << endl; success=false;}
-			if (success && (lattice_type != "hexagonal")) {cout << "FJC_choices can only be used in combination with 'lattice_type == hexagonal' "<<endl; success=false;} 
-			//cout <<FJC <<"FJC_choices" << endl; 
-			fjc=(FJC-1)/2; 
+			if (success && (lattice_type != "hexagonal")) {cout << "FJC_choices can only be used in combination with 'lattice_type == hexagonal' "<<endl; success=false;}
+			//cout <<FJC <<"FJC_choices" << endl;
+			fjc=(FJC-1)/2;
 			//cout <<fjc <<"divisions per segment" << endl;
 			M *=fjc;
 		}
@@ -945,7 +945,7 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	push("volume",volume);
 	push("lattice_type",lattice_type);
 	push("bond_length",bond_length);
-	push("FJC_choices",FJC); 
+	push("FJC_choices",FJC);
 	string s="profile;0"; push("L",s);
 
 	switch (gradients) {
@@ -991,7 +991,8 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 }
 
 Real* Lattice::GetPointer(string s) {
-if (debug) cout <<"GetPointer for Mol " + name << endl;	vector<string> sub;
+if (debug) cout <<"GetPointer for Mol " + name << endl;
+	vector<string> sub;
 	In[0]->split(s,';',sub);
 	if (sub[1]=="0") return L;
 	return NULL;
@@ -1159,7 +1160,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 					AddTimes(gs+kk,gs_1,LAMBDA+j*M+kk,M-kk);
 					AddTimes(gs,gs_1+kk,LAMBDA+(FJC-j-1)*M,M-kk);
 				}
-				AddTimes(gs,gs_1,LAMBDA+(FJC-1)/2*M,M); 
+				AddTimes(gs,gs_1,LAMBDA+(FJC-1)/2*M,M);
 				Times(gs,gs,G1,M);
 			}
 			break;
@@ -1981,7 +1982,7 @@ Real Lattice::ComputeTheta(Real* phi) {
 }
 
 bool Lattice::ReadGuess(string filename, Real *x ,string &method, vector<string> &monlist, bool &charged, int &mx, int &my, int &mz, int &fjc, int readx) {
-if (debug) cout <<"ReadGuess in output" << endl; 
+if (debug) cout <<"ReadGuess in output" << endl;
 	bool success=true;
 	ifstream in_file;
 	string s_charge;
@@ -1991,7 +1992,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 	if (in_file.is_open()) {
 		while (in_file && readx>-1) {
 			in_file>>method;
-			in_file>>mx>>my>>mz>>fjc;		
+			in_file>>mx>>my>>mz>>fjc;
 			in_file>>s_charge;
 			if (s_charge=="true") charged=true; else charged=false;
 			in_file>>num;
@@ -2422,13 +2423,13 @@ void PROPAGATE(Real *G, Real *G1, int s_from, int s_to) { //on big box
 }
 
 
-void Lattice::Edis(Real *X_side, Real *X, int M) { //operation opposite to Side ;-) ....careful it distroys info in X_side. 
-if (debug) cout <<"Edis in lattice " << endl; 
+void Lattice::Edis(Real *X_side, Real *X, int M) { //operation opposite to Side ;-) ....careful it distroys info in X_side.
+if (debug) cout <<"Edis in lattice " << endl;
 	int j;
 	Zero(X_side,M); set_bounds(X);
 	if (fjc==1) {
 	} else {
-		for (j=0; j<fjc/2; j++) {	
+		for (j=0; j<fjc/2; j++) {
 			AddTimes(X_side+j,X,VL+j*M+j,M-j);
 			AddTimes(X_side,X+j,VL+(fjc-j-1)*M,M-j);
 		}

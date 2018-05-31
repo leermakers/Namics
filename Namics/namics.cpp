@@ -105,6 +105,7 @@ int main(int argc, char* argv[]) {
   vector<Engine*> Eng;
   vector<Variate*> Var;
   vector<Mesodyn*> Mes;
+  vector<Monte*> Mon;
 
   // Create input class instance and handle errors(reference above)
   In.push_back(new Input(filename.str()) );
@@ -319,11 +320,19 @@ int main(int argc, char* argv[]) {
         Mes[start-1]->mesodyn();
       //Otherwise, go through the classic function solve.
       } else {
-        if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
-          New[0]->Solve(true);
-        } else {
-          if (debug) cout << "Solve towards superiteration " << endl;
-          New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
+	if (New[0]->method == "MonteCarlo"){
+	//Create montecarlo class instance and run it.
+	cout << "Solving MonteCarlo problem" << endl;
+	Mon.push_back(new Monte(In, Lat, Seg, Mol, Sys, New, In[0]->MonteList[0]));
+	Mon[start-1]->Simulate();
+	} else {
+          if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
+          cout << "Solving classic Meanfield problem" << endl;
+	  New[0]->Solve(true);
+          } else {
+            if (!debug) cout << "Solve towards superiteration " << endl;
+            New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
+          }
         }
       }
       /********** Output information about all classes to file *********/

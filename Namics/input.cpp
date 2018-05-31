@@ -106,7 +106,7 @@ std::vector<std::string>& Input::split(std::string s, char delim, std::vector<st
 }
 
 bool Input:: IsDigit(string &s) {
-	return (s=="0" || s=="1" ||s=="2" || s=="3" || s=="4" || s=="5" ||s=="6" || s=="7" || s=="8" || s=="9");
+	return (s=="0" || s=="1" ||s=="2" || s=="3" || s=="4" || s=="5" ||s=="6" || s=="7" || s=="8" || s=="9" || s=="10");
 }
 
 int Input:: Get_int(string s, int ss) {
@@ -492,6 +492,12 @@ if (debug) cout <<"LoadItems in Input " << endl;
 							PrintList(MesodynList); name_found=false;
 							}
 							break;
+						case 10:
+							if (set[3]=="*") set[3]=MonteList[0];
+							if (MonteList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+							PrintList(MonteList); name_found=false;
+							}
+							break;
 						default:
 							key_found=false;
 						}
@@ -683,6 +689,7 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(MonteList,"monte",0,1,start)) {cout << "There can be no more than 1 'Monte carlo' engine brand name in the input " << endl; success=false;}
 	if (EngineList.size()==0) EngineList.push_back("noname");
 	if (MesodynList.size()==0) MesodynList.push_back("noname");
+	if (MonteList.size()==0) MonteList.push_back("noname");
 	if (!TestNum(VarList,"var",0,10,start))
 	if (VarList.size()==0) VarList.push_back("noname");
 	return success;

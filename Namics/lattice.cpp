@@ -1,5 +1,7 @@
 #include "lattice.h"
-Lattice::Lattice(vector<Input*> In_,string name_) { //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
+Lattice::Lattice(vector<Input*> In_,string name_) :
+	BC(6) // resize the boundary condition vector to 6 for Mesodyn
+{ //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
 if (debug) cout <<"Lattice constructor" << endl;
 	In=In_; name=name_;
 	KEYS.push_back("gradients"); KEYS.push_back("n_layers"); KEYS.push_back("offset_first_layer");
@@ -387,21 +389,21 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value=GetValue("lowerbound");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound' boundary condition not recognized.")) success=false;
-					if (VALUE1=="mirror") { BX1=1; BC.push_back("mirror"); }
+					if (VALUE1=="mirror") { BX1=1; BC[0] = VALUE1; }
 					//if (VALUE1=="surface") { BX1=0;BC.push_back("surface");}
 				} else {
 					VALUE1="mirror";
 					BX1=1;
-					BC.push_back("mirror");
+					BC[0] = VALUE1;
 				}
 				Value.clear();
 				Value=GetValue("upperbound");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE2,options,"for 'upperbound' boundary condition not recognized.")) success=false;
-					if (VALUE2=="mirror")  { BXM=MX; BC.push_back("mirror"); }
+					if (VALUE2=="mirror")  { BXM=MX; BC[1] = VALUE2; }
 					//if (VALUE2=="surface") { BXM=MX+1; BC.push_back("surface");}
 				} else {
-					VALUE2="mirror"; BC.push_back("mirror");
+					VALUE2="mirror"; BC[1] = VALUE2;
 					BXM=MX;
 				}
 
@@ -451,24 +453,24 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value=GetValue("lowerbound_x");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE1);
+					BC[0] = VALUE1;
 					if (VALUE1=="mirror") BX1=1;
 					//if (VALUE1=="surface")  BX1=0;
 					if (VALUE1=="periodic") BX1=MX;
 				} else {
-					VALUE1="mirror"; BC.push_back("mirror");
+					VALUE1="mirror"; BC[0] = VALUE1;
 					BX1=1;
 				}
 				Value.clear();
 				Value=GetValue("upperbound_x");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE2,options,"for 'upperbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE2);
+					BC[1] = VALUE2;
 					if (VALUE2=="mirror")  BXM=MX;
 					//if (VALUE2=="surface")  BXM=MX+1;
 					if (VALUE2=="periodic") BXM=1;
 				} else {
-					VALUE2="mirror"; BC.push_back("mirror");
+					VALUE2="mirror"; BC[1] = VALUE2;
 					BXM=MX;
 				}
 
@@ -477,24 +479,24 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value=GetValue("lowerbound_y");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE3,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE3);
+					BC[2] = VALUE3;
 					if (VALUE3=="mirror") BY1=1;
 					//if (VALUE3=="surface")  BY1=0;
 					if (VALUE3=="periodic") BY1=MY;
 				} else {
-					VALUE3="mirror"; BC.push_back("mirror");
+					VALUE3="mirror"; BC[2] = VALUE3;
 					BY1=1;
 				}
 				Value.clear();
 				Value=GetValue("upperbound_x");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE4,options,"for 'upperbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE4);
+					BC[3] = VALUE4;
 					if (VALUE4=="mirror") BYM=MY;
 					//if (VALUE4=="surface")  BYM=MY+1;
 					if (VALUE4=="periodic") BYM=1;
 				} else {
-					VALUE4="mirror"; BC.push_back("mirror");
+					VALUE4="mirror"; BC[3] = VALUE4;
 					BYM=MY;
 				}
 				if (VALUE1=="periodic" || VALUE2=="periodic") {
@@ -519,61 +521,61 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value.clear();
 				Value=GetValue("lowerbound_x"); if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE1);
+					BC[1] = VALUE1;
 					if (VALUE1=="mirror") BX1=1;
 					if (VALUE1=="periodic") BX1=MX;
 				} else {
-					VALUE1="periodic"; BC.push_back(VALUE1);
+					VALUE1="periodic"; BC[0] = VALUE1;
 					BX1=MX;
 				}
 				Value.clear();
-				Value=GetValue("lowerbound_y"); if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,VALUE2,options,"for 'lowerbound_y' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE2);
-					if (VALUE2=="mirror") BY1=1;
-					if (VALUE2=="periodic") BY1=MY;
-				} else {
-					VALUE2="periodic";BC.push_back(VALUE2);
-					BY1=MY;
-				}
-				Value.clear();
-				Value=GetValue("lowerbound_z"); if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,VALUE3,options,"for 'lowerbound_z' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE3);
-					if (VALUE3=="mirror") BZ1=1;
-					if (VALUE3=="periodic") BZ1=MZ;
-				} else {
-					VALUE3="periodic"; BC.push_back(VALUE3);
-					BZ1=MZ;
-				}
-				Value.clear();
 				Value=GetValue("upperbound_x"); if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,VALUE4,options,"for 'upperbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE4);
-					if (VALUE4=="mirror") BXM=MX;
-					if (VALUE4=="periodic") BXM=1;
+					if (!In[0]->Get_string(Value,VALUE2,options,"for 'upperbound_x' boundary condition not recognized.")) success=false;
+					BC[1]=VALUE2;
+					if (VALUE2=="mirror") BXM=MX;
+					if (VALUE2=="periodic") BXM=1;
 				} else {
-					VALUE4="periodic"; BC.push_back(VALUE4);
+					VALUE2="periodic"; BC[1]=VALUE2;
 					BXM=1;
 				}
 				Value.clear();
-				Value=GetValue("upperbound_y"); if (Value.length()>0) {
-					if(!In[0]->Get_string(Value,VALUE5,options,"for 'upperbound_y' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE5);
-					if (VALUE5=="mirror") BYM=MY;
-					if (VALUE5=="periodic") BYM=1;
+				Value=GetValue("lowerbound_y"); if (Value.length()>0) {
+					if (!In[0]->Get_string(Value,VALUE3,options,"for 'lowerbound_y' boundary condition not recognized.")) success=false;
+					BC[2]=VALUE3;
+					if (VALUE3=="mirror") BY1=1;
+					if (VALUE3=="periodic") BY1=MY;
 				} else {
-					VALUE5="periodic";BC.push_back(VALUE5);
+					VALUE3="periodic";BC[2]=VALUE3;
+					BY1=MY;
+				}
+				Value.clear();
+				Value=GetValue("upperbound_y"); if (Value.length()>0) {
+					if(!In[0]->Get_string(Value,VALUE4,options,"for 'upperbound_y' boundary condition not recognized.")) success=false;
+					BC[3] = VALUE4;
+					if (VALUE4=="mirror") BYM=MY;
+					if (VALUE4=="periodic") BYM=1;
+				} else {
+					VALUE4="periodic"; BC[3] = VALUE4;
 					BYM=1;
+				}
+				Value.clear();
+				Value=GetValue("lowerbound_z"); if (Value.length()>0) {
+					if (!In[0]->Get_string(Value,VALUE5,options,"for 'lowerbound_z' boundary condition not recognized.")) success=false;
+					BC[4] = VALUE5;
+					if (VALUE5=="mirror") BZ1=1;
+					if (VALUE5=="periodic") BZ1=MZ;
+				} else {
+					VALUE3="periodic"; BC[4] = VALUE5;
+					BZ1=MZ;
 				}
 				Value.clear();
 				Value=GetValue("upperbound_z"); if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE6,options,"for 'upperbound_z' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE6);
+					BC[5] = VALUE6;
 					if (VALUE6=="mirror") BZM=MZ;
 					if (VALUE6=="periodic") BZM=1;
 				} else {
-					VALUE6="periodic";BC.push_back(VALUE6);
+					VALUE6="periodic"; BC[5] = VALUE6;
 					BZM=1;
 				}
 

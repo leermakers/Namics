@@ -4,15 +4,16 @@
 #include "namics.h"
 #include "newton.h"
 #include "system.h"
-#include <random> //For noise in langevinFlux()
-//#include <ctime> //To append timestamp to filename.
-#include <map>  //For generating the output of settings
+#include <random>
 #include <ctime>
 #include <cassert>
+#include <functional>
 
 
 class Mesodyn {
-private:
+public:
+
+  //private:
   const string name;
   const vector<Input*> In;
   const vector<Lattice*> Lat;
@@ -35,7 +36,7 @@ private:
   const int MY;
   const int MX;
   const int M;
-  const int componentNo;
+  int componentNo;
   const int dimensions;
   vector<Real> J;
   vector<Real> L;
@@ -43,13 +44,39 @@ private:
   vector<Real*> ptrComponentStart;    //densities used in langevinFlux
   vector<Real> U;
 
+  vector<string> BC;
+  function<void()> bX0;
+  function<void()> bXm;
+  function<void()> bY0;
+  function<void()> bYm;
+  function<void()> bZ0;
+  function<void()> bZm;
+
+  void setBoundaryPointers();
+
   ofstream mesFile;
   void prepareOutputFile();
   void writeRho(int);
-  map<string,Real> settings;
   void boundaryConditions();
 
-public:
+  void bX0Mirror(int, int);
+  void bX1Mirror(int, int);
+  void bXmMirror(int, int, int);
+  void bY0Mirror(int, int);
+  void bYmMirror(int, int, int);
+  void bZ0Mirror(int, int);
+  void bZmMirror(int, int, int);
+  void bX0XmMirror(int, int, int);
+  void bY0YmMirror(int, int, int);
+  void bZ0ZmMirror(int, int, int);
+
+  void bX0Periodic(int, int, int);
+  void bY0Periodic(int, int, int);
+  void bZ0Periodic(int, int, int);
+
+  void bNothing();
+
+//public:
   Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
   ~Mesodyn();
 

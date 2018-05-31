@@ -17,9 +17,9 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       JZ{Lat[0]->JZ}, // Usage for e.g. layer z: foo[z]+foo[z+1] becomes foo[z] + foo[z+JX]
       JY{Lat[0]->JY},
       JX{Lat[0]->JX},
-      MZ{Lat[0]->MZ},
-      MY{Lat[0]->MY},
-      MX{Lat[0]->MX},
+      MZ{Lat[0]->MZ+2},
+      MY{Lat[0]->MY+2},
+      MX{Lat[0]->MX+2},
       M{Lat[0]->M},                                   // Neighboring component
       componentNo{(int)Sys[0]->SysMolMonList.size()}, //find how many compontents there are (e.g. head, tail, solvent)
       dimensions{findDimensions()},                   // used to decide which fluxes to calculate
@@ -45,9 +45,6 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
     || (MX > 0 && MY > 0 && MZ == 0)
     || (MX > 0 && MY > 0 && MZ > 0)
         );
-
-  // And boundary conditions should be the same for both sides of one dimension
-  assert(Lat[0]->BC[0] == Lat[0]->BC[3] && Lat[0]->BC[1] == Lat[0]->BC[4] && Lat[0]->BC[2] == Lat[0]->BC[5]);
 }
 
 Mesodyn::~Mesodyn() {
@@ -102,14 +99,116 @@ bool Mesodyn::CheckInput(int start) {
   return success;
 }
 
+/* Dynamically sets the boundary condition functions to the correct type.
+*/
+void Mesodyn::setBoundaryPointers() {
+
+  if (Lat[0]->BC[0] == "mirror")
+    switch (dimensions) {
+      case 1:
+        bX0 = bind(&Mesodyn::bX0Mirror, this, 1, 1);
+        break;
+      case 2:
+        bX0 = bind(&Mesodyn::bX0Mirror, this, MY, 1);
+        break;
+      case 3:
+        bX0 = bind(&Mesodyn::bX0Mirror, this, MY, MZ);
+        break;
+    }
+  else if (Lat[0]->BC[0] == "periodic")
+  switch (dimensions) {
+    case 1:
+      bX0 = bind(&Mesodyn::bX0Periodic, this, 1, 1, MX);
+      break;
+    case 2:
+      bX0 = bind(&Mesodyn::bX0Periodic, this, MY, 1, MX);
+      break;
+    case 3:
+      bX0 = bind(&Mesodyn::bX0Periodic, this, MY, MZ, MX);
+      break;
+  }
+  else
+    bX0 = bind(&Mesodyn::bNothing, this);
+
+  if (Lat[0]->BC[1] == "mirror")
+  switch (dimensions) {
+    case 1:
+      bXm = bind(&Mesodyn::bXmMirror, this, 1, 1, MX);
+      break;
+    case 2:
+      bXm = bind(&Mesodyn::bXmMirror, this, MY, 1, MX);
+      break;
+    case 3:
+      bXm = bind(&Mesodyn::bXmMirror, this, MY, MZ, MX);
+      break;
+  }
+  else if (Lat[0]->BC[1] == "periodic")
+    bXm = bind(&Mesodyn::bNothing, this);
+  else
+    bXm = bind(&Mesodyn::bNothing, this);
+
+  // Only true if dimensions > 1
+  if (Lat[0]->BC[2] == "mirror")
+  switch (dimensions) {
+    case 2:
+      bY0 = bind(&Mesodyn::bY0Mirror, this, MX, 1);
+      break;
+    case 3:
+      bY0 = bind(&Mesodyn::bY0Mirror, this, MX, MZ);
+      break;
+  }
+  else if (Lat[0]->BC[2] == "periodic")
+  switch (dimensions) {
+    case 2:
+      bY0 = bind(&Mesodyn::bY0Periodic, this, MX, 1, MY);
+      break;
+    case 3:
+      bY0 = bind(&Mesodyn::bY0Periodic, this, MX, MZ, MY);
+      break;
+  }
+  else
+    bY0 = bind(&Mesodyn::bNothing, this);
+
+  // Only true if dimensions > 1
+  if (Lat[0]->BC[3] == "mirror")
+  switch (dimensions) {
+    case 2:
+      bYm = bind(&Mesodyn::bYmMirror, this, MX, 1, MY);
+      break;
+    case 3:
+      bYm = bind(&Mesodyn::bYmMirror, this, MX, MZ, MY);
+      break;
+  }
+  else if (Lat[0]->BC[3] == "periodic")
+    bYm = bind(&Mesodyn::bNothing, this);
+  else
+    bYm = bind(&Mesodyn::bNothing, this);
+
+  // Only true if dimensions > 2
+  if (Lat[0]->BC[4] == "mirror")
+    bZ0 = bind(&Mesodyn::bZ0Mirror, this, MX, MY);
+  else if (Lat[0]->BC[4] == "periodic")
+    bZ0 = bind(&Mesodyn::bZ0Periodic, this, MX, MY, MZ);
+  else
+    bZ0 = bind(&Mesodyn::bNothing, this);
+
+  // Only true if dimensions > 2
+  if (Lat[0]->BC[5] == "mirror")
+    bZm = bind(&Mesodyn::bZmMirror, this, MX, MY, MZ);
+  else if (Lat[0]->BC[5] == "periodic")
+    bZm = bind(&Mesodyn::bNothing, this);
+  else
+    bZm = bind(&Mesodyn::bNothing, this);
+}
+
 //Used by langevinFlux() to calculate the correct number of fluxes
 int Mesodyn::findDimensions() {
   int d = 0;
-  if (MX > 0)
+  if (Lat[0]->MX > 0)
     ++d;
-  if (MY > 0)
+  if (Lat[0]->MY > 0)
     ++d;
-  if (MZ > 0)
+  if (Lat[0]->MZ > 0)
     ++d;
   return d;
 }
@@ -122,17 +221,20 @@ bool Mesodyn::mesodyn() {
   initRho(); // Get initial conditions (phi and potentials) by running the classical method once.
   //prepareOutputFile();
   //writeRho(0); // write initial conditions
+
+  setBoundaryPointers();
+
   if (debug)
     cout << "Mesodyn is all set, starting calculations.." << endl;
 
   for (int t = 1; t < 100; t++) { // get segment potentials by iteration so that they match the given rho.
+    cout << "MESODYN: t = " << t << endl;
     New[0]->Solve(&rho[0]);
     onsagerCoefficient();
     potentialDifference();
     boundaryConditions();
     langevinFlux();
     updateDensity();
-    cin.get();
     //writeRho(t);
   }
   return true;
@@ -169,13 +271,15 @@ void Mesodyn::updateDensity() {
 
   // J looks like: Jx1 - Jy1 - Jz1 - Jx2 - Jy2 - Jz2 etc.
   // Each J has size Lat[0]->M
+  // Density = flux [lattice site * coordinate start index + component]
 
   for (int j = 0; j < componentNo; ++j) {
     for (int i = 0; i < M; ++i) {
-      // Density = flux [lattice site * coordinate start index + component]
       rho[i + j * M] += J[i + j * M]; // x
+
       if (dimensions > 1) {
         rho[i + j * M] += J[i * M + j * M]; // y
+
         if (dimensions > 2)
           rho[i + j * M] += J[i * 2 * M + j * M]; // z
       }
@@ -184,102 +288,21 @@ void Mesodyn::updateDensity() {
 }
 
 void Mesodyn::boundaryConditions() {
+  if (debug)
+    cout << "boundaryConditions in Mesodyn." << endl;
 
-  //MX-1 and MX-2 because the last index is MX-1 (starts at 0)
-
-  if (Lat[0]->BC[0] == "mirror") {
-    for (int c = 0; c < combinations(componentNo, 2); ++c) {
-      for (int y = 0; y < MY; ++y) {
-        for (int z = 0; z < MZ; ++z) {
-          //Onsager coefficents
-          *valPtr(L, c, 0, y, z) = val(L, c, 1, y, z);           //start
-          *valPtr(L, c, MX - 1, y, z) = val(L, c, MX - 2, y, z); //end
-          //Potentials
-          *valPtr(U, c, 0, y, z) = val(U, c, 1, y, z);           //start
-          *valPtr(U, c, MX - 1, y, z) = val(U, c, MX - 2, y, z); //end
-        }
-      }
-    }
-
-  if (Lat[0]->BC[1] == "mirror") {
-
-      for (int c = 0; c < combinations(componentNo, 2); ++c) {
-        for (int x = 0; x < MX; ++x) {
-          for (int z = 0; z < MZ; ++z) {
-            //Onsager coefficents
-            *valPtr(L, c, x, 0, z) = val(L, c, x, 1, z);           //start
-            *valPtr(L, c, x, MY - 1, z) = val(L, c, x, MY - 2, z); //end
-            //Potentials
-            *valPtr(U, c, x, 0, z) = val(U, c, x, 1, z);           //start
-            *valPtr(U, c, x, MY - 1, z) = val(U, c, x, MY - 2, z); //end
-          }
-        }
-      }
-    }
-
-    if (Lat[0]->BC[2] == "mirror") {
-
-        for (int c = 0; c < combinations(componentNo, 2); ++c) {
-          for (int x = 0; x < MX; ++x) {
-            for (int y = 0; y < MY; ++y) {
-              //Onsager coefficents
-              *valPtr(L, c, x, y, 0) = val(L, c, x, y, 1);           //start
-              *valPtr(L, c, x, y, MY - 1) = val(L, c, x, y, MY - 2); //end
-              //Potentials
-              *valPtr(U, c, x, y, 0) = val(U, c, x, y, 1);           //start
-              *valPtr(U, c, x, y, MY - 1) = val(U, c, x, y, MY - 2); //end
-            }
-          }
-        }
-      }
-    }
-
-    if (Lat[0]->BC[0] == "periodic") {
-      for (int c = 0; c < combinations(componentNo, 2); ++c) {
-        for (int y = 0; y < MY; ++y) {
-          for (int z = 0; z < MZ; ++z) {
-            //Onsager coefficents
-            *valPtr(L, c, 0, y, z) = val(L, c, MX-2, y, z);           //start
-            *valPtr(L, c, MX - 1, y, z) = val(L, c, 1, y, z); //end
-            //Potentials
-            *valPtr(U, c, 0, y, z) = val(U, c, MX-2, y, z);           //start
-            *valPtr(U, c, MX - 1, y, z) = val(U, c, 1, y, z); //end
-          }
-        }
-      }
-
-    if (Lat[0]->BC[1] == "periodic") {
-
-        for (int c = 0; c < combinations(componentNo, 2); ++c) {
-          for (int x = 0; x < MX; ++x) {
-            for (int z = 0; z < MZ; ++z) {
-              //Onsager coefficents
-              *valPtr(L, c, x, 0, z) = val(L, c, x, MY-2, z);           //start
-              *valPtr(L, c, x, MY - 1, z) = val(L, c, x, 1, z); //end
-              //Potentials
-              *valPtr(U, c, x, 0, z) = val(U, c, x, MY-2, z);           //start
-              *valPtr(U, c, x, MY - 1, z) = val(U, c, x, 1, z); //end
-            }
-          }
-        }
-      }
-
-      if (Lat[0]->BC[2] == "periodic") {
-
-          for (int c = 0; c < combinations(componentNo, 2); ++c) {
-            for (int x = 0; x < MX; ++x) {
-              for (int y = 0; y < MY; ++y) {
-                //Onsager coefficents
-                *valPtr(L, c, x, y, 0) = val(L, c, x, y, MZ-2);           //start
-                *valPtr(L, c, x, y, MZ - 1) = val(L, c, x, y, 1); //end
-                //Potentials
-                *valPtr(U, c, x, y, 0) = val(U, c, x, y, MZ-2);           //start
-                *valPtr(U, c, x, y, MY - 1) = val(U, c, x, y, 1); //end
-              }
-            }
-          }
-        }
-      }
+  if (debug) cout << "bX0" << endl;
+  bX0();
+  if (debug) cout << "bXm" << endl;
+  bXm();
+  if (debug) cout << "bY0" << endl;
+  bY0();
+  if (debug) cout << "bYm" << endl;
+  bYm();
+  if (debug) cout << "bZ0" << endl;
+  bZ0();
+  if (debug) cout << "bZm" << endl;
+  bZm();
 }
 
 /******** Calculations ********/
@@ -468,6 +491,250 @@ void Mesodyn::gaussianNoise(Real mean, Real stdev, unsigned int count) {
 */
 }
 
+/******* Boundary conditions *******/
+
+//MX-1 and MX-2 because the last index is MX-1 (starts at 0)
+
+//TODO: DOES MY, MX, MZ include boundary layers?
+
+void Mesodyn::bX0Mirror(int fMY, int fMZ) {
+  if (debug)
+    cout << "bX0Mirror in Mesodyn" << endl;
+
+  for (int y = 0; y < fMY; ++y) {
+    for (int z = 0; z < fMZ; ++z) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, 0, y, z) = val(L, c, 1, y, z); //start
+      }
+
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        *valPtr(U, c, 0, y, z) = val(U, c, 1, y, z); //start
+      }
+    }
+  }
+}
+
+void Mesodyn::bXmMirror(int fMY, int fMZ, int fMX) {
+  if (debug)
+    cout << "bXmMirror in Mesodyn" << endl;
+
+  for (int y = 0; y < fMY; ++y) {
+    for (int z = 0; z < fMZ; ++z) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, fMX - 1, y, z) = val(L, c, fMX - 2, y, z); //end
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        if (c < componentNo - 1)
+          *valPtr(U, c, fMX - 1, y, z) = val(U, c, fMX - 2, y, z); //end
+      }
+    }
+  }
+}
+
+void Mesodyn::bX0XmMirror(int fMY, int fMZ, int fMX) {
+  if (debug)
+    cout << "bX0XmMirror in Mesodyn" << endl;
+
+  for (int y = 0; y < fMY; ++y) {
+    for (int z = 0; z < fMZ; ++z) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, 0, y, z) = val(L, c, 1, y, z);           //start
+        *valPtr(L, c, fMX - 1, y, z) = val(L, c, fMX - 2, y, z); //end
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        if (c < componentNo - 1)
+          *valPtr(U, c, 0, y, z) = val(U, c, 1, y, z);         //start
+        *valPtr(U, c, fMX - 1, y, z) = val(U, c, fMX - 2, y, z); //end
+      }
+    }
+  }
+}
+
+void Mesodyn::bY0Mirror(int fMX, int fMZ) {
+  if (debug)
+    cout << "bY0Mirror in Mesodyn" << endl;
+
+  for (int x = 0; x < fMX; ++x) {
+    for (int z = 0; z < fMZ; ++z) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, x, 0, z) = val(L, c, x, 1, z); //start
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        if (c < componentNo - 1)
+          *valPtr(U, c, x, 0, z) = val(U, c, x, 1, z); //start
+      }
+    }
+  }
+}
+
+void Mesodyn::bYmMirror(int fMX, int fMZ, int fMY) {
+  if (debug)
+    cout << "bYmMirror in Mesodyn" << endl;
+
+  for (int x = 0; x < fMX; ++x) {
+    for (int z = 0; z < fMZ; ++z) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, x, fMY - 1, z) = val(L, c, x, fMY - 2, z); //end
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        *valPtr(U, c, x, fMY - 1, z) = val(U, c, x, fMY - 2, z); //end
+      }
+    }
+  }
+}
+
+void Mesodyn::bY0YmMirror(int fMX, int fMZ, int fMY) {
+  if (debug)
+    cout << "bY0YmMirror in Mesodyn" << endl;
+
+  for (int x = 0; x < fMX; ++x) {
+    for (int z = 0; z < fMZ; ++z) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, x, 0, z) = val(L, c, x, 1, z);           //start
+        *valPtr(L, c, x, fMY - 1, z) = val(L, c, x, fMY - 2, z); //end
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        *valPtr(U, c, x, 0, z) = val(U, c, x, 1, z);           //start
+        *valPtr(U, c, x, fMY - 1, z) = val(U, c, x, fMY - 2, z); //end
+      }
+    }
+  }
+}
+
+void Mesodyn::bZ0Mirror(int fMX, int fMY) {
+  if (debug)
+    cout << "bZ0Mirror in Mesodyn" << endl;
+
+  for (int x = 0; x < fMX; ++x) {
+    for (int y = 0; y < fMY; ++y) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, x, y, 0) = val(L, c, x, y, 1); //start
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        *valPtr(U, c, x, y, 0) = val(U, c, x, y, 1); //start
+      }
+    }
+  }
+}
+
+void Mesodyn::bZmMirror(int fMX, int fMY, int fMZ) {
+  if (debug)
+    cout << "bZmMirror in Mesodyn" << endl;
+
+  for (int x = 0; x < fMX; ++x) {
+    for (int y = 0; y < fMY; ++y) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, x, y, fMZ - 1) = val(L, c, x, y, fMZ - 2); //end
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        *valPtr(U, c, x, y, fMZ - 1) = val(U, c, x, y, fMZ - 2); //end
+      }
+    }
+  }
+}
+
+void Mesodyn::bZ0ZmMirror(int fMX, int fMY, int fMZ) {
+  if (debug)
+    cout << "bZ0ZmMirror in Mesodyn" << endl;
+
+  for (int x = 0; x < fMX; ++x) {
+    for (int y = 0; y < fMY; ++y) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, x, y, 0) = val(L, c, x, y, 1);           //start
+        *valPtr(L, c, x, y, fMZ - 1) = val(L, c, x, y, fMZ - 2); //end
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        *valPtr(U, c, x, y, 0) = val(U, c, x, y, 1);           //start
+        *valPtr(U, c, x, y, fMZ - 1) = val(U, c, x, y, fMZ - 2); //end
+      }
+    }
+  }
+}
+
+void Mesodyn::bX0Periodic(int fMY, int fMZ, int fMX) {
+  if (debug)
+    cout << "bX0Periodic in Mesodyn" << endl;
+
+  for (int y = 0; y < fMY; ++y) {
+    for (int z = 0; z < fMZ; ++z) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, 0, y, z) = val(L, c, fMX - 2, y, z); //start
+        *valPtr(L, c, fMX - 1, y, z) = val(L, c, 1, y, z); //end
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        *valPtr(U, c, 0, y, z) = val(U, c, fMX - 2, y, z); //start
+        *valPtr(U, c, fMX - 1, y, z) = val(U, c, 1, y, z); //end
+      }
+    }
+  }
+}
+
+void Mesodyn::bY0Periodic(int fMX, int fMZ, int fMY) {
+  if (debug)
+    cout << "bY0Periodic in Mesodyn" << endl;
+
+  for (int x = 0; x < fMX; ++x) {
+    for (int z = 0; z < fMZ; ++z) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, x, 0, z) = val(L, c, x, fMY - 2, z); //start
+        *valPtr(L, c, x, fMY - 1, z) = val(L, c, x, 1, z); //end
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        *valPtr(U, c, x, 0, z) = val(U, c, x, fMY - 2, z); //start
+        *valPtr(U, c, x, fMY - 1, z) = val(U, c, x, 1, z); //end
+      }
+    }
+  }
+}
+
+void Mesodyn::bZ0Periodic(int fMX, int fMY, int fMZ) {
+  if (debug)
+    cout << "bZ0Periodic in Mesodyn" << endl;
+
+  for (int x = 0; x < fMX; ++x) {
+    for (int y = 0; y < fMY; ++y) {
+      for (int c = 0; c < combinations(componentNo, 2); ++c) {
+        //Onsager coefficents
+        *valPtr(L, c, x, y, 0) = val(L, c, x, y, fMZ - 2); //start
+        *valPtr(L, c, x, y, fMZ - 1) = val(L, c, x, y, 1); //end
+      }
+      for (int c = 0; c < componentNo - 1; ++c) {
+        //Potentials
+        *valPtr(U, c, x, y, 0) = val(U, c, x, y, fMZ - 2); //start
+        *valPtr(U, c, x, y, fMZ - 1) = val(U, c, x, y, 1); //end
+      }
+    }
+  }
+}
+
+void Mesodyn::bNothing() {
+  if (debug)
+    cout << "bNothing in Mesodyn" << endl;
+  //do nothing
+}
+
 /******* Output generation *******/
 
 void Mesodyn::prepareOutputFile() {
@@ -547,8 +814,6 @@ inline Real* Mesodyn::valPtr(vector<Real>& v, int c, int x, int y, int z) {
 }
 
 int Mesodyn::factorial(int n) {
-  if (debug)
-    cout << "factorial in Mesodyn." << endl;
   if (n > 1) {
     return n * factorial(n - 1);
   } else
@@ -556,8 +821,6 @@ int Mesodyn::factorial(int n) {
 }
 
 int Mesodyn::combinations(int n, int k) {
-  if (debug)
-    cout << "combinations in Mesodyn." << endl;
   return factorial(n) / (factorial(n - k) * factorial(k));
 }
 

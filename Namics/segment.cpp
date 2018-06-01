@@ -24,15 +24,18 @@ if (debug) cout <<"Segment destructor " + name << endl;
 
 void Segment::DeAllocateMemory(void){
 if (debug) cout << "In Segment, Deallocating memory " + name << endl;
+
 if (n_pos>0) cout <<"problem for n_pos " <<endl; 
 	if(n_pos>0) free(H_P);
 	if (freedom != "free"){
 		 free(r);
 	}
-	free(H_u); free(H_phi);
-	if (freedom =="free") {
+	free(H_u); 
+	free(H_phi);
+	if (freedom !="free") {
 		free(H_MASK);
 	}
+
 #ifdef CUDA
 	if(n_pos>0) cudaFree(P);
 	cudaFree(u); cudaFree(phi); 
@@ -41,6 +44,7 @@ if (n_pos>0) cout <<"problem for n_pos " <<endl;
 #else
 	//free(G1); 
 	free(phi_side);
+
 #endif
 }
 
@@ -145,7 +149,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		}
 
 		if (freedom =="clamp" ) {
-			n_box=0;
+			n_box=0; mx=0;
 			if (GetValue("clamp_filename").size()>0) {
 				if (!GetClamp(GetValue("clamp_filename"))) {
 					success=false; cout <<"Failed to read 'clamp_filename'. Problem terminated" << endl;

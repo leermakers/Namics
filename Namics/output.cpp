@@ -77,7 +77,7 @@ if (debug) cout <<"Load in output " << endl;
 			cout << "vtk output can have only one member. Multiple entries were found namely: " << endl;
 			success=false;
 			int length=OUT_key.size();
-			for (int i=0; i<length; i++) cout << name << " : " << OUT_key[i] << " : " << OUT_name[i] << " : " << OUT_prop[i] << endl;
+			for (int i=0; i<length; i++) cout << name << ":" << OUT_key[i] << ":" << OUT_name[i] << ":" << OUT_prop[i] << endl;
 		}
 
 	}
@@ -326,7 +326,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 
 	if (name=="vtk") {
 		Real*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0]);
-		string s=OUT_key[0].append(" : ").append(OUT_name[0]).append(" : ").append(OUT_prop[0]);
+		string s=OUT_key[0].append(":").append(OUT_name[0]).append(":").append(OUT_prop[0]);
 		if (!(X==NULL))
 		Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found" << endl;}
 	}

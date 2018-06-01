@@ -846,17 +846,17 @@ if (debug) cout << "vtk in lattice " << endl;
 			cout << "for system with one gradient there is no VTK output available " << endl;
 			break;
 		case 2:
-			fprintf(fp,"# vtk DataFile Version 7.0 \nvtk output \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i\n",MX,MY,1);
+			fprintf(fp,"# vtk DataFile Version 3.0 \nvtk output \nASCII \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i\n",MX,MY,1);
 			fprintf(fp,"SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i\n",MX*MY);
-			fprintf(fp,"SCALARS %s \nLOOKUP_TABLE default \n",id.c_str());
+			fprintf(fp,"SCALARS %s double \nLOOKUP_TABLE default \n",id.c_str());
 			for (i=1; i<MX+1; i++)
 			for (j=1; j<MY+1; j++)
 			fprintf(fp,"%f \n",X[i*JX+j]);
 			break;
 		case 3:
-			fprintf(fp,"# vtk DataFile Version 7.0 \nvtk output \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i\n",MX,MY,MZ);
+			fprintf(fp,"# vtk DataFile Version 3.0  \nvtk output \nASCII \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i\n",MX,MY,MZ);
 			fprintf(fp,"SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i\n",MX*MY*MZ);
-			fprintf(fp,"SCALARS %s \nLOOKUP_TABLE default \n",id.c_str());
+			fprintf(fp,"SCALARS %s double \nLOOKUP_TABLE default \n",id.c_str());
 			for (i=1; i<MX+1; i++)
 			for (j=1; j<MY+1; j++)
 			for (k=1; k<MZ+1; k++)

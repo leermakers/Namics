@@ -1,11 +1,12 @@
 #define MAINxH
 #include "alias.h"
-#include "engine.h"
+#include "engine.h" 
 #include "input.h"
 #include "lattice.h"
 #include "molecule.h"
 #include "namics.h"
 #include "mesodyn.h"
+#include "cleng.h"
 #include "newton.h"
 #include "output.h"
 #include "segment.h"
@@ -105,6 +106,7 @@ int main(int argc, char* argv[]) {
   vector<Engine*> Eng;
   vector<Variate*> Var;
   vector<Mesodyn*> Mes;
+  vector<Cleng*> Cle; //enginge for clampled molecules 
 
   // Create input class instance and handle errors(reference above)
   In.push_back(new Input(filename.str()) );
@@ -309,7 +311,13 @@ int main(int argc, char* argv[]) {
   /********* This is the starting point of all calculations. *********/
 
       //If mesodyn is to be used, go through this loop
-      if (New[0]->method == "DIIS-mesodyn") {
+      if (New[0]->method == "DIIS-mesodyn" || In[0]->ClengList.size()>0) {
+	if (In[0]->ClengList.size()>0) {
+		if (!debug) cout << "Creating Cleng module" << endl;
+		Cle.push_back(new Cleng(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->ClengList[0]));      
+		if (!Cle[0]->CheckInput(start)) {return 0;}
+		Cle[0]->MonteCarlo();
+	} else {
         // Create mesodyn class instance and check inputs (reference above)
         if (debug) cout << "Creating mesodyn" << endl;
         Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
@@ -318,6 +326,7 @@ int main(int argc, char* argv[]) {
         }
         Mes[start-1]->mesodyn();
       //Otherwise, go through the classic function solve.
+	}
       } else {
         if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
           New[0]->Solve(true);
@@ -379,9 +388,8 @@ int main(int argc, char* argv[]) {
         MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
       }
       Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->method, MONLIST, Sys[0]->charged, start);
-    }
-    for (int i = 0; i < n_out; i++)
-      delete Out[i];
+    } 
+    for (int i = 0; i < n_out; i++) delete Out[i];
     Out.clear();
     delete Eng[0];
     Eng.clear();
@@ -393,16 +401,12 @@ int main(int argc, char* argv[]) {
     delete Sys[0];
     Sys.clear();
     for (int i = 0; i < n_mol; i++) {
-      // Mol[i]->DeleteAl();
-      // int length_al = Mol[i]->MolAlList.size();
-      // for (int k=0; k<length_al; k++) {
-      // delete Mol[i]->Al[k]; Mol[i]->Al.clear();
-      //}
       delete Mol[i];
     }
     Mol.clear();
-    for (int i = 0; i < n_seg; i++)
-      delete Seg[i];
+    for (int i = 0; i < n_seg; i++) {
+	// delete Seg[i]; //gives error but I -frans- do not know why? guess it is not important at this moment.
+    }
     Seg.clear();
     delete Lat[0];
     Lat.clear();

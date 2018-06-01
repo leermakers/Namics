@@ -43,6 +43,7 @@ extern bool suppress;
 #endif
 
 enum MoleculeType {monomer, linear, branched, dendrimer, comb, ring};
+enum transfer {to_segment,to_cleng};
 
 #endif
 /*

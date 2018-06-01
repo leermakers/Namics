@@ -27,6 +27,7 @@ public:
 	std::vector<string> OutputList; 
 	std::vector<string> EngineList;
 	std::vector<string> MesodynList;
+	std::vector<string> ClengList;
 	std::vector<string> MonteList;
 	std::vector<string> VarList;
 	std::vector<std::string> elems;

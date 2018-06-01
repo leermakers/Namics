@@ -28,6 +28,7 @@ public:
 	vector<bool> bools_value;
 	vector<string> strings_value;
 	int Positions1Dto3D(int*, int, int, int);
+	bool Simulate();
 	void push(string,Real);
 	void push(string,int);
 	void push(string,bool);

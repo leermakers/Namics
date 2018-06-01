@@ -118,6 +118,7 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 			vector<string>method_options;
 			method_options.push_back("DIIS");
 			method_options.push_back("DIIS-mesodyn");
+			method_options.push_back("MonteCarlo");
 			//method_options.push_back("DIIS-ext"); //can be included again when adjusted for charges and guess
 			//method_options.push_back("Picard"); //can be included again when adjusted for charges and guess
 			method_options.push_back("pseudohessian");

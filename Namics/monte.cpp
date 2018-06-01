@@ -1,6 +1,7 @@
 #include "monte.h"
 
 Monte::Monte(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_, string name_) {
+	cout << "constructor in Monte" << endl;
 	In=In_; name=name_;   Lat=Lat_; Mol=Mol_; Seg = Seg_; Sys=Sys_; New=New_; 
 	KEYS.push_back("timesteps"); KEYS.push_back("walks"); 
 	KEYS.push_back("timebetweensaves");
@@ -35,7 +36,7 @@ if (debug) cout <<"Check Monte" << endl;
 int Monte::Positions1Dto3D(int* H_P, int n_pos, int JX, int JY){
 // Usually position is flattened into 1D. To make monte carlo moves we need particle co-ordinates in 3D
 // This procedure converts flattend array into expanded 3D array. 
-	int pos_x[n_pos];
+/*	int pos_x[n_pos];
 	int pos_y[n_pos];
 	int pos_z[n_pos];
 	for(int i=0; i<n_pos; i++){
@@ -43,7 +44,17 @@ int Monte::Positions1Dto3D(int* H_P, int n_pos, int JX, int JY){
 	pos_y[i]=(H_P[i]-pos_x[i]*JX)/JY;
 	pos_z[i]=(H_P[i]-pos_x[i]*JX)%JY;
 	}
+*/
 	return 0;
+}
+
+bool Monte::Simulate(){
+	bool success=true;
+	for (int i=1; i<3; i++){
+	cout << "Running Monte-Carlo simulations" << endl;
+	New[0]->Solve(true);
+	cout << "Change in Free energy, computed" << endl;}
+	return success;
 }
 
 

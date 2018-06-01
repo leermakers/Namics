@@ -1,5 +1,7 @@
 #include "lattice.h"
-Lattice::Lattice(vector<Input*> In_,string name_) { //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
+Lattice::Lattice(vector<Input*> In_,string name_) :
+	BC(6) // resize the boundary condition vector to 6 for Mesodyn
+{ //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
 if (debug) cout <<"Lattice constructor" << endl;
 	In=In_; name=name_;
 	KEYS.push_back("gradients"); KEYS.push_back("n_layers"); KEYS.push_back("offset_first_layer");
@@ -10,10 +12,10 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("lowerbound_y"); KEYS.push_back("upperbound_y");
 	KEYS.push_back("lowerbound_z"); KEYS.push_back("upperbound_z");
  	KEYS.push_back("bondlength");  KEYS.push_back("lattice_type");
-	KEYS.push_back("lambda"); 
-	KEYS.push_back("Z"); 
-	KEYS.push_back("FJC_choices"); 
-	sub_box_on=0; 
+	KEYS.push_back("lambda");
+	KEYS.push_back("Z");
+	KEYS.push_back("FJC_choices");
+	sub_box_on=0;
 }
 
 Lattice::~Lattice() {
@@ -29,8 +31,8 @@ if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 	       if (fjc==1) {
 			free(lambda_1);
 			free(lambda1);
-			free(lambda0); 
-			free(L); 
+			free(lambda0);
+			free(L);
 		} else {free(L); free(LAMBDA); }
 	}
 #ifdef CUDA
@@ -41,9 +43,9 @@ if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 }
 
 void Lattice::AllocateMemory(void) {
-if (debug) cout <<"AllocateMemory in lattice " << endl; 
+if (debug) cout <<"AllocateMemory in lattice " << endl;
 	Real r,VL,LS;
-	Real rlow,rhigh; 
+	Real rlow,rhigh;
 	Real one_over_lambda_min_two=1.0/lambda-2.0;
 	int i,j,k;
 	PutM();
@@ -96,11 +98,11 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 						}
 					}
 
-				} 
+				}
 				if (geometry =="cylindrical") {
-										
+
 					for (i=fjc; i<M-fjc; i++) {
-						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc; 
+						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc;
 						rlow=r-0.5;
 						rhigh=r+0.5;
 						L[i]=PIE*(2.0*r)/fjc;
@@ -114,13 +116,13 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 							for (j=1; j<=fjc; j++) {
 								if (2*rhigh-r-MX > 0.99*j/fjc && 2*rhigh-r-MX < 1.01*j/fjc) {
 									LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*2.0*(rhigh-1.0*j/fjc)/VL;
-								} 
+								}
 							}
 						}
 						for (j=1; j<fjc; j++) {
 							rlow += 0.5/(fjc);
 							rhigh -= 0.5/(fjc);
-							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*2.0*rlow/VL; 
+							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*2.0*rlow/VL;
 							if ((rhigh-r)*2+r < offset_first_layer+MX) LAMBDA[i+(FJC-1-j)*M]+=1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
 							else {
 								if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001 ) {
@@ -129,7 +131,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 								for (k=1; k<=fjc; k++) {
 									if (2*rhigh-r-MX > 0.99*k/fjc && 2*rhigh-r-MX < 1.01*k/fjc) {
 										LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*2.0*(rhigh-1.0*k/fjc)/VL;
-									} 
+									}
 								}
 							}
 						}
@@ -140,9 +142,9 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 				}
 
 
-				if (geometry =="spherical") {//todo : test 
+				if (geometry =="spherical") {//todo : test
 					for (i=fjc; i<M-fjc; i++) {
-						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc; 
+						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc;
 						rlow=r-0.5;
 						rhigh=r+0.5;
 						L[i]=PIE*4.0/3.0*(rhigh*rhigh*rhigh-rlow*rlow*rlow)/fjc;
@@ -156,13 +158,13 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 							for (j=1; j<=fjc; j++) {
 								if (2*rhigh-r-MX > 0.99*j/fjc && 2*rhigh-r-MX < 1.01*j/fjc) {
 									LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*4.0*(rhigh-1.0*j/fjc)*(rhigh-1.0*j/fjc)/VL;
-								} 
+								}
 							}
 						}
 						for (j=1; j<fjc; j++) {
 							rlow += 0.5/(fjc);
 							rhigh -= 0.5/(fjc);
-							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*4.0*rlow*rlow/VL; 
+							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*4.0*rlow*rlow/VL;
 							if ((rhigh-r)*2+r < offset_first_layer+MX) LAMBDA[i+(FJC-1-j)*M]+=1.0/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
 							else {
 								if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001 ) {
@@ -171,7 +173,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 								for (k=1; k<=fjc; k++) {
 									if (2*rhigh-r-MX > 0.99*k/fjc && 2*rhigh-r-MX < 1.01*k/fjc) {
 										LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*4.0*(rhigh-1.0*k/fjc)*(rhigh-1.0*k/fjc)/VL;
-									} 
+									}
 								}
 							}
 						}
@@ -376,32 +378,32 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				options.clear();
 				options.push_back("mirror"); //options.push_back("mirror_2");
 				//options.push_back("surface");
-				if (GetValue("lowerbound_x").size()>0) {cout << "lowerbond_x is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("lowerbound_y").size()>0) {cout << "lowerbond_y is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbond_z is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("upperbound_x").size()>0) {cout << "upperbond_x is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("upperbound_y").size()>0) {cout << "upperbond_y is not allowed in 1-gradient calculations" << endl; success=false;}
-				if (GetValue("upperbound_z").size()>0) {cout << "upperbond_z is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_x").size()>0) {cout << "lowerbound_x is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_y").size()>0) {cout << "lowerbound_y is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbound_z is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_x").size()>0) {cout << "upperbound_x is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_y").size()>0) {cout << "upperbound_y is not allowed in 1-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_z").size()>0) {cout << "upperbound_z is not allowed in 1-gradient calculations" << endl; success=false;}
 
 				Value.clear();
 				Value=GetValue("lowerbound");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound' boundary condition not recognized.")) success=false;
-					if (VALUE1=="mirror") { BX1=1; BC.push_back("mirror"); }
+					if (VALUE1=="mirror") { BX1=1; BC[0] = VALUE1; }
 					//if (VALUE1=="surface") { BX1=0;BC.push_back("surface");}
 				} else {
 					VALUE1="mirror";
 					BX1=1;
-					BC.push_back("mirror");
+					BC[0] = VALUE1;
 				}
 				Value.clear();
 				Value=GetValue("upperbound");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE2,options,"for 'upperbound' boundary condition not recognized.")) success=false;
-					if (VALUE2=="mirror")  { BXM=MX; BC.push_back("mirror"); }
+					if (VALUE2=="mirror")  { BXM=MX; BC[1] = VALUE2; }
 					//if (VALUE2=="surface") { BXM=MX+1; BC.push_back("surface");}
 				} else {
-					VALUE2="mirror"; BC.push_back("mirror");
+					VALUE2="mirror"; BC[1] = VALUE2;
 					BXM=MX;
 				}
 
@@ -444,31 +446,31 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				options.push_back("mirror"); //options.push_back("mirror_2");
 				//options.push_back("surface");
 				if (geometry=="planar") options.push_back("periodic");
-				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbond_z is not allowed in 2-gradient calculations" << endl; success=false;}
-				if (GetValue("upperbound_z").size()>0) {cout << "upperbond_z is not allowed in 2-gradient calculations" << endl; success=false;}
+				if (GetValue("lowerbound_z").size()>0) {cout << "lowerbound_z is not allowed in 2-gradient calculations" << endl; success=false;}
+				if (GetValue("upperbound_z").size()>0) {cout << "upperbound_z is not allowed in 2-gradient calculations" << endl; success=false;}
 
 				Value.clear();
 				Value=GetValue("lowerbound_x");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE1);
+					BC[0] = VALUE1;
 					if (VALUE1=="mirror") BX1=1;
 					//if (VALUE1=="surface")  BX1=0;
 					if (VALUE1=="periodic") BX1=MX;
 				} else {
-					VALUE1="mirror"; BC.push_back("mirror");
+					VALUE1="mirror"; BC[0] = VALUE1;
 					BX1=1;
 				}
 				Value.clear();
 				Value=GetValue("upperbound_x");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE2,options,"for 'upperbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE2);
+					BC[1] = VALUE2;
 					if (VALUE2=="mirror")  BXM=MX;
 					//if (VALUE2=="surface")  BXM=MX+1;
 					if (VALUE2=="periodic") BXM=1;
 				} else {
-					VALUE2="mirror"; BC.push_back("mirror");
+					VALUE2="mirror"; BC[1] = VALUE2;
 					BXM=MX;
 				}
 
@@ -477,24 +479,24 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value=GetValue("lowerbound_y");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE3,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE3);
+					BC[2] = VALUE3;
 					if (VALUE3=="mirror") BY1=1;
 					//if (VALUE3=="surface")  BY1=0;
 					if (VALUE3=="periodic") BY1=MY;
 				} else {
-					VALUE3="mirror"; BC.push_back("mirror");
+					VALUE3="mirror"; BC[2] = VALUE3;
 					BY1=1;
 				}
 				Value.clear();
 				Value=GetValue("upperbound_x");
 				if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE4,options,"for 'upperbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE4);
+					BC[3] = VALUE4;
 					if (VALUE4=="mirror") BYM=MY;
 					//if (VALUE4=="surface")  BYM=MY+1;
 					if (VALUE4=="periodic") BYM=1;
 				} else {
-					VALUE4="mirror"; BC.push_back("mirror");
+					VALUE4="mirror"; BC[3] = VALUE4;
 					BYM=MY;
 				}
 				if (VALUE1=="periodic" || VALUE2=="periodic") {
@@ -519,61 +521,61 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value.clear();
 				Value=GetValue("lowerbound_x"); if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE1);
+					BC[1] = VALUE1;
 					if (VALUE1=="mirror") BX1=1;
 					if (VALUE1=="periodic") BX1=MX;
 				} else {
-					VALUE1="periodic"; BC.push_back(VALUE1);
+					VALUE1="periodic"; BC[0] = VALUE1;
 					BX1=MX;
 				}
 				Value.clear();
-				Value=GetValue("lowerbound_y"); if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,VALUE2,options,"for 'lowerbound_y' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE2);
-					if (VALUE2=="mirror") BY1=1;
-					if (VALUE2=="periodic") BY1=MY;
-				} else {
-					VALUE2="periodic";BC.push_back(VALUE2);
-					BY1=MY;
-				}
-				Value.clear();
-				Value=GetValue("lowerbound_z"); if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,VALUE3,options,"for 'lowerbound_z' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE3);
-					if (VALUE3=="mirror") BZ1=1;
-					if (VALUE3=="periodic") BZ1=MZ;
-				} else {
-					VALUE3="periodic"; BC.push_back(VALUE3);
-					BZ1=MZ;
-				}
-				Value.clear();
 				Value=GetValue("upperbound_x"); if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,VALUE4,options,"for 'upperbound_x' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE4);
-					if (VALUE4=="mirror") BXM=MX;
-					if (VALUE4=="periodic") BXM=1;
+					if (!In[0]->Get_string(Value,VALUE2,options,"for 'upperbound_x' boundary condition not recognized.")) success=false;
+					BC[1]=VALUE2;
+					if (VALUE2=="mirror") BXM=MX;
+					if (VALUE2=="periodic") BXM=1;
 				} else {
-					VALUE4="periodic"; BC.push_back(VALUE4);
+					VALUE2="periodic"; BC[1]=VALUE2;
 					BXM=1;
 				}
 				Value.clear();
-				Value=GetValue("upperbound_y"); if (Value.length()>0) {
-					if(!In[0]->Get_string(Value,VALUE5,options,"for 'upperbound_y' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE5);
-					if (VALUE5=="mirror") BYM=MY;
-					if (VALUE5=="periodic") BYM=1;
+				Value=GetValue("lowerbound_y"); if (Value.length()>0) {
+					if (!In[0]->Get_string(Value,VALUE3,options,"for 'lowerbound_y' boundary condition not recognized.")) success=false;
+					BC[2]=VALUE3;
+					if (VALUE3=="mirror") BY1=1;
+					if (VALUE3=="periodic") BY1=MY;
 				} else {
-					VALUE5="periodic";BC.push_back(VALUE5);
+					VALUE3="periodic";BC[2]=VALUE3;
+					BY1=MY;
+				}
+				Value.clear();
+				Value=GetValue("upperbound_y"); if (Value.length()>0) {
+					if(!In[0]->Get_string(Value,VALUE4,options,"for 'upperbound_y' boundary condition not recognized.")) success=false;
+					BC[3] = VALUE4;
+					if (VALUE4=="mirror") BYM=MY;
+					if (VALUE4=="periodic") BYM=1;
+				} else {
+					VALUE4="periodic"; BC[3] = VALUE4;
 					BYM=1;
+				}
+				Value.clear();
+				Value=GetValue("lowerbound_z"); if (Value.length()>0) {
+					if (!In[0]->Get_string(Value,VALUE5,options,"for 'lowerbound_z' boundary condition not recognized.")) success=false;
+					BC[4] = VALUE5;
+					if (VALUE5=="mirror") BZ1=1;
+					if (VALUE5=="periodic") BZ1=MZ;
+				} else {
+					VALUE3="periodic"; BC[4] = VALUE5;
+					BZ1=MZ;
 				}
 				Value.clear();
 				Value=GetValue("upperbound_z"); if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE6,options,"for 'upperbound_z' boundary condition not recognized.")) success=false;
-					BC.push_back(VALUE6);
+					BC[5] = VALUE6;
 					if (VALUE6=="mirror") BZM=MZ;
 					if (VALUE6=="periodic") BZM=1;
 				} else {
-					VALUE6="periodic";BC.push_back(VALUE6);
+					VALUE6="periodic"; BC[5] = VALUE6;
 					BZM=1;
 				}
 
@@ -599,9 +601,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (FJC %4 != 3) {cout << "FJC_choices can adopt only few integer values: 3 + i*4, with i = 1, 2, 3, 4, ...." <<endl; success=false;}
 			}
 			if (success && (gradients>1)) {cout << "FJC_choices can only be used in combination with 'gradients == planar' " << endl; success=false;}
-			if (success && (lattice_type != "hexagonal")) {cout << "FJC_choices can only be used in combination with 'lattice_type == hexagonal' "<<endl; success=false;} 
-			//cout <<FJC <<"FJC_choices" << endl; 
-			fjc=(FJC-1)/2; 
+			if (success && (lattice_type != "hexagonal")) {cout << "FJC_choices can only be used in combination with 'lattice_type == hexagonal' "<<endl; success=false;}
+			//cout <<FJC <<"FJC_choices" << endl;
+			fjc=(FJC-1)/2;
 			//cout <<fjc <<"divisions per segment" << endl;
 			M *=fjc;
 		}
@@ -945,7 +947,7 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	push("volume",volume);
 	push("lattice_type",lattice_type);
 	push("bond_length",bond_length);
-	push("FJC_choices",FJC); 
+	push("FJC_choices",FJC);
 	string s="profile;0"; push("L",s);
 
 	switch (gradients) {
@@ -991,7 +993,8 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 }
 
 Real* Lattice::GetPointer(string s) {
-if (debug) cout <<"GetPointer for Mol " + name << endl;	vector<string> sub;
+if (debug) cout <<"GetPointer for Mol " + name << endl;
+	vector<string> sub;
 	In[0]->split(s,';',sub);
 	if (sub[1]=="0") return L;
 	return NULL;
@@ -1159,7 +1162,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 					AddTimes(gs+kk,gs_1,LAMBDA+j*M+kk,M-kk);
 					AddTimes(gs,gs_1+kk,LAMBDA+(FJC-j-1)*M,M-kk);
 				}
-				AddTimes(gs,gs_1,LAMBDA+(FJC-1)/2*M,M); 
+				AddTimes(gs,gs_1,LAMBDA+(FJC-1)/2*M,M);
 				Times(gs,gs,G1,M);
 			}
 			break;
@@ -1981,7 +1984,7 @@ Real Lattice::ComputeTheta(Real* phi) {
 }
 
 bool Lattice::ReadGuess(string filename, Real *x ,string &method, vector<string> &monlist, bool &charged, int &mx, int &my, int &mz, int &fjc, int readx) {
-if (debug) cout <<"ReadGuess in output" << endl; 
+if (debug) cout <<"ReadGuess in output" << endl;
 	bool success=true;
 	ifstream in_file;
 	string s_charge;
@@ -1991,7 +1994,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 	if (in_file.is_open()) {
 		while (in_file && readx>-1) {
 			in_file>>method;
-			in_file>>mx>>my>>mz>>fjc;		
+			in_file>>mx>>my>>mz>>fjc;
 			in_file>>s_charge;
 			if (s_charge=="true") charged=true; else charged=false;
 			in_file>>num;
@@ -2422,13 +2425,13 @@ void PROPAGATE(Real *G, Real *G1, int s_from, int s_to) { //on big box
 }
 
 
-void Lattice::Edis(Real *X_side, Real *X, int M) { //operation opposite to Side ;-) ....careful it distroys info in X_side. 
-if (debug) cout <<"Edis in lattice " << endl; 
+void Lattice::Edis(Real *X_side, Real *X, int M) { //operation opposite to Side ;-) ....careful it distroys info in X_side.
+if (debug) cout <<"Edis in lattice " << endl;
 	int j;
 	Zero(X_side,M); set_bounds(X);
 	if (fjc==1) {
 	} else {
-		for (j=0; j<fjc/2; j++) {	
+		for (j=0; j<fjc/2; j++) {
 			AddTimes(X_side+j,X,VL+j*M+j,M-j);
 			AddTimes(X_side,X+j,VL+(fjc-j-1)*M,M-j);
 		}

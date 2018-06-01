@@ -118,6 +118,7 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 			vector<string>method_options;
 			method_options.push_back("DIIS");
 			method_options.push_back("DIIS-mesodyn");
+			method_options.push_back("MonteCarlo");
 			//method_options.push_back("DIIS-ext"); //can be included again when adjusted for charges and guess
 			//method_options.push_back("Picard"); //can be included again when adjusted for charges and guess
 			method_options.push_back("pseudohessian");
@@ -970,10 +971,10 @@ if(debug) cout <<"PutU in  Newton " << endl;
 		int length = In[0]->MolList.size();
 		while (i<length) {
 			int j=0;
-			int LENGTH=Mol[i]->MolMonList.size(); 
+			int LENGTH=Mol[i]->MolMonList.size();
 			while (j<LENGTH) {
-				Cp(Mol[i]->u+j*M,Seg[Mol[i]->MolMonList[j]]->u,M); j++; 
-			} 
+				Cp(Mol[i]->u+j*M,Seg[Mol[i]->MolMonList[j]]->u,M); j++;
+			}
 			i++;
 		}
 	}
@@ -1098,7 +1099,7 @@ void Newton::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 	int pos_i,pos_o;
 	int JX=(MY+2)*(MZ+2);
 	int JY=(MZ+2);
-	Real Xvalue; 
+	Real Xvalue;
 	int fjc=Lat[0]->fjc;
 
 	switch (Lat[0]->gradients) {
@@ -1110,10 +1111,11 @@ void Newton::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 			if (MZ>0) { pos_i=JX+JY; pos_o=MZ+2;} else {if (MY>0) {pos_i=JX; pos_o=MY+2; } else { pos_i=0; pos_o=MX+2; } }
 			for (i=0; i<mx+2; i++)  if (i<pos_o) x[i]=X[pos_i+i];
 			} else {
-				for (i=0; i<mx+2; i++) { 
+				for (i=0; i<mx+2; i++) {
 					Xvalue=0; pos_i=0; pos_o=MX+2;
 					if (i<pos_o) {
-						for (j=0; j<fjc_old; j++) Xvalue+=X[i*fjc_old+j]; Xvalue/=fjc_old;  
+						for (j=0; j<fjc_old; j++) Xvalue+=X[i*fjc_old+j];
+						Xvalue/=fjc_old;
 						for (j=0; j<fjc; j++) {if (fjc!=fjc_old) x[i*fjc+j]=Xvalue; else  x[i*fjc+j]= X[i*fjc+j];}
 					} else for (j=0; j<fjc; j++) x[i*fjc+j]=0;
 				}
@@ -1175,7 +1177,7 @@ bool Newton::Guess(Real *X, string METHOD, vector<string> MONLIST, bool CHARGED,
 	} else {
 		int m;
 		if (MZ>0) {m=(MX+2)*(MY+2)*(MZ+2); } else { if (MY>0) { m=(MX+2)*(MY+2); } else {  m=(MX+2);}}
-		if (fjc_old>1) m*=fjc_old; 
+		if (fjc_old>1) m*=fjc_old;
 		int length_old_mon=MONLIST.size();
 		int length_new_mon=Sys[0]->SysMonList.size();
 		for (int i = 0; i<length_old_mon; i++) {

@@ -565,7 +565,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					if (VALUE5=="mirror") BZ1=1;
 					if (VALUE5=="periodic") BZ1=MZ;
 				} else {
-					VALUE3="periodic"; BC[4] = VALUE5;
+					VALUE5="periodic"; BC[4] = VALUE5;
 					BZ1=MZ;
 				}
 				Value.clear();
@@ -579,14 +579,14 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					BZM=1;
 				}
 
-				if (VALUE1=="periodic" || VALUE4=="periodic") {
-					if (VALUE1 != VALUE4) {cout <<"In x-direction the boundary conditions do not match:" + VALUE1 << " and " <<  VALUE4 << endl; success=false;}
+				if (VALUE1=="periodic" || VALUE2=="periodic") {
+					if (VALUE1 != VALUE2) {cout <<"In x-direction the boundary conditions do not match:" + VALUE1 << " and " <<  VALUE2 << endl; success=false;}
 				}
-				if (VALUE2=="periodic" || VALUE5=="periodic") {
-					if (VALUE2 != VALUE5) {cout <<"In y-direction the boundary conditions do not match:" + VALUE2 << " and " <<  VALUE5 << endl; success=false;}
+				if (VALUE3=="periodic" || VALUE4=="periodic") {
+					if (VALUE3 != VALUE4) {cout <<"In y-direction the boundary conditions do not match:" + VALUE3 << " and " <<  VALUE4 << endl; success=false;}
 				}
-				if (VALUE3=="periodic" || VALUE6=="periodic") {
-					if (VALUE3 != VALUE6) {cout <<"In z-direction the boundary conditions do not match:" + VALUE3 << " and " <<  VALUE6 << endl; success=false;}
+				if (VALUE5=="periodic" || VALUE6=="periodic") {
+					if (VALUE5 != VALUE6) {cout <<"In z-direction the boundary conditions do not match:" + VALUE5 << " and " <<  VALUE6 << endl; success=false;}
 				}
 
 				break;

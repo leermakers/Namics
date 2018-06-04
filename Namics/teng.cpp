@@ -187,7 +187,7 @@ bool Teng::CheckInput(int start) {
    		n_out = In[0]->OutputList.size();
     		if (n_out == 0) cout << "Warning: no output defined!" << endl;
     		for (int i =  0; i < n_out; i++) {
-      			Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out));
+      			Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], i, n_out));
        			if (!Out[i]->CheckInput(start)) {
         		cout << "input_error in output " << endl;
         		success=false;

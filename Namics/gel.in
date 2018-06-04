@@ -1,0 +1,52 @@
+lat : flat : gradients : 3
+lat : flat : n_layers_x : 20
+lat : flat : n_layers_y : 20
+lat : flat : n_layers_z : 20
+lat : flat : geometry : planar
+lat : flat : lattice_type : simple_cubic
+
+mon : W : freedom : free
+mon : X : freedom : clamp
+
+mon : X : clamp_info : (5,5,5)(15,5,5);(5,5,5)(5,15,5);(5,5,5)(5,5,15);(15,5,5)(15,5,15);(5,15,5)(15,15,5);(5,5,15)(5,15,15);(15,15,5)(15,15,15);(15,15,5)(15,25,5);(15,5,15)(15,15,15);(15,5,15)(25,5,15);(5,15,15)(5,15,25);(5,15,15)(15,15,15)
+mon : A : freedom : free
+mon : X : sub_box_size : 14
+
+mol : pol : composition : (X)1(A)99(X)1
+mol : pol : freedom : clamped
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+newton : isaac : method : pseudohessian 
+//newton : isaac : m : 4
+newton : isaac : deltamax : 1
+newton : isaac : e_info : true
+newton :isaac : iterationlimit: 100
+
+//sys : sacha : GPU : true
+output : vtk : append : false
+vtk : mol : pol : phi
+
+output : kal : append : true
+kal : sys : noname : free_energy
+kal : output : noname : MCS
+kal : output : noname : t
+
+output : pro : append : false
+pro : mon : X : phi
+
+output : pos : append : true
+pos : output : noname : X
+pos : output : noname : Y
+pos : output : noname : Z
+
+output : vec : append : true
+vec : mol : pol : gn
+vec : output : noname : gn
+
+cleng : sascha : MCS : 10
+cleng : sascha : save_interval : 1
+
+start
+

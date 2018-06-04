@@ -12,13 +12,11 @@ Cleng::Cleng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, v
       Eng{Eng_}
 
 {
-  KEYS.push_back("MCS");
-  KEYS.push_back("save_interval");
-  KEYS.push_back("save_filename");
-  KEYS.push_back("seed");
-  if (debug) cout << "Cleng initialized" << endl;
-
-
+	if (debug) cout << "Cleng initialized" << endl;
+ 	 KEYS.push_back("MCS");
+  	KEYS.push_back("save_interval");
+  	KEYS.push_back("save_filename");
+  	KEYS.push_back("seed");
 }
 
 Cleng::~Cleng() {
@@ -152,6 +150,7 @@ void Cleng::WriteOutput(int subloop){
        }
       // length = In[0]->AliasList.size();
       // for (int i=0; i<length; i++) Al[i]->PushOutput();
+
       for (int i = 0; i < n_out; i++) {
         Out[i]->WriteOutput(subloop);
 	}

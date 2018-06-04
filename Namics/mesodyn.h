@@ -11,9 +11,8 @@
 
 
 class Mesodyn {
-public:
 
-  //private:
+private:
   const string name;
   const vector<Input*> In;
   const vector<Lattice*> Lat;
@@ -35,8 +34,12 @@ public:
   const int MZ;
   const int MY;
   const int MX;
+  const int LMZ;
+  const int LMY;
+  const int LMX;
   const int M;
-  int componentNo;
+  const int componentNo;
+  const int cCombinations;
   const int dimensions;
   vector<Real> J;
   vector<Real> L;
@@ -76,7 +79,7 @@ public:
 
   void bNothing();
 
-//public:
+public:
   Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
   ~Mesodyn();
 

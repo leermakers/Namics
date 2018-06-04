@@ -235,7 +235,7 @@ bool Mesodyn::mesodyn() {
 
   for (int t = 1; t < timesteps; t++) { // get segment potentials by iteration so that they match the given rho.
     cout << "MESODYN: t = " << t << endl;
-    New[0]->SolveMesodyn(&rho[0]);
+    New[0]->SolveMesodyn(rho);
     onsagerCoefficient();
     potentialDifference();
     boundaryConditions();

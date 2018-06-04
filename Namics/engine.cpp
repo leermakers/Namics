@@ -28,10 +28,10 @@ if (debug) cout <<"Check Engine" << endl;
                    if (!In[0]->Get_string(GetValue("brand"),brand,options,"In engine " + name + " value of brand " + brand + " is not recognised"));
 		} ;
 		if (brand=="mesodyn") {
-			Mdyn.push_back(new Mesodyn(In,Lat,Seg,Mol,Sys,New,In[0]->MesodynList[0])); success=Mdyn[0]->CheckInput(start);
+			//Mdyn.push_back(new Mesodyn(In,Lat,Seg,Mol,Sys,New,In[0]->MesodynList[0])); success=Mdyn[0]->CheckInput(start);
 		}
 		if (brand=="monte") {
-                        Mont.push_back(new Monte(In,Lat,Seg,Mol,Sys,New,In[0]->MonteList[0])); success=Mont[0]->CheckInput(start);
+                        //Mont.push_back(new Monte(In,Lat,Seg,Mol,Sys,New,In[0]->MonteList[0])); success=Mont[0]->CheckInput(start);
                 }
 
 	}

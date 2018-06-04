@@ -26,7 +26,7 @@ endif
 CPPFLAGS = -I$(INC_DIR) $(DEBUG_STR) -Wall
 CPPFLAGS+= -O3
 
-	CPPFLAGS = -I$(INC_DIR) $(DEBUG_STR)  -O3 -Wall -DHAS_LAPACK -DNO_BLAS_WRAP -std=c++11
+	CPPFLAGS = -I$(INC_DIR) $(DEBUG_STR)  -O3 -Wall -std=c++11
 #	CPPFLAGS = -I$(INC_DIR) $(DEBUG_STR) -g -O3 -Wall -DHAS_LAPACK -DNO_BLAS_WRAP
 CFLAGS = $(CPPFLAGS)
 
@@ -42,7 +42,7 @@ endif
 %.o: %.cu
 	$(NVCC) $(NVCCFLAGS) -c $< -o $@
 
-OBJECTS = namics.o tools.o input.o lattice.o segment.o alias.o molecule.o newton.o engine.o mesodyn.o cleng.o monte.o output.o variate.o system.o
+OBJECTS = namics.o tools.o input.o lattice.o segment.o alias.o molecule.o newton.o engine.o mesodyn.o cleng.o teng.o output.o variate.o system.o
 
 #namics : namics.o
 #	g++  -o namics namics.o -L$(LIB_DIR) $(LIBS)

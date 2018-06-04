@@ -1,13 +1,14 @@
-#include "output.h"
+#include "output.h" 
 #include "time.h"
 Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_,vector<Engine*> Eng_,string name_,int outnr,int N_out) {
 if (debug) cout <<"constructor in Output "<< endl;
 	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_; Eng=Eng_;
 	KEYS.push_back("write_bounds");
-	KEYS.push_back("append");
+	KEYS.push_back("append"); 
 	input_error=false;
 	//if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
 	//if (!Load()) {input_error=true;  cout <<"Error found in load output items in output module " << endl; }
+
 
 }
 Output::~Output() {
@@ -98,6 +99,8 @@ if (debug) cout << "CheckInput in output " << endl;
 			if (name=="kal") append=true;
 			if (name=="pro") append=false;
 			if (name=="vtk") append=false;
+			if (name=="vec") append=true;
+			if (name=="pro") append=true;
 		}
 		if (GetValue("write_bounds").size()>0) {
 			In[0]->Get_bool(GetValue("write_bounds"),write_bounds);
@@ -118,8 +121,8 @@ if (debug) cout << "GetValue in output " << endl;
 	return "";
 }
 
-Real* Output::GetPointer(string key, string name, string prop) {
-if (debug) cout << "GetPointer in output " << endl;
+int* Output::GetPointerInt(string key, string name, string prop, int &Size) {
+if (debug) cout << "GetPointerInt in output " << endl;
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
 	//int aliaslistlength;
@@ -131,16 +134,16 @@ if (debug) cout << "GetPointer in output " << endl;
 	if  (key=="mon") choice=3;
 	if  (key=="engine") choice=4;
 	if (key=="lat") choice=5;
+	if (key=="output") choice = 6; 
 
 	switch(choice) {
 		case 1:
 			listlength=Sys[0]->strings.size();
 			j=0;
 			while (j<listlength) {
-				if (prop==Sys[0]->strings[j]) return Sys[0]->GetPointer(Sys[0]->strings_value[j]);
+				if (prop==Sys[0]->strings[j]) return Sys[0]->GetPointerInt(Sys[0]->strings_value[j],Size);
 				j++;
 			}
-			//return Sys[0]->GetPointer(prop);
 			break;
 		case 2:
 			i=0;
@@ -149,7 +152,7 @@ if (debug) cout << "GetPointer in output " << endl;
 					listlength= Mol[i]->strings.size();
 					j=0;
 					while (j<listlength) {
-						if (prop==Mol[i]->strings[j]) return Mol[i]->GetPointer(Mol[i]->strings_value[j]);
+						if (prop==Mol[i]->strings[j]) return Mol[i]->GetPointerInt(Mol[i]->strings_value[j],Size);
 						j++;
 					}
 				}
@@ -163,7 +166,7 @@ if (debug) cout << "GetPointer in output " << endl;
 					listlength= Seg[i]->strings.size();
 					j=0;
 					while (j<listlength) {
-						if (prop==Seg[i]->strings[j]) return Seg[i]->GetPointer(Seg[i]->strings_value[j]);
+						if (prop==Seg[i]->strings[j]) return Seg[i]->GetPointerInt(Seg[i]->strings_value[j],Size);
 						j++;
 					}
 				}
@@ -174,7 +177,7 @@ if (debug) cout << "GetPointer in output " << endl;
 			listlength= Eng[0]->strings.size();
 			j=0;
 			while (j<listlength) {
-				if (prop==Eng[0]->strings[j]) return Eng[0]->GetPointer(Eng[0]->strings_value[j]);
+				if (prop==Eng[0]->strings[j]) return Eng[0]->GetPointerInt(Eng[0]->strings_value[j],Size);
 				j++;
 			}
 			break;
@@ -182,8 +185,97 @@ if (debug) cout << "GetPointer in output " << endl;
 			listlength= Lat[0]->strings.size();
 			j=0;
 			while (j<listlength) {
-				if (prop==Lat[0]->strings[j]) return Lat[0]->GetPointer(Lat[0]->strings_value[j]);
+				if (prop==Lat[0]->strings[j]) return Lat[0]->GetPointerInt(Lat[0]->strings_value[j],Size);
 				j++;
+			}
+			break;
+		case 6: 
+			listlength=PointerVectorInt.size();
+			j=0;
+			while (j<listlength) {
+				if (prop==strings[j]){ Size=SizeVectorInt[j];  return PointerVectorInt[j];}
+				j++;
+			}
+			break;
+		default:
+			cout << "Program error: in Output, GetPointerInt reaches default...." << endl;
+	}
+	return NULL;
+}
+Real* Output::GetPointer(string key, string name, string prop, int &Size) {
+if (debug) cout << "GetPointer in output " << endl;
+	int monlistlength=In[0]->MonList.size();
+	int mollistlength=In[0]->MolList.size();
+	//int aliaslistlength;
+	int listlength;
+	int choice;
+	int i,j;
+	if  (key=="sys") choice=1;
+	if  (key=="mol") choice=2;
+	if  (key=="mon") choice=3;
+	if  (key=="engine") choice=4;
+	if (key=="lat") choice=5;
+	if (key=="output") choice = 6; 
+
+	switch(choice) {
+		case 1:
+			listlength=Sys[0]->strings.size();
+			j=0;
+			while (j<listlength) {
+				if (prop==Sys[0]->strings[j]) return Sys[0]->GetPointer(Sys[0]->strings_value[j],Size);
+				j++;
+			}
+			//return Sys[0]->GetPointer(prop,Size);
+			break;
+		case 2:
+			i=0;
+			while (i<mollistlength){
+				if (name==In[0]->MolList[i]) {
+					listlength= Mol[i]->strings.size();
+					j=0;
+					while (j<listlength) {
+						if (prop==Mol[i]->strings[j]) return Mol[i]->GetPointer(Mol[i]->strings_value[j],Size);
+						j++;
+					}
+				}
+				i++;
+			}
+			break;
+		case 3:
+			i=0;
+			while (i<monlistlength){
+				if (name==In[0]->MonList[i]) {
+					listlength= Seg[i]->strings.size();
+					j=0;
+					while (j<listlength) {
+						if (prop==Seg[i]->strings[j]) return Seg[i]->GetPointer(Seg[i]->strings_value[j],Size);
+						j++;
+					}
+				}
+				i++;
+			}
+			break;
+		case 4:
+			listlength= Eng[0]->strings.size();
+			j=0;
+			while (j<listlength) {
+				if (prop==Eng[0]->strings[j]) return Eng[0]->GetPointer(Eng[0]->strings_value[j],Size);
+				j++;
+			}
+			break;
+		case 5:
+			listlength= Lat[0]->strings.size();
+			j=0;
+			while (j<listlength) {
+				if (prop==Lat[0]->strings[j]) return Lat[0]->GetPointer(Lat[0]->strings_value[j],Size);
+				j++;
+			}
+			break;
+		case 6: 
+			listlength=PointerVectorReal.size();
+			j=0;
+			while (j<listlength) {
+				if (prop==strings[j]){ Size=SizeVectorReal[j];  return PointerVectorReal[j];}
 			}
 			break;
 		default:
@@ -203,6 +295,7 @@ if (debug) cout << "GetValue (long) in output " << endl;
 	if  (key=="newton") choice=4;
 	if  (key=="lat") choice=5;
 	if  (key=="engine") choice=6;
+	if  (key=="output") choice=7;
 	switch(choice) {
 		case 1:
 			return Sys[0]->GetValue(prop,int_result,Real_result,string_result);
@@ -230,6 +323,9 @@ if (debug) cout << "GetValue (long) in output " << endl;
 		case 6:
 			return Eng[0]->GetValue(prop,int_result,Real_result,string_result);
 			break;
+		case 7:
+			return GetValue(prop,name,int_result,Real_result,string_result);
+			break;
 		default:
 			cout << "Program error: in Output, GetValue reaches default...." << endl;
 	}
@@ -237,8 +333,9 @@ if (debug) cout << "GetValue (long) in output " << endl;
 }
 
 void Output::WriteOutput(int subl) {
-if (debug) cout << "WriteOutput in output " << endl;
+if (debug) cout << "WriteOutput in output " + name << endl;
 	int length;
+	int Size=0;
 	string s;
 	string filename;
 	vector<string> sub;
@@ -249,9 +346,46 @@ if (debug) cout << "WriteOutput in output " << endl;
         sprintf(numc,"%d",subl);
 	char numcc[2];
 	sprintf(numcc,"%d",start);
-	if (name=="kal") filename=sub[0].append(".").append(name); else
+	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
 	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
-
+	if (name=="pos") {
+		length=OUT_key.size();
+		FILE *fp;
+		fp=fopen(filename.c_str(),"a");
+		for (int i=0; i<length; i++) {
+			key.clear();
+			string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
+			int* X=GetPointerInt(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
+			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of array is rejected " << endl;  
+			} else {
+				key=OUT_key[i];
+				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]).append(":");
+				fprintf(fp,"%s",s.c_str()); fprintf(fp,"%d\t",subl);
+				int length_vec=Size;
+				for (int j=0; j<length_vec; j++) fprintf(fp,"%i \t",X[j]); fprintf(fp,"\n"); 
+			}
+		}
+		fclose(fp);
+	}
+	if (name=="vec") {
+		length=OUT_key.size();
+		FILE *fp;
+		fp=fopen(filename.c_str(),"a");
+		for (int i=0; i<length; i++) {
+			key.clear();
+			string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
+			Real* X=GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
+			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of vector is rejected " << endl;  
+			}  else {
+				key=OUT_key[i];
+				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
+				fprintf(fp,"%s \t",s.c_str());
+				int length_vec=Size;
+				for (int j=0; j<length_vec; j++) fprintf(fp,"%e \t",X[j]); fprintf(fp,"\n"); 
+			}
+		}
+		fclose(fp);
+	}
 	if (name=="pro") {
 		vector<Real*> pointer;
 		FILE *fp;
@@ -272,7 +406,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 		}
 		//fprintf(fp,"x \t y \t z \t");
 		for (int i=0; i<length; i++) {
-			Real*  X = GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i]);
+			Real*  X = GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
 			if (X!=NULL) {
 				pointer.push_back(X);
 				key = OUT_key[i];
@@ -315,7 +449,7 @@ if (debug) cout << "WriteOutput in output " << endl;
 				if (sub[0]==OUT_prop[i]) {
 					fprintf(fp,"%s\t",string_result.c_str());
 				} else {
-					Real* X=GetPointer(OUT_key[i],OUT_name[i],sub[0]);
+					Real* X=GetPointer(OUT_key[i],OUT_name[i],sub[0],Size);
 					fprintf(fp,"%e\t",Lat[0]->GetValue(X,sub[1]));
 				}
 			}
@@ -325,10 +459,11 @@ if (debug) cout << "WriteOutput in output " << endl;
 	}
 
 	if (name=="vtk") {
-		Real*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0]);
-		string s=OUT_key[0].append(":").append(OUT_name[0]).append(":").append(OUT_prop[0]);
+		Real*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0],Size);
+		key = OUT_key[0];
+		string s=key.append(":").append(OUT_name[0]).append(":").append(OUT_prop[0]);
 		if (!(X==NULL))
-		Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found" << endl;}
+		Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
 	}
 
 
@@ -432,6 +567,20 @@ if (debug) cout << "WriteOutput in output " << endl;
 			length = Mol[j]->strings.size();
 			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Mol[j]->strings[i].c_str(),Mol[j]->strings_value[i].c_str());
 		}
+//output
+		s="output : noname :";
+		length = ints.size();
+		for (int i=0; i<length; i++)
+			fprintf(fp,"%s %s : %i \n",s.c_str(),ints[i].c_str(),ints_value[i]);
+		length = Reals.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Reals[i].c_str(),Reals_value[i]);
+		length = bools.size();
+		for (int i=0; i<length; i++) {
+			if (bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),bools[i].c_str(),"true");
+			else fprintf(fp,"%s %s : %s \n",s.c_str(),bools[i].c_str(),"false");
+		}
+		length = strings.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),strings[i].c_str(),strings_value[i].c_str());
 
 		fprintf(fp,"%s \n","system delimiter");
 		fclose(fp);
@@ -542,6 +691,68 @@ if (debug) cout << "printlist in output " << endl;
 	writefile << " " << endl;
 	writefile.close();
 
+}
+
+int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result, string& string_result) {
+  int i = 0;
+  int length = ints.size();
+  while (i < length) { 
+    if (prop == ints[i]) {
+      int_result = ints_value[i];
+      return 1;
+    }
+    i++;
+  }
+  i = 0;
+  length = Reals.size();
+  while (i < length) {
+    if (prop == Reals[i]) {
+      Real_result = Reals_value[i];
+      return 2;
+    }
+    i++;
+  }
+  i = 0;
+  length = bools.size();
+  while (i < length) {
+    if (prop == bools[i]) {
+      if (bools_value[i])
+        string_result = "true";
+      else
+        string_result = "false";
+      return 3;
+    }
+    i++;
+  }
+  i = 0;
+  length = strings.size();
+  while (i < length) {
+    if (prop == strings[i]) {
+      string_result = strings_value[i];
+      return 3;
+    }
+    i++;
+  }
+  return 0;
+}
+
+void Output::push(string s, Real X) {
+  Reals.push_back(s);
+  Reals_value.push_back(X);
+}
+void Output::push(string s, int X) {
+//cout <<"push in output is activated with " << s << X << endl; 
+  ints.push_back(s);
+  ints_value.push_back(X);
+}
+void Output::push(string s, bool X) {
+  bools.push_back(s);
+  bools_value.push_back(X);
+}
+
+void Output::push(string s, string X) {
+  strings.push_back(s);
+  strings_value.push_back(X);
 }
 
 

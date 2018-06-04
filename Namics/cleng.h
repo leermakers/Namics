@@ -35,9 +35,13 @@ public:
   ~Cleng();
 
   int clamp_seg;
+  int clp_mol;
   int n_boxes;
+  int n_out;
   int sub_box_size;  
-  int MCS; 
+  int MCS;
+  int n_p;  
+  int t; 
   int save_interval;
   string save_filename;
     vector<Output*> Out;
@@ -54,19 +58,13 @@ vector<int> Y;
 vector<int> Z;
 
   bool MonteCarlo();
-  vector<string> ints;
-  vector<string> Reals;
-  vector<string> bools;
-  vector<string> strings;
-  vector<Real> Reals_value;
-  vector<int> ints_value;
-  vector<bool> bools_value;
-  vector<string> strings_value;
+
   void push(string, Real);
   void push(string, int);
   void push(string, bool);
   void push(string, string);
   bool CP(transfer);
+  void WriteOutput(int);
   void PushOutput();
   int GetValue(string, int&, Real&, string&);
 

@@ -443,9 +443,10 @@ if (debug) cout << "PushOutput for system " << endl;
 #endif
 }
 	
-Real* System::GetPointer(string s){
+Real* System::GetPointer(string s,int &SIZE){
 if (debug) cout << "GetPointer for system " << endl;
 	vector<string>sub;
+	SIZE=Lat[0]->M;
 	In[0]->split(s,';',sub);
 	if (sub[1]=="0") return H_alpha; 
 	if (sub[1]=="1") return H_GrandPotentialDensity;
@@ -453,8 +454,14 @@ if (debug) cout << "GetPointer for system " << endl;
 	if (sub[1]=="3") return psi;
 	if (sub[1]=="4") return q;
 	if (sub[1]=="5") return eps;
-	
-	
+	return NULL; 
+}
+int* System::GetPointerInt(string s,int &SIZE){
+if (debug) cout << "GetPointerInt for system " << endl;
+	vector<string>sub;
+	In[0]->split(s,';',sub);
+	if (sub[0]=="array") { //set SIZE and return pointer of int array
+	}
 	return NULL; 
 }
 
@@ -727,7 +734,7 @@ if (debug) cout << "CheckResults for system " << endl;
 	int M=Lat[0]->M;
 	for (int i=0; i<n_mol; i++) {
 		int n_molmon=Mol[i]->MolMonList.size();
-		Real theta_tot=Mol[i]->n*Mol[i]->chainlength; 
+		Real theta_tot=Mol[i]->n*Mol[i]->chainlength;  
 		for (int j=0; j<n_molmon; j++) {
 			Real FRACTION=Mol[i]->fraction(Mol[i]->MolMonList[j]);
 			if (Seg[Mol[i]->MolMonList[j]]->freedom !="clamp" ) {

@@ -70,7 +70,8 @@ public:
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	Real* GetPointer(string);
+	Real* GetPointer(string,int&);
+	int* GetPointerInt(string,int&);
 	int GetValue(string,int&,Real&,string&); 
 	string CalculationType; // {micro_emulsion,micro_phasesegregation};
 	string GuessType; // {lamellae,Im3m,FCC,BCC,HEX,gyroid,Real_gyroid,Real_diamond,perforated_lamellae};

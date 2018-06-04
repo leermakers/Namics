@@ -107,7 +107,6 @@ int main(int argc, char* argv[]) {
   vector<Variate*> Var;
   vector<Mesodyn*> Mes;
   vector<Cleng*> Cle; //enginge for clampled molecules 
-  vector<Monte*> Mon;
 
   // Create input class instance and handle errors(reference above)
   In.push_back(new Input(filename.str()) );
@@ -202,6 +201,8 @@ int main(int argc, char* argv[]) {
       }
     }
 
+
+
     // Error code for faulty variate class creation
     if (n_etm > 1) {
       cout << "too many equate_to_mu's in var statements. The limit is 1 " << endl;
@@ -240,25 +241,11 @@ int main(int argc, char* argv[]) {
     }
     if (suppress == true) New[0]->e_info = false;
 
+
     // Create engine class instance and check inputs (reference above)
     Eng.push_back(new Engine(In, Lat, Seg, Mol, Sys, New, In[0]->EngineList[0]));
     if (!Eng[0]->CheckInput(start)) {
       return 0;
-    }
-
-    // Prepare, catch errors for output class creation
-    int n_out = In[0]->OutputList.size();
-    if (n_out == 0)
-      cout << "Warning: no output defined!" << endl;
-
-    // Create output class instance and check inputs (reference above)
-    for (int i = 0; i < n_out; i++) {
-
-      Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out));
-      if (!Out[i]->CheckInput(start)) {
-        cout << "input_error in output " << endl;
-        return 0;
-      }
     }
 
     //Guesses geometry
@@ -291,83 +278,88 @@ int main(int argc, char* argv[]) {
       // last argument 1 is to read guess in X.
     }
 
-
     /********** All classes have been created and input gathered, time to start some calculations *********/
-    int substart = 0;
-    int subloop = 0;
+	int substart = 0;
+	int subloop = 0;
+	int i,kk;
+	int n_out;
+	int length_al;
+	int length; 
+	EngineType = SCF; //default;
+	if (New[0]->method == "DIIS-mesodyn" ) {EngineType = MESODYN;}
+	if (In[0]->ClengList.size()>0) {EngineType=CLENG;}
 
-    if (scan_nr < 0)
-      substart = 0;
-    else
-      substart = Var[scan_nr]->num_of_cals;
-    if (substart < 1)
-      substart = 1; // Default to 1 substart
+switch(EngineType) {
+	case SCF:
+  	 	 // Prepare, catch errors for output class creation
+  	  	n_out = In[0]->OutputList.size();
+    		if (n_out == 0) cout << "Warning: no output defined!" << endl;
+		// Create output class instance and check inputs (reference above)
+   		for (i = 0; i < n_out; i++) {
+			Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out));
+      			if (!Out[i]->CheckInput(start)) {
+      				cout << "input_error in output (in SCF EngineType) " << endl;
+        			return 0;
+     		 	}
+   		 }
+    		if (scan_nr < 0)
+     			substart = 0;
+    		else
+      			substart = Var[scan_nr]->num_of_cals;
+    		if (substart < 1)
+      			substart = 1; // Default to 1 substart
 
-    while (subloop < substart) {
-      if (scan_nr > -1)
-        Var[scan_nr]->PutVarScan(subloop);
-      New[0]->AllocateMemory();
-      New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ,fjc_old);
+		 while (subloop < substart) {
+     		 	if (scan_nr > -1)
+        			Var[scan_nr]->PutVarScan(subloop);
+      			New[0]->AllocateMemory();
+      			New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ,fjc_old);
+        		if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
+         			 New[0]->Solve(true);
+        		} else {
+         			 if (debug) cout << "Solve towards superiteration " << endl;
+          			New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
+        		}
+          		Lat[0]->PushOutput();
+      			New[0]->PushOutput();
+      			Eng[0]->PushOutput();
+      			length = In[0]->MonList.size();
+      			for (i = 0; i < length; i++)
+        			Seg[i]->PushOutput();
+      			length = In[0]->MolList.size();
+     			for (i = 0; i < length; i++) {
+       			length_al = Mol[i]->MolAlList.size();
+        			for (kk = 0; kk < length_al; kk++) {
+          				Mol[i]->Al[kk]->PushOutput();
+      				}
+        			Mol[i]->PushOutput();
+     			}
+      			// length = In[0]->AliasList.size();
+      			// for (i=0; i<length; i++) Al[i]->PushOutput();
+      			Sys[0]->PushOutput(); // needs to be after pushing output for seg.
 
-  /********* This is the starting point of all calculations. *********/
+      			for (i = 0; i < n_out; i++) {
+        			Out[i]->WriteOutput(subloop);
+      			}
+      			subloop++;
+    		}
 
-      //If mesodyn is to be used, go through this loop
-      if (New[0]->method == "DIIS-mesodyn" || In[0]->ClengList.size()>0) {
-	if (In[0]->ClengList.size()>0) {
-		if (!debug) cout << "Creating Cleng module" << endl;
+	break;
+	case CLENG: 
+		if (debug) cout << "Creating Cleng module" << endl;
 		Cle.push_back(new Cleng(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->ClengList[0]));      
-		if (!Cle[0]->CheckInput(start)) {return 0;}
-		Cle[0]->MonteCarlo();
-	} else {
-        // Create mesodyn class instance and check inputs (reference above)
-        if (debug) cout << "Creating mesodyn" << endl;
-        Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
-        if (!Mes[0]->CheckInput(start)) {
-          return 0;
-        }
-        Mes[start-1]->mesodyn();
-      //Otherwise, go through the classic function solve.
-	}
-      } else {
-	if (New[0]->method == "MonteCarlo"){
-	//Create montecarlo class instance and run it.
-	cout << "Solving MonteCarlo problem" << endl;
-	Mon.push_back(new Monte(In, Lat, Seg, Mol, Sys, New, In[0]->MonteList[0]));
-	Mon[start-1]->Simulate();
-	} else {
-          if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
-          cout << "Solving classic Meanfield problem" << endl;
-	  New[0]->Solve(true);
-          } else {
-            if (!debug) cout << "Solve towards superiteration " << endl;
-            New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
-          }
-        }
-      }
-      /********** Output information about all classes to file *********/
-      Lat[0]->PushOutput();
-      New[0]->PushOutput();
-      Eng[0]->PushOutput();
-      int length = In[0]->MonList.size();
-      for (int i = 0; i < length; i++)
-        Seg[i]->PushOutput();
-      length = In[0]->MolList.size();
-      for (int i = 0; i < length; i++) {
-        int length_al = Mol[i]->MolAlList.size();
-        for (int k = 0; k < length_al; k++) {
-          Mol[i]->Al[k]->PushOutput();
-        }
-        Mol[i]->PushOutput();
-      }
-      // length = In[0]->AliasList.size();
-      // for (int i=0; i<length; i++) Al[i]->PushOutput();
-      Sys[0]->PushOutput(); // needs to be after pushing output for seg.
-
-      for (int i = 0; i < n_out; i++) {
-        Out[i]->WriteOutput(subloop);
-      }
-      subloop++;
-    }
+		if (!Cle[0]->CheckInput(start)) {return 0;} 
+	break;
+	case MESODYN:
+       	// Create mesodyn class instance and check inputs (reference above)
+        	if (debug) cout << "Creating mesodyn" << endl;
+       	 Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
+        	if (!Mes[0]->CheckInput(start)) return 0;
+        	Mes[start-1]->mesodyn();
+	break;
+	default:
+	break;
+}
 
     /******** Clear all class instances ********/
     if (scan_nr > -1)
@@ -414,7 +406,7 @@ int main(int argc, char* argv[]) {
     }
     Mol.clear();
     for (int i = 0; i < n_seg; i++) {
-	// delete Seg[i]; //gives error but I -frans- do not know why? guess it is not important at this moment.
+	delete Seg[i]; //gives error but I -frans- do not know why? guess it is not important at this moment.
     }
     Seg.clear();
     delete Lat[0];

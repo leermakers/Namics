@@ -16,8 +16,7 @@ Cleng::Cleng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, v
   KEYS.push_back("save_interval");
   KEYS.push_back("save_filename");
   KEYS.push_back("seed");
-  if (debug)
-    cout << "Cleng initialized" << endl;
+  if (debug) cout << "Cleng initialized" << endl;
 
 
 }
@@ -26,12 +25,9 @@ Cleng::~Cleng() {
 }
 
 bool Cleng::CheckInput(int start) {
-  if (debug)
-    cout << "CheckInput in Cleng" << endl;
+  if (debug) cout << "CheckInput in Cleng" << endl;
   bool success = true;
 
-
-  /* When adding new items here, please add them to the function prepareOutputFile()*/
   success = In[0]->CheckParameters("cleng", name, start, KEYS, PARAMETERS, VALUES);
   if (success) {
     vector<string> options;
@@ -42,37 +38,31 @@ bool Cleng::CheckInput(int start) {
       cout << "MCS is " << MCS << endl;
 
     if (GetValue("save_interval").size() > 0) {
-      success = In[0]->Get_int(GetValue("save_interval"), save_interval,1,100,"The save interval nr should be between 1 and 100. ");
+      success = In[0]->Get_int(GetValue("save_interval"), save_interval,1,MCS,"The save interval nr should be between 1 and 100");
     }
     if (debug) cout << "Save_interval " << save_interval << endl;
     if (Sys[0]->SysClampList.size() <1) {cout <<"Cleng needs to have clamped molecules in the system" << endl; success=false;}
 	else {clamp_seg=Sys[0]->SysClampList[0]; if (Sys[0]->SysClampList.size()>1) {success=false; cout <<"Currently the clamping is limited to one molecule per system. " << endl; }}
-//cout <<"clamp_seg : " << clamp_seg << endl; 
-	if (success) {
-		n_boxes = Seg[clamp_seg]->n_box;
-		sub_box_size=Seg[clamp_seg]->mx;
-//cout <<"subboxsize " << sub_box_size << endl; 
-		//success=CP(to_cleng);
-		//success=CP(to_segment);
-		New[0]->Solve(true);  
-	}
-	
+    if (success) {
+	n_boxes = Seg[clamp_seg]->n_box;
+	sub_box_size=Seg[clamp_seg]->mx;
+    }
+    clp_mol=-1;
+    int length = In[0]->MolList.size();
+    for (int i=0; i<length; i++) if (Mol[i]->freedom =="clamped") clp_mol=i; 
   }
-
-   int n_out = In[0]->OutputList.size();
-    if (n_out == 0)
-      cout << "Warning: no output defined!" << endl;
-
-    // Create output class instance and check inputs (reference above)
-    for (int i = 0; i < n_out; i++) {
-
+  if (success) {
+    n_out = In[0]->OutputList.size();
+    if (n_out == 0) cout << "Warning: no output defined!" << endl;
+    for (int i =  0; i < n_out; i++) {
       Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->OutputList[i], i, n_out));
-      if (!Out[i]->CheckInput(start)) {
+       if (!Out[i]->CheckInput(start)) {
         cout << "input_error in output " << endl;
         success=false;
       }
-    }
-
+     }
+     MonteCarlo();
+   }
   return success;
 }
 
@@ -102,7 +92,6 @@ bool Cleng::CP(transfer tofrom) {
 				if (found==false) {
 					X.push_back(PX);Y.push_back(PY);Z.push_back(PZ); P.push_back(X.size()-1);
 				}
-//cout << "("<<PX<<","<<PY<<","<<PZ<<")"; 
 				PX=Seg[clamp_seg]->px2[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
 				PY=Seg[clamp_seg]->py2[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
 				PZ=Seg[clamp_seg]->pz2[i]; if (PZ>MZ) {PZ-=MZ; Sz.push_back(1);} else {Sz.push_back(0);}
@@ -114,13 +103,8 @@ bool Cleng::CP(transfer tofrom) {
 				if (found==false) {
 					X.push_back(PX);Y.push_back(PY);Z.push_back(PZ); P.push_back(X.size()-1);
 				}
-				
-//cout << "("<<PX<<","<<PY<<","<<PZ<<")"<< endl; 
-
 			}
-//cout <<"number of unique pos " << X.size() << endl;
-//cout <<"size of P " << P.size()<< endl; 
- 
+
 		break;
 		case to_segment:
 			Zero(Seg[clamp_seg]->H_MASK,M); 
@@ -134,14 +118,11 @@ bool Cleng::CP(transfer tofrom) {
 				Seg[clamp_seg]->bx[i]=(Seg[clamp_seg]->px2[i]+Seg[clamp_seg]->px1[i]-sub_box_size)/2;
 				Seg[clamp_seg]->by[i]=(Seg[clamp_seg]->py2[i]+Seg[clamp_seg]->py1[i]-sub_box_size)/2;
 				Seg[clamp_seg]->bz[i]=(Seg[clamp_seg]->pz2[i]+Seg[clamp_seg]->pz1[i]-sub_box_size)/2;
-//cout << "("<<Seg[clamp_seg]->bx[i]<<","<<Seg[clamp_seg]->by[i]<<","<<Seg[clamp_seg]->bz[i]<<")";
 				if (Seg[clamp_seg]->bx[i]<1) {Seg[clamp_seg]->bx[i] +=MX; Seg[clamp_seg]->px1[i] +=MX; Seg[clamp_seg]->px2[i] +=MX;} 
 				if (Seg[clamp_seg]->by[i]<1) {Seg[clamp_seg]->by[i] +=MY; Seg[clamp_seg]->py1[i] +=MY; Seg[clamp_seg]->py2[i] +=MY;} 
 				if (Seg[clamp_seg]->bz[i]<1) {Seg[clamp_seg]->bz[i] +=MZ; Seg[clamp_seg]->pz1[i] +=MZ; Seg[clamp_seg]->pz2[i] +=MZ;} 
 				Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px1[i]-1)%MX+1)*JX + ((Seg[clamp_seg]->py1[i]-1)%MY+1)*JY + (Seg[clamp_seg]->pz1[i]-1)%MZ+1]=1;
 				Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px2[i]-1)%MX+1)*JX + ((Seg[clamp_seg]->py2[i]-1)%MY+1)*JY + (Seg[clamp_seg]->pz2[i]-1)%MZ+1]=1;
-//cout << "("<<Seg[clamp_seg]->bx[i]<<","<<Seg[clamp_seg]->by[i]<<","<<Seg[clamp_seg]->bz[i]<<")";
-//cout << "("<<Seg[clamp_seg]->px1[i]<<","<<Seg[clamp_seg]->py1[i]<<","<<Seg[clamp_seg]->pz1[i]<<")("<<Seg[clamp_seg]->px2[i]<<","<<Seg[clamp_seg]->py2[i]<<","<<Seg[clamp_seg]->pz2[i]<<")"<<endl;
 			}
 		break;
 		default:
@@ -152,13 +133,10 @@ bool Cleng::CP(transfer tofrom) {
 	return success; 
 }
 
-
-bool Cleng::MonteCarlo() {
-  if (debug)
-    cout << "Monte Carlo in Cleng" << endl;
-
-/*
-     Lat[0]->PushOutput();
+void Cleng::WriteOutput(int subloop){
+      PushOutput();
+      Sys[0]->PushOutput(); // needs to be after pushing output for seg.
+      Lat[0]->PushOutput();
       New[0]->PushOutput();
       Eng[0]->PushOutput();
       int length = In[0]->MonList.size();
@@ -169,24 +147,32 @@ bool Cleng::MonteCarlo() {
         int length_al = Mol[i]->MolAlList.size();
         for (int k = 0; k < length_al; k++) {
           Mol[i]->Al[k]->PushOutput();
-        }
-	PushOutput();
+        } 
         Mol[i]->PushOutput();
-      }
+       }
       // length = In[0]->AliasList.size();
       // for (int i=0; i<length; i++) Al[i]->PushOutput();
-      Sys[0]->PushOutput(); // needs to be after pushing output for seg.
-*/
-	  
-	return true;
+      for (int i = 0; i < n_out; i++) {
+        Out[i]->WriteOutput(subloop);
+	}
 }
 
+bool Cleng::MonteCarlo() {
+  if (debug) cout << "Monte Carlo in Cleng" << endl;
+	bool success; 
+	t=0;
+ 	success=CP(to_cleng);
+	New[0]->Solve(true);
+	WriteOutput(t);
+	n_p = X.size();
+	X[0]=X[0]++; Y[0]=Y[0]++; 
+	success=CP(to_segment);
+	t++;
+	New[0]->Solve(true);
+	WriteOutput(t);
 
-void Cleng::prepareOutputFile() {
-  /* Open filestream and set filename to "mesodyn-datetime.csv" */
-
- }
-
+	return success;
+}
 
 void Cleng::PutParameter(string new_param) {
   KEYS.push_back(new_param);
@@ -202,72 +188,48 @@ string Cleng::GetValue(string parameter) {
   }
   return "";
 }
-void Cleng::push(string s, Real X) {
-  Reals.push_back(s);
-  Reals_value.push_back(X);
-}
-void Cleng::push(string s, int X) {
-  ints.push_back(s);
-  ints_value.push_back(X);
-}
-void Cleng::push(string s, bool X) {
-  bools.push_back(s);
-  bools_value.push_back(X);
-}
-void Cleng::push(string s, string X) {
-  strings.push_back(s);
-  strings_value.push_back(X);
-}
+
 void Cleng::PushOutput() {
-  strings.clear();
-  strings_value.clear();
-  bools.clear();
-  bools_value.clear();
-  Reals.clear();
-  Reals_value.clear();
-  ints.clear();
-  ints_value.clear();
+	int* point;
+	for (int i = 0; i < n_out; i++) {
+		Out[i]->PointerVectorInt.clear();
+		Out[i]->PointerVectorReal.clear();
+		Out[i]->SizeVectorInt.clear();
+		Out[i]->SizeVectorReal.clear();
+  		Out[i]->strings.clear();
+  		Out[i]->strings_value.clear();
+ 		Out[i]->bools.clear();
+ 	 	Out[i]->bools_value.clear();
+ 		Out[i]->Reals.clear();
+ 	 	Out[i]->Reals_value.clear();
+  		Out[i]->ints.clear();
+  		Out[i]->ints_value.clear();
+		if (Out[i]->name=="ana" || Out[i]->name=="kal") Out[i]->push("t",t);
+		if (Out[i]->name=="ana" || Out[i]->name=="kal") Out[i]->push("MCS",MCS);
+		if (Out[i]->name=="ana" || Out[i]->name=="vec") { //example for putting an array of Reals of arbitrary length to output
+			string s="vector;0"; //the keyword 'vector' is used for Reals; the value 0 is the first vector, use 1 for the next etc, 
+			Out[i]->push("gn",s); //"gn" is the name that will appear in output file
+			Out[i]->PointerVectorReal.push_back(Mol[clp_mol]->gn); //this is the pointer to the start of the 'vector' that is reported to output.
+			Out[i]->SizeVectorReal.push_back(sizeof(Mol[clp_mol]->gn)); //this is the size of the 'vector' that is reported to output
+		}
+		if (Out[i]->name=="ana" || Out[i]->name=="pos") { //example for putting 3 array's of Integers of arbitrary length to output
+			string s="array;0";
+			Out[i]->push("X",s);
+			point=X.data();
+			Out[i]->PointerVectorInt.push_back(point);
+			Out[i]->SizeVectorInt.push_back(X.size());
+			s="array;1";
+			Out[i]->push("Y",s);
+			point = Y.data();
+			Out[i]->PointerVectorInt.push_back(point);
+			Out[i]->SizeVectorInt.push_back(Y.size());
+			s="array;2";
+			Out[i]->push("Z",s);
+			point=Z.data();
+			Out[i]->PointerVectorInt.push_back(point);
+			Out[i]->SizeVectorInt.push_back(Z.size());
+		}
+	
+	}
 }
 
-int Cleng::GetValue(string prop, int& int_result, Real& Real_result, string& string_result) {
-  int i = 0;
-  int length = ints.size();
-  while (i < length) {
-    if (prop == ints[i]) {
-      int_result = ints_value[i];
-      return 1;
-    }
-    i++;
-  }
-  i = 0;
-  length = Reals.size();
-  while (i < length) {
-    if (prop == Reals[i]) {
-      Real_result = Reals_value[i];
-      return 2;
-    }
-    i++;
-  }
-  i = 0;
-  length = bools.size();
-  while (i < length) {
-    if (prop == bools[i]) {
-      if (bools_value[i])
-        string_result = "true";
-      else
-        string_result = "false";
-      return 3;
-    }
-    i++;
-  }
-  i = 0;
-  length = strings.size();
-  while (i < length) {
-    if (prop == strings[i]) {
-      string_result = strings_value[i];
-      return 3;
-    }
-    i++;
-  }
-  return 0;
-}

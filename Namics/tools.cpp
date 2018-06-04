@@ -890,7 +890,7 @@ void OverwriteA(Real *P, int *Mask,Real* A,int M) {
 #ifdef CUDA
 void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, int* Mask, int M)  {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	uppsi<<<n_blocks,block_size>>>(g,psi,X,esp,JX,JY,C,Mask,M);
+	uppsi<<<n_blocks,block_size>>>(g,psi,X,eps,JX,JY,C,Mask,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at UpPsi"<<endl;}
 }
 #else
@@ -902,7 +902,7 @@ void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, int* 
 #ifdef CUDA
 void UpQ(Real* g, Real* q, Real* psi, Real* eps, int JX, int JY, Real C, int* Mask, int M)  {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	upq<<<n_blocks,block_size>>>(g,q,psi,esp,JX,JY,C,Mask,M);
+	upq<<<n_blocks,block_size>>>(g,q,psi,eps,JX,JY,C,Mask,M);
 	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at UpQ"<<endl;}
 }
 #else

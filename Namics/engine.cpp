@@ -76,9 +76,16 @@ void Engine::PushOutput() {
 	ints.clear();
 	ints_value.clear();  
 }
-Real* Engine::GetPointer(string s) {
+Real* Engine::GetPointer(string s, int &SIZE) {
 	//vector<string> sub;
 	//nothing yet
+	SIZE=0;
+	return NULL;
+}
+int* Engine::GetPointerInt(string s, int &SIZE) {
+	//vector<string> sub;
+	//nothing yet
+	SIZE=0;
 	return NULL;
 }
 

@@ -120,7 +120,8 @@ public:
 	void push(string,string);
 	void PushOutput();
 	bool DeleteAl();
-	Real* GetPointer(string);
+	Real* GetPointer(string,int&);
+	int* GetPointerInt(string,int&);
 	int GetValue(string,int&,Real&,string&);
 	bool PutVarInfo(string,string,Real);
 	int PutVarScan(Real,Real,int,string);

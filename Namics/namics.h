@@ -44,6 +44,7 @@ extern bool suppress;
 
 enum MoleculeType {monomer, linear, branched, dendrimer, comb, ring};
 enum transfer {to_segment,to_cleng};
+enum EngineType {SCF, CLENG, MESODYN, TENG};
 
 #endif
 /*

@@ -4,7 +4,6 @@
 #include "namics.h"
 #include "newton.h"
 #include "system.h"
-#include "engine.h"
 #include "output.h"
 
 #include <random> //For noise in langevinFlux()

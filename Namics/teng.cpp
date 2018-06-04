@@ -12,7 +12,7 @@ Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vec
 
 {
 	if (debug) cout << "Teng initialized" << endl;
- 	 KEYS.push_back("MCS");
+ 	KEYS.push_back("MCS");
   	KEYS.push_back("save_interval");
   	KEYS.push_back("save_filename");
   	KEYS.push_back("seed");
@@ -21,105 +21,46 @@ Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vec
 Teng::~Teng() {
 }
 
-bool Teng::CheckInput(int start) {
-  if (debug) cout << "CheckInput in Teng" << endl;
-  bool success = true;
+// MonteCarlo Engine to drive the tagged molecules. 
+bool Teng::MonteCarlo() {
+  if (debug) cout << "Monte Carlo in Teng" << endl;
+	bool success; 
+	t=0;
+ 	success=CP(to_cleng);
+	New[0]->Solve(true);
+	WriteOutput(t);
+	n_p = X.size();
+	X[0]+=1; Y[0]+=1; 
+	success=CP(to_segment);
+	t++;
+	New[0]->Solve(true);
+	WriteOutput(t);
 
-  success = In[0]->CheckParameters("cleng", name, start, KEYS, PARAMETERS, VALUES);
-  if (success) {
-    vector<string> options;
-    if (GetValue("MCS").size() > 0) {
-      success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000, "The number of timesteps should be between 1 and 10000");
-    }
-    if (debug)
-      cout << "MCS is " << MCS << endl;
-
-    if (GetValue("save_interval").size() > 0) {
-      success = In[0]->Get_int(GetValue("save_interval"), save_interval,1,MCS,"The save interval nr should be between 1 and 100");
-    }
-    if (debug) cout << "Save_interval " << save_interval << endl;
-    if (Sys[0]->SysClampList.size() <1) {cout <<"Teng needs to have clamped molecules in the system" << endl; success=false;}
-	else {clamp_seg=Sys[0]->SysClampList[0]; if (Sys[0]->SysClampList.size()>1) {success=false; cout <<"Currently the clamping is limited to one molecule per system. " << endl; }}
-    if (success) {
-	n_boxes = Seg[clamp_seg]->n_box;
-	sub_box_size=Seg[clamp_seg]->mx;
-    }
-    clp_mol=-1;
-    int length = In[0]->MolList.size();
-    for (int i=0; i<length; i++) if (Mol[i]->freedom =="clamped") clp_mol=i; 
-  }
-  if (success) {
-    n_out = In[0]->OutputList.size();
-    if (n_out == 0) cout << "Warning: no output defined!" << endl;
-    for (int i =  0; i < n_out; i++) {
-      Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], i, n_out));
-       if (!Out[i]->CheckInput(start)) {
-        cout << "input_error in output " << endl;
-        success=false;
-      }
-     }
-     MonteCarlo();
-   }
-  return success;
+	return success;
 }
 
-
+// Transfer the particle locations from segment to teng, and vice versa.,
 bool Teng::CP(transfer tofrom) {
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int MZ=Lat[0]->MZ;
 	int JX=Lat[0]->JX;
 	int JY=Lat[0]->JY;
 	int M = Lat[0]->M;
+
 	bool success=true;
-	int i,j;
-	int length; 
-	bool found;
+	int i;
 	switch(tofrom) {
 		case to_cleng:
-			for (i=0; i<n_boxes; i++) {
-				PX=Seg[clamp_seg]->px1[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
-				PY=Seg[clamp_seg]->py1[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
-				PZ=Seg[clamp_seg]->pz1[i]; if (PZ>MZ) {PZ-=MZ; Sz.push_back(1);} else {Sz.push_back(0);}
-				length=X.size();
-				found=false; j=0;
-				while (!found && j<length) {
-					if (X[j]==PX&&Y[j]==PY && Z[j]==PZ) {found = true; P.push_back(j);} else j++;
-				}
-				if (found==false) {
-					X.push_back(PX);Y.push_back(PY);Z.push_back(PZ); P.push_back(X.size()-1);
-				}
-				PX=Seg[clamp_seg]->px2[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
-				PY=Seg[clamp_seg]->py2[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
-				PZ=Seg[clamp_seg]->pz2[i]; if (PZ>MZ) {PZ-=MZ; Sz.push_back(1);} else {Sz.push_back(0);}
-				length=X.size();
-				found=false; j=0;
-				while (!found&& j<length) {
-					if (X[j]==PX&&Y[j]==PY && Z[j]==PZ) {found = true; P.push_back(j);} else j++;
-				}
-				if (found==false) {
-					X.push_back(PX);Y.push_back(PY);Z.push_back(PZ); P.push_back(X.size()-1);
-				}
+			for (i=0; i<n_particles; i++) {
+				PX=Seg[tag_seg]->H_P[i]/JX;
+				PY=(Seg[tag_seg]->H_P[i]-PX*JX)/JY; 
+				PZ=(Seg[tag_seg]->H_P[i]-PX*JX-PY*JY);
+				X.push_back(PX); Y.push_back(PY); Z.push_back(PZ);
 			}
-
 		break;
 		case to_segment:
-			Zero(Seg[clamp_seg]->H_MASK,M); 
-			for (i=0; i<n_boxes; i++) {
-				Seg[clamp_seg]->px1[i]=X[P[2*i]]+Sx[2*i]*MX;
-				Seg[clamp_seg]->px2[i]=X[P[2*i+1]]+Sx[2*i+1]*MX;
-				Seg[clamp_seg]->py1[i]=Y[P[2*i]]+Sy[2*i]*MY;
-				Seg[clamp_seg]->py2[i]=Y[P[2*i+1]]+Sy[2*i+1]*MY;
-				Seg[clamp_seg]->pz1[i]=Z[P[2*i]]+Sz[2*i]*MZ;
-				Seg[clamp_seg]->pz2[i]=Z[P[2*i+1]]+Sz[2*i+1]*MZ;
-				Seg[clamp_seg]->bx[i]=(Seg[clamp_seg]->px2[i]+Seg[clamp_seg]->px1[i]-sub_box_size)/2;
-				Seg[clamp_seg]->by[i]=(Seg[clamp_seg]->py2[i]+Seg[clamp_seg]->py1[i]-sub_box_size)/2;
-				Seg[clamp_seg]->bz[i]=(Seg[clamp_seg]->pz2[i]+Seg[clamp_seg]->pz1[i]-sub_box_size)/2;
-				if (Seg[clamp_seg]->bx[i]<1) {Seg[clamp_seg]->bx[i] +=MX; Seg[clamp_seg]->px1[i] +=MX; Seg[clamp_seg]->px2[i] +=MX;} 
-				if (Seg[clamp_seg]->by[i]<1) {Seg[clamp_seg]->by[i] +=MY; Seg[clamp_seg]->py1[i] +=MY; Seg[clamp_seg]->py2[i] +=MY;} 
-				if (Seg[clamp_seg]->bz[i]<1) {Seg[clamp_seg]->bz[i] +=MZ; Seg[clamp_seg]->pz1[i] +=MZ; Seg[clamp_seg]->pz2[i] +=MZ;} 
-				Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px1[i]-1)%MX+1)*JX + ((Seg[clamp_seg]->py1[i]-1)%MY+1)*JY + (Seg[clamp_seg]->pz1[i]-1)%MZ+1]=1;
-				Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px2[i]-1)%MX+1)*JX + ((Seg[clamp_seg]->py2[i]-1)%MY+1)*JY + (Seg[clamp_seg]->pz2[i]-1)%MZ+1]=1;
+			Zero(Seg[tag_seg]->H_MASK,M);  //TODO: (Ram) Not sure If I have to remove the mask, all calculations use H_P after this. 
+			for (i=0; i<n_particles; i++) {
+				Seg[tag_seg]->H_P[i]=X[i]*JX+Y[i]*JY+Z[i];
+				Seg[tag_seg]->H_MASK[X[i]*JX+Y[i]*JY+Z[i]]=1;
 			}
 		break;
 		default:
@@ -130,62 +71,29 @@ bool Teng::CP(transfer tofrom) {
 	return success; 
 }
 
+// Push outputs from this and other classes to Output class
 void Teng::WriteOutput(int subloop){
-      PushOutput();
-      Sys[0]->PushOutput(); // needs to be after pushing output for seg.
-      Lat[0]->PushOutput();
-      New[0]->PushOutput();
-      int length = In[0]->MonList.size();
-      for (int i = 0; i < length; i++)
-        Seg[i]->PushOutput();
-      length = In[0]->MolList.size();
-      for (int i = 0; i < length; i++) {
-        int length_al = Mol[i]->MolAlList.size();
-        for (int k = 0; k < length_al; k++) {
-          Mol[i]->Al[k]->PushOutput();
-        } 
-        Mol[i]->PushOutput();
-       }
-      // length = In[0]->AliasList.size();
-      // for (int i=0; i<length; i++) Al[i]->PushOutput();
-
-      for (int i = 0; i < n_out; i++) {
-        Out[i]->WriteOutput(subloop);
+      	PushOutput();
+      	Sys[0]->PushOutput(); // needs to be after pushing output for seg.
+      	Lat[0]->PushOutput();
+      	New[0]->PushOutput();
+      	int length = In[0]->MonList.size();
+      	for (int i = 0; i < length; i++)
+        	Seg[i]->PushOutput();
+      		length = In[0]->MolList.size();
+      	for (int i = 0; i < length; i++) {
+        	int length_al = Mol[i]->MolAlList.size();
+        	for (int k = 0; k < length_al; k++) {
+          		Mol[i]->Al[k]->PushOutput();
+        	} 
+        	Mol[i]->PushOutput();
+       	}
+      	for (int i = 0; i < n_out; i++) {
+        	Out[i]->WriteOutput(subloop);
 	}
 }
 
-bool Teng::MonteCarlo() {
-  if (debug) cout << "Monte Carlo in Teng" << endl;
-	bool success; 
-	t=0;
- 	success=CP(to_cleng);
-	New[0]->Solve(true);
-	WriteOutput(t);
-	n_p = X.size();
-	X[0]=X[0]++; Y[0]=Y[0]++; 
-	success=CP(to_segment);
-	t++;
-	New[0]->Solve(true);
-	WriteOutput(t);
-
-	return success;
-}
-
-void Teng::PutParameter(string new_param) {
-  KEYS.push_back(new_param);
-}
-string Teng::GetValue(string parameter) {
-  int i = 0;
-  int length = PARAMETERS.size();
-  while (i < length) {
-    if (parameter == PARAMETERS[i]) {
-      return VALUES[i];
-    }
-    i++;
-  }
-  return "";
-}
-
+// Additional information to pass outputs from Teng class.
 void Teng::PushOutput() {
 	int* point;
 	for (int i = 0; i < n_out; i++) {
@@ -206,8 +114,8 @@ void Teng::PushOutput() {
 		if (Out[i]->name=="ana" || Out[i]->name=="vec") { //example for putting an array of Reals of arbitrary length to output
 			string s="vector;0"; //the keyword 'vector' is used for Reals; the value 0 is the first vector, use 1 for the next etc, 
 			Out[i]->push("gn",s); //"gn" is the name that will appear in output file
-			Out[i]->PointerVectorReal.push_back(Mol[clp_mol]->gn); //this is the pointer to the start of the 'vector' that is reported to output.
-			Out[i]->SizeVectorReal.push_back(sizeof(Mol[clp_mol]->gn)); //this is the size of the 'vector' that is reported to output
+			Out[i]->PointerVectorReal.push_back(Mol[tag_mol]->gn); //this is the pointer to the start of the 'vector' that is reported to output.
+			Out[i]->SizeVectorReal.push_back(sizeof(Mol[tag_mol]->gn)); //this is the size of the 'vector' that is reported to output
 		}
 		if (Out[i]->name=="ana" || Out[i]->name=="pos") { //example for putting 3 array's of Integers of arbitrary length to output
 			string s="array;0";
@@ -228,5 +136,67 @@ void Teng::PushOutput() {
 		}
 	
 	}
+}
+
+
+// Standard procedures.
+void Teng::PutParameter(string new_param) {
+	KEYS.push_back(new_param);
+}
+
+string Teng::GetValue(string parameter) {
+	int i = 0;
+	int length = PARAMETERS.size();
+  	while (i < length) {
+    		if (parameter == PARAMETERS[i]) {
+      		return VALUES[i];
+    		}
+    		i++;
+  	}
+  	return "";
+}
+
+// Procedure that acquires the given inputs and checks 
+// Primary call to all engines (montecarlo or langevin dynamics) are also located here. 
+bool Teng::CheckInput(int start) {
+  	if (debug) cout << "CheckInput in Teng" << endl;
+  	bool success = true;
+
+  	success = In[0]->CheckParameters("teng", name, start, KEYS, PARAMETERS, VALUES);
+  	if (success) {
+    		vector<string> options;
+    		if (GetValue("MCS").size() > 0) {
+      			success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000, "The number of timesteps should be between 1 and 10000");
+    		}
+    		if (debug)
+      			cout << "MCS is " << MCS << endl;
+
+    		if (GetValue("save_interval").size() > 0) {
+      			success = In[0]->Get_int(GetValue("save_interval"), save_interval,1,MCS,"The save interval nr should be between 1 and 100");
+    		}
+    		if (debug) cout << "Save_interval " << save_interval << endl;
+    		if (Sys[0]->SysTagList.size() <1) {cout <<"Teng needs to have tagged molecules in the system" << endl; success=false;}
+		else {tag_seg=Sys[0]->SysTagList[0]; if (Sys[0]->SysTagList.size()>1) {success=false; cout <<"Currently the Tagging is limited to one molecule per system. " << endl; }}
+    		if (success) {
+			n_particles = Seg[tag_seg]->n_pos;
+    		}
+    		tag_mol=-1;
+    		int length = In[0]->MolList.size();
+    		for (int i=0; i<length; i++) if (Mol[i]->freedom =="tagged") tag_mol=i; 
+  	}
+  	if (success) {
+   		n_out = In[0]->OutputList.size();
+    		if (n_out == 0) cout << "Warning: no output defined!" << endl;
+    		for (int i =  0; i < n_out; i++) {
+      			Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], i, n_out));
+       			if (!Out[i]->CheckInput(start)) {
+        		cout << "input_error in output " << endl;
+        		success=false;
+      			}
+     		}
+     		//TODO: There should be a for loop over the required number of timesteps.		
+     		MonteCarlo();
+   	}
+  return success;
 }
 

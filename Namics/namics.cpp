@@ -356,7 +356,7 @@ int main(int argc, char* argv[]) {
       			New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ,fjc_old);
 			cout << "Solving Teng problem" << endl;
 			Ten.push_back(new Teng(In, Lat, Seg, Mol, Sys, New, In[0]->TengList[0]));
-			if (!Cle[0]->CheckInput(start)) {return 0;}
+			if (!Ten[0]->CheckInput(start)) {return 0;}
 		break;
 		default:
 			cout <<"TheEngine is unknown. Programming error " << endl; return 0;
@@ -414,4 +414,5 @@ int main(int argc, char* argv[]) {
     		Lat.clear();
 	}
 return 0;
+
 }

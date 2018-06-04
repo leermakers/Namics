@@ -3,7 +3,7 @@ Input::Input(string name_) {
 	name=name_;
 	KEYS.push_back("start");
 	KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); KEYS.push_back("alias");
- 	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("mesodyn"); KEYS.push_back("cleng"); KEYS.push_back("monte"); KEYS.push_back("output");
+ 	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("mesodyn"); KEYS.push_back("cleng"); KEYS.push_back("teng"); KEYS.push_back("output"); 
 	KEYS.push_back("var");
 
 
@@ -485,18 +485,14 @@ if (debug) cout <<"LoadItems in Input " << endl;
 								PrintList(MonList);
 							}
 							break;
-						case 9:
-//TODO:CHECK IF THIS IS CORRECT AND DOESN'T SCREW UP EVERYTHING
-							if (set[3]=="*") set[3]=MesodynList[0];
-							if (MesodynList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-							PrintList(MesodynList); name_found=false;
-							}
+						case 9:name_found=true;
+
 							break;
-						case 10:
-							if (set[3]=="*") set[3]=MonteList[0];
-							if (MonteList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-							PrintList(MonteList); name_found=false;
-							}
+						case 10:name_found=true;
+
+							break;
+						case 11:
+							name_found=true;
 							break;
 						default:
 							key_found=false;
@@ -506,7 +502,8 @@ if (debug) cout <<"LoadItems in Input " << endl;
 				j++;
 			}
 			if (!key_found) {cout<< "In line " << set[0] << " the keyword '" << set[2] << "' not recognized. Choose keywords from: " << endl;
-				for (int k=1; k<7; k++) cout << KEYS[k] << endl;
+				int length = KEYS.size();
+				for (int k=1; k<length; k++) cout << KEYS[k] << endl;
 				return false;
 			}
 			if (!name_found) {return false;}
@@ -571,7 +568,7 @@ bool Input:: CheckInput(void) {
 
 		if (set[1]=="output") {
 			vector<string> options;
-			options.push_back("ana"); options.push_back("vtk"); options.push_back("kal"); options.push_back("pro");
+			options.push_back("ana"); options.push_back("vtk"); options.push_back("kal"); options.push_back("pro"); options.push_back("vec"); options.push_back("pos"); 
 			string option;
 			if (!Get_string(set[2],option,options,"Value for output extension '" + set[2] + "' not allowed. ")) {success=false;}
 			else {
@@ -671,7 +668,7 @@ bool Input::MakeLists(int start) {
 	EngineList.clear();
 	MesodynList.clear();
 	ClengList.clear();
-	MonteList.clear();
+	TengList.clear();
 	VarList.clear();
 
 	if (!TestNum(SysList,"sys",0,1,start)) {cout << "There can be no more than 1 'sys name' in the input" << endl; }
@@ -688,10 +685,8 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(EngineList,"engine",0,1,start)) {cout << "There can be no more than 1 'engine' name in the input " << endl; success=false;}
 	if (!TestNum(MesodynList,"mesodyn",0,1,start)) {cout << "There can be no more than 1 'mesodyn' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(ClengList,"cleng",0,1,start)) {cout << "There can be no more than 1 'cleng' engine brand name in the input " << endl; success=false;}
-	if (!TestNum(MonteList,"monte",0,1,start)) {cout << "There can be no more than 1 'Monte carlo' engine brand name in the input " << endl; success=false;}
+	if (!TestNum(TengList,"teng",0,1,start)) {cout << "There can be no more than 1 'teng' engine brand name in the input " << endl; success=false;}
 	if (EngineList.size()==0) EngineList.push_back("noname");
-	if (MesodynList.size()==0) MesodynList.push_back("noname");
-	if (MonteList.size()==0) MonteList.push_back("noname");
 	if (!TestNum(VarList,"var",0,10,start))
 	if (VarList.size()==0) VarList.push_back("noname");
 	return success;

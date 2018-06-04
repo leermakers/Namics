@@ -29,7 +29,20 @@ public:
 	bool write_bounds;
 	bool append; 
 	bool input_error; 
-		
+
+  	vector<string> ints;
+ 	vector<string> Reals;
+ 	vector<string> bools;
+ 	vector<string> strings;
+  	vector<Real> Reals_value;
+	vector<int > SizeVectorReal;
+	vector<int > SizeVectorInt;
+	vector<Real*> PointerVectorReal;
+	vector<int*> PointerVectorInt;
+	vector<int> pointer_size;
+  	vector<int> ints_value;
+  	vector<bool> bools_value;
+  	vector<string> strings_value;		
 
 	std::vector<string> OUT_key;
 	std::vector<string> OUT_name;
@@ -47,9 +60,13 @@ public:
 	void printlist();
 	void WriteOutput(int);
 	int GetValue(string, string, string, int&, Real&, string&);
-	Real* GetPointer(string, string, string);
-
-
+	Real* GetPointer(string, string, string, int&);
+	int* GetPointerInt(string, string, string, int&);
+	int GetValue(string, string, int& , Real& , string&);
+	void push(string, Real);
+	void push(string, int);
+	void push(string, bool);
+	void push(string, string);
 
 };
 #endif

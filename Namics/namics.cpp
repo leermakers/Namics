@@ -7,6 +7,7 @@
 #include "namics.h"
 #include "mesodyn.h"
 #include "cleng.h"
+#include "teng.h"
 #include "newton.h"
 #include "output.h"
 #include "segment.h"
@@ -107,7 +108,7 @@ int main(int argc, char* argv[]) {
   vector<Variate*> Var;
   vector<Mesodyn*> Mes;
   vector<Cleng*> Cle; //enginge for clampled molecules 
-  vector<Monte*> Mon;
+  vector<Teng*> Ten; //enginge for clampled molecules 
 
   // Create input class instance and handle errors(reference above)
   In.push_back(new Input(filename.str()) );
@@ -317,7 +318,6 @@ int main(int argc, char* argv[]) {
 		if (!debug) cout << "Creating Cleng module" << endl;
 		Cle.push_back(new Cleng(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->ClengList[0]));      
 		if (!Cle[0]->CheckInput(start)) {return 0;}
-		Cle[0]->MonteCarlo();
 	} else {
         // Create mesodyn class instance and check inputs (reference above)
         if (debug) cout << "Creating mesodyn" << endl;
@@ -329,11 +329,11 @@ int main(int argc, char* argv[]) {
       //Otherwise, go through the classic function solve.
 	}
       } else {
-	if (New[0]->method == "MonteCarlo"){
+	if (In[0]->TengList.size()>0){
 	//Create montecarlo class instance and run it.
-	cout << "Solving MonteCarlo problem" << endl;
-	Mon.push_back(new Monte(In, Lat, Seg, Mol, Sys, New, In[0]->MonteList[0]));
-	Mon[start-1]->Simulate();
+	cout << "Solving Teng problem" << endl;
+	Ten.push_back(new Teng(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->TengList[0]));
+	if (!Cle[0]->CheckInput(start)) {return 0;}
 	} else {
           if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
           cout << "Solving classic Meanfield problem" << endl;

@@ -992,11 +992,23 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	}
 }
 
-Real* Lattice::GetPointer(string s) {
-if (debug) cout <<"GetPointer for Mol " + name << endl;
+Real* Lattice::GetPointer(string s,int &SIZE) {
+if (debug) cout <<"GetPointer for lattice " + name << endl;
 	vector<string> sub;
+	SIZE=M;
 	In[0]->split(s,';',sub);
-	if (sub[1]=="0") return L;
+	if (sub[0]=="profile" && sub[1]=="0") return L;
+	if (sub[0]=="vector") {}
+	return NULL;
+}
+int* Lattice::GetPointerInt(string s,int &SIZE) {
+if (debug) cout <<"GetPointerInt for lattice " + name << endl;
+	vector<string> sub;
+	SIZE=M;
+	In[0]->split(s,';',sub);
+	if (sub[0]=="array"){//get with sub[1] the number and put the pointer to integer array in return. 
+	}
+
 	return NULL;
 }
 

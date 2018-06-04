@@ -1,5 +1,5 @@
-#ifndef CLENGxH
-#define CLENGxH
+#ifndef TENGxH
+#define TENGxH
 #include "input.h"
 #include "namics.h"
 #include "newton.h"
@@ -14,7 +14,7 @@
 #include <cassert>
 
 
-class Cleng {
+class Teng {
 private:
   const string name;
   const vector<Input*> In;
@@ -31,8 +31,8 @@ private:
 
 
 public:
-  Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, vector<Engine*>, string);
-  ~Cleng();
+  Teng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, vector<Engine*>, string);
+  ~Teng();
 
   int clamp_seg;
   int clp_mol;

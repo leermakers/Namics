@@ -150,6 +150,21 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 		if (freedom =="clamp" ) {
 			n_box=0; mx=0;
+			int m_x; 
+			int MX=Lat[0]->MX;
+			if (GetValue("sub_box_size").size()>0) {
+				m_x=In[0]->Get_int(GetValue("sub_box_size"),-1);
+				if (m_x <1 || m_x > MX) {success=false; cout <<"Value of sub_box_size is out of bounds: 1 ... " << MX << endl; }
+				if (mx>0) {
+					if (m_x!=mx) {
+						cout <<"values for sub_box_size of input " << m_x << " not consistent with value found in clamp_filename " << mx << " input file data is taken " << endl; 
+						mx=m_x; my=m_x; mz=m_x; 
+					}
+				} else { mx=m_x; my=m_x; mz=m_x; }
+			}
+			Lat[0]->PutSub_box(mx,my,mz,n_box);
+			clamp_nr = Lat[0]->m.size()-1; 
+
 			if (GetValue("clamp_filename").size()>0) {
 				if (!GetClamp(GetValue("clamp_filename"))) {
 					success=false; cout <<"Failed to read 'clamp_filename'. Problem terminated" << endl;
@@ -181,9 +196,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 						set.clear();
 						In[0]->split(sub[i],'(',set);
 						int length = set.size(); 
-						if (length!=4) {
-							success=false; cout <<" In 'clamp_info' for segment '"+name+"', for box number " << i << " the expected format (bx,by,bz)(px1,py1,pz1)(px2,py2,pz2) was not found" << endl; 
+						if (length!=3) {
+							success=false; cout <<" In 'clamp_info' for segment '"+name+"', for box number " << i << " the expected format (px1,py1,pz1)(px2,py2,pz2) was not found" << endl; 
 						} else {
+/*
 							coor.clear();
 							In[0]->split(set[1],',',coor);
 							if (coor.size()!=3) {
@@ -193,9 +209,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 								by.push_back(In[0]->Get_int(coor[1],-10000));
 								bz.push_back(In[0]->Get_int(coor[2],-10000));
 							}
+*/
 					
 							coor.clear();
-							In[0]->split(set[2],',',coor);
+							In[0]->split(set[1],',',coor);
 							if (coor.size()!=3) {
 								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format. " << endl; 
 							} else {
@@ -204,7 +221,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 								pz1.push_back(In[0]->Get_int(coor[2],-10000));
 							}
 							coor.clear();
-							In[0]->split(set[3],',',coor);
+							In[0]->split(set[2],',',coor);
 							if (coor.size()!=3) {
 								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (px2,py2,pz2) not correct format. " << endl; 
 							} else {
@@ -212,7 +229,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 								py2.push_back(In[0]->Get_int(coor[1],-10000));
 								pz2.push_back(In[0]->Get_int(coor[2],-10000));
 							}
-						}
+							bx.push_back((px2[i]+px1[i]-mx)/2);  
+							by.push_back((py2[i]+py1[i]-mx)/2); 
+							bz.push_back((pz2[i]+pz1[i]-mx)/2); 
+						} 
 					}
 				} else {
 					success=false;
@@ -322,19 +342,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					H_MASK[((px1[i]-1)%MX+1)*JX + ((py1[i]-1)%MY+1)*JY + (pz1[i]-1)%MZ+1]=1;
 					H_MASK[((px2[i]-1)%MX+1)*JX + ((py2[i]-1)%MY+1)*JY + (pz2[i]-1)%MZ+1]=1;
 				}
-				int m_x; 
-				if (GetValue("sub_box_size").size()>0) {
-					m_x=In[0]->Get_int(GetValue("sub_box_size"),-1);
-					if (m_x <1 || m_x > MX) {success=false; cout <<"Value of sub_box_size is out of bounds: 1 ... " << MX << endl; }
-					if (mx>0) {
-						if (m_x!=mx) {
-							cout <<"values for sub_box_size of input " << m_x << " not consistent with value found in clamp_filename " << mx << " input file data is taken " << endl; 
-							mx=m_x; my=m_x; mz=m_x; 
-						}
-					} else { mx=m_x; my=m_x; mz=m_x; }
-				}
-				Lat[0]->PutSub_box(mx,my,mz,n_box);
-				clamp_nr = Lat[0]->m.size()-1; 
+
 			} else Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block); 
 		}
 		valence =0;
@@ -686,13 +694,26 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 #endif
 }
 
-Real* Segment::GetPointer(string s) {
+Real* Segment::GetPointer(string s, int &SIZE) {
 if (debug) cout <<"Get Pointer for segment " + name << endl;
 	vector<string> sub;
+	SIZE=Lat[0]->M;
 	In[0]->split(s,';',sub);
+	if (sub[0]=="profile") {
 	if (sub[1]=="0") return H_phi;
 	if (sub[1]=="1") return H_u;
 	//if (sub[1]=="2") return H_MASK;
+	} else {//sub[0]=="vector" ..do not forget to set SIZE before returning the pointer.
+	}
+	return NULL; 
+}
+int* Segment::GetPointerInt(string s, int &SIZE) {
+if (debug) cout <<"GetPointerInt for segment " + name << endl;
+	vector<string> sub;
+	SIZE=Lat[0]->M;
+	In[0]->split(s,';',sub);
+	if (sub[0]=="array") {// set SIZE and return int pointer.
+	}
 	return NULL; 
 }
 

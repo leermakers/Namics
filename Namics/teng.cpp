@@ -1,7 +1,7 @@
-#include "cleng.h"
+#include "teng.h"
 #include "output.h"
 
-Cleng::Cleng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Newton*> New_, vector<Engine*> Eng_,  string name_)
+Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Newton*> New_, vector<Engine*> Eng_,  string name_)
     : name{name_},
       In{In_},
       Lat{Lat_},
@@ -12,18 +12,18 @@ Cleng::Cleng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, v
       Eng{Eng_}
 
 {
-	if (debug) cout << "Cleng initialized" << endl;
+	if (debug) cout << "Teng initialized" << endl;
  	 KEYS.push_back("MCS");
   	KEYS.push_back("save_interval");
   	KEYS.push_back("save_filename");
   	KEYS.push_back("seed");
 }
 
-Cleng::~Cleng() {
+Teng::~Teng() {
 }
 
-bool Cleng::CheckInput(int start) {
-  if (debug) cout << "CheckInput in Cleng" << endl;
+bool Teng::CheckInput(int start) {
+  if (debug) cout << "CheckInput in Teng" << endl;
   bool success = true;
 
   success = In[0]->CheckParameters("cleng", name, start, KEYS, PARAMETERS, VALUES);
@@ -39,7 +39,7 @@ bool Cleng::CheckInput(int start) {
       success = In[0]->Get_int(GetValue("save_interval"), save_interval,1,MCS,"The save interval nr should be between 1 and 100");
     }
     if (debug) cout << "Save_interval " << save_interval << endl;
-    if (Sys[0]->SysClampList.size() <1) {cout <<"Cleng needs to have clamped molecules in the system" << endl; success=false;}
+    if (Sys[0]->SysClampList.size() <1) {cout <<"Teng needs to have clamped molecules in the system" << endl; success=false;}
 	else {clamp_seg=Sys[0]->SysClampList[0]; if (Sys[0]->SysClampList.size()>1) {success=false; cout <<"Currently the clamping is limited to one molecule per system. " << endl; }}
     if (success) {
 	n_boxes = Seg[clamp_seg]->n_box;
@@ -65,7 +65,7 @@ bool Cleng::CheckInput(int start) {
 }
 
 
-bool Cleng::CP(transfer tofrom) {
+bool Teng::CP(transfer tofrom) {
 	int MX=Lat[0]->MX;
 	int MY=Lat[0]->MY;
 	int MZ=Lat[0]->MZ;
@@ -131,7 +131,7 @@ bool Cleng::CP(transfer tofrom) {
 	return success; 
 }
 
-void Cleng::WriteOutput(int subloop){
+void Teng::WriteOutput(int subloop){
       PushOutput();
       Sys[0]->PushOutput(); // needs to be after pushing output for seg.
       Lat[0]->PushOutput();
@@ -156,8 +156,8 @@ void Cleng::WriteOutput(int subloop){
 	}
 }
 
-bool Cleng::MonteCarlo() {
-  if (debug) cout << "Monte Carlo in Cleng" << endl;
+bool Teng::MonteCarlo() {
+  if (debug) cout << "Monte Carlo in Teng" << endl;
 	bool success; 
 	t=0;
  	success=CP(to_cleng);
@@ -173,10 +173,10 @@ bool Cleng::MonteCarlo() {
 	return success;
 }
 
-void Cleng::PutParameter(string new_param) {
+void Teng::PutParameter(string new_param) {
   KEYS.push_back(new_param);
 }
-string Cleng::GetValue(string parameter) {
+string Teng::GetValue(string parameter) {
   int i = 0;
   int length = PARAMETERS.size();
   while (i < length) {
@@ -188,7 +188,7 @@ string Cleng::GetValue(string parameter) {
   return "";
 }
 
-void Cleng::PushOutput() {
+void Teng::PushOutput() {
 	int* point;
 	for (int i = 0; i < n_out; i++) {
 		Out[i]->PointerVectorInt.clear();

@@ -183,7 +183,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Bx=H_Bx; By=H_By; Bz=H_Bz;
 		Px1=H_Px1; Py1=H_Py1; Pz1=H_Pz2;
 		Px2=H_Px2; Py2=H_Py2; Pz2=H_Pz2;
-		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real));
+		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real)); 
 		Gg_b = (Real*) malloc(m*2*n_box*sizeof(Real));
 		
 		g1=(Real*) malloc(m*n_box*sizeof(Real));
@@ -193,6 +193,8 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	} else {
 		Gg_f = (Real*) malloc(M*N*sizeof(Real));
 		Gg_b = (Real*) malloc(M*2*sizeof(Real));
+		Zero(Gg_f,M*N);
+		Zero(Gg_b,2*M);
 		phi=H_phi;
 		rho=phi;
 		if (save_memory) Gs=(Real*) malloc(2*M*sizeof(Real));
@@ -202,10 +204,9 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	phitot = H_phitot;
 	UNITY = (Real*) malloc(M*sizeof(Real));
 #endif
-	Zero(Gg_f,M*N);
-	Zero(Gg_b,2*M);
-	if (save_memory) Zero(Gs,2*M);
-	int length =MolAlList.size();
+
+	if (save_memory) Zero(Gs,2*M); 
+	int length =MolAlList.size(); 
 	if (freedom!="clamped") Seg[mon_nr[0]]->clamp_nr=0;
 	for (int i=0; i<length; i++) Al[i]->AllocateMemory(Seg[mon_nr[0]]->clamp_nr,n_box);
 }
@@ -274,6 +275,8 @@ if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 			if (chainlength_even == pathlength_even) 
 			cout <<" Warning, for chain part " << i << " the paths between clamps is not commensurate with the length of the chain fragment. Consider moving the calmp point by one site!" << endl; 
 		}
+		n = n_box; 
+		theta=n_box*chainlength; 
 	}
 	return success;
 }
@@ -1486,33 +1489,47 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		stringstream ss; ss<<i+length; string str=ss.str();
 		s="profile;"+str; push(Al[i]->name+"-phi",s);
 	}
+	s="vector;0"; push("gn",s);
 #ifdef CUDA
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
 #endif	
 }
 
-Real* Molecule::GetPointer(string s) {
-if (debug) cout <<"GetPointer for Mol " + name << endl;	vector<string> sub;
+Real* Molecule::GetPointer(string s, int &SIZE) {
+if (debug) cout <<"GetPointer for Mol " + name << endl;	
+	vector<string> sub;
 	int M= Lat[0]->M;
 	In[0]->split(s,';',sub);
-	if (sub[1]=="0") return H_phitot;
-	int length=MolMonList.size();
-	int i=0;
-	while (i<length) { 
-		stringstream ss; ss<<i+1; string str=ss.str();
-		if (sub[1]==str) return H_phi+i*M; 
-		i++;
-	}
-	int length_al=MolAlList.size();
-	i=0;
-	while (i<length_al) {
-		stringstream ss; ss<<i+length; string str=ss.str();
-		if (sub[i]==str) return Al[i]->H_phi; 
+	if (sub[0]=="profile") {
+		SIZE=M;
+		if (sub[1]=="0") return H_phitot;
+		int length=MolMonList.size();
+		int i=0;
+		while (i<length) { 
+			stringstream ss; ss<<i+1; string str=ss.str();
+			if (sub[1]==str) return H_phi+i*M; 
+			i++;
+		}
+		int length_al=MolAlList.size();
+		i=0;
+		while (i<length_al) {
+			stringstream ss; ss<<i+length; string str=ss.str();
+			if (sub[i]==str) return Al[i]->H_phi; 
+		}
+	} else { //sub[0]=="vector"; 
+		if (sub[1]=="0") {SIZE=n_box; return gn;}
 	}
 	return NULL;
 }
-
+int* Molecule::GetPointerInt(string s, int &SIZE) {
+if (debug) cout <<"GetPointerInt for Mol " + name << endl;	
+	vector<string> sub;
+	In[0]->split(s,';',sub);
+	if (sub[0]=="array") { //set SIZE and return array pointer.
+	}
+	return NULL;
+}
 int Molecule::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
 if (debug) cout <<"GetValue (long) for Mol " + name << endl;
 	int i=0;

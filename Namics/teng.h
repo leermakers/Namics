@@ -33,9 +33,9 @@ public:
   Teng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
   ~Teng();
 
-  int clamp_seg;
-  int clp_mol;
-  int n_boxes;
+  int tag_seg;
+  int tag_mol;
+  int n_particles;
   int n_out;
   int sub_box_size;  
   int MCS;

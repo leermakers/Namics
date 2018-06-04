@@ -333,7 +333,7 @@ int main(int argc, char* argv[]) {
 	//Create montecarlo class instance and run it.
 	cout << "Solving Teng problem" << endl;
 	Ten.push_back(new Teng(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->TengList[0]));
-	if (!Cle[0]->CheckInput(start)) {return 0;}
+	if (!Ten[0]->CheckInput(start)) {return 0;}
 	} else {
           if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
           cout << "Solving classic Meanfield problem" << endl;

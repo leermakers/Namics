@@ -23,7 +23,6 @@ private:
   const vector<Segment*> Seg;
   const vector<System*> Sys;
   const vector<Newton*> New;
-  const vector<Engine*> Eng;
   const string brand;
 
   Real seed;
@@ -31,7 +30,7 @@ private:
 
 
 public:
-  Teng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, vector<Engine*>, string);
+  Teng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
   ~Teng();
 
   int clamp_seg;

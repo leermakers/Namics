@@ -25,7 +25,6 @@ public:
 	std::vector<string> AliasList; 
 	std::vector<string> NewtonList;
 	std::vector<string> OutputList; 
-	std::vector<string> EngineList;
 	std::vector<string> MesodynList;
 	std::vector<string> ClengList;
 	std::vector<string> TengList;

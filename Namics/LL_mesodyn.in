@@ -17,24 +17,21 @@ mol : A : theta : 50
 mol : B : composition : (B)4
 mol : B : freedom : solvent
 
-//mol : C : composition : (A)10(B)10
-//mol : C : freedom : restricted
-//mol : C : theta : 12.2
+mesodyn : smth : timesteps : 100000
+mesodyn : smth : timebetweensaves : 10000
+mesodyn : smth : diffusionconstant : 1
+mesodyn : smth : mean : 1
+mesodyn : smth : stdev : 1
+
 newton : isaac : method : DIIS-mesodyn
+newton : isaac : e_info : false
+newton : isaac : s_info : false
+newton : isaac : i_info : false
+newton : isaac : super_e_info : false
+//newton : isaac : m : 4
 newton : isaac : deltamax : 0.1
+newton : isaac : tolerance : 1e-5
 output : pro : append : false
 pro : mon : * : phi
 pro : mol : * : phi
 start
-mon : A : freedom : free
-output : kal : append : false
-kal : mol : * : theta
-kal : sys : noname : grand_potential
-kal : lat : flat : FJC_choices
-
-start
-//mol : A : theta : 43
-//var : mol-A : search : equate_to_solvent
-//var : mol-C : search : theta
-//var : sys-noname : grand_potential : 0
-//start

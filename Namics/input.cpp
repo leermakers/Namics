@@ -2,8 +2,16 @@
 Input::Input(string name_) {
 	name=name_;
 	KEYS.push_back("start");
-	KEYS.push_back("sys");KEYS.push_back("mol"); KEYS.push_back("mon"); KEYS.push_back("alias");
- 	KEYS.push_back("lat"); KEYS.push_back("newton"); KEYS.push_back("engine"); KEYS.push_back("mesodyn"); KEYS.push_back("cleng"); KEYS.push_back("teng"); KEYS.push_back("output"); 
+	KEYS.push_back("sys");
+	KEYS.push_back("mol"); 
+	KEYS.push_back("mon"); 
+	KEYS.push_back("alias");
+ 	KEYS.push_back("lat"); 
+	KEYS.push_back("newton"); 
+	KEYS.push_back("mesodyn"); 
+	KEYS.push_back("cleng"); 
+	KEYS.push_back("teng"); 
+	KEYS.push_back("output"); 
 	KEYS.push_back("var");
 
 
@@ -457,13 +465,6 @@ if (debug) cout <<"LoadItems in Input " << endl;
 							}
 							break;
 						case 6:
-							if (set[3]=="*") set[3]=EngineList[0];
-							if (EngineList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-							//if (EngineList[0]!=set[3] && set[1]!= "var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-								PrintList(EngineList); name_found=false;
-							}
-							break;
-						case 7:
 							k=0; name_length=OutputList.size(); name_found=false;
                                                         //if (set[1]=="var") name_found=true;
 							while (k<name_length) {
@@ -474,7 +475,7 @@ if (debug) cout <<"LoadItems in Input " << endl;
 								PrintList(OutputList);
 							}
 							break;
-						case 8:
+						case 7:
 							name_found=false;
 							k=0; name_length=VarList.size();
 							while (k<name_length && !name_found) {
@@ -485,13 +486,13 @@ if (debug) cout <<"LoadItems in Input " << endl;
 								PrintList(MonList);
 							}
 							break;
+						case 8:name_found=true;
+
+							break;
 						case 9:name_found=true;
 
 							break;
-						case 10:name_found=true;
-
-							break;
-						case 11:
+						case 10:
 							name_found=true;
 							break;
 						default:
@@ -589,32 +590,6 @@ bool Input:: CheckInput(void) {
 		}
 
 /*
-                if (set[1]=="engine") {
-                        vector<string> options;
-                        options.push_back("sfbox");
-                        string option;
-                        if (!Get_string(set[4],option,options,"Value for Engine brand '" + set[4] + "' not allowed. ")) {success=false;}
-                        else {
-                                word=set[4];
-
-                                j=0; Keywordfound=false; key_length =KEYS.size();
-                                while (j<key_length) {
-                                        if (word==KEYS[j]) {Keywordfound=true; }
-                                        j++;
-                                }
-                                if (!Keywordfound) {
-                                        KEYS.push_back(word);
-                                        key_length++;
-                                }
-
-
-                        }
-
-                }
-*/
-
-
-/*
 			if (set[1]=="search"){
 			vector<string> options;
 			options.push_back("sys"); options.push_back("mol");
@@ -665,7 +640,6 @@ bool Input::MakeLists(int start) {
 	MonList.clear();
 	MolList.clear();
 	OutputList.clear();
-	EngineList.clear();
 	MesodynList.clear();
 	ClengList.clear();
 	TengList.clear();
@@ -682,11 +656,9 @@ bool Input::MakeLists(int start) {
 	if (AliasList.size()==0) AliasList.push_back("noname");
 	if (!TestNum(MolList,"mol",1,1000,start)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}
 	if (!TestNum(OutputList,"output",1,1000,start)) {cout << "No output defined! " << endl;}
-	if (!TestNum(EngineList,"engine",0,1,start)) {cout << "There can be no more than 1 'engine' name in the input " << endl; success=false;}
 	if (!TestNum(MesodynList,"mesodyn",0,1,start)) {cout << "There can be no more than 1 'mesodyn' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(ClengList,"cleng",0,1,start)) {cout << "There can be no more than 1 'cleng' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(TengList,"teng",0,1,start)) {cout << "There can be no more than 1 'teng' engine brand name in the input " << endl; success=false;}
-	if (EngineList.size()==0) EngineList.push_back("noname");
 	if (!TestNum(VarList,"var",0,10,start))
 	if (VarList.size()==0) VarList.push_back("noname");
 	return success;

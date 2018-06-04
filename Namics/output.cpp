@@ -1,8 +1,8 @@
 #include "output.h" 
 #include "time.h"
-Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_,vector<Engine*> Eng_,string name_,int outnr,int N_out) {
+Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_,string name_,int outnr,int N_out) {
 if (debug) cout <<"constructor in Output "<< endl;
-	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_; Eng=Eng_;
+	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append"); 
 	input_error=false;
@@ -132,9 +132,8 @@ if (debug) cout << "GetPointerInt in output " << endl;
 	if  (key=="sys") choice=1;
 	if  (key=="mol") choice=2;
 	if  (key=="mon") choice=3;
-	if  (key=="engine") choice=4;
-	if (key=="lat") choice=5;
-	if (key=="output") choice = 6; 
+	if (key=="lat") choice=4;
+	if (key=="output") choice = 5; 
 
 	switch(choice) {
 		case 1:
@@ -174,14 +173,6 @@ if (debug) cout << "GetPointerInt in output " << endl;
 			}
 			break;
 		case 4:
-			listlength= Eng[0]->strings.size();
-			j=0;
-			while (j<listlength) {
-				if (prop==Eng[0]->strings[j]) return Eng[0]->GetPointerInt(Eng[0]->strings_value[j],Size);
-				j++;
-			}
-			break;
-		case 5:
 			listlength= Lat[0]->strings.size();
 			j=0;
 			while (j<listlength) {
@@ -189,7 +180,7 @@ if (debug) cout << "GetPointerInt in output " << endl;
 				j++;
 			}
 			break;
-		case 6: 
+		case 5: 
 			listlength=PointerVectorInt.size();
 			j=0;
 			while (j<listlength) {
@@ -213,9 +204,8 @@ if (debug) cout << "GetPointer in output " << endl;
 	if  (key=="sys") choice=1;
 	if  (key=="mol") choice=2;
 	if  (key=="mon") choice=3;
-	if  (key=="engine") choice=4;
-	if (key=="lat") choice=5;
-	if (key=="output") choice = 6; 
+	if (key=="lat") choice=4;
+	if (key=="output") choice = 5; 
 
 	switch(choice) {
 		case 1:
@@ -256,14 +246,6 @@ if (debug) cout << "GetPointer in output " << endl;
 			}
 			break;
 		case 4:
-			listlength= Eng[0]->strings.size();
-			j=0;
-			while (j<listlength) {
-				if (prop==Eng[0]->strings[j]) return Eng[0]->GetPointer(Eng[0]->strings_value[j],Size);
-				j++;
-			}
-			break;
-		case 5:
 			listlength= Lat[0]->strings.size();
 			j=0;
 			while (j<listlength) {
@@ -271,7 +253,7 @@ if (debug) cout << "GetPointer in output " << endl;
 				j++;
 			}
 			break;
-		case 6: 
+		case 5: 
 			listlength=PointerVectorReal.size();
 			j=0;
 			while (j<listlength) {
@@ -294,8 +276,7 @@ if (debug) cout << "GetValue (long) in output " << endl;
 	if  (key=="mon") choice=3;
 	if  (key=="newton") choice=4;
 	if  (key=="lat") choice=5;
-	if  (key=="engine") choice=6;
-	if  (key=="output") choice=7;
+	if  (key=="output") choice=6;
 	switch(choice) {
 		case 1:
 			return Sys[0]->GetValue(prop,int_result,Real_result,string_result);
@@ -321,9 +302,6 @@ if (debug) cout << "GetValue (long) in output " << endl;
 			return Lat[0]->GetValue(prop,int_result,Real_result,string_result);
 			break;
 		case 6:
-			return Eng[0]->GetValue(prop,int_result,Real_result,string_result);
-			break;
-		case 7:
 			return GetValue(prop,name,int_result,Real_result,string_result);
 			break;
 		default:
@@ -518,21 +496,6 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		length = New[0]->strings.size();
 		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),New[0]->strings[i].c_str(),New[0]->strings_value[i].c_str());
 
-//Engine parameters
-		s="engine : " + Eng[0]->name + " :";
-		length = Eng[0]->ints.size();
-		for (int i=0; i<length; i++)
-			fprintf(fp,"%s %s : %i \n",s.c_str(),Eng[0]->ints[i].c_str(),Eng[0]->ints_value[i]);
-		length = Eng[0]->Reals.size();
-		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Eng[0]->Reals[i].c_str(),Eng[0]->Reals_value[i]);
-		length = Eng[0]->bools.size();
-		for (int i=0; i<length; i++) {
-			if (Eng[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[0]->bools[i].c_str(),"true");
-			else fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[0]->bools[i].c_str(),"false");
-		}
-		length = Eng[0]->strings.size();
-		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[0]->strings[i].c_str(),Eng[0]->strings_value[i].c_str());
-
 //segment parameters
 		int length_A=In[0]->MonList.size();
 		for (int j=0; j<length_A; j++) {
@@ -544,8 +507,8 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Seg[j]->Reals[i].c_str(),Seg[j]->Reals_value[i]);
 			length = Seg[j]->bools.size();
 			for (int i=0; i<length; i++) {
-				if (Seg[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[j]->bools[i].c_str(),"true");
-				else fprintf(fp,"%s %s : %s \n",s.c_str(),Eng[j]->bools[i].c_str(),"false");
+				if (Seg[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Seg[j]->bools[i].c_str(),"true");
+				else fprintf(fp,"%s %s : %s \n",s.c_str(),Seg[j]->bools[i].c_str(),"false");
 			}
 			length = Seg[j]->strings.size();
 			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Seg[j]->strings[i].c_str(),Seg[j]->strings_value[i].c_str());

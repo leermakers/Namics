@@ -8,10 +8,9 @@
 #include "system.h"
 #include "newton.h"
 #include "alias.h"
-#include "engine.h"
 class Output {
 public:
-	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,vector<Engine*>,string,int,int);
+	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,string,int,int);
 
 ~Output();
 
@@ -22,7 +21,6 @@ public:
 	vector<Molecule*> Mol;
 	vector<System*> Sys;
 	vector<Newton*> New;
-	vector<Engine*> Eng;
 	int n_output; 
 	int start;
 	int output_nr; 

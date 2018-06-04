@@ -1,15 +1,14 @@
 #include "teng.h"
 #include "output.h"
 
-Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Newton*> New_, vector<Engine*> Eng_,  string name_)
+Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Newton*> New_,  string name_)
     : name{name_},
       In{In_},
       Lat{Lat_},
       Mol{Mol_},
       Seg{Seg_},
       Sys{Sys_},
-      New{New_},
-      Eng{Eng_}
+      New{New_}
 
 {
 	if (debug) cout << "Teng initialized" << endl;
@@ -36,7 +35,6 @@ bool Teng::MonteCarlo() {
 	t++;
 	New[0]->Solve(true);
 	WriteOutput(t);
-
 	return success;
 }
 
@@ -78,7 +76,6 @@ void Teng::WriteOutput(int subloop){
       	Sys[0]->PushOutput(); // needs to be after pushing output for seg.
       	Lat[0]->PushOutput();
       	New[0]->PushOutput();
-      	Eng[0]->PushOutput();
       	int length = In[0]->MonList.size();
       	for (int i = 0; i < length; i++)
         	Seg[i]->PushOutput();

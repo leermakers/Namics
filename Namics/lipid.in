@@ -37,9 +37,6 @@ kal : mol : lipid : chainlength
 kal : mon : C : chi-O
 kal : mol : lipid : mu
 kal : mol : lipid : phibulk
-kal : out : mesodyn : time
-kal : out : cleng : MCS
-kal : out : namics : calculation_number
 newton : isaac : i_info : 10
 newton : isaac : e_info : true
 newton : isaac : s_info : false

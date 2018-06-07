@@ -351,7 +351,7 @@ if (debug) cout << "System::GetError " << endl;
 			Error = FreeEnergy - Var_target_value;
 			break;
 		case 1:
-			Error = GrandPotential- Var_target_value;
+			Error = -1.0*(GrandPotential- Var_target_value);
 			break;
 		default:
 			cout <<"Program error in GetVarError" <<endl; 
@@ -616,7 +616,7 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]-
 			while (k<length) {
 				Real *phi=Mol[i]->phi+k*M;
 				Norm(phi,norm,M); 
-if (!debug) {
+if (debug) {
 Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]->MolMonList[k] << ": " << sum << endl; 
 }
 				k++;
@@ -675,7 +675,8 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << neutralizer << "for mon " <
 			Real* mol_phitot=Mol[i]->phitot;
 			Real* phi_molmon = Mol[i]->phi + k*M; 
 			Add(phi_mon,phi_molmon,M);
-			if (!(Seg[Mol[i]->MolMonList[k]]->freedom == "tagged")) Add(phitot,phi_molmon,M); 
+			//if (!(Seg[Mol[i]->MolMonList[k]]->freedom == "tagged")) 
+Add(phitot,phi_molmon,M); 
 			Add(mol_phitot,phi_molmon,M);
 			Seg[Mol[i]->MolMonList[k]]->phibulk +=Mol[i]->fraction(Mol[i]->MolMonList[k])*Mol[i]->phibulk; 
 			k++; 
@@ -724,13 +725,14 @@ if (debug) cout << "CheckResults for system " << endl;
 		cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
 	}
 	
-	for (int i=0; i<n_mol; i++) { //NEED FIX . densities are not yet computed correctly that is why it is turned off.....!!!
-		if (Mol[i]->MolAlList.size()>0) {
+	//for (int i=0; i<n_mol; i++) { //NEED FIX . densities are not yet computed correctly that is why it is turned off.....!!!
+		//if (Mol[i]->MolAlList.size()>0) {
 		//	Mol[i]->compute_phi_alias=true;
 			//Mol[i]->ComputePhi(); 
-		}
+		//}
 		//ComputePhis();
-	}
+	//}
+	cout << endl;
 	int M=Lat[0]->M;
 	for (int i=0; i<n_mol; i++) {
 		int n_molmon=Mol[i]->MolMonList.size();
@@ -739,11 +741,11 @@ if (debug) cout << "CheckResults for system " << endl;
 			Real FRACTION=Mol[i]->fraction(Mol[i]->MolMonList[j]);
 			if (Seg[Mol[i]->MolMonList[j]]->freedom !="clamp" ) {
 				Real THETA=Lat[0]->WeightedSum(Mol[i]->phi+j*M);
-				cout <<"Fraction: " << FRACTION << "=?=" << THETA/theta_tot << " or " << THETA << " of " << theta_tot <<  endl; 
+				cout <<"MOL " << Mol[i]->name << " Fraction " << Seg[Mol[i]->MolMonList[j]]->name << ": " << FRACTION << "=?=" << THETA/theta_tot << " or " << THETA << " of " << theta_tot <<  endl; 
 			}
 		}
 	}
-
+	cout << endl;
 	return success;  
 }
 

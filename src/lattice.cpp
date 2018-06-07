@@ -51,7 +51,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	PutM();
 	DeAllocateMemory();
 	if (fjc==1) {
-	if (geometry !="planar" && gradients<3) {
+	if (gradients<3) {
 		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
 		lambda_1=(Real*)malloc(M*sizeof(Real)); Zero(lambda_1,M);
 		lambda1=(Real*)malloc(M*sizeof(Real)); Zero(lambda1,M);
@@ -65,6 +65,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	switch (gradients) {
 		case 1:
 			if (fjc==1) {
+				if (geometry=="planar") {for (i=1; i<MX+1; i++) L[i]=1; }
 				if (geometry=="cylindrical") {
 					for (i=1; i<MX+1; i++) {
 						r=offset_first_layer + i;
@@ -185,6 +186,9 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 			}
 			break;
 		case 2:
+			if (geometry=="planar") {
+				for (i=0; i<M; i++) L[i]=1;
+			}
 			if (geometry=="cylindrical") {
 				for (i=1; i<MX+1; i++)
 				for (j=1; j<MY+1; j++) {
@@ -823,6 +827,7 @@ Real Lattice::WeightedSum(Real* X){
 			}
 			break;
 		case 2:
+			remove_bounds(X);
 			if (geometry=="planar") {
 				Sum(sum,X,M); return sum;
 			} else {
@@ -830,6 +835,7 @@ Real Lattice::WeightedSum(Real* X){
 			}
 			break;
 		case 3:
+			remove_bounds(X);
 			Sum(sum,X,M); return sum;
 			break;
 		default:
@@ -1197,8 +1203,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 			}
 			break;
 		case 3:
-			if (k>0) JX_=jx[k];
-			JY_=jy[k]; //TODO: Doesn't this belong to the if statement?
+			if (k>0) {JX_=jx[k]; JY_=jy[k];} 			
 			Zero(gs,M); set_bounds(gs_1);
 			Add(gs+JX_,gs_1,M-JX_); Add(gs,gs_1+JX_,M-JX_);
 			Add(gs+JY_,gs_1,M-JY_); Add(gs,gs_1+JY_,M-JY_);
@@ -1243,8 +1248,9 @@ if (debug) cout <<" remove_bounds (Real) in lattice " << endl;
 			if (sub_box_on!=0) {int k=sub_box_on;
 				for (int i=0; i<n_box[k]; i++)
 				RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
-			} else
+			} else {
 			RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			}	
 			break;
 		default:
 

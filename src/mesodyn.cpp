@@ -768,7 +768,7 @@ void Mesodyn::bNothing() {
 void Mesodyn::prepareOutputFile() {
   /* Open filestream and set filename to "mesodyn-datetime.csv" */
   ostringstream filename;
-  filename << "output/mesodyn-";
+  filename << "Namics/output/mesodyn-";
 
   time_t rawtime;
   time(&rawtime);

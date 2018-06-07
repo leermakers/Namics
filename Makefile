@@ -2,7 +2,7 @@
 CC          := g++
 
 #The Target Binary Program
-TARGET      := program
+TARGET      := namics
 
 #The Directories, Source, Includes, Objects, Binary and Resources
 SRCDIR      := src

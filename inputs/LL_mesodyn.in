@@ -1,0 +1,37 @@
+lat : flat : n_layers :100
+lat : flat : lattice_type : simple_cubic
+//lat : flat : FJC_choices :7
+lat : flat : gradients : 1
+
+mon : A : freedom : pinned
+mon : A : pinned_range : 1;60
+
+mon : B : freedom : free
+
+mon : A : chi - B : 0.6
+
+mol : A : composition : (A)4
+mol : A : freedom : restricted
+mol : A : theta : 50
+
+mol : B : composition : (B)4
+mol : B : freedom : solvent
+
+mesodyn : smth : timesteps : 100000
+mesodyn : smth : timebetweensaves : 10000
+mesodyn : smth : diffusionconstant : 1
+mesodyn : smth : mean : 1
+mesodyn : smth : stdev : 1
+
+newton : isaac : method : DIIS-mesodyn
+newton : isaac : e_info : false
+newton : isaac : s_info : false
+newton : isaac : i_info : false
+newton : isaac : super_e_info : false
+//newton : isaac : m : 4
+newton : isaac : deltamax : 0.1
+newton : isaac : tolerance : 1e-5
+output : pro : append : false
+pro : mon : * : phi
+pro : mol : * : phi
+start

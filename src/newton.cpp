@@ -23,6 +23,7 @@ if(debug) cout <<"Constructor in Newton " << endl;
 	KEYS.push_back("super_s_info");
 	KEYS.push_back("super_tolerance");
 	KEYS.push_back("super_iterationlimit");
+	mesodyn = false;
 }
 
 Newton::~Newton() {
@@ -56,6 +57,37 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	if (method == "DIIS-mesodyn") {
 		iv = Sys[0]->SysMolMonList.size()*M;
 	} else iv = Sys[0]->SysMonList.size() * M;
+	if (Sys[0]->charged) iv +=M;
+	if (method=="DIIS-ext") iv +=M;
+	Aij  =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
+	Ci   =(Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
+	Apij =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
+	mask= (int*) malloc(iv*sizeof(int));
+#ifdef CUDA
+	xx  = (Real*)AllOnDev(iv);
+	x0  = (Real*)AllOnDev(iv);
+	g   = (Real*)AllOnDev(iv);
+	xR  = (Real*)AllOnDev(m*iv);
+	x_x0= (Real*)AllOnDev(m*iv);
+#else
+	xx   =(Real*) malloc(iv*sizeof(Real));
+	x0   =(Real*) malloc(iv*sizeof(Real));
+	g    =(Real*) malloc(iv*sizeof(Real));
+	xR   =(Real*) malloc(m*iv*sizeof(Real));
+	x_x0 =(Real*) malloc(m*iv*sizeof(Real));
+#endif
+	Zero(xx,iv);
+	Zero(x0,iv);
+	Zero(g,iv);
+	Zero(xR,m*iv);
+	Zero(x_x0,m*iv);
+	Sys[0]->AllocateMemory();
+}
+
+void Newton::AllocateMemory(int fIv) {
+if(debug) cout <<"AllocateMemeory in Newton " << endl;
+	int M=Lat[0]->M;
+	iv = fIv;
 	if (Sys[0]->charged) iv +=M;
 	if (method=="DIIS-ext") iv +=M;
 	Aij  =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
@@ -948,10 +980,12 @@ if(debug) cout <<"iterate in Newton" << endl;
 bool Newton::PutU() {
 if(debug) cout <<"PutU in  Newton " << endl;
 	int M=Lat[0]->M;
+
+
 	bool success=true;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	alpha=Sys[0]->alpha;
-	if (method=="DIIS-mesodyn") {
+	if (In[0]->MesodynList.size()>0) {
 		int i=0; int k=0;
 		int length = In[0]->MolList.size();
 		while (i<length) {
@@ -1210,40 +1244,43 @@ if(debug) cout <<"Solve in  Newton " << endl;
 	return success;
 }
 
-bool Newton::SolveMesodyn(vector<Real>& rho) {
+bool Newton::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
+
 	if(debug) cout <<"Solve (mesodyn) in  Newton " << endl;
+  mesodyn =true;
+	//RHO=&rho[0];
+
 	int M=Lat[0]->M;
 	Real chi;
 	int sysmon_length = Sys[0]->SysMolMonList.size();
-	cout << "1" << endl;
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 
 	bool success=true;
 
 	success=Iterate_DIIS(&rho.at(0));
+	//iterate(xx,iv);
 
-	Cp(alpha,xx,iv);
-	if (Sys[0]->charged) {
+	Cp(&fAlpha[0],xx,iv);
+	/*if (Sys[0]->charged) {
 		Sys[0]->DoElectrostatics(alpha+sysmon_length*M,xx+sysmon_length*M);
 		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
-	}
+	}*/
 
 	for (int i=0; i<sysmon_length; i++) {
 		for (int k=0; k<mon_length; k++) {
                         chi= Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
 			if (chi!=0) {
-				PutAlpha(alpha+i*M,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+				PutAlpha( (&fAlpha[0]) +i*M,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 			}
 		}
-		if (Sys[0]->charged){
+
+/*		if (Sys[0]->charged){
 			YplusisCtimesX(alpha+i*M,Sys[0]->EE,Seg[Sys[0]->SysMolMonList[i]]->epsilon,M);
 			if (Seg[Sys[0]->SysMolMonList[i]]->valence !=0)
 			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMolMonList[i]]->valence,M);
-		}
+		}*/
 
 	}
-
-
 	//Sys[0]->CheckResults(report_errors);
 	return success;
 }
@@ -1362,7 +1399,7 @@ if(debug) cout <<"Iterate_DIIS for mesodyn in Newton " << endl;
 	Cp(xR,xx,iv);
 	Dot(residual,g,g,iv);
 	residual=sqrt(residual);
-	if (e_info) printf("DIIS has been notified\n");
+	if (e_info) printf("DIIS Mesodyn has been notified\n");
 	if (e_info) printf("Your guess = %1e \n",residual);
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
@@ -1451,6 +1488,10 @@ void Newton::ComputeG(Real* g){
 	Real chi;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size(); //also frozen segments
+
+	if (mesodyn) {
+		ComputeG_mesodyn(RHO);
+	} else {
 	ComputePhis();
 
 	if (Sys[0]->charged) {
@@ -1484,7 +1525,7 @@ void Newton::ComputeG(Real* g){
 		Lat[0]->set_bounds(Sys[0]->psi);
 		Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
 		//Lat[0]->remove_bounds(g+sysmon_length*M);
-
+}
 
 	//	Cp(g+sysmon_length*M,Sys[0]->psi,M);
 	//	Lat[0]->UpdatePsi(Sys[0]->psi,Sys[0]->q,Sys[0]->eps);
@@ -1537,7 +1578,16 @@ void Newton::ComputeG_mesodyn(Real* rho) {
 	while (i<length) {
 		int j=0;
 		int LENGTH=Mol[i]->MolMonList.size();
-		while (j<LENGTH) {YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M); k++; j++;}
+		while (j<LENGTH) {
+				//YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M);
+				for ( int z = 0; z < M; ++z) {
+					g[z+k*M] += (-1.0*Mol[i]->phi[z+j*M]);
+				}
+				Lat[0]->remove_bounds(g+k*M);
+
+				k++;
+				j++;
+		}
 		i++;
 	}
 }

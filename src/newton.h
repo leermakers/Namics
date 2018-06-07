@@ -111,6 +111,8 @@ public:
 	Real* d;
 	Real* q;
 	Real* s;
+	bool mesodyn;
+	Real* RHO;
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -122,10 +124,11 @@ public:
 	bool Guess(Real*,string,vector<string>,bool,int,int,int,int);
 	string GetNewtonInfo(int&);
 	bool Solve(bool);
-	bool SolveMesodyn(vector<Real>&); //first argument should contain rho
+	bool SolveMesodyn(vector<Real>&, vector<Real>&); //first argument should contain rho
 	bool SuperIterate(int,int,int,int);
 	void DeAllocateMemory();
 	void AllocateMemory();
+	void AllocateMemory(int);
 	bool PrepareForCalculations(void);
 	void Ax(Real* , Real* , int );
 	void DIIS(Real* , Real* , Real* , Real*, Real* ,Real* , int ,int, int , int );

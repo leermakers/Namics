@@ -8,7 +8,7 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       Seg{Seg_},
       Sys{Sys_},
       New{New_},
-      D{1},
+      D{0.001},
       mean{1},
       stdev{1},
       seed{1},
@@ -29,9 +29,10 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       dimensions{findDimensions()},
 
       //These also set size == capacity. Not resizing will break all iterators.
-      J(dimensions * componentNo * M),
+      J(dimensions * componentNo * M, vector<Real>(componentNo)),
       L(cCombinations * M),
       rho(componentNo * M),
+      alpha(componentNo * M),
       ptrComponentStart(componentNo),
       U(componentNo * (componentNo - 1) * M)
 
@@ -70,13 +71,13 @@ bool Mesodyn::CheckInput(int start) {
       cout << "Timesteps is " << timesteps << endl;
 
     if (GetValue("timebetweensaves").size() > 0) {
-      success = In[0]->Get_int(GetValue("timebetweensaves"), timebetweensaves);
+      timebetweensaves = In[0]->Get_int(GetValue("timebetweensaves"), timebetweensaves);
     }
     if (debug)
       cout << "Time bewteen saves is " << timebetweensaves << endl;
 
     if (GetValue("diffusionconstant").size() > 0) {
-      success = In[0]->Get_Real(GetValue("diffusionconstant"), D);
+      D = In[0]->Get_Real(GetValue("diffusionconstant"), D);
     }
     if (debug)
       cout << "Diffusion const is " << D << endl;
@@ -224,27 +225,33 @@ bool Mesodyn::mesodyn() {
     cout << "mesodyn in Mesodyn" << endl;
 
   initRho(); // Get initial conditions (phi and potentials) by running the classical method once.
+
+
   prepareOutputFile();
 //  writeRho(0); // write initial conditions
   setBoundaryPointers();
 
+
+
   if (debug)
     cout << "Mesodyn is all set, starting calculations.." << endl;
 
-  int save {1};
-
   for (int t = 1; t < timesteps; t++) { // get segment potentials by iteration so that they match the given rho.
     cout << "MESODYN: t = " << t << endl;
-    New[0]->SolveMesodyn(rho);
+
+    cout.precision(32);
+
+    //TODO: Check for convergence and exit?
+    New[0]->SolveMesodyn(rho, alpha);
     onsagerCoefficient();
     potentialDifference();
     boundaryConditions();
     langevinFlux();
-    if( t == timebetweensaves*save ) {
+    if( t % timebetweensaves == 0 ) {
       writeRho(t);
-      save+=1;
     }
     updateDensity();
+
   }
   return true;
 }
@@ -262,10 +269,18 @@ void Mesodyn::initRho() {
       Seg[i]->freedom = "free";
   }
 
+  New[0]->Solve(true);
+
+  //TODO: 3+ components
   for (int z = 0; z < Lat[0]->M; z++) {
     rho[z] = Mol[0]->phi[z];
     rho[z + M] = Mol[1]->phi[z];
   }
+
+  New[0]->Solve(true);
+
+//  New[0]->DeAllocateMemory();
+//  New[0]->AllocateMemory(componentNo);
 
   //Next, register where in rho all components are located:
   //start indices for each segment type are pointed to by ptrComponentStart.
@@ -285,31 +300,20 @@ void Mesodyn::updateDensity() {
   for (int j = 0; j < componentNo; ++j) {
     for (int i = 0; i < M; ++i) {
 
-      rho[i + j * M] += J[i + j * M]; // x of component j
-      for (int z = 0; z < j; ++z) {
-        rho[i + z * M] -= (J[i + j * M] / (componentNo-1));
-      }
-      for (int z = j+1; z < componentNo; ++z) {
-        rho[i + z * M] -= (J[i + j * M] / (componentNo-1));
+      // Jx of component j at coordinate i
+      for (int y = 0; y < componentNo-1; y++) {
+        rho[i + j * M] -= (J[i + j * M])[y];
       }
 
       if (dimensions > 1) {
-        rho[i + j * M] += J[i * M + j * M]; // y
-        for (int z = 0; z < j; ++z) {
-          rho[i + z * M] -= (J[i * M + j * M] / (componentNo-1));
-        }
-        for (int z = j+1; z < componentNo; ++z) {
-          rho[i + z * M] -= (J[i * M + j * M] / (componentNo-1));
-        }
+        for (int y = 0; y < componentNo-1; y++) {
+        rho[i + j * M] += (J[i * M + j * M])[y]; // y
+      }
 
         if (dimensions > 2) {
-          rho[i + j * M] += J[i * 2 * M + j * M]; // z
-          for (int z = 0; z < j; ++z) {
-            rho[i + z * M] -= (J[i * 2 + j * M] / (componentNo-1));
-          }
-          for (int z = j+1; z < componentNo; ++z) {
-            rho[i + z * M] -= (J[i * 2 + j * M] / (componentNo-1));
-          }
+          for (int y = 0; y < componentNo-1; y++) {
+          rho[i + j * M] += (J[i * 2 * M + j * M])[y]; // z
+        }
 
         }
       }
@@ -379,10 +383,10 @@ void Mesodyn::potentialDifference() {
 
         if (j < i) {
           //subtract the potential of the other components j or j+1 from the potential the current component i
-          *uIterator = New[0]->xx[z + i * M] - New[0]->xx[z + j * M];
+          *uIterator = alpha[z + i * M] - alpha[z + j * M];
           ++uIterator;
         } else {
-          *uIterator = New[0]->xx[z + i * M] - New[0]->xx[z + (j+1) * M];
+          *uIterator = alpha[z + i * M] - alpha[z + (j+1) * M];
           ++uIterator;
           //No bounds checking needed because it runs out of scope right after.
         }
@@ -398,11 +402,13 @@ void Mesodyn::langevinFlux() {
   //This jIterator is going to keep track of where in the flux vector we are and keeps incrementing over all the coming loops.
   //so that fluxes are sequentially placed like Jx1, Jy1, Jz1, Jx2, Jy2, Jz2, where the number is the (indexed) lattice site.
   //(this structure is important to know when updating the densities accordingly).
-  vector<Real>::iterator jIterator;
+  vector< vector<Real> >::iterator jIterator;
 
   // Zero the jIterator
   for (jIterator = J.begin(); jIterator != J.end(); ++jIterator) {
-    *jIterator = 0;
+    for (int y = 0; y < componentNo-1; ++y) {
+          (*jIterator)[y] = 0;
+    }
   }
 
   jIterator = J.begin();
@@ -445,7 +451,7 @@ void Mesodyn::langevinFlux() {
       gaussianNoise(mean, stdev, 1);
       //for all combinations with other components
       for (int l = 0; l < componentNo - 1; ++l) {
-        *jIterator += -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JX]) * (U[z + (i*M*(componentNo-1)) + l * M + JX] - U[z + (i*M*(componentNo-1)) + l * M])) - ((L[z + cCombinations[l] * M - JX] + L[z + cCombinations[l] * M]) * (U[z + (i*M*(componentNo-1)) + l * M] - U[z + (i*M*(componentNo-1)) + l * M - JX]));
+              (*jIterator)[l] = D * (((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JX]) * (U[z + (i*M*(componentNo-1)) + l * M + JX] - U[z + (i*M*(componentNo-1)) + l * M])) - ((L[z + cCombinations[l] * M - JX] + L[z + cCombinations[l] * M]) * (U[z + (i*M*(componentNo-1)) + l * M] - U[z + (i*M*(componentNo-1)) + l * M - JX])));
       }
       ++jIterator;
     }
@@ -461,7 +467,7 @@ void Mesodyn::langevinFlux() {
       for (int z = 1; z < M - 1; ++z) {
         gaussianNoise(mean, stdev, 1);
         for (int l = 0; l < componentNo - 1; ++l) {
-          *jIterator = -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JY]) * (U[z + (i*M*(componentNo-1)) + l * M + JY] - U[z + (i*M*(componentNo-1)) + l * M])) - ((L[z + cCombinations[l] * M - JY] + L[z + cCombinations[l] * M]) * (U[z + (i*M*(componentNo-1)) + l * M] - U[z + (i*M*(componentNo-1)) + l * M - JY]));
+          (*jIterator)[l] = -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JY]) * (U[z + (i*M*(componentNo-1)) + l * M + JY] - U[z + (i*M*(componentNo-1)) + l * M])) - ((L[z + cCombinations[l] * M - JY] + L[z + cCombinations[l] * M]) * (U[z + (i*M*(componentNo-1)) + l * M] - U[z + (i*M*(componentNo-1)) + l * M - JY]));
         }
         ++jIterator;
       }
@@ -477,7 +483,7 @@ void Mesodyn::langevinFlux() {
         for (int z = 1; z < M - 1; ++z) {
           gaussianNoise(mean, stdev, 1);
           for (int l = 0; l < componentNo - 1; ++l) {
-            *jIterator = -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JZ]) * (U[z + (i*M*(componentNo-1)) + l * M + JZ] - U[z + (i*M*(componentNo-1)) + l * M])) - ((L[z + cCombinations[l] * M - JZ] + L[z + cCombinations[l] * M]) * (U[z + (i*M*(componentNo-1)) + l * M] - U[z + (i*M*(componentNo-1)) + l * M - JZ]));
+            (*jIterator)[l] = -D * ((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JZ]) * (U[z + (i*M*(componentNo-1)) + l * M + JZ] - U[z + (i*M*(componentNo-1)) + l * M])) - ((L[z + cCombinations[l] * M - JZ] + L[z + cCombinations[l] * M]) * (U[z + (i*M*(componentNo-1)) + l * M] - U[z + (i*M*(componentNo-1)) + l * M - JZ]));
           }
           ++jIterator;
         }
@@ -499,7 +505,7 @@ void Mesodyn::gaussianNoise(Real mean, Real stdev, unsigned int count) {
 
   random_device generator;
 
-  seed_seq seed("something", "something else");
+  seed_seq seed {Mesodyn::seed};
 
   //Mersenne Twister 19937 bit state size PRNG
   mt19937 prng(seed);
@@ -553,7 +559,6 @@ void Mesodyn::bXmMirror(int fMY, int fMZ, int fMX) {
       }
       for (int c = 0; c < componentNo; ++c) {
         //Potentials
-        if (c < componentNo - 1)
           *valPtr(U, c, fMX - 1, y, z) = val(U, c, fMX - 2, y, z); //end
       }
     }
@@ -573,7 +578,6 @@ void Mesodyn::bX0XmMirror(int fMY, int fMZ, int fMX) {
       }
       for (int c = 0; c < componentNo; ++c) {
         //Potentials
-        if (c < componentNo - 1)
           *valPtr(U, c, 0, y, z) = val(U, c, 1, y, z);         //start
         *valPtr(U, c, fMX - 1, y, z) = val(U, c, fMX - 2, y, z); //end
       }
@@ -593,7 +597,6 @@ void Mesodyn::bY0Mirror(int fMX, int fMZ) {
       }
       for (int c = 0; c < componentNo; ++c) {
         //Potentials
-        if (c < componentNo - 1)
           *valPtr(U, c, x, 0, z) = val(U, c, x, 1, z); //start
       }
     }
@@ -773,6 +776,8 @@ void Mesodyn::prepareOutputFile() {
 
   mesFile.open(filename.str());
 
+  mesFile.precision(16);
+
   /* Output settings */
 
   ostringstream settings;
@@ -802,6 +807,10 @@ void Mesodyn::prepareOutputFile() {
   }
 
   for (int i = 1; i <= componentNo; ++i) {
+    headers << "alpha" << i << ",";
+  }
+
+  for (int i = 1; i <= componentNo; ++i) {
     headers << "U" << i << ",";
   }
 
@@ -821,26 +830,28 @@ void Mesodyn::writeRho(int t) {
 
   ostringstream rhoOutput;
 
-  int tLMZ {LMZ};
-  int tLMY {LMY};
-  int tLMX {LMX};
+  rhoOutput.precision(32);
+
+  int tMZ {MZ};
+  int tMY {MY};
+  int tMX {MX};
 
   switch ( dimensions ) {
     case 1:
-      tLMY = 1;
-      tLMZ = 1;
+      tMY = 1;
+      tMZ = 1;
       break;
     case 2:
-      tLMZ = 1;
+      tMZ = 1;
       break;
     default:
       break;
 
   }
 
-  for (int z = 0; z < tLMZ; ++z) {
-    for (int y = 0; y < tLMY; ++y) {
-      for (int x = 0; x < tLMX; ++x) {
+  for (int z = 0; z < tMZ; ++z) {
+    for (int y = 0; y < tMY; ++y) {
+      for (int x = 0; x < tMX; ++x) {
         rhoOutput << x << ",";//":" << y << ":" << z << ",";
         for (int c = 0; c < componentNo; ++c) {
           rhoOutput << val(rho, c, x, y, z) << ",";
@@ -851,11 +862,17 @@ void Mesodyn::writeRho(int t) {
         }
 
         for (int c = 0; c < componentNo; ++c) {
+          rhoOutput << val(alpha, c, x, y, z) << ",";
+        }
+
+        for (int c = 0; c < componentNo; ++c) {
           rhoOutput << val(U, c, x, y, z) << ",";
         }
 
         for (int c = 0; c < componentNo; ++c) {
-          rhoOutput << val(J, c, x, y, z) << ",";
+          for (int a = 0; a < componentNo-1; ++a)  {
+            rhoOutput << valAt(J, c, x, y, z, a) << ",";
+          }
         }
 
         rhoOutput << "\n";
@@ -874,6 +891,10 @@ void Mesodyn::writeRho(int t) {
 
 inline Real Mesodyn::val(vector<Real>& v, int c, int x, int y, int z) {
   return v[c * Lat[0]->M + x * Lat[0]->JX + y * Lat[0]->JY + z];
+}
+
+inline Real Mesodyn::valAt(vector< vector<Real> >& v, int c, int x, int y, int z, int a) {
+  return v[c * Lat[0]->M + x * Lat[0]->JX + y * Lat[0]->JY + z][a];
 }
 
 inline Real* Mesodyn::valPtr(vector<Real>& v, int c, int x, int y, int z) {

@@ -54,8 +54,12 @@ public:
 	Real delta_max;
 	bool e_info;
 	bool s_info;
+	bool t_info;
 	bool super_e_info;
 	bool super_s_info;
+	Real super_deltamax;
+
+	int super_m;
 	vector<Input*> In;
 	vector<System*> Sys;
 	vector<Segment*> Seg;

@@ -5,7 +5,7 @@ Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;Var=Var_;
 if(debug) cout <<"Constructor in Newton " << endl;
 	KEYS.push_back("method");  KEYS.push_back("m");
-	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");
+	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info"); 
 
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance");
 	KEYS.push_back("stop_criterion");
@@ -23,6 +23,9 @@ if(debug) cout <<"Constructor in Newton " << endl;
 	KEYS.push_back("super_s_info");
 	KEYS.push_back("super_tolerance");
 	KEYS.push_back("super_iterationlimit");
+	KEYS.push_back("super_m");
+	KEYS.push_back("super_deltamax");
+	
 }
 
 Newton::~Newton() {
@@ -97,6 +100,7 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 	if (success) {
 		e_info=In[0]->Get_bool(GetValue("e_info"),true);
 		s_info=In[0]->Get_bool(GetValue("s_info"),false);
+		t_info=In[0]->Get_bool(GetValue("t_info"),false);
 		i_info=In[0]->Get_int(GetValue("i_info"),1);
 		iterationlimit=In[0]->Get_int(GetValue("iterationlimit"),1000);
 		if (iterationlimit < 0 || iterationlimit>1e6) {iterationlimit = 1000;}
@@ -104,8 +108,10 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),e_info);
 		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),s_info);
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
+		super_m =In[0]->Get_int("super_m",10); 
 
 		delta_max=In[0]->Get_Real(GetValue("deltamax"),0.1);
+		super_deltamax=In[0]->Get_Real(GetValue("super_deltamax"),0.5);
 		if (delta_max < 0 || delta_max>100) {delta_max = 0.1;  cout << "Value of deltamax out of range 0..100, and value set to default value 0.1" <<endl; }
 		delta_min=delta_max/100000;
 		delta_min=In[0]->Get_Real(GetValue("deltamin"),delta_min);
@@ -595,7 +601,7 @@ if(debug) cout <<"direction in Newton " << endl;
 		for (int i=0; i<nvar; i++) {
 			p[i] *= -1;
 		}
-		if ( e_info) cout << "*";
+		if ( e_info && t_info) cout << "*";
 	}
 }
 
@@ -939,6 +945,7 @@ if(debug) cout <<"iterate in Newton" << endl;
 		normg=sqrt(minimum);
 		if (print_hessian_at_it==it) print_hessian(h,nvar);
 	}
+	printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
 	Message(e_info,s_info,it,iterationlimit,accuracy,tolerance,"");
 	ResetX(xx,nvar);
 	delete [] p; delete [] g0 ; delete [] p0;
@@ -1252,16 +1259,17 @@ void Newton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real r
 	if (debug) cout <<"Message in  Newton " << endl;
 	if (it == iterationlimit) cout <<"Warning: "<<s<<"iteration not solved. Residual error= " << residual << endl;
 	if (e_info || s_info) {
-		cout <<" " <<s<<"problem solved" << endl;
+		
+		cout <<s<<"Problem solved." << endl;
 		if (e_info) {
-			if (it < iterationlimit/10) cout <<" That was easy." << endl;
+			if (it < iterationlimit/10) cout <<"That was easy." << endl;
 			if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
-			if (it <2 && iterationlimit >1 ) cout <<" You hit the nail on the head." << endl;
+			if (it <2 && iterationlimit >1 ) cout <<"You hit the nail on the head." << endl;
 			if (residual > tolerance) { cout << " Iterations failed." << endl;
-				if (residual < tolerance/10) cout <<" I almost made it..." << endl;
+				if (residual < tolerance/10) cout <<"... I almost made it..." << endl;
 			}
 		}
-		if (s_info) cout <<it << " iterations used to reach residual " << residual << endl;
+		if (s_info) cout <<it << " iterations used to reach residual " << residual <<"."<< endl;
 	}
 }
 
@@ -1389,7 +1397,7 @@ if(debug) cout <<"Iterate_DIIS for mesodyn in Newton " << endl;
 bool Newton::SuperIterate(int search, int target,int ets,int etm) {
 if(debug) cout <<"SuperIteration in  Newton " << endl;
 	int iv=1;
-	int m=10;
+	int m=super_m;
 	Real* x = (Real*)malloc(iv*sizeof(Real));
 	if (ets==-1 && etm==-1) x[0] =Var[search]->GetValue(); else {if (ets>-1) x[0] = Var[ets]->GetValue(); else x[0]=Var[etm]->GetValue();}
 	Real* x_x0 = (Real*)malloc(m*sizeof(Real));
@@ -1399,7 +1407,7 @@ if(debug) cout <<"SuperIteration in  Newton " << endl;
 	Real* Aij = (Real*)malloc(m*m*sizeof(Real));
 	Real* Apij = (Real*)malloc(m*m*sizeof(Real));
 	Real* Ci = (Real*)malloc(m*sizeof(Real));
-	Real delta_max=0.5;
+	Real delta_max=super_deltamax;
 	Real residual;
 	Real tol=super_tolerance;
 	int iterationlimit=super_iterationlimit;

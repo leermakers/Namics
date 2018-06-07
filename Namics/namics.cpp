@@ -1,6 +1,6 @@
 #define MAINxH
 #include "alias.h"
-#include "engine.h" 
+#include "engine.h"
 #include "input.h"
 #include "lattice.h"
 #include "molecule.h"
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
   string METHOD = "";
   Real* X = NULL;
   int MX = 0, MY = 0, MZ = 0;
-  int fjc_old; 
+  int fjc_old;
   bool CHARGED = false;
   vector<string> MONLIST;
 
@@ -107,8 +107,8 @@ int main(int argc, char* argv[]) {
   vector<Engine*> Eng;
   vector<Variate*> Var;
   vector<Mesodyn*> Mes;
-  vector<Cleng*> Cle; //enginge for clampled molecules 
-  vector<Teng*> Ten; //enginge for clampled molecules 
+  vector<Cleng*> Cle; //enginge for clampled molecules
+  vector<Teng*> Ten; //enginge for clampled molecules
 
   // Create input class instance and handle errors(reference above)
   In.push_back(new Input(filename.str()) );
@@ -279,7 +279,7 @@ int main(int argc, char* argv[]) {
         } else {
           m = (MX + 2) * (MY + 2) * (MZ + 2);
         }
-      }      
+      }
       int IV = nummon * m;
 
       if (CHARGED)
@@ -313,16 +313,17 @@ int main(int argc, char* argv[]) {
   /********* This is the starting point of all calculations. *********/
 
       //If mesodyn is to be used, go through this loop
-      if (New[0]->method == "DIIS-mesodyn" || In[0]->ClengList.size()>0) {
+    //  if (New[0]->method == "DIIS-mesodyn" || In[0]->ClengList.size()>0) {
+        if (In[0]->MesodynList.size()>0|| In[0]->ClengList.size()>0) {
 	if (In[0]->ClengList.size()>0) {
 		if (!debug) cout << "Creating Cleng module" << endl;
-		Cle.push_back(new Cleng(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->ClengList[0]));      
+		Cle.push_back(new Cleng(In, Lat, Seg, Mol, Sys, New, Eng, In[0]->ClengList[0]));
 		if (!Cle[0]->CheckInput(start)) {return 0;}
 	} else {
         // Create mesodyn class instance and check inputs (reference above)
         if (debug) cout << "Creating mesodyn" << endl;
         Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
-        if (!Mes[0]->CheckInput(start)) {
+        if (!Mes[start-1]->CheckInput(start)) {
           return 0;
         }
         Mes[start-1]->mesodyn();
@@ -383,7 +384,7 @@ int main(int argc, char* argv[]) {
         free(X);
       X = (Real *)malloc(IV_new * sizeof(Real));
       for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
-      fjc_old=Lat[0]->fjc; 
+      fjc_old=Lat[0]->fjc;
       int length = Sys[0]->SysMonList.size();
       MONLIST.clear();
       for (int i = 0; i < length; i++) {
@@ -397,7 +398,7 @@ int main(int argc, char* argv[]) {
         MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
       }
       Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->method, MONLIST, Sys[0]->charged, start);
-    } 
+    }
     for (int i = 0; i < n_out; i++) delete Out[i];
     Out.clear();
     delete Eng[0];

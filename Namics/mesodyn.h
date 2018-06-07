@@ -41,9 +41,10 @@ private:
   const int componentNo;
   const int cCombinations;
   const int dimensions;
-  vector<Real> J;
+  vector < vector<Real> > J;
   vector<Real> L;
   vector<Real> rho;
+  vector<Real> alpha;
   vector<Real*> ptrComponentStart;    //densities used in langevinFlux
   vector<Real> U;
 
@@ -93,6 +94,7 @@ public:
   void potentialDifference();
   int combinations (int, int);
   inline Real val(vector<Real>&, int, int, int, int);
+  inline Real valAt(vector< vector<Real> >&, int, int, int, int, int);
   inline Real* valPtr(vector<Real>&, int, int, int, int);
   int findDimensions();
 

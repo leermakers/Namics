@@ -1,5 +1,5 @@
 #define MAINxH
-#include "alias.h" 
+#include "alias.h"
 #include "input.h"
 #include "lattice.h"
 #include "molecule.h"
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
   	string METHOD = "";
   	Real* X = NULL;
   	int MX = 0, MY = 0, MZ = 0;
-  	int fjc_old; 
+  	int fjc_old;
   	bool CHARGED = false;
   	vector<string> MONLIST;
 
@@ -101,8 +101,8 @@ int main(int argc, char* argv[]) {
   	vector<System*> Sys;
   	vector<Variate*> Var;
   	vector<Mesodyn*> Mes;
-  	vector<Cleng*> Cle; //enginge for clampled molecules 
-  	vector<Teng*> Ten; //enginge for clampled molecules 
+  	vector<Cleng*> Cle; //enginge for clampled molecules
+  	vector<Teng*> Ten; //enginge for clampled molecules
 
 // Create input class instance and handle errors(reference above)
   	In.push_back(new Input(filename.str()) );
@@ -253,9 +253,9 @@ int main(int argc, char* argv[]) {
         		} else {
           			m = (MX + 2) * (MY + 2) * (MZ + 2);
         		}
-      		}      
+      		}
       		int IV = nummon * m;
-	
+
       		if (CHARGED)
         		IV += m;
       		if (start > 1)
@@ -265,7 +265,7 @@ int main(int argc, char* argv[]) {
       		Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, fjc_old, 1);
 // last argument 1 is to read guess in X.
 	}
-	
+
     	int substart = 0;
     	int subloop = 0;
     	if (scan_nr < 0)
@@ -277,14 +277,14 @@ int main(int argc, char* argv[]) {
 
 	EngineType TheEngine;
 	TheEngine=SCF;
-	if (New[0]->method == "DIIS-mesodyn") {TheEngine=MESODYN;}
+	if (In[0]->MesodynList.size()>0) {TheEngine=MESODYN;}
 	if (In[0]->ClengList.size()>0) {TheEngine=CLENG;}
 	if (In[0]->TengList.size()>0) {TheEngine=TENG;}
 
 	int ii,kk,length,length_al;
 	int n_out=0;
 	switch(TheEngine) {
-		case SCF: 
+		case SCF:
 			// Prepare, catch errors for output class creation
     			n_out = In[0]->OutputList.size();
     			if (n_out == 0)
@@ -315,11 +315,11 @@ int main(int argc, char* argv[]) {
       				length = In[0]->MonList.size();
       				for (ii = 0; ii < length; ii++)
         				Seg[ii]->PushOutput();
-      					length = In[0]->MolList.size();
-      					for (ii = 0; ii < length; ii++) {
+      				length = In[0]->MolList.size();
+      				for (ii = 0; ii < length; ii++) {
         				length_al = Mol[ii]->MolAlList.size();
-        				for (kk = 0; kk < length_al; kk++) {
-          					Mol[ii]->Al[kk]->PushOutput();
+        			for (kk = 0; kk < length_al; kk++) {
+          				Mol[ii]->Al[kk]->PushOutput();
         				}
        			 	Mol[ii]->PushOutput();
       				}
@@ -348,7 +348,7 @@ int main(int argc, char* argv[]) {
 			New[0]->AllocateMemory();
       			New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ,fjc_old);
 			if (!debug) cout << "Creating Cleng module" << endl;
-			Cle.push_back(new Cleng(In, Lat, Seg, Mol, Sys, New, In[0]->ClengList[0]));      
+			Cle.push_back(new Cleng(In, Lat, Seg, Mol, Sys, New, In[0]->ClengList[0]));
 			if (!Cle[0]->CheckInput(start)) {return 0;}
 		break;
 		case TENG:
@@ -362,7 +362,7 @@ int main(int argc, char* argv[]) {
 			cout <<"TheEngine is unknown. Programming error " << endl; return 0;
 		break;
 	}
-      
+
 
 /******** Clear all class instances ********/
     		if (scan_nr > -1)
@@ -378,7 +378,7 @@ int main(int argc, char* argv[]) {
         			free(X);
       			X = (Real *)malloc(IV_new * sizeof(Real));
       			for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
-      			fjc_old=Lat[0]->fjc; 
+      			fjc_old=Lat[0]->fjc;
       			int length = Sys[0]->SysMonList.size();
       			MONLIST.clear();
       			for (int i = 0; i < length; i++) {
@@ -392,7 +392,7 @@ int main(int argc, char* argv[]) {
         			MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
       			}
       			Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->method, MONLIST, Sys[0]->charged, start);
-   		} 
+   		}
    		for (int i = 0; i < n_out; i++) delete Out[i];
 		Out.clear();
    	 	for (int i = 0; i < n_var; i++)

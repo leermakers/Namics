@@ -226,9 +226,8 @@ bool Mesodyn::mesodyn() {
 
   initRho(); // Get initial conditions (phi and potentials) by running the classical method once.
 
-
   prepareOutputFile();
-//  writeRho(0); // write initial conditions
+  writeRho(0); // write initial conditions
   setBoundaryPointers();
 
 
@@ -271,10 +270,10 @@ void Mesodyn::initRho() {
 
   New[0]->Solve(true);
 
-  //TODO: 3+ components
-  for (int z = 0; z < Lat[0]->M; z++) {
-    rho[z] = Mol[0]->phi[z];
-    rho[z + M] = Mol[1]->phi[z];
+  for (int i = 0; i < componentNo; ++i) {
+    for (int z = 0; z < Lat[0]->M; z++) {
+      rho[z + i * M] = Mol[i]->phi[z];
+    }
   }
 
   New[0]->Solve(true);

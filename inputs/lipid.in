@@ -2,7 +2,7 @@ lat : flat : n_layers : 50
 lat : flat : geometry : planar
 lat : flat : bondlength : 5e-10
 lat : flat : lattice_type : hexagonal
-lat : flat : FJC_choices : 3
+lat : flat : FJC_choices : 7
 
 mon : C : freedom : pinned
 mon : C : pinned_range : 1;6

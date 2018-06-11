@@ -5,7 +5,7 @@ Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;Var=Var_;
 if(debug) cout <<"Constructor in Newton " << endl;
 	KEYS.push_back("method");  KEYS.push_back("m");
-	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info"); 
+	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");
 
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance");
 	KEYS.push_back("stop_criterion");
@@ -25,7 +25,7 @@ if(debug) cout <<"Constructor in Newton " << endl;
 	KEYS.push_back("super_iterationlimit");
 	KEYS.push_back("super_m");
 	KEYS.push_back("super_deltamax");
-	
+
 }
 
 Newton::~Newton() {
@@ -139,7 +139,7 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),e_info);
 		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),s_info);
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
-		super_m =In[0]->Get_int("super_m",10); 
+		super_m =In[0]->Get_int("super_m",10);
 
 		delta_max=In[0]->Get_Real(GetValue("deltamax"),0.1);
 		super_deltamax=In[0]->Get_Real(GetValue("super_deltamax"),0.5);
@@ -1254,7 +1254,7 @@ bool Newton::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
 
 	if(debug) cout <<"Solve (mesodyn) in  Newton " << endl;
   mesodyn =true;
-	//RHO=&rho[0];
+	RHO=&rho[0];
 
 	int M=Lat[0]->M;
 	Real chi;
@@ -1263,8 +1263,12 @@ bool Newton::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
 
 	bool success=true;
 
-	success=Iterate_DIIS(&rho.at(0));
-	//iterate(xx,iv);
+	if (method == "DIIS") success=Iterate_DIIS(&rho.at(0));
+	else if (method == "pseudohessian") iterate(xx,iv);
+	else {
+		cout << "Method not supported by mesodyn" << endl;
+		return false;
+	}
 
 	Cp(&fAlpha[0],xx,iv);
 	/*if (Sys[0]->charged) {
@@ -1295,7 +1299,7 @@ void Newton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real r
 	if (debug) cout <<"Message in  Newton " << endl;
 	if (it == iterationlimit) cout <<"Warning: "<<s<<"iteration not solved. Residual error= " << residual << endl;
 	if (e_info || s_info) {
-		
+
 		cout <<s<<"Problem solved." << endl;
 		if (e_info) {
 			if (it < iterationlimit/10) cout <<"That was easy." << endl;

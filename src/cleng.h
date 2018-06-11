@@ -6,11 +6,15 @@
 #include "system.h"
 #include "output.h"
 
-#include <random> //For noise in langevinFlux()
-//#include <ctime> //To append timestamp to filename.
-#include <map>  //For generating the output of settings
+//#include <random> //For noise in langevinFlux()
+//#include <map>  //For generating the output of settings
+//#include <cassert>
+//random
+#include <cstdlib>
 #include <ctime>
-#include <cassert>
+#include <iostream>
+
+using std::setprecision;
 
 
 class Cleng {
@@ -62,9 +66,12 @@ vector<int> Z;
   void push(string, bool);
   void push(string, string);
   bool CP(transfer);
+  bool MakeShift();
   void WriteOutput(int);
   void PushOutput();
   int GetValue(string, int&, Real&, string&);
+  int GetIntRandomValue(int, int);
+  Real GetRealRandomValue(int, int);
 
   std::vector<string> KEYS;
   std::vector<string> PARAMETERS;

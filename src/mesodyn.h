@@ -62,6 +62,7 @@ private:
   void prepareOutputFile();
   void writeRho(int);
   void boundaryConditions();
+  void exit_program();
 
   void bX0Mirror(int, int);
   void bX1Mirror(int, int);

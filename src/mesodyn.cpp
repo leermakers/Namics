@@ -241,7 +241,7 @@ bool Mesodyn::mesodyn() {
     cout.precision(32);
 
     //TODO: Check for convergence and exit?
-    New[0]->SolveMesodyn(rho, alpha);
+    if ( !New[0]->SolveMesodyn(rho, alpha) ) exit_program();
     onsagerCoefficient();
     potentialDifference();
     boundaryConditions();
@@ -255,11 +255,14 @@ bool Mesodyn::mesodyn() {
   return true;
 }
 
+void Mesodyn::exit_program() {
+  exit(0);
+}
+
 //defaults to homogeneous system for now
 void Mesodyn::initRho() {
   if (debug)
     cout << "initRho in Mesodyn." << endl;
-
   New[0]->Solve(true);
 
   //If molecules are pinned they cannot move, so we have to free them before moving them by using fluxes
@@ -275,8 +278,6 @@ void Mesodyn::initRho() {
       rho[z + i * M] = Mol[i]->phi[z];
     }
   }
-
-  New[0]->Solve(true);
 
 //  New[0]->DeAllocateMemory();
 //  New[0]->AllocateMemory(componentNo);
@@ -301,7 +302,7 @@ void Mesodyn::updateDensity() {
 
       // Jx of component j at coordinate i
       for (int y = 0; y < componentNo-1; y++) {
-        rho[i + j * M] -= (J[i + j * M])[y];
+        rho[i + j * M] += (J[i + j * M])[y];
       }
 
       if (dimensions > 1) {
@@ -450,7 +451,7 @@ void Mesodyn::langevinFlux() {
       gaussianNoise(mean, stdev, 1);
       //for all combinations with other components
       for (int l = 0; l < componentNo - 1; ++l) {
-              (*jIterator)[l] = D * (((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JX]) * (U[z + (i*M*(componentNo-1)) + l * M + JX] - U[z + (i*M*(componentNo-1)) + l * M])) - ((L[z + cCombinations[l] * M - JX] + L[z + cCombinations[l] * M]) * (U[z + (i*M*(componentNo-1)) + l * M] - U[z + (i*M*(componentNo-1)) + l * M - JX])));
+              (*jIterator)[l] = D * (((L[z + cCombinations[l] * M] + L[z + cCombinations[l] * M + JX]) * (U[z + (i*M*(componentNo-1)) + l * M + JX] - U[z + (i*M*(componentNo-1)) + l * M])) + ((L[z + cCombinations[l] * M - JX] + L[z + cCombinations[l] * M]) * (U[z + (i*M*(componentNo-1)) + l * M - JX] - U[z + (i*M*(componentNo-1)) + l * M])));
       }
       ++jIterator;
     }
@@ -767,7 +768,7 @@ void Mesodyn::bNothing() {
 void Mesodyn::prepareOutputFile() {
   /* Open filestream and set filename to "mesodyn-datetime.csv" */
   ostringstream filename;
-  filename << "Namics/output/mesodyn-";
+  filename << "output/mesodyn-";
 
   time_t rawtime;
   time(&rawtime);

@@ -8,6 +8,9 @@
 #include "system.h"
 #include "newton.h"
 #include "alias.h"
+#include <limits.h>
+#include <unistd.h>
+
 class Output {
 public:
 	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,string,int,int);
@@ -15,18 +18,21 @@ public:
 ~Output();
 
 	string name;
-	vector<Input*> In; 
+	vector<Input*> In;
 	vector<Lattice*> Lat;
-	vector<Segment*> Seg; 
+	vector<Segment*> Seg;
 	vector<Molecule*> Mol;
 	vector<System*> Sys;
 	vector<Newton*> New;
-	int n_output; 
+	int n_output;
 	int start;
-	int output_nr; 
+	int output_nr;
 	bool write_bounds;
-	bool append; 
-	bool input_error; 
+	bool append;
+	bool input_error;
+	string output_folder;
+	string bin_folder;
+	bool use_output_folder;
 
   	vector<string> ints;
  	vector<string> Reals;
@@ -40,7 +46,7 @@ public:
 	vector<int> pointer_size;
   	vector<int> ints_value;
   	vector<bool> bools_value;
-  	vector<string> strings_value;		
+  	vector<string> strings_value;
 
 	std::vector<string> OUT_key;
 	std::vector<string> OUT_name;
@@ -50,9 +56,9 @@ public:
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
 	bool CheckInput(int);
-	void PutParameter(string); 
+	void PutParameter(string);
 	string GetValue(string);
-	bool Load(); 
+	bool Load();
 	void vtk(string, Real *);
 	void density();
 	void printlist();

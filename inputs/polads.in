@@ -8,30 +8,26 @@ mon : S : frozen_range : 1;1
 
 mon : A : freedom : free
 
-mon : B : freedom : free
+//mon : B : freedom : free
 
 mon : W : freedom : free
 mon : A : chi-S : -6
-mon : B : chi-S : -6
-
+//mon : B : chi-S : -6
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent
-mol : pol : composition : (A)1
+mol : pol : composition : (A)100
 mol : pol : freedom : restricted
-mol : pol : theta : 0.045
-mol : pol2 : composition : (B)1
-mol : pol2: freedom : restricted
-mol : pol2 : theta : 0.045
+mol : pol : theta : 1.0
 
 output : kal : append : true
 
 output : pro : append : true
 pro : mol : pol : phi
 
-mesodyn : smth : timesteps : 100
-mesodyn : smth : timebetweensaves : 1
-mesodyn : smth : diffusionconstant : 0.005
+mesodyn : smth : timesteps : 100000
+mesodyn : smth : timebetweensaves : 1000
+mesodyn : smth : diffusionconstant : 0.5
 mesodyn : smth : mean : 1
 mesodyn : smth : stdev : 1
 mesodyn : smth : seed : 1

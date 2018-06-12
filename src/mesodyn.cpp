@@ -208,7 +208,23 @@ int Mesodyn::initial_conditions() {
 void Mesodyn::prepareOutputFile() {
   /* Open filestream and set filename to "mesodyn-datetime.csv" */
   ostringstream filename;
-  filename << "mesodyn-";
+
+  // TODO: Get all of this stuff below from output!
+  string output_folder = "output/";
+  string bin_folder = "bin";
+
+  // Find path to Namics executable
+  char result[ PATH_MAX ];
+  ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
+  string executable_path = string( result, (count > 0) ? count : 0 );
+
+  // Find the last string before the executable
+  size_t found = executable_path.find_last_of("/\\");
+
+  // Set the output folder to be one level up from the binary folder, plus the specified output folder
+  output_folder = executable_path.substr(0,found - bin_folder.size() ) + output_folder;
+
+  filename << output_folder << "mesodyn-";
 
   time_t rawtime;
   time(&rawtime);

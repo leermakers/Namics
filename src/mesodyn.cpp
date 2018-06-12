@@ -75,20 +75,6 @@ bool Mesodyn::mesodyn() {
       copy( all_components->rho.begin(),  all_components->rho.end(), back_inserter(rho));
     }
 
-  /*  Real result {0};
-    Sum(result,&rho[0],M);
-    Real theta = 1.0*(M-3) - Mol[1]->theta
-    Norm(&rho[0],theta/result,M);
-
-    Sum(result,&rho[M],M);
-    theta = Mol[1]->theta;
-    Norm(&rho[M],theta/result,M);
-
-    Sum(result,&rho[2*M],M);
-    theta = Mol[2]->theta;
-    Norm(&rho[2*M],theta/result,M);*/
-
-
     New[0]->SolveMesodyn(rho, alpha);
 
     for (int i = 0 ; i < componentNo ; ++i) component[i]->load_alpha(&alpha[0+i*M], M);
@@ -117,13 +103,12 @@ bool Mesodyn::mesodyn() {
     }
 
   } // time loop
-
+  writeRho(timesteps);
+  cin.get();
   return true;
 }
 
 int Mesodyn::initial_conditions() {
-
-    New[0]->Solve(true);
 
     //If molecules are pinned they cannot move, so we have to free them before moving them by using fluxes
     for (Segment* seg : Seg) {
@@ -131,23 +116,34 @@ int Mesodyn::initial_conditions() {
         seg->freedom = "free";
     }
 
-    New[0]->Solve(true);
-
     vector< vector<Real> > rho(componentNo, vector<Real>(M));
 
-    // TODO: once phi becomes a vector, this will be much sexier.
-    for (int i = 0; i < componentNo; ++i) {
-      for (int z = 0; z < M; ++z) {
-        rho[i][z] = Mol[i]->phi[z];
+    //TODO: generalize (M-1-volume?) for 2D/3D
+    int solvent = Sys[0]->solvent;
+
+    int volume = Sys[0]->volume-(pow(M,dimensions) - pow ((M-2),dimensions));
+
+    Real sum_theta {0};
+    Real theta {0};
+
+    for (int i = 0; i < componentNo ; ++i) {
+      if (i != solvent) {
+        theta = Mol[i]->theta;
+        sum_theta += theta;
+        for (int z = M-1-volume; z < Lat[0]->M-1; z++) {
+          rho[i][z] = theta/volume;
+        }
       }
     }
 
-/*    for (int z = 2; z < Lat[0]->M-1; z++) {
-      rho[1][z] = 0.045;
-      rho[2][z] = 0.045;
-      rho[0][z] = 1-0.09;
+    for (int z = M-1-volume ; z < Lat[0]->M-1 ; ++z) {
+      rho[solvent][z] = (volume-sum_theta)/volume;
     }
-    rho[1][1]=rho[0][1]=0; */
+
+    //TODO: wall boundary
+    for (int i = 0 ; i < componentNo ; ++i) {
+      rho[i][1] = 0;
+    }
 
     vector<Component1D::boundary> boundaries;
     for (string& boundary : Lat[0]->BC) {
@@ -269,7 +265,7 @@ void Mesodyn::prepareOutputFile() {
   }
 
   for (int i = 1; i <= permutations; ++i) {
-    headers << "U" << i << ",";
+    headers << "mu" << i << ",";
   }
 
   for (int i = 1; i <= permutations; ++i) {
@@ -282,9 +278,10 @@ void Mesodyn::prepareOutputFile() {
 }
 
 void Mesodyn::writeRho(int t) {
-  ostringstream timeOutput;
-  timeOutput << t << ",\n";
-  mesFile << timeOutput.str();
+  ostringstream headers;
+
+  headers << t << "," << "\n";
+  mesFile << headers.str();
 
   ostringstream rhoOutput;
 
@@ -330,6 +327,8 @@ void Mesodyn::writeRho(int t) {
     } while (y < MY);
     z++;
   } while (z < MZ);
+
+  mesFile.flush();
 }
 
 /******* FLUX *********/
@@ -426,7 +425,7 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
 
 int Flux1D::langevin_flux(int jump) {
   for (int z = 1; z < M-1; ++z){
-  J[z] += D * (((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])) + ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])));
+  J[z] += -D * (((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])) + ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])));
   }
   return 0;
 }
@@ -696,7 +695,7 @@ void Component1D::bX0Mirror(int fMY, int fMZ) {
     do {
       *valPtr(rho, 0, y, z) = val(rho, 1, y, z);     //start
       *valPtr(alpha, 0, y, z) = val(alpha, 1, y, z); //start
-      *valPtr(alpha, 2, y, z) = val(alpha, 1, y, z); //start // DELETE WALL
+      *valPtr(alpha, 1, y, z) = val(alpha, 2, y, z); //start // DELETE WALL
       ++z;
     } while (z < fMZ);
 

@@ -1283,6 +1283,9 @@ bool Newton::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
 				PutAlpha( (&fAlpha[0]) +i*M,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 			}
 		}
+		Lat[0]->remove_bounds(&fAlpha[0]+i*M);
+		Times(&fAlpha[0]+i*M,&fAlpha[0]+i*M,Sys[0]->KSAM,M);
+
 
 /*		if (Sys[0]->charged){
 			YplusisCtimesX(alpha+i*M,Sys[0]->EE,Seg[Sys[0]->SysMolMonList[i]]->epsilon,M);
@@ -1595,10 +1598,11 @@ void Newton::ComputeG_mesodyn(Real* rho) {
 					g[z+k*M] += (-1.0*Mol[i]->phi[z+j*M]);
 				}
 				Lat[0]->remove_bounds(g+k*M);
-
+						Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 				k++;
 				j++;
 		}
 		i++;
 	}
+
 }

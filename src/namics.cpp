@@ -388,14 +388,16 @@ X = (Real *)malloc(IV_new * sizeof(Real));
       			}
     		}
     		if (Sys[0]->final_guess == "file") {
-      		MONLIST.clear();
-      		int length = Sys[0]->SysMonList.size();
-      		for (int i = 0; i < length; i++) {
-        		MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
-      		}
-      		Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->SCF_method, MONLIST, Sys[0]->charged, start);
-   	} 
-}
+      			MONLIST.clear();
+      			int length = Sys[0]->SysMonList.size();
+      			for (int i = 0; i < length; i++) {
+        			MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
+      			}
+      			Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->SCF_method, MONLIST, Sys[0]->charged, start);
+   		}
+ 
+		
+	} //loop over starts.
 
 if (X) free(X);
 

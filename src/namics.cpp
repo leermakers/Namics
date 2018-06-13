@@ -318,11 +318,11 @@ X = (Real*)malloc(IV * sizeof(Real));
       					length = In[0]->MonList.size();
       					for (ii = 0; ii < length; ii++)
         					Seg[ii]->PushOutput();
-      						length = In[0]->MolList.size();
-      						for (ii = 0; ii < length; ii++) {
-        					length_al = Mol[ii]->MolAlList.size();
-        					for (kk = 0; kk < length_al; kk++) {
-          						Mol[ii]->Al[kk]->PushOutput();
+      					length = In[0]->MolList.size();
+      					for (ii = 0; ii < length; ii++) {
+        				  length_al = Mol[ii]->MolAlList.size();
+        				for (kk = 0; kk < length_al; kk++) {
+          				Mol[ii]->Al[kk]->PushOutput();
         					}
        			 		Mol[ii]->PushOutput();
       					}

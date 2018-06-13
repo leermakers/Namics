@@ -2,6 +2,7 @@
 #define MESODYNxH
 #include "input.h"
 #include "namics.h"
+#include "solve_scf.h"
 #include "system.h"
 #include "newton.h"
 #include <random>
@@ -196,7 +197,7 @@ private:
   const vector<Molecule*> Mol;
   const vector<Segment*> Seg;
   const vector<System*> Sys;
-  const vector<Newton*> New;
+  const vector<Solve_scf*> New;
   const string brand;
   Real D; //diffusionconstant
   Real mean;
@@ -217,7 +218,7 @@ private:
 
 
 public:
-  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
+  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Mesodyn();
 
   void gaussianNoise(Real, Real, unsigned int);

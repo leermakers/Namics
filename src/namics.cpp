@@ -367,7 +367,7 @@ X = (Real*)malloc(IV * sizeof(Real));
 		}
       
 
-/******** Clear all class instances ********/
+
     		if (scan_nr > -1)
       			Var[scan_nr]->ResetScanValue();
     		if (Sys[0]->initial_guess == "previous_result") {
@@ -395,11 +395,27 @@ X = (Real *)malloc(IV_new * sizeof(Real));
       			}
       			Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->SCF_method, MONLIST, Sys[0]->charged, start);
    		}
- 
 		
+/******** Clear all class instances ********/
+    		//for (int i = 0; i < n_out; i++) delete Out[i];
+		Out.clear();
+   	 	//for (int i = 0; i < n_var; i++)
+      			//delete Var[i];
+    		Var.clear();
+   	 	//delete New[0];
+    		New.clear();
+   	 	//delete Sys[0];
+    		Sys.clear();
+   	 	//for (int i = 0; i < n_mol; i++) {
+      			//delete Mol[i];
+    		//}
+    		Mol.clear();
+    		//for (int i = 0; i < n_seg; i++) {
+			//delete Seg[i];     	
+		//}
+   	 	Seg.clear();
+    		//delete Lat[0];
+    		Lat.clear();
 	} //loop over starts.
-
-if (X) free(X);
-
 return 0;
 }

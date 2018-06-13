@@ -153,6 +153,12 @@ int Mesodyn::initial_conditions() {
       if (boundary == "periodic") {
         boundaries.push_back(Component1D::PERIODIC);
       }
+      if (boundary == "bulk") {
+        boundaries.push_back(Component1D::BULK);
+      }
+      if (boundary == "surface") {
+        boundaries.push_back(Component1D::SURFACE);
+      }
     }
 
     // TODO: specify boundary conditions in constructor
@@ -482,18 +488,21 @@ Component1D::Component1D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary 
     throw ERROR_SIZE_INCOMPATIBLE;
   }
   set_x_boundaries(x0, xm);
+  update_boundaries();
 }
 
 Component2D::Component2D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm, boundary y0, boundary ym)
     : Component1D(Lat, rho, x0, xm)
 {
   set_y_boundaries(y0, ym);
+  update_boundaries();
 }
 
 Component3D::Component3D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm, boundary y0, boundary ym, boundary z0, boundary zm)
     : Component2D(Lat, rho, x0, xm, y0, ym)
 {
   set_z_boundaries(z0, zm);
+  update_boundaries();
 }
 
 Component1D::~Component1D() {
@@ -597,6 +606,8 @@ int Component1D::set_x_boundaries(boundary x0, boundary xm) {
     break;
   case BULK:
     //nothing yet
+  case SURFACE:
+    //nothing yet
     break;
   }
 
@@ -612,6 +623,8 @@ int Component1D::set_x_boundaries(boundary x0, boundary xm) {
     break;
   case BULK:
     //nothing yet
+  case SURFACE:
+   // nothing yet
     break;
   }
 
@@ -632,6 +645,8 @@ int Component2D::set_y_boundaries(boundary y0, boundary ym) {
     break;
   case BULK:
     //nothing yet
+  case SURFACE:
+   // nothing yet
     break;
   }
 
@@ -647,6 +662,9 @@ int Component2D::set_y_boundaries(boundary y0, boundary ym) {
     break;
   case BULK:
     //nothing yet
+    break;
+  case SURFACE:
+    // nothing yet
     break;
   }
 
@@ -667,6 +685,8 @@ int Component3D::set_z_boundaries(boundary z0, boundary zm) {
     break;
   case BULK:
     //nothing yet
+  case SURFACE:
+   // nothing yet
     break;
   }
 
@@ -682,6 +702,9 @@ int Component3D::set_z_boundaries(boundary z0, boundary zm) {
     break;
   case BULK:
     //nothing yet
+    break;
+  case SURFACE:
+    // nothing yet
     break;
   }
 
@@ -732,6 +755,31 @@ void Component1D::bXPeriodic(int fMY, int fMZ, int fMX) {
   } while (y < fMY);
 }
 
+void Component1D::bX0Bulk(int fMY, int fMZ, Real bulk) {
+  int y = 0;
+  int z = 0;
+  do {
+    do {
+      *valPtr(rho, 0, y, z) = bulk;     //start
+      ++z;
+    } while (z < fMZ);
+
+    ++y;
+  } while (y < fMY);
+}
+
+void Component1D::bXmBulk(int fMY, int fMZ, int fMX, Real bulk) {
+  int y = 0;
+  int z = 0;
+  do {
+    do {
+      *valPtr(rho, fMX - 1, y, z) = bulk;     //end
+      ++z;
+    } while (z < fMZ);
+    ++y;
+  } while (y < fMY);
+}
+
 void Component2D::bY0Mirror(int fMX, int fMZ) {
   int x = 0;
   int z = 0;
@@ -771,6 +819,28 @@ void Component2D::bYPeriodic(int fMX, int fMZ, int fMY) {
   } while (x < fMX);
 }
 
+void Component2D::bY0Bulk(int fMX, int fMZ, Real bulk) {
+  int x = 0;
+  int z = 0;
+  do {
+    do {
+      *valPtr(rho, x, 0, z) = bulk;     //start
+    } while (z < fMZ);
+    ++x;
+  } while (x < fMX);
+}
+
+void Component2D::bYmBulk(int fMX, int fMZ, int fMY, Real bulk) {
+  int x = 0;
+  int z = 0;
+  do {
+    do {
+      *valPtr(rho, x, fMY - 1, z) = bulk;     //end
+    } while (z < fMZ);
+    ++x;
+  } while (x < fMX);
+}
+
 void Component3D::bZ0Mirror(int fMX, int fMY) {
   int x = 0;
   int y = 0;
@@ -805,6 +875,28 @@ void Component3D::bZPeriodic(int fMX, int fMY, int fMZ) {
 
       *valPtr(alpha, x, y, 0) = val(alpha, x, y, fMZ - 2); //start
       *valPtr(alpha, x, y, fMZ - 1) = val(alpha, x, y, 1); //end
+    } while (x < fMX);
+    ++x;
+  } while (y < fMY);
+}
+
+void Component3D::bZ0Bulk(int fMX, int fMY, Real bulk) {
+  int x = 0;
+  int y = 0;
+  do {
+    do {
+      *valPtr(rho, x, y, 0) = bulk;     //start
+    } while (x < fMX);
+    ++x;
+  } while (y < fMY);
+}
+
+void Component3D::bZmBulk(int fMX, int fMY, int fMZ, Real bulk) {
+  int x = 0;
+  int y = 0;
+  do {
+    do {
+      *valPtr(rho, x, y, fMZ - 1) = bulk;     //end
     } while (x < fMX);
     ++x;
   } while (y < fMY);

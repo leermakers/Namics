@@ -48,6 +48,7 @@ public:
     MIRROR,
     PERIODIC,
     BULK,
+    SURFACE,
   };
 
   enum error {
@@ -78,6 +79,8 @@ private:
   void bX0Mirror(int, int);
   void bXmMirror(int, int, int);
   void bXPeriodic(int, int, int);
+  void bX0Bulk(int, int, Real);
+  void bXmBulk(int, int, int, Real);
 };
 
 class Component2D : public Component1D {
@@ -95,6 +98,8 @@ private:
   void bY0Mirror(int, int);
   void bYmMirror(int, int, int);
   void bYPeriodic(int, int, int);
+  void bY0Bulk(int, int, Real);
+  void bYmBulk(int, int, int, Real);
 };
 
 class Component3D : public Component2D {
@@ -112,6 +117,8 @@ private:
   void bZ0Mirror(int, int);
   void bZmMirror(int, int, int);
   void bZPeriodic(int, int, int);
+  void bZ0Bulk(int, int, Real);
+  void bZmBulk(int, int, int, Real);
 };
 
 class Flux1D : private Access {

@@ -17,8 +17,8 @@ OBJEXT      := o
 #Flags, Libraries and Includes
 CFLAGS      := -Wall -O3 -std=c++11
 LIB         := -lm -lpthread
-INC         := -I$(INCDIR) -I/usr/local/include
-INCDEP      := -I$(INCDIR)
+INC         := -I/usr/local/include
+#INCDEP      := -I$(INCDIR)
 
 #---------------------------------------------------------------------------------
 #DO NOT EDIT BELOW THIS LINE

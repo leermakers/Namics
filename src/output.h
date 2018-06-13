@@ -24,7 +24,11 @@ public:
 	vector<Molecule*> Mol;
 	vector<System*> Sys;
 	vector<Solve_scf*> New;
+<<<<<<< HEAD
 	int n_output;
+=======
+	int n_output; 
+>>>>>>> 07db4c70110a77e032cc3c011780530ee6de9888
 	int start;
 	int output_nr;
 	bool write_bounds;

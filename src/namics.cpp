@@ -364,10 +364,14 @@ X = (Real*)malloc(IV * sizeof(Real));
 			default:
 				cout <<"TheEngine is unknown. Programming error " << endl; return 0;
 				break;
+<<<<<<< HEAD
 		}
 
 
 
+=======
+    }
+>>>>>>> 07db4c70110a77e032cc3c011780530ee6de9888
     		if (scan_nr > -1)
       			Var[scan_nr]->ResetScanValue();
     		if (Sys[0]->initial_guess == "previous_result") {

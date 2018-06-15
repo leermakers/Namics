@@ -36,9 +36,11 @@ virtual ~Solve_scf();
 	int iv;
 	int m;
 
-	Real super_tolerance,value_tolerance;
-	Real super_deltamax,value_deltamax;
-	int super_iterationlimit,value_iterationlimit;
+	Real super_tolerance,tolerance;
+	Real super_deltamax,deltamax;
+	Real super_deltamin,deltamin; 
+
+	int super_iterationlimit,iterationlimit;
 	bool super_e_info, value_e_info;
 	bool super_s_info, value_s_info;
 	int super_i_info, value_i_info;
@@ -72,6 +74,8 @@ virtual ~Solve_scf();
 	Real *x_x0;
 #endif
 	Real* xx;  
+	Real* yy;
+	Real* zz;
 	Real* alpha;
 	bool mesodyn;
 	Real* RHO;
@@ -98,7 +102,7 @@ virtual ~Solve_scf();
 	void ComputePhis();
 	bool PutU();
 	void residuals(Real*,Real*);
-	void inneriteration(Real*,Real*,float*,Real,int);
+	void inneriteration(Real*,Real*,float*,Real,Real,Real,int);
 
 };
 #endif

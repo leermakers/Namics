@@ -147,6 +147,10 @@ protected:
   int onsager_coefficient(vector<Real>&, vector<Real>&);
   int potential_difference(vector<Real>&, vector<Real>&);
   int langevin_flux(int);
+  int gaussian_noise(Real = 1, Real = 1, Real = 1);
+  seed_seq seed {1};
+  mt19937 prng;
+  normal_distribution<> dist;
 
   vector<Real> L;
   vector<Real> mu;
@@ -214,6 +218,8 @@ private:
   void prepareOutputFile();
   void writeRho(int);
   int initial_conditions();
+  void init_rho(vector<Real>&, int);
+  void init_rho_homogeneous(vector<Real>&, int);
 
 
 public:

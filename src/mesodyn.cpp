@@ -104,7 +104,6 @@ bool Mesodyn::mesodyn() {
 
   } // time loop
   writeRho(timesteps);
-  cin.get();
   return true;
 }
 
@@ -204,6 +203,8 @@ int Mesodyn::initial_conditions() {
 
   return 0;
 }
+
+/******* Rho initialization *******/
 
 /******* Output generation *******/
 
@@ -605,7 +606,8 @@ int Component1D::set_x_boundaries(boundary x0, boundary xm) {
     bX0 = bind(&Component1D::bXPeriodic, this, MY, MZ, MX);
     break;
   case BULK:
-    //nothing yet
+    bX0 = bind(&Component1D::bX0Bulk, this, MY, MZ, rho[1]);
+    break;
   case SURFACE:
     //nothing yet
     break;
@@ -622,7 +624,8 @@ int Component1D::set_x_boundaries(boundary x0, boundary xm) {
     }
     break;
   case BULK:
-    //nothing yet
+    bXm = bind(&Component1D::bXmBulk, this, MY, MZ, MX, rho[MX-2]);
+    break;
   case SURFACE:
    // nothing yet
     break;

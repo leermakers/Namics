@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
   	string METHOD = "";
   	Real* X = NULL;
   	int MX = 0, MY = 0, MZ = 0;
-  	int fjc_old;
+  	int fjc_old = 0;
   	bool CHARGED = false;
   	vector<string> MONLIST;
 

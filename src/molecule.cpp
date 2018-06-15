@@ -129,6 +129,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
 //cout <<"molmonlist.size in mol" << MolMonList.size() << endl;
 	H_u = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
+	Zero(H_u, M*MolMonList.size());
 	H_phitot = (Real*) malloc(M*sizeof(Real));
 	if (freedom=="clamped") {
 		H_Bx=(int*) malloc(n_box*sizeof(int));
@@ -213,7 +214,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 
 bool Molecule:: PrepareForCalculations(int *KSAM) {
 if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
-	int M=Lat[0]->M;
+int M=Lat[0]->M;
 	if (freedom=="clamped") {
 		int jx=Lat[0]->jx[Seg[mon_nr[0]]->clamp_nr];
 		int jy=Lat[0]->jy[Seg[mon_nr[0]]->clamp_nr];
@@ -255,7 +256,7 @@ if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 	while (i<length) {
 		if (Seg[MolMonList[i]]->freedom=="tagged" || Seg[MolMonList[i]]->freedom=="clamp" ) Zero(u+i*M,M);
 		Lat[0]->set_bounds(u+i*M);
-		Boltzmann(G1+i*M,u+i*M,M);
+		Boltzmann(G1+i*M , u+i*M, M);
 		if (Seg[MolMonList[i]]->freedom=="pinned") Times(G1+i*M,G1+i*M,Seg[MolMonList[i]]->MASK,M);
 		if (Seg[MolMonList[i]]->freedom=="tagged") Cp(G1+i*M,Seg[MolMonList[i]]->MASK,M);
 		Lat[0]->set_bounds(G1+i*M);

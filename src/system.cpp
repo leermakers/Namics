@@ -11,6 +11,7 @@ if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("GPU");
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]);
+	charged=false;
 	AllocateMemory();
 	PrepareForCalculations();
 }
@@ -219,7 +220,6 @@ if (debug) cout << "CheckInput for system " << endl;
 			cout << "In system '" + name + "' the 'solvent' was not found, while the volume fractions of the bulk do not add up to unity. " << endl;
 			success=false;
 		}
-		charged=false;
 		if (IsCharged()) {
 			charged=true;
 			bool neutralizer_needed=false;

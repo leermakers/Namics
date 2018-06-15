@@ -22,7 +22,12 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
   if (debug) cout << "Mesodyn initialized." << endl;
 }
 
-Mesodyn::~Mesodyn() {}
+Mesodyn::~Mesodyn() {
+  for (unsigned int i = 0 ; i < flux.size(); ++i) delete flux[i];
+  flux.clear();
+  for (unsigned int i = 0 ; i < component.size(); ++i) delete component[i];
+  flux.clear();
+}
 
 bool Mesodyn::CheckInput(int start) {
   if (debug) cout << "CheckInput in Mesodyn" << endl;
@@ -93,7 +98,6 @@ bool Mesodyn::mesodyn() {
       }
     }
 
-    //TODO: CHECK.
     c = 0;
     for (int j = 0 ; j < (componentNo - 1) ; ++j) {
       for (int i = 1+j ; i < componentNo; ++i) {
@@ -118,8 +122,8 @@ int Mesodyn::initial_conditions() {
     vector< vector<Real> > rho(componentNo, vector<Real>(M));
 
     //TODO: generalize (M-1-volume?) for 2D/3D
+    Sys[0]->PrepareForCalculations();
     int solvent = Sys[0]->solvent;
-
     int volume = Sys[0]->volume-(pow(M,dimensions) - pow ((M-2),dimensions));
 
     Real sum_theta {0};

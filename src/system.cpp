@@ -12,8 +12,6 @@ if (debug) cout << "Constructor for system " << endl;
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]);
 	charged=false;
-	AllocateMemory();
-	PrepareForCalculations();
 }
 System::~System() {
 if (debug) cout << "Destructor for system " << endl;

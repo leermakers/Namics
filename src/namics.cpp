@@ -261,9 +261,10 @@ int main(int argc, char* argv[]) {
 
       			if (CHARGED)
         			IV += m;
-      			if (start > 1)
+      			if (start > 1){
         			free(X);
-X = (Real*)malloc(IV * sizeof(Real));
+              X = (Real*)malloc(IV * sizeof(Real));
+            }
       			MONLIST.clear();
       			Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, fjc_old, 1);
 // last argument 1 is to read guess in X.
@@ -370,15 +371,16 @@ X = (Real*)malloc(IV * sizeof(Real));
     		if (scan_nr > -1)
       			Var[scan_nr]->ResetScanValue();
     		if (Sys[0]->initial_guess == "previous_result") {
-     			  int IV_new=New[0]->iv; //check this
       			METHOD = New[0]->SCF_method; //check this..
       			MX = Lat[0]->MX;
       			MY = Lat[0]->MY;
       			MZ = Lat[0]->MZ;
       			CHARGED = Sys[0]->charged;
-      			if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file")) free(X);
+            int IV_new=New[0]->iv; //check this
+      			if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
+                free(X);
             X = (Real *)malloc(IV_new * sizeof(Real));
-      			for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
+            for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
       			fjc_old=Lat[0]->fjc;
       			int length = Sys[0]->SysMonList.size();
       			MONLIST.clear();
@@ -396,6 +398,7 @@ X = (Real*)malloc(IV * sizeof(Real));
    		}
 
 /******** Clear all class instances ********/
+
     		for (int i = 0; i < n_out; i++) delete Out[i];
 		    Out.clear();
    	 	  for (int i = 0; i < n_var; i++) delete Var[i];
@@ -411,6 +414,7 @@ X = (Real*)malloc(IV * sizeof(Real));
     		delete Lat[0];
     		Lat.clear();
 	} //loop over starts.
+  free(X);
   delete In[0];
   In.clear();
 return 0;

@@ -726,17 +726,10 @@ if (debug) cout << "CheckResults for system " << endl;
 		n_times_mu +=  n*Mu;
 	}
 	if (e_info) {
-<<<<<<< HEAD
 		cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
 		cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl;
-	}
-
-=======
-		cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl; 
-		cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
 //	}
-	
->>>>>>> master
+
 	//for (int i=0; i<n_mol; i++) { //NEED FIX . densities are not yet computed correctly that is why it is turned off.....!!!
 		//if (Mol[i]->MolAlList.size()>0) {
 		//	Mol[i]->compute_phi_alias=true;
@@ -758,12 +751,8 @@ if (debug) cout << "CheckResults for system " << endl;
 		}
 	}
 	cout << endl;
-<<<<<<< HEAD
-	return success;
-=======
 }
-	return success;  
->>>>>>> master
+	return success;
 }
 
 Real System::GetFreeEnergy(void) {

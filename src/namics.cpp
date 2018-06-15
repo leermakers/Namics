@@ -364,14 +364,7 @@ X = (Real*)malloc(IV * sizeof(Real));
 			default:
 				cout <<"TheEngine is unknown. Programming error " << endl; return 0;
 				break;
-<<<<<<< HEAD
 		}
-
-
-
-=======
-    }
->>>>>>> 07db4c70110a77e032cc3c011780530ee6de9888
     		if (scan_nr > -1)
       			Var[scan_nr]->ResetScanValue();
     		if (Sys[0]->initial_guess == "previous_result") {
@@ -382,7 +375,7 @@ X = (Real*)malloc(IV * sizeof(Real));
       			MZ = Lat[0]->MZ;
       			CHARGED = Sys[0]->charged;
       			if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file")) free(X);
-X = (Real *)malloc(IV_new * sizeof(Real));
+            X = (Real *)malloc(IV_new * sizeof(Real));
       			for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
       			fjc_old=Lat[0]->fjc;
       			int length = Sys[0]->SysMonList.size();

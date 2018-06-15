@@ -1,15 +1,13 @@
 #include "cleng.h"
-#include "output.h"
 
-Cleng::Cleng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Newton*> New_,  string name_):
-
-    name{name_},
-    In{In_},
-    Lat{Lat_},
-    Mol{Mol_},
-    Seg{Seg_},
-    Sys{Sys_},
-    New{New_}
+Cleng::Cleng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_,  string name_)
+    : name{name_},
+      In{In_},
+      Lat{Lat_},
+      Mol{Mol_},
+      Seg{Seg_},
+      Sys{Sys_},
+      New{New_}
 {
 	if (debug) cout << "Cleng initialized" << endl;
 

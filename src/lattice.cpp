@@ -15,7 +15,10 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("lambda");
 	KEYS.push_back("Z");
 	KEYS.push_back("FJC_choices");
-	sub_box_on=0;
+	sub_box_on = 0;
+	gradients = 0;
+	all_lattice = false;
+	fjc = 0;
 }
 
 Lattice::~Lattice() {
@@ -47,7 +50,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	Real r,VL,LS;
 	Real rlow,rhigh;
 	Real one_over_lambda_min_two=1.0/lambda-2.0;
-	int i,j,k;
+	int i {0}; int j {0}; int k {0};
 	PutM();
 	DeAllocateMemory();
 	if (fjc==1) {
@@ -287,7 +290,6 @@ bool Lattice::PutSub_box(int mx_, int my_, int mz_,int n_box_) {
 bool Lattice::CheckInput(int start) {
 if (debug) cout <<"CheckInput in lattice " << endl;
 	bool success;
-	all_lattice=false;
 	MX=MY=MZ=0;
 	sub_box_on=0;
 	mx.push_back(0); my.push_back(0); mz.push_back(0); jx.push_back(0); jy.push_back(0); m.push_back(0); n_box.push_back(0);
@@ -1012,7 +1014,7 @@ if (debug) cout <<"GetPointerInt for lattice " + name << endl;
 	vector<string> sub;
 	SIZE=M;
 	In[0]->split(s,';',sub);
-	if (sub[0]=="array"){//get with sub[1] the number and put the pointer to integer array in return. 
+	if (sub[0]=="array"){//get with sub[1] the number and put the pointer to integer array in return.
 	}
 
 	return NULL;
@@ -1203,7 +1205,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 			}
 			break;
 		case 3:
-			if (k>0) {JX_=jx[k]; JY_=jy[k];} 			
+			if (k>0) {JX_=jx[k]; JY_=jy[k];}
 			Zero(gs,M); set_bounds(gs_1);
 			Add(gs+JX_,gs_1,M-JX_); Add(gs,gs_1+JX_,M-JX_);
 			Add(gs+JY_,gs_1,M-JY_); Add(gs,gs_1+JY_,M-JY_);
@@ -1250,7 +1252,7 @@ if (debug) cout <<" remove_bounds (Real) in lattice " << endl;
 				RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 			} else {
 			RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-			}	
+			}
 			break;
 		default:
 

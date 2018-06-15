@@ -11,19 +11,19 @@ public:
 ~System();
 
 	string name;
-	vector<Input*> In; 
+	vector<Input*> In;
 	Real* CHI;
-	vector<Segment*> Seg; 
+	vector<Segment*> Seg;
 	vector<Molecule*> Mol;
-	vector<Lattice*> Lat; 
-	vector<int> SysMonList; 
+	vector<Lattice*> Lat;
+	vector<int> SysMonList;
 	vector<int> SysMolMonList;
 	vector<int> FrozenList;
-	vector<int> SysTagList; 
+	vector<int> SysTagList;
 	vector<int> SysClampList;
 	Real FreeEnergy;
 	Real GrandPotential;
-	Real* phitot;  
+	Real* phitot;
 	int* KSAM;
 	Real* eps;
 	Real* H_psi;
@@ -32,7 +32,7 @@ public:
 	Real* EE;
 	int* psiMask;
 	bool fixedPsi0;
-	Real* q; 
+	Real* q;
 	Real* H_GrandPotentialDensity;
 	Real* H_FreeEnergyDensity;
 	Real* H_alpha;
@@ -40,22 +40,23 @@ public:
 	Real* FreeEnergyDensity;
 	Real* alpha;
 	Real* TEMP;
-	bool GPU; 
-	int n_mol; 
-	int solvent; 
+	bool GPU;
+	int n_mol;
+	int solvent;
 	int neutralizer;
-	int tag_segment; 
-	bool input_error; 
-	bool cuda; 
+	int tag_segment;
+	int volume;
+	bool input_error;
+	bool cuda;
 	bool charged;
 	string initial_guess;
 	string guess_inputfile;
 	string final_guess;
 	string guess_outputfile;
-	int Var_target;         
+	int Var_target;
 	Real Var_target_value;
-	
-	int MonA,MonB; 
+
+	int MonA,MonB;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -72,16 +73,16 @@ public:
 	void PushOutput();
 	Real* GetPointer(string,int&);
 	int* GetPointerInt(string,int&);
-	int GetValue(string,int&,Real&,string&); 
+	int GetValue(string,int&,Real&,string&);
 	string CalculationType; // {micro_emulsion,micro_phasesegregation};
 	string GuessType; // {lamellae,Im3m,FCC,BCC,HEX,gyroid,Real_gyroid,Real_diamond,perforated_lamellae};
-		
+
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
 	bool CheckInput(int);
-	void PutParameter(string); 
-	string GetValue(string); 	
+	void PutParameter(string);
+	string GetValue(string);
 	string GetMonName(int );
 	bool CheckChi_values(int);
 	bool IsCharged();
@@ -94,8 +95,6 @@ public:
 	Real GetGrandPotential();
 	bool CreateMu();
 	bool PutVarInfo(string,string,Real);
-	Real GetError(); 
+	Real GetError();
 };
 #endif
-
- 

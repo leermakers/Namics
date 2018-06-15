@@ -15,7 +15,7 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -O3 -std=c++11
+CFLAGS      := -Wall -g -O3 -std=c++11
 LIB         := -lm -lpthread
 INC         := -I/usr/local/include
 #INCDEP      := -I$(INCDIR)

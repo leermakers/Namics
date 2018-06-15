@@ -723,7 +723,7 @@ if (debug) cout << "CheckResults for system " << endl;
 	if (e_info) {
 		cout <<"free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl; 
 		cout <<"Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu  << endl; 
-	}
+//	}
 	
 	//for (int i=0; i<n_mol; i++) { //NEED FIX . densities are not yet computed correctly that is why it is turned off.....!!!
 		//if (Mol[i]->MolAlList.size()>0) {
@@ -746,6 +746,7 @@ if (debug) cout << "CheckResults for system " << endl;
 		}
 	}
 	cout << endl;
+}
 	return success;  
 }
 

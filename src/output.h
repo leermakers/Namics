@@ -6,14 +6,14 @@
 #include "segment.h"
 #include "molecule.h"
 #include "system.h"
-#include "newton.h"
+#include "solve_scf.h"
 #include "alias.h"
 #include <limits.h>
 #include <unistd.h>
 
 class Output {
 public:
-	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Newton*>,string,int,int);
+	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Solve_scf*>,string,int,int);
 
 ~Output();
 
@@ -23,8 +23,12 @@ public:
 	vector<Segment*> Seg;
 	vector<Molecule*> Mol;
 	vector<System*> Sys;
-	vector<Newton*> New;
+	vector<Solve_scf*> New;
+<<<<<<< HEAD
 	int n_output;
+=======
+	int n_output; 
+>>>>>>> 07db4c70110a77e032cc3c011780530ee6de9888
 	int start;
 	int output_nr;
 	bool write_bounds;

@@ -26,9 +26,6 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("super_iterationlimit");
 	KEYS.push_back("m");
 	KEYS.push_back("super_deltamax");
-
-	//hessian=false;
-	//pseudohessian=false;
 }
 
 Solve_scf::~Solve_scf() {
@@ -183,12 +180,10 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 			if (gradients=="Picard")  gradient=Picard;
 		}
 
-		cout << "****************************************************************" << endl;
-
 		StoreFileGuess=In[0]->Get_string(GetValue("store_guess"),"");
 		ReadFileGuess=In[0]->Get_string(GetValue("read_guess"),"");
 		if (GetValue("stop_criterion").size() > 0) {
-			cout <<"Warning: Only classical stop criterion implemented" << endl;
+			cout <<"Warning: Only classical stop criterion implemented" << endl; 
 			vector<string>options;
 			options.push_back("norm_of_g");
 			options.push_back("max_of_element_of_|g|");

@@ -20,7 +20,9 @@ mol : B : freedom : solvent
 //mol : C : composition : (A)10(B)10
 //mol : C : freedom : restricted
 //mol : C : theta : 12.2
-newton : isaac : method : pseudohessian
+newton : isaac : method : DIIS
+newton : isaac : m : 10
+newton : isaac : i_info : 25
 //newton : isaac : deltamax : 0.1
 output : pro : append : false 
 pro : mon : * : phi

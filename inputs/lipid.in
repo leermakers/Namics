@@ -45,6 +45,7 @@ newton : isaac : super_s_info : true
 newton : isaac : method : pseudohessian
 newton : isaac : iterationlimit : 1000
 newton : isaac : deltamax : 0.05
+newton : isaac  : super_deltamax : 0.9
 newton : isaac : m : 12
 start 
 mon : C : freedom : free
@@ -53,8 +54,8 @@ newton : isaac : deltamax : 0.05
 //var : lat-flat : scan : n_layers 
 //var : lat-flat : step : -1
 //var : lat-flat : end_value : 5
-//var : mol-lipid : search : theta
-//var : sys-noname: grand_potential : 0
+var : mol-lipid : search : theta
+var : sys-noname: grand_potential : 0
 start
 //lat : flat : FJC_choices : 7
 //start

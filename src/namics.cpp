@@ -345,7 +345,10 @@ X = (Real*)malloc(IV * sizeof(Real));
         			if (!Mes[0]->CheckInput(start)) {
           				return 0;
         			}
-        			Mes[start-1]->mesodyn();
+        			Mes[0]->mesodyn();
+              delete Mes[0];
+              Mes.clear();
+        New[0]->DeAllocateMemory();
 				break;
 			case CLENG:
 				New[0]->AllocateMemory();
@@ -394,25 +397,22 @@ X = (Real*)malloc(IV * sizeof(Real));
    		}
 
 /******** Clear all class instances ********/
-    		//for (int i = 0; i < n_out; i++) delete Out[i];
-		Out.clear();
-   	 	//for (int i = 0; i < n_var; i++)
-      			//delete Var[i];
+    		for (int i = 0; i < n_out; i++) delete Out[i];
+		    Out.clear();
+   	 	  for (int i = 0; i < n_var; i++) delete Var[i];
     		Var.clear();
-   	 	//delete New[0];
+   	 	  delete New[0];
     		New.clear();
-   	 	//delete Sys[0];
+   	 	  delete Sys[0];
     		Sys.clear();
-   	 	//for (int i = 0; i < n_mol; i++) {
-      			//delete Mol[i];
-    		//}
+   	 	  for (int i = 0; i < n_mol; i++) delete Mol[i];
     		Mol.clear();
-    		//for (int i = 0; i < n_seg; i++) {
-			//delete Seg[i];
-		//}
-   	 	Seg.clear();
-    		//delete Lat[0];
+    		for (int i = 0; i < n_seg; i++) delete Seg[i];
+   	 	  Seg.clear();
+    		delete Lat[0];
     		Lat.clear();
+        delete In[0];
+        In.clear();
 	} //loop over starts.
 return 0;
 }

@@ -14,7 +14,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 }
 
 Molecule::~Molecule() {
-	//DeAllocateMemory();
+	DeAllocateMemory();
 }
 
 void Molecule :: DeAllocateMemory(){

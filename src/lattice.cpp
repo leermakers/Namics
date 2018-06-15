@@ -25,7 +25,7 @@ Lattice::~Lattice() {
 if (debug) cout <<"lattice destructor " << endl;
   //In this program, we will assume that the propagator will work on a simple cubic lattice.
 			//Interactions will be treated either with simple cubic or FCC 'lambda's.
-	DeAllocateMemory();
+			DeAllocateMemory();
 }
 
 void Lattice::DeAllocateMemory(void) {

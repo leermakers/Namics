@@ -348,7 +348,6 @@ X = (Real*)malloc(IV * sizeof(Real));
         			Mes[0]->mesodyn();
               delete Mes[0];
               Mes.clear();
-        New[0]->DeAllocateMemory();
 				break;
 			case CLENG:
 				New[0]->AllocateMemory();
@@ -371,7 +370,7 @@ X = (Real*)malloc(IV * sizeof(Real));
     		if (scan_nr > -1)
       			Var[scan_nr]->ResetScanValue();
     		if (Sys[0]->initial_guess == "previous_result") {
-     			int IV_new=New[0]->iv; //check this
+     			  int IV_new=New[0]->iv; //check this
       			METHOD = New[0]->SCF_method; //check this..
       			MX = Lat[0]->MX;
       			MY = Lat[0]->MY;
@@ -411,8 +410,8 @@ X = (Real*)malloc(IV * sizeof(Real));
    	 	  Seg.clear();
     		delete Lat[0];
     		Lat.clear();
-        delete In[0];
-        In.clear();
 	} //loop over starts.
+  delete In[0];
+  In.clear();
 return 0;
 }

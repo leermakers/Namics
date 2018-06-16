@@ -1,12 +1,12 @@
 #include "solve_scf.h"
-#include <iostream> 
+#include <iostream>
 
 Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) {
 	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;Var=Var_;
 if(debug) cout <<"Constructor in Solve_scf " << endl;
-	KEYS.push_back("method");  
+	KEYS.push_back("method");
 	KEYS.push_back("gradient_type");
-	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info"); 
+	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance");
 	KEYS.push_back("stop_criterion");
 	KEYS.push_back("deltamin");KEYS.push_back("deltamax");
@@ -25,7 +25,7 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("super_tolerance");
 	KEYS.push_back("super_iterationlimit");
 	KEYS.push_back("m");
-	KEYS.push_back("super_deltamax"); 
+	KEYS.push_back("super_deltamax");
 }
 
 Solve_scf::~Solve_scf() {
@@ -42,7 +42,7 @@ if (debug) cout <<"Destructor in Solve " << endl;
 	cudaFree(xR);
 	cudaFree(x_x0);
 #endif
-	free(xx); 
+	free(xx);
 	free(yy);
 	free(zz);
 }
@@ -80,20 +80,20 @@ if (debug) cout <<"PrepareForCalculations in Solve " << endl;
 bool Solve_scf::CheckInput(int start_) { start=start_;
 if(debug) cout <<"CheckInput in Solve " << endl;
 	bool success=true;
-	control=proceed; 
+	control=proceed;
 	mesodyn=false;
 	string value;
-	solver=PSEUDOHESSIAN; 
-	SCF_method="pseudohessian"; 
+	solver=PSEUDOHESSIAN;
+	SCF_method="pseudohessian";
 	gradient=classical;
 	m=10;
 	success=In[0]->CheckParameters("newton",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		e_info=In[0]->Get_bool(GetValue("e_info"),true); value_e_info=e_info;
 		s_info=In[0]->Get_bool(GetValue("s_info"),false); value_s_info =s_info;
-		t_info=In[0]->Get_bool(GetValue("t_info"),false); 
-		i_info=In[0]->Get_int(GetValue("i_info"),1); value_i_info=i_info; 
-		iterationlimit=In[0]->Get_int(GetValue("iterationlimit"),1000); 
+		t_info=In[0]->Get_bool(GetValue("t_info"),false);
+		i_info=In[0]->Get_int(GetValue("i_info"),1); value_i_info=i_info;
+		iterationlimit=In[0]->Get_int(GetValue("iterationlimit"),1000);
 		if (iterationlimit < 0 || iterationlimit>1e6) {iterationlimit = 1000;}
 
 		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),e_info);
@@ -101,14 +101,14 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		super_i_info=In[0]->Get_bool(GetValue("super_i_info"),i_info);
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
 
-		deltamax=In[0]->Get_Real(GetValue("deltamax"),0.1);  
+		deltamax=In[0]->Get_Real(GetValue("deltamax"),0.1);
 		super_deltamax=In[0]->Get_Real(GetValue("super_deltamax"),0.5);
 		if (deltamax < 0 || deltamax>100) {deltamax = 0.1;  cout << "Value of deltamax out of range 0..100, and value set to default value 0.1" <<endl; }
 		deltamin=0; super_deltamin=0;
 		deltamin=In[0]->Get_Real(GetValue("deltamin"),deltamin);
 		if (deltamin < 0 || deltamin>100) {deltamin = deltamax/100000;  cout << "Value of deltamin out of range 0..100, and value set to default value deltamax/100000" <<endl; }
-		tolerance=In[0]->Get_Real(GetValue("tolerance"),1e-7);  
-		super_tolerance=In[0]->Get_Real(GetValue("super_tolerance"),tolerance*10); 
+		tolerance=In[0]->Get_Real(GetValue("tolerance"),1e-7);
+		super_tolerance=In[0]->Get_Real(GetValue("super_tolerance"),tolerance*10);
 		if (tolerance < 1e-12 ||tolerance>10) {tolerance = 1e-5;  cout << "Value of tolerance out of range 1e-12..10 Value set to default value 1e-5" <<endl; }
 		if (GetValue("method").size()==0) {SCF_method="pseudohessian";} else {
 			vector<string>method_options;
@@ -168,22 +168,22 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		if (SCF_method=="Picard") {
 			solver= PICARD;
 			gradient=Picard;
-		}	
+		}
 		if (GetValue("gradient_type").size()==0) {gradient=classical;} else {
 			vector<string>gradient_options;
 			gradient_options.push_back("classical");
-			gradient_options.push_back("mesodyn"); 			
-			gradient_options.push_back("Picard"); 
+			gradient_options.push_back("mesodyn");
+			gradient_options.push_back("Picard");
 			if (!In[0]->Get_string(GetValue("gradient_type"),gradients,gradient_options,"In 'solve_scf' the entry for 'gradient_type' not recognized: choose from:")) success=false;
 			if (gradients=="classical") gradient=classical;
 			if (gradients=="mesodyn") {gradient = MESODYN; mesodyn=true;}
 			if (gradients=="Picard")  gradient=Picard;
 		}
-		
+
 		StoreFileGuess=In[0]->Get_string(GetValue("store_guess"),"");
 		ReadFileGuess=In[0]->Get_string(GetValue("read_guess"),"");
 		if (GetValue("stop_criterion").size() > 0) {
-			cout <<"Warning: Only classical stop criterion implemented" << endl; 
+			cout <<"Warning: Only classical stop criterion implemented" << endl;
 			vector<string>options;
 			options.push_back("norm_of_g");
 			options.push_back("max_of_element_of_|g|");
@@ -407,9 +407,9 @@ bool Solve_scf::Guess(Real *X, string METHOD, vector<string> MONLIST, bool CHARG
 
 bool Solve_scf::Solve(bool report_errors) { //going SCF here
 if(debug) cout <<"Solve in  Solve_scf " << endl;
-	bool success=true;	
+	bool success=true;
 	switch(solver) {
-		case HESSIAN:	
+		case HESSIAN:
 			success=iterate(xx,iv,iterationlimit,tolerance,deltamax,deltamin,true);
 		break;
 		case PSEUDOHESSIAN:
@@ -423,16 +423,17 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		break;
 		default:
 			cout <<"Solve is lost" << endl; success=false;
-		break; 
+		break;
 	}
 	Sys[0]->CheckResults(report_errors);
 	return success;
 }
 
-bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
+bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha, function< vector<Real>&(int) > flux_callback) {
 	if(debug) cout <<"Solve (mesodyn) in  Solve_scf " << endl;
-	//iv should have been set at AllocateMemory. 
-	int M=Lat[0]->M; 
+	//iv should have been set at AllocateMemory.
+	flux = flux_callback;
+	int M=Lat[0]->M;
   	mesodyn =true;
 	gradient=MESODYN;
 	RHO=&rho[0]; //RHO is 'published' now gradient can know the 'targets.
@@ -445,7 +446,7 @@ bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
 
 	switch (solver) {
 		case diis:
-			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax); 
+			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 		break;
 		case PSEUDOHESSIAN:
 			success=iterate(xx,iv,iterationlimit,tolerance,deltamax,deltamin,true);
@@ -483,24 +484,24 @@ bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
 
 bool Solve_scf::SuperIterate(int search, int target,int ets,int etm) {
 if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
-	bool success; 
+	bool success;
 	value_search=search;				//cp superiteration cnontrols to solve. These can be used in residuals.
 	value_target=target;
 	value_ets=ets;
 	value_etm=etm;
-	if (ets==-1 && etm==-1)  {                  //pick up initial guess; 
-		yy[0] =Var[search]->GetValue(); 
+	if (ets==-1 && etm==-1)  {                  //pick up initial guess;
+		yy[0] =Var[search]->GetValue();
 	} else {
-		if (ets>-1) 
-			yy[0] = Var[ets]->GetValue(); 
-		else 
+		if (ets>-1)
+			yy[0] = Var[ets]->GetValue();
+		else
 			yy[0]=Var[etm]->GetValue();
 	}
 	gradient=custum; 				//the proper gradient is used
 	control=super;				//this is for inneriteration
 //	e_info=super_e_info;
 	s_info=super_s_info;
-	i_info=super_i_info; 	
+	i_info=super_i_info;
 	solver=diis;
 	    success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 	//success=iterate(yy,1,super_iterationlimit,super_tolerance,super_deltamax,deltamin,false);	//iterate is called with just one iteration variable
@@ -508,21 +509,25 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 }
 
 void Solve_scf::residuals(Real* X, Real* g){
- if (debug) cout <<"residuals in Solve_scf " << endl;	
+ if (debug) cout <<"residuals in Solve_scf " << endl;
 	int M=Lat[0]->M;
 	Real chi;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size(); //also frozen segments
-	int i,j,k; 
-	int jump=0; 
+	int i,j,k;
+	int jump=0;
 	int lengthMolList=In[0]->MolList.size();
-	int LENGTH;  
+	int LENGTH;
 	switch(gradient) {
 		case MESODYN:
+		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
 			Cp(xx,X,iv);
 			ComputePhis();
 			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
+			for (unsigned int c = 0 ; c < Sys[0]->SysMolMonList.size() ; ++c) {
+					// fluxes = flux(i) ;
+			}
 			i=k=0;
 			while (i<lengthMolList) {
 				j=0;
@@ -535,20 +540,21 @@ void Solve_scf::residuals(Real* X, Real* g){
 				}
 				i++;
 			}
+		}
 		break;
 		case custum:
-			if (debug) cout <<"Residuals in custum mode in Solve_scf " << endl; 
+			if (debug) cout <<"Residuals in custum mode in Solve_scf " << endl;
 			Cp(yy,X,1);
 			if (value_ets==-1 && value_etm==-1) 			//guess from newton is stored in place.
-				Var[value_search]->PutValue(yy[0]); 
+				Var[value_search]->PutValue(yy[0]);
 			else {
-				if (value_ets>-1) 
-					Var[value_ets]->PutValue(yy[0]); 
-				else 
+				if (value_ets>-1)
+					Var[value_ets]->PutValue(yy[0]);
+				else
 					Var[value_etm]->PutValue(yy[0]);
 			}
 
-			if (value_ets==-1||value_search<0 || value_etm>-1) {	
+			if (value_ets==-1||value_search<0 || value_etm>-1) {
 				control=proceed;					//prepare for solving scf eqns. (both for inneriteration and residuals)
 				gradient=classical;
 				if (SCF_method=="hessian") {hessian=true; pseudohessian=false; solver=HESSIAN;}
@@ -558,13 +564,13 @@ void Solve_scf::residuals(Real* X, Real* g){
 				//e_info=value_e_info;
 				s_info=value_s_info;
 				e_info=value_e_info;
-cout <<"gotoSolve and SCF_method is " << SCF_method << endl; 
+cout <<"gotoSolve and SCF_method is " << SCF_method << endl;
 				Solve(false);						//find scf solution
 				value_i_info = i_info;
-				i_info=super_i_info; 
-				solver=HESSIAN; pseudohessian=false; hessian=true; 
+				i_info=super_i_info;
+				solver=HESSIAN; pseudohessian=false; hessian=true;
 				i_info=value_i_info;
-				control=super;					
+				control=super;
 				gradient=custum;
 			} else {
 				old_value_ets=value_ets;				//prepare of next level of super-iteration.
@@ -573,21 +579,21 @@ cout <<"gotoSolve and SCF_method is " << SCF_method << endl;
 				value_ets = old_value_ets;				//reset conditions so that old iteration can continue
 				value_etm=old_value_etm;
 			}
-		
+
 			if (value_ets==-1 && value_etm==-1) {			//get value for gradient.
-				g[0]=Var[value_target]->GetError(); 
+				g[0]=Var[value_target]->GetError();
 			} else {
-				if (value_ets>-1) 
-					g[0]=Var[value_ets]->GetError(); 
-				else 
+				if (value_ets>-1)
+					g[0]=Var[value_ets]->GetError();
+				else
 					g[0]=Var[value_etm]->GetError();
 			}
 		break;
 		case Picard:
-			if (debug) cout <<"Residuals in Picard mode in Solve_scf " << endl; 
-			jump=sysmon_length; 
-			if (Sys[0]->charged) jump++; 
-			Cp(alpha,xx+jump*M,M);  
+			if (debug) cout <<"Residuals in Picard mode in Solve_scf " << endl;
+			jump=sysmon_length;
+			if (Sys[0]->charged) jump++;
+			Cp(alpha,xx+jump*M,M);
 			ComputePhis();
 			if (Sys[0]->charged) {
 				Sys[0]->DoElectrostatics(g+sysmon_length*M,xx+sysmon_length*M);
@@ -596,7 +602,7 @@ cout <<"gotoSolve and SCF_method is " << SCF_method << endl;
 				Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
 				Lat[0]->remove_bounds(g+sysmon_length*M);
 			}
-			YisAplusC(g+jump*M,Sys[0]->phitot,-1.0,M); 
+			YisAplusC(g+jump*M,Sys[0]->phitot,-1.0,M);
 			for (i=0; i<sysmon_length; i++) {
 				Cp(g+i*M,xx+i*M,M);
 				for (k=0; k<mon_length; k++) {
@@ -610,12 +616,12 @@ cout <<"gotoSolve and SCF_method is " << SCF_method << endl;
 					YplusisCtimesX(g+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMonList[i]]->valence,M);
 				}
 				Lat[0]->remove_bounds(g+i*M);
-				Times(g+i*M,g+i*M,Sys[0]->KSAM,M);	
-			}		
-		break; 		
-		default: 
+				Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
+			}
+		break;
+		default:
 
-			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl; 
+			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
 			Cp(xx,X,iv);
  			ComputePhis();
 
@@ -703,8 +709,8 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 
 			numReverseDirection = 0;
 			for (int i=0; i<reverseDirectionRange; i++) {
-				if (reverseDirection[i] == 1) 
-					numReverseDirection++; 
+				if (reverseDirection[i] == 1)
+					numReverseDirection++;
 			}
 
 			numIterationsSinceHessian++;
@@ -721,7 +727,7 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 				numIterationsSinceHessian = 0;
 			}
 
-		break; 
+		break;
 	}
 }
 

@@ -242,6 +242,7 @@ bool Mesodyn::mesodyn() {
     cout.precision(32);
 
     //TODO: Check for convergence and exit?
+for (int z=0; z<2*Lat[0]->M; z++) cout <<rho[z] << endl; 
     New[0]->SolveMesodyn(rho, alpha);
     onsagerCoefficient();
     potentialDifference();
@@ -266,7 +267,7 @@ void Mesodyn::initRho() {
   //If molecules are pinned they cannot move, so we have to free them before moving them by using fluxes
   for (int i = 0; i < (int)Seg.size(); ++i) {
     if (Seg[i]->freedom == "pinned")
-      Seg[i]->freedom = "free";
+     Seg[i]->freedom = "free";
   }
 
   New[0]->Solve(true);

@@ -59,7 +59,8 @@ public:
 	Real minimum;
 
 	virtual void residuals(Real*,Real*); //x,g
-	virtual void inneriteration(Real*,Real*,float*, Real, Real, Real, int); //x g accuracy nvar 
+	virtual void inneriteration(Real*,Real*,float*, Real, Real&, Real, int); //x g accuracy nvar 
+	void Init_it(); 
 	bool getnewtondirection();
 	int getiterations();
 	bool ispseudohessian();

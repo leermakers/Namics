@@ -70,6 +70,7 @@ C Copyright (2018) Wageningen University, NL.
 	maxFrReverseDirection=0.4;
 	numIterationsForHessian=100;
 	minAccuracyForHessian=0.1;
+	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); H_Zero(reverseDirection,reverseDirectionRange);
 	     
 }
 
@@ -79,7 +80,7 @@ if (reverseDirection) free(reverseDirection);
 }
 
 void SFNewton::residuals(Real*,Real*){}
-void SFNewton::inneriteration(Real*,Real*,float*,Real,Real,Real,int){} //x g accuracy nvar
+void SFNewton::inneriteration(Real*,Real*,float*,Real,Real&,Real,int){} //x g accuracy nvar
 bool SFNewton::getnewtondirection() {return newtondirection;}
 int SFNewton::getiterations() {return iterations;}
 bool SFNewton::ispseudohessian() {return pseudohessian;}
@@ -587,7 +588,7 @@ void SFNewton::COMPUTEG(Real* x, Real* g, int nvar,bool filter) {//done
 		for (int i=0; i<IV; i++) {
 			if (mask[i]==1) {x[pos]=x[i]; g[pos]=g[i];pos++;}
 		}
-	} else residuals(x,g); 
+	} else {residuals(x,g); }
 }
 
 void SFNewton::ResetX(Real* x,int nvar,bool filter) { //done
@@ -611,8 +612,9 @@ bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real
 		success=false;
 	}
 	if (e_info || s_info) {
-		if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
+		
 		if (e_info) {
+			if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
 			if (it < iterationlimit/10) cout <<"That was easy." << endl;
 			if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
 			if (it <2 && iterationlimit >1 ) cout <<"You hit the nail on the head." << endl;
@@ -633,9 +635,8 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
 Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);
 Real* p0 = (Real*) malloc(nvar*sizeof(Real));H_Zero(p0,nvar);
 Real* g0  = (Real*) malloc(nvar*sizeof(Real));H_Zero(g0,nvar);
-float* h = (float*) malloc(nvar*nvar*sizeof(float)); //H_Zero(h,nvar*nvar); 
-mask = (int*) malloc(nvar*sizeof(int));
-	
+if (mask) free(mask); mask = (int*) malloc(nvar*sizeof(int));
+	//Init_it();
 	if (nvar<1) {cout << "newton has nothing to do; returning the problem" << endl; return false;}
 	int it=0;
 	iterations=it; 
@@ -645,13 +646,12 @@ mask = (int*) malloc(nvar*sizeof(int));
 	Real trustfactor =1;
 	reverseDirectionRange=50;
 
+        trouble = resetiteration = 0;
+	minAccuracySoFar = 1e30; 
+	numIterationsSinceHessian=0;
 	
 	IV =nvar;
-	cout <<nvar << " " << IV << endl; 
-	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); H_Zero(reverseDirection,reverseDirectionRange);
-
 	srand (1);
-
 	if (e_info) {cout <<"NEWTON has been notified."<< endl;
 		cout << "Your guess:";
 	}
@@ -665,17 +665,18 @@ mask = (int*) malloc(nvar*sizeof(int));
 		for (int i=0; i<nvar; i++) {if (g[i]==0) mask[i]=0; else {xxx++;  mask[i]=1;}}
 		nvar=xxx;
 		int pos=0;
-		for (int i=0; i<nvar; i++) {
+		for (int i=0; i<IV; i++) {
 			if (mask[i]==1) {g[pos]=g[i]; x[pos]=x[i];pos++;}
 		}
 	}
+
+float* h = (float*) malloc(nvar*nvar*sizeof(float)); H_Zero(h,nvar*nvar); 
+  
 	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
 	minimum=newfunction(g,x,nvar);
 	inneriteration(x,g,h,accuracy,delta_max,ALPHA,nvar);
 	accuracy=newdirection(h,p,p0,g,g0,x,nvar,ALPHA,filter);
 	normg=sqrt(minimum);
-	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
-	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
 	accuracy=residue(g,p,x,nvar,ALPHA);
 	
 	while ((tolerance < accuracy || tolerance*10<normg) && iterations<iterationlimit && accuracy == fabs(accuracy) ) {
@@ -695,7 +696,7 @@ mask = (int*) malloc(nvar*sizeof(int));
 		accuracy=newdirection(h,p,p0,g,g0,x,nvar,ALPHA,filter);
 		normg=sqrt(minimum);
 	}
-	printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
+	if (e_info) printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
 	success=Message(e_info,s_info,it,iterationlimit,accuracy,tolerance,"");
 	ResetX(x,nvar,filter);
 free(x0);free(g);free(p);free(p0);free(g0);free(h);

@@ -74,8 +74,6 @@ virtual ~Solve_scf();
 	Real *x_x0;
 #endif
 	Real* xx;  
-	Real* yy;
-	Real* zz;
 	Real* alpha;
 	bool mesodyn;
 	Real* RHO;
@@ -102,7 +100,7 @@ virtual ~Solve_scf();
 	void ComputePhis();
 	bool PutU();
 	void residuals(Real*,Real*);
-	void inneriteration(Real*,Real*,float*,Real,Real,Real,int);
+	void inneriteration(Real*,Real*,float*,Real,Real&,Real,int);
 
 };
 #endif

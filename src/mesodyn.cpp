@@ -80,7 +80,7 @@ bool Mesodyn::mesodyn() {
       copy( all_components->rho.begin(),  all_components->rho.end(), back_inserter(rho));
     }
 
-    New[0]->SolveMesodyn(rho, alpha, [this](int i)-> vector<Real> {return flux[i]->J;}  );
+    New[0]->SolveMesodyn(rho, alpha, [this](int i)-> vector<Real>& {return flux[i]->J;}  );
 
     for (int i = 0 ; i < componentNo ; ++i) component[i]->load_alpha(&alpha[0+i*M], M);
 
@@ -99,7 +99,7 @@ bool Mesodyn::mesodyn() {
       }
 /* this was in local .. I kept the head
     //TODO: Check for convergence and exit?
-for (int z=0; z<2*Lat[0]->M; z++) cout <<rho[z] << endl; 
+for (int z=0; z<2*Lat[0]->M; z++) cout <<rho[z] << endl;
     New[0]->SolveMesodyn(rho, alpha);
     onsagerCoefficient();
     potentialDifference();

@@ -90,12 +90,24 @@ bool Mesodyn::mesodyn() {
 
     if (t % timebetweensaves == 0) writeRho(t);
 
+//this was in head.
     int c = 0;
     for (int i = 0 ; i < componentNo ; ++i) {
       for (int j = 0 ; j < (componentNo - 1) - i ; ++j) {
         component[i]->update_density( flux[c]->J );
         ++c;
       }
+/* this was in local .. I kept the head
+    //TODO: Check for convergence and exit?
+for (int z=0; z<2*Lat[0]->M; z++) cout <<rho[z] << endl; 
+    New[0]->SolveMesodyn(rho, alpha);
+    onsagerCoefficient();
+    potentialDifference();
+    boundaryConditions();
+    langevinFlux();
+    if( t % timebetweensaves == 0 ) {
+      writeRho(t);
+*/
     }
 
     c = 0;
@@ -113,11 +125,11 @@ bool Mesodyn::mesodyn() {
 
 int Mesodyn::initial_conditions() {
 
-    //If molecules are pinned they cannot move, so we have to free them before moving them by using fluxes
-    for (Segment* seg : Seg) {
-      if (seg->freedom == "pinned")
-        seg->freedom = "free";
-    }
+  //If molecules are pinned they cannot move, so we have to free them before moving them by using fluxes
+  for (int i = 0; i < (int)Seg.size(); ++i) {
+    if (Seg[i]->freedom == "pinned")
+     Seg[i]->freedom = "free";
+  }
 
     vector< vector<Real> > rho(componentNo, vector<Real>(M));
 

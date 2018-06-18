@@ -1,0 +1,40 @@
+lat : flat : gradients : 1
+lat : flat : geometry : planar
+lat : flat : lambda : simple_cubic
+lat : flat : n_layers : 10
+
+mon : S : freedom : frozen
+mon : S : frozen_range : 1;1
+
+mon : A : freedom : free
+
+//mon : B : freedom : free
+
+mon : W : freedom : free
+mon : A : chi-S : -6
+//mon : B : chi-S : -6
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+mol : pol : composition : (A)100
+mol : pol : freedom : restricted
+mol : pol : theta : 1.0
+
+output : kal : append : true
+
+output : pro : append : true
+pro : mol : pol : phi
+
+mesodyn : smth : timesteps : 10
+mesodyn : smth : timebetweensaves : 1
+mesodyn : smth : diffusionconstant : 0.5
+mesodyn : smth : mean : 1
+mesodyn : smth : stdev : 1
+mesodyn : smth : seed : 1
+
+newton :isaac : method : pseudohessian
+newton : isaac : i_info : 5000
+newton : isaac : deltamax : 0.5
+newton : isaac : iterationlimit : 5000
+newton : isaac : tolerance : 1e-7
+start

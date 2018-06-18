@@ -76,6 +76,8 @@ bool Mesodyn::mesodyn() {
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
+    rho.clear();
+
     for (Component1D* all_components : component) {
       copy( all_components->rho.begin(),  all_components->rho.end(), back_inserter(rho));
     }

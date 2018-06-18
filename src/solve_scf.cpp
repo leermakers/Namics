@@ -42,9 +42,13 @@ if (debug) cout <<"Destructor in Solve " << endl;
 	cudaFree(xR);
 	cudaFree(x_x0);
 #endif
+<<<<<<< HEAD
 	free(xx);
 	free(yy);
 	free(zz);
+=======
+	free(xx); 
+>>>>>>> master
 }
 
 void Solve_scf::AllocateMemory() {
@@ -56,6 +60,7 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	if (Sys[0]->charged) iv +=M;
 	if (SCF_method=="DIIS-ext") iv +=M;
 	if (SCF_method=="Picard") iv+=M;
+//	cout <<"iv in allocateMemory: " << iv << endl;
 
 #ifdef CUDA
 	xx  = (Real*)AllOnDev(iv);
@@ -66,8 +71,6 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 #endif
 
 	xx=(Real*) malloc(iv*sizeof(Real)); Zero(xx,iv);
-	yy=(Real*) malloc(sizeof(Real)); Zero(yy,1);
-	zz=(Real*) malloc(sizeof(Real)); Zero(zz,1);
 	Sys[0]->AllocateMemory();
 }
 
@@ -408,6 +411,11 @@ bool Solve_scf::Guess(Real *X, string METHOD, vector<string> MONLIST, bool CHARG
 bool Solve_scf::Solve(bool report_errors) { //going SCF here
 if(debug) cout <<"Solve in  Solve_scf " << endl;
 	bool success=true;
+<<<<<<< HEAD
+=======
+	gradient=classical;
+	control=proceed;
+>>>>>>> master
 	switch(solver) {
 		case HESSIAN:
 			success=iterate(xx,iv,iterationlimit,tolerance,deltamax,deltamin,true);
@@ -487,11 +495,17 @@ bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha, function< 
 
 bool Solve_scf::SuperIterate(int search, int target,int ets,int etm) {
 if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
+<<<<<<< HEAD
 	bool success;
+=======
+	Real* x = (Real*) malloc(sizeof(Real)); H_Zero(x,1);
+	bool success; 
+>>>>>>> master
 	value_search=search;				//cp superiteration cnontrols to solve. These can be used in residuals.
 	value_target=target;
 	value_ets=ets;
 	value_etm=etm;
+<<<<<<< HEAD
 	if (ets==-1 && etm==-1)  {                  //pick up initial guess;
 		yy[0] =Var[search]->GetValue();
 	} else {
@@ -499,20 +513,39 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 			yy[0] = Var[ets]->GetValue();
 		else
 			yy[0]=Var[etm]->GetValue();
+=======
+	if (ets==-1 && etm==-1)  {                  //pick up initial guess; 
+		x[0] =Var[search]->GetValue(); 
+	} else {
+		if (ets>-1) 
+			x[0] = Var[ets]->GetValue(); 
+		else 
+			x[0]=Var[etm]->GetValue();
+>>>>>>> master
 	}
 	gradient=custum; 				//the proper gradient is used
 	control=super;				//this is for inneriteration
-//	e_info=super_e_info;
+	e_info=super_e_info;
 	s_info=super_s_info;
+<<<<<<< HEAD
 	i_info=super_i_info;
+=======
+	i_info=super_i_info; 
+	tolerance=super_tolerance; 	
+>>>>>>> master
 	solver=diis;
-	    success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
-	//success=iterate(yy,1,super_iterationlimit,super_tolerance,super_deltamax,deltamin,false);	//iterate is called with just one iteration variable
+	    success=iterate_DIIS(x,1,m,iterationlimit,tolerance,deltamax);
+	//success=iterate(x,1,super_iterationlimit,super_tolerance,super_deltamax,deltamin,false);	//iterate is called with just one iteration variable
 	return success;
 }
 
+<<<<<<< HEAD
 void Solve_scf::residuals(Real* X, Real* g){
  if (debug) cout <<"residuals in Solve_scf " << endl;
+=======
+void Solve_scf::residuals(Real* x, Real* g){
+ if (debug) cout <<"residuals in Solve_scf " << endl;	
+>>>>>>> master
 	int M=Lat[0]->M;
 	Real chi;
 	int sysmon_length = Sys[0]->SysMonList.size();
@@ -525,7 +558,6 @@ void Solve_scf::residuals(Real* X, Real* g){
 		case MESODYN:
 		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
-			Cp(xx,X,iv);
 			ComputePhis();
 			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
 			for (unsigned int c = 0 ; c < Sys[0]->SysMolMonList.size() ; ++c) {
@@ -538,11 +570,13 @@ void Solve_scf::residuals(Real* X, Real* g){
 				while (j<LENGTH) {
 					YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M);
 					Lat[0]->remove_bounds(g+k*M);
+					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 					k++;
 					j++;
 				}
 				i++;
 			}
+<<<<<<< HEAD
 		}
 		break;
 		case custum:
@@ -555,6 +589,20 @@ void Solve_scf::residuals(Real* X, Real* g){
 					Var[value_ets]->PutValue(yy[0]);
 				else
 					Var[value_etm]->PutValue(yy[0]);
+=======
+			for (j=0; j<M; j++) 
+			cout << RHO[j] << " " << RHO[M+j] << " " << Mol[0]->phi[j] << " " << Mol[1]->phi[j] << endl;  
+		break;
+		case custum:
+			if (debug) cout <<"Residuals in custum mode in Solve_scf " << endl; 
+			if (value_ets==-1 && value_etm==-1) 			//guess from newton is stored in place.
+				Var[value_search]->PutValue(x[0]); 
+			else {
+				if (value_ets>-1) 
+					Var[value_ets]->PutValue(x[0]); 
+				else 
+					Var[value_etm]->PutValue(x[0]);
+>>>>>>> master
 			}
 
 			if (value_ets==-1||value_search<0 || value_etm>-1) {
@@ -566,6 +614,7 @@ void Solve_scf::residuals(Real* X, Real* g){
 				if (SCF_method=="Picard") {solver=PICARD;}
 				//e_info=value_e_info;
 				s_info=value_s_info;
+<<<<<<< HEAD
 				e_info=value_e_info;
 cout <<"gotoSolve and SCF_method is " << SCF_method << endl;
 				Solve(false);						//find scf solution
@@ -574,7 +623,18 @@ cout <<"gotoSolve and SCF_method is " << SCF_method << endl;
 				solver=HESSIAN; pseudohessian=false; hessian=true;
 				i_info=value_i_info;
 				control=super;
+=======
+				e_info=false;
+				i_info=value_i_info;
+				//tolerance = value_tolerance; 
+				Solve(false);						//find scf solution 
+				control=super;					
+>>>>>>> master
 				gradient=custum;
+				tolerance=super_tolerance; 
+				e_info=super_e_info;
+				i_info=super_i_info; 
+				s_info=super_s_info; 
 			} else {
 				old_value_ets=value_ets;				//prepare of next level of super-iteration.
 				old_value_etm=value_etm;
@@ -624,8 +684,12 @@ cout <<"gotoSolve and SCF_method is " << SCF_method << endl;
 		break;
 		default:
 
+<<<<<<< HEAD
 			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
 			Cp(xx,X,iv);
+=======
+			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl; 
+>>>>>>> master
  			ComputePhis();
 
 			if (Sys[0]->charged) {
@@ -652,7 +716,7 @@ cout <<"gotoSolve and SCF_method is " << SCF_method << endl;
 			for (i=0; i<sysmon_length; i++) {
 				AddG(g+i*M,Sys[0]->phitot,alpha,M);
 				Lat[0]->remove_bounds(g+i*M);
-				//Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
+				Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
 			}
 
 			if (Sys[0]->charged) {
@@ -664,7 +728,7 @@ cout <<"gotoSolve and SCF_method is " << SCF_method << endl;
 	}
 }
 
-void Solve_scf::inneriteration(Real* x, Real* g, float* h, Real accuracy, Real deltamax, Real ALPHA, int nvar) {
+void Solve_scf::inneriteration(Real* x, Real* g, float* h, Real accuracy, Real& deltamax, Real ALPHA, int nvar) {
 if(debug) cout <<"inneriteration in Solve_scf " << endl;
 
 	switch(control) {

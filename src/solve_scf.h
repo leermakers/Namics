@@ -74,9 +74,7 @@ public:
 	Real *xR;
 	Real *x_x0;
 #endif
-	Real* xx;
-	Real* yy;
-	Real* zz;
+	Real *xx;
 	Real* alpha;
 	bool mesodyn;
 	Real* RHO;
@@ -104,7 +102,7 @@ public:
 	void ComputePhis();
 	bool PutU();
 	void residuals(Real*,Real*);
-	void inneriteration(Real*,Real*,float*,Real,Real,Real,int);
+	void inneriteration(Real*,Real*,float*,Real,Real&,Real,int);
 
 };
 #endif

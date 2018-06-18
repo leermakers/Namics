@@ -37,7 +37,7 @@ kal : mol : lipid : chainlength
 kal : mon : C : chi-O
 kal : mol : lipid : mu
 kal : mol : lipid : phibulk
-newton : isaac : i_info : 10
+newton : isaac : i_info : 100
 newton : isaac : e_info : true
 newton : isaac : s_info : false
 newton : isaac : super_e_info : true
@@ -45,7 +45,7 @@ newton : isaac : super_s_info : true
 newton : isaac : method : pseudohessian
 newton : isaac : iterationlimit : 1000
 newton : isaac : deltamax : 0.05
-newton : isaac  : super_deltamax : 0.9
+newton : isaac  : super_deltamax : 1
 newton : isaac : m : 12
 start 
 mon : C : freedom : free

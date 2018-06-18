@@ -21,6 +21,7 @@ public:
 	vector<int> jx;
 	vector<int> jy;
 	vector<int> n_box;
+	vector<string> BC;
 	int BX1,BY1,BZ1,BXM,BYM,BZM;
 	int JX,JY,JZ,M;
 	bool all_lattice;
@@ -38,7 +39,7 @@ public:
 	Real *lambda_1;
 	Real *lambda1;
 	Real *LAMBDA;
-	int fjc,FJC;
+	int fjc, FJC;
 	Real *X;
 	int VarInitValue;
 	string Var_type;
@@ -51,7 +52,6 @@ public:
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
 
-	vector<string> BC;
 	vector<string> ints;
 	vector<string> Reals;
 	vector<string> bools;

@@ -183,7 +183,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		StoreFileGuess=In[0]->Get_string(GetValue("store_guess"),"");
 		ReadFileGuess=In[0]->Get_string(GetValue("read_guess"),"");
 		if (GetValue("stop_criterion").size() > 0) {
-			cout <<"Warning: Only classical stop criterion implemented" << endl; 
+			cout <<"Warning: Only classical stop criterion implemented" << endl;
 			vector<string>options;
 			options.push_back("norm_of_g");
 			options.push_back("max_of_element_of_|g|");
@@ -429,9 +429,13 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	return success;
 }
 
-bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
+bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha, function< vector<Real>&(int) > flux_callback) {
 	if(debug) cout <<"Solve (mesodyn) in  Solve_scf " << endl;
 	//iv should have been set at AllocateMemory.
+<<<<<<< HEAD
+=======
+	flux = flux_callback;
+>>>>>>> ebe26a1497b31163d77eafca147ee5e641e78515
 	int M=Lat[0]->M;
   	mesodyn =true;
 	gradient=MESODYN;
@@ -519,10 +523,14 @@ void Solve_scf::residuals(Real* X, Real* g){
 	int LENGTH;
 	switch(gradient) {
 		case MESODYN:
+		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
 			Cp(xx,X,iv);
 			ComputePhis();
 			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
+			for (unsigned int c = 0 ; c < Sys[0]->SysMolMonList.size() ; ++c) {
+					// fluxes = flux(i) ;
+			}
 			i=k=0;
 			while (i<lengthMolList) {
 				j=0;
@@ -535,6 +543,7 @@ void Solve_scf::residuals(Real* X, Real* g){
 				}
 				i++;
 			}
+		}
 		break;
 		case custum:
 			if (debug) cout <<"Residuals in custum mode in Solve_scf " << endl;

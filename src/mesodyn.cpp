@@ -71,16 +71,16 @@ bool Mesodyn::mesodyn() {
 
   if (debug) cout << "Mesodyn is all set, starting calculations.." << endl;
 
+  vector<Real> rho;
+
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
-    // TODO: once phi becomes a vector, this will be much sexier.
-    vector<Real> rho;
     for (Component1D* all_components : component) {
       copy( all_components->rho.begin(),  all_components->rho.end(), back_inserter(rho));
     }
 
-    New[0]->SolveMesodyn(rho, alpha);
+    New[0]->SolveMesodyn(rho, alpha, [this](int i)-> vector<Real>& {return flux[i]->J;}  );
 
     for (int i = 0 ; i < componentNo ; ++i) component[i]->load_alpha(&alpha[0+i*M], M);
 
@@ -90,24 +90,12 @@ bool Mesodyn::mesodyn() {
 
     if (t % timebetweensaves == 0) writeRho(t);
 
-//this was in head.
     int c = 0;
     for (int i = 0 ; i < componentNo ; ++i) {
       for (int j = 0 ; j < (componentNo - 1) - i ; ++j) {
         component[i]->update_density( flux[c]->J );
         ++c;
       }
-/* this was in local .. I kept the head
-    //TODO: Check for convergence and exit?
-for (int z=0; z<2*Lat[0]->M; z++) cout <<rho[z] << endl; 
-    New[0]->SolveMesodyn(rho, alpha);
-    onsagerCoefficient();
-    potentialDifference();
-    boundaryConditions();
-    langevinFlux();
-    if( t % timebetweensaves == 0 ) {
-      writeRho(t);
-*/
     }
 
     c = 0;
@@ -133,32 +121,7 @@ int Mesodyn::initial_conditions() {
 
     vector< vector<Real> > rho(componentNo, vector<Real>(M));
 
-    //TODO: generalize (M-1-volume?) for 2D/3D
-    Sys[0]->PrepareForCalculations();
-    int solvent = Sys[0]->solvent;
-    int volume = Sys[0]->volume-(pow(M,dimensions) - pow ((M-2),dimensions));
-
-    Real sum_theta {0};
-    Real theta {0};
-
-    for (int i = 0; i < componentNo ; ++i) {
-      if (i != solvent) {
-        theta = Mol[i]->theta;
-        sum_theta += theta;
-        for (int z = M-1-volume; z < Lat[0]->M-1; z++) {
-          rho[i][z] = theta/volume;
-        }
-      }
-    }
-
-    for (int z = M-1-volume ; z < Lat[0]->M-1 ; ++z) {
-      rho[solvent][z] = (volume-sum_theta)/volume;
-    }
-
-    //TODO: wall boundary
-    for (int i = 0 ; i < componentNo ; ++i) {
-      rho[i][1] = 0;
-    }
+    init_rho_wall(rho);
 
     vector<Component1D::boundary> boundaries;
     for (string& boundary : Lat[0]->BC) {
@@ -221,6 +184,37 @@ int Mesodyn::initial_conditions() {
 }
 
 /******* Rho initialization *******/
+
+int Mesodyn::init_rho_wall(vector< vector<Real> >& rho) {
+//TODO: generalize (M-1-volume?) for 2D/3D
+Sys[0]->PrepareForCalculations();
+int solvent = Sys[0]->solvent;
+int volume = Sys[0]->volume-(pow(M,dimensions) - pow ((M-2),dimensions));
+
+Real sum_theta {0};
+Real theta {0};
+
+for (int i = 0; i < componentNo ; ++i) {
+  if (i != solvent) {
+    theta = Mol[i]->theta;
+    sum_theta += theta;
+    for (int z = M-1-volume; z < Lat[0]->M-1; z++) {
+      rho[i][z] = theta/volume;
+    }
+  }
+}
+
+for (int z = M-1-volume ; z < Lat[0]->M-1 ; ++z) {
+  rho[solvent][z] = (volume-sum_theta)/volume;
+}
+
+//TODO: wall boundary
+for (int i = 0 ; i < componentNo ; ++i) {
+  rho[i][1] = 0;
+}
+
+return 0;
+}
 
 /******* Output generation *******/
 

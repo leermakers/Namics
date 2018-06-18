@@ -84,37 +84,7 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	Zero(g,iv);
 	Zero(xR,m*iv);
 	Zero(x_x0,m*iv);
-	Sys[0]->AllocateMemory();
-}
-
-void Newton::AllocateMemory(int fIv) {
-if(debug) cout <<"AllocateMemeory in Newton " << endl;
-	int M=Lat[0]->M;
-	iv = fIv;
-	if (Sys[0]->charged) iv +=M;
-	if (method=="DIIS-ext") iv +=M;
-	Aij  =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
-	Ci   =(Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
-	Apij =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
-	mask= (int*) malloc(iv*sizeof(int));
-#ifdef CUDA
-	xx  = (Real*)AllOnDev(iv);
-	x0  = (Real*)AllOnDev(iv);
-	g   = (Real*)AllOnDev(iv);
-	xR  = (Real*)AllOnDev(m*iv);
-	x_x0= (Real*)AllOnDev(m*iv);
-#else
-	xx   =(Real*) malloc(iv*sizeof(Real));
-	x0   =(Real*) malloc(iv*sizeof(Real));
-	g    =(Real*) malloc(iv*sizeof(Real));
-	xR   =(Real*) malloc(m*iv*sizeof(Real));
-	x_x0 =(Real*) malloc(m*iv*sizeof(Real));
-#endif
-	Zero(xx,iv);
-	Zero(x0,iv);
-	Zero(g,iv);
-	Zero(xR,m*iv);
-	Zero(x_x0,m*iv);
+	Lat[0]->DeAllocateMemory();
 	Sys[0]->AllocateMemory();
 }
 

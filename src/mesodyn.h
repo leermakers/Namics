@@ -219,7 +219,8 @@ private:
   void prepareOutputFile();
   void writeRho(int);
   int initial_conditions();
-  void init_rho(vector<Real>&, int);
+  vector<Real>&  flux_callback(int);
+  int init_rho_wall(vector< vector<Real> >&);
   void init_rho_homogeneous(vector<Real>&, int);
 
 

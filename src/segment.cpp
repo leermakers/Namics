@@ -1,21 +1,21 @@
-#include "segment.h"  
-#include <fstream>  
+#include "segment.h"
+#include <fstream>
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
-	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; 
+	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr;
 if (debug) cout <<"Segment constructor" + name << endl;
-	KEYS.push_back("freedom"); 
-	KEYS.push_back("valence"); 
+	KEYS.push_back("freedom");
+	KEYS.push_back("valence");
 	KEYS.push_back("epsilon");
 	KEYS.push_back("e.psi0/kT");
 	KEYS.push_back("pinned_range");
 	KEYS.push_back("frozen_range");
 	KEYS.push_back("tagged_range");
-	KEYS.push_back("pinned_filename"); 	
+	KEYS.push_back("pinned_filename");
 	KEYS.push_back("frozen_filename");
-	KEYS.push_back("tagged_filename"); 
+	KEYS.push_back("tagged_filename");
 	KEYS.push_back("clamp_filename");
 	KEYS.push_back("sub_box_size");
-	KEYS.push_back("clamp_info"); 
+	KEYS.push_back("clamp_info");
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -25,31 +25,29 @@ if (debug) cout <<"Segment destructor " + name << endl;
 void Segment::DeAllocateMemory(void){
 if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 
-if (n_pos>0) cout <<"problem for n_pos " <<endl; 
+if (n_pos>0) cout <<"problem for n_pos " <<endl;
 	if(n_pos>0) free(H_P);
 	if (freedom != "free"){
 		 free(r);
 	}
-	free(H_u); 
+	free(H_u);
 	free(H_phi);
-	if (freedom !="free") {
-		free(H_MASK);
-	}
+	free(H_MASK);
 
 #ifdef CUDA
 	if(n_pos>0) cudaFree(P);
-	cudaFree(u); cudaFree(phi); 
-	//cudaFree(G1); 
+	cudaFree(u); cudaFree(phi);
+	//cudaFree(G1);
 	cudaFree(MASK); cudaFree(phi_side);
 #else
-	//free(G1); 
+	//free(G1);
 	free(phi_side);
 
 #endif
 }
 
 void Segment::AllocateMemory() {
-if (debug) cout <<"Allocate Memory in Segment " + name << endl; 
+if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	int M=Lat[0]->M;
 	phibulk =0; //initialisatie van monomer phibulk.
 	//r=(int*) malloc(6*sizeof(int));
@@ -59,26 +57,26 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	//}
 	H_u = (Real*) malloc(M*sizeof(Real));
 	H_phi = (Real*) malloc(M*sizeof(Real));
-	H_Zero(H_u,M); 
+	H_Zero(H_u,M);
 	H_Zero(H_phi,M);
 	if (freedom=="free") {
 		H_MASK = (int*) malloc(M*sizeof(int));
-		H_Zero(H_MASK,M); 
+		H_Zero(H_MASK,M);
 	}
 #ifdef CUDA
 	if (n_pos>0) {
 		Px=(int*)AllIntOnDev(n_pos);
 	}
 	//G1=(Real*)AllOnDev(M); //Zero(G1,M);
-	u=(Real*)AllOnDev(M); Zero(u,M); 
+	u=(Real*)AllOnDev(M); Zero(u,M);
 	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
 	phi_side=(Real*)AllOnDev(M); Zero(phi_side,M);
 #else
 	if (n_pos>0) {
 		P=H_P;
-	}	
-	MASK=H_MASK;  
+	}
+	MASK=H_MASK;
 	phi =H_phi;
 	u = H_u;
 	//G1 = (Real*)malloc(M*sizeof(Real));
@@ -90,7 +88,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 bool Segment::PrepareForCalculations(int* KSAM) {
 if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
-	int M=Lat[0]->M; 
+	int M=Lat[0]->M;
 #ifdef CUDA
 	TransferIntDataToDevice(H_MASK, MASK, M);
 	//TransferDataToDevice(H_u, u, M);
@@ -99,40 +97,40 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	//TransferIntDataToDevice(H_Pz, Pz, n_pos);
 #endif
 
-	bool success=true; 
+	bool success=true;
 	phibulk=0;
 	if (freedom=="frozen") {
-		Cp(phi,MASK,M); 
-	} else Zero(phi,M); 
+		Cp(phi,MASK,M);
+	} else Zero(phi,M);
 	//if (freedom=="tagged") Zero(u,M);
 	//Lat[0]->set_bounds(u);
 	//Boltzmann(G1,u,M); //See also molecule equivalent.....
 	//if (freedom=="pinned") Times(G1,G1,MASK,M);
 	//if (freedom=="tagged") Cp(G1,MASK,M);
 	//Lat[0]->set_bounds(G1);
-	//if (!(freedom ==" frozen" || freedom =="tagged" )) Times(G1,G1,KSAM,M); 
+	//if (!(freedom ==" frozen" || freedom =="tagged" )) Times(G1,G1,KSAM,M);
 	return success;
 }
 
 bool Segment::CheckInput(int start) {
 if (debug) cout <<"CheckInput in Segment " + name << endl;
 	bool success;
-	string s; 
-	vector<string>options; 
+	string s;
+	vector<string>options;
 	guess_u=0;
 	n_pos=0;
 	fixedPsi0=false;
 	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {
-		options.push_back("free"); 
+		options.push_back("free");
 		options.push_back("pinned");
 		options.push_back("frozen");
 		options.push_back("tagged");
-		options.push_back("clamp"); 
+		options.push_back("clamp");
 
 
-		
-		freedom = In[0]->Get_string(GetValue("freedom"),"free"); 
+
+		freedom = In[0]->Get_string(GetValue("freedom"),"free");
 		if (!In[0]->InSet(options,freedom)) {
 			cout << "Freedom: '"<< freedom  <<"' for mon " + name + " not recognized. "<< endl;
 			cout << "Freedom choices: free, pinned, frozen, tagged, clamp " << endl; success=false;
@@ -141,7 +139,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		if (freedom =="free") {
 			if (GetValue("frozen_range").size()>0||GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 ||
 			GetValue("frozen_filename").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tagged_filename").size()>0) {
-					if (start==1) {success=false; cout <<"In mon " + name + " you should not combine 'freedom : free' with 'frozen_range' or 'pinned_range' or 'tagged_range' or corresponding filenames." << endl; 
+					if (start==1) {success=false; cout <<"In mon " + name + " you should not combine 'freedom : free' with 'frozen_range' or 'pinned_range' or 'tagged_range' or corresponding filenames." << endl;
 				}
 			}
 		} else {
@@ -150,20 +148,20 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 		if (freedom =="clamp" ) {
 			n_box=0; mx=0;
-			int m_x; 
+			int m_x;
 			int MX=Lat[0]->MX;
 			if (GetValue("sub_box_size").size()>0) {
 				m_x=In[0]->Get_int(GetValue("sub_box_size"),-1);
 				if (m_x <1 || m_x > MX) {success=false; cout <<"Value of sub_box_size is out of bounds: 1 ... " << MX << endl; }
 				if (mx>0) {
 					if (m_x!=mx) {
-						cout <<"values for sub_box_size of input " << m_x << " not consistent with value found in clamp_filename " << mx << " input file data is taken " << endl; 
-						mx=m_x; my=m_x; mz=m_x; 
+						cout <<"values for sub_box_size of input " << m_x << " not consistent with value found in clamp_filename " << mx << " input file data is taken " << endl;
+						mx=m_x; my=m_x; mz=m_x;
 					}
 				} else { mx=m_x; my=m_x; mz=m_x; }
 			}
 			Lat[0]->PutSub_box(mx,my,mz,n_box);
-			clamp_nr = Lat[0]->m.size()-1; 
+			clamp_nr = Lat[0]->m.size()-1;
 
 			if (GetValue("clamp_filename").size()>0) {
 				if (!GetClamp(GetValue("clamp_filename"))) {
@@ -171,17 +169,17 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					cout <<"Example of structure of clamp_filename is the following:" << endl;
 					cout <<"N : 20 : subbox0 : 15 15 15 pcb:[0. 0. 0.] " << endl;
 					cout <<"-1 -6 -6 " << endl;
-					cout <<"1 1 1 "  << endl; 
+					cout <<"1 1 1 "  << endl;
 					cout <<"11 1 1 " << endl;
 					cout <<" explanation: 1st line: length of chain fragment (should coinside with the composition) " << endl;
-					cout <<"              followed by subboxnr, Mx, My , Mz (sizes of subbox)" << endl; 
+					cout <<"              followed by subboxnr, Mx, My , Mz (sizes of subbox)" << endl;
 					cout <<" 	      followed by pcb info. Note that the spaces beween numbers is essential info " << endl ;
-					cout <<"              2nd line: lower coordinate of subbox " << endl; 
-					cout <<"              3rd line: coordinates of clamp point 1 " << endl; 
-					cout <<"              4th line: coordinates of clamp point 2 " << endl; 
-					cout <<" repeat these 4 lines for every sub-box " << endl; 
-					cout <<" note that currently all subboxes should be equal in size " << endl; 
-					cout <<" note as well that the chain lengths should also be the same.(redundent information because inputfile overrules this setting" << endl; 
+					cout <<"              2nd line: lower coordinate of subbox " << endl;
+					cout <<"              3rd line: coordinates of clamp point 1 " << endl;
+					cout <<"              4th line: coordinates of clamp point 2 " << endl;
+					cout <<" repeat these 4 lines for every sub-box " << endl;
+					cout <<" note that currently all subboxes should be equal in size " << endl;
+					cout <<" note as well that the chain lengths should also be the same.(redundent information because inputfile overrules this setting" << endl;
 				}
 			} else {
 				string s;
@@ -189,32 +187,32 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					s=GetValue("clamp_info");
 					vector<string> sub;
 					vector<string> set;
-					vector<string> coor; 
+					vector<string> coor;
 					In[0]->split(s,';',sub);
 					n_box=sub.size();
 					for (int i=0; i<n_box; i++) {
 						set.clear();
 						In[0]->split(sub[i],'(',set);
-						int length = set.size(); 
+						int length = set.size();
 						if (length!=3) {
-							success=false; cout <<" In 'clamp_info' for segment '"+name+"', for box number " << i << " the expected format (px1,py1,pz1)(px2,py2,pz2) was not found" << endl; 
+							success=false; cout <<" In 'clamp_info' for segment '"+name+"', for box number " << i << " the expected format (px1,py1,pz1)(px2,py2,pz2) was not found" << endl;
 						} else {
 /*
 							coor.clear();
 							In[0]->split(set[1],',',coor);
 							if (coor.size()!=3) {
-								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (bx,by,bz) not correct format. " << endl; 
+								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (bx,by,bz) not correct format. " << endl;
 							} else {
 								bx.push_back(In[0]->Get_int(coor[0],-10000));
 								by.push_back(In[0]->Get_int(coor[1],-10000));
 								bz.push_back(In[0]->Get_int(coor[2],-10000));
 							}
 */
-					
+
 							coor.clear();
 							In[0]->split(set[1],',',coor);
 							if (coor.size()!=3) {
-								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format. " << endl; 
+								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format. " << endl;
 							} else {
 								px1.push_back(In[0]->Get_int(coor[0],-10000));
 								py1.push_back(In[0]->Get_int(coor[1],-10000));
@@ -223,24 +221,24 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 							coor.clear();
 							In[0]->split(set[2],',',coor);
 							if (coor.size()!=3) {
-								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (px2,py2,pz2) not correct format. " << endl; 
+								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (px2,py2,pz2) not correct format. " << endl;
 							} else {
 								px2.push_back(In[0]->Get_int(coor[0],-10000));
 								py2.push_back(In[0]->Get_int(coor[1],-10000));
 								pz2.push_back(In[0]->Get_int(coor[2],-10000));
 							}
-							bx.push_back((px2[i]+px1[i]-mx)/2);  
-							by.push_back((py2[i]+py1[i]-mx)/2); 
-							bz.push_back((pz2[i]+pz1[i]-mx)/2); 
-						} 
+							bx.push_back((px2[i]+px1[i]-mx)/2);
+							by.push_back((py2[i]+py1[i]-mx)/2);
+							bz.push_back((pz2[i]+pz1[i]-mx)/2);
+						}
 					}
 				} else {
 					success=false;
-					cout<<"Segment " + name + " with 'freedom: clamp' expects input from 'clamp_filename' or 'clamp_info' " << endl; 
+					cout<<"Segment " + name + " with 'freedom: clamp' expects input from 'clamp_filename' or 'clamp_info' " << endl;
 				}
-			} 
+			}
 		}
-	
+
 		if (freedom == "pinned") {
 			phibulk=0;
 			if (GetValue("frozen_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("frozen_filename").size()>0 || GetValue("tag_filename").size()>0) {
@@ -259,8 +257,8 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
 				}
 			}
-			if (GetValue("pinned_filename").size()>0) { s="pinned"; 
-				filename=GetValue("pinned_filename"); 
+			if (GetValue("pinned_filename").size()>0) { s="pinned";
+				filename=GetValue("pinned_filename");
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
@@ -296,10 +294,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					H_P=(int*) malloc(n_pos*sizeof(int));
 					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
-			} 			 
-		} 
-	
-		if (freedom == "tagged") { 
+			}
+		}
+
+		if (freedom == "tagged") {
 			phibulk=0;
 			if (GetValue("pinned_range").size()>0 || GetValue("frozen_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("frozen_filename").size()>0) {
 			cout<< "For mon " + name + ", you should exclusively combine 'freedom : tagged' with 'tagged_range' or 'tagged_filename'" << endl;  success=false;}
@@ -316,7 +314,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					H_P=(int*) malloc(n_pos*sizeof(int));
 					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),name,s);
 				}
-			} 
+			}
 			if (GetValue("tagged_filename").size()>0) {s="tagged";
 				filename=GetValue("tagged_filename");
 				n_pos=0;
@@ -325,9 +323,9 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					H_P=(int*) malloc(n_pos*sizeof(int));
 			 		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
-			} 	
+			}
 		}
-		if (freedom!="free") { 
+		if (freedom!="free") {
 			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
 			if (freedom=="clamp") {
 				int JX=Lat[0]->JX;
@@ -336,20 +334,20 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				int MY=Lat[0]->MY;
 				int MZ=Lat[0]->MZ;
 				for (int i=0; i<n_box; i++) {
-					if (bx[i]<1) {bx[i] +=MX; px1[i] +=MX; px2[i] +=MX;} 
-					if (by[i]<1) {by[i] +=MY; py1[i] +=MY; py2[i] +=MY;} 
-					if (bz[i]<1) {bz[i] +=MZ; pz1[i] +=MZ; pz2[i] +=MZ;} 
+					if (bx[i]<1) {bx[i] +=MX; px1[i] +=MX; px2[i] +=MX;}
+					if (by[i]<1) {by[i] +=MY; py1[i] +=MY; py2[i] +=MY;}
+					if (bz[i]<1) {bz[i] +=MZ; pz1[i] +=MZ; pz2[i] +=MZ;}
 					H_MASK[((px1[i]-1)%MX+1)*JX + ((py1[i]-1)%MY+1)*JY + (pz1[i]-1)%MZ+1]=1;
 					H_MASK[((px2[i]-1)%MX+1)*JX + ((py2[i]-1)%MY+1)*JY + (pz2[i]-1)%MZ+1]=1;
 				}
 
-			} else Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block); 
+			} else Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block);
 		}
 		valence =0;
 		if (GetValue("valence").size()>0) {
 			valence=In[0]->Get_Real(GetValue("valence"),0);
 			if (valence<-10 || valence > 10) cout <<"For mon " + name + " valence value out of range -10 .. 10. Default value used instead" << endl;
-		} 
+		}
 		epsilon=80;
 		if (GetValue("epsilon").size()>0) {
 			epsilon=In[0]->Get_Real(GetValue("epsilon"),80);
@@ -358,8 +356,8 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		if (valence !=0) {
 			if (Lat[0]->bond_length <1e-10 || Lat[0]->bond_length > 1e-8) {
 				success=false;
-				if (Lat[0]->bond_length==0) cout << "When there are charged segments, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-10 ... 1e-8 m " << endl; 
-				else cout <<"Bond length is out of range: 1e-10..1e-8 m " << endl; 
+				if (Lat[0]->bond_length==0) cout << "When there are charged segments, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-10 ... 1e-8 m " << endl;
+				else cout <<"Bond length is out of range: 1e-10..1e-8 m " << endl;
 			}
 		}
 		if (GetValue("e.psi0/kT").size()>0) {
@@ -368,19 +366,19 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			PSI0=In[0]->Get_Real(GetValue("e.psi0/kT"),0);
 			if (PSI0!=0 && valence !=0) {
 				success=false;
-				cout <<"You can set only 'valence' or 'e.psi0/kT', but not both " << endl; 
+				cout <<"You can set only 'valence' or 'e.psi0/kT', but not both " << endl;
 			}
 			if (PSI0!=0 && freedom!="frozen") {
 				success=false;
-				cout <<"You can not set potential on segment that has not freedom 'frozen' " << endl; 
+				cout <<"You can not set potential on segment that has not freedom 'frozen' " << endl;
 			}
 			if (PSI0 <-25 || PSI0 > 25) {
 				success=false;
-				cout <<"Value for dimensionless surface potentials 'e.psi0/kT' is out of range -25 .. 25. Recall the value of 1 at room temperature is equivalent to approximately 25 mV " << endl; 
+				cout <<"Value for dimensionless surface potentials 'e.psi0/kT' is out of range -25 .. 25. Recall the value of 1 at room temperature is equivalent to approximately 25 mV " << endl;
 			}
 		}
 	}
-	return success; 
+	return success;
 }
 
 bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
@@ -396,7 +394,7 @@ bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_v
 			vector<string>sub;
 			In[0]->split(Var_target_,'-',sub);
 			if (sub.size()==2) {
-				if (sub[0]=="chi") { 
+				if (sub[0]=="chi") {
 					if (In[0]->InSet(In[0]->MonList,chi_var_seg,sub[1])) {
 						Var_target=2; Var_start_value=In[0]->Get_Real(GetValue(Var_target_),0);
 					} else {cout <<"In var: trying to read " + Var_target_ + " failed, because Seg " + sub[1] + "was not found" << endl;}
@@ -405,7 +403,7 @@ bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_v
 		}
 	}
 	if (Var_target<0) {success=false; cout <<"In var: for segment you can 'scan' {valence, ePsi0/kT, or a chi-value 'chi-X' with 'X' valid mon : name} "<<endl; }
-	return success; 
+	return success;
 }
 
 int Segment::PutVarScan(Real step, Real end_value, int steps, string scale_) {
@@ -415,28 +413,28 @@ int Segment::PutVarScan(Real step, Real end_value, int steps, string scale_) {
 	if (scale=="exponential") {
 		Var_steps=steps; Var_step = 0;
 		if (steps==0) {
-			cout <<"In var scan: the value of 'steps' is zero, this is not allowed" << endl; 
+			cout <<"In var scan: the value of 'steps' is zero, this is not allowed" << endl;
 			return -1;
 		}
 		if (Var_end_value*Var_start_value <0) {
-			cout <<"In var scan: the product end_value*start_value < 0. This is not allowed. " << endl; 
+			cout <<"In var scan: the product end_value*start_value < 0. This is not allowed. " << endl;
 			return -1;
 		}
-		if (Var_end_value > Var_start_value) 
-			num_of_steps= steps* log10 (Var_end_value/Var_start_value); 
-		else 
-			num_of_steps= steps* log10 (Var_start_value/Var_end_value); 
+		if (Var_end_value > Var_start_value)
+			num_of_steps= steps* log10 (Var_end_value/Var_start_value);
+		else
+			num_of_steps= steps* log10 (Var_start_value/Var_end_value);
 
 	} else {
 		Var_steps=0; Var_step=step;
 		if (step==0) {
 			cout <<"In var scan : of segment variable, the value of step can not be zero" << endl;
 			return -1;
-		} 	
+		}
 		num_of_steps=(Var_end_value-Var_start_value)/step+1;
 
 		if (num_of_steps<0) {
-			cout<<"In var scan : (end_value-start_value)/step is negative. This is not allowed. Try changing the sign of the 'step'." << endl; 
+			cout<<"In var scan : (end_value-start_value)/step is negative. This is not allowed. Try changing the sign of the 'step'." << endl;
 			return -1;
 		}
 	}
@@ -447,13 +445,13 @@ int Segment::PutVarScan(Real step, Real end_value, int steps, string scale_) {
 bool Segment::UpdateVarInfo(int step_nr) {
 	bool success=true;
 	switch(Var_target) {
-		case 0: 
+		case 0:
 			if (scale=="exponential") {
 				if (valence <0)	{
 					valence=-pow(10,(1-step_nr/num_of_steps)*log10(-Var_start_value)+ (step_nr/num_of_steps)*log10(-Var_end_value));
 				} else {
 					valence= pow(10,(1-step_nr/num_of_steps)*log10( Var_start_value)+ (step_nr/num_of_steps)*log10( Var_end_value));
-				}	
+				}
 			} else {
 				valence=Var_start_value+step_nr*Var_step;
 			}
@@ -464,17 +462,17 @@ bool Segment::UpdateVarInfo(int step_nr) {
 					PSI0=-pow(10,(1-step_nr/num_of_steps)*log10(-Var_start_value)+ (step_nr/num_of_steps)*log10(-Var_end_value));
 				} else {
 					PSI0= pow(10,(1-step_nr/num_of_steps)*log10( Var_start_value)+ (step_nr/num_of_steps)*log10( Var_end_value));
-				}	
+				}
 			} else {
 				PSI0=Var_start_value+step_nr*Var_step;
 			}
 			break;
-		case 2: 
+		case 2:
 			if (scale=="exponential") {
-				cout <<"In var of chi-parameter, only linear scale is implemented" << endl; success=false; 
+				cout <<"In var of chi-parameter, only linear scale is implemented" << endl; success=false;
 			} else {
-				chi_value = Var_start_value+step_nr*Var_step; 
-			}	
+				chi_value = Var_start_value+step_nr*Var_step;
+			}
 			break;
 		default:
 			break;
@@ -488,11 +486,11 @@ bool Segment::ResetInitValue() {
 		case 0:
 			valence=Var_start_value;
 			break;
-		case 1: 
+		case 1:
 			PSI0=Var_start_value;
 			break;
 		default:
-			cout <<"program error in Seg:ResetInitValue "<<endl; 
+			cout <<"program error in Seg:ResetInitValue "<<endl;
 			break;
 	}
 	return success;
@@ -503,11 +501,11 @@ void Segment::PutValue(Real X) {
 		case 0:
 			valence=X;
 			break;
-		case 1: 
+		case 1:
 			PSI0=X;
 			break;
 		default:
-			cout <<"program error in Seg:ResetInitValue "<<endl; 
+			cout <<"program error in Seg:ResetInitValue "<<endl;
 			break;
 	}
 }
@@ -518,11 +516,11 @@ Real Segment::GetValue() {
 		case 0:
 			X=valence;
 			break;
-		case 1: 
+		case 1:
 			X=PSI0;
 			break;
 		default:
-			cout <<"program error in Seg:ResetInitValue "<<endl; 
+			cout <<"program error in Seg:ResetInitValue "<<endl;
 			break;
 	}
 	return X;
@@ -542,19 +540,19 @@ bool Segment::GetClamp(string filename) {
 	in_file.open(filename.c_str());
 	if (in_file.is_open()) {
 		while (in_file) {
-			i++; 
+			i++;
 			if (i==1) {
-				n_box++; 
-				NN.clear(); 
-				in_file >> line_ >> NN >> line_ >> X >> Y >> Z >> line_ >> line_ >> line_ >> line_;	
+				n_box++;
+				NN.clear();
+				in_file >> line_ >> NN >> line_ >> X >> Y >> Z >> line_ >> line_ >> line_ >> line_;
 				if (NN.size()>0) {
 				if (!In[0]->Get_int(NN,pos,"")) { success=false; cout<<" length of 'fragment' not an integer " << endl; }
 				else {if (N>0) {if (N!=pos) {cout <<"lengths of fregment are not equal " << endl; success=false;}} else N = pos;}
-				if (!In[0]->Get_int(X,pos,"")) {success=false; cout <<"X-value for sub_box size is not integer " << endl;  } 
+				if (!In[0]->Get_int(X,pos,"")) {success=false; cout <<"X-value for sub_box size is not integer " << endl;  }
 				else {if (mx>0) {if (mx !=pos) {success=false; cout <<"We can deal with only one sub-box size" << endl;}} else mx=pos; }
-				if (!In[0]->Get_int(Y,pos,"")) {success=false; cout <<"Y-value for sub_box size is not integer " << endl;  } 
+				if (!In[0]->Get_int(Y,pos,"")) {success=false; cout <<"Y-value for sub_box size is not integer " << endl;  }
 				else {if (my>0) {if (my !=pos) {success=false; cout <<"We can deal with only one sub-box size" << endl;}} else my=pos; }
-				if (!In[0]->Get_int(Z,pos,"")) {success=false; cout <<"Z-value for sub_box size is not integer " << endl;  } 
+				if (!In[0]->Get_int(Z,pos,"")) {success=false; cout <<"Z-value for sub_box size is not integer " << endl;  }
 				else {if (mz>0) {if (mz !=pos) {success=false; cout <<"We can deal with only one sub-box size" << endl;}} else mz=pos; }
 				}
 			}
@@ -583,90 +581,90 @@ bool Segment::GetClamp(string filename) {
 				else pz2.push_back(pos);
 			}
 		}
-		
+
 	} else {
 		success=false;
-		cout <<"To read 'clamp_file', the file " << filename << " is not available." << endl; 
+		cout <<"To read 'clamp_file', the file " << filename << " is not available." << endl;
 	}
 	in_file.close();
-	return success; 
+	return success;
 }
 
 int* Segment::GetMASK() {
 if (debug) cout <<"Get Mask for segment" + name << endl;
-	if (MASK==NULL) {cout <<"MASK not yet created. Task to point to MASK in segment is rejected. " << endl; return NULL;} 
-	else return MASK; 
+	if (MASK==NULL) {cout <<"MASK not yet created. Task to point to MASK in segment is rejected. " << endl; return NULL;}
+	else return MASK;
 }
 
 Real* Segment::GetPhi() {
 if (debug) cout <<"GetPhi in segment " + name << endl;
 	int M=Lat[0]->M;
-	if (freedom=="frozen") Cp(phi,MASK,M); 
-	return phi; 
+	if (freedom=="frozen") Cp(phi,MASK,M);
+	return phi;
 }
 
 string Segment::GetFreedom(void){
 if (debug) cout <<"GetFreedom for segment " + name << endl;
-	return freedom; 
+	return freedom;
 }
 bool Segment::IsClamp(void) {
 if (debug) cout <<"Is free for " + name << endl;
-	return freedom == "clamp"; 
+	return freedom == "clamp";
 }
 bool Segment::IsFree(void) {
 if (debug) cout <<"Is free for " + name << endl;
-	return freedom == "free"; 
+	return freedom == "free";
 }
 bool Segment::IsPinned(void) {
 if (debug) cout <<"IsPinned for segment " + name << endl;
-	return freedom == "pinned"; 
+	return freedom == "pinned";
 }
 bool Segment::IsFrozen(void) {
 if (debug) cout <<"IsFrozen for segment " + name << endl;
 	phibulk =0;
-	return freedom == "frozen"; 
+	return freedom == "frozen";
 }
 bool Segment::IsTagged(void) {
 if (debug) cout <<"IsTagged for segment " + name << endl;
 	phibulk =0;
-	return freedom == "tagged"; 
+	return freedom == "tagged";
 }
 
 void Segment::PutChiKEY(string new_name) {
 if (debug) cout <<"PutChiKey " + name << endl;
-	if(name != new_name) KEYS.push_back("chi-" + new_name); 
+	if(name != new_name) KEYS.push_back("chi-" + new_name);
 }
 
 string Segment::GetValue(string parameter) {
 if (debug) cout <<"GetValue for segment " + name + " for parameter " + parameter << endl;
-	int length = PARAMETERS.size(); 
+	int length = PARAMETERS.size();
 	int i=0;
 	while (i<length) {
-		if (PARAMETERS[i]==parameter) { return VALUES[i];}		
+		if (PARAMETERS[i]==parameter) { return VALUES[i];}
 		i++;
-	} 
-	return ""; 
+	}
+	return "";
 }
 
 void Segment::push(string s, Real X) {
 if (debug) cout <<"Push in Segment (Real) " + name << endl;
 	Reals.push_back(s);
-	Reals_value.push_back(X); 
+	Reals_value.push_back(X);
 }
 void Segment::push(string s, int X) {
 if (debug) cout <<"Push in Segment (int) " + name << endl;
 	ints.push_back(s);
-	ints_value.push_back(X); 
+	ints_value.push_back(X);
 }
 void Segment::push(string s, bool X) {
 if (debug) cout <<"Push in Segment (bool) " + name << endl;
 	bools.push_back(s);
-	bools_value.push_back(X); 
+	bools_value.push_back(X);
 }
 void Segment::push(string s, string X) {
 if (debug) cout <<"Push in Segment (string) " + name << endl;
 	strings.push_back(s);
-	strings_value.push_back(X); 	
+	strings_value.push_back(X);
 }
 void Segment::PushOutput() {
 if (debug) cout <<"PushOutput for segment " + name << endl;
@@ -677,7 +675,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	Reals.clear();
 	Reals_value.clear();
 	ints.clear();
-	ints_value.clear();  
+	ints_value.clear();
 	push("freedom",freedom);
 	push("valence",valence);
 	if (fixedPsi0) push("Psi0",PSI0);
@@ -705,7 +703,7 @@ if (debug) cout <<"Get Pointer for segment " + name << endl;
 	//if (sub[1]=="2") return H_MASK;
 	} else {//sub[0]=="vector" ..do not forget to set SIZE before returning the pointer.
 	}
-	return NULL; 
+	return NULL;
 }
 int* Segment::GetPointerInt(string s, int &SIZE) {
 if (debug) cout <<"GetPointerInt for segment " + name << endl;
@@ -714,7 +712,7 @@ if (debug) cout <<"GetPointerInt for segment " + name << endl;
 	In[0]->split(s,';',sub);
 	if (sub[0]=="array") {// set SIZE and return int pointer.
 	}
-	return NULL; 
+	return NULL;
 }
 
 int Segment::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
@@ -722,7 +720,7 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 	int i=0;
 	int length = ints.size();
 	while (i<length) {
-		if (prop==ints[i]) { 
+		if (prop==ints[i]) {
 			int_result=ints_value[i];
 			return 1;
 		}
@@ -731,7 +729,7 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 	i=0;
 	length = Reals.size();
 	while (i<length) {
-		if (prop==Reals[i]) { 
+		if (prop==Reals[i]) {
 			Real_result=Reals_value[i];
 			return 2;
 		}
@@ -740,8 +738,8 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 	i=0;
 	length = bools.size();
 	while (i<length) {
-		if (prop==bools[i]) { 
-			if (bools_value[i]) string_result="true"; else string_result="false"; 
+		if (prop==bools[i]) {
+			if (bools_value[i]) string_result="true"; else string_result="false";
 			return 3;
 		}
 		i++;
@@ -749,13 +747,13 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 	i=0;
 	length = strings.size();
 	while (i<length) {
-		if (prop==strings[i]) { 
-			string_result=strings_value[i]; 
+		if (prop==strings[i]) {
+			string_result=strings_value[i];
 			return 3;
 		}
 		i++;
 	}
-	return 0; 
+	return 0;
 }
 void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps) {
 	int M=Lat[0]->M;
@@ -764,5 +762,5 @@ void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps) {
 		Lat[0]->set_bounds(psi);
 		Lat[0]->UpdateQ(g,psi,q,eps,MASK);
 	}
-	
+
 }

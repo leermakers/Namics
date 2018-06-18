@@ -9,6 +9,7 @@
 #include "tools.h"
 #include "variate.h"
 #include "sfnewton.h"
+#include <functional>
 
 class Solve_scf : public SFNewton {
 public:
@@ -92,7 +93,8 @@ public:
 	bool Guess(Real*,string,vector<string>,bool,int,int,int,int);
 
 	bool Solve(bool);
-	bool SolveMesodyn(vector<Real>&, vector<Real>&); //first argument should contain rho
+	bool SolveMesodyn(vector<Real>&, vector<Real>&, function< vector<Real>&(int) >); //first argument should contain rho
+	function< vector<Real>&(int) > flux;
 	bool SuperIterate(int,int,int,int);
 	void DeAllocateMemory();
 	void AllocateMemory();

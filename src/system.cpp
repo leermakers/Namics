@@ -757,7 +757,7 @@ Real System::GetFreeEnergy(void) {
 if (debug) cout << "GetFreeEnergy for system " << endl;
 	int M=Lat[0]->M;
 	Real FreeEnergy=0;
-	Real* F=FreeEnergyDensity;
+	Real* F=FreeEnergyDensity; 
 	Real constant=0;
 	int n_mol=In[0]->MolList.size();
 	//for (int i=0; i<n_mol; i++) Lat[0]->remove_bounds(Mol[i]->phitot);
@@ -789,12 +789,21 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 			Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
 		}
 	}
-
+/*
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++) {
 		Real* phi=Seg[SysMonList[j]]->phi;
 		Real* u=Seg[SysMonList[j]]->u;
 		Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
+	}
+*/
+	for (int i=0; i<n_mol; i++) {
+		int length=Mol[i]->MolMonList.size(); 
+		for (int j=0; j<length; j++) {
+			Real* phi = Mol[i]->phi+M*j;
+			Real* u =Mol[i]->u+M*j;
+			Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
+		}
 	}
 	for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
 		Real chi;
@@ -820,8 +829,9 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 		Real* phi=Mol[i]->phitot;
 		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
 	}
-	Lat[0]->remove_bounds(F); Times(F,F,KSAM,M);
-	return FreeEnergy+Lat[0]->WeightedSum(F);
+
+	Lat[0]->remove_bounds(F); Times(F,F,KSAM,M); 
+	return Lat[0]->WeightedSum(F);
 }
 
 Real System::GetGrandPotential(void) {

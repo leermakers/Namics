@@ -543,6 +543,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 			}
 			for (j=0; j<M; j++)
 			cout << RHO[j] << " " << RHO[M+j] << " " << Mol[0]->phi[j] << " " << Mol[1]->phi[j] << endl;
+		}
 		break;
 		case custum:
 			if (debug) cout <<"Residuals in custum mode in Solve_scf " << endl;

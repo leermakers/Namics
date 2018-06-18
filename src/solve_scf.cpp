@@ -405,8 +405,8 @@ bool Solve_scf::Guess(Real *X, string METHOD, vector<string> MONLIST, bool CHARG
 bool Solve_scf::Solve(bool report_errors) { //going SCF here
 if(debug) cout <<"Solve in  Solve_scf " << endl;
 	bool success=true;
-	gradient=classical;
-	control=proceed;
+	//gradient=classical;
+	//control=proceed;
 	switch(solver) {
 		case HESSIAN:
 			success=iterate(xx,iv,iterationlimit,tolerance,deltamax,deltamin,true);
@@ -541,8 +541,8 @@ void Solve_scf::residuals(Real* x, Real* g){
 				}
 				i++;
 			}
-			for (j=0; j<M; j++)
-			cout << RHO[j] << " " << RHO[M+j] << " " << Mol[0]->phi[j] << " " << Mol[1]->phi[j] << endl;
+			//for (j=0; j<M; j++)
+			//cout << RHO[j] << " " << RHO[M+j] << " " << Mol[0]->phi[j] << " " << Mol[1]->phi[j] << endl;
 		}
 		break;
 		case custum:

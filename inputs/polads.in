@@ -25,13 +25,8 @@ output : kal : append : true
 output : pro : append : true
 pro : mol : pol : phi
 
-<<<<<<< HEAD
-mesodyn : smth : timesteps : 100000
+mesodyn : smth : timesteps : 9999
 mesodyn : smth : timebetweensaves : 1000
-=======
-mesodyn : smth : timesteps : 10
-mesodyn : smth : timebetweensaves : 1
->>>>>>> tempt
 mesodyn : smth : diffusionconstant : 0.5
 mesodyn : smth : mean : 1
 mesodyn : smth : stdev : 1

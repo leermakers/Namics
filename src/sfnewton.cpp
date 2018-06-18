@@ -633,7 +633,7 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
 Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);
 Real* p0 = (Real*) malloc(nvar*sizeof(Real));H_Zero(p0,nvar);
 Real* g0  = (Real*) malloc(nvar*sizeof(Real));H_Zero(g0,nvar);
-if (mask) free(mask); mask = (int*) malloc(nvar*sizeof(int));
+mask = (int*) malloc(nvar*sizeof(int));
 	if (nvar<1) {cout << "newton has nothing to do; returning the problem" << endl; return false;}
 	int it=0;
 	iterations=it;
@@ -641,7 +641,7 @@ if (mask) free(mask); mask = (int*) malloc(nvar*sizeof(int));
 	Real trustregion=delta_max;
 	Real ALPHA=1;
 	Real trustfactor =1;
-	reverseDirectionRange=50;
+	//reverseDirectionRange=50;
 
         trouble = resetiteration = 0;
 	minAccuracySoFar = 1e30; 
@@ -698,7 +698,6 @@ float* h = (float*) malloc(nvar*nvar*sizeof(float)); H_Zero(h,nvar*nvar);
 	ResetX(x,nvar,filter);
 free(x0);free(g);free(p);free(p0);free(g0);free(h);
 free(mask); mask = NULL;
-free(reverseDirection); reverseDirection = NULL;
 	return success;
 }
 

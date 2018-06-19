@@ -124,7 +124,7 @@ private:
 
 class Flux1D : private Access {
 public:
-  Flux1D(Lattice*, Real, Component1D*, Component1D*);
+  Flux1D(Lattice*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux1D();
 
   int langevin_flux();
@@ -138,6 +138,8 @@ public:
     ERROR_NOT_IMPLEMENTED,
   };
 
+  vector<Real> J_plus;
+  vector<Real> J_minus;
   vector<Real> J;
 
 private:
@@ -145,9 +147,10 @@ private:
   Component1D* B;
 
 protected:
+  int mask(vector<int>&, vector<int>&, vector<int>&, int);
   int onsager_coefficient(vector<Real>&, vector<Real>&);
   int potential_difference(vector<Real>&, vector<Real>&);
-  int langevin_flux(int);
+  int langevin_flux(vector<int>&, vector<int>&, int);
   int gaussian_noise(Real = 1, Real = 1, Real = 1);
   seed_seq seed {1};
   mt19937 prng;
@@ -157,11 +160,13 @@ protected:
   vector<Real> mu;
   const Real D;
   const int JX;
+  vector<int> Mask_plus_x;
+  vector<int> Mask_minus_x;
 };
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Real, Component1D*, Component1D*);
+  Flux2D(Lattice*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux2D();
 
   int langevin_flux();
@@ -173,12 +178,14 @@ Component2D* B;
 
 protected:
   const int JY;
+  vector<int> Mask_plus_y;
+  vector<int> Mask_minus_y;
 
 };
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Real, Component1D*, Component1D*);
+  Flux3D(Lattice*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux3D();
 
   int langevin_flux();
@@ -189,6 +196,8 @@ Component3D* B;
 
 protected:
   const int JZ;
+  vector<int> Mask_plus_z;
+  vector<int> Mask_minus_z;
 };
 
 

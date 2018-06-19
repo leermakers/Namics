@@ -1,14 +1,17 @@
-#include "output.h" 
+#include "output.h"
 #include "time.h"
-Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Newton*> New_,string name_,int outnr,int N_out) {
+Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
 if (debug) cout <<"constructor in Output "<< endl;
 	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
 	KEYS.push_back("write_bounds");
-	KEYS.push_back("append"); 
+	KEYS.push_back("append");
+	KEYS.push_back("use_output_folder");
 	input_error=false;
+	output_folder = "output/";
+	bin_folder = "bin"; // folder in Namics where the binary is located
+	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
 	//if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
 	//if (!Load()) {input_error=true;  cout <<"Error found in load output items in output module " << endl; }
-
 
 }
 Output::~Output() {
@@ -102,10 +105,23 @@ if (debug) cout << "CheckInput in output " << endl;
 			if (name=="vec") append=true;
 			if (name=="pro") append=true;
 		}
+
 		if (GetValue("write_bounds").size()>0) {
 			In[0]->Get_bool(GetValue("write_bounds"),write_bounds);
 		} else write_bounds=false;
-		if (success) {if (!Load()) {cout <<"Error in Load() in output" << endl; success=false; }}
+
+		/*** TRUE IS LINUX ONLY ***/
+		if (GetValue("use_output_folder").size()>0) {
+			In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
+		} // default is set in the constructor
+
+		if (success) {
+			if (!Load()) {
+				cout <<"Error in Load() in output" << endl;
+				success=false;
+			}
+		}
+
 	} else cout <<"Error in CheckParameters in output" << endl;
 	return success;
 }
@@ -133,7 +149,7 @@ if (debug) cout << "GetPointerInt in output " << endl;
 	if  (key=="mol") choice=2;
 	if  (key=="mon") choice=3;
 	if (key=="lat") choice=4;
-	if (key=="output") choice = 5; 
+	if (key=="output") choice = 5;
 
 	switch(choice) {
 		case 1:
@@ -180,7 +196,7 @@ if (debug) cout << "GetPointerInt in output " << endl;
 				j++;
 			}
 			break;
-		case 5: 
+		case 5:
 			listlength=PointerVectorInt.size();
 			j=0;
 			while (j<listlength) {
@@ -205,7 +221,7 @@ if (debug) cout << "GetPointer in output " << endl;
 	if  (key=="mol") choice=2;
 	if  (key=="mon") choice=3;
 	if (key=="lat") choice=4;
-	if (key=="output") choice = 5; 
+	if (key=="output") choice = 5;
 
 	switch(choice) {
 		case 1:
@@ -253,7 +269,7 @@ if (debug) cout << "GetPointer in output " << endl;
 				j++;
 			}
 			break;
-		case 5: 
+		case 5:
 			listlength=PointerVectorReal.size();
 			j=0;
 			while (j<listlength) {
@@ -317,15 +333,48 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	string s;
 	string filename;
 	vector<string> sub;
-	string infilename=In[0]->name;
+	string infilename = In[0]->name;
 	In[0]->split(infilename,'.',sub);
 	string key;
+
+	/**** LINUX ONLY ****/
+	if (use_output_folder == true) {
+
+		int occurrences = 0;
+		string::size_type start = 0;
+		string slash = "/";
+
+		// Check if we have any slashes in the filename (are we in inputs, or higher up?)
+		while ((start = infilename.find(slash, start)) != string::npos) {
+    	++occurrences;
+    	start += slash.length();
+		}
+
+		// If we're not in the inputs folder, discard the path and take only the filename
+		if  (occurrences != 0) {
+			size_t found = infilename.find_last_of("/\\");
+			sub[0] = infilename.substr(found+1);
+		}
+
+		// Find path to Namics executable
+		char result[ PATH_MAX ];
+		ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
+		string executable_path = string( result, (count > 0) ? count : 0 );
+
+		// Find the last string before the executable
+		size_t found = executable_path.find_last_of("/\\");
+
+		// Set the output folder to be one level up from the binary folder, plus the specified output folder
+		output_folder = executable_path.substr(0,found - bin_folder.size() ) + output_folder;
+	}
+
 	char numc[2];
         sprintf(numc,"%d",subl);
 	char numcc[2];
 	sprintf(numcc,"%d",start);
 	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
 	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
+	filename = output_folder + filename;
 	if (name=="pos") {
 		length=OUT_key.size();
 		FILE *fp;
@@ -334,13 +383,14 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			key.clear();
 			string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 			int* X=GetPointerInt(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
-			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of array is rejected " << endl;  
+			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of array is rejected " << endl;
 			} else {
 				key=OUT_key[i];
 				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]).append(":");
 				fprintf(fp,"%s",s.c_str()); fprintf(fp,"%d\t",subl);
 				int length_vec=Size;
-				for (int j=0; j<length_vec; j++) fprintf(fp,"%i \t",X[j]); fprintf(fp,"\n"); 
+				for (int j=0; j<length_vec; j++) fprintf(fp,"%i \t",X[j]);
+				fprintf(fp,"\n");
 			}
 		}
 		fclose(fp);
@@ -353,13 +403,14 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			key.clear();
 			string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 			Real* X=GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
-			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of vector is rejected " << endl;  
+			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of vector is rejected " << endl;
 			}  else {
 				key=OUT_key[i];
 				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 				fprintf(fp,"%s \t",s.c_str());
 				int length_vec=Size;
-				for (int j=0; j<length_vec; j++) fprintf(fp,"%e \t",X[j]); fprintf(fp,"\n"); 
+				for (int j=0; j<length_vec; j++) fprintf(fp,"%e \t",X[j]);
+				fprintf(fp,"\n");
 			}
 		}
 		fclose(fp);
@@ -575,7 +626,7 @@ if (debug) cout << "density in output " << endl;
 	int length=In[0]->MolList.size();
 	string fname;
 	for (int i=0; i<length; i++) {
-		fname = "Molecule_" +In[0]->MolList[i]+ "_Density.vtk";
+		fname = "output/Molecule_" +In[0]->MolList[i]+ "_Density.vtk";
 		vtk(fname,Mol[i]->phitot);
 	}
 }
@@ -585,7 +636,7 @@ void Output::printlist(){
 if (debug) cout << "printlist in output " << endl;
 
 	ofstream writefile;
-	writefile.open ("listdetails.cpp");
+	writefile.open ("output/listdetails.cpp");
 	writefile << "---------------------------------------------------------------" << endl;
 
 
@@ -659,7 +710,7 @@ if (debug) cout << "printlist in output " << endl;
 int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result, string& string_result) {
   int i = 0;
   int length = ints.size();
-  while (i < length) { 
+  while (i < length) {
     if (prop == ints[i]) {
       int_result = ints_value[i];
       return 1;
@@ -704,7 +755,7 @@ void Output::push(string s, Real X) {
   Reals_value.push_back(X);
 }
 void Output::push(string s, int X) {
-//cout <<"push in output is activated with " << s << X << endl; 
+//cout <<"push in output is activated with " << s << X << endl;
   ints.push_back(s);
   ints_value.push_back(X);
 }

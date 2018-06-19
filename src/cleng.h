@@ -2,7 +2,7 @@
 #define CLENGxH
 #include "input.h"
 #include "namics.h"
-#include "newton.h"
+#include "solve_scf.h"
 #include "system.h"
 #include "output.h"
 
@@ -25,7 +25,7 @@ private:
   const vector<Molecule*> Mol;
   const vector<Segment*> Seg;
   const vector<System*> Sys;
-  const vector<Newton*> New;
+  const vector<Solve_scf*> New;
   const string brand;
 
   Real seed;
@@ -33,7 +33,7 @@ private:
 
 
 public:
-  Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Newton*>, string);
+  Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Cleng();
 
   int clamp_seg;
@@ -46,7 +46,7 @@ public:
   int t; 
   int save_interval;
   string save_filename;
-    vector<Output*> Out;
+  vector<Output*> Out;
 
 int PX;
 int PY;

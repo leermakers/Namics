@@ -1,7 +1,7 @@
 #include "teng.h"
 #include "output.h"
 
-Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Newton*> New_,  string name_)
+Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_,  string name_)
     : name{name_},
       In{In_},
       Lat{Lat_},
@@ -21,16 +21,16 @@ Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vec
 Teng::~Teng() {
 }
 
-// MonteCarlo Engine to drive the tagged molecules. 
+// MonteCarlo Engine to drive the tagged molecules.
 bool Teng::MonteCarlo() {
   if (debug) cout << "Monte Carlo in Teng" << endl;
-	bool success; 
+	bool success;
 	t=0;
  	success=CP(to_cleng);
 	New[0]->Solve(true);
 	WriteOutput(t);
 	n_p = X.size();
-	X[0]+=1; Y[0]+=1; 
+	X[0]+=1; Y[0]+=1;
 	success=CP(to_segment);
 	t++;
 	New[0]->Solve(true);
@@ -50,24 +50,24 @@ bool Teng::CP(transfer tofrom) {
 		case to_cleng:
 			for (i=0; i<n_particles; i++) {
 				PX=Seg[tag_seg]->H_P[i]/JX;
-				PY=(Seg[tag_seg]->H_P[i]-PX*JX)/JY; 
+				PY=(Seg[tag_seg]->H_P[i]-PX*JX)/JY;
 				PZ=(Seg[tag_seg]->H_P[i]-PX*JX-PY*JY);
 				X.push_back(PX); Y.push_back(PY); Z.push_back(PZ);
 			}
 		break;
 		case to_segment:
-			Zero(Seg[tag_seg]->H_MASK,M);  //TODO: (Ram) Not sure If I have to remove the mask, all calculations use H_P after this. 
+			Zero(Seg[tag_seg]->H_MASK,M);  //TODO: (Ram) Not sure If I have to remove the mask, all calculations use H_P after this.
 			for (i=0; i<n_particles; i++) {
 				Seg[tag_seg]->H_P[i]=X[i]*JX+Y[i]*JY+Z[i];
 				Seg[tag_seg]->H_MASK[X[i]*JX+Y[i]*JY+Z[i]]=1;
 			}
 		break;
 		default:
-			success=false; 
-			cout <<"error in tranfer" << endl; 
+			success=false;
+			cout <<"error in tranfer" << endl;
 		break;
 	}
-	return success; 
+	return success;
 }
 
 // Push outputs from this and other classes to Output class
@@ -79,12 +79,12 @@ void Teng::WriteOutput(int subloop){
       	int length = In[0]->MonList.size();
       	for (int i = 0; i < length; i++)
         	Seg[i]->PushOutput();
-      		length = In[0]->MolList.size();
+      	length = In[0]->MolList.size();
       	for (int i = 0; i < length; i++) {
-        	int length_al = Mol[i]->MolAlList.size();
-        	for (int k = 0; k < length_al; k++) {
-          		Mol[i]->Al[k]->PushOutput();
-        	} 
+        	  int length_al = Mol[i]->MolAlList.size();
+      	    for (int k = 0; k < length_al; k++) {
+          	Mol[i]->Al[k]->PushOutput();
+        	}
         	Mol[i]->PushOutput();
        	}
       	for (int i = 0; i < n_out; i++) {
@@ -111,7 +111,7 @@ void Teng::PushOutput() {
 		if (Out[i]->name=="ana" || Out[i]->name=="kal") Out[i]->push("t",t);
 		if (Out[i]->name=="ana" || Out[i]->name=="kal") Out[i]->push("MCS",MCS);
 		if (Out[i]->name=="ana" || Out[i]->name=="vec") { //example for putting an array of Reals of arbitrary length to output
-			string s="vector;0"; //the keyword 'vector' is used for Reals; the value 0 is the first vector, use 1 for the next etc, 
+			string s="vector;0"; //the keyword 'vector' is used for Reals; the value 0 is the first vector, use 1 for the next etc,
 			Out[i]->push("gn",s); //"gn" is the name that will appear in output file
 			Out[i]->PointerVectorReal.push_back(Mol[tag_mol]->gn); //this is the pointer to the start of the 'vector' that is reported to output.
 			Out[i]->SizeVectorReal.push_back(sizeof(Mol[tag_mol]->gn)); //this is the size of the 'vector' that is reported to output
@@ -133,7 +133,7 @@ void Teng::PushOutput() {
 			Out[i]->PointerVectorInt.push_back(point);
 			Out[i]->SizeVectorInt.push_back(Z.size());
 		}
-	
+
 	}
 }
 
@@ -155,8 +155,8 @@ string Teng::GetValue(string parameter) {
   	return "";
 }
 
-// Procedure that acquires the given inputs and checks 
-// Primary call to all engines (montecarlo or langevin dynamics) are also located here. 
+// Procedure that acquires the given inputs and checks
+// Primary call to all engines (montecarlo or langevin dynamics) are also located here.
 bool Teng::CheckInput(int start) {
   	if (debug) cout << "CheckInput in Teng" << endl;
   	bool success = true;
@@ -181,7 +181,7 @@ bool Teng::CheckInput(int start) {
     		}
     		tag_mol=-1;
     		int length = In[0]->MolList.size();
-    		for (int i=0; i<length; i++) if (Mol[i]->freedom =="tagged") tag_mol=i; 
+    		for (int i=0; i<length; i++) if (Mol[i]->freedom =="tagged") tag_mol=i;
   	}
   	if (success) {
    		n_out = In[0]->OutputList.size();
@@ -193,9 +193,8 @@ bool Teng::CheckInput(int start) {
         		success=false;
       			}
      		}
-     		//TODO: There should be a for loop over the required number of timesteps.		
+     		//TODO: There should be a for loop over the required number of timesteps.
      		MonteCarlo();
    	}
   return success;
 }
-

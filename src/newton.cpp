@@ -1,11 +1,12 @@
 #include "newttool.h"
 #include "newton.h"
+#include <math.h>
 
 Newton::Newton(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) {
 	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;Var=Var_;
 if(debug) cout <<"Constructor in Newton " << endl;
 	KEYS.push_back("method");  KEYS.push_back("m");
-	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info"); 
+	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");
 
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance");
 	KEYS.push_back("stop_criterion");
@@ -25,7 +26,7 @@ if(debug) cout <<"Constructor in Newton " << endl;
 	KEYS.push_back("super_iterationlimit");
 	KEYS.push_back("super_m");
 	KEYS.push_back("super_deltamax");
-	
+
 }
 
 Newton::~Newton() {
@@ -83,37 +84,7 @@ if(debug) cout <<"AllocateMemeory in Newton " << endl;
 	Zero(g,iv);
 	Zero(xR,m*iv);
 	Zero(x_x0,m*iv);
-	Sys[0]->AllocateMemory();
-}
-
-void Newton::AllocateMemory(int fIv) {
-if(debug) cout <<"AllocateMemeory in Newton " << endl;
-	int M=Lat[0]->M;
-	iv = fIv;
-	if (Sys[0]->charged) iv +=M;
-	if (method=="DIIS-ext") iv +=M;
-	Aij  =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
-	Ci   =(Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
-	Apij =(Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
-	mask= (int*) malloc(iv*sizeof(int));
-#ifdef CUDA
-	xx  = (Real*)AllOnDev(iv);
-	x0  = (Real*)AllOnDev(iv);
-	g   = (Real*)AllOnDev(iv);
-	xR  = (Real*)AllOnDev(m*iv);
-	x_x0= (Real*)AllOnDev(m*iv);
-#else
-	xx   =(Real*) malloc(iv*sizeof(Real));
-	x0   =(Real*) malloc(iv*sizeof(Real));
-	g    =(Real*) malloc(iv*sizeof(Real));
-	xR   =(Real*) malloc(m*iv*sizeof(Real));
-	x_x0 =(Real*) malloc(m*iv*sizeof(Real));
-#endif
-	Zero(xx,iv);
-	Zero(x0,iv);
-	Zero(g,iv);
-	Zero(xR,m*iv);
-	Zero(x_x0,m*iv);
+	Lat[0]->DeAllocateMemory();
 	Sys[0]->AllocateMemory();
 }
 
@@ -139,7 +110,7 @@ if(debug) cout <<"CheckInput in Newton " << endl;
 		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),e_info);
 		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),s_info);
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
-		super_m =In[0]->Get_int("super_m",10); 
+		super_m =In[0]->Get_int("super_m",10);
 
 		delta_max=In[0]->Get_Real(GetValue("deltamax"),0.1);
 		super_deltamax=In[0]->Get_Real(GetValue("super_deltamax"),0.5);
@@ -1254,7 +1225,7 @@ bool Newton::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
 
 	if(debug) cout <<"Solve (mesodyn) in  Newton " << endl;
   mesodyn =true;
-	//RHO=&rho[0];
+	RHO=&rho[0];
 
 	int M=Lat[0]->M;
 	Real chi;
@@ -1263,8 +1234,12 @@ bool Newton::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
 
 	bool success=true;
 
-	success=Iterate_DIIS(&rho.at(0));
-	//iterate(xx,iv);
+	if (method == "DIIS") success=Iterate_DIIS(&rho.at(0));
+	else if (method == "pseudohessian") iterate(xx,iv);
+	else {
+		cout << "Method not supported by mesodyn" << endl;
+		return false;
+	}
 
 	Cp(&fAlpha[0],xx,iv);
 	/*if (Sys[0]->charged) {
@@ -1279,6 +1254,9 @@ bool Newton::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
 				PutAlpha( (&fAlpha[0]) +i*M,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 			}
 		}
+		Lat[0]->remove_bounds(&fAlpha[0]+i*M);
+		Times(&fAlpha[0]+i*M,&fAlpha[0]+i*M,Sys[0]->KSAM,M);
+
 
 /*		if (Sys[0]->charged){
 			YplusisCtimesX(alpha+i*M,Sys[0]->EE,Seg[Sys[0]->SysMolMonList[i]]->epsilon,M);
@@ -1295,7 +1273,7 @@ void Newton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real r
 	if (debug) cout <<"Message in  Newton " << endl;
 	if (it == iterationlimit) cout <<"Warning: "<<s<<"iteration not solved. Residual error= " << residual << endl;
 	if (e_info || s_info) {
-		
+
 		cout <<s<<"Problem solved." << endl;
 		if (e_info) {
 			if (it < iterationlimit/10) cout <<"That was easy." << endl;
@@ -1591,10 +1569,11 @@ void Newton::ComputeG_mesodyn(Real* rho) {
 					g[z+k*M] += (-1.0*Mol[i]->phi[z+j*M]);
 				}
 				Lat[0]->remove_bounds(g+k*M);
-
+						Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 				k++;
 				j++;
 		}
 		i++;
 	}
+
 }

@@ -240,8 +240,7 @@ private:
   void writeRho(int);
   int initial_conditions();
   vector<Real>&  flux_callback(int);
-  int init_rho_wall(vector< vector<Real> >&);
-  int init_rho_homogeneous(vector< vector<Real> >&);
+  int init_rho(vector< vector<Real> >&, vector<int>&);
 
 
 public:

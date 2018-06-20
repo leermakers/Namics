@@ -119,6 +119,7 @@ bool Mesodyn::mesodyn() {
     for (int i = 0; i < componentNo; ++i)
       component[i]->load_alpha(&alpha[0 + i * M], M);
 
+    //TODO: mirror boundaries might be doing redundant work because of masking.
     for (Component1D* all_components : component)
       all_components->update_boundaries();
 
@@ -159,7 +160,16 @@ int Mesodyn::initial_conditions() {
 
   vector<vector<Real>> rho(componentNo, vector<Real>(M));
 
-  init_rho_wall(rho);
+  Sys[0]->PrepareForCalculations(); // to get the correct KSAM.
+
+  //TODO: once KSAM becomes a vector, this loop won't be nessecary anymore, just pass KSAM to the flux constructor.
+  vector<int> mask(M);
+  for (int i = 0; i < M; ++i )
+  {
+    mask[i] = *(Sys[0]->KSAM+i);
+  }
+
+  init_rho(rho, mask);
 
   vector<Component1D::boundary> boundaries;
   for (string& boundary : Lat[0]->BC) {
@@ -172,13 +182,6 @@ int Mesodyn::initial_conditions() {
     if (boundary == "bulk") {
       boundaries.push_back(Component1D::BULK);
     }
-  }
-
-  //TODO: once KSAM becomes a vector, this won't be nessecary anymore, just pass KSAM to the flux constructor.
-  vector<int> mask(M);
-  for (int i = 0; i < M; ++i )
-  {
-    mask[i] = *(Sys[0]->KSAM+i);
   }
 
   switch (dimensions) {
@@ -222,10 +225,8 @@ int Mesodyn::initial_conditions() {
 
 /******* Rho initialization *******/
 
-int Mesodyn::init_rho_wall(vector<vector<Real>>& rho) {
-  //TODO: generalize (M-1-volume?) for 2D/3D
-  Sys[0]->PrepareForCalculations();
-  int solvent = Sys[0]->solvent;
+int Mesodyn::init_rho(vector<vector<Real>>& rho, vector<int>& mask) {
+  int solvent = Sys[0]->solvent; // Find which componentNo is the solvent
   int volume = Sys[0]->volume - (pow(M, dimensions) - pow((M - 2), dimensions));
 
   Real sum_theta{0};
@@ -235,27 +236,20 @@ int Mesodyn::init_rho_wall(vector<vector<Real>>& rho) {
     if (i != solvent) {
       theta = Mol[i]->theta;
       sum_theta += theta;
-      for (int z = M - 1 - volume; z < Lat[0]->M - 1; z++) {
-        rho[i][z] = theta / volume;
+      for (int z = 0; z < M; ++z) {
+        for (int i = 0; i < componentNo; ++i) {
+          if (mask[z] == 0) rho[i][z] = 0;
+          else rho[i][z] = theta / volume;
+        }
       }
     }
   }
 
-  for (int z = M - 1 - volume; z < Lat[0]->M - 1; ++z) {
-    rho[solvent][z] = (volume - sum_theta) / volume;
+  for (int z = 0; z < M; ++z) {
+    if (mask[z] == 0) rho[solvent][z] = 0;
+    else rho[solvent][z] = (volume - sum_theta) / volume;
   }
 
-  for (int i = 0; i < componentNo; ++i) {
-    rho[i][1] = 0;
-  }
-
-  return 0;
-}
-
-
-//TODO: homogeneous system
-int Mesodyn::init_rho_homogeneous(vector<vector<Real>>& rho) {
-  throw Component1D::ERROR_NOT_IMPLEMENTED;
   return 0;
 }
 

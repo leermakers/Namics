@@ -721,6 +721,7 @@ if (debug) cout << "CheckResults for system " << endl;
 	for (int i=0; i<n_mol; i++) {
 		Real Mu=Mol[i]->Mu;
 		Real n=Mol[i]->n;
+		if (Mol[i]->IsClamped()) n=Mol[i]->n_box;
 		n_times_mu +=  n*Mu;
 	}
 	if (e_info) {
@@ -805,6 +806,7 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 			Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
 		}
 	}
+
 	for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
 		Real chi;
 		if (Seg[k]->freedom=="frozen") chi=CHI[j*n_mon+k]; else  chi = CHI[j*n_mon+k]/2;
@@ -831,7 +833,7 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 	}
 
 	Lat[0]->remove_bounds(F); Times(F,F,KSAM,M); 
-	return Lat[0]->WeightedSum(F);
+	return FreeEnergy+Lat[0]->WeightedSum(F);
 }
 
 Real System::GetGrandPotential(void) {
@@ -889,7 +891,7 @@ if (debug) cout << "CreateMu for system " << endl;
 			for (int p=0; p<n_box; p++) {
 				GN+=log(Mol[i]->gn[p]);
 			}
-			Mu= -GN/n +1;
+			Mu= -GN/n +1; 
 		} else {
 			n=Mol[i]->n;
 			GN=Mol[i]->GN;

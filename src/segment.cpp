@@ -25,7 +25,11 @@ if (debug) cout <<"Segment destructor " + name << endl;
 void Segment::DeAllocateMemory(void){
 if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 
+<<<<<<< HEAD
 //if (n_pos>0) cout <<"problem for n_pos " <<endl;
+=======
+if (n_pos>0) cout <<"problem for n_pos " <<endl;
+>>>>>>> 6ca03aaec3f8a4a84b48ae8f4717a6e4b3acd76b
 	if(n_pos>0) free(H_P);
 	if (freedom != "free"){
 		 free(r);

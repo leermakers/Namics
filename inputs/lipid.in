@@ -28,7 +28,10 @@ pro : mon : * : u
 pro : mol : lipid : phi-C
 pro : mol : lipid : phi-O
 output : kal : append : false
+<<<<<<< HEAD
 output : kal : use_output_folder : false
+=======
+>>>>>>> 6ca03aaec3f8a4a84b48ae8f4717a6e4b3acd76b
 kal : sys : noname : grand_potential
 kal : mol : lipid : theta
 kal : mol : lipid : theta_exc

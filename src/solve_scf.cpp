@@ -76,8 +76,11 @@ if (debug) cout <<"PrepareForCalculations in Solve " << endl;
 
 bool Solve_scf::CheckInput(int start_) { start=start_;
 if(debug) cout <<"CheckInput in Solve " << endl;
+<<<<<<< HEAD
 	pseudohessian =false;
 	hessian =false;
+=======
+>>>>>>> 6ca03aaec3f8a4a84b48ae8f4717a6e4b3acd76b
 	bool success=true;
 	control=proceed;
 	mesodyn=false;
@@ -249,7 +252,11 @@ if(debug) cout <<"PushOutput in  Solve " << endl;
 	push("iterations",iterations);
 	push("iterationlimit",iterationlimit);
 	push("stop_criterion",stop_criterion);
+<<<<<<< HEAD
 	if (pseudohessian || hessian) {
+=======
+	if (pseudohessian||hessian) {
+>>>>>>> 6ca03aaec3f8a4a84b48ae8f4717a6e4b3acd76b
 		//push("same_hessian",samehessian);
 		push("linesearchlimit",linesearchlimit);
 		push("max_accuracy_for_hessian_scaling",max_accuracy_for_hessian_scaling);

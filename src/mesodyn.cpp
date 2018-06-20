@@ -1,6 +1,9 @@
 #include "mesodyn.h"
 #include "newton.h"
 
+/* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018 */
+/* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
+
 Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, vector<Molecule *> Mol_, vector<System *> Sys_, vector<Solve_scf*> New_, string name_)
   :
     Access(Lat_[0]),
@@ -19,18 +22,22 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
 
   initial_conditions(); // Initialize densities by running the classical method once.
 
-  if (debug) cout << "Mesodyn initialized." << endl;
+  if (debug)
+    cout << "Mesodyn initialized." << endl;
 }
 
 Mesodyn::~Mesodyn() {
-  for (unsigned int i = 0 ; i < flux.size(); ++i) delete flux[i];
+  for (unsigned int i = 0; i < flux.size(); ++i)
+    delete flux[i];
   flux.clear();
-  for (unsigned int i = 0 ; i < component.size(); ++i) delete component[i];
+  for (unsigned int i = 0; i < component.size(); ++i)
+    delete component[i];
   flux.clear();
 }
 
 bool Mesodyn::CheckInput(int start) {
-  if (debug) cout << "CheckInput in Mesodyn" << endl;
+  if (debug)
+    cout << "CheckInput in Mesodyn" << endl;
   bool success = true;
 
   /* When adding new items here, please add them to the function prepareOutputFile()*/
@@ -38,23 +45,41 @@ bool Mesodyn::CheckInput(int start) {
 
   if (success) {
     vector<string> options;
-    if (GetValue("timesteps").size() > 0) { success = In[0]->Get_int(GetValue("timesteps"), timesteps, 1, 100000000, "The number of timesteps should be between 1 and 10000");}
-    if (debug) cout << "Timesteps is " << timesteps << endl;
+    if (GetValue("timesteps").size() > 0) {
+      success = In[0]->Get_int(GetValue("timesteps"), timesteps, 1, 100000000, "The number of timesteps should be between 1 and 10000");
+    }
+    if (debug)
+      cout << "Timesteps is " << timesteps << endl;
 
-    if (GetValue("timebetweensaves").size() > 0) {timebetweensaves = In[0]->Get_int(GetValue("timebetweensaves"), timebetweensaves);}
-    if (debug) cout << "Time bewteen saves is " << timebetweensaves << endl;
+    if (GetValue("timebetweensaves").size() > 0) {
+      timebetweensaves = In[0]->Get_int(GetValue("timebetweensaves"), timebetweensaves);
+    }
+    if (debug)
+      cout << "Time bewteen saves is " << timebetweensaves << endl;
 
-    if (GetValue("diffusionconstant").size() > 0) {D = In[0]->Get_Real(GetValue("diffusionconstant"), D);}
-    if (debug)  cout << "Diffusion const is " << D << endl;
+    if (GetValue("diffusionconstant").size() > 0) {
+      D = In[0]->Get_Real(GetValue("diffusionconstant"), D);
+    }
+    if (debug)
+      cout << "Diffusion const is " << D << endl;
 
-    if (GetValue("seed").size() > 0) {seed = In[0]->Get_Real(GetValue("seed"), seed);}
-    if (debug) cout << "Seed is " << seed << endl;
+    if (GetValue("seed").size() > 0) {
+      seed = In[0]->Get_Real(GetValue("seed"), seed);
+    }
+    if (debug)
+      cout << "Seed is " << seed << endl;
 
-    if (GetValue("mean").size() > 0) {mean = In[0]->Get_Real(GetValue("mean"), mean);}
-    if (debug) cout << "Mean is " << mean << endl;
+    if (GetValue("mean").size() > 0) {
+      mean = In[0]->Get_Real(GetValue("mean"), mean);
+    }
+    if (debug)
+      cout << "Mean is " << mean << endl;
 
-    if (GetValue("stdev").size() > 0) { stdev = In[0]->Get_Real(GetValue("stdev"), stdev);}
-    if (debug) cout << "Stdev is " << stdev << endl;
+    if (GetValue("stdev").size() > 0) {
+      stdev = In[0]->Get_Real(GetValue("stdev"), stdev);
+    }
+    if (debug)
+      cout << "Stdev is " << stdev << endl;
   }
 
   return success;
@@ -69,7 +94,8 @@ bool Mesodyn::mesodyn() {
   prepareOutputFile();
   writeRho(0); // write initial conditions
 
-  if (debug) cout << "Mesodyn is all set, starting calculations.." << endl;
+  if (debug)
+    cout << "Mesodyn is all set, starting calculations.." << endl;
 
   vector<Real> rho;
 
@@ -79,31 +105,35 @@ bool Mesodyn::mesodyn() {
     rho.clear();
 
     for (Component1D* all_components : component) {
-      copy( all_components->rho.begin(),  all_components->rho.end(), back_inserter(rho));
+      copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
     }
 
-    New[0]->SolveMesodyn(rho, alpha, [this](int i)-> vector<Real>& {return flux[i]->J;}  );
+    New[0]->SolveMesodyn(rho, alpha, [this](int i) -> vector<Real>& { return flux[i]->J; });
 
-    for (int i = 0 ; i < componentNo ; ++i) component[i]->load_alpha(&alpha[0+i*M], M);
+    for (int i = 0; i < componentNo; ++i)
+      component[i]->load_alpha(&alpha[0 + i * M], M);
 
-    for (Component1D* all_components : component) all_components->update_boundaries();
+    for (Component1D* all_components : component)
+      all_components->update_boundaries();
 
-    for (Flux1D* all_fluxes : flux) all_fluxes->langevin_flux();
+    for (Flux1D* all_fluxes : flux)
+      all_fluxes->langevin_flux();
 
-    if (t % timebetweensaves == 0) writeRho(t);
+    if (t % timebetweensaves == 0)
+      writeRho(t);
 
     int c = 0;
-    for (int i = 0 ; i < componentNo ; ++i) {
-      for (int j = 0 ; j < (componentNo - 1) - i ; ++j) {
-        component[i]->update_density( flux[c]->J );
+    for (int i = 0; i < componentNo; ++i) {
+      for (int j = 0; j < (componentNo - 1) - i; ++j) {
+        component[i]->update_density(flux[c]->J);
         ++c;
       }
     }
 
     c = 0;
-    for (int j = 0 ; j < (componentNo - 1) ; ++j) {
-      for (int i = 1+j ; i < componentNo; ++i) {
-        component[i]->update_density( flux[c]->J , -1.0 );
+    for (int j = 0; j < (componentNo - 1); ++j) {
+      for (int i = 1 + j; i < componentNo; ++i) {
+        component[i]->update_density(flux[c]->J, -1.0);
         ++c;
       }
     }
@@ -118,104 +148,110 @@ int Mesodyn::initial_conditions() {
   //If molecules are pinned they cannot move, so we have to free them before moving them by using fluxes
   for (int i = 0; i < (int)Seg.size(); ++i) {
     if (Seg[i]->freedom == "pinned")
-     Seg[i]->freedom = "free";
+      Seg[i]->freedom = "free";
   }
 
-    vector< vector<Real> > rho(componentNo, vector<Real>(M));
+  vector<vector<Real>> rho(componentNo, vector<Real>(M));
 
-    init_rho_wall(rho);
+  init_rho_wall(rho);
 
-    vector<Component1D::boundary> boundaries;
-    for (string& boundary : Lat[0]->BC) {
-      if (boundary == "mirror") {
-        boundaries.push_back(Component1D::MIRROR);
-      }
-      if (boundary == "periodic") {
-        boundaries.push_back(Component1D::PERIODIC);
-      }
-      if (boundary == "bulk") {
-        boundaries.push_back(Component1D::BULK);
-      }
-      if (boundary == "surface") {
-        boundaries.push_back(Component1D::SURFACE);
+  vector<Component1D::boundary> boundaries;
+  for (string& boundary : Lat[0]->BC) {
+    if (boundary == "mirror") {
+      boundaries.push_back(Component1D::MIRROR);
+    }
+    if (boundary == "periodic") {
+      boundaries.push_back(Component1D::PERIODIC);
+    }
+    if (boundary == "bulk") {
+      boundaries.push_back(Component1D::BULK);
+    }
+    if (boundary == "surface") {
+      boundaries.push_back(Component1D::SURFACE);
+    }
+  }
+
+  //TODO: once KSAM becomes a vector, this won't be nessecary anymore, just pass KSAM to the flux constructor.
+  vector<int> mask(M);
+  for (int i = 0; i < M; ++i )
+  {
+    mask[i] = *(Sys[0]->KSAM+i);
+  }
+
+  // TODO: specify boundary conditions in constructor
+  switch (dimensions) {
+  case 1:
+    for (int i = 0; i < componentNo; ++i)
+      component.push_back(new Component1D(Lat[0], rho[i], boundaries[0], boundaries[1]));
+
+    for (int i = 0; i < componentNo - 1; ++i) {
+      for (int j = i + 1; j < componentNo; ++j) {
+        flux.push_back(new Flux1D(Lat[0], D, mask, component[i], component[j]));
       }
     }
 
-    // TODO: specify boundary conditions in constructor
-    switch (dimensions) {
-    case 1:
-      for (int i = 0 ; i < componentNo ; ++i)
-          component.push_back( new Component1D( Lat[0], rho[i], boundaries[0], boundaries[1] ));
+    break;
+  case 2:
+    for (int i = 0; i < componentNo; ++i)
+      component.push_back(new Component2D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3]));
 
-      for (int i = 0; i < componentNo - 1; ++i) {
-        for (int j = i + 1; j < componentNo; ++j) {
-            flux.push_back( new Flux1D( Lat[0], D, component[i], component[j] ) );
-        }
+    for (int i = 0; i < componentNo - 1; ++i) {
+      for (int j = i + 1; j < componentNo; ++j) {
+        flux.push_back(new Flux2D(Lat[0], D, mask, component[i], component[j]));
       }
-
-
-      break;
-    case 2:
-      for (int i = 0 ; i < componentNo ; ++i)
-        component.push_back( new Component2D( Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3] ));
-
-      for (int i = 0; i < componentNo - 1; ++i) {
-        for (int j = i + 1; j < componentNo; ++j) {
-          flux.push_back( new Flux2D( Lat[0], D, component[i], component[j] ) );
-        }
-      }
-
-      break;
-    case 3:
-      for (int i = 0 ; i < componentNo ; ++i)
-        component.push_back( new Component3D( Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5] ));
-
-      for (int i = 0; i < componentNo - 1; ++i) {
-        for (int j = i + 1; j < componentNo; ++j) {
-          flux.push_back( new Flux3D( Lat[0], D, component[i], component[j] ) );
-        }
-      }
-
-      break;
     }
 
-      //  New[0]->DeAllocateMemory();
-      //  New[0]->AllocateMemory(componentNo);
+    break;
+  case 3:
+    for (int i = 0; i < componentNo; ++i)
+      component.push_back(new Component3D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
+
+    for (int i = 0; i < componentNo - 1; ++i) {
+      for (int j = i + 1; j < componentNo; ++j) {
+        flux.push_back(new Flux3D(Lat[0], D, mask, component[i], component[j]));
+      }
+    }
+
+    break;
+  }
+
+  //  New[0]->DeAllocateMemory();
+  //  New[0]->AllocateMemory(componentNo);
 
   return 0;
 }
 
 /******* Rho initialization *******/
 
-int Mesodyn::init_rho_wall(vector< vector<Real> >& rho) {
-//TODO: generalize (M-1-volume?) for 2D/3D
-Sys[0]->PrepareForCalculations();
-int solvent = Sys[0]->solvent;
-int volume = Sys[0]->volume-(pow(M,dimensions) - pow ((M-2),dimensions));
+int Mesodyn::init_rho_wall(vector<vector<Real>>& rho) {
+  //TODO: generalize (M-1-volume?) for 2D/3D
+  Sys[0]->PrepareForCalculations();
+  int solvent = Sys[0]->solvent;
+  int volume = Sys[0]->volume - (pow(M, dimensions) - pow((M - 2), dimensions));
 
-Real sum_theta {0};
-Real theta {0};
+  Real sum_theta{0};
+  Real theta{0};
 
-for (int i = 0; i < componentNo ; ++i) {
-  if (i != solvent) {
-    theta = Mol[i]->theta;
-    sum_theta += theta;
-    for (int z = M-1-volume; z < Lat[0]->M-1; z++) {
-      rho[i][z] = theta/volume;
+  for (int i = 0; i < componentNo; ++i) {
+    if (i != solvent) {
+      theta = Mol[i]->theta;
+      sum_theta += theta;
+      for (int z = M - 1 - volume; z < Lat[0]->M - 1; z++) {
+        rho[i][z] = theta / volume;
+      }
     }
   }
-}
 
-for (int z = M-1-volume ; z < Lat[0]->M-1 ; ++z) {
-  rho[solvent][z] = (volume-sum_theta)/volume;
-}
+  for (int z = M - 1 - volume; z < Lat[0]->M - 1; ++z) {
+    rho[solvent][z] = (volume - sum_theta) / volume;
+  }
 
-//TODO: wall boundary
-for (int i = 0 ; i < componentNo ; ++i) {
-  rho[i][1] = 0;
-}
+  //TODO: wall boundary
+  for (int i = 0; i < componentNo; ++i) {
+    rho[i][1] = 0;
+  }
 
-return 0;
+  return 0;
 }
 
 /******* Output generation *******/
@@ -229,15 +265,15 @@ void Mesodyn::prepareOutputFile() {
   string bin_folder = "bin";
 
   // Find path to Namics executable
-  char result[ PATH_MAX ];
-  ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
-  string executable_path = string( result, (count > 0) ? count : 0 );
+  char result[PATH_MAX];
+  ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+  string executable_path = string(result, (count > 0) ? count : 0);
 
   // Find the last string before the executable
   size_t found = executable_path.find_last_of("/\\");
 
   // Set the output folder to be one level up from the binary folder, plus the specified output folder
-  output_folder = executable_path.substr(0,found - bin_folder.size() ) + output_folder;
+  output_folder = executable_path.substr(0, found - bin_folder.size()) + output_folder;
 
   filename << output_folder << "mesodyn-";
 
@@ -299,7 +335,8 @@ void Mesodyn::prepareOutputFile() {
 void Mesodyn::writeRho(int t) {
   ostringstream headers;
 
-  headers << t << "," << "\n";
+  headers << t << ","
+          << "\n";
   mesFile << headers.str();
 
   ostringstream rhoOutput;
@@ -311,23 +348,23 @@ void Mesodyn::writeRho(int t) {
     do {
       do {
         rhoOutput << x << ","; //":" << y << ":" << z << ",";
-        for (Component1D *all_components : component) {
+        for (Component1D* all_components : component) {
           rhoOutput << all_components->rho_at(x, y, z) << ",";
         }
 
-        for (Flux1D *all_fluxes : flux) {
+        for (Flux1D* all_fluxes : flux) {
           rhoOutput << all_fluxes->L_at(x, y, z) << ",";
         }
 
-        for (Component1D *all_components : component) {
+        for (Component1D* all_components : component) {
           rhoOutput << all_components->alpha_at(x, y, z) << ",";
         }
 
-        for (Flux1D *all_fluxes : flux) {
+        for (Flux1D* all_fluxes : flux) {
           rhoOutput << all_fluxes->mu_at(x, y, z) << ",";
         }
 
-        for (Flux1D *all_fluxes : flux) {
+        for (Flux1D* all_fluxes : flux) {
           rhoOutput << all_fluxes->J_at(x, y, z) << ",";
         }
 
@@ -350,18 +387,21 @@ void Mesodyn::writeRho(int t) {
   mesFile.flush();
 }
 
-/******* FLUX *********/
+/******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
-Flux1D::Flux1D(Lattice* Lat, Real D, Component1D* A, Component1D* B)
-    : Access(Lat), J(M), A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX}   {
+Flux1D::Flux1D(Lattice* Lat, Real D, vector<int>& mask, Component1D* A, Component1D* B)
+    : Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX} {
+  Flux1D::mask(mask, Mask_plus_x, Mask_minus_x, JX);
 }
 
-Flux2D::Flux2D(Lattice* Lat, Real D, Component1D* A, Component1D* B)
-    : Flux1D(Lat, D, A, B), JY{Lat->JY} {
+Flux2D::Flux2D(Lattice* Lat, Real D, vector<int>& mask, Component1D* A, Component1D* B)
+    : Flux1D(Lat, D, mask, A, B), JY{Lat->JY} {
+  Flux1D::mask(mask, Mask_plus_y, Mask_minus_y, JY);
 }
 
-Flux3D::Flux3D(Lattice* Lat, Real D, Component1D* A, Component1D* B)
-    : Flux2D(Lat, D, A, B), JZ{Lat->JZ} {
+Flux3D::Flux3D(Lattice* Lat, Real D, vector<int>& mask, Component1D* A, Component1D* B)
+    : Flux2D(Lat, D, mask, A, B), JZ{Lat->JZ} {
+  Flux1D::mask(mask, Mask_plus_z, Mask_minus_z, JZ);
 }
 
 Flux1D::~Flux1D() {
@@ -379,6 +419,12 @@ int Flux1D::langevin_flux() {
   for (Real& i : J) {
     i = 0;
   }
+  for (Real& i : J_minus) {
+    i = 0;
+  }
+  for (Real& i : J_plus) {
+    i = 0;
+  }
 
   if (A->rho.size() != J.size()) {
     //already checked: A.alpha.size = B.alpha.size and A.rho.size = B.rho.size
@@ -387,7 +433,7 @@ int Flux1D::langevin_flux() {
 
   onsager_coefficient(A->rho, B->rho);
   potential_difference(A->alpha, B->alpha);
-  langevin_flux(JX);
+  langevin_flux(Mask_plus_x, Mask_minus_x, JX);
 
   return 0;
 }
@@ -395,7 +441,7 @@ int Flux1D::langevin_flux() {
 int Flux2D::langevin_flux() {
   Flux1D::langevin_flux();
 
-  Flux1D::langevin_flux(JY);
+  Flux1D::langevin_flux(Mask_plus_y, Mask_minus_y, JY);
 
   return 0;
 }
@@ -403,27 +449,49 @@ int Flux2D::langevin_flux() {
 int Flux3D::langevin_flux() {
   Flux2D::langevin_flux();
 
-  Flux1D::langevin_flux(JZ);
+  Flux1D::langevin_flux(Mask_plus_z, Mask_minus_z, JZ);
 
   return 0;
 }
 
 Real Flux1D::J_at(int x, int y, int z) {
-  return val(J, x, y ,z);
+  return val(J, x, y, z);
 }
 
 Real Flux1D::L_at(int x, int y, int z) {
-  return val(L, x, y ,z);
+  return val(L, x, y, z);
 }
 
 Real Flux1D::mu_at(int x, int y, int z) {
-  return val(mu, x, y ,z);
+  return val(mu, x, y, z);
+}
+
+int Flux1D::mask(vector<int>& mask_in, vector<int>& mask_out_plus, vector<int>& mask_out_minus, int jump) {
+  if ( (int)mask_in.size() != M) {
+    throw ERROR_SIZE_INCOMPATIBLE;
+    return 1;
+  }
+
+  // TODO: There is likely a better way of writing this
+  // TODO: Only calculate odd numberzsch
+  for (int z = 1; z < M-1 ; ++z) {
+    if (mask_in[z] == 1) {
+      if (mask_in[z+jump] == 1) {
+        mask_out_plus.push_back(z);
+      }
+      if (mask_in[z-jump] == 1) {
+        mask_out_minus.push_back(z);
+      }
+    }
+  }
+
+  return 0;
 }
 
 int Flux1D::onsager_coefficient(vector<Real>& A, vector<Real>& B) {
   //TODO: maybe do this inline / per J calculation to preserve memory
 
-  if (A.size() != B.size() ) {
+  if (A.size() != B.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
 
@@ -434,7 +502,7 @@ int Flux1D::onsager_coefficient(vector<Real>& A, vector<Real>& B) {
 int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
   //TODO: maybe do this inline / per J calculation to preserve memory
 
-  if (A.size() != B.size() ) {
+  if (A.size() != B.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
 
@@ -442,28 +510,33 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
   return 0;
 }
 
-int Flux1D::langevin_flux(int jump) {
-  for (int z = 1; z < M-1; ++z){
-  J[z] += -D * (((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])) + ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])));
+int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump) {
+
+  for (int& z: mask_plus) {
+    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
   }
+  for (int& z: mask_minus) {
+    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z]));
+  }
+  
+  transform(J_plus.begin(), J_plus.end(), J_minus.begin(), J.begin(), [](Real A, Real B) { return A + B; });
+
   return 0;
 }
 
-/****************** ACCESS ********************/
+/****************** ACCESS: AN INTERFACE FOR LATTICE ********************/
 
 Access::Access(Lattice* Lat)
-  : dimensions{Lat->gradients}, JX {Lat->JX}, JY {Lat->JY}, JZ {Lat->JZ}, M {Lat->M}, MX {2+Lat->MX}, MY { setMY(Lat) }, MZ{ setMZ(Lat) }
-{
+    : dimensions{Lat->gradients}, JX{Lat->JX}, JY{Lat->JY}, JZ{Lat->JZ}, M{Lat->M}, MX{2 + Lat->MX}, MY{setMY(Lat)}, MZ{setMZ(Lat)} {
   // If this is not true, NOTHING will work. So this check is aboslutely necessary.
+  // If, at some point, the above happens to be the case every class in this module will probably need rewriting.
   assert(
-    (MX > 0 && MY == 0 && MZ == 0) ||
-    (MX > 0 && MY > 0  && MZ == 0) ||
-    (MX > 0 && MY > 0  && MZ > 0)
-  );
+      (MX > 0 && MY == 0 && MZ == 0) ||
+      (MX > 0 && MY > 0 && MZ == 0) ||
+      (MX > 0 && MY > 0 && MZ > 0));
 }
 
 Access::~Access() {
-
 }
 
 inline Real Access::val(vector<Real>& v, int x, int y, int z) {
@@ -479,25 +552,27 @@ inline int Access::xyz(int x, int y, int z) {
 }
 
 int Access::setMY(Lattice* Lat) {
-  if (dimensions < 2) return 0;
-  else return Lat->MY+2;
+  if (dimensions < 2)
+    return 0;
+  else
+    return Lat->MY + 2;
 }
 
 int Access::setMZ(Lattice* Lat) {
-  if (dimensions < 3) return 0;
-  else return Lat->MZ+2;
+  if (dimensions < 3)
+    return 0;
+  else
+    return Lat->MZ + 2;
 }
 
-/****************** COMPONENT ********************/
+/****************** COMPONENT: DENSITY PROFILE STORAGE AND UPDATING, BOUNDARY CONDITIONS ********************/
 
-
-          /******* Constructors *******/
+/******* Constructors *******/
 
 Component1D::Component1D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm)
-    : Access(Lat), rho{rho}, alpha(M)
-{
+    : Access(Lat), rho{rho}, alpha(M) {
   //This check is implemented multiple times throughout mesodyn because rho and alpha are public.
-  if ( rho.size() != alpha.size() ) {
+  if (rho.size() != alpha.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
   set_x_boundaries(x0, xm);
@@ -505,15 +580,13 @@ Component1D::Component1D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary 
 }
 
 Component2D::Component2D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm, boundary y0, boundary ym)
-    : Component1D(Lat, rho, x0, xm)
-{
+    : Component1D(Lat, rho, x0, xm) {
   set_y_boundaries(y0, ym);
   update_boundaries();
 }
 
 Component3D::Component3D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm, boundary y0, boundary ym, boundary z0, boundary zm)
-    : Component2D(Lat, rho, x0, xm, y0, ym)
-{
+    : Component2D(Lat, rho, x0, xm, y0, ym) {
   set_z_boundaries(z0, zm);
   update_boundaries();
 }
@@ -527,7 +600,6 @@ Component2D::~Component2D() {
 Component3D::~Component3D() {
 }
 
-
 /******* Interface *******/
 
 Real Component1D::rho_at(int x, int y, int z) {
@@ -535,7 +607,7 @@ Real Component1D::rho_at(int x, int y, int z) {
 }
 
 Real Component1D::alpha_at(int x, int y, int z) {
-  return val(alpha, x, y ,z);
+  return val(alpha, x, y, z);
 }
 
 int Component1D::update_density(vector<Real>& J, int sign) {
@@ -549,7 +621,7 @@ int Component1D::update_density(vector<Real>& J, int sign) {
   int i = 0;
 
   for (Real& Flux : J) {
-    rho[i] += sign*Flux;
+    rho[i] += sign * Flux;
     ++i;
   }
 
@@ -569,7 +641,7 @@ int Component1D::load_alpha(Real* alpha, int m) {
     throw ERROR_SIZE_INCOMPATIBLE;
     return 1;
   }
-  Component1D::alpha.assign(alpha,alpha+m);
+  Component1D::alpha.assign(alpha, alpha + m);
   return 0;
 }
 
@@ -579,7 +651,7 @@ int Component1D::load_rho(Real* rho, int m) {
     throw ERROR_SIZE_INCOMPATIBLE;
     return 1;
   }
-  Component1D::rho.assign(rho,rho+m);
+  Component1D::rho.assign(rho, rho + m);
   return 0;
 }
 
@@ -636,10 +708,10 @@ int Component1D::set_x_boundaries(boundary x0, boundary xm) {
     }
     break;
   case BULK:
-    bXm = bind(&Component1D::bXmBulk, this, MY, MZ, MX, rho[MX-2]);
+    bXm = bind(&Component1D::bXmBulk, this, MY, MZ, MX, rho[MX - 2]);
     break;
   case SURFACE:
-   // nothing yet
+    // nothing yet
     break;
   }
 
@@ -661,7 +733,7 @@ int Component2D::set_y_boundaries(boundary y0, boundary ym) {
   case BULK:
     //nothing yet
   case SURFACE:
-   // nothing yet
+    // nothing yet
     break;
   }
 
@@ -701,7 +773,7 @@ int Component3D::set_z_boundaries(boundary z0, boundary zm) {
   case BULK:
     //nothing yet
   case SURFACE:
-   // nothing yet
+    // nothing yet
     break;
   }
 
@@ -733,7 +805,6 @@ void Component1D::bX0Mirror(int fMY, int fMZ) {
     do {
       *valPtr(rho, 0, y, z) = val(rho, 1, y, z);     //start
       *valPtr(alpha, 0, y, z) = val(alpha, 1, y, z); //start
-      *valPtr(alpha, 1, y, z) = val(alpha, 2, y, z); //start // DELETE WALL
       ++z;
     } while (z < fMZ);
 
@@ -775,7 +846,7 @@ void Component1D::bX0Bulk(int fMY, int fMZ, Real bulk) {
   int z = 0;
   do {
     do {
-      *valPtr(rho, 0, y, z) = bulk;     //start
+      *valPtr(rho, 0, y, z) = bulk; //start
       ++z;
     } while (z < fMZ);
 
@@ -788,7 +859,7 @@ void Component1D::bXmBulk(int fMY, int fMZ, int fMX, Real bulk) {
   int z = 0;
   do {
     do {
-      *valPtr(rho, fMX - 1, y, z) = bulk;     //end
+      *valPtr(rho, fMX - 1, y, z) = bulk; //end
       ++z;
     } while (z < fMZ);
     ++y;
@@ -839,7 +910,7 @@ void Component2D::bY0Bulk(int fMX, int fMZ, Real bulk) {
   int z = 0;
   do {
     do {
-      *valPtr(rho, x, 0, z) = bulk;     //start
+      *valPtr(rho, x, 0, z) = bulk; //start
     } while (z < fMZ);
     ++x;
   } while (x < fMX);
@@ -850,7 +921,7 @@ void Component2D::bYmBulk(int fMX, int fMZ, int fMY, Real bulk) {
   int z = 0;
   do {
     do {
-      *valPtr(rho, x, fMY - 1, z) = bulk;     //end
+      *valPtr(rho, x, fMY - 1, z) = bulk; //end
     } while (z < fMZ);
     ++x;
   } while (x < fMX);
@@ -900,7 +971,7 @@ void Component3D::bZ0Bulk(int fMX, int fMY, Real bulk) {
   int y = 0;
   do {
     do {
-      *valPtr(rho, x, y, 0) = bulk;     //start
+      *valPtr(rho, x, y, 0) = bulk; //start
     } while (x < fMX);
     ++x;
   } while (y < fMY);
@@ -911,14 +982,15 @@ void Component3D::bZmBulk(int fMX, int fMY, int fMZ, Real bulk) {
   int y = 0;
   do {
     do {
-      *valPtr(rho, x, y, fMZ - 1) = bulk;     //end
+      *valPtr(rho, x, y, fMZ - 1) = bulk; //end
     } while (x < fMX);
     ++x;
   } while (y < fMY);
 }
 
+/******* TOOLS: MATHEMATICS AND INTERFACE FOR THE IO CLASSES ********/
 
-/******* Tools ********/
+/***** Mathematics *****/
 
 int Mesodyn::factorial(int n) {
   if (n > 1) {
@@ -930,6 +1002,8 @@ int Mesodyn::factorial(int n) {
 int Mesodyn::combinations(int n, int k) {
   return factorial(n) / (factorial(n - k) * factorial(k));
 }
+
+/***** IO *****/
 
 void Mesodyn::PutParameter(string new_param) { KEYS.push_back(new_param); }
 string Mesodyn::GetValue(string parameter) {
@@ -969,8 +1043,8 @@ void Mesodyn::PushOutput() {
   ints.clear();
   ints_value.clear();
 }
-int Mesodyn::GetValue(string prop, int &int_result, Real &Real_result,
-                      string &string_result) {
+int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result,
+                      string& string_result) {
   int i = 0;
   int length = ints.size();
   while (i < length) {

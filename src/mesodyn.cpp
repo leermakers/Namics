@@ -20,6 +20,10 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
   KEYS.push_back("mean");
   KEYS.push_back("stdev");
 
+  // All Flux class instances need to share the same gaussian noise generator if we're going to seed it, or we'll
+  // end up with the same numbers over and over.
+  gaussian_noise = new Gaussian_noise(D);
+
   initial_conditions(); // Initialize densities by running the classical method once.
 
   if (debug)
@@ -33,6 +37,8 @@ Mesodyn::~Mesodyn() {
   for (unsigned int i = 0; i < component.size(); ++i)
     delete component[i];
   flux.clear();
+
+  delete gaussian_noise;
 }
 
 bool Mesodyn::CheckInput(int start) {
@@ -166,9 +172,6 @@ int Mesodyn::initial_conditions() {
     if (boundary == "bulk") {
       boundaries.push_back(Component1D::BULK);
     }
-    if (boundary == "surface") {
-      boundaries.push_back(Component1D::SURFACE);
-    }
   }
 
   //TODO: once KSAM becomes a vector, this won't be nessecary anymore, just pass KSAM to the flux constructor.
@@ -178,7 +181,6 @@ int Mesodyn::initial_conditions() {
     mask[i] = *(Sys[0]->KSAM+i);
   }
 
-  // TODO: specify boundary conditions in constructor
   switch (dimensions) {
   case 1:
     for (int i = 0; i < componentNo; ++i)
@@ -186,7 +188,7 @@ int Mesodyn::initial_conditions() {
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
-        flux.push_back(new Flux1D(Lat[0], D, mask, component[i], component[j]));
+        flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
       }
     }
 
@@ -197,7 +199,7 @@ int Mesodyn::initial_conditions() {
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
-        flux.push_back(new Flux2D(Lat[0], D, mask, component[i], component[j]));
+        flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
       }
     }
 
@@ -208,15 +210,12 @@ int Mesodyn::initial_conditions() {
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
-        flux.push_back(new Flux3D(Lat[0], D, mask, component[i], component[j]));
+        flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
       }
     }
 
     break;
   }
-
-  //  New[0]->DeAllocateMemory();
-  //  New[0]->AllocateMemory(componentNo);
 
   return 0;
 }
@@ -246,11 +245,17 @@ int Mesodyn::init_rho_wall(vector<vector<Real>>& rho) {
     rho[solvent][z] = (volume - sum_theta) / volume;
   }
 
-  //TODO: wall boundary
   for (int i = 0; i < componentNo; ++i) {
     rho[i][1] = 0;
   }
 
+  return 0;
+}
+
+
+//TODO: homogeneous system
+int Mesodyn::init_rho_homogeneous(vector<vector<Real>>& rho) {
+  throw Component1D::ERROR_NOT_IMPLEMENTED;
   return 0;
 }
 
@@ -389,18 +394,18 @@ void Mesodyn::writeRho(int t) {
 
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
-Flux1D::Flux1D(Lattice* Lat, Real D, vector<int>& mask, Component1D* A, Component1D* B)
-    : Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX} {
+Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
+    : Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, gaussian{gaussian}, L(M), mu(M), D{D}, JX{Lat->JX} {
   Flux1D::mask(mask, Mask_plus_x, Mask_minus_x, JX);
 }
 
-Flux2D::Flux2D(Lattice* Lat, Real D, vector<int>& mask, Component1D* A, Component1D* B)
-    : Flux1D(Lat, D, mask, A, B), JY{Lat->JY} {
+Flux2D::Flux2D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
+    : Flux1D(Lat, gaussian, D, mask, A, B), JY{Lat->JY} {
   Flux1D::mask(mask, Mask_plus_y, Mask_minus_y, JY);
 }
 
-Flux3D::Flux3D(Lattice* Lat, Real D, vector<int>& mask, Component1D* A, Component1D* B)
-    : Flux2D(Lat, D, mask, A, B), JZ{Lat->JZ} {
+Flux3D::Flux3D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
+    : Flux2D(Lat, gaussian, D, mask, A, B), JZ{Lat->JZ} {
   Flux1D::mask(mask, Mask_plus_z, Mask_minus_z, JZ);
 }
 
@@ -489,7 +494,7 @@ int Flux1D::mask(vector<int>& mask_in, vector<int>& mask_out_plus, vector<int>& 
 }
 
 int Flux1D::onsager_coefficient(vector<Real>& A, vector<Real>& B) {
-  //TODO: maybe do this inline / per J calculation to preserve memory
+  //TODO: maybe do this in propagator style inline / per J calculation to preserve memory
 
   if (A.size() != B.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
@@ -500,7 +505,7 @@ int Flux1D::onsager_coefficient(vector<Real>& A, vector<Real>& B) {
 }
 
 int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
-  //TODO: maybe do this inline / per J calculation to preserve memory
+  //TODO: maybe do this in propagator style inline / per J calculation to preserve memory
 
   if (A.size() != B.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
@@ -513,14 +518,13 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
 int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump) {
 
   for (int& z: mask_plus) {
-    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
+    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])) + gaussian->noise();
   }
   for (int& z: mask_minus) {
-    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z]));
+    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])) + gaussian->noise();
   }
-  
-  transform(J_plus.begin(), J_plus.end(), J_minus.begin(), J.begin(), [](Real A, Real B) { return A + B; });
 
+  transform(J_plus.begin(), J_plus.end(), J_minus.begin(), J.begin(), [this](Real A, Real B) { return A + B; });
   return 0;
 }
 
@@ -692,9 +696,6 @@ int Component1D::set_x_boundaries(boundary x0, boundary xm) {
   case BULK:
     bX0 = bind(&Component1D::bX0Bulk, this, MY, MZ, rho[1]);
     break;
-  case SURFACE:
-    //nothing yet
-    break;
   }
 
   switch (xm) {
@@ -709,9 +710,6 @@ int Component1D::set_x_boundaries(boundary x0, boundary xm) {
     break;
   case BULK:
     bXm = bind(&Component1D::bXmBulk, this, MY, MZ, MX, rho[MX - 2]);
-    break;
-  case SURFACE:
-    // nothing yet
     break;
   }
 
@@ -732,8 +730,6 @@ int Component2D::set_y_boundaries(boundary y0, boundary ym) {
     break;
   case BULK:
     //nothing yet
-  case SURFACE:
-    // nothing yet
     break;
   }
 
@@ -749,9 +745,6 @@ int Component2D::set_y_boundaries(boundary y0, boundary ym) {
     break;
   case BULK:
     //nothing yet
-    break;
-  case SURFACE:
-    // nothing yet
     break;
   }
 
@@ -772,8 +765,6 @@ int Component3D::set_z_boundaries(boundary z0, boundary zm) {
     break;
   case BULK:
     //nothing yet
-  case SURFACE:
-    // nothing yet
     break;
   }
 
@@ -789,9 +780,6 @@ int Component3D::set_z_boundaries(boundary z0, boundary zm) {
     break;
   case BULK:
     //nothing yet
-    break;
-  case SURFACE:
-    // nothing yet
     break;
   }
 
@@ -987,6 +975,17 @@ void Component3D::bZmBulk(int fMX, int fMY, int fMZ, Real bulk) {
     ++x;
   } while (y < fMY);
 }
+
+/******* GAUSSIAN_NOISE: GENERATES WHITE NOISE FOR FLUXES ********/
+
+Gaussian_noise::Gaussian_noise(Real D) : prng { std::random_device{} () }, dist(0, 2*D*k_BT) {}
+
+Gaussian_noise::Gaussian_noise(Real D, size_t seed) : prng(seed), dist(0, 2*D*k_BT) {}
+
+Real Gaussian_noise::noise() {
+  return dist(prng);
+}
+
 
 /******* TOOLS: MATHEMATICS AND INTERFACE FOR THE IO CLASSES ********/
 

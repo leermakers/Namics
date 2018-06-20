@@ -4,19 +4,33 @@
 #include "namics.h"
 #include "solve_scf.h"
 #include "system.h"
-#include "newton.h"
-#include <random>
-#include <ctime>
-#include <cassert>
-#include <functional>
-#include <algorithm>
-//for output:
-#include <limits.h>
-#include <unistd.h>
+#include "newton.h"   // for...
+#include <random>     // noise generation
+#include <ctime>      // output labling
+#include <cassert>    // making sure all underlying assumptions (e.g. lattice geometry) are satisfied
+#include <functional> // boundary conditions
+#include <algorithm>  // transform, copy, find functions
+#include <limits.h>   // output
+#include <unistd.h>   // output
 
 class Newton;
 
+class Gaussian_noise {
+  //Makes sure that we keep generating new numbers, instead of the same over and over.
+
+public:
+  Gaussian_noise(Real); // Not seeded (32 bits of randomness)
+  Gaussian_noise(Real, size_t); // Seeded
+  Real noise();
+
+private:
+  seed_seq seed;
+  mt19937 prng;
+  normal_distribution<Real> dist;
+};
+
 class Access {
+
 public:
 
   Access(Lattice*);
@@ -49,7 +63,6 @@ public:
     MIRROR,
     PERIODIC,
     BULK,
-    SURFACE,
   };
 
   enum error {
@@ -124,7 +137,7 @@ private:
 
 class Flux1D : private Access {
 public:
-  Flux1D(Lattice*, Real, vector<int>&, Component1D*, Component1D*);
+  Flux1D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux1D();
 
   int langevin_flux();
@@ -151,10 +164,8 @@ protected:
   int onsager_coefficient(vector<Real>&, vector<Real>&);
   int potential_difference(vector<Real>&, vector<Real>&);
   int langevin_flux(vector<int>&, vector<int>&, int);
-  int gaussian_noise(Real = 1, Real = 1, Real = 1);
-  seed_seq seed {1};
-  mt19937 prng;
-  normal_distribution<> dist;
+
+  Gaussian_noise* gaussian;
 
   vector<Real> L;
   vector<Real> mu;
@@ -166,7 +177,7 @@ protected:
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Real, vector<int>&, Component1D*, Component1D*);
+  Flux2D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux2D();
 
   int langevin_flux();
@@ -185,7 +196,7 @@ protected:
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Real, vector<int>&, Component1D*, Component1D*);
+  Flux3D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux3D();
 
   int langevin_flux();
@@ -219,7 +230,7 @@ private:
   int timesteps;
   int timebetweensaves;
   const int componentNo;
-  vector<Real> noise;
+  Gaussian_noise* gaussian_noise;
 
   vector<Component1D*> component;
   vector<Flux1D*> flux;
@@ -230,7 +241,7 @@ private:
   int initial_conditions();
   vector<Real>&  flux_callback(int);
   int init_rho_wall(vector< vector<Real> >&);
-  void init_rho_homogeneous(vector<Real>&, int);
+  int init_rho_homogeneous(vector< vector<Real> >&);
 
 
 public:

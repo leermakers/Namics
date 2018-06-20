@@ -1,0 +1,27 @@
+lat : vlak : n_layers : 100
+lat : vlak : lambda : simple_cubic
+lat : vlak : geometry : planar
+
+mon : S : freedom : frozen
+mon : S : frozen_range : 1;1
+
+mon : X : freedom : pinned
+mon : X : pinned_range : 2;2
+
+mon : A : freedom : free
+mon : W : freedom : free
+
+mol : pol : composition : (X)1(A)99
+mol : pol : theta : 5
+mol : pol : freedom : restricted
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+output : pro  :append : false
+pro : mol : pol : phi
+
+newton : isaac : method : DIIS
+newton : isaac : m : 64
+newton : isaac : deltamax : 0.5
+start

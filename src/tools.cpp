@@ -7,13 +7,28 @@
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
 const int block_size = 256;
-/*
-__global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY)   {
+
+
+__device__ void atomicAdd(Real* address, Real val)
+{
+    unsigned long long int* address_as_ull =
+                             (unsigned long long int*)address;
+    unsigned long long int old = *address_as_ull, assumed;
+    do {
+        assumed = old;
+	old = atomicCAS(address_as_ull, assumed,
+                        __double_as_longlong(val +
+                               __longlong_as_double(assumed)));
+    } while (assumed != old);
+    //return __longlong_as_double(old);
+}
+
+__global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
 	if (k < Mz && j < My && i < Mx){
-		int pM=jx+jy+1+k+jx*i+jy*j;
+		int pM=jx+jy+1+k+jx*i+jy*j; 
 		int pos_r=JX+JY+1;
 		int ii;
 		int MXm1 = MX-1;
@@ -26,31 +41,32 @@ __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int 
 			g1[pM]=G1[pos_r+ii];
 			pM+=M;
 		}
-	}
+	}	
 }
 
-__global__ void collectphi(Real* phi, Real* GN,Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY)   {
+
+__global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
-	int pos_r=(JX+JY+1);//This needs af fix**
+	int pos_r=MM+(JX+JY+1);
 	int pM=jx+jy+1+jx*i+jy*j+k;
-	int ii,jj,kk;//This needs af fix**
+	int ii,jj,kk;
 	int MXm1 = MX-1;
 	int MYm1 = MY-1;
 	int MZm1 = MZ-1;
 	if (k < Mz && j < My && i < Mx){
 		for (int p = 0;p<n_box;++p){
-			if (Bx[p]+i > MXm1)  ii=(Bx[p]+i-MX)*JX; else ii=(Bx[p]+i)*JX;
+			if (Bx[p]+i > MXm1)  ii=(Bx[p]+i-MX)*JX; else ii=(Bx[p]+i)*JX; 
 			if (By[p]+j > MYm1)  jj=(By[p]+j-MY)*JY; else jj=(By[p]+j)*JY;
 			if (Bz[p]+k > MZm1)  kk=(Bz[p]+k-MZ); else kk=(Bz[p]+k);
-
-			atomicAdd(&phi[ii+jj+kk], rho[pM]/GN[p]); //This needs af fix*****************************
+			//__syncthreads(); //will not work when two boxes are idential....
+			//phi[pos_r+ii+jj+kk]+=rho[pM+jx*i+jy*j+k]*Inv_GNp;
+			atomicAdd(&phi[pos_r+ii+jj+kk], rho[pM]/GN[p]);
 			pM+=M;
-		}
+		}		
 	}
 }
-*/
 
 __global__ void dot(Real *X, Real *Y, Real *Z, int M)   {
    __shared__ Real tmp[MAX_BLOCK_SZ];
@@ -168,11 +184,11 @@ __global__ void boltzmann(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=exp(-A[idx]);
 }
-__global__ void overwritec(Real* P, int Mask, Real X,int M) {
+__global__ void overwritec(Real* P, int* Mask, Real X,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (Mask[idx]==1) P[idx] = X ; else P[idx]=0;
 }
-__global__ void overwritea(Real* P, int Mask, Real* A,int M) {
+__global__ void overwritea(Real* P, int* Mask, Real* A,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (Mask[idx]==1) P[idx] = A[idx] ; else P[idx]=0;
 }
@@ -200,12 +216,12 @@ __global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real
 		g[idx] -=q[idx];
 	}
 }
-__global__ void uppsi(Real* g, Real* psi, Real* X, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
+__global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	Real* Px=X+jx;
 	Real* P_x=X-jx;
 	Real* Py=X+jy;
-	Real* P_y=x-jy;
+	Real* P_y=X-jy;
 	Real* Pz=X+1;
 	Real* P_z=X-1;
 	Real* ex=eps+jx;
@@ -220,7 +236,7 @@ __global__ void uppsi(Real* g, Real* psi, Real* X, Real* eps, int jx, int jy, Re
 			(e_y[idx]+e[idx])*P_y[idx] + (ey[idx]+e[idx])*Py[idx] +
 			(e_z[idx]+e[idx])*P_z[idx] + (ez[idx]+e[idx])*Pz[idx] +
 			C*q[idx])/(e_x[idx]+ex[idx]+e_y[idx]+ey[idx]+e_z[idx]+ez[idx]+6*e[idx]);
-		g[idx] -=psi[idx];
+		q[idx] -=psi[idx];
 	}
 }
 
@@ -895,7 +911,7 @@ void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, int* 
 }
 #else
 void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, int* Mask, int M) {
-	cout <<"UpPsi: program should not get here, becauase when no CUDA-flag is used, the routine in Lattice is used. " << endl;
+	cout <<"UpPsi: program should not get here, because when no CUDA-flag is used, the routine in Lattice is used. " << endl;
 }
 #endif
 
@@ -1017,7 +1033,7 @@ void DisG1(Real* G1, Real* g1, int* Bx, int* By, int* Bz, int MM, int M, int n_b
 
 }
 #else
-void DisG1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void DisG1(Real* G1, Real* g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int pos_l=-M;
 	int pos_x,pos_y,pos_z;
 	int Bxp,Byp,Bzp;

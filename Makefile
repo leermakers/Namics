@@ -1,5 +1,6 @@
 #Compiler and Linker
 CC          := g++
+NVCC        :=nvcc
 
 #The Target Binary Program
 TARGET      := namics
@@ -19,12 +20,22 @@ CFLAGS      := -Wall -g -O3 -std=c++11
 LIB         := -lm -lpthread
 INC         := -I/usr/local/include
 #INCDEP      := -I$(INCDIR)
+ifdef CUDA
+	LIB        += -lcuda -lcudart
+	NVCCFLAGS   := -DCUDA -arch sm_13
+endif
 
+# %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@
 #---------------------------------------------------------------------------------
 #DO NOT EDIT BELOW THIS LINE
 #---------------------------------------------------------------------------------
-SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT)))
+
+SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT)) 
+ifdef CUDA
+OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o)
+else
+OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)))
+endif
 
 #Defauilt Make
 all: resources $(TARGET)
@@ -41,7 +52,7 @@ directories:
 	@mkdir -p $(TARGETDIR)
 	@mkdir -p $(BUILDDIR)
 
-#Clean only Objecst
+#Clean only Objects
 clean:
 	@$(RM) -rf $(BUILDDIR)
 
@@ -53,10 +64,18 @@ cleaner: clean
 -include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))
 
 #Link
+#$(TARGET): $(OBJECTS)
 $(TARGET): $(OBJECTS)
 	$(CC) -o $(TARGETDIR)/$(TARGET) $^ $(LIB)
 
+
 #Compile
+ifdef CUDA
+$(BUILDDIR)/tools.o: 
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/tools.o $(SRCDIR)/tools.cu
+endif
+
+
 $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<

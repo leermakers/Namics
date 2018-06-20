@@ -18,15 +18,9 @@ mol : pol : freedom : clamped
 mol : water : composition : (W)1
 mol : water : freedom : solvent
 
-<<<<<<< HEAD
-newton : isaac : method : pseudohessian
-//newton : isaac : m : 4
-newton : isaac : deltamax : 1
-=======
-newton : isaac : method : DIIS 
+newton : isaac : method : DIIS
 newton : isaac : m : 4
 newton : isaac : deltamax : 0.1
->>>>>>> 604332636d024a1d57b0efc96458cd14c7976450
 newton : isaac : e_info : true
 newton :isaac : iterationlimit: 200
 

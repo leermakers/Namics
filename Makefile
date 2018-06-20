@@ -30,7 +30,11 @@ endif
 #DO NOT EDIT BELOW THIS LINE
 #---------------------------------------------------------------------------------
 
+<<<<<<< HEAD
 SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+=======
+SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT)) 
+>>>>>>> 604332636d024a1d57b0efc96458cd14c7976450
 ifdef CUDA
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o)
 else
@@ -71,7 +75,11 @@ $(TARGET): $(OBJECTS)
 
 #Compile
 ifdef CUDA
+<<<<<<< HEAD
 $(BUILDDIR)/tools.o:
+=======
+$(BUILDDIR)/tools.o: 
+>>>>>>> 604332636d024a1d57b0efc96458cd14c7976450
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/tools.o $(SRCDIR)/tools.cu
 endif
 

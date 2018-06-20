@@ -18,11 +18,17 @@ mol : pol : freedom : clamped
 mol : water : composition : (W)1
 mol : water : freedom : solvent
 
+<<<<<<< HEAD
 newton : isaac : method : pseudohessian
 //newton : isaac : m : 4
 newton : isaac : deltamax : 1
+=======
+newton : isaac : method : DIIS 
+newton : isaac : m : 4
+newton : isaac : deltamax : 0.1
+>>>>>>> 604332636d024a1d57b0efc96458cd14c7976450
 newton : isaac : e_info : true
-newton :isaac : iterationlimit: 100
+newton :isaac : iterationlimit: 200
 
 //sys : sacha : GPU : true
 output : vtk : append : false
@@ -36,16 +42,16 @@ kal : output : noname : t
 output : pro : append : false
 pro : mon : X : phi
 
-output : pos : append : true
-pos : output : noname : X
-pos : output : noname : Y
-pos : output : noname : Z
+//output : pos : append : true
+//pos : output : noname : X
+//pos : output : noname : Y
+//pos : output : noname : Z
 
-output : vec : append : true
-vec : mol : pol : gn
-vec : output : noname : gn
+//output : vec : append : true
+//vec : mol : pol : gn
+//vec : output : noname : gn
 
-cleng : sascha : MCS : 10
-cleng : sascha : save_interval : 1
+//cleng : sascha : MCS : 10
+//cleng : sascha : save_interval : 1
 
 start

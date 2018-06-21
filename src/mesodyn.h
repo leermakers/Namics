@@ -234,6 +234,7 @@ private:
 
   vector<Component1D*> component;
   vector<Flux1D*> flux;
+  vector<Flux1D*> solver_flux;
 
   ofstream mesFile;
   void prepareOutputFile();

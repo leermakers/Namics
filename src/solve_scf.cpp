@@ -513,7 +513,7 @@ void Solve_scf::residuals(Real* x, Real* g){
  if (debug) cout <<"residuals in Solve_scf " << endl;
 	int M=Lat[0]->M;
 	Real chi;
-	int sysmon_length = Sys[0]->SysMonList.size();
+	int sysmon_length = Sys[0]->SysMonList.size(); //TODO: shouldn't this be SysMolMonList?
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 	int i,j,k;
 	int jump=0;
@@ -524,16 +524,25 @@ void Solve_scf::residuals(Real* x, Real* g){
 		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
 			ComputePhis();
-			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
+
+			vector<Real> solver_flux(M); //TODO: may run out of scope early
 			for (unsigned int c = 0 ; c < Sys[0]->SysMolMonList.size() ; ++c) {
-					// fluxes = flux(i) ;
+
+					copy(solver_flux.begin(), solver_flux.end(), back_inserter(solver_flux));
+					//flux(c)
+					//Where the hell are we going to get alpha from?
 			}
+
+			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
 			i=k=0;
 			while (i<lengthMolList) {
 				j=0;
 				LENGTH=Mol[i]->MolMonList.size();
 				while (j<LENGTH) {
+
+					//Target function: rho - phi < tolerance
 					YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M);
+
 					Lat[0]->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 					k++;

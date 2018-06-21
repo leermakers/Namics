@@ -114,7 +114,7 @@ bool Mesodyn::mesodyn() {
       copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
     }
 
-    New[0]->SolveMesodyn(rho, alpha, [this](int i) -> vector<Real>& { return flux[i]->J; });
+    New[0]->SolveMesodyn(rho, alpha, [this](int i) -> vector<Real>& { solver_flux[i]->langevin_flux(); return solver_flux[i]->J; });
 
     for (int i = 0; i < componentNo; ++i)
       component[i]->load_alpha(&alpha[0 + i * M], M);
@@ -192,6 +192,7 @@ int Mesodyn::initial_conditions() {
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
         flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
       }
     }
 
@@ -203,6 +204,7 @@ int Mesodyn::initial_conditions() {
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
         flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
       }
     }
 
@@ -214,6 +216,7 @@ int Mesodyn::initial_conditions() {
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
         flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
       }
     }
 
@@ -222,8 +225,6 @@ int Mesodyn::initial_conditions() {
 
   return 0;
 }
-
-/******* Rho initialization *******/
 
 int Mesodyn::init_rho(vector<vector<Real>>& rho, vector<int>& mask) {
   int solvent = Sys[0]->solvent; // Find which componentNo is the solvent
@@ -511,11 +512,13 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
 
 int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump) {
 
+//TODO: Noise
+
   for (int& z: mask_plus) {
-    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])) + gaussian->noise();
+    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])); //+ gaussian->noise();
   }
   for (int& z: mask_minus) {
-    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])) + gaussian->noise();
+    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); //+ gaussian->noise();
   }
 
   transform(J_plus.begin(), J_plus.end(), J_minus.begin(), J.begin(), [this](Real A, Real B) { return A + B; });

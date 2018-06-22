@@ -481,7 +481,7 @@ int Flux1D::mask(vector<int>& mask_in, vector<int>& mask_out_plus, vector<int>& 
 
   // TODO: There is likely a better way of writing this
   // TODO: Only calculate odd numberzsch
-  for (int z = 1; z < M-1 ; ++z) {
+  for (int z = 0+jump; z < M-jump ; ++z) {
     if (mask_in[z] == 1) {
       if (mask_in[z+jump] == 1) {
         mask_out_plus.push_back(z);

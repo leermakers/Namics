@@ -9,8 +9,7 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
     Access(Lat_[0]),
     name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
     D{0.001}, mean{1}, stdev{1}, seed{1}, timesteps{100}, timebetweensaves{1},
-    componentNo{(int)Sys[0]->SysMolMonList.size()},
-    alpha(componentNo*M)
+    componentNo{(int)Sys[0]->SysMolMonList.size()}
 
 {
   KEYS.push_back("timesteps");
@@ -114,10 +113,18 @@ bool Mesodyn::mesodyn() {
       copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
     }
 
-    New[0]->SolveMesodyn(rho, alpha, [this](int i) -> vector<Real>& { solver_flux[i]->langevin_flux(); return solver_flux[i]->J; });
 
-    for (int i = 0; i < componentNo; ++i)
-      component[i]->load_alpha(&alpha[0 + i * M], M);
+    New[0]->SolveMesodyn(
+        rho,
+        [this](vector<Real>& alpha, int i) {
+          if (i < componentNo) component[i]->load_alpha(alpha);
+        },
+        [this](int i) -> vector<Real>& {
+          for (Component1D* all_components : component) all_components->update_boundaries();
+          solver_flux[i]->langevin_flux();
+          return solver_flux[i]->J;
+        }
+      );
 
     //TODO: mirror boundaries might be doing redundant work because of masking.
     for (Component1D* all_components : component)
@@ -506,22 +513,20 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
 
-  transform(A.begin(), A.end(), B.begin(), mu.begin(), [](Real A, Real B) { return A - B; });
+  transform(A.begin(), A.end(), B.begin(), mu.begin(), [](Real A, Real B) { return A - B ; }); //+ gaussian->noise()
   return 0;
 }
 
 int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump) {
 
-//TODO: Noise
-
   for (int& z: mask_plus) {
-    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])); //+ gaussian->noise();
+    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
   }
   for (int& z: mask_minus) {
-    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); //+ gaussian->noise();
+    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z]));
   }
 
-  transform(J_plus.begin(), J_plus.end(), J_minus.begin(), J.begin(), [this](Real A, Real B) { return A + B; });
+  transform(J_plus.begin(), J_plus.end(), J_minus.begin(), J.begin(), [](Real A, Real B) { return A + B; });
   return 0;
 }
 
@@ -636,13 +641,8 @@ int Component1D::update_density(vector<Real>& J1, vector<Real>& J2) {
   return 1;
 }
 
-int Component1D::load_alpha(Real* alpha, int m) {
-  //  TODO: C++11ify this hideous function please
-  if (m != M) {
-    throw ERROR_SIZE_INCOMPATIBLE;
-    return 1;
-  }
-  Component1D::alpha.assign(alpha, alpha + m);
+int Component1D::load_alpha(vector<Real>& alpha) {
+  Component1D::alpha = alpha;
   return 0;
 }
 
@@ -975,9 +975,9 @@ void Component3D::bZmBulk(int fMX, int fMY, int fMZ, Real bulk) {
 
 /******* GAUSSIAN_NOISE: GENERATES WHITE NOISE FOR FLUXES ********/
 
-Gaussian_noise::Gaussian_noise(Real D) : prng { std::random_device{} () }, dist(0, 2*D*k_BT) {}
+Gaussian_noise::Gaussian_noise(Real D) : prng { std::random_device{} () }, dist(0, 1*D) {}
 
-Gaussian_noise::Gaussian_noise(Real D, size_t seed) : prng(seed), dist(0, 2*D*k_BT) {}
+Gaussian_noise::Gaussian_noise(Real D, size_t seed) : prng(seed), dist(0, 1*D) {}
 
 Real Gaussian_noise::noise() {
   return dist(prng);

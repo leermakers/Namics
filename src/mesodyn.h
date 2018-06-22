@@ -81,7 +81,7 @@ public:
   Real alpha_at(int, int, int);
   int update_density(vector<Real>&, int = 1.0);     //Explicit scheme
   int update_density(vector<Real>&, vector<Real>&); //Implicit scheme
-  int load_alpha(Real*, int);  // Update when xx becomes a vector
+  int load_alpha(vector<Real>&);  // Update when xx becomes a vector
   int load_rho(Real*, int); // Update when xx becomes a vector
   int update_boundaries();
 
@@ -243,6 +243,8 @@ private:
   vector<Real>&  flux_callback(int);
   int init_rho(vector< vector<Real> >&, vector<int>&);
 
+  int alpha_callback(vector<Real>&, int);
+
 
 public:
   Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
@@ -253,7 +255,6 @@ public:
   int factorial (int);
   int combinations (int, int);
   int findDimensions();
-  vector<Real> alpha;
 
   vector<string> ints;
   vector<string> Reals;

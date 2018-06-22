@@ -353,8 +353,9 @@ void Mesodyn::writeRho(int t) {
 
   do {
     do {
+      x = 0;
       do {
-        rhoOutput << x << ","; //":" << y << ":" << z << ",";
+        rhoOutput << x << ":" << y << ":" << z << ",";
         for (Component1D* all_components : component) {
           rhoOutput << all_components->rho_at(x, y, z) << ",";
         }

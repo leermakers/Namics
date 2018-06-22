@@ -790,11 +790,11 @@ void Component1D::bX0Mirror(int fMY, int fMZ) {
     do {
       *valPtr(rho, 0, y, z) = val(rho, 1, y, z);     //start
       *valPtr(alpha, 0, y, z) = val(alpha, 1, y, z); //start
-      ++z;
-    } while (z < fMZ);
 
-    ++y;
-  } while (y < fMY);
+      ++y;
+    } while (y < fMY);
+    ++z;
+  } while (z < fMZ);
 }
 
 void Component1D::bXmMirror(int fMY, int fMZ, int fMX) {
@@ -804,11 +804,10 @@ void Component1D::bXmMirror(int fMY, int fMZ, int fMX) {
     do {
       *valPtr(rho, fMX - 1, y, z) = val(rho, fMX - 2, y, z);     //end
       *valPtr(alpha, fMX - 1, y, z) = val(alpha, fMX - 2, y, z); //end
-      ++z;
-    } while (z < fMZ);
-
-    ++y;
-  } while (y < fMY);
+      ++y;
+    } while (y < fMY);
+  ++z;
+  } while (z < fMZ);
 }
 
 void Component1D::bXPeriodic(int fMY, int fMZ, int fMX) {
@@ -821,9 +820,10 @@ void Component1D::bXPeriodic(int fMY, int fMZ, int fMX) {
 
       *valPtr(alpha, 0, y, z) = val(alpha, fMX - 2, y, z); //start
       *valPtr(alpha, fMX - 1, y, z) = val(alpha, 1, y, z); //end
-    } while (z < fMZ);
-    ++y;
-  } while (y < fMY);
+      ++y;
+    } while (y < fMY);
+    ++z;
+  } while (z < fMZ);
 }
 
 void Component1D::bX0Bulk(int fMY, int fMZ, Real bulk) {
@@ -832,11 +832,10 @@ void Component1D::bX0Bulk(int fMY, int fMZ, Real bulk) {
   do {
     do {
       *valPtr(rho, 0, y, z) = bulk; //start
-      ++z;
-    } while (z < fMZ);
-
-    ++y;
-  } while (y < fMY);
+      ++y;
+    } while (y < fMY);
+    ++z;
+  } while (z < fMZ);
 }
 
 void Component1D::bXmBulk(int fMY, int fMZ, int fMX, Real bulk) {
@@ -845,10 +844,10 @@ void Component1D::bXmBulk(int fMY, int fMZ, int fMX, Real bulk) {
   do {
     do {
       *valPtr(rho, fMX - 1, y, z) = bulk; //end
-      ++z;
-    } while (z < fMZ);
-    ++y;
-  } while (y < fMY);
+      ++y;
+    } while (y < fMY);
+    ++z;
+  } while (z < fMZ);
 }
 
 void Component2D::bY0Mirror(int fMX, int fMZ) {
@@ -858,9 +857,10 @@ void Component2D::bY0Mirror(int fMX, int fMZ) {
     do {
       *valPtr(rho, x, 0, z) = val(rho, x, 1, z);     //start
       *valPtr(alpha, x, 0, z) = val(alpha, x, 1, z); //start
-    } while (z < fMZ);
-    ++x;
-  } while (x < fMX);
+      ++x;
+    } while (x < fMX);
+    ++z;
+  } while (z < fMZ);
 }
 
 void Component2D::bYmMirror(int fMX, int fMZ, int fMY) {
@@ -870,9 +870,10 @@ void Component2D::bYmMirror(int fMX, int fMZ, int fMY) {
     do {
       *valPtr(rho, x, fMY - 1, z) = val(rho, x, fMY - 2, z);     //end
       *valPtr(alpha, x, fMY - 1, z) = val(alpha, x, fMY - 2, z); //end
-    } while (z < fMZ);
-    ++x;
-  } while (x < fMX);
+      ++x;
+    } while (x < fMX);
+    ++z;
+  } while (z < fMZ);
 }
 
 void Component2D::bYPeriodic(int fMX, int fMZ, int fMY) {
@@ -885,9 +886,10 @@ void Component2D::bYPeriodic(int fMX, int fMZ, int fMY) {
 
       *valPtr(alpha, x, 0, z) = val(alpha, x, fMY - 2, z); //start
       *valPtr(alpha, x, fMY - 1, z) = val(alpha, x, 1, z); //end
-    } while (z < fMZ);
-    ++x;
-  } while (x < fMX);
+      ++x;
+    } while (x < fMX);
+    ++z;
+  } while (z < fMZ);
 }
 
 void Component2D::bY0Bulk(int fMX, int fMZ, Real bulk) {
@@ -896,9 +898,10 @@ void Component2D::bY0Bulk(int fMX, int fMZ, Real bulk) {
   do {
     do {
       *valPtr(rho, x, 0, z) = bulk; //start
-    } while (z < fMZ);
-    ++x;
-  } while (x < fMX);
+      ++x;
+    } while (x < fMX);
+    ++z;
+  } while (z < fMZ);
 }
 
 void Component2D::bYmBulk(int fMX, int fMZ, int fMY, Real bulk) {
@@ -907,9 +910,10 @@ void Component2D::bYmBulk(int fMX, int fMZ, int fMY, Real bulk) {
   do {
     do {
       *valPtr(rho, x, fMY - 1, z) = bulk; //end
-    } while (z < fMZ);
-    ++x;
-  } while (x < fMX);
+      ++x;
+    } while (x < fMX);
+    ++z;
+  } while (z < fMZ);
 }
 
 void Component3D::bZ0Mirror(int fMX, int fMY) {
@@ -919,8 +923,9 @@ void Component3D::bZ0Mirror(int fMX, int fMY) {
     do {
       *valPtr(rho, x, y, 0) = val(rho, x, y, 1);     //start
       *valPtr(alpha, x, y, 0) = val(alpha, x, y, 1); //start
+      ++x;
     } while (x < fMX);
-    ++x;
+  ++y;
   } while (y < fMY);
 }
 
@@ -931,8 +936,9 @@ void Component3D::bZmMirror(int fMX, int fMY, int fMZ) {
     do {
       *valPtr(rho, x, y, fMZ - 1) = val(rho, x, y, fMZ - 2);     //end
       *valPtr(alpha, x, y, fMZ - 1) = val(alpha, x, y, fMZ - 2); //end
+      ++x;
     } while (x < fMX);
-    ++x;
+  ++y;
   } while (y < fMY);
 }
 
@@ -946,8 +952,9 @@ void Component3D::bZPeriodic(int fMX, int fMY, int fMZ) {
 
       *valPtr(alpha, x, y, 0) = val(alpha, x, y, fMZ - 2); //start
       *valPtr(alpha, x, y, fMZ - 1) = val(alpha, x, y, 1); //end
+      ++x;
     } while (x < fMX);
-    ++x;
+    ++y;
   } while (y < fMY);
 }
 
@@ -957,8 +964,9 @@ void Component3D::bZ0Bulk(int fMX, int fMY, Real bulk) {
   do {
     do {
       *valPtr(rho, x, y, 0) = bulk; //start
+      ++x;
     } while (x < fMX);
-    ++x;
+    ++y;
   } while (y < fMY);
 }
 
@@ -968,8 +976,9 @@ void Component3D::bZmBulk(int fMX, int fMY, int fMZ, Real bulk) {
   do {
     do {
       *valPtr(rho, x, y, fMZ - 1) = bulk; //end
+      ++x;
     } while (x < fMX);
-    ++x;
+    ++y;
   } while (y < fMY);
 }
 

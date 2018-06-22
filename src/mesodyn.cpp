@@ -19,6 +19,12 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
   KEYS.push_back("mean");
   KEYS.push_back("stdev");
 
+  // All Flux class instances need to share the same gaussian noise generator if we're going to seed it, or we'll
+  // end up with the same numbers over and over.
+  gaussian_noise = new Gaussian_noise(D);
+
+  initial_conditions(); // Initialize densities by running the classical method once.
+
   if (debug)
     cout << "Mesodyn initialized." << endl;
 }
@@ -45,7 +51,7 @@ bool Mesodyn::CheckInput(int start) {
   if (success) {
     vector<string> options;
     if (GetValue("timesteps").size() > 0) {
-      success = In[0]->Get_int(GetValue("timesteps"), timesteps, 1, 100000000, "The number of timesteps should be between 1 and 10000, returning to default: 100");
+      success = In[0]->Get_int(GetValue("timesteps"), timesteps, 1, 100000000, "The number of timesteps should be between 1 and 10000");
     }
     if (debug)
       cout << "Timesteps is " << timesteps << endl;
@@ -89,12 +95,6 @@ bool Mesodyn::CheckInput(int start) {
 bool Mesodyn::mesodyn() {
   if (debug)
     cout << "mesodyn in Mesodyn" << endl;
-
-  // All Flux class instances need to share the same gaussian noise generator if we're going to seed it, or we'll
-  // end up with the same numbers over and over.
-  gaussian_noise = new Gaussian_noise(D);
-
-  initial_conditions(); // Initialize densities by running the classical method once.
 
   prepareOutputFile();
   writeRho(0); // write initial conditions

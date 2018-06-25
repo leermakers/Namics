@@ -6,7 +6,7 @@
 
 Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, vector<Molecule *> Mol_, vector<System *> Sys_, vector<Solve_scf*> New_, string name_)
   :
-    Access(Lat_[0]),
+    Lattice_Access(Lat_[0]),
     name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
     D{0.001}, mean{1}, stdev{1}, seed{1}, timesteps{100}, timebetweensaves{1},
     componentNo{(int)Sys[0]->SysMolMonList.size()}
@@ -404,7 +404,7 @@ void Mesodyn::writeRho(int t) {
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
 Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
-    : Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, gaussian{gaussian}, L(M), mu(M), D{D}, JX{Lat->JX} {
+    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, gaussian{gaussian}, L(M), mu(M), D{D}, JX{Lat->JX} {
   Flux1D::mask(mask, Mask_plus_x, Mask_minus_x, JX);
 }
 
@@ -538,9 +538,9 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   return 0;
 }
 
-/****************** ACCESS: AN INTERFACE FOR LATTICE ********************/
+/****************** Lattice_Access: AN INTERFACE FOR LATTICE ********************/
 
-Access::Access(Lattice* Lat)
+Lattice_Access::Lattice_Access(Lattice* Lat)
     : dimensions{Lat->gradients}, JX{Lat->JX}, JY{Lat->JY}, JZ{Lat->JZ}, M{Lat->M}, MX{2 + Lat->MX}, MY{setMY(Lat)}, MZ{setMZ(Lat)} {
   // If this is not true, NOTHING will work. So this check is aboslutely necessary.
   // If, at some point, the above happens to be the case every class in this module will probably need rewriting.
@@ -550,29 +550,27 @@ Access::Access(Lattice* Lat)
       (MX > 0 && MY > 0 && MZ > 0));
 }
 
-Access::~Access() {
+Lattice_Access::~Lattice_Access() {
 }
 
-inline Real Access::val(vector<Real>& v, int x, int y, int z) {
+inline Real Lattice_Access::val(vector<Real>& v, int x, int y, int z) {
   return v[x * JX + y * JY + z];
 }
 
-inline Real* Access::valPtr(vector<Real>& v, int x, int y, int z) {
+inline Real* Lattice_Access::valPtr(vector<Real>& v, int x, int y, int z) {
   return &v[x * JX + y * JY + z];
 }
 
-inline int Access::xyz(int x, int y, int z) {
-  return (x * JX + y * JY + z);
-}
-
-int Access::setMY(Lattice* Lat) {
+int Lattice_Access::setMY(Lattice* Lat) {
+  //used by constructor
   if (dimensions < 2)
     return 0;
   else
     return Lat->MY + 2;
 }
 
-int Access::setMZ(Lattice* Lat) {
+int Lattice_Access::setMZ(Lattice* Lat) {
+  //used by constructor
   if (dimensions < 3)
     return 0;
   else
@@ -584,7 +582,7 @@ int Access::setMZ(Lattice* Lat) {
 /******* Constructors *******/
 
 Component1D::Component1D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm)
-    : Access(Lat), rho{rho}, alpha(M) {
+    : Lattice_Access(Lat), rho{rho}, alpha(M) {
   //This check is implemented multiple times throughout mesodyn because rho and alpha are public.
   if (rho.size() != alpha.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;

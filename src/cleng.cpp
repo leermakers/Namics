@@ -1,4 +1,5 @@
 #include "cleng.h"
+#include <random>
 
 Cleng::Cleng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_,  string name_)
     : name{name_},

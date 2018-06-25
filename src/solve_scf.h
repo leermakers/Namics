@@ -9,6 +9,7 @@
 #include "tools.h"
 #include "variate.h"
 #include "sfnewton.h"
+#include <functional>
 
 class Solve_scf : public SFNewton {
 public:
@@ -16,7 +17,7 @@ public:
 
 	Solve_scf(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Variate*>,string);
 
-virtual ~Solve_scf();
+	~Solve_scf();
 
 	string name;
 	vector<Input*> In;
@@ -38,13 +39,13 @@ virtual ~Solve_scf();
 
 	Real super_tolerance,tolerance;
 	Real super_deltamax,deltamax;
-	Real super_deltamin,deltamin; 
+	Real super_deltamin,deltamin;
 
 	int super_iterationlimit,iterationlimit;
 	bool super_e_info, value_e_info;
 	bool super_s_info, value_s_info;
 	int super_i_info, value_i_info;
- 
+
 	vector<string> ints;
 	vector<string> Reals;
 	vector<string> bools;
@@ -61,10 +62,10 @@ virtual ~Solve_scf();
 	int GetValue(string,int&,Real&,string&);
 	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis};
 	enum inner_iteration_method {super,proceed};
-	enum gradient_method {classical, MESODYN, Picard, custum};	
+	enum gradient_method {classical, MESODYN, Picard, custum};
 	iteration_method solver;
 	gradient_method gradient;
-	inner_iteration_method control; 
+	inner_iteration_method control;
 
 
 #ifdef CUDA
@@ -73,9 +74,7 @@ virtual ~Solve_scf();
 	Real *xR;
 	Real *x_x0;
 #endif
-	Real* xx;  
-	Real* yy;
-	Real* zz;
+	Real *xx;
 	Real* alpha;
 	bool mesodyn;
 	Real* RHO;
@@ -94,7 +93,8 @@ virtual ~Solve_scf();
 	bool Guess(Real*,string,vector<string>,bool,int,int,int,int);
 
 	bool Solve(bool);
-	bool SolveMesodyn(vector<Real>&, vector<Real>&); //first argument should contain rho
+	bool SolveMesodyn(vector<Real>&, vector<Real>&, function< vector<Real>&(int) >); //first argument should contain rho
+	function< vector<Real>&(int) > flux;
 	bool SuperIterate(int,int,int,int);
 	void DeAllocateMemory();
 	void AllocateMemory();
@@ -102,7 +102,7 @@ virtual ~Solve_scf();
 	void ComputePhis();
 	bool PutU();
 	void residuals(Real*,Real*);
-	void inneriteration(Real*,Real*,float*,Real,Real,Real,int);
+	void inneriteration(Real*,Real*,float*,Real,Real&,Real,int);
 
 };
 #endif

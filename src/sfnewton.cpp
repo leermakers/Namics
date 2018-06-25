@@ -1,9 +1,9 @@
 #include <iostream>
-#include "sfnewton.h"  
-#include "tools.h" 
-  
-SFNewton::SFNewton () { 
- 
+#include "sfnewton.h"
+#include "tools.h"
+
+SFNewton::SFNewton () {
+
 /*      class for
         unconstrained minimization,
         systems of nonlinear algebraic equations,
@@ -60,26 +60,25 @@ C Copyright (2018) Wageningen University, NL.
        max_accuracy_for_hessian_scaling = 0.1;
        linesearchlimit = 20;
        linetolerance = 9e-1;
-       epsilon = 0.1/pow(2.0,nbits/2); 
-	minAccuracySoFar = 1e30; 
-	reverseDirectionRange = 50; 
-	resetHessianCriterion = 1e5; 
+       epsilon = 0.1/pow(2.0,nbits/2);
+	minAccuracySoFar = 1e30;
+	reverseDirectionRange = 50;
+	resetHessianCriterion = 1e5;
 	reset_pseudohessian = false;
 	accuracy=1e30;
 	numIterationsSinceHessian=0;
 	maxFrReverseDirection=0.4;
 	numIterationsForHessian=100;
 	minAccuracyForHessian=0.1;
+	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); H_Zero(reverseDirection,reverseDirectionRange);
 	     
 }
 
 SFNewton::~SFNewton() {
-if (mask) free(mask);
-if (reverseDirection) free(reverseDirection);
 }
 
 void SFNewton::residuals(Real*,Real*){}
-void SFNewton::inneriteration(Real*,Real*,float*,Real,Real,Real,int){} //x g accuracy nvar
+void SFNewton::inneriteration(Real*,Real*,float*,Real,Real&,Real,int){} //x g accuracy nvar
 bool SFNewton::getnewtondirection() {return newtondirection;}
 int SFNewton::getiterations() {return iterations;}
 bool SFNewton::ispseudohessian() {return pseudohessian;}
@@ -104,10 +103,10 @@ if(debug) cout <<"multiply in Newton" << endl;
 		v[i] = alpha*(sum+x[i]);
 	}
 	delete [] x;
-} 
+}
 
 
-Real SFNewton::norm2(Real*x, int nvar) { //done 
+Real SFNewton::norm2(Real*x, int nvar) { //done
 if(debug) cout <<"norm2 in Newton" << endl;
 	Real sum=0;
 	for (int i=0; i<nvar; i++) sum += pow(x[i],2);
@@ -335,7 +334,7 @@ void SFNewton::resethessian(float *h,Real *g,Real *x,int nvar){ //done
 if(debug) cout <<"resethessian in Newton" << endl;
 	trouble = 0;
 	startderivatives(h,g,x,nvar);
-	resetiteration=iterations; 
+	resetiteration=iterations;
 }
 
 void SFNewton::newhessian(float *h, Real *g, Real *g0, Real *x, Real *p, int nvar, Real accuracy,Real ALPHA,bool filter) {//done
@@ -366,7 +365,7 @@ if(debug) cout <<"newhessian in Newton" << endl;
 
 			Dot(php,p,hp,nvar);
 			theta = py/(10*dmin+ALPHA*php);
-			
+
 			if ( nvar>=1 && theta>0 && iterations==resetiteration+1 && accuracy > max_accuracy_for_hessian_scaling) {
 				if (e_info ) {
 					cout << "hessian scaling: " << theta << endl;
@@ -503,7 +502,7 @@ if(debug) cout <<"newdirection in Newton" << endl;
 	return accuracy;
 }
 
-void SFNewton::newtrustregion(Real *p0,Real ALPHA, Real &trustregion, Real& trustfactor, Real delta_max, Real delta_min, int nvar){ 
+void SFNewton::newtrustregion(Real *p0,Real ALPHA, Real &trustregion, Real& trustfactor, Real delta_max, Real delta_min, int nvar){
 if(debug) cout <<"newtrustregion in Newton" << endl;
 	Real normp0 = norm2(p0,nvar);
 
@@ -587,11 +586,11 @@ void SFNewton::COMPUTEG(Real* x, Real* g, int nvar,bool filter) {//done
 		for (int i=0; i<IV; i++) {
 			if (mask[i]==1) {x[pos]=x[i]; g[pos]=g[i];pos++;}
 		}
-	} else residuals(x,g); 
+	} else residuals(x,g);
 }
 
 void SFNewton::ResetX(Real* x,int nvar,bool filter) { //done
-	if (filter) {	
+	if (filter) {
 		int pos=nvar;
 		for (int i=IV-1; i>=0; i--) {
 			if (mask[i]==1) {
@@ -605,14 +604,15 @@ void SFNewton::ResetX(Real* x,int nvar,bool filter) { //done
 
 bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real residual, Real tolerance, string s) {
 	if (debug) cout <<"Message in  Newton " << endl;
-	bool success=true; 
+	bool success=true;
 	if (it == iterationlimit) {
 		cout <<"Warning: "<<s<<"iteration not solved. Residual error= " << residual << endl;
 		success=false;
 	}
 	if (e_info || s_info) {
-		if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
+		
 		if (e_info) {
+			if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
 			if (it < iterationlimit/10) cout <<"That was easy." << endl;
 			if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
 			if (it <2 && iterationlimit >1 ) cout <<"You hit the nail on the head." << endl;
@@ -622,36 +622,33 @@ bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real
 		}
 		if (s_info) cout <<it << " iterations used to reach residual " << residual <<"."<< endl;
 	}
-	return success; 
+	return success;
 }
 
 bool SFNewton::iterate(Real* x,int nvar,int iterationlimit,Real tolerance, Real delta_max, Real delta_min,bool filter) {
 if(debug) cout <<"iterate in SFNewton" << endl;
-	bool success; 
+	bool success;
 Real* x0 = (Real*) malloc(nvar*sizeof(Real)); H_Zero(x0,nvar);
 Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
 Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);
 Real* p0 = (Real*) malloc(nvar*sizeof(Real));H_Zero(p0,nvar);
 Real* g0  = (Real*) malloc(nvar*sizeof(Real));H_Zero(g0,nvar);
-float* h = (float*) malloc(nvar*nvar*sizeof(float)); //H_Zero(h,nvar*nvar); 
 mask = (int*) malloc(nvar*sizeof(int));
-	
 	if (nvar<1) {cout << "newton has nothing to do; returning the problem" << endl; return false;}
 	int it=0;
-	iterations=it; 
+	iterations=it;
 	Real alphabound=0;
 	Real trustregion=delta_max;
 	Real ALPHA=1;
 	Real trustfactor =1;
-	reverseDirectionRange=50;
+	//reverseDirectionRange=50;
 
+        trouble = resetiteration = 0;
+	minAccuracySoFar = 1e30; 
+	numIterationsSinceHessian=0;
 	
 	IV =nvar;
-	cout <<nvar << " " << IV << endl; 
-	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); H_Zero(reverseDirection,reverseDirectionRange);
-
 	srand (1);
-
 	if (e_info) {cout <<"NEWTON has been notified."<< endl;
 		cout << "Your guess:";
 	}
@@ -665,19 +662,20 @@ mask = (int*) malloc(nvar*sizeof(int));
 		for (int i=0; i<nvar; i++) {if (g[i]==0) mask[i]=0; else {xxx++;  mask[i]=1;}}
 		nvar=xxx;
 		int pos=0;
-		for (int i=0; i<nvar; i++) {
+		for (int i=0; i<IV; i++) {
 			if (mask[i]==1) {g[pos]=g[i]; x[pos]=x[i];pos++;}
 		}
 	}
+
+float* h = (float*) malloc(nvar*nvar*sizeof(float)); H_Zero(h,nvar*nvar); 
+  
 	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
 	minimum=newfunction(g,x,nvar);
 	inneriteration(x,g,h,accuracy,delta_max,ALPHA,nvar);
 	accuracy=newdirection(h,p,p0,g,g0,x,nvar,ALPHA,filter);
 	normg=sqrt(minimum);
-	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
-	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
 	accuracy=residue(g,p,x,nvar,ALPHA);
-	
+
 	while ((tolerance < accuracy || tolerance*10<normg) && iterations<iterationlimit && accuracy == fabs(accuracy) ) {
 		if (e_info && it%i_info == 0){
 			printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
@@ -695,11 +693,12 @@ mask = (int*) malloc(nvar*sizeof(int));
 		accuracy=newdirection(h,p,p0,g,g0,x,nvar,ALPHA,filter);
 		normg=sqrt(minimum);
 	}
-	printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
+	if (e_info) printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
 	success=Message(e_info,s_info,it,iterationlimit,accuracy,tolerance,"");
 	ResetX(x,nvar,filter);
 free(x0);free(g);free(p);free(p0);free(g0);free(h);
-	return success; 
+free(mask); mask = NULL;
+	return success;
 }
 
 
@@ -708,24 +707,24 @@ if(debug) cout <<"Iterate_Picard in  SFNewton " << endl;
 
 
 float* h  = (float*) malloc(sizeof(float));
-Real* g = (Real*) malloc(nvar*sizeof(Real));	
+Real* g = (Real*) malloc(nvar*sizeof(Real));
 	bool success=true;
-	int it; 
+	int it;
 	Real residual;
 
 	it=0;
 	if (e_info) {cout <<"Picard has been notified" << endl;
 		cout << "Your guess:";
 	}
-	residuals(x,g); 
+	residuals(x,g);
 	residual=norm2(g,nvar);
 	while (residual > tolerance && it < iterationlimit) {
 		if(it%i_info == 0){
 			printf("it = %i g = %1e \n",it,residual);
 		}
-		YplusisCtimesX(x,g,delta_max,nvar);		
+		YplusisCtimesX(x,g,delta_max,nvar);
 		residual=norm2(g,nvar);
-		//inneriteration(x,g,h,residual,nvar); 
+		//inneriteration(x,g,h,residual,nvar);
 		it++;
 	}
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
@@ -802,7 +801,7 @@ Real* xR = (Real*) malloc(m*nvar*sizeof(Real)); Zero(xR,m*nvar);
 Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
 Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
 Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
-	int it=0; 
+	int it=0;
 	int k_diis=1;
 	int k=0;
 	Cp(x0,x,nvar);
@@ -834,5 +833,3 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 free(Aij);free(Ci);free(Apij);free(xR);free(x_x0);free(x0);free(g);
 	return success;
 }
-
-

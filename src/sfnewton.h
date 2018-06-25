@@ -1,17 +1,17 @@
 #ifndef SFNEWTONxH
 #define SFNEWTONxH
 #include <vector>
-#include <stdlib.h>  
+#include <stdlib.h>
 #include <math.h>
 #include <float.h>
 #include "namics.h"
 
 class SFNewton {
-public: 
+public:
 	SFNewton();
 
-~SFNewton();
-	int nbits;	
+ 	virtual ~SFNewton();
+	int nbits;
 	int lineiterations,linetolerance,numIterationsSinceHessian,resetiteration;
 	int print_hessian_at_it;
 	int linesearchlimit;
@@ -37,7 +37,7 @@ public:
 	int numIterationsForHessian;
 
 	bool ignore_newton_direction;
-	Real delta_min; 
+	Real delta_min;
 
 	int trouble;
 	Real normg;
@@ -45,7 +45,7 @@ public:
 	bool d_info;
 	bool g_info;
 	bool h_info;
-	bool x_info; 
+	bool x_info;
 	bool s_info;
 	bool t_info;
 
@@ -55,11 +55,11 @@ public:
 	int* reverseDirection;
 	int* mask;
 	int IV;
-	int iterations; 
+	int iterations;
 	Real minimum;
 
 	virtual void residuals(Real*,Real*); //x,g
-	virtual void inneriteration(Real*,Real*,float*, Real, Real, Real, int); //x g accuracy nvar 
+	virtual void inneriteration(Real*,Real*,float*, Real, Real&, Real, int); //x g accuracy nvar 
 	bool getnewtondirection();
 	int getiterations();
 	bool ispseudohessian();
@@ -68,7 +68,7 @@ public:
 	void COMPUTEG(Real*,Real*,int,bool);
 	void ResetX(Real*,int,bool);
 	bool Message(bool,bool,int, int,Real, Real,string);
-	 
+
 	Real newdirection(float*, Real*,Real*, Real*,Real*, Real*, int, Real,bool); //there is only one of this.
 	//void inneriteration(Real*,Real*,float*,Real,int);
 	void direction(float*, Real*, Real*, Real*, Real*, int, Real,Real,bool);
@@ -100,6 +100,6 @@ public:
 	bool iterate_DIIS(Real*,int,int, int, Real, Real);
 	void Ax(Real*, Real*, int);
 	void DIIS(Real* , Real*, Real*, Real* , Real* ,Real*, int, int , int, int );
- 
+
 };
 #endif

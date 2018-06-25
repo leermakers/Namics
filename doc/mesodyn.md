@@ -7,11 +7,11 @@ author: Daniël P. Emmery, 2018
 2. [Dependencies](#dependencies)
 3. [Variables read from file](#input)
 4. [Class definitions](#definitions)
-  1. [Mesodyn](#mesodyn)
-  2. [Lattice_Access](#lattice)
-  3. [Gaussian](#gaussian)
-  4. [Component](#component)
-  5. [Flux](#flux)
+   1. [Mesodyn](#mesodyn)
+   2. [Lattice_Access](#lattice)
+   3. [Gaussian](#gaussian)
+   4. [Component](#component)
+   5. [Flux](#flux)
 5. [References](#references)
 
 ## Introduction <a name="introduction"></a>

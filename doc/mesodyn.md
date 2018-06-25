@@ -12,15 +12,14 @@ author: Daniël P. Emmery, 2018
    3. [Gaussian](#gaussian)
    4. [Component](#component)
    5. [Flux](#flux)
-5. [References](#references)
 
 ## Introduction <a name="introduction"></a>
 
 The mesodyn classes are an implementation of dynamic mean-field theory, developed by Fraaije in the 1990s. It allows the user to generate the time evolution of multi-component system given the parameters used by the classic Namics SCF tools. Mesodyn uses inheritance to handle different dimensions of the system.
 
 ## Dependencies <a name="dependencies"></a>
-### System
-Provides a list - called a mask - (variable `KSAM`) of where immovable objects are located (such as pinned or frozen molecules). This list is used to initialize the density profile and to disable fluxes to and from lattice sites with such objects. Moreover, the number of components in the system is read from `SysMolMonList`.
+### System <a name="system"></a>
+Provides a list - called a mask - (variable `System::`) of where immovable objects are located (such as pinned or frozen molecules). This list is used to initialize the density profile and to disable fluxes to and from lattice sites with such objects. Moreover, the number of components in the system is read from `SysMolMonList`.
 
 ### Lattice
 Contains all information on the geometry of the system and passes the boundary conditions to mesodyn contained in its `BC` vector. Mesodyn implements an interface to the lattice class called Lattice_access. The interface provides easy and consistent access to the lattice using 3 coordinates instead of an indexed vector. It is assumed (and asserted by Lattice_Access) that for 1D system, there is only an X dimension, for 2D an X and a Y dimension, and for 3D an X, Y, and Z dimension.
@@ -66,9 +65,9 @@ Argument `start` is passed from main via this function to the `Input` class and 
 Called from `main()` after `CheckInput()`. Provides the overall flow of the mesodyn algorithm and thus only calls other functions. It calls the functions that implement the capabilities described in the introduction.
 
 `int initial_conditions()` <br>
-Sets up the two helper classes, `Flux` and `Component` and passes the data needed for initialization. First, the mask (see system dependency) is read from system. The density profile is initialized using `init_rho(rho, mask)` (see below). It then constructs two vectors of size component number that contain pointers to the respective class instances of `Flux` and `Component`. Depending on the number of dimensions, these are instances of either the 1D, 2D or 3D version of the classes. This removes the need for lots of `if (dimension)` statements throughout the code. The boundary conditions are read from input or assigned a default value by `Lattice`. Called by `mesodyn()`.
+Sets up the two helper classes, `Flux` and `Component` and passes the data needed for initialization. First, the mask (see [system](#system) dependency) is read from system. The density profile is initialized using `init_rho(rho, mask)` (see [below](#initrho)). It then constructs two vectors of size component number that contain pointers to the respective class instances of `Flux` and `Component`. Depending on the number of dimensions, these are instances of either the 1D, 2D or 3D version of the classes. This removes the need for lots of `if (dimension)` statements throughout the code. The boundary conditions are read from input or assigned a default value by `Lattice`. Called by `mesodyn()`.
 
-`int init_rho(vector<vector<Real>>& rho, vector<int>& mask)` <br>
+`int init_rho(vector<vector<Real>>& rho, vector<int>& mask)` <a name="initrho"></a> <br>
 Computes the volume of the system (number of lattice sites minus solid objects) using the argument `mask` and distributes the theta (sum of all densities, read from input by `System`) over the remaining lattice sites. It also finds which component is the solvent and accounts for it in the density profile. The density profile is loaded into the (reference) argument rho, the first dimension being the component number, the second being the lattice site. Called by `initial_conditions()`.
 
 `void prepareOutputFile()` <br>
@@ -84,6 +83,12 @@ Outputs the data described in `prepareOutputFile()` for a given timestep. Called
 
 ##### Functions
 
+`inline Real val(vector<Real>& v, int x, int y, int z)` <br>
+Returns the value at a position in vector `v` using coordinates `x`, `y`, `z`. Works for all dimensions.
+
+`inline Real* valPtr(vector<Real>& v, int x, int y, int z)` <br>
+Returns a pointer to the value at a position in vector `v` using coordinates `x`, `y`, `z`. Works for all dimensions. Can be used to set the value at that position using `valPtr(foo, x, y, z) = val(bar, x, y, z);` or `valPtr(foo, x, y, z) = bar;`.
+
 ### Gaussian <a name="gaussian"></a>
 
 ##### Introduction
@@ -91,11 +96,14 @@ Generates gaussian noise with given mean and standard deviation. Default mean = 
 
 ##### Functions
 
+`Real noise()` <br>
+Returns a number sampled from a distribution of given mean, standard deviation. These can be set and seeded using the constructors.
+
 ### Component <a name="component"></a>
 
 ##### Introduction
 
-The component class is used to keep track of variables and properties that are specified per one component. These include the density profiles `rho` and potentials `alpha`. Furthermore it implements functions that form the interface to these variables for `Mesodyn`. Because boundary conditions are applied to the potentials and could be set per component, these also live in this class. Each derived class houses the boundary conditions for the dimension that they correspond to (X for 1D, Y for 2D, Z for 3D). Lattice_Access asserts that this is indeed the case. Boundary conditions are implemented using the `std::bind` function. This allows the class to assign the function pointers for updating the boundaries to the correct functions and fix the arguments. This design removes the need for multiple `if (dimension)` statements.
+The component class is used to keep track of variables and properties that are specified per one component. These include the density profiles `Component1D::rho` and potentials `Component1D::alpha`. Furthermore it implements functions that form the interface to these variables for `Mesodyn`. Because boundary conditions are applied to the potentials and could be set per component, these also live in this class. Each derived class houses the boundary conditions for the dimension that they correspond to (X for 1D, Y for 2D, Z for 3D). Lattice_Access asserts that this is indeed the case. Boundary conditions are implemented using the `std::bind` function. This allows the class to assign the function pointers for updating the boundaries to the correct functions and fix the arguments. This design removes the need for multiple `if (dimension)` statements.
 
 ##### Inheritance
 
@@ -107,24 +115,28 @@ The component class is used to keep track of variables and properties that are s
 Coordinate-based access to the vector that corresponds to [variable]. See Lattice_Access function `val(vector<Real>& v, int x, int y, int z)`.
 
 `int update_density(vector<Real>& J, int sign = 1.0)`<br>
-//Explicit scheme
-
-`int update_density(vector<Real>& J1, vector<Real>& J2)`<br>
-//Implicit scheme
+Add (default) or subtract (`sign = -1.0`) vector `J` (flux) from the corresponding density `Component1D::rho`.
 
 `int load_alpha(vector<Real>& alpha)` <br>
+Copy the specified potential `alpha` to the member variable `Component1D::alpha`. This is used in a callback function for newton to return the computed potentials to the corresponding `Component`.
 
 `int load_rho(Real* rho, int m)`<br>
+Copy the specified density `rho` to the member variable `Component1D::rho`. `rho` should be a pointer to the first element to be copied, whereas m should be the number of elements to be copied (usually lattice size).
+
+`int set_[axis]_boundaries(boundary [axis]0, boundary [axis]m)` <a name="setboundaries"></a> <br>
+`std::bind` the correct boundary condition functions to their pointers according to the boundary conditions from `Lattice`. The latter are specified in the arguments where [axis] is x (1D), y (2D) or z (3D). Options are [MIRROR](#mirror), [PERIODIC](#periodic) and [BULK](#bulk).
 
 `int update_boundaries()` (overloaded per dimension)<br>
+See [`set_[axis]_boundaries`](#setboundaries). Call the bound boundary conditions to update the potentials for the Component.
 
-`int set_[axis]_boundaries(boundary [axis]0, boundary [axis]m)`<br>
+`void b[axis][0/m]Mirror(int, int)`<a name="mirror"></a><br>
+Sets the boundaries of the system to mirror the lattice site next to them.
 
-`void b[axis][0/m]Mirror(int, int)`<br>
+`void b[axis]Periodic(int, int, int)`<a name="periodic"></a><br>
+Sets the boundaries of the system to the value of the lattice site on the opposite site.
 
-`void b[axis]Periodic(int, int, int)`<br>
-
-`void b[axis][0/m]Bulk(int, int, Real)`<br>
+`void b[axis][0/m]Bulk(int, int, Real)`<a name="bulk"></a><br>
+Sets the boundaries of the system keep the density `Component1D::rho` constant.
 
 
 
@@ -143,17 +155,14 @@ The flux class is used to keep track of variables and functions that are specifi
 `Real [variable]_at(int x, int y, int_z)` <br>
 Coordinate-based access to the vector [variable]. See Lattice_Access function `val(vector<Real>& v, int x, int y, int z)`.
 
-`int mask(vector<int>& mask_in, vector<int>& mask_out_plus, vector<int>& mask_out_minus, int jump)`<br>
-The mask is used to work out which fluxes are allowed. `System`'s `KSAM` is passed as `mask_in` and contains 0's or 1's for the positions at which a solid or immovable component is located. `Mask_out_[plus/minus]` is stored as the member variable `Mask_[plus/minus]_[axis]` where axis is x, y, or z, depending on the dimension of the Flux class. The outgoing masks contain the indices at which the flux (plus or minus one lattice site in one dimension) should be calculated. E.g. if a solid is located at the z+1 position, we skip the calculation of flux_plus at position z and consequently the index z is not in `mask_out_plus`.
+`int mask(vector<int>& mask_in, vector<int>& mask_out_plus, vector<int>& mask_out_minus, int jump)` <a name="mask"></a><br>
+The mask is used to work out which fluxes are allowed. `System::KSAM` is passed as `mask_in` and contains 0's or 1's for the positions at which a solid or immovable component is located. `Mask_out_[plus/minus]` is stored as the member variable `Flux1D::Mask_[plus/minus]_[axis]` where axis is x, y, or z, depending on the dimension of the Flux class. The outgoing masks contain the indices at which the flux (plus or minus one lattice site in one dimension) should be calculated. E.g. if a solid is located at the z+1 position, we skip the calculation of flux_plus at position z and consequently the index z is not in `mask_out_plus`.
 
 `int onsager_coefficient(vector<Real>& A, vector<Real>& B)`<br>
-The Onsager coefficient is part of the langevin flux equation and is the product of two densities. Hence, this function multiplies the densities `rho` at each lattice site of the corresponding component pair and stores it in the vector `mu`.
+The Onsager coefficient is part of the langevin flux equation and is the product of two densities. Hence, this function multiplies the densities `Component1D::rho` at each lattice site of the corresponding component pair and stores it in the vector `Flux1D::mu`.
 
 `int potential_difference(vector<Real>& A, vector<Real>& B)`<br>
-The potential difference is part of the langevin flux equation and is the difference between two potentials. Hence, this function subtracts the potentials `alpha` at each lattice site of the corresponding component pair and stores it in the vector `mu`.
+The potential difference is part of the langevin flux equation and is the difference between two potentials. Hence, this function subtracts the potentials `Component1D::alpha` at each lattice site of the corresponding component pair and stores it in the vector `Flux1D::mu`.
 
 `int langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump)`<br>
-See also the `Flux1D::mask` function. Computes the flux _J (mu,L)_ for z+1 and z-1 and stores them in `J_plus` and `J_minus` respectively. Only fluxes specified in the `mask_plus` and `mask_minus` will be computed.
-
-
-## References <a name="references"></a>
+See also the [`Flux1D::mask`](#mask) function. Computes the flux _J (mu,L)_ for z+1 and z-1 and stores them in `J_plus` and `J_minus` respectively. Only fluxes specified in the `mask_plus` and `mask_minus` will be computed.

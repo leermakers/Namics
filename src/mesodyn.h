@@ -79,9 +79,9 @@ public:
   Real rho_at(int, int, int);
   Real alpha_at(int, int, int);
   int update_density(vector<Real>&, int = 1);     //Explicit scheme
-  int update_density(vector<Real>&, vector<Real>&, int = 1); //Implicit scheme
+  int update_density(vector<Real>&, vector<Real>&, vector<Real>&, int = 1); //Implicit scheme
   int load_alpha(vector<Real>&);
-  int load_rho(vector<Real>&); 
+  int load_rho(vector<Real>&);
   int update_boundaries();
 
 private:
@@ -172,6 +172,7 @@ protected:
   const int JX;
   vector<int> Mask_plus_x;
   vector<int> Mask_minus_x;
+  vector<Real> gaussian_noise;
 };
 
 class Flux2D : public Flux1D {

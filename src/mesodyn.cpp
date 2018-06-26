@@ -119,7 +119,7 @@ bool Mesodyn::mesodyn() {
           int c = 0;
           for (int i = 0; i < componentNo; ++i) {
             for (int j = 0; j < (componentNo - 1) - i; ++j) {
-              solver_component[i]->update_density( flux[c]->J, solver_flux[c]->J);
+              solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J);
               ++c;
             }
           }
@@ -127,7 +127,7 @@ bool Mesodyn::mesodyn() {
           c = 0;
           for (int j = 0; j < (componentNo - 1); ++j) {
             for (int i = 1 + j; i < componentNo; ++i) {
-              solver_component[i]->update_density(flux[c]->J, solver_flux[c]->J, -1.0);
+              solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, -1.0);
               ++c;
             }
           }
@@ -249,6 +249,7 @@ int Mesodyn::init_rho(vector<vector<Real>>& rho, vector<int>& mask) {
   int tMY = Lat[0]->MY;
   int tMZ = Lat[0]->MZ;
 
+  // The right hand side of the minus sign calculates the volume of the boundaries. I know, it's hideous.
   int volume = Sys[0]->volume - ( (2*dimensions-4)*tMX*tMY+2*tMX*tMZ+2*tMY*tMZ+(-2+2*dimensions)*(tMX+tMY+tMZ)+pow(2,dimensions));
 
   Real sum_theta{0};
@@ -326,7 +327,7 @@ void Mesodyn::prepareOutputFile() {
 
   int permutations = combinations(componentNo, 2);
 
-  headers << "x:y:z,";
+  headers << "t,x,y,z,";
 
   for (int i = 1; i <= componentNo; ++i) {
     headers << "rho" << i << ",";
@@ -354,12 +355,6 @@ void Mesodyn::prepareOutputFile() {
 }
 
 void Mesodyn::writeRho(int t) {
-  ostringstream headers;
-
-  headers << t << ","
-          << "\n";
-  mesFile << headers.str();
-
   ostringstream rhoOutput;
 
   rhoOutput.precision(16);
@@ -370,7 +365,7 @@ void Mesodyn::writeRho(int t) {
     do {
       x = 0;
       do {
-        rhoOutput << x << ":" << y << ":" << z << ",";
+        rhoOutput << t << "," << x << "," << y << "," << z << ",";
         for (Component1D* all_components : component) {
           rhoOutput << all_components->rho_at(x, y, z) << ",";
         }
@@ -413,7 +408,7 @@ void Mesodyn::writeRho(int t) {
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
 Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
-    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, gaussian{gaussian}, L(M), mu(M), D{D}, JX{Lat->JX} {
+    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, gaussian{gaussian}, L(M), mu(M), D{D}, JX{Lat->JX}, gaussian_noise(M) {
   Flux1D::mask(mask, Mask_plus_x, Mask_minus_x, JX);
 }
 
@@ -536,10 +531,10 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
 int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump) {
 
   for (int& z: mask_plus) {
-    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
+    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])) + gaussian_noise[z];
   }
   for (int& z: mask_minus) {
-    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z]));
+    J_minus[z] += -J_plus[z-jump]; //-D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z]));
   }
 
   transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
@@ -649,7 +644,7 @@ int Component1D::update_density(vector<Real>& J, int sign) {
   return 0;
 }
 
-int Component1D::update_density(vector<Real>& J1, vector<Real>& J2, int sign) {
+int Component1D::update_density(vector<Real>& rho_old, vector<Real>& J1, vector<Real>& J2, int sign) {
   //Implicit update
   if (J1.size() != rho.size() || J1.size() != J2.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
@@ -659,7 +654,7 @@ int Component1D::update_density(vector<Real>& J1, vector<Real>& J2, int sign) {
   int i = 0;
 
   for (Real& Flux : J1) {
-    rho[i] += 0.5 * sign * Flux;
+    rho[i] = rho_old[i] + 0.5 * sign * Flux;
     ++i;
   }
 

@@ -527,11 +527,11 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				Value.clear();
 				Value=GetValue("lowerbound_x"); if (Value.length()>0) {
 					if (!In[0]->Get_string(Value,VALUE1,options,"for 'lowerbound_x' boundary condition not recognized.")) success=false;
-					BC[1] = VALUE1;
+					BC[0] = VALUE1;
 					if (VALUE1=="mirror") BX1=1;
 					if (VALUE1=="periodic") BX1=MX;
 				} else {
-					VALUE1="periodic"; BC[0] = VALUE1;
+					VALUE1="mirror"; BC[0] = VALUE1;
 					BX1=MX;
 				}
 				Value.clear();
@@ -541,7 +541,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					if (VALUE2=="mirror") BXM=MX;
 					if (VALUE2=="periodic") BXM=1;
 				} else {
-					VALUE2="periodic"; BC[1]=VALUE2;
+					VALUE2="mirror"; BC[1]=VALUE2;
 					BXM=1;
 				}
 				Value.clear();
@@ -551,7 +551,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					if (VALUE3=="mirror") BY1=1;
 					if (VALUE3=="periodic") BY1=MY;
 				} else {
-					VALUE3="periodic";BC[2]=VALUE3;
+					VALUE3="mirror";BC[2]=VALUE3;
 					BY1=MY;
 				}
 				Value.clear();
@@ -561,7 +561,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					if (VALUE4=="mirror") BYM=MY;
 					if (VALUE4=="periodic") BYM=1;
 				} else {
-					VALUE4="periodic"; BC[3] = VALUE4;
+					VALUE4="mirror"; BC[3] = VALUE4;
 					BYM=1;
 				}
 				Value.clear();
@@ -571,7 +571,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					if (VALUE5=="mirror") BZ1=1;
 					if (VALUE5=="periodic") BZ1=MZ;
 				} else {
-					VALUE5="periodic"; BC[4] = VALUE5;
+					VALUE5="mirror"; BC[4] = VALUE5;
 					BZ1=MZ;
 				}
 				Value.clear();
@@ -581,7 +581,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					if (VALUE6=="mirror") BZM=MZ;
 					if (VALUE6=="periodic") BZM=1;
 				} else {
-					VALUE6="periodic"; BC[5] = VALUE6;
+					VALUE6="mirror"; BC[5] = VALUE6;
 					BZM=1;
 				}
 

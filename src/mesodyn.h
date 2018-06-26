@@ -29,16 +29,15 @@ private:
   normal_distribution<Real> dist;
 };
 
-class Access {
+class Lattice_Access {
 
 public:
 
-  Access(Lattice*);
-  ~Access();
+  Lattice_Access(Lattice*);
+  ~Lattice_Access();
 
   inline Real val(vector<Real>&, int, int, int);
   inline Real* valPtr(vector<Real>&, int, int, int);
-  inline int xyz(int, int, int);
 
   const int dimensions;
 
@@ -56,7 +55,7 @@ protected:
   const int MZ;
 };
 
-class Component1D : protected Access {
+class Component1D : protected Lattice_Access {
 public:
 
   enum boundary {
@@ -135,7 +134,7 @@ private:
   void bZmBulk(int, int, int, Real);
 };
 
-class Flux1D : private Access {
+class Flux1D : private Lattice_Access {
 public:
   Flux1D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux1D();
@@ -212,9 +211,10 @@ protected:
 };
 
 
-class Mesodyn : private Access {
+class Mesodyn : private Lattice_Access {
 
 private:
+  /* Constructor arguments*/
   const string name;
   const vector<Input*> In;
   const vector<Lattice*> Lat;
@@ -223,39 +223,47 @@ private:
   const vector<System*> Sys;
   const vector<Solve_scf*> New;
   const string brand;
-  Real D; //diffusionconstant
-  Real mean;
-  Real stdev;
-  Real seed;
-  int timesteps;
-  int timebetweensaves;
-  const int componentNo;
-  Gaussian_noise* gaussian_noise;
 
-  vector<Component1D*> component;
-  vector<Flux1D*> flux;
-  vector<Flux1D*> solver_flux;
+  /* Read from file */
+  Real D; // diffusionconstant
+  Real mean; // mean of gaussian noise (should be 0)
+  Real stdev; // stdev of gaussian noise (should be 1*D)
+  Real seed;  // seed of gaussian noise
+  int timesteps; // length of the time evolution
+  int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
+  const int componentNo; // number of components in the system, read from SysMonMolList
 
-  ofstream mesFile;
-  void prepareOutputFile();
-  void writeRho(int);
+  /* Initialization*/
   int initial_conditions();
   vector<Real>&  flux_callback(int);
   int init_rho(vector< vector<Real> >&, vector<int>&);
 
-  int alpha_callback(vector<Real>&, int);
+  /* Helper class instances */
+  vector<Component1D*> component;
+  vector<Flux1D*> flux;
+  vector<Flux1D*> solver_flux;
+
+  /* Mesodyn specific output */
+  ofstream mesFile;
+  void prepareOutputFile();
+  void writeRho(int);
+
+  /* Mathematics */
+  int factorial (int);
+  int combinations (int, int);
 
 
 public:
   Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Mesodyn();
 
-  void gaussianNoise(Real, Real, unsigned int);
   bool mesodyn();
-  int factorial (int);
-  int combinations (int, int);
-  int findDimensions();
 
+  void gaussianNoise(Real, Real, unsigned int);
+  Gaussian_noise* gaussian_noise;
+
+
+  /* Inputs / output class interface functions */
   vector<string> ints;
   vector<string> Reals;
   vector<string> bools;

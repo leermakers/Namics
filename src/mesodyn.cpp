@@ -6,7 +6,7 @@
 
 Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, vector<Molecule *> Mol_, vector<System *> Sys_, vector<Solve_scf*> New_, string name_)
   :
-    Access(Lat_[0]),
+    Lattice_Access(Lat_[0]),
     name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
     D{0.001}, mean{1}, stdev{1}, seed{1}, timesteps{100}, timebetweensaves{1},
     componentNo{(int)Sys[0]->SysMolMonList.size()}
@@ -235,7 +235,12 @@ int Mesodyn::initial_conditions() {
 
 int Mesodyn::init_rho(vector<vector<Real>>& rho, vector<int>& mask) {
   int solvent = Sys[0]->solvent; // Find which componentNo is the solvent
-  int volume = Sys[0]->volume - (pow(M, dimensions) - pow((M - 2), dimensions));
+//  int volume = Sys[0]->volume - (pow(M, dimensions) - pow((M - 2), dimensions));
+  int tMX = Lat[0]->MX;
+  int tMY = Lat[0]->MY;
+  int tMZ = Lat[0]->MZ;
+
+  int volume = Sys[0]->volume - ( (2*dimensions-4)*tMX*tMY+2*tMX*tMZ+2*tMY*tMZ+(-2+2*dimensions)*(tMX+tMY+tMZ)+pow(2,dimensions));
 
   Real sum_theta{0};
   Real theta{0};
@@ -352,6 +357,7 @@ void Mesodyn::writeRho(int t) {
   int x{0}, y{0}, z{0};
 
   do {
+    y = 0;
     do {
       x = 0;
       do {
@@ -398,7 +404,7 @@ void Mesodyn::writeRho(int t) {
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
 Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
-    : Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, gaussian{gaussian}, L(M), mu(M), D{D}, JX{Lat->JX} {
+    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, gaussian{gaussian}, L(M), mu(M), D{D}, JX{Lat->JX} {
   Flux1D::mask(mask, Mask_plus_x, Mask_minus_x, JX);
 }
 
@@ -527,13 +533,14 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
     J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z]));
   }
 
-  transform(J_plus.begin(), J_plus.end(), J_minus.begin(), J.begin(), [](Real A, Real B) { return A + B; });
+  transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
+  transform(J_minus.begin(), J_minus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
   return 0;
 }
 
-/****************** ACCESS: AN INTERFACE FOR LATTICE ********************/
+/****************** Lattice_Access: AN INTERFACE FOR LATTICE ********************/
 
-Access::Access(Lattice* Lat)
+Lattice_Access::Lattice_Access(Lattice* Lat)
     : dimensions{Lat->gradients}, JX{Lat->JX}, JY{Lat->JY}, JZ{Lat->JZ}, M{Lat->M}, MX{2 + Lat->MX}, MY{setMY(Lat)}, MZ{setMZ(Lat)} {
   // If this is not true, NOTHING will work. So this check is aboslutely necessary.
   // If, at some point, the above happens to be the case every class in this module will probably need rewriting.
@@ -543,29 +550,27 @@ Access::Access(Lattice* Lat)
       (MX > 0 && MY > 0 && MZ > 0));
 }
 
-Access::~Access() {
+Lattice_Access::~Lattice_Access() {
 }
 
-inline Real Access::val(vector<Real>& v, int x, int y, int z) {
+inline Real Lattice_Access::val(vector<Real>& v, int x, int y, int z) {
   return v[x * JX + y * JY + z];
 }
 
-inline Real* Access::valPtr(vector<Real>& v, int x, int y, int z) {
+inline Real* Lattice_Access::valPtr(vector<Real>& v, int x, int y, int z) {
   return &v[x * JX + y * JY + z];
 }
 
-inline int Access::xyz(int x, int y, int z) {
-  return (x * JX + y * JY + z);
-}
-
-int Access::setMY(Lattice* Lat) {
+int Lattice_Access::setMY(Lattice* Lat) {
+  //used by constructor
   if (dimensions < 2)
     return 0;
   else
     return Lat->MY + 2;
 }
 
-int Access::setMZ(Lattice* Lat) {
+int Lattice_Access::setMZ(Lattice* Lat) {
+  //used by constructor
   if (dimensions < 3)
     return 0;
   else
@@ -577,7 +582,7 @@ int Access::setMZ(Lattice* Lat) {
 /******* Constructors *******/
 
 Component1D::Component1D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm)
-    : Access(Lat), rho{rho}, alpha(M) {
+    : Lattice_Access(Lat), rho{rho}, alpha(M) {
   //This check is implemented multiple times throughout mesodyn because rho and alpha are public.
   if (rho.size() != alpha.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
@@ -788,6 +793,7 @@ void Component1D::bX0Mirror(int fMY, int fMZ) {
   int y = 0;
   int z = 0;
   do {
+    y=0;
     do {
       *valPtr(rho, 0, y, z) = val(rho, 1, y, z);     //start
       *valPtr(alpha, 0, y, z) = val(alpha, 1, y, z); //start
@@ -802,6 +808,7 @@ void Component1D::bXmMirror(int fMY, int fMZ, int fMX) {
   int y = 0;
   int z = 0;
   do {
+    y=0;
     do {
       *valPtr(rho, fMX - 1, y, z) = val(rho, fMX - 2, y, z);     //end
       *valPtr(alpha, fMX - 1, y, z) = val(alpha, fMX - 2, y, z); //end
@@ -815,6 +822,7 @@ void Component1D::bXPeriodic(int fMY, int fMZ, int fMX) {
   int y = 0;
   int z = 0;
   do {
+    y=0;
     do {
       *valPtr(rho, 0, y, z) = val(rho, fMX - 2, y, z); //start
       *valPtr(rho, fMX - 1, y, z) = val(rho, 1, y, z); //end
@@ -831,6 +839,7 @@ void Component1D::bX0Bulk(int fMY, int fMZ, Real bulk) {
   int y = 0;
   int z = 0;
   do {
+    y=0;
     do {
       *valPtr(rho, 0, y, z) = bulk; //start
       ++y;
@@ -843,6 +852,7 @@ void Component1D::bXmBulk(int fMY, int fMZ, int fMX, Real bulk) {
   int y = 0;
   int z = 0;
   do {
+    y=0;
     do {
       *valPtr(rho, fMX - 1, y, z) = bulk; //end
       ++y;
@@ -855,6 +865,7 @@ void Component2D::bY0Mirror(int fMX, int fMZ) {
   int x = 0;
   int z = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, 0, z) = val(rho, x, 1, z);     //start
       *valPtr(alpha, x, 0, z) = val(alpha, x, 1, z); //start
@@ -868,6 +879,7 @@ void Component2D::bYmMirror(int fMX, int fMZ, int fMY) {
   int x = 0;
   int z = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, fMY - 1, z) = val(rho, x, fMY - 2, z);     //end
       *valPtr(alpha, x, fMY - 1, z) = val(alpha, x, fMY - 2, z); //end
@@ -881,6 +893,7 @@ void Component2D::bYPeriodic(int fMX, int fMZ, int fMY) {
   int x = 0;
   int z = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, 0, z) = val(rho, x, fMY - 2, z); //start
       *valPtr(rho, x, fMY - 1, z) = val(rho, x, 1, z); //end
@@ -897,6 +910,7 @@ void Component2D::bY0Bulk(int fMX, int fMZ, Real bulk) {
   int x = 0;
   int z = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, 0, z) = bulk; //start
       ++x;
@@ -909,6 +923,7 @@ void Component2D::bYmBulk(int fMX, int fMZ, int fMY, Real bulk) {
   int x = 0;
   int z = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, fMY - 1, z) = bulk; //end
       ++x;
@@ -921,6 +936,7 @@ void Component3D::bZ0Mirror(int fMX, int fMY) {
   int x = 0;
   int y = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, y, 0) = val(rho, x, y, 1);     //start
       *valPtr(alpha, x, y, 0) = val(alpha, x, y, 1); //start
@@ -934,6 +950,7 @@ void Component3D::bZmMirror(int fMX, int fMY, int fMZ) {
   int x = 0;
   int y = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, y, fMZ - 1) = val(rho, x, y, fMZ - 2);     //end
       *valPtr(alpha, x, y, fMZ - 1) = val(alpha, x, y, fMZ - 2); //end
@@ -947,6 +964,7 @@ void Component3D::bZPeriodic(int fMX, int fMY, int fMZ) {
   int x = 0;
   int y = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, y, 0) = val(rho, x, y, fMZ - 2); //start
       *valPtr(rho, x, y, fMZ - 1) = val(rho, x, y, 1); //end
@@ -963,6 +981,7 @@ void Component3D::bZ0Bulk(int fMX, int fMY, Real bulk) {
   int x = 0;
   int y = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, y, 0) = bulk; //start
       ++x;
@@ -975,6 +994,7 @@ void Component3D::bZmBulk(int fMX, int fMY, int fMZ, Real bulk) {
   int x = 0;
   int y = 0;
   do {
+    x=0;
     do {
       *valPtr(rho, x, y, fMZ - 1) = bulk; //end
       ++x;

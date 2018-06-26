@@ -8,7 +8,7 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
   :
     Lattice_Access(Lat_[0]),
     name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
-    D{0.001}, mean{1}, stdev{1}, seed{1}, timesteps{100}, timebetweensaves{1},
+    D{0.01}, mean{0}, stdev{1*D}, seed{1}, timesteps{100}, timebetweensaves{1},
     componentNo{(int)Sys[0]->SysMolMonList.size()}
 
 {
@@ -18,12 +18,6 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
   KEYS.push_back("seed");
   KEYS.push_back("mean");
   KEYS.push_back("stdev");
-
-  // All Flux class instances need to share the same gaussian noise generator if we're going to seed it, or we'll
-  // end up with the same numbers over and over.
-  gaussian_noise = new Gaussian_noise(D);
-
-  initial_conditions(); // Initialize densities by running the classical method once.
 
   if (debug)
     cout << "Mesodyn initialized." << endl;
@@ -63,7 +57,7 @@ bool Mesodyn::CheckInput(int start) {
       cout << "Time bewteen saves is " << timebetweensaves << endl;
 
     if (GetValue("diffusionconstant").size() > 0) {
-      D = In[0]->Get_Real(GetValue("diffusionconstant"), D);
+      D = In[0]->Get_Real(GetValue("diffusionconstant"),D);
     }
     if (debug)
       cout << "Diffusion const is " << D << endl;
@@ -95,6 +89,12 @@ bool Mesodyn::CheckInput(int start) {
 bool Mesodyn::mesodyn() {
   if (debug)
     cout << "mesodyn in Mesodyn" << endl;
+
+  // All Flux class instances need to share the same gaussian noise generator if we're going to seed it, or we'll
+  // end up with the same numbers over and over.
+  gaussian_noise = new Gaussian_noise(D);
+
+  initial_conditions(); // Initialize densities by running the classical method once.
 
   prepareOutputFile();
   writeRho(0); // write initial conditions

@@ -107,50 +107,54 @@ bool Mesodyn::mesodyn() {
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
-    rho.clear();
-
-    for (Component1D* all_components : component) {
-      copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
-    }
-
-
     New[0]->SolveMesodyn(
-        rho,
         [this](vector<Real>& alpha, int i) {
-          if (i < componentNo) component[i]->load_alpha(alpha);
+          if (i < componentNo) solver_component[i]->load_alpha(alpha);
         },
-        [this](int i) -> vector<Real>& {
-          for (Component1D* all_components : component) all_components->update_boundaries();
-          solver_flux[i]->langevin_flux();
-          return solver_flux[i]->J;
+        [this, &rho] () {
+          for (Component1D* all_components : solver_component) all_components->update_boundaries();
+
+          for (Flux1D* all_fluxes : solver_flux) all_fluxes->langevin_flux();
+
+          int c = 0;
+          for (int i = 0; i < componentNo; ++i) {
+            for (int j = 0; j < (componentNo - 1) - i; ++j) {
+              solver_component[i]->update_density( flux[c]->J, solver_flux[c]->J);
+              ++c;
+            }
+          }
+
+          c = 0;
+          for (int j = 0; j < (componentNo - 1); ++j) {
+            for (int i = 1 + j; i < componentNo; ++i) {
+              solver_component[i]->update_density(flux[c]->J, solver_flux[c]->J, -1.0);
+              ++c;
+            }
+          }
+
+          rho.clear();
+          for (Component1D* all_components : solver_component) {
+            copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
+          }
+
+          return &rho[0];
         }
       );
 
-    //TODO: mirror boundaries might be doing redundant work because of masking.
-    for (Component1D* all_components : component)
-      all_components->update_boundaries();
+    int i = 0;
+    for(Component1D* all_components : component) {
+      all_components->load_rho(solver_component[i]->rho);
+      ++i;
+    }
 
-    for (Flux1D* all_fluxes : flux)
-      all_fluxes->langevin_flux();
+    i = 0;
+    for(Flux1D* all_fluxes : flux) {
+      all_fluxes->J = solver_flux[i]->J;
+      ++i;
+    }
 
     if (t % timebetweensaves == 0)
       writeRho(t);
-
-    int c = 0;
-    for (int i = 0; i < componentNo; ++i) {
-      for (int j = 0; j < (componentNo - 1) - i; ++j) {
-        component[i]->update_density(flux[c]->J);
-        ++c;
-      }
-    }
-
-    c = 0;
-    for (int j = 0; j < (componentNo - 1); ++j) {
-      for (int i = 1 + j; i < componentNo; ++i) {
-        component[i]->update_density(flux[c]->J, -1.0);
-        ++c;
-      }
-    }
 
   } // time loop
   writeRho(timesteps);
@@ -193,37 +197,42 @@ int Mesodyn::initial_conditions() {
 
   switch (dimensions) {
   case 1:
-    for (int i = 0; i < componentNo; ++i)
-      component.push_back(new Component1D(Lat[0], rho[i], boundaries[0], boundaries[1]));
+    for (int i = 0; i < componentNo; ++i) {
+        component.push_back(new Component1D(Lat[0], rho[i], boundaries[0], boundaries[1]));
+        solver_component.push_back(new Component1D(Lat[0], rho[i], boundaries[0], boundaries[1]));
+      }
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
         flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, solver_component[i], solver_component[j]));
       }
     }
 
     break;
   case 2:
-    for (int i = 0; i < componentNo; ++i)
+    for (int i = 0; i < componentNo; ++i) {
       component.push_back(new Component2D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3]));
+      solver_component.push_back(new Component2D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3]));
+    }
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
         flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, solver_component[i], solver_component[j]));
       }
     }
 
     break;
   case 3:
-    for (int i = 0; i < componentNo; ++i)
+    for (int i = 0; i < componentNo; ++i) {
       component.push_back(new Component3D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
-
+      solver_component.push_back(new Component3D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
+    }
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
         flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, solver_component[i], solver_component[j]));
       }
     }
 
@@ -640,11 +649,28 @@ int Component1D::update_density(vector<Real>& J, int sign) {
   return 0;
 }
 
-int Component1D::update_density(vector<Real>& J1, vector<Real>& J2) {
+int Component1D::update_density(vector<Real>& J1, vector<Real>& J2, int sign) {
   //Implicit update
+  if (J1.size() != rho.size() || J1.size() != J2.size()) {
+    throw ERROR_SIZE_INCOMPATIBLE;
+    return 1;
+  }
 
-  throw ERROR_NOT_IMPLEMENTED;
-  return 1;
+  int i = 0;
+
+  for (Real& Flux : J1) {
+    rho[i] += 0.5 * sign * Flux;
+    ++i;
+  }
+
+  i = 0;
+
+  for (Real& Flux : J2) {
+    rho[i] += 0.5 * sign * Flux;
+    ++i;
+  }
+
+  return 0;
 }
 
 int Component1D::load_alpha(vector<Real>& alpha) {
@@ -652,13 +678,8 @@ int Component1D::load_alpha(vector<Real>& alpha) {
   return 0;
 }
 
-int Component1D::load_rho(Real* rho, int m) {
-  //  TODO: C++11ify this hideous function please
-  if (m != M) {
-    throw ERROR_SIZE_INCOMPATIBLE;
-    return 1;
-  }
-  Component1D::rho.assign(rho, rho + m);
+int Component1D::load_rho(vector<Real>& rho) {
+  Component1D::rho = rho;
   return 0;
 }
 

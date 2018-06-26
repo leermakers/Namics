@@ -78,10 +78,10 @@ public:
 
   Real rho_at(int, int, int);
   Real alpha_at(int, int, int);
-  int update_density(vector<Real>&, int = 1.0);     //Explicit scheme
-  int update_density(vector<Real>&, vector<Real>&); //Implicit scheme
-  int load_alpha(vector<Real>&);  // Update when xx becomes a vector
-  int load_rho(Real*, int); // Update when xx becomes a vector
+  int update_density(vector<Real>&, int = 1);     //Explicit scheme
+  int update_density(vector<Real>&, vector<Real>&, int = 1); //Implicit scheme
+  int load_alpha(vector<Real>&);
+  int load_rho(vector<Real>&); 
   int update_boundaries();
 
 private:
@@ -240,6 +240,7 @@ private:
 
   /* Helper class instances */
   vector<Component1D*> component;
+  vector<Component1D*> solver_component;
   vector<Flux1D*> flux;
   vector<Flux1D*> solver_flux;
 

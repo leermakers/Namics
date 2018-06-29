@@ -86,12 +86,19 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 	m=10;
 	success=In[0]->CheckParameters("newton",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
+		iterationlimit=In[0]->Get_int(GetValue("iterationlimit"),1000);
+		if (iterationlimit < 0 || iterationlimit>1e6) {iterationlimit = 1000;}
+
 		e_info=In[0]->Get_bool(GetValue("e_info"),true); value_e_info=e_info;
 		s_info=In[0]->Get_bool(GetValue("s_info"),false); value_s_info =s_info;
 		t_info=In[0]->Get_bool(GetValue("t_info"),false);
-		i_info=In[0]->Get_int(GetValue("i_info"),1); value_i_info=i_info;
-		iterationlimit=In[0]->Get_int(GetValue("iterationlimit"),1000);
-		if (iterationlimit < 0 || iterationlimit>1e6) {iterationlimit = 1000;}
+		i_info=In[0]->Get_int(GetValue("i_info"),1);
+		if (i_info == 0) {
+		// We cannot divide by zero (see modulus statements in sfnewton), but this will probably be what the user means.
+		cerr << "WARNING: i_info cannot be zero ! Defaulting to iterationlimit + 1."<< endl;
+		i_info = iterationlimit+1;
+		}
+		value_i_info=i_info;
 
 		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),e_info);
 		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),s_info);

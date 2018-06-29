@@ -217,7 +217,7 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
     if (debug) cout << "Real GetRandomValue in Cleng" << endl;
     random_device rd;
     default_random_engine gen(rd());
-    uniform_real_distribution<> dist(0, 1);
+    uniform_real_distribution<> dist(min_value, max_value);
     return dist(gen);
 }
 
@@ -225,9 +225,6 @@ bool Cleng::MakeShift() {
     if (debug) cout << "MakeShift in Cleng" << endl;
 
     bool success = true;
-    int MX=Lat[0]->MX;
-    int MY=Lat[0]->MY;
-    int MZ=Lat[0]->MZ;
     int pos_array = -2;
     int rand_part_index;
     vector<int> shift_XYZ = {0,0,0};
@@ -235,11 +232,14 @@ bool Cleng::MakeShift() {
     rand_part_index = GetIntRandomValueExclude(0, X.size()+1, 0, false);
     cout << "rand_part_index:" << rand_part_index << endl;
 
+    cout << "X:" << X[rand_part_index] << endl;
+    cout << "Y:" << Y[rand_part_index] << endl;
+    cout << "Z:" << Z[rand_part_index] << endl;
+
 //    TODO: rethink physics
 //    pos_array = GetIntRandomValueExclude(0, 2, 0, false);
 //    cout << "pos_array:" << pos_array << endl;
-//
-//  choosing what direction should I change (x-y ; z)
+//    //choosing what direction should I change (x,y or z)
 //    for (int i=0; i<3; i++) {
 //        shift_XYZ[i] = GetIntRandomValueExclude(-1, 1, 0, true);
 //    }
@@ -247,54 +247,24 @@ bool Cleng::MakeShift() {
 
     pos_array = GetIntRandomValueExclude(0, 1, 0, false);
     cout << "pos_array:" << pos_array << endl;
+
     if (pos_array == 0) {
-        // z-direction
+//      z-direction
         shift_XYZ[2] = GetIntRandomValueExclude(-1, 1, 0, true);
     } else {
-        // xy-direction
+//      xy-direction
         shift_XYZ[0] = GetIntRandomValueExclude(-1, 1, 0, true);
         shift_XYZ[1] = GetIntRandomValueExclude(-1, 1, 0, true);
     }
 
-    int changed = 0;
-    for (int i=0; i < n_boxes; i++) {
-        if (changed < 1) {
-            if (rand_part_index == P[2 * i]) {
-                cout << "Initially 1" << endl;
-                cout << " partx:" << X[P[2 * i]] << " " << X[P[2 * i]] + Sx[2 * i] * MX << endl;
-                cout << " party:" << Y[P[2 * i]] << " " << Y[P[2 * i]] + Sy[2 * i] * MY << endl;
-                cout << " partz:" << Z[P[2 * i]] << " " << Z[P[2 * i]] + Sz[2 * i] * MZ << endl;
+    X[rand_part_index]+= shift_XYZ[0];
+    Y[rand_part_index]+= shift_XYZ[1];
+    Z[rand_part_index]+= shift_XYZ[2];
 
-                X[P[2 * i]] = X[P[2 * i]] + shift_XYZ[0];
-                Y[P[2 * i]] = Y[P[2 * i]] + shift_XYZ[1];
-                Z[P[2 * i]] = Z[P[2 * i]] + shift_XYZ[2];
 
-                cout << "makeshift 1" << endl;
-                cout << " partx:" << X[P[2 * i]] << " " << X[P[2 * i]] + Sx[2 * i] * MX << endl;
-                cout << " party:" << Y[P[2 * i]] << " " << Y[P[2 * i]] + Sy[2 * i] * MY << endl;
-                cout << " partz:" << Z[P[2 * i]] << " " << Z[P[2 * i]] + Sz[2 * i] * MZ << endl;
-
-                changed += 1;
-            }
-            if (rand_part_index == P[2 * i + 1]) {
-                cout << "Initially 2" << endl;
-                cout << " partx:" << X[P[2 * i + 1]] << " " << X[P[2 * i + 1]] + Sx[2 * i + 1] * MX << endl;
-                cout << " party:" << Y[P[2 * i + 1]] << " " << Y[P[2 * i + 1]] + Sy[2 * i + 1] * MY << endl;
-                cout << " partz:" << Z[P[2 * i + 1]] << " " << Z[P[2 * i + 1]] + Sz[2 * i + 1] * MZ << endl;
-
-                X[P[2 * i + 1]] = X[P[2 * i + 1]] + shift_XYZ[0];
-                Y[P[2 * i + 1]] = Y[P[2 * i + 1]] + shift_XYZ[1];
-                Z[P[2 * i + 1]] = Z[P[2 * i + 1]] + shift_XYZ[2];
-
-                cout << "makeshift 2" << endl;
-                cout << " partx:" << X[P[2 * i + 1]] << " " << X[P[2 * i + 1]] + Sx[2 * i + 1] * MX << endl;
-                cout << " party:" << Y[P[2 * i + 1]] << " " << Y[P[2 * i + 1]] + Sy[2 * i + 1] * MY << endl;
-                cout << " partz:" << Z[P[2 * i + 1]] << " " << Z[P[2 * i + 1]] + Sz[2 * i + 1] * MZ << endl;
-
-                changed += 1;
-            }
-        }
-    }
+    cout << "X:" << X[rand_part_index] << endl;
+    cout << "Y:" << Y[rand_part_index] << endl;
+    cout << "Z:" << Z[rand_part_index] << endl;
 
 //    cout << "changed:" << changed << endl;
     cout << "Shift:" << shift_XYZ[0] << " " << shift_XYZ[1] << " " << shift_XYZ[2] << endl;
@@ -311,27 +281,30 @@ bool Cleng::MakeShift() {
 
 bool Cleng::MonteCarlo() {
   if (debug) cout << "Monte Carlo in Cleng" << endl;
-	bool success;
+	bool success = true;
 
 	Real free_energy_c;
 	Real free_energy_t;
 
 // init system outlook
-    New[0]->Solve(true);    // solving
-    WriteOutput(0);  // writing output
+    New[0]->Solve(true);
+    WriteOutput(0);
     for (int i = 1; i < MCS; i++) { // loop for trials
         Real my_rand = GetRealRandomValue(0, 1);
-        free_energy_c = Sys[0]-> FreeEnergy; // storing free_energy
+
+        free_energy_c = Sys[0]-> FreeEnergy;
         success=CP(to_cleng);
         MakeShift();
         success=CP(to_segment);
         New[0]->Solve(true);
+
         free_energy_t = Sys[0]-> FreeEnergy;
+
         cout << "my_rand:" << my_rand << endl;
         cout << "free_energy_c:" << free_energy_c << endl;
         cout << "free_energy_t:" << free_energy_t << endl;
+
         if ( my_rand < exp(free_energy_c-free_energy_t) ) {
-//        if ( (exp(free_energy_t) * my_rand) < exp(free_energy_c) ) {
             cout << "Accepted" << endl;
         } else {
             cout << "Deny" << endl;
@@ -345,6 +318,7 @@ bool Cleng::MonteCarlo() {
 void Cleng::PutParameter(string new_param) {
     KEYS.push_back(new_param);
 }
+
 string Cleng::GetValue(string parameter) {
     int i = 0;
     int length = PARAMETERS.size();

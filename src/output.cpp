@@ -7,8 +7,6 @@ if (debug) cout <<"constructor in Output "<< endl;
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");
 	input_error=false;
-	output_path = "";
-	output_folder = "output/";
 	bin_folder = "bin"; // folder in Namics where the binary is located
 	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
 	//if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
@@ -354,17 +352,6 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			size_t found = infilename.find_last_of("/\\");
 			sub[0] = infilename.substr(found+1);
 		}
-
-		// Find path to Namics executable
-		char result[ PATH_MAX ];
-		ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
-		string executable_path = string( result, (count > 0) ? count : 0 );
-
-		// Find the last string before the executable
-		size_t found = executable_path.find_last_of("/\\");
-
-		// Set the output folder to be one level up from the binary folder, plus the specified output folder
-		output_path = executable_path.substr(0,found - bin_folder.size() );
 	}
 
 	char numc[2];

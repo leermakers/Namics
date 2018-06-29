@@ -30,8 +30,6 @@ public:
 	bool write_bounds;
 	bool append;
 	bool input_error;
-	string output_path;
-	string output_folder;
 	string bin_folder;
 	bool use_output_folder;
 

@@ -13,6 +13,7 @@ Input::Input(string name_) {
 	KEYS.push_back("teng"); 
 	KEYS.push_back("output"); 
 	KEYS.push_back("var");
+	KEYS.push_back(OutputInfo::IN_CLASS_NAME);
 
 
 	in_file.open(name.c_str()); Input_error=false;
@@ -31,6 +32,7 @@ Input::Input(string name_) {
 		}
 		in_file.close();
 		if (!CheckInput()) Input_error=true;
+		parseOutputInfo();
 	} else {cout <<  "Inputfile " << name << " is not found. " << endl; Input_error=true; }
 
 }
@@ -662,4 +664,15 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(VarList,"var",0,10,start))
 	if (VarList.size()==0) VarList.push_back("noname");
 	return success;
+}
+
+void Input::parseOutputInfo() {
+	for (const string &line : elems) {
+		vector<string> param;
+		split(line, ':', param);
+		if (param[1] != OutputInfo::IN_CLASS_NAME) {
+			continue;
+		}
+		output_info.addProperty(param[2], param[3], param[4]);
+	}
 }

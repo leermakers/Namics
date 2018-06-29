@@ -373,7 +373,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	sprintf(numcc,"%d",start);
 	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
 	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
-	filename = output_path + output_folder + filename;
+	filename = In[0]->output_info.getOutputPath() + filename;
 	if (name=="pos") {
 		length=OUT_key.size();
 		FILE *fp;

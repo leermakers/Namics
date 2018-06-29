@@ -1,6 +1,7 @@
 #ifndef INPUTxH
 #define INPUTxH
 #include "namics.h"
+#include "output_info.h"
 
 class Input {
 public:
@@ -15,7 +16,8 @@ public:
 	std::string In_buffer;
 	string string_value;
 	bool Input_error; 
-	string filename; 
+	string filename;
+	OutputInfo output_info;
 	
 	std::vector<string> KEYS;
 	std::vector<string> SysList;
@@ -60,5 +62,7 @@ public:
 	bool EvenSquareBrackets(string,vector<int> &, vector<int>&); 
 	bool MakeLists(int);
 
+private:
+	void parseOutputInfo();
 };
 #endif

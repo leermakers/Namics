@@ -235,7 +235,6 @@ int main(int argc, char* argv[]) {
     		if (!New[0]->CheckInput(start)) {
       			return 0;
     		}
-    		if (suppress == true) New[0]->e_info = false;
 
 
 //Guesses geometry

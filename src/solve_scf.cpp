@@ -86,12 +86,19 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 	m=10;
 	success=In[0]->CheckParameters("newton",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
+		iterationlimit=In[0]->Get_int(GetValue("iterationlimit"),1000);
+		if (iterationlimit < 0 || iterationlimit>1e6) {iterationlimit = 1000;}
+
 		e_info=In[0]->Get_bool(GetValue("e_info"),true); value_e_info=e_info;
 		s_info=In[0]->Get_bool(GetValue("s_info"),false); value_s_info =s_info;
 		t_info=In[0]->Get_bool(GetValue("t_info"),false);
-		i_info=In[0]->Get_int(GetValue("i_info"),1); value_i_info=i_info;
-		iterationlimit=In[0]->Get_int(GetValue("iterationlimit"),1000);
-		if (iterationlimit < 0 || iterationlimit>1e6) {iterationlimit = 1000;}
+		i_info=In[0]->Get_int(GetValue("i_info"),1);
+		if (i_info == 0) {
+		// We cannot divide by zero (see modulus statements in sfnewton), but this will probably be what the user means.
+		cerr << "WARNING: i_info cannot be zero ! Defaulting to iterationlimit + 1."<< endl;
+		i_info = iterationlimit+1;
+		}
+		value_i_info=i_info;
 
 		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),e_info);
 		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),s_info);
@@ -428,18 +435,14 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	return success;
 }
 
-bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha, function< vector<Real>&(int) > flux_callback) {
+bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback, function< Real*() > flux_callback) {
 	if(debug) cout <<"Solve (mesodyn) in  Solve_scf " << endl;
 	//iv should have been set at AllocateMemory.
-	flux = flux_callback;
-	int M=Lat[0]->M;
-  	mesodyn =true;
-	gradient=MESODYN;
-	RHO=&rho[0]; //RHO is 'published' now gradient can know the 'targets.
+	mesodyn_flux = flux_callback;
+	mesodyn_load_alpha = alpha_callback;
 
-	Real chi;
-	int sysmon_length = Sys[0]->SysMolMonList.size();
-	int mon_length = In[0]->MonList.size(); //also frozen segments
+  mesodyn =true;
+	gradient=MESODYN;
 
 	bool success=true;
 
@@ -455,19 +458,11 @@ bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha, function< 
 		break;
 	}
 
-	Cp(&fAlpha[0],xx,iv);
 	/*if (Sys[0]->charged) {
 		Sys[0]->DoElectrostatics(alpha+sysmon_length*M,xx+sysmon_length*M);
 		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
 	}*/
 
-	for (int i=0; i<sysmon_length; i++) {
-		for (int k=0; k<mon_length; k++) {
-                        chi= Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
-			if (chi!=0) {
-				PutAlpha( (&fAlpha[0]) +i*M,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
-			}
-		}
 
 /*		if (Sys[0]->charged){
 			YplusisCtimesX(alpha+i*M,Sys[0]->EE,Seg[Sys[0]->SysMolMonList[i]]->epsilon,M);
@@ -475,7 +470,6 @@ bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha, function< 
 			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMolMonList[i]]->valence,M);
 		}*/
 
-	}
 	//Sys[0]->CheckResults(report_errors);
 	return success;
 }
@@ -524,16 +518,36 @@ void Solve_scf::residuals(Real* x, Real* g){
 		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
 			ComputePhis();
-			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
-			for (unsigned int c = 0 ; c < Sys[0]->SysMolMonList.size() ; ++c) {
-					// fluxes = flux(i) ;
+		//ComputeAlpha();
+
+			sysmon_length = Sys[0]->SysMolMonList.size();
+
+			vector<Real> temp_alpha(M);
+			for (int i=0; i<sysmon_length; i++) {
+				for (int j = 0; j < M ; ++j) {
+					temp_alpha[j] = xx[j+i*M];
+				}
+				for (int k=0; k<mon_length; k++) {
+					chi= Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
+					if (chi!=0) {
+						PutAlpha(&temp_alpha[0],Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+					}
+				}
+			mesodyn_load_alpha(temp_alpha, i);
 			}
+
+			RHO = mesodyn_flux();
+
+			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
 			i=k=0;
 			while (i<lengthMolList) {
 				j=0;
 				LENGTH=Mol[i]->MolMonList.size();
 				while (j<LENGTH) {
+
+					//Target function: rho - phi < tolerance
 					YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M);
+
 					Lat[0]->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 					k++;

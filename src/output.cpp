@@ -7,6 +7,7 @@ if (debug) cout <<"constructor in Output "<< endl;
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");
 	input_error=false;
+	output_path = "";
 	output_folder = "output/";
 	bin_folder = "bin"; // folder in Namics where the binary is located
 	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
@@ -363,7 +364,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		size_t found = executable_path.find_last_of("/\\");
 
 		// Set the output folder to be one level up from the binary folder, plus the specified output folder
-		output_folder = executable_path.substr(0,found - bin_folder.size() ) + output_folder;
+		output_path = executable_path.substr(0,found - bin_folder.size() );
 	}
 
 	char numc[2];
@@ -372,7 +373,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	sprintf(numcc,"%d",start);
 	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
 	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
-	filename = output_folder + filename;
+	filename = output_path + output_folder + filename;
 	if (name=="pos") {
 		length=OUT_key.size();
 		FILE *fp;

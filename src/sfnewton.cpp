@@ -71,7 +71,7 @@ C Copyright (2018) Wageningen University, NL.
 	numIterationsForHessian=100;
 	minAccuracyForHessian=0.1;
 	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); H_Zero(reverseDirection,reverseDirectionRange);
-	     
+
 }
 
 SFNewton::~SFNewton() {
@@ -609,8 +609,8 @@ bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real
 		cout <<"Warning: "<<s<<"iteration not solved. Residual error= " << residual << endl;
 		success=false;
 	}
-	if (e_info || s_info) {
-		
+	if ((e_info || s_info) && suppress == false) {
+
 		if (e_info) {
 			if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
 			if (it < iterationlimit/10) cout <<"That was easy." << endl;
@@ -644,9 +644,9 @@ mask = (int*) malloc(nvar*sizeof(int));
 	//reverseDirectionRange=50;
 
         trouble = resetiteration = 0;
-	minAccuracySoFar = 1e30; 
+	minAccuracySoFar = 1e30;
 	numIterationsSinceHessian=0;
-	
+
 	IV =nvar;
 	srand (1);
 	if (e_info) {cout <<"NEWTON has been notified."<< endl;
@@ -667,8 +667,8 @@ mask = (int*) malloc(nvar*sizeof(int));
 		}
 	}
 
-float* h = (float*) malloc(nvar*nvar*sizeof(float)); H_Zero(h,nvar*nvar); 
-  
+float* h = (float*) malloc(nvar*nvar*sizeof(float)); H_Zero(h,nvar*nvar);
+
 	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
 	minimum=newfunction(g,x,nvar);
 	inneriteration(x,g,h,accuracy,delta_max,ALPHA,nvar);

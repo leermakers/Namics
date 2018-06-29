@@ -147,14 +147,14 @@ bool Mesodyn::mesodyn() {
       ++i;
     }
 
+    if (t % timebetweensaves == 0)
+      writeRho(t);
+
     i = 0;
     for(Flux1D* all_fluxes : flux) {
       all_fluxes->J = solver_flux[i]->J;
       ++i;
     }
-
-    if (t % timebetweensaves == 0)
-      writeRho(t);
 
   } // time loop
   writeRho(timesteps);
@@ -334,19 +334,11 @@ void Mesodyn::prepareOutputFile() {
   }
 
   for (int i = 1; i <= permutations; ++i) {
-    headers << "L" << i << ",";
-  }
-
-  for (int i = 1; i <= componentNo; ++i) {
-    headers << "alpha" << i << ",";
+    headers << "J_solver" << i << ",";
   }
 
   for (int i = 1; i <= permutations; ++i) {
-    headers << "mu" << i << ",";
-  }
-
-  for (int i = 1; i <= permutations; ++i) {
-    headers << "J" << i << ",";
+    headers << "J_previous" << i << ",";
   }
 
   headers << "\n";
@@ -370,16 +362,8 @@ void Mesodyn::writeRho(int t) {
           rhoOutput << all_components->rho_at(x, y, z) << ",";
         }
 
-        for (Flux1D* all_fluxes : flux) {
-          rhoOutput << all_fluxes->L_at(x, y, z) << ",";
-        }
-
-        for (Component1D* all_components : component) {
-          rhoOutput << all_components->alpha_at(x, y, z) << ",";
-        }
-
-        for (Flux1D* all_fluxes : flux) {
-          rhoOutput << all_fluxes->mu_at(x, y, z) << ",";
+        for (Flux1D* all_fluxes : solver_flux) {
+          rhoOutput << all_fluxes->J_at(x, y, z) << ",";
         }
 
         for (Flux1D* all_fluxes : flux) {
@@ -409,17 +393,17 @@ void Mesodyn::writeRho(int t) {
 
 Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
     : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, gaussian{gaussian}, L(M), mu(M), D{D}, JX{Lat->JX}, gaussian_noise(M) {
-  Flux1D::mask(mask, Mask_plus_x, Mask_minus_x, JX);
+  Flux1D::mask(mask);
 }
 
 Flux2D::Flux2D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
     : Flux1D(Lat, gaussian, D, mask, A, B), JY{Lat->JY} {
-  Flux1D::mask(mask, Mask_plus_y, Mask_minus_y, JY);
+  Flux2D::mask(mask);
 }
 
 Flux3D::Flux3D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
     : Flux2D(Lat, gaussian, D, mask, A, B), JZ{Lat->JZ} {
-  Flux1D::mask(mask, Mask_plus_z, Mask_minus_z, JZ);
+  Flux3D::mask(mask);
 }
 
 Flux1D::~Flux1D() {
@@ -484,27 +468,112 @@ Real Flux1D::mu_at(int x, int y, int z) {
   return val(mu, x, y, z);
 }
 
-int Flux1D::mask(vector<int>& mask_in, vector<int>& mask_out_plus, vector<int>& mask_out_minus, int jump) {
+inline int val(vector<int>&, int, int, int);
+int Flux1D::mask(vector<int>& mask_in) {
   if ( (int)mask_in.size() != M) {
     throw ERROR_SIZE_INCOMPATIBLE;
     return 1;
   }
 
-  // TODO: There is likely a better way of writing this
-  // TODO: Only calculate odd numberzsch
-  for (int z = 0+jump; z < M-jump ; ++z) {
-    if (mask_in[z] == 1) {
-      if (mask_in[z+jump] == 1) {
-        mask_out_plus.push_back(z);
-      }
-      if (mask_in[z-jump] == 1) {
-        mask_out_minus.push_back(z);
-      }
-    }
+  int x,y,z;
+
+  z = 1;
+  do {
+    y = 1;
+    do{
+      x = 1;
+      do{
+        cout << x << "," << y << "," << z << endl;
+        if (val(mask_in,x,y,z) == 1) {
+          if ( val(mask_in,x+1,y,z) == 1) {
+            Mask_plus_x.push_back( index(x,y,z) );
+          }
+          if ( val(mask_in,x-1,y,z) == 1) {
+            Mask_minus_x.push_back( index(x,y,z) );
+          }
+        }
+        ++x;
+      } while (x < MX - 1);
+      ++y;
+    } while (y < MY - 1);
+    ++z;
+  } while (z < MZ - 1);
+
+  for (int& i : Mask_plus_x) {
+    cout << i << endl;
   }
+  cin.get();
 
   return 0;
 }
+
+int Flux2D::mask(vector<int>& mask_in) {
+  if ( (int)mask_in.size() != M) {
+    throw ERROR_SIZE_INCOMPATIBLE;
+    return 1;
+  }
+
+  Flux1D::mask(mask_in);
+  int x,y,z;
+
+  z = 1;
+  do {
+    y = 1;
+    do{
+      x = 1;
+      do{
+        if (val(mask_in,x,y,z) == 1) {
+          if ( val(mask_in,x,y+1,z) == 1) {
+            Mask_plus_y.push_back( index(x,y,z) );
+          }
+          if (val(mask_in,x,y-1,z) == 1) {
+            Mask_minus_y.push_back( index(x,y,z) );
+          }
+        }
+        ++x;
+      } while (x < MX - 1);
+      ++y;
+    } while (y < MY - 1);
+    ++z;
+  } while (z < MZ - 1);
+
+  return 0;
+}
+
+
+int Flux3D::mask(vector<int>& mask_in) {
+  if ( (int)mask_in.size() != M) {
+    throw ERROR_SIZE_INCOMPATIBLE;
+    return 1;
+  }
+
+  Flux2D::mask(mask_in);
+  int x,y,z;
+
+  z = 1;
+  do {
+    y = 1;
+    do{
+      x = 1;
+      do{
+        if (val(mask_in,x,y,z) == 1) {
+          if ( val(mask_in,x,y,z+1) == 1) {
+            Mask_plus_z.push_back( index(x,y,z) );
+          }
+          if ( val(mask_in,x,y,z-1) == 1) {
+            Mask_minus_z.push_back( index(x,y,z) );
+          }
+        }
+        ++x;
+      } while (x < MX - 1);
+      ++y;
+    } while (y < MY - 1);
+    ++z;
+  } while (z < MZ - 1);
+
+  return 0;
+}
+
 
 int Flux1D::onsager_coefficient(vector<Real>& A, vector<Real>& B) {
   //TODO: maybe do this in propagator style inline / per J calculation to preserve memory
@@ -531,10 +600,10 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
 int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump) {
 
   for (int& z: mask_plus) {
-    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])) + gaussian_noise[z];
+    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])); //+ gaussian_noise[z];
   }
   for (int& z: mask_minus) {
-    J_minus[z] += -J_plus[z-jump]; //-D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z]));
+    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); // = -J_plus[z-jump];
   }
 
   transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
@@ -558,11 +627,15 @@ Lattice_Access::~Lattice_Access() {
 }
 
 inline Real Lattice_Access::val(vector<Real>& v, int x, int y, int z) {
-  return v[x * JX + y * JY + z];
+  return v[x * JX + y * JY + z * JZ];
+}
+
+inline int Lattice_Access::val(vector<int>& v, int x, int y, int z) {
+  return v[x * JX + y * JY + z * JZ];
 }
 
 inline Real* Lattice_Access::valPtr(vector<Real>& v, int x, int y, int z) {
-  return &v[x * JX + y * JY + z];
+  return &v[x * JX + y * JY + z * JZ];
 }
 
 int Lattice_Access::setMY(Lattice* Lat) {
@@ -580,6 +653,11 @@ int Lattice_Access::setMZ(Lattice* Lat) {
   else
     return Lat->MZ + 2;
 }
+
+inline int Lattice_Access::index(int x, int y, int z) {
+  return x * JX + y * JY + z * JZ;
+}
+
 
 /****************** COMPONENT: DENSITY PROFILE STORAGE AND UPDATING, BOUNDARY CONDITIONS ********************/
 

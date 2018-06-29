@@ -36,8 +36,11 @@ public:
   Lattice_Access(Lattice*);
   ~Lattice_Access();
 
+  //TODO: Template these:
   inline Real val(vector<Real>&, int, int, int);
+  inline int val(vector<int>&, int, int, int);
   inline Real* valPtr(vector<Real>&, int, int, int);
+  inline int index(int x, int y, int z);
 
   const int dimensions;
 
@@ -134,7 +137,7 @@ private:
   void bZmBulk(int, int, int, Real);
 };
 
-class Flux1D : private Lattice_Access {
+class Flux1D : protected Lattice_Access {
 public:
   Flux1D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux1D();
@@ -158,11 +161,12 @@ private:
   Component1D* A;
   Component1D* B;
 
+
 protected:
-  int mask(vector<int>&, vector<int>&, vector<int>&, int);
   int onsager_coefficient(vector<Real>&, vector<Real>&);
   int potential_difference(vector<Real>&, vector<Real>&);
   int langevin_flux(vector<int>&, vector<int>&, int);
+  int mask(vector<int>&);
 
   Gaussian_noise* gaussian;
 
@@ -183,11 +187,12 @@ public:
   int langevin_flux();
 
 private:
-Component2D* A;
-Component2D* B;
+  Component2D* A;
+  Component2D* B;
 
 
 protected:
+  int mask(vector<int>&);
   const int JY;
   vector<int> Mask_plus_y;
   vector<int> Mask_minus_y;
@@ -204,6 +209,7 @@ public:
 private:
 Component3D* A;
 Component3D* B;
+int mask(vector<int>&);
 
 protected:
   const int JZ;

@@ -7,7 +7,6 @@ if (debug) cout <<"constructor in Output "<< endl;
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");
 	input_error=false;
-	output_folder = "output/";
 	bin_folder = "bin"; // folder in Namics where the binary is located
 	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
 	//if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
@@ -106,13 +105,11 @@ if (debug) cout << "CheckInput in output " << endl;
 			if (name=="pro") append=true;
 		}
 
-		if (GetValue("write_bounds").size()>0) {
-			In[0]->Get_bool(GetValue("write_bounds"),write_bounds);
-		} else write_bounds=false;
+		write_bounds = In[0]->Get_bool(GetValue("write_bounds"),false);
 
 		/*** TRUE IS LINUX ONLY ***/
 		if (GetValue("use_output_folder").size()>0) {
-			In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
+			use_output_folder = In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
 		} // default is set in the constructor
 
 		if (success) {
@@ -355,17 +352,6 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			size_t found = infilename.find_last_of("/\\");
 			sub[0] = infilename.substr(found+1);
 		}
-
-		// Find path to Namics executable
-		char result[ PATH_MAX ];
-		ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
-		string executable_path = string( result, (count > 0) ? count : 0 );
-
-		// Find the last string before the executable
-		size_t found = executable_path.find_last_of("/\\");
-
-		// Set the output folder to be one level up from the binary folder, plus the specified output folder
-		output_folder = executable_path.substr(0,found - bin_folder.size() ) + output_folder;
 	}
 
 	char numc[2];
@@ -374,7 +360,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	sprintf(numcc,"%d",start);
 	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
 	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
-	filename = output_folder + filename;
+	filename = In[0]->output_info.getOutputPath() + filename;
 	if (name=="pos") {
 		length=OUT_key.size();
 		FILE *fp;

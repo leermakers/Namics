@@ -31,8 +31,8 @@ Input::Input(string name_) {
 			if (add) elems.push_back(SSTR(line_nr).append(":").append(In_line)); else add=true;
 		}
 		in_file.close();
-		if (!CheckInput()) Input_error=true;
 		parseOutputInfo();
+		if (!CheckInput()) Input_error=true;
 	} else {cout <<  "Inputfile " << name << " is not found. " << endl; Input_error=true; }
 
 }
@@ -630,7 +630,10 @@ bool Input:: CheckInput(void) {
 		i++;
 	}
 	success=MakeLists(1);
-
+	if (!output_info.isOutputExists()) {
+		cout << "Cannot access output folder '" << output_info.getOutputPath() << "'" << endl;
+		success = false;
+	}
 	return success;
 }
 

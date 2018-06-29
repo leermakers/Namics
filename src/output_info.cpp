@@ -1,5 +1,7 @@
 #include "output_info.h"
 #include <string>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 using std::string;
 
@@ -31,4 +33,9 @@ string OutputInfo::processOutputPath(string path) {
 		path.push_back('/');
 	}
 	return path;
+}
+
+bool OutputInfo::isOutputExists() const {
+	struct stat info{};
+	return (stat(output_path.c_str(), &info) == 0) && (info.st_mode & S_IFDIR) != 0;
 }

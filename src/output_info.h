@@ -7,10 +7,9 @@ public:
 	OutputInfo();
 
 	void addProperty(const std::string &elem, const std::string &param, const std::string &value);
-
 	void addFolderInfo(const std::string &param, const std::string &value);
-
 	const std::string &getOutputPath() const;
+	bool isOutputExists() const;
 
 	static const std::string IN_CLASS_NAME;
 	static const std::string DEFAULT_OUTPUT_PATH;

@@ -483,7 +483,6 @@ int Flux1D::mask(vector<int>& mask_in) {
     do{
       x = 1;
       do{
-        cout << x << "," << y << "," << z << endl;
         if (val(mask_in,x,y,z) == 1) {
           if ( val(mask_in,x+1,y,z) == 1) {
             Mask_plus_x.push_back( index(x,y,z) );
@@ -498,11 +497,6 @@ int Flux1D::mask(vector<int>& mask_in) {
     } while (y < MY - 1);
     ++z;
   } while (z < MZ - 1);
-
-  for (int& i : Mask_plus_x) {
-    cout << i << endl;
-  }
-  cin.get();
 
   return 0;
 }

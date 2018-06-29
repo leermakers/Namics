@@ -106,13 +106,11 @@ if (debug) cout << "CheckInput in output " << endl;
 			if (name=="pro") append=true;
 		}
 
-		if (GetValue("write_bounds").size()>0) {
-			In[0]->Get_bool(GetValue("write_bounds"),write_bounds);
-		} else write_bounds=false;
+		write_bounds = In[0]->Get_bool(GetValue("write_bounds"),false);
 
 		/*** TRUE IS LINUX ONLY ***/
 		if (GetValue("use_output_folder").size()>0) {
-			In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
+			use_output_folder = In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
 		} // default is set in the constructor
 
 		if (success) {

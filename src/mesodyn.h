@@ -73,7 +73,7 @@ public:
     ERROR_NOT_IMPLEMENTED,
   };
 
-  Component1D(Lattice*, vector<Real>&, boundary, boundary); //1D
+  Component1D(Lattice*, Gaussian_noise*, vector<Real>&, boundary, boundary); //1D
   ~Component1D();
 
   vector<Real> rho;
@@ -86,6 +86,11 @@ public:
   int load_alpha(vector<Real>&);
   int load_rho(vector<Real>&);
   int update_boundaries();
+
+protected:
+
+  Gaussian_noise* gaussian;
+  vector<Real> gaussian_noise;
 
 private:
   function<void()> bX0;
@@ -101,7 +106,7 @@ private:
 
 class Component2D : public Component1D {
 public:
-  Component2D(Lattice*, vector<Real>&, boundary, boundary, boundary, boundary); //1D
+  Component2D(Lattice*, Gaussian_noise*, vector<Real>&, boundary, boundary, boundary, boundary); //1D
   ~Component2D();
 
   int update_boundaries();
@@ -120,7 +125,7 @@ private:
 
 class Component3D : public Component2D {
 public:
-  Component3D(Lattice*, vector<Real>&, boundary, boundary, boundary, boundary, boundary, boundary); //1D
+  Component3D(Lattice*, Gaussian_noise*, vector<Real>&, boundary, boundary, boundary, boundary, boundary, boundary); //1D
   ~Component3D();
 
   int update_boundaries();
@@ -139,7 +144,7 @@ private:
 
 class Flux1D : protected Lattice_Access {
 public:
-  Flux1D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
+  Flux1D(Lattice*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux1D();
 
   int langevin_flux();
@@ -168,20 +173,17 @@ protected:
   int langevin_flux(vector<int>&, vector<int>&, int);
   int mask(vector<int>&);
 
-  Gaussian_noise* gaussian;
-
   vector<Real> L;
   vector<Real> mu;
   const Real D;
   const int JX;
   vector<int> Mask_plus_x;
   vector<int> Mask_minus_x;
-  vector<Real> gaussian_noise;
 };
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
+  Flux2D(Lattice*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux2D();
 
   int langevin_flux();
@@ -201,7 +203,7 @@ protected:
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
+  Flux3D(Lattice*, Real, vector<int>&, Component1D*, Component1D*);
   ~Flux3D();
 
   int langevin_flux();

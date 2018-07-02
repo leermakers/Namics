@@ -198,41 +198,41 @@ int Mesodyn::initial_conditions() {
   switch (dimensions) {
   case 1:
     for (int i = 0; i < componentNo; ++i) {
-        component.push_back(new Component1D(Lat[0], rho[i], boundaries[0], boundaries[1]));
-        solver_component.push_back(new Component1D(Lat[0], rho[i], boundaries[0], boundaries[1]));
+        component.push_back(new Component1D(Lat[0], gaussian_noise, rho[i], boundaries[0], boundaries[1]));
+        solver_component.push_back(new Component1D(Lat[0], gaussian_noise, rho[i], boundaries[0], boundaries[1]));
       }
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
-        flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, solver_component[i], solver_component[j]));
+        flux.push_back(new Flux1D(Lat[0], D, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux1D(Lat[0], D, mask, solver_component[i], solver_component[j]));
       }
     }
 
     break;
   case 2:
     for (int i = 0; i < componentNo; ++i) {
-      component.push_back(new Component2D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3]));
-      solver_component.push_back(new Component2D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3]));
+      component.push_back(new Component2D(Lat[0], gaussian_noise, rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3]));
+      solver_component.push_back(new Component2D(Lat[0], gaussian_noise, rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3]));
     }
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
-        flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, solver_component[i], solver_component[j]));
+        flux.push_back(new Flux2D(Lat[0], D, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux2D(Lat[0], D, mask, solver_component[i], solver_component[j]));
       }
     }
 
     break;
   case 3:
     for (int i = 0; i < componentNo; ++i) {
-      component.push_back(new Component3D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
-      solver_component.push_back(new Component3D(Lat[0], rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
+      component.push_back(new Component3D(Lat[0], gaussian_noise, rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
+      solver_component.push_back(new Component3D(Lat[0], gaussian_noise, rho[i], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
     }
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
-        flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, solver_component[i], solver_component[j]));
+        flux.push_back(new Flux3D(Lat[0], D, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux3D(Lat[0], D, mask, solver_component[i], solver_component[j]));
       }
     }
 
@@ -391,18 +391,18 @@ void Mesodyn::writeRho(int t) {
 
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
-Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
-    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, gaussian{gaussian}, L(M), mu(M), D{D}, JX{Lat->JX}, gaussian_noise(M) {
+Flux1D::Flux1D(Lattice* Lat, Real D, vector<int>& mask, Component1D* A, Component1D* B)
+    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX} {
   Flux1D::mask(mask);
 }
 
-Flux2D::Flux2D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
-    : Flux1D(Lat, gaussian, D, mask, A, B), JY{Lat->JY} {
+Flux2D::Flux2D(Lattice* Lat, Real D, vector<int>& mask, Component1D* A, Component1D* B)
+    : Flux1D(Lat, D, mask, A, B), JY{Lat->JY} {
   Flux2D::mask(mask);
 }
 
-Flux3D::Flux3D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component1D* A, Component1D* B)
-    : Flux2D(Lat, gaussian, D, mask, A, B), JZ{Lat->JZ} {
+Flux3D::Flux3D(Lattice* Lat, Real D, vector<int>& mask, Component1D* A, Component1D* B)
+    : Flux2D(Lat, D, mask, A, B), JZ{Lat->JZ} {
   Flux3D::mask(mask);
 }
 
@@ -594,7 +594,7 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
 int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump) {
 
   for (int& z: mask_plus) {
-    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])); //+ gaussian_noise[z];
+    J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
   }
   for (int& z: mask_minus) {
     J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); // = -J_plus[z-jump];
@@ -657,8 +657,8 @@ inline int Lattice_Access::index(int x, int y, int z) {
 
 /******* Constructors *******/
 
-Component1D::Component1D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm)
-    : Lattice_Access(Lat), rho{rho}, alpha(M) {
+Component1D::Component1D(Lattice* Lat, Gaussian_noise* gaussian, vector<Real>& rho, boundary x0, boundary xm)
+    : Lattice_Access(Lat), rho{rho}, alpha(M), gaussian{gaussian}, gaussian_noise(M) {
   //This check is implemented multiple times throughout mesodyn because rho and alpha are public.
   if (rho.size() != alpha.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
@@ -667,14 +667,14 @@ Component1D::Component1D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary 
   update_boundaries();
 }
 
-Component2D::Component2D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm, boundary y0, boundary ym)
-    : Component1D(Lat, rho, x0, xm) {
+Component2D::Component2D(Lattice* Lat, Gaussian_noise* gaussian, vector<Real>& rho, boundary x0, boundary xm, boundary y0, boundary ym)
+    : Component1D(Lat, gaussian, rho, x0, xm) {
   set_y_boundaries(y0, ym);
   update_boundaries();
 }
 
-Component3D::Component3D(Lattice* Lat, vector<Real>& rho, boundary x0, boundary xm, boundary y0, boundary ym, boundary z0, boundary zm)
-    : Component2D(Lat, rho, x0, xm, y0, ym) {
+Component3D::Component3D(Lattice* Lat, Gaussian_noise* gaussian, vector<Real>& rho, boundary x0, boundary xm, boundary y0, boundary ym, boundary z0, boundary zm)
+    : Component2D(Lat, gaussian, rho, x0, xm, y0, ym) {
   set_z_boundaries(z0, zm);
   update_boundaries();
 }

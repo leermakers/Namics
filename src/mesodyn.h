@@ -19,9 +19,11 @@ class Gaussian_noise {
   //Makes sure that we keep generating new numbers, instead of the same over and over.
 
 public:
-  Gaussian_noise(Real); // Not seeded (32 bits of randomness)
-  Gaussian_noise(Real, size_t); // Seeded
-  Real noise();
+  Gaussian_noise(Real, int); // Not seeded (32 bits of randomness)
+  Gaussian_noise(Real, int, size_t); // Seeded
+  int generate();
+  int generate_vector();
+  vector<Real> noise;
 
 private:
   seed_seq seed;
@@ -86,8 +88,6 @@ public:
   int load_alpha(vector<Real>&);
   int load_rho(vector<Real>&);
   int update_boundaries();
-
-protected:
 
   Gaussian_noise* gaussian;
   vector<Real> gaussian_noise;

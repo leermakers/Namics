@@ -92,7 +92,7 @@ bool Mesodyn::mesodyn() {
 
   // All Flux class instances need to share the same gaussian noise generator if we're going to seed it, or we'll
   // end up with the same numbers over and over.
-  gaussian_noise = new Gaussian_noise(D);
+  gaussian_noise = new Gaussian_noise(D, M);
 
   initial_conditions(); // Initialize densities by running the classical method once.
 
@@ -107,9 +107,17 @@ bool Mesodyn::mesodyn() {
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
+    //noise is the same for each component at a lattice site.
+    gaussian_noise->generate();
+
     New[0]->SolveMesodyn(
         [this](vector<Real>& alpha, int i) {
-          if (i < componentNo) solver_component[i]->load_alpha(alpha);
+          if (i < componentNo) {
+            //add noise to alpha:
+            transform(alpha.begin(), alpha.end(), gaussian_noise->noise.begin(), alpha.begin(), [](Real A, Real B) { return A + B; });
+            //load alpha+noise
+            solver_component[i]->load_alpha(alpha);
+          }
         },
         [this, &rho] () {
           for (Component1D* all_components : solver_component) all_components->update_boundaries();
@@ -1093,12 +1101,14 @@ void Component3D::bZmBulk(int fMX, int fMY, int fMZ, Real bulk) {
 
 /******* GAUSSIAN_NOISE: GENERATES WHITE NOISE FOR FLUXES ********/
 
-Gaussian_noise::Gaussian_noise(Real D) : prng { std::random_device{} () }, dist(0, 1*D) {}
+Gaussian_noise::Gaussian_noise(Real D, int size) : noise(size), prng { std::random_device{} () }, dist(0, 1*D) {}
 
-Gaussian_noise::Gaussian_noise(Real D, size_t seed) : prng(seed), dist(0, 1*D) {}
+Gaussian_noise::Gaussian_noise(Real D, int size, size_t seed) : noise(size), prng(seed), dist(0, 1*D) {}
 
-Real Gaussian_noise::noise() {
-  return dist(prng);
+int Gaussian_noise::generate() {
+  for (Real& value : noise)
+    value = dist(prng);
+  return 0;
 }
 
 

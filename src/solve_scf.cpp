@@ -518,7 +518,6 @@ void Solve_scf::residuals(Real* x, Real* g){
 		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
 			ComputePhis();
-		//ComputeAlpha();
 
 			sysmon_length = Sys[0]->SysMolMonList.size();
 

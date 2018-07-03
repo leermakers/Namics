@@ -13,20 +13,30 @@
 #include <limits.h>   // output
 #include <unistd.h>   // output
 
-class Newton;
+class Boundary1D;
+
+enum error {
+  ERROR_PERIODIC_BOUNDARY,
+  ERROR_SIZE_INCOMPATIBLE,
+  ERROR_NOT_IMPLEMENTED,
+};
 
 class Gaussian_noise {
   //Makes sure that we keep generating new numbers, instead of the same over and over.
 
 public:
-  Gaussian_noise(Real); // Not seeded (32 bits of randomness)
-  Gaussian_noise(Real, size_t); // Seeded
-  Real noise();
+  Gaussian_noise(Boundary1D*, Real, int, Real, Real); // Not seeded (32 bits of randomness)
+  Gaussian_noise(Boundary1D*, Real, int, Real, Real, size_t); // Seeded
+  int generate();
+  int add_noise(vector<Real>&);
 
 private:
   seed_seq seed;
   mt19937 prng;
   normal_distribution<Real> dist;
+  vector<Real> noise;
+
+  Boundary1D* boundary;
 };
 
 class Lattice_Access {
@@ -58,7 +68,7 @@ protected:
   const int MZ;
 };
 
-class Component1D : protected Lattice_Access {
+class Boundary1D : protected Lattice_Access {
 public:
 
   enum boundary {
@@ -67,14 +77,71 @@ public:
     BULK,
   };
 
-  enum error {
-    ERROR_PERIODIC_BOUNDARY,
-    ERROR_SIZE_INCOMPATIBLE,
-    ERROR_NOT_IMPLEMENTED,
-  };
+  Boundary1D(Lattice*, boundary, boundary); //1D
+  Boundary1D(Lattice*, vector<Real>&, boundary, boundary); //1D
+  ~Boundary1D();
 
-  Component1D(Lattice*, vector<Real>&, boundary, boundary); //1D
-  ~Component1D();
+  int update_boundaries(vector<Real>&);
+
+  Gaussian_noise* gaussian;
+  vector<Real> gaussian_noise;
+
+private:
+  function<void(vector<Real>&)> bX0;
+  function<void(vector<Real>&)> bXm;
+
+  int set_x_boundaries(boundary, boundary);
+  void bX0Mirror(vector<Real>&, int, int);
+  void bXmMirror(vector<Real>&, int, int, int);
+  void bXPeriodic(vector<Real>&, int, int, int);
+  void bX0Bulk(vector<Real>&, int, int, Real);
+  void bXmBulk(vector<Real>&, int, int, int, Real);
+
+};
+
+class Boundary2D: public Boundary1D {
+public:
+  Boundary2D(Lattice*, boundary, boundary, boundary, boundary);
+  ~Boundary2D();
+
+  int update_boundaries(vector<Real>&);
+
+private:
+  function<void(vector<Real>&)> bY0;
+  function<void(vector<Real>&)> bYm;
+
+  int set_y_boundaries(boundary, boundary);
+  void bY0Mirror(vector<Real>&, int, int);
+  void bYmMirror(vector<Real>&, int, int, int);
+  void bYPeriodic(vector<Real>&, int, int, int);
+  void bY0Bulk(vector<Real>&, int, int, Real);
+  void bYmBulk(vector<Real>&, int, int, int, Real);
+
+};
+
+class Boundary3D: public Boundary2D {
+public:
+  Boundary3D(Lattice*, boundary, boundary, boundary, boundary, boundary, boundary);
+  ~Boundary3D();
+
+  int update_boundaries(vector<Real>&);
+
+private:
+  function<void(vector<Real>&)> bZ0;
+  function<void(vector<Real>&)> bZm;
+
+  int set_z_boundaries(boundary, boundary);
+  void bZ0Mirror(vector<Real>&, int, int);
+  void bZmMirror(vector<Real>&, int, int, int);
+  void bZPeriodic(vector<Real>&, int, int, int);
+  void bZ0Bulk(vector<Real>&, int, int, Real);
+  void bZmBulk(vector<Real>&, int, int, int, Real);
+};
+
+class Component : protected Lattice_Access {
+public:
+  Component(Lattice*, Boundary1D*, vector<Real>&); //1D
+  ~Component();
 
   vector<Real> rho;
   vector<Real> alpha;
@@ -88,58 +155,12 @@ public:
   int update_boundaries();
 
 private:
-  function<void()> bX0;
-  function<void()> bXm;
-
-  int set_x_boundaries(boundary, boundary);
-  void bX0Mirror(int, int);
-  void bXmMirror(int, int, int);
-  void bXPeriodic(int, int, int);
-  void bX0Bulk(int, int, Real);
-  void bXmBulk(int, int, int, Real);
-};
-
-class Component2D : public Component1D {
-public:
-  Component2D(Lattice*, vector<Real>&, boundary, boundary, boundary, boundary); //1D
-  ~Component2D();
-
-  int update_boundaries();
-
-private:
-  function<void()> bY0;
-  function<void()> bYm;
-
-  int set_y_boundaries(boundary, boundary);
-  void bY0Mirror(int, int);
-  void bYmMirror(int, int, int);
-  void bYPeriodic(int, int, int);
-  void bY0Bulk(int, int, Real);
-  void bYmBulk(int, int, int, Real);
-};
-
-class Component3D : public Component2D {
-public:
-  Component3D(Lattice*, vector<Real>&, boundary, boundary, boundary, boundary, boundary, boundary); //1D
-  ~Component3D();
-
-  int update_boundaries();
-
-private:
-  function<void()> bZ0;
-  function<void()> bZm;
-
-  int set_z_boundaries(boundary, boundary);
-  void bZ0Mirror(int, int);
-  void bZmMirror(int, int, int);
-  void bZPeriodic(int, int, int);
-  void bZ0Bulk(int, int, Real);
-  void bZmBulk(int, int, int, Real);
+  Boundary1D* boundary;
 };
 
 class Flux1D : protected Lattice_Access {
 public:
-  Flux1D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
+  Flux1D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
   ~Flux1D();
 
   int langevin_flux();
@@ -157,9 +178,7 @@ public:
   vector<Real> J_minus;
   vector<Real> J;
 
-private:
-  Component1D* A;
-  Component1D* B;
+  Gaussian_noise* gaussian;
 
 
 protected:
@@ -167,8 +186,8 @@ protected:
   int potential_difference(vector<Real>&, vector<Real>&);
   int langevin_flux(vector<int>&, vector<int>&, int);
   int mask(vector<int>&);
-
-  Gaussian_noise* gaussian;
+  Component* A;
+  Component* B;
 
   vector<Real> L;
   vector<Real> mu;
@@ -176,19 +195,14 @@ protected:
   const int JX;
   vector<int> Mask_plus_x;
   vector<int> Mask_minus_x;
-  vector<Real> gaussian_noise;
 };
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
+  Flux2D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
   ~Flux2D();
 
   int langevin_flux();
-
-private:
-  Component2D* A;
-  Component2D* B;
 
 
 protected:
@@ -201,15 +215,13 @@ protected:
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component1D*, Component1D*);
+  Flux3D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
   ~Flux3D();
 
   int langevin_flux();
 
 private:
-Component3D* A;
-Component3D* B;
-int mask(vector<int>&);
+  int mask(vector<int>&);
 
 protected:
   const int JZ;
@@ -234,7 +246,7 @@ private:
   /* Read from file */
   Real D; // diffusionconstant
   Real mean; // mean of gaussian noise (should be 0)
-  Real stdev; // stdev of gaussian noise (should be 1*D)
+  Real stddev; // stdev of gaussian noise (should be 1*D)
   Real seed;  // seed of gaussian noise
   int timesteps; // length of the time evolution
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
@@ -246,8 +258,9 @@ private:
   int init_rho(vector< vector<Real> >&, vector<int>&);
 
   /* Helper class instances */
-  vector<Component1D*> component;
-  vector<Component1D*> solver_component;
+  vector<Boundary1D*> boundary;
+  vector<Component*> component;
+  vector<Component*> solver_component;
   vector<Flux1D*> flux;
   vector<Flux1D*> solver_flux;
 

@@ -63,6 +63,7 @@ public:
     vector<int> Z;
 
     vector<int> shift_XYZ;
+    int rand_part_index;
 
 
     bool MonteCarlo();
@@ -72,7 +73,7 @@ public:
     void push(string, bool);
     void push(string, string);
     bool CP(transfer);
-    bool MakeShift();
+    bool MakeShift(bool back);
     void WriteOutput(int);
     void PushOutput();
     int GetValue(string, int&, Real&, string&);

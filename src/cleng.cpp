@@ -1,14 +1,21 @@
 #include "cleng.h"
 
+Cleng::Cleng(
+        vector<Input*> In_,
+        vector<Lattice*> Lat_,
+        vector<Segment*> Seg_,
+        vector<Molecule*> Mol_,
+        vector<System*> Sys_,
+        vector<Solve_scf*> New_,
+        string name_
+) : name(name_),
+    In(In_),
+    Lat(Lat_),
+    Mol(Mol_),
+    Seg(Seg_),
+    Sys(Sys_),
+    New(New_)
 
-Cleng::Cleng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_,  string name_)
-    : name{name_},
-      In{In_},
-      Lat{Lat_},
-      Mol{Mol_},
-      Seg{Seg_},
-      Sys{Sys_},
-      New{New_}
 {
 	if (debug) cout << "Cleng initialized" << endl;
 
@@ -18,8 +25,7 @@ Cleng::Cleng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, v
   	KEYS.push_back("seed");
 }
 
-Cleng::~Cleng() {
-}
+Cleng::~Cleng() {}
 
 bool Cleng::CheckInput(int start) {
     if (debug) cout << "CheckInput in Cleng" << endl;
@@ -82,7 +88,7 @@ bool Cleng::CP(transfer tofrom) {
 	int MZ=Lat[0]->MZ;
 	int JX=Lat[0]->JX;
 	int JY=Lat[0]->JY;
-	int M = Lat[0]->M;
+	int M =Lat[0]->M;
 	int j;
     int length;
 	bool found;
@@ -141,6 +147,7 @@ bool Cleng::CP(transfer tofrom) {
 
         case to_segment:
 			Zero(Seg[clamp_seg]->H_MASK,M);
+
 			for (int i=0; i < n_boxes; i++) {
 				Seg[clamp_seg]->px1[i] = X[P[2*i]] + Sx[2*i]*MX;
                 Seg[clamp_seg]->py1[i] = Y[P[2*i]] + Sy[2*i]*MY;
@@ -165,6 +172,9 @@ bool Cleng::CP(transfer tofrom) {
             Sx.clear();
             Sy.clear();
             Sz.clear();
+            X.clear();
+            Y.clear();
+            Z.clear();
 		break;
 
         default:
@@ -177,25 +187,32 @@ bool Cleng::CP(transfer tofrom) {
 
 void Cleng::WriteOutput(int subloop){
     if (debug) cout << "WriteOutput in Cleng" << endl;
-      PushOutput();
-      Sys[0]->PushOutput(); // needs to be after pushing output for seg.
-      Lat[0]->PushOutput();
-      New[0]->PushOutput();
-      int length = In[0]->MonList.size();
-      for (int i = 0; i < length; i++) Seg[i]->PushOutput();
-      length = In[0]->MolList.size();
-      for (int i = 0; i < length; i++) {
-          int length_al = Mol[i]->MolAlList.size();
-          for (int k = 0; k < length_al; k++) {
-              Mol[i]->Al[k]->PushOutput();
-          } 
-          Mol[i]->PushOutput();
-      }
-      // length = In[0]->AliasList.size();
-      // for (int i=0; i<length; i++) Al[i]->PushOutput();
-      for (int i = 0; i < n_out; i++) {
-          Out[i]->WriteOutput(subloop);
-      }
+    int mon_length;
+    int mol_length;
+    int molal_length;
+
+    PushOutput();
+    Sys[0]->PushOutput(); // needs to be after pushing output for seg.
+    Lat[0]->PushOutput();
+    New[0]->PushOutput();
+    mon_length = (int)In[0]->MonList.size();
+    for (int i = 0; i < mon_length; i++) {
+        Seg[i]->PushOutput();
+    }
+    mol_length = (int)In[0]->MolList.size();
+    for (int i = 0; i < mol_length; i++) {
+        molal_length = (int) Mol[i]->MolAlList.size();
+        for (int k = 0; k < molal_length; k++) {
+            Mol[i]->Al[k]->PushOutput();
+        }
+        Mol[i]->PushOutput();
+    }
+    // length = In[0]->AliasList.size();
+    // for (int i=0; i<length; i++) Al[i]->PushOutput();
+
+    for (int i = 0; i < n_out; i++) {
+        Out[i]->WriteOutput(subloop);
+    }
 }
 
 int Cleng::GetIntRandomValueExclude(int min_value, int max_value, int exclude_value, bool need_exclude) {
@@ -221,20 +238,18 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
     return dist(gen);
 }
 
-bool Cleng::MakeShift() {
+bool Cleng::MakeShift(bool back) {
     if (debug) cout << "MakeShift in Cleng" << endl;
-
     bool success = true;
-    int pos_array = -2;
-    int rand_part_index;
-    vector<int> shift_XYZ = {0,0,0};
 
-    rand_part_index = GetIntRandomValueExclude(0, X.size()+1, 0, false);
-    cout << "rand_part_index:" << rand_part_index << endl;
+    if (!back) {
+        shift_XYZ = {0, 0, 0};
+        rand_part_index = GetIntRandomValueExclude(0, X.size() - 1, 0, false);
 
-    cout << "X:" << X[rand_part_index] << endl;
-    cout << "Y:" << Y[rand_part_index] << endl;
-    cout << "Z:" << Z[rand_part_index] << endl;
+        cout << "rand_part_index:" << rand_part_index << endl;
+        cout << "X:" << X[rand_part_index] << endl;
+        cout << "Y:" << Y[rand_part_index] << endl;
+        cout << "Z:" << Z[rand_part_index] << endl;
 
 //    TODO: rethink physics
 //    pos_array = GetIntRandomValueExclude(0, 2, 0, false);
@@ -245,29 +260,43 @@ bool Cleng::MakeShift() {
 //    }
 //    shift_XYZ[pos_array] = 0;
 
-    pos_array = GetIntRandomValueExclude(0, 1, 0, false);
-    cout << "pos_array:" << pos_array << endl;
+        int pos_array = GetIntRandomValueExclude(0, 1, 0, false);
+        cout << "pos_array:" << pos_array << endl;
 
-    if (pos_array == 0) {
+        if (pos_array == 0) {
 //      z-direction
-        shift_XYZ[2] = GetIntRandomValueExclude(-1, 1, 0, true);
-    } else {
+            shift_XYZ[2] = GetIntRandomValueExclude(-1, 1, 0, true);
+        } else {
 //      xy-direction
-        shift_XYZ[0] = GetIntRandomValueExclude(-1, 1, 0, true);
-        shift_XYZ[1] = GetIntRandomValueExclude(-1, 1, 0, true);
-    }
+            shift_XYZ[0] = GetIntRandomValueExclude(-1, 1, 0, true);
+            shift_XYZ[1] = GetIntRandomValueExclude(-1, 1, 0, true);
+        }
 
-    X[rand_part_index]+= shift_XYZ[0];
-    Y[rand_part_index]+= shift_XYZ[1];
-    Z[rand_part_index]+= shift_XYZ[2];
+        if ((3 < X[rand_part_index] + shift_XYZ[0]) && (X[rand_part_index] + shift_XYZ[0] < 18)
+            && (3 < Y[rand_part_index] + shift_XYZ[1]) && (Y[rand_part_index] + shift_XYZ[1] < 18)
+            && (3 < Z[rand_part_index] + shift_XYZ[2]) && (Z[rand_part_index] + shift_XYZ[2] < 18)) {
+
+            X[rand_part_index] += shift_XYZ[0];
+            Y[rand_part_index] += shift_XYZ[1];
+            Z[rand_part_index] += shift_XYZ[2];
+        } else {
+            if (pos_array == 0) {
+//      z-direction
+                shift_XYZ[2] = GetIntRandomValueExclude(-1, 1, 0, true);
+            } else {
+//      xy-direction
+                shift_XYZ[0] = GetIntRandomValueExclude(-1, 1, 0, true);
+                shift_XYZ[1] = GetIntRandomValueExclude(-1, 1, 0, true);
+            }
+        }
 
 
-    cout << "X:" << X[rand_part_index] << endl;
-    cout << "Y:" << Y[rand_part_index] << endl;
-    cout << "Z:" << Z[rand_part_index] << endl;
+        cout << "X:" << X[rand_part_index] << endl;
+        cout << "Y:" << Y[rand_part_index] << endl;
+        cout << "Z:" << Z[rand_part_index] << endl;
 
 //    cout << "changed:" << changed << endl;
-    cout << "Shift:" << shift_XYZ[0] << " " << shift_XYZ[1] << " " << shift_XYZ[2] << endl;
+        cout << "Shift:" << shift_XYZ[0] << " " << shift_XYZ[1] << " " << shift_XYZ[2] << endl;
 //    cout << "len P:" << P.size() << endl;
 //    cout << "len Sx:" << Sx.size() << endl;
 //    cout << "len Sy:" << Sy.size() << endl;
@@ -275,6 +304,29 @@ bool Cleng::MakeShift() {
 //    cout << "len X:" << X.size() << endl;
 //    cout << "len Y:" << Y.size() << endl;
 //    cout << "len Z:" << Z.size() << endl;
+    }
+    else {
+        cout << "MakeShift back" << endl;
+
+        cout << "rand_part_index:" << rand_part_index << endl;
+        cout << "X:" << X[rand_part_index] << endl;
+        cout << "Y:" << Y[rand_part_index] << endl;
+        cout << "Z:" << Z[rand_part_index] << endl;
+
+        cout << -shift_XYZ[0] << " " << -shift_XYZ[1] << " " << -shift_XYZ[2] << endl;
+        cout << "last particle:" << rand_part_index << endl;
+        X[rand_part_index] -= shift_XYZ[0];
+        Y[rand_part_index] -= shift_XYZ[1];
+        Z[rand_part_index] -= shift_XYZ[2];
+
+        cout << "rand_part_index:" << rand_part_index << endl;
+        cout << "X:" << X[rand_part_index] << endl;
+        cout << "Y:" << Y[rand_part_index] << endl;
+        cout << "Z:" << Z[rand_part_index] << endl;
+
+        cout << "Done." << endl;
+
+    }
     return success;
 }
 
@@ -289,12 +341,12 @@ bool Cleng::MonteCarlo() {
 // init system outlook
     New[0]->Solve(true);
     WriteOutput(0);
-    for (int i = 1; i < MCS; i++) { // loop for trials
+    for (int i = 0; i < MCS; ++i) { // loop for trials
         Real my_rand = GetRealRandomValue(0, 1);
-
         free_energy_c = Sys[0]-> FreeEnergy;
         success=CP(to_cleng);
-        MakeShift();
+        MakeShift(false);
+
         success=CP(to_segment);
         New[0]->Solve(true);
 
@@ -308,7 +360,8 @@ bool Cleng::MonteCarlo() {
             cout << "Accepted" << endl;
         } else {
             cout << "Deny" << endl;
-            cout << shift_XYZ[0] << " " << shift_XYZ[1] << " " << shift_XYZ[2] << endl;
+            MakeShift(true);
+            continue;
          }
         WriteOutput(i);
     }

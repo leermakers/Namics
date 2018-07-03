@@ -216,21 +216,24 @@ bool Molecule:: PrepareForCalculations(int *KSAM) {
 if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 int M=Lat[0]->M;
 	if (freedom=="clamped") {
-		int jx=Lat[0]->jx[Seg[mon_nr[0]]->clamp_nr];
-		int jy=Lat[0]->jy[Seg[mon_nr[0]]->clamp_nr];
-		int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
-		for (int i=0; i<n_box; i++) {
-			H_Bx[i]=Seg[mon_nr[0]]->bx[i];
-			H_By[i]=Seg[mon_nr[0]]->by[i];
-			H_Bz[i]=Seg[mon_nr[0]]->bz[i];
-			H_Px1[i]=Seg[mon_nr[0]]->px1[i];
-			H_Py1[i]=Seg[mon_nr[0]]->py1[i];
-			H_Pz1[i]=Seg[mon_nr[0]]->pz1[i];
-			H_Px2[i]=Seg[mon_nr[0]]->px2[i];
-			H_Py2[i]=Seg[mon_nr[0]]->py2[i];
-			H_Pz2[i]=Seg[mon_nr[0]]->pz2[i];
-			H_mask1[i*m + jx*(Px1[i]-Bx[i])+jy*(Py1[i]-By[i])+(Pz1[i]-Bz[i])]=1;
-			H_mask2[i*m + jx*(Px2[i]-Bx[i])+jy*(Py2[i]-By[i])+(Pz2[i]-Bz[i])]=1;
+        int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
+        Zero(H_mask1,n_box*m); 
+        Zero(H_mask2,n_box*m);
+
+        int jx=Lat[0]->jx[Seg[mon_nr[0]]->clamp_nr];
+        int jy=Lat[0]->jy[Seg[mon_nr[0]]->clamp_nr];
+        for (int i=0; i<n_box; i++) {
+            H_Bx[i]=Seg[mon_nr[0]]->bx[i];
+            H_By[i]=Seg[mon_nr[0]]->by[i];
+            H_Bz[i]=Seg[mon_nr[0]]->bz[i];
+            H_Px1[i]=Seg[mon_nr[0]]->px1[i];
+            H_Py1[i]=Seg[mon_nr[0]]->py1[i];
+            H_Pz1[i]=Seg[mon_nr[0]]->pz1[i];
+            H_Px2[i]=Seg[mon_nr[0]]->px2[i];
+            H_Py2[i]=Seg[mon_nr[0]]->py2[i];
+            H_Pz2[i]=Seg[mon_nr[0]]->pz2[i];
+            H_mask1[i*m + jx*(Px1[i]-Bx[i])+jy*(Py1[i]-By[i])+(Pz1[i]-Bz[i])]=1;
+            H_mask2[i*m + jx*(Px2[i]-Bx[i])+jy*(Py2[i]-By[i])+(Pz2[i]-Bz[i])]=1;
 		}
 #ifdef CUDA
 		TransferDataToDevice(H_mask1,mask1,m*n_box);

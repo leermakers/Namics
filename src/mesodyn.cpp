@@ -399,7 +399,7 @@ void Mesodyn::writeRho(int t) {
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
 Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component* A, Component* B)
-    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), gaussian{gaussian}, A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX}, gaussian_noise(M) {
+    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), gaussian{gaussian}, A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX} {
   Flux1D::mask(mask);
 }
 

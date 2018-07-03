@@ -30,13 +30,13 @@ pro : mol : pol : phi
 mesodyn : smth : timesteps : 10000
 mesodyn : smth : timebetweensaves : 100000000
 mesodyn : smth : diffusionconstant : 0.5
-mesodyn : smth : mean : 1
-mesodyn : smth : stdev : 1
+mesodyn : smth : mean : 0
+mesodyn : smth : stddev : 0
 mesodyn : smth : seed : 1
 
-newton :isaac : method : pseudohessian
+newton :isaac : method : DIIS
 newton : isaac : i_info : 5000
-newton : isaac : deltamax : 0.1
+newton : isaac : deltamax : 1.0
 newton : isaac : iterationlimit : 5000
 newton : isaac : tolerance : 1e-5
 start

@@ -83,6 +83,9 @@ public:
 
   int update_boundaries(vector<Real>&);
 
+  Gaussian_noise* gaussian;
+  vector<Real> gaussian_noise;
+
 private:
   function<void(vector<Real>&)> bX0;
   function<void(vector<Real>&)> bXm;
@@ -192,7 +195,6 @@ protected:
   const int JX;
   vector<int> Mask_plus_x;
   vector<int> Mask_minus_x;
-  vector<Real> gaussian_noise;
 };
 
 class Flux2D : public Flux1D {

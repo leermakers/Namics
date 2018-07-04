@@ -87,7 +87,7 @@ private:
   function<void(vector<Real>&)> bX0;
   function<void(vector<Real>&)> bXm;
 
-  int set_x_boundaries(boundary, boundary);
+  int set_x_boundaries(boundary, boundary, Real = 0);
   void bX0Mirror(vector<Real>&, int, int);
   void bXmMirror(vector<Real>&, int, int, int);
   void bXPeriodic(vector<Real>&, int, int, int);
@@ -107,7 +107,7 @@ private:
   function<void(vector<Real>&)> bY0;
   function<void(vector<Real>&)> bYm;
 
-  int set_y_boundaries(boundary, boundary);
+  int set_y_boundaries(boundary, boundary, Real = 0);
   void bY0Mirror(vector<Real>&, int, int);
   void bYmMirror(vector<Real>&, int, int, int);
   void bYPeriodic(vector<Real>&, int, int, int);
@@ -127,7 +127,7 @@ private:
   function<void(vector<Real>&)> bZ0;
   function<void(vector<Real>&)> bZm;
 
-  int set_z_boundaries(boundary, boundary);
+  int set_z_boundaries(boundary, boundary, Real = 0);
   void bZ0Mirror(vector<Real>&, int, int);
   void bZmMirror(vector<Real>&, int, int, int);
   void bZPeriodic(vector<Real>&, int, int, int);

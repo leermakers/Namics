@@ -762,7 +762,7 @@ int Boundary3D::update_boundaries(vector<Real>& target) {
   return 0;
 }
 
-int Boundary1D::set_x_boundaries(boundary x0, boundary xm) {
+int Boundary1D::set_x_boundaries(boundary x0, boundary xm, Real bulk) {
   using namespace std::placeholders;
 
   switch (x0) {
@@ -777,7 +777,7 @@ int Boundary1D::set_x_boundaries(boundary x0, boundary xm) {
     bX0 = bind(&Boundary1D::bXPeriodic, this, _1, MY, MZ, MX);
     break;
   case BULK:
-    //bX0 = bind(&Boundary1D::bX0Bulk, this, _1, MY, MZ, rho[1]);
+    bX0 = bind(&Boundary1D::bX0Bulk, this, _1, MY, MZ, bulk);
     break;
   }
 
@@ -794,14 +794,14 @@ int Boundary1D::set_x_boundaries(boundary x0, boundary xm) {
     bXm = bind(&Boundary1D::bXPeriodic, this, _1, MY, MZ, MX);
     break;
   case BULK:
-  //  bXm = bind(&Boundary1D::bXmBulk, this, _1, MY, MZ, MX, rho[MX - 2]);
+    bXm = bind(&Boundary1D::bXmBulk, this, _1, MY, MZ, MX, bulk);
     break;
   }
 
   return 0;
 }
 
-int Boundary2D::set_y_boundaries(boundary y0, boundary ym) {
+int Boundary2D::set_y_boundaries(boundary y0, boundary ym, Real bulk) {
   using namespace std::placeholders;
 
   switch (y0) {
@@ -816,7 +816,7 @@ int Boundary2D::set_y_boundaries(boundary y0, boundary ym) {
     bY0 = bind(&Boundary2D::bYPeriodic, this, _1, MX, MZ, MY);
     break;
   case BULK:
-    //nothing yet
+    bY0 = bind(&Boundary2D::bY0Bulk, this, _1, MX, MZ, bulk);
     break;
   }
 
@@ -832,14 +832,14 @@ int Boundary2D::set_y_boundaries(boundary y0, boundary ym) {
     bYm = bind(&Boundary2D::bYPeriodic, this, _1, MX, MZ, MY);
     break;
   case BULK:
-    //nothing yet
+    bYm = bind(&Boundary2D::bYmBulk, this, _1, MX, MZ, MY, bulk);
     break;
   }
 
   return 0;
 }
 
-int Boundary3D::set_z_boundaries(boundary z0, boundary zm) {
+int Boundary3D::set_z_boundaries(boundary z0, boundary zm, Real bulk) {
     using namespace std::placeholders;
 
   switch (z0) {
@@ -854,7 +854,7 @@ int Boundary3D::set_z_boundaries(boundary z0, boundary zm) {
     bZ0 = bind(&Boundary3D::bZPeriodic, this, _1, MX, MY, MZ);
     break;
   case BULK:
-    //nothing yet
+    bZ0 = bind(&Boundary3D::bZ0Bulk, this, _1, MX, MY, bulk);
     break;
   }
 
@@ -870,7 +870,7 @@ int Boundary3D::set_z_boundaries(boundary z0, boundary zm) {
     bZm = bind(&Boundary3D::bZPeriodic, this, _1, MX, MY, MZ);
     break;
   case BULK:
-    //nothing yet
+    bZm = bind(&Boundary3D::bZmBulk, this, _1, MX, MY, MZ, bulk);
     break;
   }
 

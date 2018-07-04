@@ -10,7 +10,8 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
     name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
     D{0.01}, mean{0}, stddev{1*D}, seed{1}, timesteps{100}, timebetweensaves{1},
     componentNo{(int)Sys[0]->SysMolMonList.size()},
-    boundary(0), component(0), flux(0)
+    boundary(0), component(0), flux(0),
+    writes{0}
 {
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
@@ -91,9 +92,11 @@ bool Mesodyn::mesodyn() {
     cout << "mesodyn in Mesodyn" << endl;
 
   initial_conditions(); // Initialize densities by running the classical method once.
+  set_filename();
+  write_settings();
 
-  prepareOutputFile();
-  writeRho(0); // write initial conditions
+  // write initial conditions
+  write_density(solver_component);
 
   if (debug)
     cout << "Mesodyn is all set, starting calculations.." << endl;
@@ -146,7 +149,7 @@ bool Mesodyn::mesodyn() {
     }
 
     if (t % timebetweensaves == 0)
-      writeRho(t);
+      write_density(solver_component);
 
     i = 0;
     for(Flux1D* all_fluxes : flux) {
@@ -155,7 +158,8 @@ bool Mesodyn::mesodyn() {
     }
 
   } // time loop
-  writeRho(timesteps);
+
+  write_density(solver_component);
   return true;
 }
 
@@ -285,11 +289,8 @@ int Mesodyn::init_rho(vector<vector<Real>>& rho, vector<int>& mask) {
 
 /******* Output generation *******/
 
-void Mesodyn::prepareOutputFile() {
+void Mesodyn::set_filename() {
   /* Open filestream and set filename to "mesodyn-datetime.csv" */
-  ostringstream filename;
-
-  // TODO: Get all of this stuff below from output!
   string output_folder = "output/";
   string bin_folder = "bin";
 
@@ -308,11 +309,17 @@ void Mesodyn::prepareOutputFile() {
 
   time_t rawtime;
   time(&rawtime);
-  filename << rawtime << ".csv";
+  filename << rawtime;
+}
 
-  mesFile.open(filename.str());
+void Mesodyn::write_settings() {
+  ostringstream settings_filename;
 
-  mesFile.precision(16);
+  settings_filename << filename.str()  << "-settings.dat";
+
+  mesodyn_output.open(settings_filename.str());
+
+  mesodyn_output.precision(16);
 
   /* Output settings */
 
@@ -326,74 +333,39 @@ void Mesodyn::prepareOutputFile() {
   settings << "Mean for noise," << mean << ",\n";
   settings << "Stddev for noise," << stddev << ",\n";
 
-  mesFile << settings.str();
-
-  /* Generate headers for rho entries */
-
-  ostringstream headers;
-
-  int permutations = combinations(componentNo, 2);
-
-  headers << "t,x,y,z,";
-
-  for (int i = 1; i <= componentNo; ++i) {
-    headers << "rho" << i << ",";
-  }
-
-  for (int i = 1; i <= permutations; ++i) {
-    headers << "J_solver" << i << ",";
-  }
-
-  for (int i = 1; i <= permutations; ++i) {
-    headers << "J_previous" << i << ",";
-  }
-
-  headers << "\n";
-
-  mesFile << headers.str();
+  mesodyn_output << settings.str();
+  mesodyn_output.close();
 }
 
-void Mesodyn::writeRho(int t) {
-  ostringstream rhoOutput;
+void Mesodyn::write_density(vector<Component*>& component) {
+  int component_count{1};
+  for (Component* all_components : component) {
 
-  rhoOutput.precision(16);
-  int x{0}, y{0}, z{0};
+    ostringstream vtk_filename;
+    vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
 
-  do {
-    y = 0;
-    do {
-      x = 0;
-      do {
-        rhoOutput << t << "," << x << "," << y << "," << z << ",";
-        for (Component* all_components : component) {
-          rhoOutput << all_components->rho_at(x, y, z) << ",";
-        }
+    mesodyn_output.open(vtk_filename.str());
 
-        for (Flux1D* all_fluxes : solver_flux) {
-          rhoOutput << all_fluxes->J_at(x, y, z) << ",";
-        }
+    /* Generate headers for rho entries */
 
-        for (Flux1D* all_fluxes : flux) {
-          rhoOutput << all_fluxes->J_at(x, y, z) << ",";
-        }
+    ostringstream vtk;
 
-        rhoOutput << "\n";
+    //int permutations = combinations(componentNo, 2);
 
-        mesFile << rhoOutput.str();
+    vtk << "# vtk DataFile Version 7.0 \nvtk output \nASCII \nDATASET STRUCTURED_POINTS \nDIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
+    vtk << "SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA " << MX * MY * MZ << "\n";
+    vtk << "SCALARS Box_profile float\nLOOKUP_TABLE default \n";
 
-        // Set rhoOutput to empty
-        rhoOutput.str("");
-        // Clear any remaining error flags
-        rhoOutput.clear();
+    for (Real& value : all_components->rho)
+      vtk << value << " \n";
 
-        x++;
-      } while (x < MX);
-      y++;
-    } while (y < MY);
-    z++;
-  } while (z < MZ);
+    mesodyn_output << vtk.str();
+    mesodyn_output.flush();
 
-  mesFile.flush();
+    mesodyn_output.close();
+    ++component_count;
+  }
+  ++writes;
 }
 
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
@@ -818,6 +790,8 @@ int Boundary1D::set_x_boundaries(boundary x0, boundary xm) {
       throw ERROR_PERIODIC_BOUNDARY;
       return 1;
     }
+    //TODO: fix this double periodic (including ones below)
+    bXm = bind(&Boundary1D::bXPeriodic, this, _1, MY, MZ, MX);
     break;
   case BULK:
   //  bXm = bind(&Boundary1D::bXmBulk, this, _1, MY, MZ, MX, rho[MX - 2]);
@@ -855,6 +829,7 @@ int Boundary2D::set_y_boundaries(boundary y0, boundary ym) {
       throw ERROR_PERIODIC_BOUNDARY;
       return 1;
     }
+    bYm = bind(&Boundary2D::bYPeriodic, this, _1, MX, MZ, MY);
     break;
   case BULK:
     //nothing yet
@@ -892,6 +867,7 @@ int Boundary3D::set_z_boundaries(boundary z0, boundary zm) {
       throw ERROR_PERIODIC_BOUNDARY;
       return 1;
     }
+    bZm = bind(&Boundary3D::bZPeriodic, this, _1, MX, MY, MZ);
     break;
   case BULK:
     //nothing yet

@@ -239,10 +239,10 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
 }
 
 bool Cleng::InBoxRange() {
-    int down_bondary = 2;
-    return    (down_bondary < X[rand_part_index] + shift.x) && (X[rand_part_index] + shift.x < (int)Lat[0]->MX - down_bondary)
-           && (down_bondary < Y[rand_part_index] + shift.y) && (Y[rand_part_index] + shift.y < (int)Lat[0]->MY - down_bondary)
-           && (down_bondary < Z[rand_part_index] + shift.z) && (Z[rand_part_index] + shift.z < (int)Lat[0]->MZ - down_bondary);
+    int up_bondary = 3; int down_bondary = 3;
+    return    (down_bondary < X[rand_part_index] + shift.x) && (X[rand_part_index] + shift.x < (int)Lat[0]->MX - up_bondary)
+           && (down_bondary < Y[rand_part_index] + shift.y) && (Y[rand_part_index] + shift.y < (int)Lat[0]->MY - up_bondary)
+           && (down_bondary < Z[rand_part_index] + shift.z) && (Z[rand_part_index] + shift.z < (int)Lat[0]->MZ - up_bondary);
 }
 
 bool Cleng::NotTooClose() {
@@ -259,6 +259,30 @@ bool Cleng::NotTooClose() {
     }
     return !equals;
 }
+
+bool Cleng::MakeShift1(bool back) {
+    if (debug) cout << "MakeShift1 in Cleng" << endl;
+    bool success = true;
+
+    cout << "clamped seg:" << clamp_seg << endl;
+    for (int i=0; i < n_boxes; i++) {
+        cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " " << Seg[clamp_seg]-> py1[i] << " " << Seg[clamp_seg]-> pz1[i] << endl;
+        cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " " << Seg[clamp_seg]-> py2[i] << " " << Seg[clamp_seg]-> pz2[i] << endl;
+    }
+
+    cout << "len X:" << X.size() << endl;
+    cout << "len Y:" << Y.size() << endl;
+    cout << "len Z:" << Z.size() << endl;
+
+    for (int i=0; i < (int)X.size(); i++) {
+        cout << "i:" << i << " X:" << X[i] << " Y:" << Y[i] << " Z:" << Z[i] << endl;
+    }
+
+    return success;
+}
+
+
+
 
 bool Cleng::MakeShift(bool back) {
     if (debug) cout << "MakeShift in Cleng" << endl;
@@ -310,10 +334,38 @@ bool Cleng::MakeShift(bool back) {
             }
         }
 
+        cout << "*************************************************\n";
+        cout << "*************************************************\n";
+
 
         cout << "X:" << X[rand_part_index] << endl;
         cout << "Y:" << Y[rand_part_index] << endl;
         cout << "Z:" << Z[rand_part_index] << endl;
+
+        cout << "*************************************************\n";
+        cout << "*************************************************\n";
+
+
+        cout << "=================================================\n";
+        cout << "=================================================\n";
+
+        cout << "clamped seg:" << clamp_seg << endl;
+        for (int i=0; i < n_boxes; i++) {
+            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " " << Seg[clamp_seg]-> py1[i] << " " << Seg[clamp_seg]-> pz1[i] << endl;
+            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " " << Seg[clamp_seg]-> py2[i] << " " << Seg[clamp_seg]-> pz2[i] << endl;
+        }
+
+        cout << "len X:" << X.size() << endl;
+        cout << "len Y:" << Y.size() << endl;
+        cout << "len Z:" << Z.size() << endl;
+
+        for (int i=0; i < (int)X.size(); i++) {
+            cout << "i:" << i << " X:" << X[i] << " Y:" << Y[i] << " Z:" << Z[i] << endl;
+        }
+
+        cout << "=================================================\n";
+        cout << "=================================================\n";
+
 
 //    cout << "changed:" << changed << endl;
         cout << "Shift:" << shift.x << " " << shift.y << " " << shift.z << endl;
@@ -324,6 +376,8 @@ bool Cleng::MakeShift(bool back) {
     cout << "len X:" << X.size() << endl;
     cout << "len Y:" << Y.size() << endl;
     cout << "len Z:" << Z.size() << endl;
+
+    cout << endl;
     }
     else {
         cout << "MakeShift back" << endl;
@@ -344,7 +398,7 @@ bool Cleng::MakeShift(bool back) {
         cout << "Y:" << Y[rand_part_index] << endl;
         cout << "Z:" << Z[rand_part_index] << endl;
 
-        cout << "Done." << endl;
+        cout << endl;
 
     }
     return success;
@@ -376,7 +430,7 @@ bool Cleng::MonteCarlo() {
         cout << "free_energy_t:" << free_energy_t << endl;
 
         if (free_energy_t != free_energy_t) {
-            for (int k = 0; k < X.size(); k++) {
+            for (int k = 0; k < (int) X.size(); k++) {
                 cout << X[k] << " " << Y[k] << " " << Z[k] << endl;
             }
             break;

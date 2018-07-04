@@ -27,6 +27,7 @@ Cleng::Cleng(
 
 Cleng::~Cleng() {}
 
+
 bool Cleng::CheckInput(int start) {
     if (debug) cout << "CheckInput in Cleng" << endl;
     bool success = true;
@@ -97,7 +98,6 @@ bool Cleng::CP(transfer tofrom) {
         case to_cleng:
             // cleaning
             P.clear();
-
 			for (int i=0; i<n_boxes; i++) {
 			    PX=Seg[clamp_seg]->px1[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
 				PY=Seg[clamp_seg]->py1[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
@@ -238,13 +238,35 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
     return dist(gen);
 }
 
+bool Cleng::InBoxRange() {
+    int down_bondary = 2;
+    return    (down_bondary < X[rand_part_index] + shift.x) && (X[rand_part_index] + shift.x < (int)Lat[0]->MX - down_bondary)
+           && (down_bondary < Y[rand_part_index] + shift.y) && (Y[rand_part_index] + shift.y < (int)Lat[0]->MY - down_bondary)
+           && (down_bondary < Z[rand_part_index] + shift.z) && (Z[rand_part_index] + shift.z < (int)Lat[0]->MZ - down_bondary);
+}
+
+bool Cleng::NotTooClose() {
+    
+    auto indexes_particle = (int) X.size();
+
+    Point MP {X[rand_part_index] + shift.x, Y[rand_part_index]+ shift.y, Z[rand_part_index]+ shift.z };
+    int equals = 0;
+
+    for (int index = 0; index < indexes_particle; index++) {
+        if (MP.x == X[index] && MP.y == Y[index] && MP.z == Z[index]) {
+            equals+=1;
+        }
+    }
+    return !equals;
+}
+
 bool Cleng::MakeShift(bool back) {
     if (debug) cout << "MakeShift in Cleng" << endl;
     bool success = true;
 
     if (!back) {
-        shift_XYZ = {0, 0, 0};
-        rand_part_index = GetIntRandomValueExclude(0, X.size() - 1, 0, false);
+        shift = {0, 0, 0};
+        rand_part_index = GetIntRandomValueExclude(0, (int)X.size() - 1, 0, false);
 
         cout << "rand_part_index:" << rand_part_index << endl;
         cout << "X:" << X[rand_part_index] << endl;
@@ -256,37 +278,35 @@ bool Cleng::MakeShift(bool back) {
 //    cout << "pos_array:" << pos_array << endl;
 //    //choosing what direction should I change (x,y or z)
 //    for (int i=0; i<3; i++) {
-//        shift_XYZ[i] = GetIntRandomValueExclude(-1, 1, 0, true);
+//        shift[i] = GetIntRandomValueExclude(-1, 1, 0, true);
 //    }
-//    shift_XYZ[pos_array] = 0;
+//    shift[pos_array] = 0;
 
         int pos_array = GetIntRandomValueExclude(0, 1, 0, false);
         cout << "pos_array:" << pos_array << endl;
 
         if (pos_array == 0) {
 //      z-direction
-            shift_XYZ[2] = GetIntRandomValueExclude(-1, 1, 0, true);
+            shift.z = GetIntRandomValueExclude(-1, 1, 0, true);
         } else {
 //      xy-direction
-            shift_XYZ[0] = GetIntRandomValueExclude(-1, 1, 0, true);
-            shift_XYZ[1] = GetIntRandomValueExclude(-1, 1, 0, true);
+            shift.x = GetIntRandomValueExclude(-1, 1, 0, true);
+            shift.y = GetIntRandomValueExclude(-1, 1, 0, true);
         }
 
-        if ((3 < X[rand_part_index] + shift_XYZ[0]) && (X[rand_part_index] + shift_XYZ[0] < 18)
-            && (3 < Y[rand_part_index] + shift_XYZ[1]) && (Y[rand_part_index] + shift_XYZ[1] < 18)
-            && (3 < Z[rand_part_index] + shift_XYZ[2]) && (Z[rand_part_index] + shift_XYZ[2] < 18)) {
+        if (InBoxRange() && NotTooClose()) {
 
-            X[rand_part_index] += shift_XYZ[0];
-            Y[rand_part_index] += shift_XYZ[1];
-            Z[rand_part_index] += shift_XYZ[2];
+            X[rand_part_index] += shift.x;
+            Y[rand_part_index] += shift.y;
+            Z[rand_part_index] += shift.z;
         } else {
             if (pos_array == 0) {
 //      z-direction
-                shift_XYZ[2] = GetIntRandomValueExclude(-1, 1, 0, true);
+                shift.z = GetIntRandomValueExclude(-1, 1, 0, true);
             } else {
 //      xy-direction
-                shift_XYZ[0] = GetIntRandomValueExclude(-1, 1, 0, true);
-                shift_XYZ[1] = GetIntRandomValueExclude(-1, 1, 0, true);
+                shift.x = GetIntRandomValueExclude(-1, 1, 0, true);
+                shift.y = GetIntRandomValueExclude(-1, 1, 0, true);
             }
         }
 
@@ -296,14 +316,14 @@ bool Cleng::MakeShift(bool back) {
         cout << "Z:" << Z[rand_part_index] << endl;
 
 //    cout << "changed:" << changed << endl;
-        cout << "Shift:" << shift_XYZ[0] << " " << shift_XYZ[1] << " " << shift_XYZ[2] << endl;
+        cout << "Shift:" << shift.x << " " << shift.y << " " << shift.z << endl;
 //    cout << "len P:" << P.size() << endl;
 //    cout << "len Sx:" << Sx.size() << endl;
 //    cout << "len Sy:" << Sy.size() << endl;
 //    cout << "len Sz:" << Sz.size() << endl;
-//    cout << "len X:" << X.size() << endl;
-//    cout << "len Y:" << Y.size() << endl;
-//    cout << "len Z:" << Z.size() << endl;
+    cout << "len X:" << X.size() << endl;
+    cout << "len Y:" << Y.size() << endl;
+    cout << "len Z:" << Z.size() << endl;
     }
     else {
         cout << "MakeShift back" << endl;
@@ -313,11 +333,11 @@ bool Cleng::MakeShift(bool back) {
         cout << "Y:" << Y[rand_part_index] << endl;
         cout << "Z:" << Z[rand_part_index] << endl;
 
-        cout << -shift_XYZ[0] << " " << -shift_XYZ[1] << " " << -shift_XYZ[2] << endl;
+        cout << -shift.x << " " << -shift.y << " " << -shift.z << endl;
         cout << "last particle:" << rand_part_index << endl;
-        X[rand_part_index] -= shift_XYZ[0];
-        Y[rand_part_index] -= shift_XYZ[1];
-        Z[rand_part_index] -= shift_XYZ[2];
+        X[rand_part_index] -= shift.x;
+        Y[rand_part_index] -= shift.y;
+        Z[rand_part_index] -= shift.z;
 
         cout << "rand_part_index:" << rand_part_index << endl;
         cout << "X:" << X[rand_part_index] << endl;
@@ -341,12 +361,11 @@ bool Cleng::MonteCarlo() {
 // init system outlook
     New[0]->Solve(true);
     WriteOutput(0);
-    for (int i = 0; i < MCS; ++i) { // loop for trials
+    for (int i = 1; i < MCS; i++) { // loop for trials
         Real my_rand = GetRealRandomValue(0, 1);
         free_energy_c = Sys[0]-> FreeEnergy;
         success=CP(to_cleng);
         MakeShift(false);
-
         success=CP(to_segment);
         New[0]->Solve(true);
 
@@ -356,14 +375,24 @@ bool Cleng::MonteCarlo() {
         cout << "free_energy_c:" << free_energy_c << endl;
         cout << "free_energy_t:" << free_energy_t << endl;
 
+        if (free_energy_t != free_energy_t) {
+            for (int k = 0; k < X.size(); k++) {
+                cout << X[k] << " " << Y[k] << " " << Z[k] << endl;
+            }
+            break;
+        }
+
+
         if ( my_rand < exp(free_energy_c-free_energy_t) ) {
             cout << "Accepted" << endl;
         } else {
             cout << "Deny" << endl;
             MakeShift(true);
             continue;
-         }
-        WriteOutput(i);
+        }
+        if ((i % save_interval) == 0) {
+            WriteOutput(i);
+        }
     }
 	return success;
 }

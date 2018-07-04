@@ -33,6 +33,14 @@ private:
     Real seed;
     void prepareOutputFile();
 
+    struct Point {
+    public:
+        int x;
+        int y;
+        int z;
+    };
+
+
 public:
     Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
     ~Cleng();
@@ -62,7 +70,7 @@ public:
     vector<int> Y;
     vector<int> Z;
 
-    vector<int> shift_XYZ;
+    Point shift;
     int rand_part_index;
 
 
@@ -74,6 +82,8 @@ public:
     void push(string, string);
     bool CP(transfer);
     bool MakeShift(bool back);
+    bool InBoxRange();
+    bool NotTooClose();
     void WriteOutput(int);
     void PushOutput();
     int GetValue(string, int&, Real&, string&);

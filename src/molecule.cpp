@@ -244,6 +244,7 @@ int M=Lat[0]->M;
 		TransferDataToDevice(H_Px2,Px2,n_box);
 		TransferDataToDevice(H_Py2,Py2,n_box);
 		TransferDataToDevice(H_Pz2,Pz2,n_box);
+		TransferDataToDevice(H_u, u, MolMonList.size()*M);
 #endif
 	}
 	Cp(UNITY,KSAM,M);
@@ -267,12 +268,10 @@ int M=Lat[0]->M;
 	compute_phi_alias=false;
 	if (freedom=="clamped") {
 		int chainlength_even=chainlength%2;
-		//cout << " chainlength_even" << chainlength_even << endl;
 		int pathlength_even;
 		for (int i=0; i<n_box; i++) {
 			pathlength_even=0;
 			pathlength_even=(Px2[i]-Px1[i]+Py2[i]-Py1[i]+Pz2[i]-Pz1[i])%2;
-			//cout << " i " << i << "pathlength_even "  << pathlength_even << endl;
 			if (chainlength_even == pathlength_even)
 			cout <<" Warning, for chain part " << i << " the paths between clamps is not commensurate with the length of the chain fragment. Consider moving the calmp point by one site!" << endl;
 		}

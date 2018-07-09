@@ -192,9 +192,6 @@ int Mesodyn::initial_conditions() {
     if (boundary == "periodic") {
       boundaries.push_back(Boundary1D::PERIODIC);
     }
-    if (boundary == "bulk") {
-      boundaries.push_back(Boundary1D::BULK);
-    }
   }
 
   boundary.push_back(new Boundary1D(Lat[0], boundaries[0], boundaries[1]));

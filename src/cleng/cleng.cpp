@@ -143,7 +143,12 @@ bool Cleng::CP(transfer tofrom) {
 					P.push_back(X.size()-1);
 				}
             }
-			break;
+
+            for (int k = 0; k < X.size(); k++) {
+                cout << X[k] << " " << Y[k] << " " << Z[k] << endl;
+            }
+
+            break;
 
         case to_segment:
 			Zero(Seg[clamp_seg]->H_MASK,M);
@@ -318,11 +323,27 @@ bool Cleng::MakeShift(bool back) {
             shift.y = GetIntRandomValueExclude(-1, 1, 0, true);
         }
 
-        if (InBoxRange() && NotTooClose()) {
+//        if (InBoxRange() && NotTooClose()) {
+        if (true) {
 
-            X[rand_part_index] += shift.x;
-            Y[rand_part_index] += shift.y;
-            Z[rand_part_index] += shift.z;
+//            X[rand_part_index] += shift.x;
+//            Y[rand_part_index] += shift.y;
+//            Z[rand_part_index] += shift.z;
+
+
+            for (int i=0; i<n_boxes; i++) {
+
+                Seg[clamp_seg]-> px1[i]+= shift.x;
+                Seg[clamp_seg]-> py1[i]+= shift.y;
+                Seg[clamp_seg]-> pz1[i]+= shift.z;
+
+                cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " pos_y1:" << Seg[clamp_seg]-> py1[i] << " pos_z1: " << Seg[clamp_seg]-> pz1[i] << endl;
+                cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " pos_y2:" << Seg[clamp_seg]-> py2[i]  << " pos_z2: " << Seg[clamp_seg]-> pz2[i] << endl;
+            }
+
+
+
+
         } else {
             if (pos_array == 0) {
 //      z-direction
@@ -334,37 +355,37 @@ bool Cleng::MakeShift(bool back) {
             }
         }
 
-        cout << "*************************************************\n";
-        cout << "*************************************************\n";
+//        cout << "*************************************************\n";
+//        cout << "*************************************************\n";
+//
+//
+//        cout << "X:" << X[rand_part_index] << endl;
+//        cout << "Y:" << Y[rand_part_index] << endl;
+//        cout << "Z:" << Z[rand_part_index] << endl;
+//
+//        cout << "*************************************************\n";
+//        cout << "*************************************************\n";
+//
+//
+//        cout << "=================================================\n";
+//        cout << "=================================================\n";
 
-
-        cout << "X:" << X[rand_part_index] << endl;
-        cout << "Y:" << Y[rand_part_index] << endl;
-        cout << "Z:" << Z[rand_part_index] << endl;
-
-        cout << "*************************************************\n";
-        cout << "*************************************************\n";
-
-
-        cout << "=================================================\n";
-        cout << "=================================================\n";
-
-        cout << "clamped seg:" << clamp_seg << endl;
-        for (int i=0; i < n_boxes; i++) {
-            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " " << Seg[clamp_seg]-> py1[i] << " " << Seg[clamp_seg]-> pz1[i] << endl;
-            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " " << Seg[clamp_seg]-> py2[i] << " " << Seg[clamp_seg]-> pz2[i] << endl;
-        }
+//        cout << "clamped seg:" << clamp_seg << endl;
+//        for (int i=0; i < n_boxes; i++) {
+//            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " " << Seg[clamp_seg]-> py1[i] << " " << Seg[clamp_seg]-> pz1[i] << endl;
+//            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " " << Seg[clamp_seg]-> py2[i] << " " << Seg[clamp_seg]-> pz2[i] << endl;
+//        }
 
         cout << "len X:" << X.size() << endl;
         cout << "len Y:" << Y.size() << endl;
         cout << "len Z:" << Z.size() << endl;
 
-        for (int i=0; i < (int)X.size(); i++) {
-            cout << "i:" << i << " X:" << X[i] << " Y:" << Y[i] << " Z:" << Z[i] << endl;
-        }
+//        for (int i=0; i < (int)X.size(); i++) {
+//            cout << "i:" << i << " X:" << X[i] << " Y:" << Y[i] << " Z:" << Z[i] << endl;
+//        }
 
-        cout << "=================================================\n";
-        cout << "=================================================\n";
+//        cout << "=================================================\n";
+//        cout << "=================================================\n";
 
 
 //    cout << "changed:" << changed << endl;
@@ -416,12 +437,24 @@ bool Cleng::MonteCarlo() {
     New[0]->Solve(true);
     WriteOutput(0);
     for (int i = 1; i < MCS; i++) { // loop for trials
+
+        cout << "Step i:" << i << endl;
         Real my_rand = GetRealRandomValue(0, 1);
         free_energy_c = Sys[0]-> FreeEnergy;
         success=CP(to_cleng);
         MakeShift(false);
         success=CP(to_segment);
         New[0]->Solve(true);
+
+///        for (int i=0; i < n_boxes; i++) {
+//
+//            cout << "################ START" << endl;
+//            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " pos_y1:" << Seg[clamp_seg]-> py1[i] << " pos_z1: " << Seg[clamp_seg]-> pz1[i] << endl;
+//            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " pos_y2:" << Seg[clamp_seg]-> py2[i]  << " pos_z2: " << Seg[clamp_seg]-> pz2[i] << endl;
+//        }
+
+
+
 
         free_energy_t = Sys[0]-> FreeEnergy;
 

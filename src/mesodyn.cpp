@@ -776,9 +776,6 @@ int Boundary1D::set_x_boundaries(boundary x0, boundary xm, Real bulk) {
     }
     bX0 = bind(&Boundary1D::bXPeriodic, this, _1, MY, MZ, MX);
     break;
-  case BULK:
-    bX0 = bind(&Boundary1D::bX0Bulk, this, _1, MY, MZ, bulk);
-    break;
   }
 
   switch (xm) {
@@ -792,9 +789,6 @@ int Boundary1D::set_x_boundaries(boundary x0, boundary xm, Real bulk) {
     }
     //TODO: fix this double periodic (including ones below)
     bXm = bind(&Boundary1D::bXPeriodic, this, _1, MY, MZ, MX);
-    break;
-  case BULK:
-    bXm = bind(&Boundary1D::bXmBulk, this, _1, MY, MZ, MX, bulk);
     break;
   }
 
@@ -815,9 +809,6 @@ int Boundary2D::set_y_boundaries(boundary y0, boundary ym, Real bulk) {
     }
     bY0 = bind(&Boundary2D::bYPeriodic, this, _1, MX, MZ, MY);
     break;
-  case BULK:
-    bY0 = bind(&Boundary2D::bY0Bulk, this, _1, MX, MZ, bulk);
-    break;
   }
 
   switch (ym) {
@@ -830,9 +821,6 @@ int Boundary2D::set_y_boundaries(boundary y0, boundary ym, Real bulk) {
       return 1;
     }
     bYm = bind(&Boundary2D::bYPeriodic, this, _1, MX, MZ, MY);
-    break;
-  case BULK:
-    bYm = bind(&Boundary2D::bYmBulk, this, _1, MX, MZ, MY, bulk);
     break;
   }
 
@@ -853,9 +841,6 @@ int Boundary3D::set_z_boundaries(boundary z0, boundary zm, Real bulk) {
     }
     bZ0 = bind(&Boundary3D::bZPeriodic, this, _1, MX, MY, MZ);
     break;
-  case BULK:
-    bZ0 = bind(&Boundary3D::bZ0Bulk, this, _1, MX, MY, bulk);
-    break;
   }
 
   switch (zm) {
@@ -868,9 +853,6 @@ int Boundary3D::set_z_boundaries(boundary z0, boundary zm, Real bulk) {
       return 1;
     }
     bZm = bind(&Boundary3D::bZPeriodic, this, _1, MX, MY, MZ);
-    break;
-  case BULK:
-    bZm = bind(&Boundary3D::bZmBulk, this, _1, MX, MY, MZ, bulk);
     break;
   }
 
@@ -917,32 +899,6 @@ void Boundary1D::bXPeriodic(vector<Real>& target, int fMY, int fMZ, int fMX) {
   } while (z < fMZ);
 }
 
-void Boundary1D::bX0Bulk(vector<Real>& target, int fMY, int fMZ, Real bulk) {
-  int y = 0;
-  int z = 0;
-  do {
-    y=0;
-    do {
-      *valPtr(target, 0, y, z) = bulk; //start
-      ++y;
-    } while (y < fMY);
-    ++z;
-  } while (z < fMZ);
-}
-
-void Boundary1D::bXmBulk(vector<Real>& target, int fMY, int fMZ, int fMX, Real bulk) {
-  int y = 0;
-  int z = 0;
-  do {
-    y=0;
-    do {
-      *valPtr(target, fMX - 1, y, z) = bulk; //end
-      ++y;
-    } while (y < fMY);
-    ++z;
-  } while (z < fMZ);
-}
-
 void Boundary2D::bY0Mirror(vector<Real>& target, int fMX, int fMZ) {
   int x = 0;
   int z = 0;
@@ -983,32 +939,6 @@ void Boundary2D::bYPeriodic(vector<Real>& target, int fMX, int fMZ, int fMY) {
   } while (z < fMZ);
 }
 
-void Boundary2D::bY0Bulk(vector<Real>& target, int fMX, int fMZ, Real bulk) {
-  int x = 0;
-  int z = 0;
-  do {
-    x=0;
-    do {
-      *valPtr(target, x, 0, z) = bulk; //start
-      ++x;
-    } while (x < fMX);
-    ++z;
-  } while (z < fMZ);
-}
-
-void Boundary2D::bYmBulk(vector<Real>& target, int fMX, int fMZ, int fMY, Real bulk) {
-  int x = 0;
-  int z = 0;
-  do {
-    x=0;
-    do {
-      *valPtr(target, x, fMY - 1, z) = bulk; //end
-      ++x;
-    } while (x < fMX);
-    ++z;
-  } while (z < fMZ);
-}
-
 void Boundary3D::bZ0Mirror(vector<Real>& target, int fMX, int fMY) {
   int x = 0;
   int y = 0;
@@ -1043,32 +973,6 @@ void Boundary3D::bZPeriodic(vector<Real>& target, int fMX, int fMY, int fMZ) {
     do {
       *valPtr(target, x, y, 0) = val(target, x, y, fMZ - 2); //start
       *valPtr(target, x, y, fMZ - 1) = val(target, x, y, 1); //end
-      ++x;
-    } while (x < fMX);
-    ++y;
-  } while (y < fMY);
-}
-
-void Boundary3D::bZ0Bulk(vector<Real>& target, int fMX, int fMY, Real bulk) {
-  int x = 0;
-  int y = 0;
-  do {
-    x=0;
-    do {
-      *valPtr(target, x, y, 0) = bulk; //start
-      ++x;
-    } while (x < fMX);
-    ++y;
-  } while (y < fMY);
-}
-
-void Boundary3D::bZmBulk(vector<Real>& target, int fMX, int fMY, int fMZ, Real bulk) {
-  int x = 0;
-  int y = 0;
-  do {
-    x=0;
-    do {
-      *valPtr(target, x, y, fMZ - 1) = bulk; //end
       ++x;
     } while (x < fMX);
     ++y;

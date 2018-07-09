@@ -74,7 +74,6 @@ public:
   enum boundary {
     MIRROR,
     PERIODIC,
-    BULK,
   };
 
   Boundary1D(Lattice*, boundary, boundary); //1D
@@ -91,8 +90,6 @@ private:
   void bX0Mirror(vector<Real>&, int, int);
   void bXmMirror(vector<Real>&, int, int, int);
   void bXPeriodic(vector<Real>&, int, int, int);
-  void bX0Bulk(vector<Real>&, int, int, Real);
-  void bXmBulk(vector<Real>&, int, int, int, Real);
 
 };
 
@@ -111,8 +108,6 @@ private:
   void bY0Mirror(vector<Real>&, int, int);
   void bYmMirror(vector<Real>&, int, int, int);
   void bYPeriodic(vector<Real>&, int, int, int);
-  void bY0Bulk(vector<Real>&, int, int, Real);
-  void bYmBulk(vector<Real>&, int, int, int, Real);
 
 };
 
@@ -131,8 +126,6 @@ private:
   void bZ0Mirror(vector<Real>&, int, int);
   void bZmMirror(vector<Real>&, int, int, int);
   void bZPeriodic(vector<Real>&, int, int, int);
-  void bZ0Bulk(vector<Real>&, int, int, Real);
-  void bZmBulk(vector<Real>&, int, int, int, Real);
 };
 
 class Component : protected Lattice_Access {

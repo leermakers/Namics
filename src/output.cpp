@@ -368,9 +368,9 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		output_folder = executable_path.substr(0,found - bin_folder.size() ) + output_folder;
 	}
 
-	char numc[2];
+	char numc[10];
         sprintf(numc,"%d",subl);
-	char numcc[2];
+	char numcc[10];
 	sprintf(numcc,"%d",start);
 	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
 	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);

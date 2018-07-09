@@ -83,14 +83,11 @@ public:
 
   int update_boundaries(vector<Real>&);
 
-  Gaussian_noise* gaussian;
-  vector<Real> gaussian_noise;
-
 private:
   function<void(vector<Real>&)> bX0;
   function<void(vector<Real>&)> bXm;
 
-  int set_x_boundaries(boundary, boundary);
+  int set_x_boundaries(boundary, boundary, Real = 0);
   void bX0Mirror(vector<Real>&, int, int);
   void bXmMirror(vector<Real>&, int, int, int);
   void bXPeriodic(vector<Real>&, int, int, int);
@@ -110,7 +107,7 @@ private:
   function<void(vector<Real>&)> bY0;
   function<void(vector<Real>&)> bYm;
 
-  int set_y_boundaries(boundary, boundary);
+  int set_y_boundaries(boundary, boundary, Real = 0);
   void bY0Mirror(vector<Real>&, int, int);
   void bYmMirror(vector<Real>&, int, int, int);
   void bYPeriodic(vector<Real>&, int, int, int);
@@ -130,7 +127,7 @@ private:
   function<void(vector<Real>&)> bZ0;
   function<void(vector<Real>&)> bZm;
 
-  int set_z_boundaries(boundary, boundary);
+  int set_z_boundaries(boundary, boundary, Real = 0);
   void bZ0Mirror(vector<Real>&, int, int);
   void bZmMirror(vector<Real>&, int, int, int);
   void bZPeriodic(vector<Real>&, int, int, int);
@@ -265,9 +262,12 @@ private:
   vector<Flux1D*> solver_flux;
 
   /* Mesodyn specific output */
-  ofstream mesFile;
-  void prepareOutputFile();
-  void writeRho(int);
+  ofstream mesodyn_output;
+  ostringstream filename;
+  int writes;
+  void set_filename();
+  void write_settings();
+  void write_density(vector<Component*>&);
 
   /* Mathematics */
   int factorial (int);
@@ -280,7 +280,6 @@ public:
 
   bool mesodyn();
 
-  void gaussianNoise(Real, Real, unsigned int);
   Gaussian_noise* gaussian_noise;
 
 

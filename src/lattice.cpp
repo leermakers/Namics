@@ -884,8 +884,8 @@ if (debug) cout <<"PutProfiles in lattice " << endl;
 	switch(gradients) {
 		case 1:
 			for (x=0; x<M; x++){
-				if (fjc==1) fprintf(pf,"%i \t",x); else fprintf(pf,"%f \t",1.0*(x+1)/fjc-1.0);
-				for (i=0; i<length; i++) fprintf(pf,"%f \t",X[i][x]);
+				if (fjc==1) fprintf(pf,"%i \t",x); else fprintf(pf,"%e \t",1.0*(x+1)/fjc-1.0);
+				for (i=0; i<length; i++) fprintf(pf,"%e \t",X[i][x]);
 				fprintf(pf,"\n");
 			}
 			break;
@@ -893,7 +893,7 @@ if (debug) cout <<"PutProfiles in lattice " << endl;
 			for (x=1; x<MX+1; x++)
 			for (y=1; y<MY+1; y++){
 				fprintf(pf,"%i \t %i \t",x,y);
-				for (i=0; i<length; i++) fprintf(pf,"%f \t",X[i][x*JX+y]);
+				for (i=0; i<length; i++) fprintf(pf,"%e \t",X[i][x*JX+y]);
 				fprintf(pf,"\n");
 			}
 			break;
@@ -902,7 +902,7 @@ if (debug) cout <<"PutProfiles in lattice " << endl;
 			for (y=1; y<MY+1; y++)
 			for (z=1; z<MZ+1; z++) {
 				fprintf(pf,"%i \t %i \t %i \t",x,y,z);
-				for (i=0; i<length; i++) fprintf(pf,"%f \t",X[i][x*JX+y*JY+z]);
+				for (i=0; i<length; i++) fprintf(pf,"%e \t",X[i][x*JX+y*JY+z]);
 				fprintf(pf,"\n");
 			}
 			break;

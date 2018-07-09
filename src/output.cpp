@@ -334,7 +334,8 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	string filename;
 	vector<string> sub;
 	string infilename = In[0]->name;
-	In[0]->split(infilename,'.',sub);
+
+//	In[0]->split(infilename,'.',sub);
 	string key;
 
 	/**** LINUX ONLY ****/
@@ -353,7 +354,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		// If we're not in the inputs folder, discard the path and take only the filename
 		if  (occurrences != 0) {
 			size_t found = infilename.find_last_of("/\\");
-			sub[0] = infilename.substr(found+1);
+			In[0]->split(infilename.substr(found+1),'.',sub);
 		}
 
 		// Find path to Namics executable
@@ -368,9 +369,9 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		output_folder = executable_path.substr(0,found - bin_folder.size() ) + output_folder;
 	}
 
-	char numc[2];
+	char numc[10];
         sprintf(numc,"%d",subl);
-	char numcc[2];
+	char numcc[10];
 	sprintf(numcc,"%d",start);
 	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
 	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);

@@ -19,6 +19,7 @@ enum error {
   ERROR_PERIODIC_BOUNDARY,
   ERROR_SIZE_INCOMPATIBLE,
   ERROR_NOT_IMPLEMENTED,
+  ERROR_FILE_FORMAT,
 };
 
 class Gaussian_noise {
@@ -74,7 +75,6 @@ public:
   enum boundary {
     MIRROR,
     PERIODIC,
-    BULK,
   };
 
   Boundary1D(Lattice*, boundary, boundary); //1D
@@ -91,8 +91,6 @@ private:
   void bX0Mirror(vector<Real>&, int, int);
   void bXmMirror(vector<Real>&, int, int, int);
   void bXPeriodic(vector<Real>&, int, int, int);
-  void bX0Bulk(vector<Real>&, int, int, Real);
-  void bXmBulk(vector<Real>&, int, int, int, Real);
 
 };
 
@@ -111,8 +109,6 @@ private:
   void bY0Mirror(vector<Real>&, int, int);
   void bYmMirror(vector<Real>&, int, int, int);
   void bYPeriodic(vector<Real>&, int, int, int);
-  void bY0Bulk(vector<Real>&, int, int, Real);
-  void bYmBulk(vector<Real>&, int, int, int, Real);
 
 };
 
@@ -131,8 +127,6 @@ private:
   void bZ0Mirror(vector<Real>&, int, int);
   void bZmMirror(vector<Real>&, int, int, int);
   void bZPeriodic(vector<Real>&, int, int, int);
-  void bZ0Bulk(vector<Real>&, int, int, Real);
-  void bZmBulk(vector<Real>&, int, int, int, Real);
 };
 
 class Component : protected Lattice_Access {
@@ -247,12 +241,26 @@ private:
   Real seed;  // seed of gaussian noise
   int timesteps; // length of the time evolution
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
+  Real dt;
+  int initialization_mode;
   const int componentNo; // number of components in the system, read from SysMonMolList
 
+  /* Flow control */
+  int RC;
+
   /* Initialization*/
+  enum init {
+    INIT_HOMOGENEOUS,
+    INIT_FROMFILE,
+    INIT_EQUILIBRATE,
+  };
+  vector<string> tokenize(string, char);
+  string read_filename;
   int initial_conditions();
   vector<Real>&  flux_callback(int);
-  int init_rho(vector< vector<Real> >&, vector<int>&);
+  int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
+  int init_rho_equilibrate(vector< vector<Real> >&);
+  int init_rho_fromfile(vector< vector<Real> >&, string);
 
   /* Helper class instances */
   vector<Boundary1D*> boundary;

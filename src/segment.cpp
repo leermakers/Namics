@@ -387,6 +387,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
 	bool success=true;
+
 	Var_target=-1;
 	chi_var_seg=-1;
 	Var_type="";

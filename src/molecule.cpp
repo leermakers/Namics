@@ -214,8 +214,12 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 
 bool Molecule:: PrepareForCalculations(int *KSAM) {
 if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
+int m=0;
+if (freedom=="clamped") m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
 int M=Lat[0]->M;
 	if (freedom=="clamped") {
+		Zero(H_mask1,n_box*m);
+		Zero(H_mask2,n_box*m);
 		int jx=Lat[0]->jx[Seg[mon_nr[0]]->clamp_nr];
 		int jy=Lat[0]->jy[Seg[mon_nr[0]]->clamp_nr];
 		int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
@@ -417,7 +421,8 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 bool Molecule::PutVarInfo(string Var_type_,string Var_target_,Real Var_target_value_){
 if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 	bool success=true;
-
+	Var_scan_value=-1;
+	Var_search_value=-1;
 	vector<string>sub;
 	Var_target=-1;
 	Var_type="";
@@ -426,7 +431,7 @@ if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 		Var_type="scan";
 		In[0]->split(Var_target_,'-',sub);
 		if (sub.size()==1) {
-			if (Var_target_=="theta") {Var_scan_value=0; Var_start_value=theta;}
+			if (Var_target_=="theta") {Var_scan_value=0; Var_start_value=theta; }
 			if (Var_target_=="n") {Var_scan_value=1; Var_start_value = n;}
 			if (Var_target_=="phibulk") {Var_scan_value=2; Var_start_value = phibulk;}
 			if (Var_scan_value==-1) {
@@ -452,9 +457,9 @@ if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 	}
 	if (Var_type_=="search") {
 		Var_type="search";
-		if (Var_target_=="theta") {Var_search_value=0; Var_start_search_value=theta;}
-		if (Var_target_=="n") {Var_search_value=1; Var_start_search_value=n;}
-		if (Var_target_=="phibulk") {Var_search_value=2; Var_start_search_value=phibulk;}
+		if (Var_target_=="theta") {Var_search_value=0; Var_start_search_value=theta; }
+		if (Var_target_=="n") {Var_search_value=1; Var_start_search_value=n; }
+		if (Var_target_=="phibulk") {Var_search_value=2; Var_start_search_value=phibulk; }
 		if (Var_target_=="equate_to_solvent") {
 			Var_search_value=3; Var_start_search_value=theta;
 			if (freedom=="solvent") {
@@ -542,6 +547,7 @@ if (debug) cout <<"Molecule:: PutVarScan" << endl;
 bool Molecule::ResetInitValue() {
 if (debug) cout <<"Molecule:: ResetInitValue" << endl;
 	bool success=true;
+	cout <<"reset: ";
 	switch (Var_scan_value) {
 		case 0:
 			theta=Var_start_value;

@@ -447,6 +447,8 @@ bool Solve_scf::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha, function< 
 
 	switch (solver) {
 		case diis:
+			gradient=MESODYN;
+				
 			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 		break;
 		case PSEUDOHESSIAN:

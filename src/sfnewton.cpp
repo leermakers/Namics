@@ -812,7 +812,7 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	Cp(xR,x,nvar);
 	Dot(residual,g,g,nvar);
 	residual=sqrt(residual);
-	if (e_info) printf("DIIS Mesodyn has been notified\n");
+	if (e_info) printf("DIIS has been notified\n");
 	if (e_info) printf("Your guess = %1e \n",residual);
 	while (residual > tolerance && it < iterationlimit) {
 		it++;

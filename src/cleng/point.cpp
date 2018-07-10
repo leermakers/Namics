@@ -32,6 +32,10 @@ void Point::shift(int dx, int dy, int dz) {
     setZ(Z() + dz);
 }
 
+Point Point::negate() {
+    return {-X(), -Y(), -Z()};
+}
+
 void Point::setX(int x) {
     this->x = x;
 }
@@ -43,6 +47,7 @@ void Point::setY(int y) {
 void Point::setZ(int z) {
     this->z = z;
 }
+
 
 
 

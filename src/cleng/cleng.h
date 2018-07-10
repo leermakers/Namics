@@ -33,6 +33,7 @@ private:
 
     Real seed;
     void prepareOutputFile();
+    void fillXYZ();
 
 public:
     Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
@@ -59,9 +60,14 @@ public:
     vector<int> Sx;
     vector<int> Sy;
     vector<int> Sz;
-    vector<int> X;
-    vector<int> Y;
-    vector<int> Z;
+    vector<Node> nodes;
+    // temporary arrays for keep nodes coordinates for output
+    int* xs = nullptr;
+    int* ys = nullptr;
+    int* zs = nullptr;
+//    vector<int> X;
+//    vector<int> Y;
+//    vector<int> Z;
 
     Point shift;
     int rand_part_index;

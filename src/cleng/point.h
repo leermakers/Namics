@@ -21,6 +21,7 @@ public:
 
     void shift(int dx, int dy, int dz) override;
 
+    Point negate();
 private:
     int x;
     int y;

@@ -25,7 +25,11 @@ Cleng::Cleng(
   	KEYS.push_back("seed");
 }
 
-Cleng::~Cleng() {}
+Cleng::~Cleng() {
+    delete[] xs;
+    delete[] ys;
+    delete[] zs;
+}
 
 
 bool Cleng::CheckInput(int start) {
@@ -98,54 +102,64 @@ bool Cleng::CP(transfer tofrom) {
         case to_cleng:
             // cleaning
             P.clear();
+            // TODO extract method
 			for (int i=0; i<n_boxes; i++) {
+			    // TODO simplify
 			    PX=Seg[clamp_seg]->px1[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
 				PY=Seg[clamp_seg]->py1[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
 				PZ=Seg[clamp_seg]->pz1[i]; if (PZ>MZ) {PZ-=MZ; Sz.push_back(1);} else {Sz.push_back(0);}
 
-				length=X.size();
+				length=nodes.size();
 
 				found=false; j=0;
 
 				while (!found && j < length) {
-					if (X[j]==PX && Y[j]==PY && Z[j]==PZ) {
+                    // TODO replace with points comparing
+					if (nodes[j].X() == PX && nodes[j].Y() == PY && nodes[j].Z() == PZ) {
 					    found = true;
 					    P.push_back(j);
 					} else j++;
 				}
 
 				if (!found) {
-					X.push_back(PX);
-					Y.push_back(PY);
-					Z.push_back(PZ);
-					P.push_back(X.size()-1);
+//					X.push_back(PX);
+//					Y.push_back(PY);
+//					Z.push_back(PZ);
+                    // TODO when push monolit??
+                    nodes.push_back(Point(PX, PY, PZ));
+                    // TODO: is this vector redunant?
+					P.push_back(nodes.size()-1);
 				}
 
+				// TODO simplify
 				PX=Seg[clamp_seg]->px2[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
 				PY=Seg[clamp_seg]->py2[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
 				PZ=Seg[clamp_seg]->pz2[i]; if (PZ>MZ) {PZ-=MZ; Sz.push_back(1);} else {Sz.push_back(0);}
 
-				length=X.size();
+				length = nodes.size();
 
 				found=false; j=0;
 
 				while (!found && j<length) {
-					if (X[j]==PX && Y[j]==PY && Z[j]==PZ) {
+				    // TODO replace with points comparing
+					if (nodes[j].X() == PX && nodes[j].Y() == PY && nodes[j].Z() == PZ) {
 					    found = true;
 					    P.push_back(j);
 					}
 					else j++;
 				}
 				if (!found) {
-					X.push_back(PX);
-					Y.push_back(PY);
-					Z.push_back(PZ);
-					P.push_back(X.size()-1);
+//					X.push_back(PX);
+//					Y.push_back(PY);
+//					Z.push_back(PZ);
+                    // TODO when push monolit??
+                    nodes.push_back(Point(PX, PY, PZ));
+					P.push_back(nodes.size()-1);
 				}
             }
 
-            for (int k = 0; k < X.size(); k++) {
-                cout << X[k] << " " << Y[k] << " " << Z[k] << endl;
+            for (const Node& n : nodes) {
+                cout << n.X() << " " << n.Y() << " " << n.Z() << endl;
             }
 
             break;
@@ -154,13 +168,14 @@ bool Cleng::CP(transfer tofrom) {
 			Zero(Seg[clamp_seg]->H_MASK,M);
 
 			for (int i=0; i < n_boxes; i++) {
-				Seg[clamp_seg]->px1[i] = X[P[2*i]] + Sx[2*i]*MX;
-                Seg[clamp_seg]->py1[i] = Y[P[2*i]] + Sy[2*i]*MY;
-                Seg[clamp_seg]->pz1[i] = Z[P[2*i]] + Sz[2*i]*MZ;
+			    // TODO simplify this
+				Seg[clamp_seg]->px1[i] = nodes[P[2*i]].X() + Sx[2*i]*MX;
+                Seg[clamp_seg]->py1[i] = nodes[P[2*i]].Y() + Sy[2*i]*MY;
+                Seg[clamp_seg]->pz1[i] = nodes[P[2*i]].Z() + Sz[2*i]*MZ;
 
-				Seg[clamp_seg]->px2[i] = X[P[2*i+1]] + Sx[2*i+1]*MX;
-				Seg[clamp_seg]->py2[i] = Y[P[2*i+1]] + Sy[2*i+1]*MY;
-				Seg[clamp_seg]->pz2[i] = Z[P[2*i+1]] + Sz[2*i+1]*MZ;
+				Seg[clamp_seg]->px2[i] = nodes[P[2*i+1]].X() + Sx[2*i+1]*MX;
+				Seg[clamp_seg]->py2[i] = nodes[P[2*i+1]].Y() + Sy[2*i+1]*MY;
+				Seg[clamp_seg]->pz2[i] = nodes[P[2*i+1]].Z() + Sz[2*i+1]*MZ;
 
 				Seg[clamp_seg]->bx[i] = (Seg[clamp_seg]->px2[i] + Seg[clamp_seg]->px1[i] - sub_box_size) / 2;
 				Seg[clamp_seg]->by[i] = (Seg[clamp_seg]->py2[i] + Seg[clamp_seg]->py1[i] - sub_box_size) / 2;
@@ -177,9 +192,7 @@ bool Cleng::CP(transfer tofrom) {
             Sx.clear();
             Sy.clear();
             Sz.clear();
-            X.clear();
-            Y.clear();
-            Z.clear();
+            nodes.clear();
 		break;
 
         default:
@@ -245,24 +258,23 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
 
 bool Cleng::InBoxRange() {
     int up_bondary = 3; int down_bondary = 3;
-    return    (down_bondary < X[rand_part_index] + shift.X()) && (X[rand_part_index] + shift.X() < (int)Lat[0]->MX - up_bondary)
-           && (down_bondary < Y[rand_part_index] + shift.Y()) && (Y[rand_part_index] + shift.Y() < (int)Lat[0]->MY - up_bondary)
-           && (down_bondary < Z[rand_part_index] + shift.Z()) && (Z[rand_part_index] + shift.Z() < (int)Lat[0]->MZ - up_bondary);
+    // TODO simplify this
+    return    (down_bondary < nodes[rand_part_index].X() + shift.X()) && (nodes[rand_part_index].X() + shift.X() < (int)Lat[0]->MX - up_bondary)
+           && (down_bondary < nodes[rand_part_index].Y() + shift.Y()) && (nodes[rand_part_index].Y() + shift.Y() < (int)Lat[0]->MY - up_bondary)
+           && (down_bondary < nodes[rand_part_index].Z() + shift.Z()) && (nodes[rand_part_index].Z() + shift.Z() < (int)Lat[0]->MZ - up_bondary);
 }
 
 bool Cleng::NotTooClose() {
     
-    auto indexes_particle = (int) X.size();
+    Point MP(nodes[rand_part_index].X() + shift.X(), nodes[rand_part_index].Y()+ shift.Y(), nodes[rand_part_index].Z()+ shift.Z());
 
-    Point MP(X[rand_part_index] + shift.X(), Y[rand_part_index]+ shift.Y(), Z[rand_part_index]+ shift.Z());
-    int equals = 0;
-
-    for (int index = 0; index < indexes_particle; index++) {
-        if (MP.X() == X[index] && MP.Y() == Y[index] && MP.Z() == Z[index]) {
-            equals+=1;
+    for (const Node& n : nodes) {
+        //TODO is this equal refactoring (maybe will be problems with monolit)?
+        if (MP.X() == n.X() && MP.Y() == n.Y() && MP.Z() == n.Z()) {
+            return false;
         }
     }
-    return !equals;
+    return true;
 }
 
 bool Cleng::MakeShift1(bool back) {
@@ -275,12 +287,12 @@ bool Cleng::MakeShift1(bool back) {
         cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " " << Seg[clamp_seg]-> py2[i] << " " << Seg[clamp_seg]-> pz2[i] << endl;
     }
 
-    cout << "len X:" << X.size() << endl;
-    cout << "len Y:" << Y.size() << endl;
-    cout << "len Z:" << Z.size() << endl;
+    cout << "len X:" << nodes.size() << endl;
+    cout << "len Y:" << nodes.size() << endl;
+    cout << "len Z:" << nodes.size() << endl;
 
-    for (int i=0; i < (int)X.size(); i++) {
-        cout << "i:" << i << " X:" << X[i] << " Y:" << Y[i] << " Z:" << Z[i] << endl;
+    for (int i=0; i < (int)nodes.size(); i++) {
+        cout << "i:" << i << " X:" << nodes[i].X() << " Y:" << nodes[i].Y() << " Z:" << nodes[i].Z() << endl;
     }
 
     return success;
@@ -295,12 +307,12 @@ bool Cleng::MakeShift(bool back) {
 
     if (!back) {
         shift = {0, 0, 0};
-        rand_part_index = GetIntRandomValueExclude(0, (int)X.size() - 1, 0, false);
+        rand_part_index = GetIntRandomValueExclude(0, (int)nodes.size() - 1, 0, false);
 
         cout << "rand_part_index:" << rand_part_index << endl;
-        cout << "X:" << X[rand_part_index] << endl;
-        cout << "Y:" << Y[rand_part_index] << endl;
-        cout << "Z:" << Z[rand_part_index] << endl;
+        cout << "X:" << nodes[rand_part_index].X() << endl;
+        cout << "Y:" << nodes[rand_part_index].Y() << endl;
+        cout << "Z:" << nodes[rand_part_index].Z() << endl;
 
 //    TODO: rethink physics
 //    pos_array = GetIntRandomValueExclude(0, 2, 0, false);
@@ -317,6 +329,7 @@ bool Cleng::MakeShift(bool back) {
         if (pos_array == 0) {
 //      z-direction
 //            shift.Z() = GetIntRandomValueExclude(-1, 1, 0, true);
+            // TODO maybe use setter?
             shift = Point(shift.X(), shift.Y(), GetIntRandomValueExclude(-1, 1, 0, true));
         } else {
 //      xy-direction
@@ -335,6 +348,7 @@ bool Cleng::MakeShift(bool back) {
 
             for (int i=0; i<n_boxes; i++) {
 
+                // TODO should we shift segment?
                 Seg[clamp_seg]-> px1[i]+= shift.X();
                 Seg[clamp_seg]-> py1[i]+= shift.Y();
                 Seg[clamp_seg]-> pz1[i]+= shift.Z();
@@ -380,9 +394,9 @@ bool Cleng::MakeShift(bool back) {
 //            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " " << Seg[clamp_seg]-> py2[i] << " " << Seg[clamp_seg]-> pz2[i] << endl;
 //        }
 
-        cout << "len X:" << X.size() << endl;
-        cout << "len Y:" << Y.size() << endl;
-        cout << "len Z:" << Z.size() << endl;
+        cout << "len X:" << nodes.size() << endl;
+        cout << "len Y:" << nodes.size() << endl;
+        cout << "len Z:" << nodes.size() << endl;
 
 //        for (int i=0; i < (int)X.size(); i++) {
 //            cout << "i:" << i << " X:" << X[i] << " Y:" << Y[i] << " Z:" << Z[i] << endl;
@@ -398,9 +412,9 @@ bool Cleng::MakeShift(bool back) {
 //    cout << "len Sx:" << Sx.size() << endl;
 //    cout << "len Sy:" << Sy.size() << endl;
 //    cout << "len Sz:" << Sz.size() << endl;
-    cout << "len X:" << X.size() << endl;
-    cout << "len Y:" << Y.size() << endl;
-    cout << "len Z:" << Z.size() << endl;
+    cout << "len X:" << nodes.size() << endl;
+    cout << "len Y:" << nodes.size() << endl;
+    cout << "len Z:" << nodes.size() << endl;
 
     cout << endl;
     }
@@ -408,20 +422,23 @@ bool Cleng::MakeShift(bool back) {
         cout << "MakeShift back" << endl;
 
         cout << "rand_part_index:" << rand_part_index << endl;
-        cout << "X:" << X[rand_part_index] << endl;
-        cout << "Y:" << Y[rand_part_index] << endl;
-        cout << "Z:" << Z[rand_part_index] << endl;
+        cout << "X:" << nodes[rand_part_index].X() << endl;
+        cout << "Y:" << nodes[rand_part_index].Y() << endl;
+        cout << "Z:" << nodes[rand_part_index].Z() << endl;
 
         cout << -shift.X() << " " << -shift.Y() << " " << -shift.Z() << endl;
         cout << "last particle:" << rand_part_index << endl;
-        X[rand_part_index] -= shift.X();
-        Y[rand_part_index] -= shift.Y();
-        Z[rand_part_index] -= shift.Z();
+//        nodes[rand_part_index] -= shift.X();
+//        nodes[rand_part_index] -= shift.Y();
+//        nodes[rand_part_index] -= shift.Z();
+        // TODO simplify
+        Point neg_shift = shift.negate();
+        nodes[rand_part_index].shift(neg_shift.X(), neg_shift.Y(), neg_shift.Z());
 
         cout << "rand_part_index:" << rand_part_index << endl;
-        cout << "X:" << X[rand_part_index] << endl;
-        cout << "Y:" << Y[rand_part_index] << endl;
-        cout << "Z:" << Z[rand_part_index] << endl;
+        cout << "X:" << nodes[rand_part_index].X() << endl;
+        cout << "Y:" << nodes[rand_part_index].Y() << endl;
+        cout << "Z:" << nodes[rand_part_index].Z() << endl;
 
         cout << endl;
 
@@ -466,9 +483,10 @@ bool Cleng::MonteCarlo() {
         cout << "free_energy_c:" << free_energy_c << endl;
         cout << "free_energy_t:" << free_energy_t << endl;
 
+        // TODO typo in if condition?
         if (free_energy_t != free_energy_t) {
-            for (int k = 0; k < (int) X.size(); k++) {
-                cout << X[k] << " " << Y[k] << " " << Z[k] << endl;
+            for (int k = 0; k < (int) nodes.size(); k++) {
+                cout << nodes[k].X() << " " << nodes[k].Y() << " " << nodes[k].Z() << endl;
             }
             break;
         }
@@ -505,7 +523,7 @@ string Cleng::GetValue(string parameter) {
 }
 
 void Cleng::PushOutput() {
-	int* point;
+//	int* point;
 	for (int i = 0; i < n_out; i++) {
 		Out[i]->PointerVectorInt.clear();
 		Out[i]->PointerVectorReal.clear();
@@ -530,19 +548,38 @@ void Cleng::PushOutput() {
 		if (Out[i]->name=="ana" || Out[i]->name=="pos") { //example for putting 3 array's of Integers of arbitrary length to output
 			string s="array;0";
 			Out[i]->push("X",s);
-			point=X.data();
-			Out[i]->PointerVectorInt.push_back(point);
-			Out[i]->SizeVectorInt.push_back(X.size());
+
+//			 TODO using normal point in output and remove xs, ys, zs
+			fillXYZ();
+//			point=X.data();
+			Out[i]->PointerVectorInt.push_back(xs);
+			Out[i]->SizeVectorInt.push_back(nodes.size());
 			s="array;1";
 			Out[i]->push("Y",s);
-			point = Y.data();
-			Out[i]->PointerVectorInt.push_back(point);
-			Out[i]->SizeVectorInt.push_back(Y.size());
+//			point = Y.data();
+			Out[i]->PointerVectorInt.push_back(ys);
+			Out[i]->SizeVectorInt.push_back(nodes.size());
 			s="array;2";
 			Out[i]->push("Z",s);
-			point=Z.data();
-			Out[i]->PointerVectorInt.push_back(point);
-			Out[i]->SizeVectorInt.push_back(Z.size());
+//			point=Z.data();
+			Out[i]->PointerVectorInt.push_back(zs);
+			Out[i]->SizeVectorInt.push_back(nodes.size());
 		}
 	}
+}
+
+void Cleng::fillXYZ() {
+    delete[] xs;
+    delete[] ys;
+    delete[] zs;
+
+    int n = nodes.size();
+    xs = new int[n];
+    ys = new int[n];
+    zs = new int[n];
+    for (int i = 0; i < n; i++) {
+        xs[i] = nodes[i].X();
+        ys[i] = nodes[i].Y();
+        zs[i] = nodes[i].Z();
+    }
 }

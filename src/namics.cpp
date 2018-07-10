@@ -345,7 +345,12 @@ int main(int argc, char* argv[]) {
         			if (!Mes[0]->CheckInput(start)) {
           				return 0;
         			}
-        			Mes[0]->mesodyn();
+              try {
+        			  Mes[0]->mesodyn();
+              } catch (error RC) {
+                cout << "Exiting Mesodyn with error: " << RC << ". Please check the documentation for details." << endl;
+                exit(RC);
+              }
               delete Mes[0];
               Mes.clear();
 				break;

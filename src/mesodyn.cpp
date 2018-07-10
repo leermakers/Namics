@@ -8,13 +8,16 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
   :
     Lattice_Access(Lat_[0]),
     name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
-    D{0.01}, mean{0}, stddev{1*D}, seed{1}, timesteps{100}, timebetweensaves{1},
-    componentNo{(int)Sys[0]->SysMolMonList.size()},
+    D{0.01}, mean{0}, stddev{1*D}, seed{1}, timesteps{100}, timebetweensaves{1}, dt{0.1}, initialization_mode{INIT_HOMOGENEOUS},
+    componentNo{(int)Sys[0]->SysMolMonList.size()}, RC{0},
     boundary(0), component(0), flux(0),
     writes{0}
 {
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
+  KEYS.push_back("delta_t");
+  KEYS.push_back("read_rho");
+  KEYS.push_back("equilibrate");
   KEYS.push_back("diffusionconstant");
   KEYS.push_back("seed");
   KEYS.push_back("mean");
@@ -57,6 +60,27 @@ bool Mesodyn::CheckInput(int start) {
     if (debug)
       cout << "Time bewteen saves is " << timebetweensaves << endl;
 
+    if (GetValue("delta_t").size() > 0) {
+      dt = In[0]->Get_Real(GetValue("delta_t"), dt);
+    }
+    if (debug)
+      cout << "Delta t is " << dt << endl;
+
+    bool equilibrate = false;
+    if (GetValue("equilibrate").size() > 0) {
+      if (In[0]->Get_bool(GetValue("equilibrate"), equilibrate))
+        initialization_mode = INIT_EQUILIBRATE;
+      }
+
+    if (GetValue("read_rho").size() > 0 && equilibrate )
+      cout << "WARNING: Read_rho overrides equilibrate!" << endl;
+
+    if (GetValue("read_rho").size() > 0) {
+      read_filename = In[0]->Get_string(GetValue("read_rho"), read_filename);
+      initialization_mode = INIT_FROMFILE;
+    }
+      if (debug) cout << "Filename to read rho from is: " << read_filename << endl;
+
     if (GetValue("diffusionconstant").size() > 0) {
       D = In[0]->Get_Real(GetValue("diffusionconstant"),D);
     }
@@ -85,6 +109,8 @@ bool Mesodyn::CheckInput(int start) {
   return success;
 }
 
+//TODO: no noise on support!
+
 /******** Flow control ********/
 
 bool Mesodyn::mesodyn() {
@@ -98,8 +124,7 @@ bool Mesodyn::mesodyn() {
   // write initial conditions
   write_density(solver_component);
 
-  if (debug)
-    cout << "Mesodyn is all set, starting calculations.." << endl;
+  cout << "Mesodyn is all set, starting calculations.." << endl;
 
   vector<Real> rho;
 
@@ -182,8 +207,17 @@ int Mesodyn::initial_conditions() {
     mask[i] = *(Sys[0]->KSAM+i);
   }
 
-  init_rho(rho, mask);
-
+  switch (initialization_mode) {
+  case INIT_HOMOGENEOUS:
+    init_rho_homogeneous(rho, mask);
+    break;
+  case INIT_FROMFILE:
+    init_rho_fromfile(rho, read_filename);
+    break;
+  case INIT_EQUILIBRATE:
+    init_rho_equilibrate(rho);
+    break;
+  }
   vector<Boundary1D::boundary> boundaries;
   for (string& boundary : Lat[0]->BC) {
     if (boundary == "mirror") {
@@ -192,26 +226,27 @@ int Mesodyn::initial_conditions() {
     if (boundary == "periodic") {
       boundaries.push_back(Boundary1D::PERIODIC);
     }
-    if (boundary == "bulk") {
-      boundaries.push_back(Boundary1D::BULK);
-    }
   }
 
+  //TODO: make sure they don't share gaussian noises!
   boundary.push_back(new Boundary1D(Lat[0], boundaries[0], boundaries[1]));
   gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev);
+  boundary.clear();
 
   switch (dimensions) {
   case 1:
 
     for (int i = 0; i < componentNo; ++i) {
+      boundary.push_back(new Boundary1D(Lat[0], boundaries[0], boundaries[1]));
+
       component.push_back(new Component(Lat[0], boundary[i], rho[i]));
-      solver_component.push_back(new Component(Lat[0], boundary[0], rho[i]));
+      solver_component.push_back(new Component(Lat[0], boundary[i], rho[i]));
     }
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
-        flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D, mask, solver_component[i], solver_component[j]));
+        flux.push_back(new Flux1D(Lat[0], gaussian_noise, D*dt, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D*dt, mask, solver_component[i], solver_component[j]));
       }
     }
 
@@ -221,13 +256,13 @@ int Mesodyn::initial_conditions() {
       boundary.push_back(new Boundary2D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3]));
 
       component.push_back(new Component(Lat[0], boundary[i], rho[i]));
-      solver_component.push_back(new Component(Lat[0], boundary[0], rho[i]));
+      solver_component.push_back(new Component(Lat[0], boundary[i], rho[i]));
     }
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
-        flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D, mask, solver_component[i], solver_component[j]));
+        flux.push_back(new Flux2D(Lat[0], gaussian_noise, D*dt, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D*dt, mask, solver_component[i], solver_component[j]));
       }
     }
 
@@ -237,13 +272,13 @@ int Mesodyn::initial_conditions() {
       boundary.push_back(new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
 
       component.push_back(new Component(Lat[0], boundary[i], rho[i]));
-      solver_component.push_back(new Component(Lat[0], boundary[0], rho[i]));
+      solver_component.push_back(new Component(Lat[0], boundary[i], rho[i]));
     }
 
     for (int i = 0; i < componentNo - 1; ++i) {
       for (int j = i + 1; j < componentNo; ++j) {
-        flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D, mask, solver_component[i], solver_component[j]));
+        flux.push_back(new Flux3D(Lat[0], gaussian_noise, D*dt, mask, component[i], component[j]));
+        solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D*dt, mask, solver_component[i], solver_component[j]));
       }
     }
 
@@ -253,7 +288,99 @@ int Mesodyn::initial_conditions() {
   return 0;
 }
 
-int Mesodyn::init_rho(vector<vector<Real>>& rho, vector<int>& mask) {
+int Mesodyn::init_rho_equilibrate(vector<vector<Real>>& rho) {
+  cout << "Equilibrating.." << endl;
+  New[0]->Solve(true);
+  for (int i = 0; i < componentNo; ++i) {
+    for (int z = 0; z < M; ++z)
+      rho[i][z] = *(Seg[i]->H_phi+z);
+  }
+  return 0;
+}
+
+vector<string> Mesodyn::tokenize(string line, char delim) {
+  istringstream stream{line};
+  vector<string> tokens;
+  string token;
+
+  //Read lines as tokens (tab delimited)
+  while (getline(stream, token, delim)) {
+    tokens.push_back(token);
+  }
+
+  return tokens;
+}
+
+int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
+  ifstream rho_input;
+  rho_input.open(filename);
+
+  size_t first_column{0};
+  int z{0};
+  string line;
+
+  getline(rho_input, line);
+  vector<string> tokens = tokenize(line, '\t');
+
+  //Find in which column the density profile starts
+  //This depends on the fact that the first mon output is phi
+
+  bool found = false;
+  size_t i = 1; // because first index is coordinate
+  while (found == false && i < tokens.size()) {
+    if (tokens[i].substr(0, 3) == "mon" && tokens[i].substr(tokens[i].size() - 4, 3) == "phi") {
+      first_column = i;
+      found = true;
+    }
+    ++i;
+  }
+
+  //Check if our last expected header is indeed also a mon:x:phi
+  string last_header = tokens[first_column + componentNo - 1];
+  if (last_header.substr(last_header.size() - 4, 3) != "phi") {
+    cerr << "Last header didn't end in 'phi'. Please make sure you're supplying a .pro file with expected number of components (" << componentNo << ")." << endl;
+    throw ERROR_FILE_FORMAT;
+  }
+
+  //Read lines one at a time
+  while (getline(rho_input, line)) {
+    vector<string> tokens = tokenize(line, '\t');
+    //Read all densities into rho.
+    for (int i = 0; i < componentNo; ++i) {
+      rho[i][z] = atof(tokens[first_column + i].c_str());
+    }
+    ++z;
+  }
+
+  if (z != M) { // +1 for the line with headers
+    cerr << "Input densities not of length M (" << z << "/" << M << ")" << endl;
+    throw ERROR_FILE_FORMAT;
+  }
+
+
+  // TODO: improve this (norm per mol)
+  //Re-norm the densities read from file. Errors occur through low precision writing.
+  vector<Real> sum(M);
+  sum = rho[0];
+
+  for (size_t i = 1; i < rho.size(); ++i)
+    transform(rho[i].begin(), rho[i].end(), sum.begin(), sum.begin(), [](Real A, Real B) { return A + B; });
+
+  Real sum_of_elements{0};
+  for (Real& n : sum)
+    sum_of_elements += n;
+
+  Real residual{sum_of_elements - M};
+  Real norm{residual / M};
+
+  for (vector<Real>& all_components : rho)
+    for (Real& rho : all_components)
+      rho -= (rho * norm);
+
+  return 0;
+}
+
+int Mesodyn::init_rho_homogeneous(vector<vector<Real>>& rho, vector<int>& mask) {
   int solvent = Sys[0]->solvent; // Find which componentNo is the solvent
 //  int volume = Sys[0]->volume - (pow(M, dimensions) - pow((M - 2), dimensions));
   int tMX = Lat[0]->MX;
@@ -776,9 +903,6 @@ int Boundary1D::set_x_boundaries(boundary x0, boundary xm, Real bulk) {
     }
     bX0 = bind(&Boundary1D::bXPeriodic, this, _1, MY, MZ, MX);
     break;
-  case BULK:
-    bX0 = bind(&Boundary1D::bX0Bulk, this, _1, MY, MZ, bulk);
-    break;
   }
 
   switch (xm) {
@@ -792,9 +916,6 @@ int Boundary1D::set_x_boundaries(boundary x0, boundary xm, Real bulk) {
     }
     //TODO: fix this double periodic (including ones below)
     bXm = bind(&Boundary1D::bXPeriodic, this, _1, MY, MZ, MX);
-    break;
-  case BULK:
-    bXm = bind(&Boundary1D::bXmBulk, this, _1, MY, MZ, MX, bulk);
     break;
   }
 
@@ -815,9 +936,6 @@ int Boundary2D::set_y_boundaries(boundary y0, boundary ym, Real bulk) {
     }
     bY0 = bind(&Boundary2D::bYPeriodic, this, _1, MX, MZ, MY);
     break;
-  case BULK:
-    bY0 = bind(&Boundary2D::bY0Bulk, this, _1, MX, MZ, bulk);
-    break;
   }
 
   switch (ym) {
@@ -830,9 +948,6 @@ int Boundary2D::set_y_boundaries(boundary y0, boundary ym, Real bulk) {
       return 1;
     }
     bYm = bind(&Boundary2D::bYPeriodic, this, _1, MX, MZ, MY);
-    break;
-  case BULK:
-    bYm = bind(&Boundary2D::bYmBulk, this, _1, MX, MZ, MY, bulk);
     break;
   }
 
@@ -853,9 +968,6 @@ int Boundary3D::set_z_boundaries(boundary z0, boundary zm, Real bulk) {
     }
     bZ0 = bind(&Boundary3D::bZPeriodic, this, _1, MX, MY, MZ);
     break;
-  case BULK:
-    bZ0 = bind(&Boundary3D::bZ0Bulk, this, _1, MX, MY, bulk);
-    break;
   }
 
   switch (zm) {
@@ -868,9 +980,6 @@ int Boundary3D::set_z_boundaries(boundary z0, boundary zm, Real bulk) {
       return 1;
     }
     bZm = bind(&Boundary3D::bZPeriodic, this, _1, MX, MY, MZ);
-    break;
-  case BULK:
-    bZm = bind(&Boundary3D::bZmBulk, this, _1, MX, MY, MZ, bulk);
     break;
   }
 
@@ -917,32 +1026,6 @@ void Boundary1D::bXPeriodic(vector<Real>& target, int fMY, int fMZ, int fMX) {
   } while (z < fMZ);
 }
 
-void Boundary1D::bX0Bulk(vector<Real>& target, int fMY, int fMZ, Real bulk) {
-  int y = 0;
-  int z = 0;
-  do {
-    y=0;
-    do {
-      *valPtr(target, 0, y, z) = bulk; //start
-      ++y;
-    } while (y < fMY);
-    ++z;
-  } while (z < fMZ);
-}
-
-void Boundary1D::bXmBulk(vector<Real>& target, int fMY, int fMZ, int fMX, Real bulk) {
-  int y = 0;
-  int z = 0;
-  do {
-    y=0;
-    do {
-      *valPtr(target, fMX - 1, y, z) = bulk; //end
-      ++y;
-    } while (y < fMY);
-    ++z;
-  } while (z < fMZ);
-}
-
 void Boundary2D::bY0Mirror(vector<Real>& target, int fMX, int fMZ) {
   int x = 0;
   int z = 0;
@@ -983,32 +1066,6 @@ void Boundary2D::bYPeriodic(vector<Real>& target, int fMX, int fMZ, int fMY) {
   } while (z < fMZ);
 }
 
-void Boundary2D::bY0Bulk(vector<Real>& target, int fMX, int fMZ, Real bulk) {
-  int x = 0;
-  int z = 0;
-  do {
-    x=0;
-    do {
-      *valPtr(target, x, 0, z) = bulk; //start
-      ++x;
-    } while (x < fMX);
-    ++z;
-  } while (z < fMZ);
-}
-
-void Boundary2D::bYmBulk(vector<Real>& target, int fMX, int fMZ, int fMY, Real bulk) {
-  int x = 0;
-  int z = 0;
-  do {
-    x=0;
-    do {
-      *valPtr(target, x, fMY - 1, z) = bulk; //end
-      ++x;
-    } while (x < fMX);
-    ++z;
-  } while (z < fMZ);
-}
-
 void Boundary3D::bZ0Mirror(vector<Real>& target, int fMX, int fMY) {
   int x = 0;
   int y = 0;
@@ -1043,32 +1100,6 @@ void Boundary3D::bZPeriodic(vector<Real>& target, int fMX, int fMY, int fMZ) {
     do {
       *valPtr(target, x, y, 0) = val(target, x, y, fMZ - 2); //start
       *valPtr(target, x, y, fMZ - 1) = val(target, x, y, 1); //end
-      ++x;
-    } while (x < fMX);
-    ++y;
-  } while (y < fMY);
-}
-
-void Boundary3D::bZ0Bulk(vector<Real>& target, int fMX, int fMY, Real bulk) {
-  int x = 0;
-  int y = 0;
-  do {
-    x=0;
-    do {
-      *valPtr(target, x, y, 0) = bulk; //start
-      ++x;
-    } while (x < fMX);
-    ++y;
-  } while (y < fMY);
-}
-
-void Boundary3D::bZmBulk(vector<Real>& target, int fMX, int fMY, int fMZ, Real bulk) {
-  int x = 0;
-  int y = 0;
-  do {
-    x=0;
-    do {
-      *valPtr(target, x, y, fMZ - 1) = bulk; //end
       ++x;
     } while (x < fMX);
     ++y;

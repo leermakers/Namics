@@ -6,7 +6,7 @@ lat : flat : n_layers_y : 10
 lat : flat : n_layers_z : 10
 
 mon : S : freedom : frozen
-mon : S : frozen_range : 1,1,1;1,10,1
+mon : S : frozen_range : 4,4,4;6,6,6
 
 mon : A : freedom : free
 
@@ -20,7 +20,7 @@ mol : water : composition : (W)1
 mol : water : freedom : solvent
 mol : pol : composition : (A)100
 mol : pol : freedom : restricted
-mol : pol : theta : 1.0
+mol : pol : theta : 100
 
 output : kal : append : true
 
@@ -28,10 +28,10 @@ output : pro : append : true
 pro : mol : pol : phi
 
 mesodyn : smth : timesteps : 10000
-mesodyn : smth : timebetweensaves : 100000000
+mesodyn : smth : timebetweensaves : 10
 mesodyn : smth : diffusionconstant : 0.5
 mesodyn : smth : mean : 0
-mesodyn : smth : stddev : 0
+mesodyn : smth : stddev : 0.5
 mesodyn : smth : seed : 1
 
 newton :isaac : method : DIIS

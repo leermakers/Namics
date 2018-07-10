@@ -37,7 +37,7 @@ newton : isaac : e_info : true
 newton : isaac : s_info : false
 newton : isaac : super_e_info : true
 newton : isaac : super_s_info : true
-newton : isaac : method : pseudohessian
+newton : isaac : method : DIIS
 newton : isaac : iterationlimit : 1000
 newton : isaac : deltamax : 0.05
 newton : isaac  : super_deltamax : 1
@@ -78,4 +78,14 @@ start
 mol : lipid : theta : 2.4
 start
 mol : lipid : theta : 2.3
+start
+mol : lipid : theta : 2.8
+mesodyn : smth : equilibrate : false
+mesodyn : smth : read_rho: membrane_0_10.pro
+mesodyn : smth : timesteps : 10000
+mesodyn : smth : timebetweensaves : 10
+mesodyn : smth : diffusionconstant : 0.5
+mesodyn : smth : mean : 0
+mesodyn : smth : stddev : 0
+mesodyn : smth : seed : 1
 start

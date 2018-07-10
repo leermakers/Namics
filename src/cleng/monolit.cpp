@@ -2,7 +2,7 @@
 // Created by Alexander Kazakov on 7/10/18.
 //
 
-#include "Monolit.h"
+#include "monolit.h"
 
 Monolit::Monolit(const std::vector<Point> &points, int box_size) {
     this->points = points;

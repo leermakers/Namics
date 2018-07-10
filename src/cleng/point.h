@@ -6,7 +6,7 @@
 #define NAMICS_POINT_H
 
 
-#include "Node.h"
+#include "node.h"
 
 class Point : public Node {
 public:

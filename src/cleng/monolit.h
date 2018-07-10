@@ -6,7 +6,7 @@
 #define NAMICS_MONOLIT_H
 
 
-#include "Node.h"
+#include "node.h"
 #include "point.h"
 #include <vector>
 

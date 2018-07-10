@@ -98,6 +98,7 @@ bool Cleng::CP(transfer tofrom) {
     int length;
 	bool found;
 
+	// TODO think about simplify
 	switch(tofrom) {
         case to_cleng:
             // cleaning
@@ -345,18 +346,7 @@ bool Cleng::MakeShift(bool back) {
 //            Y[rand_part_index] += shift.Y();
 //            Z[rand_part_index] += shift.Z();
 
-
-            for (int i=0; i<n_boxes; i++) {
-
-                // TODO should we shift segment?
-                Seg[clamp_seg]-> px1[i]+= shift.X();
-                Seg[clamp_seg]-> py1[i]+= shift.Y();
-                Seg[clamp_seg]-> pz1[i]+= shift.Z();
-
-                cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " pos_y1:" << Seg[clamp_seg]-> py1[i] << " pos_z1: " << Seg[clamp_seg]-> pz1[i] << endl;
-                cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " pos_y2:" << Seg[clamp_seg]-> py2[i]  << " pos_z2: " << Seg[clamp_seg]-> pz2[i] << endl;
-            }
-
+            nodes[rand_part_index].shift(shift.X(), shift.Y(), shift.Z());
 
 
 
@@ -483,8 +473,7 @@ bool Cleng::MonteCarlo() {
         cout << "free_energy_c:" << free_energy_c << endl;
         cout << "free_energy_t:" << free_energy_t << endl;
 
-        // TODO typo in if condition?
-        if (free_energy_t != free_energy_t) {
+        if (std::isnan(free_energy_t)) {
             for (int k = 0; k < (int) nodes.size(); k++) {
                 cout << nodes[k].X() << " " << nodes[k].Y() << " " << nodes[k].Z() << endl;
             }

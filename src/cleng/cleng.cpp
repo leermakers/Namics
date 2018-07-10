@@ -245,20 +245,20 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
 
 bool Cleng::InBoxRange() {
     int up_bondary = 3; int down_bondary = 3;
-    return    (down_bondary < X[rand_part_index] + shift.x) && (X[rand_part_index] + shift.x < (int)Lat[0]->MX - up_bondary)
-           && (down_bondary < Y[rand_part_index] + shift.y) && (Y[rand_part_index] + shift.y < (int)Lat[0]->MY - up_bondary)
-           && (down_bondary < Z[rand_part_index] + shift.z) && (Z[rand_part_index] + shift.z < (int)Lat[0]->MZ - up_bondary);
+    return    (down_bondary < X[rand_part_index] + shift.X()) && (X[rand_part_index] + shift.X() < (int)Lat[0]->MX - up_bondary)
+           && (down_bondary < Y[rand_part_index] + shift.Y()) && (Y[rand_part_index] + shift.Y() < (int)Lat[0]->MY - up_bondary)
+           && (down_bondary < Z[rand_part_index] + shift.Z()) && (Z[rand_part_index] + shift.Z() < (int)Lat[0]->MZ - up_bondary);
 }
 
 bool Cleng::NotTooClose() {
     
     auto indexes_particle = (int) X.size();
 
-    Point MP {X[rand_part_index] + shift.x, Y[rand_part_index]+ shift.y, Z[rand_part_index]+ shift.z };
+    Point MP(X[rand_part_index] + shift.X(), Y[rand_part_index]+ shift.Y(), Z[rand_part_index]+ shift.Z());
     int equals = 0;
 
     for (int index = 0; index < indexes_particle; index++) {
-        if (MP.x == X[index] && MP.y == Y[index] && MP.z == Z[index]) {
+        if (MP.X() == X[index] && MP.Y() == Y[index] && MP.Z() == Z[index]) {
             equals+=1;
         }
     }
@@ -316,26 +316,28 @@ bool Cleng::MakeShift(bool back) {
 
         if (pos_array == 0) {
 //      z-direction
-            shift.z = GetIntRandomValueExclude(-1, 1, 0, true);
+//            shift.Z() = GetIntRandomValueExclude(-1, 1, 0, true);
+            shift = Point(shift.X(), shift.Y(), GetIntRandomValueExclude(-1, 1, 0, true));
         } else {
 //      xy-direction
-            shift.x = GetIntRandomValueExclude(-1, 1, 0, true);
-            shift.y = GetIntRandomValueExclude(-1, 1, 0, true);
+//            shift.X() = GetIntRandomValueExclude(-1, 1, 0, true);
+//            shift.Y() = GetIntRandomValueExclude(-1, 1, 0, true);
+            shift = Point(GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true), shift.Z());
         }
 
 //        if (InBoxRange() && NotTooClose()) {
         if (true) {
 
-//            X[rand_part_index] += shift.x;
-//            Y[rand_part_index] += shift.y;
-//            Z[rand_part_index] += shift.z;
+//            X[rand_part_index] += shift.X();
+//            Y[rand_part_index] += shift.Y();
+//            Z[rand_part_index] += shift.Z();
 
 
             for (int i=0; i<n_boxes; i++) {
 
-                Seg[clamp_seg]-> px1[i]+= shift.x;
-                Seg[clamp_seg]-> py1[i]+= shift.y;
-                Seg[clamp_seg]-> pz1[i]+= shift.z;
+                Seg[clamp_seg]-> px1[i]+= shift.X();
+                Seg[clamp_seg]-> py1[i]+= shift.Y();
+                Seg[clamp_seg]-> pz1[i]+= shift.Z();
 
                 cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " pos_y1:" << Seg[clamp_seg]-> py1[i] << " pos_z1: " << Seg[clamp_seg]-> pz1[i] << endl;
                 cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " pos_y2:" << Seg[clamp_seg]-> py2[i]  << " pos_z2: " << Seg[clamp_seg]-> pz2[i] << endl;
@@ -347,11 +349,13 @@ bool Cleng::MakeShift(bool back) {
         } else {
             if (pos_array == 0) {
 //      z-direction
-                shift.z = GetIntRandomValueExclude(-1, 1, 0, true);
+//                shift.Z() = GetIntRandomValueExclude(-1, 1, 0, true);
+                shift = Point(shift.X(), shift.Y(), GetIntRandomValueExclude(-1, 1, 0, true));
             } else {
 //      xy-direction
-                shift.x = GetIntRandomValueExclude(-1, 1, 0, true);
-                shift.y = GetIntRandomValueExclude(-1, 1, 0, true);
+//                shift.X() = GetIntRandomValueExclude(-1, 1, 0, true);
+//                shift.Y() = GetIntRandomValueExclude(-1, 1, 0, true);
+                shift = Point(GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true), shift.Z());
             }
         }
 
@@ -389,7 +393,7 @@ bool Cleng::MakeShift(bool back) {
 
 
 //    cout << "changed:" << changed << endl;
-        cout << "Shift:" << shift.x << " " << shift.y << " " << shift.z << endl;
+        cout << "Shift:" << shift.X() << " " << shift.Y() << " " << shift.Z() << endl;
 //    cout << "len P:" << P.size() << endl;
 //    cout << "len Sx:" << Sx.size() << endl;
 //    cout << "len Sy:" << Sy.size() << endl;
@@ -408,11 +412,11 @@ bool Cleng::MakeShift(bool back) {
         cout << "Y:" << Y[rand_part_index] << endl;
         cout << "Z:" << Z[rand_part_index] << endl;
 
-        cout << -shift.x << " " << -shift.y << " " << -shift.z << endl;
+        cout << -shift.X() << " " << -shift.Y() << " " << -shift.Z() << endl;
         cout << "last particle:" << rand_part_index << endl;
-        X[rand_part_index] -= shift.x;
-        Y[rand_part_index] -= shift.y;
-        Z[rand_part_index] -= shift.z;
+        X[rand_part_index] -= shift.X();
+        Y[rand_part_index] -= shift.Y();
+        Z[rand_part_index] -= shift.Z();
 
         cout << "rand_part_index:" << rand_part_index << endl;
         cout << "X:" << X[rand_part_index] << endl;

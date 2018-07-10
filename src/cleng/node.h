@@ -6,8 +6,8 @@
 
 class Node {
 public:
-    virtual int getX() const = 0;
-    virtual int getY() const = 0;
-    virtual int getZ() const = 0;
+    virtual int X() const = 0;
+    virtual int Y() const = 0;
+    virtual int Z() const = 0;
     virtual void shift(int dx, int dy, int dz) = 0;
 };

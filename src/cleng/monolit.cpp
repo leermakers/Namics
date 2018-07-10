@@ -9,16 +9,16 @@ Monolit::Monolit(const std::vector<Point> &points, int box_size) {
     this->box_size = box_size;
 }
 
-int Monolit::getX() const {
-    return getPrimitive(points.back()).getX();
+int Monolit::X() const {
+    return getPrimitive(points.back()).X();
 }
 
-int Monolit::getY() const {
-    return getPrimitive(points.back()).getY();
+int Monolit::Y() const {
+    return getPrimitive(points.back()).Y();
 }
 
-int Monolit::getZ() const {
-    return getPrimitive(points.back()).getZ();
+int Monolit::Z() const {
+    return getPrimitive(points.back()).Z();
 }
 
 void Monolit::shift(int dx, int dy, int dz) {
@@ -32,9 +32,9 @@ const std::vector<Point> Monolit::getPoints() const {
 }
 
 Point Monolit::getPrimitive(const Point &p) const {
-    return {p.getX() % box_size,
-            p.getY() % box_size,
-            p.getZ() % box_size};
+    return {p.X() % box_size,
+            p.Y() % box_size,
+            p.Z() % box_size};
 }
 
 

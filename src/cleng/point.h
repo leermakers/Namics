@@ -10,13 +10,14 @@
 
 class Point : public Node {
 public:
+    Point();
     Point(int x, int y, int z);
 
-    int getX() const override;
+    int X() const override;
 
-    int getY() const override;
+    int Y() const override;
 
-    int getZ() const override;
+    int Z() const override;
 
     void shift(int dx, int dy, int dz) override;
 

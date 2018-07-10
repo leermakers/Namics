@@ -4,28 +4,32 @@
 
 #include "point.h"
 
+Point::Point() : Point(0, 0, 0) {
+
+}
+
 Point::Point(int x, int y, int z) :
     x(x),
     y(y),
     z(z)
 {}
 
-int Point::getX() const {
+int Point::X() const {
     return x;
 }
 
-int Point::getY() const {
+int Point::Y() const {
     return y;
 }
 
-int Point::getZ() const {
+int Point::Z() const {
     return z;
 }
 
 void Point::shift(int dx, int dy, int dz) {
-    setX(getX() + dx);
-    setY(getY() + dy);
-    setZ(getZ() + dz);
+    setX(X() + dx);
+    setY(Y() + dy);
+    setZ(Z() + dz);
 }
 
 void Point::setX(int x) {
@@ -39,5 +43,6 @@ void Point::setY(int y) {
 void Point::setZ(int z) {
     this->z = z;
 }
+
 
 

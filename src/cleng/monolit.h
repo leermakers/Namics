@@ -15,11 +15,11 @@
 class Monolit : public Node {
 public:
     Monolit(const std::vector<Point> &points, int box_size);
-    int getX() const override;
+    int X() const override;
 
-    int getY() const override;
+    int Y() const override;
 
-    int getZ() const override;
+    int Z() const override;
 
     void shift(int dx, int dy, int dz) override;
 

@@ -1,10 +1,11 @@
 #ifndef CLENGxH
 #define CLENGxH
-#include "input.h"
-#include "namics.h"
-#include "solve_scf.h"
-#include "system.h"
-#include "output.h"
+#include "../input.h"
+#include "point.h"
+#include "../namics.h"
+#include "../solve_scf.h"
+#include "../system.h"
+#include "../output.h"
 
 
 //#include <map>  //For generating the output of settings
@@ -32,14 +33,6 @@ private:
 
     Real seed;
     void prepareOutputFile();
-
-    struct Point {
-    public:
-        int x;
-        int y;
-        int z;
-    };
-
 
 public:
     Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);

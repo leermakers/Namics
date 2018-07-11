@@ -52,6 +52,7 @@ public:
   inline int val(vector<int>&, int, int, int);
   inline Real* valPtr(vector<Real>&, int, int, int);
   inline int index(int x, int y, int z);
+  inline void skip_bounds( function<void(int,int,int)> );
 
   const int dimensions;
 
@@ -243,7 +244,7 @@ private:
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   Real dt;
   int initialization_mode;
-  const int componentNo; // number of components in the system, read from SysMonMolList
+  const size_t component_no; // number of components in the system, read from SysMonMolList
 
   /* Flow control */
   int RC;

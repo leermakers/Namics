@@ -532,7 +532,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 						PutAlpha(&temp_alpha[0],Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 					}
 				}
-			mesodyn_load_alpha(temp_alpha, i);
+			mesodyn_load_alpha(temp_alpha, (size_t)i);
 			}
 
 			RHO = mesodyn_flux();

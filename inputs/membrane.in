@@ -23,6 +23,7 @@ pro : mon : * : phi
 pro : mon : * : u
 pro : mol : lipid : phi-C
 pro : mol : lipid : phi-O
+pro : mol : water : phi-W
 output : kal : append : false
 kal : sys : noname : grand_potential
 kal : mol : lipid : theta
@@ -39,7 +40,7 @@ newton : isaac : super_e_info : true
 newton : isaac : super_s_info : true
 newton : isaac : method : DIIS
 newton : isaac : iterationlimit : 1000
-newton : isaac : deltamax : 0.05
+newton : isaac : deltamax : 0.8
 newton : isaac  : super_deltamax : 1
 newton : isaac : m : 4
 start

@@ -76,6 +76,8 @@ if (debug) cout <<"PrepareForCalculations in Solve " << endl;
 
 bool Solve_scf::CheckInput(int start_) { start=start_;
 if(debug) cout <<"CheckInput in Solve " << endl;
+	pseudohessian =false;
+	hessian =false;
 	bool success=true;
 	control=proceed;
 	mesodyn=false;
@@ -254,7 +256,7 @@ if(debug) cout <<"PushOutput in  Solve " << endl;
 	push("iterations",iterations);
 	push("iterationlimit",iterationlimit);
 	push("stop_criterion",stop_criterion);
-	if (pseudohessian||hessian) {
+	if (pseudohessian || hessian) {
 		//push("same_hessian",samehessian);
 		push("linesearchlimit",linesearchlimit);
 		push("max_accuracy_for_hessian_scaling",max_accuracy_for_hessian_scaling);
@@ -448,6 +450,8 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback
 
 	switch (solver) {
 		case diis:
+			gradient=MESODYN;
+				
 			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 		break;
 		case PSEUDOHESSIAN:

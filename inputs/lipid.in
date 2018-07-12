@@ -24,16 +24,15 @@ mon : W : chi-O : -0.5
 output : pro : append : false
 pro : mol : * : phi
 pro : mon : * : phi
-pro : mon : * : u
 pro : mol : lipid : phi-C
 pro : mol : lipid : phi-O
 output : kal : append : false
+output : kal : use_output_directory : false
 kal : sys : noname : grand_potential
 kal : mol : lipid : theta
 kal : mol : lipid : theta_exc
 kal : lat : flat : n_layers
-kal : lat : flat : FJC_choices
-kal : mol : lipid : chainlength 
+kal : mol : lipid : chainlength
 kal : mon : C : chi-O
 kal : mol : lipid : mu
 kal : mol : lipid : phibulk
@@ -47,15 +46,12 @@ newton : isaac : iterationlimit : 1000
 newton : isaac : deltamax : 0.05
 newton : isaac  : super_deltamax : 1
 newton : isaac : m : 12
-start 
+start
 mon : C : freedom : free
 newton : isaac : iterationlimit : 5000
 newton : isaac : deltamax : 0.05
-//var : lat-flat : scan : n_layers 
-//var : lat-flat : step : -1
-//var : lat-flat : end_value : 5
-var : mol-lipid : search : theta
-var : sys-noname: grand_potential : 0
-start
-//lat : flat : FJC_choices : 7
-//start
+var : mol-lipid : scan : theta
+var : mol-lipid : step : 0.1
+var : mol-lipid : end_value : 5
+//var : mol-lipid : search : theta
+//var : sys-noname: grand_potential : 0

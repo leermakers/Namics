@@ -48,6 +48,6 @@ mesodyn : smth : timesteps : 10000
 mesodyn : smth : timebetweensaves : 1000
 mesodyn : smth : diffusionconstant : 0.5
 mesodyn : smth : mean : 0
-mesodyn : smth : stddev : 0
+mesodyn : smth : stddev : 0.5
 mesodyn : smth : seed : 1
 start

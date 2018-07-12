@@ -4,37 +4,36 @@
 
 #include "monolit.h"
 
-Monolit::Monolit(const std::vector<Point> &points, int box_size) {
-    this->points = points;
-    this->box_size = box_size;
+using std::string;
+
+Monolit::Monolit(const std::vector<SimpleNode> &nodes) {
+    this->m_nodes = nodes;
 }
 
-int Monolit::X() const {
-    return getPrimitive(points.back()).X();
+
+Point Monolit::point() const {
+    return m_nodes[0].point();
 }
 
-int Monolit::Y() const {
-    return getPrimitive(points.back()).Y();
-}
-
-int Monolit::Z() const {
-    return getPrimitive(points.back()).Z();
-}
-
-void Monolit::shift(int dx, int dy, int dz) {
-    for (auto &&point : points) {
-        point.shift(dx, dy, dz);
+void Monolit::shift(const Point &shift) {
+    for (auto &&node : m_nodes) {
+        node.shift(shift);
     }
 }
 
-const std::vector<Point> Monolit::getPoints() const {
-    return points;
+void Monolit::pushSystemPoints(std::map<int, Point> &pointsById) const {
+    for (auto &&n : m_nodes) {
+        n.pushSystemPoints(pointsById);
+    }
 }
 
-Point Monolit::getPrimitive(const Point &p) const {
-    return {p.X() % box_size,
-            p.Y() % box_size,
-            p.Z() % box_size};
+string Monolit::to_string() const {
+    string res;
+    for (auto &&n : m_nodes) {
+        res += n.to_string();
+        res += "; ";
+    }
+    return res;
 }
 
 

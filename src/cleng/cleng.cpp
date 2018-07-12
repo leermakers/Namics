@@ -1,4 +1,10 @@
 #include "cleng.h"
+#include "point.h"
+#include "monolit.h"
+#include <map>
+#include <cassert>
+
+using namespace std;
 
 Cleng::Cleng(
         vector<Input*> In_,
@@ -18,17 +24,19 @@ Cleng::Cleng(
 
 {
 	if (debug) cout << "Cleng initialized" << endl;
-
     KEYS.push_back("MCS");
   	KEYS.push_back("save_interval");
   	KEYS.push_back("save_filename");
   	KEYS.push_back("seed");
+
+  	out.open("debug.out", ios_base::out);
 }
 
 Cleng::~Cleng() {
     delete[] xs;
     delete[] ys;
     delete[] zs;
+    out.close();
 }
 
 
@@ -83,117 +91,188 @@ bool Cleng::CheckInput(int start) {
     return success;
 }
 
+SimpleNode fromSystemToNode(int x, int y, int z, int id, const Point& box) {
+    return SimpleNode({x, y, z}, id, box);
+}
+
+vector<shared_ptr<Node>> createNodes(const vector<SimpleNode>& simple_nodes) {
+    vector<shared_ptr<Node>> result;
+    map<SimpleNode, vector<SimpleNode>> m;
+    for (auto &&n  : simple_nodes) {
+        m[n].push_back(n);
+    }
+    for (auto &&entry : m) {
+        if (entry.second.size() == 1) {
+            result.push_back(make_shared<SimpleNode>(entry.first));
+        } else {
+            result.push_back(make_shared<Monolit>(entry.second));
+        }
+    }
+
+    return result;
+}
 
 bool Cleng::CP(transfer tofrom) {
     if (debug) cout << "CP in Cleng" << endl;
 
     bool success=true;
-    int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int MZ=Lat[0]->MZ;
+//    int MX=Lat[0]->MX;
+//	int MY=Lat[0]->MY;
+//	int MZ=Lat[0]->MZ;
+    Point box {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
 	int JX=Lat[0]->JX;
 	int JY=Lat[0]->JY;
 	int M =Lat[0]->M;
+
 	int j;
     int length;
 	bool found;
 
+    vector<SimpleNode> sn;
+    Segment* clamped = Seg[clamp_seg];
+    map<int, Point> system_points;
 	// TODO think about simplify
 	switch(tofrom) {
         case to_cleng:
-            // cleaning
-            P.clear();
-            // TODO extract method
-			for (int i=0; i<n_boxes; i++) {
-			    // TODO simplify
-			    PX=Seg[clamp_seg]->px1[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
-				PY=Seg[clamp_seg]->py1[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
-				PZ=Seg[clamp_seg]->pz1[i]; if (PZ>MZ) {PZ-=MZ; Sz.push_back(1);} else {Sz.push_back(0);}
-
-				length=nodes.size();
-
-				found=false; j=0;
-
-				while (!found && j < length) {
-                    // TODO replace with points comparing
-					if (nodes[j].X() == PX && nodes[j].Y() == PY && nodes[j].Z() == PZ) {
-					    found = true;
-					    P.push_back(j);
-					} else j++;
-				}
-
-				if (!found) {
-//					X.push_back(PX);
-//					Y.push_back(PY);
-//					Z.push_back(PZ);
-                    // TODO when push monolit??
-                    nodes.push_back(Point(PX, PY, PZ));
-                    // TODO: is this vector redunant?
-					P.push_back(nodes.size()-1);
-				}
-
-				// TODO simplify
-				PX=Seg[clamp_seg]->px2[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
-				PY=Seg[clamp_seg]->py2[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
-				PZ=Seg[clamp_seg]->pz2[i]; if (PZ>MZ) {PZ-=MZ; Sz.push_back(1);} else {Sz.push_back(0);}
-
-				length = nodes.size();
-
-				found=false; j=0;
-
-				while (!found && j<length) {
-				    // TODO replace with points comparing
-					if (nodes[j].X() == PX && nodes[j].Y() == PY && nodes[j].Z() == PZ) {
-					    found = true;
-					    P.push_back(j);
-					}
-					else j++;
-				}
-				if (!found) {
-//					X.push_back(PX);
-//					Y.push_back(PY);
-//					Z.push_back(PZ);
-                    // TODO when push monolit??
-                    nodes.push_back(Point(PX, PY, PZ));
-					P.push_back(nodes.size()-1);
-				}
+            for (int i = 0; i < n_boxes; i++) {
+                sn.push_back(fromSystemToNode(clamped->px1[i], clamped->py1[i], clamped->pz1[i], 2 * i, box));
+                sn.push_back(fromSystemToNode(clamped->px2[i], clamped->py2[i], clamped->pz2[i], 2 * i + 1, box));
             }
 
-            for (const Node& n : nodes) {
-                cout << n.X() << " " << n.Y() << " " << n.Z() << endl;
+            nodes = createNodes(sn);
+            for (auto && n : nodes) {
+                cout << n->to_string() << endl;
             }
+//            assert(nodes.size() == 3);
+/*
+
+//            // cleaning
+//            P.clear();
+//            // TODO extract method
+//			for (int i=0; i<n_boxes; i++) {
+//			    // TODO simplify
+//			    PX=Seg[clamp_seg]->px1[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
+//				PY=Seg[clamp_seg]->py1[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
+//				PZ=Seg[clamp_seg]->pz1[i]; if (PZ>MZ) {PZ-=MZ; Sz.push_back(1);} else {Sz.push_back(0);}
+//
+//				length=nodes.size();
+//
+//				found=false; j=0;
+//
+//				while (!found && j < length) {
+//                    // TODO replace with points comparing
+//					if (nodes[j]->point().x == PX && nodes[j]->point().y == PY && nodes[j]->point().z == PZ) {
+//					    found = true;
+//					    P.push_back(j);
+//					} else j++;
+//				}
+//
+//				if (!found) {
+////					X.push_back(PX);
+////					Y.push_back(PY);
+////					Z.push_back(PZ);
+//                    // TODO when push monolit??
+//                    nodes.push_back(SimpleNode(PX, PY, PZ));
+//                    // TODO: is this vector redunant?
+//					P.push_back(nodes.size()-1);
+//				}
+//
+//				// TODO simplify
+//				PX=Seg[clamp_seg]->px2[i]; if (PX>MX) {PX-=MX; Sx.push_back(1);} else {Sx.push_back(0);}
+//				PY=Seg[clamp_seg]->py2[i]; if (PY>MY) {PY-=MY; Sy.push_back(1);} else {Sy.push_back(0);}
+//				PZ=Seg[clamp_seg]->pz2[i]; if (PZ>MZ) {PZ-=MZ; Sz.push_back(1);} else {Sz.push_back(0);}
+//
+//				length = nodes.size();
+//
+//				found=false; j=0;
+//
+//				while (!found && j<length) {
+//				    // TODO replace with points comparing
+//					if (nodes[j]->point().x == PX && nodes[j]->point().y == PY && nodes[j]->point().z == PZ) {
+//					    found = true;
+//					    P.push_back(j);
+//					}
+//					else j++;
+//				}
+//				if (!found) {
+////					X.push_back(PX);
+////					Y.push_back(PY);
+////					Z.push_back(PZ);
+//                    // TODO when push monolit??
+//                    nodes.push_back(SimpleNode(PX, PY, PZ));
+//					P.push_back(nodes.size()-1);
+//				}
+//            }
+//
+//            for (const Node& n : nodes) {
+//                cout << n->point().x << " " << n->point().y << " " << n->point().z << endl;
+//            }
+*/
 
             break;
 
         case to_segment:
 			Zero(Seg[clamp_seg]->H_MASK,M);
 
-			for (int i=0; i < n_boxes; i++) {
-			    // TODO simplify this
-				Seg[clamp_seg]->px1[i] = nodes[P[2*i]].X() + Sx[2*i]*MX;
-                Seg[clamp_seg]->py1[i] = nodes[P[2*i]].Y() + Sy[2*i]*MY;
-                Seg[clamp_seg]->pz1[i] = nodes[P[2*i]].Z() + Sz[2*i]*MZ;
+            for (auto &&n : nodes) {
+                n->pushSystemPoints(system_points);
+            }
 
-				Seg[clamp_seg]->px2[i] = nodes[P[2*i+1]].X() + Sx[2*i+1]*MX;
-				Seg[clamp_seg]->py2[i] = nodes[P[2*i+1]].Y() + Sy[2*i+1]*MY;
-				Seg[clamp_seg]->pz2[i] = nodes[P[2*i+1]].Z() + Sz[2*i+1]*MZ;
+            for (auto &&entry : system_points) {
+                int i = entry.first / 2;
+                Point& p = entry.second;
+                if (entry.first % 2 == 0) {
+                    clamped->px1[i] = p.x;
+                    clamped->py1[i] = p.y;
+                    clamped->pz1[i] = p.z;
+                } else {
+                    clamped->px2[i] = p.x;
+                    clamped->py2[i] = p.y;
+                    clamped->pz2[i] = p.z;
+                }
+            }
 
+            for (int i = 0; i < n_boxes; i++) {
 				Seg[clamp_seg]->bx[i] = (Seg[clamp_seg]->px2[i] + Seg[clamp_seg]->px1[i] - sub_box_size) / 2;
 				Seg[clamp_seg]->by[i] = (Seg[clamp_seg]->py2[i] + Seg[clamp_seg]->py1[i] - sub_box_size) / 2;
 				Seg[clamp_seg]->bz[i] = (Seg[clamp_seg]->pz2[i] + Seg[clamp_seg]->pz1[i] - sub_box_size) / 2;
 
-				if (Seg[clamp_seg]->bx[i] < 1) {Seg[clamp_seg]->bx[i] += MX; Seg[clamp_seg]->px1[i] +=MX; Seg[clamp_seg]->px2[i] +=MX;}
-				if (Seg[clamp_seg]->by[i] < 1) {Seg[clamp_seg]->by[i] += MY; Seg[clamp_seg]->py1[i] +=MY; Seg[clamp_seg]->py2[i] +=MY;}
-				if (Seg[clamp_seg]->bz[i] < 1) {Seg[clamp_seg]->bz[i] += MZ; Seg[clamp_seg]->pz1[i] +=MZ; Seg[clamp_seg]->pz2[i] +=MZ;}
+				if (Seg[clamp_seg]->bx[i] < 1) {Seg[clamp_seg]->bx[i] += box.x; Seg[clamp_seg]->px1[i] +=box.x; Seg[clamp_seg]->px2[i] +=box.x;}
+				if (Seg[clamp_seg]->by[i] < 1) {Seg[clamp_seg]->by[i] += box.y; Seg[clamp_seg]->py1[i] +=box.y; Seg[clamp_seg]->py2[i] +=box.y;}
+				if (Seg[clamp_seg]->bz[i] < 1) {Seg[clamp_seg]->bz[i] += box.z; Seg[clamp_seg]->pz1[i] +=box.z; Seg[clamp_seg]->pz2[i] +=box.z;}
 
-				Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px1[i]-1)%MX+1)*JX + ((Seg[clamp_seg]->py1[i]-1)%MY+1)*JY + (Seg[clamp_seg]->pz1[i]-1)%MZ+1]=1;
-				Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px2[i]-1)%MX+1)*JX + ((Seg[clamp_seg]->py2[i]-1)%MY+1)*JY + (Seg[clamp_seg]->pz2[i]-1)%MZ+1]=1;
+				Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px1[i]-1)%box.x+1)*JX + ((Seg[clamp_seg]->py1[i]-1)%box.y+1)*JY + (Seg[clamp_seg]->pz1[i]-1)%box.z+1]=1;
+				Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px2[i]-1)%box.x+1)*JX + ((Seg[clamp_seg]->py2[i]-1)%box.y+1)*JY + (Seg[clamp_seg]->pz2[i]-1)%box.z+1]=1;
+
+            }
+
+            out << "Nodes:" << endl;
+            for (auto &&n : nodes) {
+                out << n->to_string() << endl;
+            }
+            for (int i = 0; i < n_boxes; i++) {
+                out << "Box " << i << ": ";
+                out << "{" << clamped->bx[i] << ", " << clamped->by[i] << ", " << clamped->bz[i] << "}" << endl;
+            }
+            out << endl;
+//            nodes.clear();
+			/*for (int i=0; i < n_boxes; i++) {
+			    // TODO simplify this
+				Seg[clamp_seg]->px1[i] = nodes[P[2*i]]->point().x + Sx[2*i]*box.x;
+                Seg[clamp_seg]->py1[i] = nodes[P[2*i]]->point().y + Sy[2*i]*box.y;
+                Seg[clamp_seg]->pz1[i] = nodes[P[2*i]]->point().z + Sz[2*i]*box.z;
+
+				Seg[clamp_seg]->px2[i] = nodes[P[2*i+1]]->point().x + Sx[2*i+1]*box.x;
+				Seg[clamp_seg]->py2[i] = nodes[P[2*i+1]]->point().y + Sy[2*i+1]*box.y;
+				Seg[clamp_seg]->pz2[i] = nodes[P[2*i+1]]->point().z + Sz[2*i+1]*box.z;
+
+
 			}
             //	cleaning
             Sx.clear();
             Sy.clear();
             Sz.clear();
-            nodes.clear();
+            nodes.clear();*/
 		break;
 
         default:
@@ -260,18 +339,18 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
 bool Cleng::InBoxRange() {
     int up_bondary = 3; int down_bondary = 3;
     // TODO simplify this
-    return    (down_bondary < nodes[rand_part_index].X() + shift.X()) && (nodes[rand_part_index].X() + shift.X() < (int)Lat[0]->MX - up_bondary)
-           && (down_bondary < nodes[rand_part_index].Y() + shift.Y()) && (nodes[rand_part_index].Y() + shift.Y() < (int)Lat[0]->MY - up_bondary)
-           && (down_bondary < nodes[rand_part_index].Z() + shift.Z()) && (nodes[rand_part_index].Z() + shift.Z() < (int)Lat[0]->MZ - up_bondary);
+    return    (down_bondary < nodes[rand_part_index]->point().x + shift.x) && (nodes[rand_part_index]->point().x + shift.x < (int)Lat[0]->MX - up_bondary)
+           && (down_bondary < nodes[rand_part_index]->point().y + shift.y) && (nodes[rand_part_index]->point().y + shift.y < (int)Lat[0]->MY - up_bondary)
+           && (down_bondary < nodes[rand_part_index]->point().z + shift.z) && (nodes[rand_part_index]->point().z + shift.z < (int)Lat[0]->MZ - up_bondary);
 }
 
 bool Cleng::NotTooClose() {
     
-    Point MP(nodes[rand_part_index].X() + shift.X(), nodes[rand_part_index].Y()+ shift.Y(), nodes[rand_part_index].Z()+ shift.Z());
+    Point MP{nodes[rand_part_index]->point().x + shift.x, nodes[rand_part_index]->point().y+ shift.y, nodes[rand_part_index]->point().z+ shift.z};
 
-    for (const Node& n : nodes) {
+    for (auto n : nodes) {
         //TODO is this equal refactoring (maybe will be problems with monolit)?
-        if (MP.X() == n.X() && MP.Y() == n.Y() && MP.Z() == n.Z()) {
+        if (MP == n->point()) {
             return false;
         }
     }
@@ -293,7 +372,7 @@ bool Cleng::MakeShift1(bool back) {
     cout << "len Z:" << nodes.size() << endl;
 
     for (int i=0; i < (int)nodes.size(); i++) {
-        cout << "i:" << i << " X:" << nodes[i].X() << " Y:" << nodes[i].Y() << " Z:" << nodes[i].Z() << endl;
+        cout << "i:" << i << " X:" << nodes[i]->point().x << " Y:" << nodes[i]->point().y << " Z:" << nodes[i]->point().z << endl;
     }
 
     return success;
@@ -311,9 +390,9 @@ bool Cleng::MakeShift(bool back) {
         rand_part_index = GetIntRandomValueExclude(0, (int)nodes.size() - 1, 0, false);
 
         cout << "rand_part_index:" << rand_part_index << endl;
-        cout << "X:" << nodes[rand_part_index].X() << endl;
-        cout << "Y:" << nodes[rand_part_index].Y() << endl;
-        cout << "Z:" << nodes[rand_part_index].Z() << endl;
+        cout << "X:" << nodes[rand_part_index]->point().x << endl;
+        cout << "Y:" << nodes[rand_part_index]->point().y << endl;
+        cout << "Z:" << nodes[rand_part_index]->point().z << endl;
 
 //    TODO: rethink physics
 //    pos_array = GetIntRandomValueExclude(0, 2, 0, false);
@@ -329,75 +408,32 @@ bool Cleng::MakeShift(bool back) {
 
         if (pos_array == 0) {
 //      z-direction
-//            shift.Z() = GetIntRandomValueExclude(-1, 1, 0, true);
-            // TODO maybe use setter?
-            shift = Point(shift.X(), shift.Y(), GetIntRandomValueExclude(-1, 1, 0, true));
+            shift = {shift.x, shift.y, GetIntRandomValueExclude(-1, 1, 0, true)};
         } else {
 //      xy-direction
-//            shift.X() = GetIntRandomValueExclude(-1, 1, 0, true);
-//            shift.Y() = GetIntRandomValueExclude(-1, 1, 0, true);
-            shift = Point(GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true), shift.Z());
+            shift = {GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true), shift.z};
         }
 
-//        if (InBoxRange() && NotTooClose()) {
-        if (true) {
-
-//            X[rand_part_index] += shift.X();
-//            Y[rand_part_index] += shift.Y();
-//            Z[rand_part_index] += shift.Z();
-
-            nodes[rand_part_index].shift(shift.X(), shift.Y(), shift.Z());
-
-
+        if (InBoxRange() && NotTooClose()) {
+            nodes[rand_part_index]->shift(shift);
 
         } else {
             if (pos_array == 0) {
 //      z-direction
-//                shift.Z() = GetIntRandomValueExclude(-1, 1, 0, true);
-                shift = Point(shift.X(), shift.Y(), GetIntRandomValueExclude(-1, 1, 0, true));
+                shift = {shift.x, shift.y, GetIntRandomValueExclude(-1, 1, 0, true)};
             } else {
 //      xy-direction
-//                shift.X() = GetIntRandomValueExclude(-1, 1, 0, true);
-//                shift.Y() = GetIntRandomValueExclude(-1, 1, 0, true);
-                shift = Point(GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true), shift.Z());
+                shift = {GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true), shift.z};
             }
         }
-
-//        cout << "*************************************************\n";
-//        cout << "*************************************************\n";
-//
-//
-//        cout << "X:" << X[rand_part_index] << endl;
-//        cout << "Y:" << Y[rand_part_index] << endl;
-//        cout << "Z:" << Z[rand_part_index] << endl;
-//
-//        cout << "*************************************************\n";
-//        cout << "*************************************************\n";
-//
-//
-//        cout << "=================================================\n";
-//        cout << "=================================================\n";
-
-//        cout << "clamped seg:" << clamp_seg << endl;
-//        for (int i=0; i < n_boxes; i++) {
-//            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " " << Seg[clamp_seg]-> py1[i] << " " << Seg[clamp_seg]-> pz1[i] << endl;
-//            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " " << Seg[clamp_seg]-> py2[i] << " " << Seg[clamp_seg]-> pz2[i] << endl;
-//        }
 
         cout << "len X:" << nodes.size() << endl;
         cout << "len Y:" << nodes.size() << endl;
         cout << "len Z:" << nodes.size() << endl;
 
-//        for (int i=0; i < (int)X.size(); i++) {
-//            cout << "i:" << i << " X:" << X[i] << " Y:" << Y[i] << " Z:" << Z[i] << endl;
-//        }
-
-//        cout << "=================================================\n";
-//        cout << "=================================================\n";
-
 
 //    cout << "changed:" << changed << endl;
-        cout << "Shift:" << shift.X() << " " << shift.Y() << " " << shift.Z() << endl;
+        cout << "Shift:" << shift.x << " " << shift.y << " " << shift.z << endl;
 //    cout << "len P:" << P.size() << endl;
 //    cout << "len Sx:" << Sx.size() << endl;
 //    cout << "len Sy:" << Sy.size() << endl;
@@ -412,23 +448,23 @@ bool Cleng::MakeShift(bool back) {
         cout << "MakeShift back" << endl;
 
         cout << "rand_part_index:" << rand_part_index << endl;
-        cout << "X:" << nodes[rand_part_index].X() << endl;
-        cout << "Y:" << nodes[rand_part_index].Y() << endl;
-        cout << "Z:" << nodes[rand_part_index].Z() << endl;
+        cout << "X:" << nodes[rand_part_index]->point().x << endl;
+        cout << "Y:" << nodes[rand_part_index]->point().y << endl;
+        cout << "Z:" << nodes[rand_part_index]->point().z << endl;
 
-        cout << -shift.X() << " " << -shift.Y() << " " << -shift.Z() << endl;
+        cout << -shift.x << " " << -shift.y << " " << -shift.z << endl;
         cout << "last particle:" << rand_part_index << endl;
-//        nodes[rand_part_index] -= shift.X();
-//        nodes[rand_part_index] -= shift.Y();
-//        nodes[rand_part_index] -= shift.Z();
+//        nodes[rand_part_index] -= shift.x;
+//        nodes[rand_part_index] -= shift.y;
+//        nodes[rand_part_index] -= shift.z;
         // TODO simplify
         Point neg_shift = shift.negate();
-        nodes[rand_part_index].shift(neg_shift.X(), neg_shift.Y(), neg_shift.Z());
+        nodes[rand_part_index]->shift(neg_shift);
 
         cout << "rand_part_index:" << rand_part_index << endl;
-        cout << "X:" << nodes[rand_part_index].X() << endl;
-        cout << "Y:" << nodes[rand_part_index].Y() << endl;
-        cout << "Z:" << nodes[rand_part_index].Z() << endl;
+        cout << "X:" << nodes[rand_part_index]->point().x << endl;
+        cout << "Y:" << nodes[rand_part_index]->point().y << endl;
+        cout << "Z:" << nodes[rand_part_index]->point().z << endl;
 
         cout << endl;
 
@@ -450,19 +486,28 @@ bool Cleng::MonteCarlo() {
     for (int i = 1; i < MCS; i++) { // loop for trials
 
         cout << "Step i:" << i << endl;
+
+        for (int i = 0; i < n_boxes; i++) {
+            cout << "Subbox_x" << Seg[clamp_seg]->bx[i] << " " << Seg[clamp_seg]->by[i] << " " << Seg[clamp_seg]->bz[i] << endl;
+        }
+//            sn.push_back(fromSystemToNode(clamped->px1[i], clamped->py1[i], clamped->pz1[i], 2 * i, box));
+//            sn.push_back(fromSystemToNode(clamped->px2[i], clamped->py2[i], clamped->pz2[i], 2 * i + 1, box));
+//        }
+
+
         Real my_rand = GetRealRandomValue(0, 1);
         free_energy_c = Sys[0]-> FreeEnergy;
-//        success=CP(to_cleng);
-//        MakeShift(false);
-//        success=CP(to_segment);
-//        New[0]->Solve(true);
+        success=CP(to_cleng);
+        MakeShift(false);
+        success=CP(to_segment);
+        New[0]->Solve(true);
 
-/        for (int i=0; i < n_boxes; i++) {
-//
-            cout << "################ START" << endl;
-            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " pos_y1:" << Seg[clamp_seg]-> py1[i] << " pos_z1: " << Seg[clamp_seg]-> pz1[i] << endl;
-            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " pos_y2:" << Seg[clamp_seg]-> py2[i]  << " pos_z2: " << Seg[clamp_seg]-> pz2[i] << endl;
-        }
+//        for (int i=0; i < n_boxes; i++) {
+
+//            cout << "################ START" << endl;
+//            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " pos_y1:" << Seg[clamp_seg]-> py1[i] << " pos_z1: " << Seg[clamp_seg]-> pz1[i] << endl;
+//            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " pos_y2:" << Seg[clamp_seg]-> py2[i]  << " pos_z2: " << Seg[clamp_seg]-> pz2[i] << endl;
+//        }
 
 
 
@@ -475,7 +520,7 @@ bool Cleng::MonteCarlo() {
 
         if (std::isnan(free_energy_t)) {
             for (int k = 0; k < (int) nodes.size(); k++) {
-                cout << nodes[k].X() << " " << nodes[k].Y() << " " << nodes[k].Z() << endl;
+                cout << nodes[k]->point().x << " " << nodes[k]->point().y << " " << nodes[k]->point().z << endl;
             }
             break;
         }
@@ -567,8 +612,8 @@ void Cleng::fillXYZ() {
     ys = new int[n];
     zs = new int[n];
     for (int i = 0; i < n; i++) {
-        xs[i] = nodes[i].X();
-        ys[i] = nodes[i].Y();
-        zs[i] = nodes[i].Z();
+        xs[i] = nodes[i]->point().x;
+        ys[i] = nodes[i]->point().y;
+        zs[i] = nodes[i]->point().z;
     }
 }

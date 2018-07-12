@@ -4,10 +4,17 @@
 
 #pragma once
 
+#include "point.h"
+#include <map>
+#include <string>
+
 class Node {
 public:
-    virtual int X() const = 0;
-    virtual int Y() const = 0;
-    virtual int Z() const = 0;
-    virtual void shift(int dx, int dy, int dz) = 0;
+    virtual Point point() const = 0;
+    virtual void shift(const Point& shift) = 0;
+    virtual void pushSystemPoints(std::map<int, Point> &pointsById) const = 0;
+    virtual bool operator <(const Node& other) const {
+        return point() < other.point();
+    }
+    virtual std::string to_string() const = 0;
 };

@@ -1,7 +1,7 @@
 #ifndef CLENGxH
 #define CLENGxH
 #include "../input.h"
-#include "point.h"
+#include "simple_node.h"
 #include "../namics.h"
 #include "../solve_scf.h"
 #include "../system.h"
@@ -16,6 +16,8 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <memory>
+#include <ostream>
 
 using std::setprecision;
 
@@ -39,6 +41,8 @@ public:
     Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
     ~Cleng();
 
+
+
     int clamp_seg;
     int clp_mol;
     int n_boxes;
@@ -60,7 +64,7 @@ public:
     vector<int> Sx;
     vector<int> Sy;
     vector<int> Sz;
-    vector<Node> nodes;
+    vector<std::shared_ptr<Node>> nodes;
     // temporary arrays for keep nodes coordinates for output
     int* xs = nullptr;
     int* ys = nullptr;
@@ -69,6 +73,7 @@ public:
 //    vector<int> Y;
 //    vector<int> Z;
 
+    ofstream out;
     Point shift;
     int rand_part_index;
 

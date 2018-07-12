@@ -1,40 +1,37 @@
 //
-// Created by Alexander Kazakov on 7/10/18.
+// Created by alexander on 7/12/18.
 //
 
-#ifndef NAMICS_POINT_H
-#define NAMICS_POINT_H
+#pragma once
 
+#include <tuple>
 
-#include "node.h"
-
-class Point : public Node {
+struct Point {
 public:
-    Point();
-    Point(int x, int y, int z);
-
-    int X() const override;
-
-    int Y() const override;
-
-    int Z() const override;
-
-    void shift(int dx, int dy, int dz) override;
-
-    Point negate();
-private:
     int x;
     int y;
     int z;
 
-    void setX(int x);
+//    Point() : x(0), y(0), z(0) {
+//    }
 
-    void setY(int y);
+    Point negate() const {
+        return {-x, -y, -z};
+    }
 
-    void setZ(int z);
+    Point operator +(const Point &p) const {
+        return {x + p.x, y + p.y, z + p.z};
+    }
 
+    Point operator %(const Point& box) const {
+        return {x % box.x, y % box.y, z % box.z};
+    }
 
+    bool operator ==(const Point& p) const {
+        return x == p.x && y == p.y && z == p.z;
+    }
+
+    bool operator <(const Point& other) const {
+        return std::make_tuple(x, y, z) < std::make_tuple(other.x, other.y, other.z);
+    }
 };
-
-
-#endif //NAMICS_POINT_H

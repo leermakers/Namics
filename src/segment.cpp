@@ -25,20 +25,24 @@ if (debug) cout <<"Segment destructor " + name << endl;
 void Segment::DeAllocateMemory(void){
 if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 
-if (n_pos>0) cout <<"problem for n_pos " <<endl;
-	if(n_pos>0) free(H_P);
+//if (n_pos>0) cout <<"problem for n_pos " <<endl;
+	if(n_pos>0)
+	free(H_P);
 	if (freedom != "free"){
 		 free(r);
 	}
-	free(H_u);
+	//free(H_u);
 	free(H_phi);
 	free(H_MASK);
 
 #ifdef CUDA
-	if(n_pos>0) cudaFree(P);
-	cudaFree(u); cudaFree(phi);
+	if(n_pos>0)
+	cudaFree(P);
+	//cudaFree(u);
+	cudaFree(phi);
 	//cudaFree(G1);
-	cudaFree(MASK); cudaFree(phi_side);
+	cudaFree(MASK);
+	cudaFree(phi_side);
 #else
 	//free(G1);
 	free(phi_side);
@@ -68,7 +72,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 		Px=(int*)AllIntOnDev(n_pos);
 	}
 	//G1=(Real*)AllOnDev(M); //Zero(G1,M);
-	u=(Real*)AllOnDev(M); Zero(u,M);
+	//u=(Real*)AllOnDev(M); Zero(u,M);
 	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
 	phi_side=(Real*)AllOnDev(M); Zero(phi_side,M);
@@ -383,6 +387,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
 	bool success=true;
+
 	Var_target=-1;
 	chi_var_seg=-1;
 	Var_type="";
@@ -683,12 +688,12 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	if (freedom=="frozen") push("range",GetValue("frozen_range"));
 	if (freedom=="tagged") push("range",GetValue("tagged_range"));
 	string profile="profile;0"; push("phi",profile);
-	profile="profile;1"; push("u",profile);
+	//profile="profile;1"; push("u",profile);
 	//profile="profile;2"; push("mask",profile);
 #ifdef CUDA
 	int M = Lat[0]->M;
 	TransferDataToHost(H_phi, phi, M);
-	TransferDataToHost(H_u, u, M);
+	//TransferDataToHost(H_u, u, M);
 #endif
 }
 
@@ -699,7 +704,7 @@ if (debug) cout <<"Get Pointer for segment " + name << endl;
 	In[0]->split(s,';',sub);
 	if (sub[0]=="profile") {
 	if (sub[1]=="0") return H_phi;
-	if (sub[1]=="1") return H_u;
+	//if (sub[1]=="1") return H_u;
 	//if (sub[1]=="2") return H_MASK;
 	} else {//sub[0]=="vector" ..do not forget to set SIZE before returning the pointer.
 	}

@@ -452,17 +452,17 @@ bool Cleng::MonteCarlo() {
         cout << "Step i:" << i << endl;
         Real my_rand = GetRealRandomValue(0, 1);
         free_energy_c = Sys[0]-> FreeEnergy;
-        success=CP(to_cleng);
-        MakeShift(false);
-        success=CP(to_segment);
-        New[0]->Solve(true);
+//        success=CP(to_cleng);
+//        MakeShift(false);
+//        success=CP(to_segment);
+//        New[0]->Solve(true);
 
-///        for (int i=0; i < n_boxes; i++) {
+/        for (int i=0; i < n_boxes; i++) {
 //
-//            cout << "################ START" << endl;
-//            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " pos_y1:" << Seg[clamp_seg]-> py1[i] << " pos_z1: " << Seg[clamp_seg]-> pz1[i] << endl;
-//            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " pos_y2:" << Seg[clamp_seg]-> py2[i]  << " pos_z2: " << Seg[clamp_seg]-> pz2[i] << endl;
-//        }
+            cout << "################ START" << endl;
+            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " pos_y1:" << Seg[clamp_seg]-> py1[i] << " pos_z1: " << Seg[clamp_seg]-> pz1[i] << endl;
+            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " pos_y2:" << Seg[clamp_seg]-> py2[i]  << " pos_z2: " << Seg[clamp_seg]-> pz2[i] << endl;
+        }
 
 
 

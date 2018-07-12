@@ -262,6 +262,7 @@ private:
   int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
   int init_rho_equilibrate(vector< vector<Real> >&);
   int init_rho_fromfile(vector< vector<Real> >&, string);
+  int norm_density(vector<Real>& rho, Real theta);
 
   /* Helper class instances */
   vector<Boundary1D*> boundary;

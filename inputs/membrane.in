@@ -1,15 +1,17 @@
-lat : flat : n_layers : 25
+lat : flat : n_layers_x : 50
+lat : flat : n_layers_y : 50
+lat : flat : n_layers_z : 50
 lat : flat : geometry : planar
+lat : flat : gradients : 3
 lat : flat : lattice_type : simple_cubic
 
-mon : C : freedom : pinned
-mon : C : pinned_range : 1;4
+mon : C : freedom : free
 mon : O : freedom : free
 mon : W : freedom : free
 
-mol : lipid : composition : (C)12((O)1(C)2)5(O)1
+mol : lipid : composition : (C)16(O)1(C)2(O)1(C)2(O)1(C)2(O)1(C)2(O)1(C)2(O)1(C)16
 mol : lipid : freedom : restricted
-mol : lipid : theta : 3
+mol : lipid : theta : 15683,585
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent
@@ -18,9 +20,6 @@ mon : C : chi-W : 1.4
 mon : C : chi-O : 2
 mon : W : chi-O : -0.7
 output : pro : append : false
-pro : mol : * : phi
-pro : mon : * : phi
-pro : mon : * : u
 pro : mol : lipid : phi-C
 pro : mol : lipid : phi-O
 pro : mol : water : phi-W
@@ -39,52 +38,14 @@ newton : isaac : s_info : false
 newton : isaac : super_e_info : true
 newton : isaac : super_s_info : true
 newton : isaac : method : DIIS
-newton : isaac : iterationlimit : 1000
-newton : isaac : deltamax : 0.8
+newton : isaac : iterationlimit : 10000
+newton : isaac : deltamax : 0.1
 newton : isaac  : super_deltamax : 1
 newton : isaac : m : 4
-start
-mon : C : freedom : free
-newton : isaac : iterationlimit : 5000
-newton : isaac : deltamax : 0.05
-mol : lipid : theta : 2
-//var : mol-lipid : search : theta
-//var : sys-noname: grand_potential : 0
-//var : mol-lipid : scan : theta
-//var : mol-lipid : end_value : 5
-//var : mol-lipid : step : 0.1
-start
-mol : lipid : theta : 3.5
-start
-mol : lipid : theta : 3.4
-start
-mol : lipid : theta : 3.3
-start
-mol : lipid : theta : 3.2
-start
-mol : lipid : theta : 3.1
-start
-mol : lipid : theta : 3.0
-start
-mol : lipid : theta : 2.9
-start
-mol : lipid : theta : 2.8
-start
-mol : lipid : theta : 2.7
-start
-mol : lipid : theta : 2.6
-start
-mol : lipid : theta : 2.5
-start
-mol : lipid : theta : 2.4
-start
-mol : lipid : theta : 2.3
-start
-mol : lipid : theta : 2.8
 mesodyn : smth : equilibrate : false
-mesodyn : smth : read_rho: membrane_0_10.pro
+mesodyn : smth : read_rho: membrane_expanded.pro
 mesodyn : smth : timesteps : 10000
-mesodyn : smth : timebetweensaves : 10
+mesodyn : smth : timebetweensaves : 1000
 mesodyn : smth : diffusionconstant : 0.5
 mesodyn : smth : mean : 0
 mesodyn : smth : stddev : 0

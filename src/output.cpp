@@ -5,7 +5,7 @@ if (debug) cout <<"constructor in Output "<< endl;
 	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
-	KEYS.push_back("use_output_folder");
+	KEYS.push_back("use_output_directory");
 	input_error=false;
 	output_folder = "output/";
 	bin_folder = "bin"; // folder in Namics where the binary is located
@@ -111,8 +111,8 @@ if (debug) cout << "CheckInput in output " << endl;
 		} else write_bounds=false;
 
 		/*** TRUE IS LINUX ONLY ***/
-		if (GetValue("use_output_folder").size()>0) {
-			In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
+		if (GetValue("usoutput_folder").size()>0) {
+			In[0]->Get_bool(GetValue("use_output_directory"),use_output_folder);
 		} // default is set in the constructor
 
 		if (success) {
@@ -376,6 +376,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
 	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
 	filename = output_folder + filename;
+
 	if (name=="pos") {
 		length=OUT_key.size();
 		FILE *fp;
@@ -442,7 +443,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				key = OUT_key[i];
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 				fprintf(fp,"%s \t",s.c_str());
-			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl; }
+			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl; cin.get();}
 		}
 		fprintf(fp,"\n");
 		Lat[0] -> PutProfiles(fp,pointer);

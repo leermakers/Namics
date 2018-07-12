@@ -845,7 +845,7 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 					string sA,sB,sC;
 					sA=s.substr(0,pos_low);
 					sB=s.substr(pos_low+1,pos_close-pos_low-1);
-					sC=s.substr(pos_open-1,s.size()-pos_open+1);
+					sC=s.substr(pos_open,s.size()-pos_open+1);
 					s=sA;for (int k=0; k<x; k++) s.append(sB); s.append(sC);
 				}
 			}

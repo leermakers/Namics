@@ -317,6 +317,11 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
   ifstream rho_input;
   rho_input.open(filename);
 
+  if( !rho_input.is_open() ) {
+    cerr << "Error opening file! Is the filename correct?" << endl;
+    throw ERROR_FILE_FORMAT;
+  }
+
   size_t i{1};
 
   //Discard rows that contain coordinates (will cause out of bounds read below)
@@ -338,7 +343,7 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
   getline(rho_input, line);
 
   if (line.find('\t') == string::npos) {
-    cerr << "Wrong delimiter! Please use tabs ('\t').";
+    cerr << "Wrong delimiter! Please use tabs.";
     throw ERROR_FILE_FORMAT;
   }
 
@@ -381,7 +386,7 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
     ++z;
   }
 
-  if (z != M) { // +1 for the line with headers
+  if (z != M) { // +1 because z starts at 0 (would be M=1)
     cerr << "Input densities not of length M (" << z << "/" << M << ")" << endl;
     throw ERROR_FILE_FORMAT;
   }
@@ -389,39 +394,36 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
   //Re-norm the densities read from file. Errors occur through low precision writing.
   size_t solvent = (size_t)Sys[0]->solvent;
 
-  vector<Real> sum(M);
   Real sum_theta{0};
   int c{0};
 
   vector<int> solvent_mons;
 
   for (size_t i = 0; i < Mol.size(); ++i) {
-    sum.clear();
-    sum.resize(M);
 
     size_t mon_nr = Mol[i]->MolMonList.size();
 
     if (i != solvent) {
       Real theta = Mol[i]->theta;
       sum_theta += theta;
+
       for (size_t j = 0; j < mon_nr; ++j) {
-        transform(rho[c].begin(), rho[c].end(), sum.begin(), sum.begin(), [](Real A, Real B) { return A + B; });
+
+
+        Real mon_theta{0};
+        mon_theta = theta * Mol[i]->fraction(Mol[i]->MolMonList[j]);
+
+        Real sum_of_elements{0};
+        skip_bounds([this, &sum_of_elements, rho, c](int x, int y, int z) mutable {
+          sum_of_elements += val(rho[c], x, y, z);
+        });
+
+        skip_bounds([this, &rho, c, mon_theta, sum_of_elements](int x, int y, int z) mutable {
+          *valPtr(rho[c], x, y, z) *= mon_theta / sum_of_elements;
+        });
+
         ++c;
       }
-
-      Real sum_of_elements{0};
-      skip_bounds([this, &sum_of_elements, sum](int x, int y, int z) mutable {
-        sum_of_elements += val(sum, x, y, z);
-      });
-
-      Real residual{sum_of_elements - theta};
-      Real norm{residual / theta};
-
-      skip_bounds([this, &rho, norm, c](int x, int y, int z) mutable {
-        for (int j = 0; j < c; ++j) {
-          *valPtr(rho[j], x, y, z) -= val(rho[j], x, y, z) * norm;
-        }
-      });
     } else {
       for (size_t j = 0; j < mon_nr; ++j) {
         solvent_mons.push_back(c);
@@ -445,48 +447,16 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
   // Calculate excesss / defecit
   for (Real& i : residuals) {
     i -= 1;
-    cout << i << endl;
   }
 
   // If there's only one solvent mon, this problem is easy.
   if (solvent_mons.size() == 1) {
-    for (int i = 0; i < M; ++i)
-      rho[solvent_mons[0]][i] -= residuals[i];
+    skip_bounds([this, &rho, residuals, solvent_mons](int x, int y, int z) mutable {
+        *valPtr(rho[solvent_mons[0]], x, y, z) -= val(residuals, x, y, z);
+    });
   } else {
-    // We will try to keep the ratio between solvent monomers intact, so we need to know how they're distributed.
-
-    vector<vector<Real>> distribution(component_no - 1, vector<Real>(M));
-
-    sum.clear();
-    sum.resize(M);
-
-    for (size_t i = 0; i < component_no; ++i) {
-      if (find(solvent_mons.begin(), solvent_mons.end(), i) != solvent_mons.end()) {
-        // if this component is in the solvent_mons list, accumulate.
-        transform(rho[i].begin(), rho[i].end(), sum.begin(), sum.begin(), [](Real A, Real B) { return A + B; });
-      } else {
-        // Do nothing
-      }
-    }
-
-    for (int j = 0; j < M; ++j) {
-      distribution[0][j] = 1; //The ratio between the first solvent mon and itself is 1 at each lattice site.
-      for (size_t i = 1; i < solvent_mons.size(); ++i)
-        //The ratio between the first solvent mon and the other ones for each lattice site.
-        distribution[i][j] = rho[solvent_mons[i]][j] / rho[solvent_mons[0]][j];
-    }
-
-    vector<Real> first_adjustment(M);
-    // Pool ratios and calculate how much the first one should be adjusted
-    for (int i = 0; i < M; ++i) {
-      for (vector<Real>& component : distribution)
-        first_adjustment[i] += component[i];
-
-      first_adjustment[i] = residuals[i] / first_adjustment[i];
-
-      for (size_t j = 0; j < solvent_mons.size(); ++j)
-        rho[solvent_mons[j]][i] += first_adjustment[i] * distribution[j][i];
-    }
+    cerr << "Norming solvents with mutliple monomers is not supported! Please write your own script" << endl;
+    throw ERROR_FILE_FORMAT;
   }
 
   return 0;
@@ -605,7 +575,7 @@ void Mesodyn::write_density(vector<Component*>& component) {
     for (int x = 0 ; x < MX ; ++x)
       for (int y = 0; y < MY ; ++y)
         for (int z = 0; z < MZ ; ++z)
-          vtk << x << " " << y << " " << z << "\n";
+          vtk << x << " " << y <<  " " << z << "\n";
 
     vtk << "POINT_DATA " << MX * MY * MZ << "\n";
     vtk << "SCALARS Box_profile float\nLOOKUP_TABLE default \n";

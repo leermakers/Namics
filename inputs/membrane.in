@@ -38,16 +38,15 @@ newton : isaac : s_info : false
 newton : isaac : super_e_info : true
 newton : isaac : super_s_info : true
 newton : isaac : method : DIIS
-newton : isaac : iterationlimit : 10000
-newton : isaac : deltamax : 0.1
-newton : isaac  : super_deltamax : 1
-newton : isaac : m : 4
-mesodyn : smth : equilibrate : false
-mesodyn : smth : read_rho: membrane_expanded.pro
-mesodyn : smth : timesteps : 10000
-mesodyn : smth : timebetweensaves : 1000
+newton : isaac : iterationlimit : 200
+newton : isaac : tolerance : 1e-5
+newton : isaac : deltamax : 0.3
+mesodyn : smth : read_rho: membrane_expanded_2.pro
+mesodyn : smth : timesteps : 1000
+mesodyn : smth : timebetweensaves : 1
 mesodyn : smth : diffusionconstant : 0.5
+mesodyn : smth : delta_t : 0.1
 mesodyn : smth : mean : 0
-mesodyn : smth : stddev : 0.5
+mesodyn : smth : stddev : 0.025
 mesodyn : smth : seed : 1
 start

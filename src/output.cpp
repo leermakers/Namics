@@ -443,7 +443,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				key = OUT_key[i];
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 				fprintf(fp,"%s \t",s.c_str());
-			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl; cin.get();}
+			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl;}
 		}
 		fprintf(fp,"\n");
 		Lat[0] -> PutProfiles(fp,pointer);

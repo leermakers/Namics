@@ -789,7 +789,7 @@ Lattice_Access::~Lattice_Access() {
 }
 
 inline void Lattice_Access::skip_bounds( function<void(int, int, int)> function ) {
-  int x,y,z;
+  int x{0};int y{0};int z{0};
   z = 1; do { y = 1; do { x = 1; do {
           function(x,y,z);
         ++x;} while (x < MX - 1);

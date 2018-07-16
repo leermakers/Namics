@@ -2,7 +2,7 @@
 #include "sfnewton.h"
 #include "tools.h"
 
-SFNewton::SFNewton () {
+SFNewton::SFNewton () : residual{0} {
 
 /*      class for
         unconstrained minimization,
@@ -805,6 +805,7 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	int k_diis=1;
 	int k=0;
 	Cp(x0,x,nvar);
+  // mol computephi takes long: moltype = monomer
 	residuals(x,g);
 
 	YplusisCtimesX(x,g,-delta_max,nvar);
@@ -817,6 +818,7 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
 		Cp(x0,x,nvar);
+    //fast: moltype = linear
 		residuals(x,g);
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(x,g,-delta_max,nvar);

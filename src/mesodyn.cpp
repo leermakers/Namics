@@ -128,44 +128,15 @@ bool Mesodyn::mesodyn() {
 
   vector<Real> rho;
 
+  //initial conditions using Explicit scheme without noise
+  solve_explicit(rho);
+
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
     gaussian_noise->generate();
 
-    New[0]->SolveMesodyn(
-        [this](vector<Real>& alpha, size_t i) {
-          if (i < component_no) solver_component[i]->load_alpha(alpha);
-        },
-        [this, &rho] () {
-          for (Component* all_components : solver_component) all_components->update_boundaries();
-
-          for (Flux1D* all_fluxes : solver_flux) all_fluxes->langevin_flux();
-
-          int c = 0;
-          for (size_t i = 0; i < component_no; ++i) {
-            for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-              solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J);
-              ++c;
-            }
-          }
-
-          c = 0;
-          for (size_t j = 0; j < (component_no - 1); ++j) {
-            for (size_t i = 1 + j; i < component_no; ++i) {
-              solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, -1.0);
-              ++c;
-            }
-          }
-
-          rho.clear();
-          for (Component* all_components : solver_component) {
-            copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
-          }
-
-          return &rho[0];
-        }
-      );
+    solve_crank_nicholson(rho);
 
     int i = 0;
     for(Component* all_components : component) {
@@ -182,10 +153,89 @@ bool Mesodyn::mesodyn() {
       ++i;
     }
 
+    cout << "Phibulk: " << Mol[0]->phibulk << endl;
+
   } // time loop
 
   write_density(solver_component);
   return true;
+}
+
+int Mesodyn::solve_explicit(vector<Real>& rho) {
+
+    New[0]->SolveMesodyn(
+        [this](vector<Real>& alpha, size_t i) {
+          if (i < component_no) solver_component[i]->load_alpha(alpha);
+        },
+        [this, &rho] () {
+          for (Component* all_components : solver_component) all_components->update_boundaries();
+
+          for (Flux1D* all_fluxes : flux) all_fluxes->langevin_flux();
+
+          int c = 0;
+          for (size_t i = 0; i < component_no; ++i) {
+            for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+              solver_component[i]->update_density(flux[c]->J);
+              ++c;
+            }
+          }
+
+          c = 0;
+          for (size_t j = 0; j < (component_no - 1); ++j) {
+            for (size_t i = 1 + j; i < component_no; ++i) {
+              solver_component[i]->update_density(flux[c]->J, -1.0);
+              ++c;
+            }
+          }
+
+          rho.clear();
+          for (Component* all_components : component) {
+            copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
+          }
+
+          return &rho[0];
+        }
+      );
+
+      return 0;
+}
+
+int Mesodyn::solve_crank_nicholson(vector<Real>& rho) {
+  New[0]->SolveMesodyn(
+      [this](vector<Real>& alpha, size_t i) {
+        if (i < component_no) solver_component[i]->load_alpha(alpha);
+      },
+      [this, &rho] () {
+        for (Component* all_components : solver_component) all_components->update_boundaries();
+
+        for (Flux1D* all_fluxes : solver_flux) all_fluxes->langevin_flux();
+
+        int c = 0;
+        for (size_t i = 0; i < component_no; ++i) {
+          for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+            solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J);
+            ++c;
+          }
+        }
+
+        c = 0;
+        for (size_t j = 0; j < (component_no - 1); ++j) {
+          for (size_t i = 1 + j; i < component_no; ++i) {
+            solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, -1.0);
+            ++c;
+          }
+        }
+
+        rho.clear();
+        for (Component* all_components : solver_component) {
+          copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
+        }
+
+        return &rho[0];
+      }
+    );
+
+    return 0;
 }
 
 int Mesodyn::initial_conditions() {
@@ -317,6 +367,11 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
   ifstream rho_input;
   rho_input.open(filename);
 
+  if( !rho_input.is_open() ) {
+    cerr << "Error opening file! Is the filename correct?" << endl;
+    throw ERROR_FILE_FORMAT;
+  }
+
   size_t i{1};
 
   //Discard rows that contain coordinates (will cause out of bounds read below)
@@ -381,12 +436,13 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
     ++z;
   }
 
-  if (z != M) { // +1 for the line with headers
+  if (z != M) { // +1 because z starts at 0 (would be M=1)
     cerr << "Input densities not of length M (" << z << "/" << M << ")" << endl;
     throw ERROR_FILE_FORMAT;
   }
 
-  //Re-norm the densities read from file. Errors occur through low precision writing.
+  /** Re-norm the densities read from file. Errors occur through low precision writing. **/
+  // Doest not work for fixed phibulk
   size_t solvent = (size_t)Sys[0]->solvent;
 
   Real sum_theta{0};
@@ -427,7 +483,7 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
     }
   }
 
-  /** Adjust solvent so that sum at position = 1 **/
+  // Adjust solvent so that sum at position = 1
 
   // We now know the total density and can adjust the solvent accodingly to add up to 1.
   // Let's first find out how much there is to adjust.
@@ -784,7 +840,7 @@ Lattice_Access::~Lattice_Access() {
 }
 
 inline void Lattice_Access::skip_bounds( function<void(int, int, int)> function ) {
-  int x,y,z;
+  int x{0};int y{0};int z{0};
   z = 1; do { y = 1; do { x = 1; do {
           function(x,y,z);
         ++x;} while (x < MX - 1);

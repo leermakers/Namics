@@ -248,6 +248,8 @@ private:
 
   /* Flow control */
   int RC;
+  int solve_explicit(vector<Real>&);
+  int solve_crank_nicholson(vector<Real>&);
 
   /* Initialization*/
   enum init {

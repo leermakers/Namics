@@ -11,7 +11,7 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
     D{0.01}, mean{0}, stddev{1*D}, seed{1}, timesteps{100}, timebetweensaves{1}, dt{0.1}, initialization_mode{INIT_HOMOGENEOUS},
     component_no{Sys[0]->SysMolMonList.size()}, RC{0},
     boundary(0), component(0), flux(0),
-    writes{0}
+    writes{0}, write_vtk{false}
 {
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
@@ -22,6 +22,13 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
   KEYS.push_back("seed");
   KEYS.push_back("mean");
   KEYS.push_back("stddev");
+
+  // TODO: implement this properly
+  // If the user has asked for vtk output
+  if (std::find(In[0]->OutputList.begin(), In[0]->OutputList.end(), "vtk") != In[0]->OutputList.end())
+  {
+    write_vtk = true;
+  }
 
   if (debug)
     cout << "Mesodyn initialized." << endl;
@@ -128,15 +135,18 @@ bool Mesodyn::mesodyn() {
 
   vector<Real> rho;
 
-  //initial conditions using Explicit scheme without noise
+  // start Crank-Nicolson using one explicit step
   solve_explicit(rho);
+  write_density(solver_component);
+  write_output();
 
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
-    gaussian_noise->generate();
+    for (Flux1D* all_fluxes : solver_flux)
+      all_fluxes->gaussian->generate();
 
-    solve_crank_nicholson(rho);
+    solve_crank_nicolson(rho);
 
     int i = 0;
     for(Component* all_components : component) {
@@ -144,8 +154,10 @@ bool Mesodyn::mesodyn() {
       ++i;
     }
 
-    if (t % timebetweensaves == 0)
-      write_density(solver_component);
+    if (t % timebetweensaves == 0) {
+      write_density(component);
+      write_output();
+    }
 
     i = 0;
     for(Flux1D* all_fluxes : flux) {
@@ -154,10 +166,7 @@ bool Mesodyn::mesodyn() {
     }
 
     cout << "Phibulk: " << Mol[0]->phibulk << endl;
-
   } // time loop
-
-  write_density(solver_component);
   return true;
 }
 
@@ -200,7 +209,7 @@ int Mesodyn::solve_explicit(vector<Real>& rho) {
       return 0;
 }
 
-int Mesodyn::solve_crank_nicholson(vector<Real>& rho) {
+int Mesodyn::solve_crank_nicolson(vector<Real>& rho) {
   New[0]->SolveMesodyn(
       [this](vector<Real>& alpha, size_t i) {
         if (i < component_no) solver_component[i]->load_alpha(alpha);
@@ -278,9 +287,7 @@ int Mesodyn::initial_conditions() {
     }
   }
 
-  //TODO: make sure they don't share gaussian noises!
   boundary.push_back(new Boundary1D(Lat[0], boundaries[0], boundaries[1]));
-  gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev);
   boundary.clear();
 
   switch (dimensions) {
@@ -295,6 +302,7 @@ int Mesodyn::initial_conditions() {
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
+        Gaussian_noise* gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev);
         flux.push_back(new Flux1D(Lat[0], gaussian_noise, D*dt, mask, component[i], component[j]));
         solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D*dt, mask, solver_component[i], solver_component[j]));
       }
@@ -311,6 +319,7 @@ int Mesodyn::initial_conditions() {
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
+        Gaussian_noise* gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev);
         flux.push_back(new Flux2D(Lat[0], gaussian_noise, D*dt, mask, component[i], component[j]));
         solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D*dt, mask, solver_component[i], solver_component[j]));
       }
@@ -327,6 +336,7 @@ int Mesodyn::initial_conditions() {
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
+        Gaussian_noise* gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev);
         flux.push_back(new Flux3D(Lat[0], gaussian_noise, D*dt, mask, component[i], component[j]));
         solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D*dt, mask, solver_component[i], solver_component[j]));
       }
@@ -602,7 +612,45 @@ void Mesodyn::write_settings() {
   mesodyn_output.close();
 }
 
+int Mesodyn::write_output() {
+  //Implement below for more starts? (OutputList higher numbers?)
+
+  for (size_t i = 0 ; i < In[0]->OutputList.size() ; ++i) {
+    Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], writes, timesteps/timebetweensaves));
+    if (!Out[i]->CheckInput(1)) {
+      cout << "input_error in output " << endl;
+      return 0;
+    }
+  }
+
+  Lat[0]->PushOutput();
+  New[0]->PushOutput();
+  size_t length = In[0]->MonList.size();
+  for (size_t ii = 0; ii < length; ii++)
+    Seg[ii]->PushOutput();
+  length = In[0]->MolList.size();
+  for (size_t ii = 0; ii < length; ii++) {
+    size_t length_al = Mol[ii]->MolAlList.size();
+    for (size_t kk = 0; kk < length_al; kk++) {
+      Mol[ii]->Al[kk]->PushOutput();
+    }
+    Mol[ii]->PushOutput();
+  }
+
+  Sys[0]->PushOutput(); // needs to be after pushing output for seg.
+  for (Output* all_output : Out) {
+    all_output->WriteOutput(writes);
+    delete all_output;
+  }
+  Out.clear();
+
+  return 0;
+}
+
 void Mesodyn::write_density(vector<Component*>& component) {
+  // Could also do this by overwriting the denisties in ... I think Mol..? right before it pushes the densities written by vtk in output.
+  // Right now output does nothing with the vtk function when mesodyn is running.
+
   int component_count{1};
   for (Component* all_components : component) {
 
@@ -615,24 +663,22 @@ void Mesodyn::write_density(vector<Component*>& component) {
 
     ostringstream vtk;
 
-    //int permutations = combinations(component_no, 2);
-
-    vtk << "# vtk DataFile Version 2.0 \n";
+    vtk << "# vtk DataFile Version 3.0 \n";
     vtk << "Mesodyn output \n";
     vtk << "ASCII\n";
     vtk << "DATASET STRUCTURED_GRID \n";
     vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
     vtk << "POINTS " << M << " int\n";
-    for (int x = 0 ; x < MX ; ++x)
-      for (int y = 0; y < MY ; ++y)
-        for (int z = 0; z < MZ ; ++z)
-          vtk << x << " " << y <<  " " << z << "\n";
+    skip_bounds([this, &vtk](int x, int y, int z) mutable {
+        vtk << x << " " << y <<  " " << z << "\n";
+    });
 
     vtk << "POINT_DATA " << MX * MY * MZ << "\n";
     vtk << "SCALARS Box_profile float\nLOOKUP_TABLE default \n";
 
-    for (Real& value : all_components->rho)
-      vtk << value << " \n";
+    skip_bounds([this, &vtk, all_components](int x, int y, int z) mutable {
+        vtk << val(all_components->rho, x, y, z) << "\n";
+    });
 
     mesodyn_output << vtk.str();
     mesodyn_output.flush();

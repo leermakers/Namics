@@ -490,11 +490,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	}
 
 	if (name=="vtk") {
-		Real*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0],Size);
-		key = OUT_key[0];
-		string s=key.append(":").append(OUT_name[0]).append(":").append(OUT_prop[0]);
-		if (!(X==NULL))
-		Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
+		if (New[0]->mesodyn == true) {
+			// do nothing, 'cause Mesodyn likes to run its own business.
+		} else {
+			Real*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0],Size);
+			key = OUT_key[0];
+			string s=key.append(":").append(OUT_name[0]).append(":").append(OUT_prop[0]);
+			if (!(X==NULL))
+			Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
+		}
 	}
 
 
@@ -616,8 +620,8 @@ if (debug) cout << "vtk in output " << endl;
 	fprintf(fp, "SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i\n", MX*MY*MZ);
 	fprintf(fp, "SCALARS Box_profile float\nLOOKUP_TABLE default \n");
 
-	for(int i=1; i<MX+1; i++) for(int j=1; j<MY+1; j++) for(int k=1; k<MZ+1; k++)
-		fprintf(fp,"%lf \n",X[i*JX+j*JY+k]);
+	for(int x=1; x<MX+1; x++) for(int y=1; y<MY+1; y++) for(int z=1; z<MZ+1; z++)
+		fprintf(fp,"%lf \n",X[x*JX+y*JY+z]);
 
 	fclose(fp);
 }

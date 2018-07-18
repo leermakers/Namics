@@ -5,6 +5,7 @@
 #include "solve_scf.h"
 #include "system.h"
 #include "newton.h"   // for...
+#include "output.h"
 #include <random>     // noise generation
 #include <ctime>      // output labling
 #include <cassert>    // making sure all underlying assumptions (e.g. lattice geometry) are satisfied
@@ -233,6 +234,7 @@ private:
   const vector<Segment*> Seg;
   const vector<System*> Sys;
   const vector<Solve_scf*> New;
+  vector <Output*> Out;
   const string brand;
 
   /* Read from file */
@@ -249,7 +251,7 @@ private:
   /* Flow control */
   int RC;
   int solve_explicit(vector<Real>&);
-  int solve_crank_nicholson(vector<Real>&);
+  int solve_crank_nicolson(vector<Real>&);
 
   /* Initialization*/
   enum init {
@@ -277,6 +279,7 @@ private:
   ofstream mesodyn_output;
   ostringstream filename;
   int writes;
+  bool write_vtk;
   void set_filename();
   void write_settings();
   void write_density(vector<Component*>&);
@@ -291,8 +294,6 @@ public:
   ~Mesodyn();
 
   bool mesodyn();
-
-  Gaussian_noise* gaussian_noise;
 
 
   /* Inputs / output class interface functions */
@@ -310,6 +311,7 @@ public:
   void push(string, string);
   void PushOutput();
   int GetValue(string, int&, Real&, string&);
+  int write_output();
 
   std::vector<string> KEYS;
   std::vector<string> PARAMETERS;

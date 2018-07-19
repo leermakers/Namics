@@ -1051,8 +1051,7 @@ if(debug) cout <<"Ax in  Newton (own svdcmp) " << endl;
 		for (int j=0; j<N; j++)
 			U[j][i] = A[i*N + j];
   if (N > 1) {
-		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
-  	modern_svdcmp(U, N, N, S, V);
+  	svdcmp(U, N, N, S, V);
 		if (debug) cout << "SVCDMP done, continuing.." << endl;
 		for (int i=0; i<N; i++) X[i]=0;
 		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[j][i];// *B[j];

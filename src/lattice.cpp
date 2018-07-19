@@ -814,7 +814,7 @@ void Lattice::DivL(Real* X){
 }
 
 Real Lattice::WeightedSum(Real* X){
-	Real sum;
+	Real sum{0};
 	switch(gradients) {
 		case 1:
 			remove_bounds(X);

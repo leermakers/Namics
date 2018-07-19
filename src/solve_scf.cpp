@@ -26,6 +26,7 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("super_iterationlimit");
 	KEYS.push_back("m");
 	KEYS.push_back("super_deltamax");
+	max_g = false; // compute g based on max error
 }
 
 Solve_scf::~Solve_scf() {
@@ -189,11 +190,13 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		StoreFileGuess=In[0]->Get_string(GetValue("store_guess"),"");
 		ReadFileGuess=In[0]->Get_string(GetValue("read_guess"),"");
 		if (GetValue("stop_criterion").size() > 0) {
-			cout <<"Warning: Only classical stop criterion implemented" << endl;
 			vector<string>options;
 			options.push_back("norm_of_g");
 			options.push_back("max_of_element_of_|g|");
 			if (!In[0]->Get_string(GetValue("stop_criterion"),stop_criterion,options,"In newton the stop_criterion setting was not recognised")) {success=false; };
+			if(GetValue("stop_criterion") == options[1]) {
+				max_g = true;
+			}
 		}
 	}
 	return success;
@@ -451,7 +454,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback
 	switch (solver) {
 		case diis:
 			gradient=MESODYN;
-				
+
 			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 		break;
 		case PSEUDOHESSIAN:
@@ -536,7 +539,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 						PutAlpha(&temp_alpha[0],Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 					}
 				}
-			mesodyn_load_alpha(temp_alpha, i);
+			mesodyn_load_alpha(temp_alpha, (size_t)i);
 			}
 
 			RHO = mesodyn_flux();

@@ -5,6 +5,7 @@
 #include "solve_scf.h"
 #include "system.h"
 #include "newton.h"   // for...
+#include "output.h"
 #include <random>     // noise generation
 #include <ctime>      // output labling
 #include <cassert>    // making sure all underlying assumptions (e.g. lattice geometry) are satisfied
@@ -20,6 +21,36 @@ enum error {
   ERROR_SIZE_INCOMPATIBLE,
   ERROR_NOT_IMPLEMENTED,
   ERROR_FILE_FORMAT,
+};
+
+class Lattice_Access {
+
+public:
+
+  Lattice_Access(Lattice*);
+  ~Lattice_Access();
+
+  //TODO: Template these:
+  inline Real val(vector<Real>&, int, int, int);
+  inline int val(vector<int>&, int, int, int);
+  inline Real* valPtr(vector<Real>&, int, int, int);
+  inline int index(int x, int y, int z);
+  inline void skip_bounds( function<void(int,int,int)> );
+
+  const int dimensions;
+
+private:
+  const int JX;
+  const int JY;
+  const int JZ;
+  int setMY(Lattice*);
+  int setMZ(Lattice*);
+
+protected:
+  const int M;
+  const int MX;
+  const int MY;
+  const int MZ;
 };
 
 class Gaussian_noise {
@@ -38,35 +69,6 @@ private:
   vector<Real> noise;
 
   Boundary1D* boundary;
-};
-
-class Lattice_Access {
-
-public:
-
-  Lattice_Access(Lattice*);
-  ~Lattice_Access();
-
-  //TODO: Template these:
-  inline Real val(vector<Real>&, int, int, int);
-  inline int val(vector<int>&, int, int, int);
-  inline Real* valPtr(vector<Real>&, int, int, int);
-  inline int index(int x, int y, int z);
-
-  const int dimensions;
-
-private:
-  const int JX;
-  const int JY;
-  const int JZ;
-  int setMY(Lattice*);
-  int setMZ(Lattice*);
-
-protected:
-  const int M;
-  const int MX;
-  const int MY;
-  const int MZ;
 };
 
 class Boundary1D : protected Lattice_Access {
@@ -144,6 +146,7 @@ public:
   int load_alpha(vector<Real>&);
   int load_rho(vector<Real>&);
   int update_boundaries();
+  Real theta();
 
 private:
   Boundary1D* boundary;
@@ -232,6 +235,7 @@ private:
   const vector<Segment*> Seg;
   const vector<System*> Sys;
   const vector<Solve_scf*> New;
+  vector <Output*> Out;
   const string brand;
 
   /* Read from file */
@@ -243,10 +247,12 @@ private:
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   Real dt;
   int initialization_mode;
-  const int componentNo; // number of components in the system, read from SysMonMolList
+  const size_t component_no; // number of components in the system, read from SysMonMolList
 
   /* Flow control */
   int RC;
+  int solve_explicit(vector<Real>&);
+  int solve_crank_nicolson(vector<Real>&);
 
   /* Initialization*/
   enum init {
@@ -261,6 +267,7 @@ private:
   int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
   int init_rho_equilibrate(vector< vector<Real> >&);
   int init_rho_fromfile(vector< vector<Real> >&, string);
+  int norm_density(vector<Real>& rho, Real theta);
 
   /* Helper class instances */
   vector<Boundary1D*> boundary;
@@ -273,6 +280,7 @@ private:
   ofstream mesodyn_output;
   ostringstream filename;
   int writes;
+  bool write_vtk;
   void set_filename();
   void write_settings();
   void write_density(vector<Component*>&);
@@ -287,8 +295,6 @@ public:
   ~Mesodyn();
 
   bool mesodyn();
-
-  Gaussian_noise* gaussian_noise;
 
 
   /* Inputs / output class interface functions */
@@ -306,6 +312,7 @@ public:
   void push(string, string);
   void PushOutput();
   int GetValue(string, int&, Real&, string&);
+  int write_output();
 
   std::vector<string> KEYS;
   std::vector<string> PARAMETERS;

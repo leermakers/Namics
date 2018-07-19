@@ -23,24 +23,6 @@ enum error {
   ERROR_FILE_FORMAT,
 };
 
-class Gaussian_noise {
-  //Makes sure that we keep generating new numbers, instead of the same over and over.
-
-public:
-  Gaussian_noise(Boundary1D*, Real, int, Real, Real); // Not seeded (32 bits of randomness)
-  Gaussian_noise(Boundary1D*, Real, int, Real, Real, size_t); // Seeded
-  int generate();
-  int add_noise(vector<Real>&);
-
-private:
-  seed_seq seed;
-  mt19937 prng;
-  normal_distribution<Real> dist;
-  vector<Real> noise;
-
-  Boundary1D* boundary;
-};
-
 class Lattice_Access {
 
 public:
@@ -69,6 +51,24 @@ protected:
   const int MX;
   const int MY;
   const int MZ;
+};
+
+class Gaussian_noise {
+  //Makes sure that we keep generating new numbers, instead of the same over and over.
+
+public:
+  Gaussian_noise(Boundary1D*, Real, int, Real, Real); // Not seeded (32 bits of randomness)
+  Gaussian_noise(Boundary1D*, Real, int, Real, Real, size_t); // Seeded
+  int generate();
+  int add_noise(vector<Real>&);
+
+private:
+  seed_seq seed;
+  mt19937 prng;
+  normal_distribution<Real> dist;
+  vector<Real> noise;
+
+  Boundary1D* boundary;
 };
 
 class Boundary1D : protected Lattice_Access {
@@ -146,6 +146,7 @@ public:
   int load_alpha(vector<Real>&);
   int load_rho(vector<Real>&);
   int update_boundaries();
+  Real theta();
 
 private:
   Boundary1D* boundary;

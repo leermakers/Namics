@@ -137,6 +137,19 @@ bool Mesodyn::mesodyn() {
 
   // start Crank-Nicolson using one explicit step
   solve_explicit(rho);
+
+  int i = 0;
+  for(Component* all_components : component) {
+    all_components->load_rho(solver_component[i]->rho);
+    ++i;
+  }
+
+  i = 0;
+  for(Flux1D* all_fluxes : flux) {
+    all_fluxes->J = solver_flux[i]->J;
+    ++i;
+  }
+
   write_density(solver_component);
   write_output();
 
@@ -148,8 +161,13 @@ bool Mesodyn::mesodyn() {
 
     solve_crank_nicolson(rho);
 
+    //sanity check theta's before loading
+
     int i = 0;
     for(Component* all_components : component) {
+      //sanity check theta's before loading
+      if (all_components->theta() != solver_component[i]->theta())
+        cerr << "WARNING: Mass of component " << i << " is NOT conserved!" << endl;
       all_components->load_rho(solver_component[i]->rho);
       ++i;
     }
@@ -179,12 +197,12 @@ int Mesodyn::solve_explicit(vector<Real>& rho) {
         [this, &rho] () {
           for (Component* all_components : solver_component) all_components->update_boundaries();
 
-          for (Flux1D* all_fluxes : flux) all_fluxes->langevin_flux();
+          for (Flux1D* all_fluxes : solver_flux) all_fluxes->langevin_flux();
 
           int c = 0;
           for (size_t i = 0; i < component_no; ++i) {
             for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-              solver_component[i]->update_density(flux[c]->J);
+              solver_component[i]->update_density(solver_flux[c]->J);
               ++c;
             }
           }
@@ -192,13 +210,13 @@ int Mesodyn::solve_explicit(vector<Real>& rho) {
           c = 0;
           for (size_t j = 0; j < (component_no - 1); ++j) {
             for (size_t i = 1 + j; i < component_no; ++i) {
-              solver_component[i]->update_density(flux[c]->J, -1.0);
+              solver_component[i]->update_density(solver_flux[c]->J, -1.0);
               ++c;
             }
           }
 
           rho.clear();
-          for (Component* all_components : component) {
+          for (Component* all_components : solver_component) {
             copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
           }
 
@@ -862,7 +880,7 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
     J_plus[z] += -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
   }
   for (int& z: mask_minus) {
-    J_minus[z] += -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); // = -J_plus[z-jump];
+    J_minus[z] += -J_plus[z-jump]; //= -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z]));
   }
 
   transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
@@ -1010,6 +1028,13 @@ int Component::update_boundaries() {
   boundary->update_boundaries(alpha);
   boundary->update_boundaries(rho);
   return 0;
+}
+
+Real Component::theta() {
+  Real sum{0};
+  for (auto& n : rho)
+    sum += n;
+  return sum;
 }
 
 /******* Boundary conditions *******/

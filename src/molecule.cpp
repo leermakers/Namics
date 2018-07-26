@@ -277,7 +277,7 @@ int M=Lat[0]->M;
 			pathlength_even=0;
 			pathlength_even=(Px2[i]-Px1[i]+Py2[i]-Py1[i]+Pz2[i]-Pz1[i])%2;
 			if (chainlength_even == pathlength_even)
-			cout <<" Warning, for chain part " << i << " the paths between clamps is not commensurate with the length of the chain fragment. Consider moving the calmp point by one site!" << endl;
+			cout <<" Warning, for chain part " << i << " the paths between clamps is not commensurate with the length of the chain fragment. Consider moving one of the calmp point by one (more) site!" << endl;
 		}
 		n = n_box;
 		theta=n_box*chainlength;

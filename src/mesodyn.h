@@ -33,7 +33,8 @@ public:
   //TODO: Template these:
   inline Real val(vector<Real>&, int, int, int);
   inline int val(vector<int>&, int, int, int);
-  inline Real* valPtr(vector<Real>&, int, int, int);
+  inline Real* val_ptr(vector<Real>&, int, int, int);
+  inline int* val_ptr(vector<int>&, int, int, int);
   inline int index(int x, int y, int z);
   inline vector<int> coordinate(int n);
   inline void skip_bounds( function<void(int,int,int)> );
@@ -134,7 +135,7 @@ private:
 
 class Component : protected Lattice_Access {
 public:
-  Component(Lattice*, Gaussian_noise*, Boundary1D*, vector<Real>&); //1D
+  Component(Lattice*, Boundary1D*, vector<Real>&); //1D
   ~Component();
 
   vector<Real> rho;
@@ -247,6 +248,7 @@ private:
   Real mean; // mean of gaussian noise (should be 0)
   Real stddev; // stdev of gaussian noise (should be 1*D)
   Real seed;  // seed of gaussian noise
+  bool seed_specified;
   int timesteps; // length of the time evolution
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   Real dt;
@@ -275,7 +277,7 @@ private:
   int norm_density(vector<Real>& rho, Real theta);
 
   /* Helper class instances */
-  vector<Boundary1D*> boundary;
+  Boundary1D* boundary;
   vector<Component*> component;
   vector<Component*> solver_component;
   vector<Flux1D*> flux;

@@ -8,9 +8,9 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
   :
     Lattice_Access(Lat_[0]),
     name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
-    D{0.01}, mean{0}, stddev{1*D}, seed{1}, timesteps{100}, timebetweensaves{1}, dt{0.1}, initialization_mode{INIT_HOMOGENEOUS},
+    D{0.01}, mean{0}, stddev{1*D}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1}, dt{0.1}, initialization_mode{INIT_HOMOGENEOUS},
     component_no{Sys[0]->SysMolMonList.size()}, RC{0},
-    boundary(0), component(0), flux(0),
+    component(0), flux(0),
     writes{0}, write_vtk{false}
 {
   KEYS.push_back("timesteps");
@@ -41,8 +41,7 @@ Mesodyn::~Mesodyn() {
   for (size_t i = 0; i < component.size(); ++i)
     delete component[i];
   component.clear();
-  delete boundary[0];
-  boundary.clear();
+  delete boundary;
 }
 
 bool Mesodyn::CheckInput(int start) {
@@ -95,6 +94,7 @@ bool Mesodyn::CheckInput(int start) {
       cout << "Diffusion const is " << D << endl;
 
     if (GetValue("seed").size() > 0) {
+      seed_specified = true;
       seed = In[0]->Get_Real(GetValue("seed"), seed);
     }
     if (debug)
@@ -138,6 +138,23 @@ bool Mesodyn::mesodyn() {
   // start Crank-Nicolson using one explicit step
   solve_explicit(rho);
 
+
+  int c = 0;
+  for (size_t i = 0; i < component_no; ++i) {
+    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+      solver_component[i]->update_density(solver_flux[c]->J);
+      ++c;
+    }
+  }
+
+  c = 0;
+  for (size_t j = 0; j < (component_no - 1); ++j) {
+    for (size_t i = 1 + j; i < component_no; ++i) {
+      solver_component[i]->update_density(solver_flux[c]->J, -1.0);
+      ++c;
+    }
+  }
+
   int i = 0;
   for (Component* all_components : component) {
     all_components->load_rho(solver_component[i]->rho);
@@ -161,7 +178,7 @@ bool Mesodyn::mesodyn() {
 
     solve_crank_nicolson(rho);
 
-    sanity_check();
+    //sanity_check();
 
     int i = 0;
     for (Component* all_components : component) {
@@ -184,7 +201,7 @@ bool Mesodyn::mesodyn() {
 }
 
 int Mesodyn::sanity_check() {
-  //sanity check fluxes in the boundaries
+  //Check fluxes in the boundaries
   bounds([this](int x, int y, int z) mutable {
     for (Flux1D* all_fluxes : solver_flux) {
       if (val(all_fluxes->J, x, y, z) != 0) {
@@ -193,12 +210,20 @@ int Mesodyn::sanity_check() {
     }
   });
 
+  //Check mass conservation
   int i = 0;
   for (Component* all_components : component) {
-    //Sanity check
     if (all_components->theta() != solver_component[i]->theta()) {
-      cerr << "WARNING: Mass of component " << i << " is NOT conserved! ";
-      cerr << "Difference: " << abs((all_components->theta() - solver_component[i]->theta())) << endl;
+      //find number of digits before the decimal point
+      int digits = log10(all_components->theta())+2;
+      //double precision means 15 significant digits
+      int significant_decimals = 15-digits;
+      //so if the difference is larger than that, print a warning!
+      Real difference = abs((all_components->theta() - solver_component[i]->theta()));
+      if (difference > pow(10, -significant_decimals)) {
+        cerr << "WARNING: Mass of component " << i << " is NOT conserved! ";
+        cerr << "Difference: " << difference << endl;
+      }
     }
     ++i;
   }
@@ -217,22 +242,6 @@ int Mesodyn::solve_explicit(vector<Real>& rho) {
 
           for (Flux1D* all_fluxes : solver_flux)
               all_fluxes->langevin_flux();
-
-          int c = 0;
-          for (size_t i = 0; i < component_no; ++i) {
-            for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-              solver_component[i]->update_density(solver_flux[c]->J);
-              ++c;
-            }
-          }
-
-          c = 0;
-          for (size_t j = 0; j < (component_no - 1); ++j) {
-            for (size_t i = 1 + j; i < component_no; ++i) {
-              solver_component[i]->update_density(solver_flux[c]->J, -1.0);
-              ++c;
-            }
-          }
 
           rho.clear();
           for (Component* all_components : solver_component) {
@@ -258,11 +267,6 @@ int Mesodyn::solve_crank_nicolson(vector<Real>& rho) {
 
         for (Flux1D* all_fluxes : solver_flux)
             all_fluxes->langevin_flux();
-
-  //      for (Flux1D* all_fluxes : solver_flux)
-  //        for (Real& all_values : all_fluxes->J)
-  //          cout << all_values << endl;
-
 
         int c = 0;
         for (size_t i = 0; i < component_no; ++i) {
@@ -322,6 +326,9 @@ int Mesodyn::initial_conditions() {
     init_rho_equilibrate(rho);
     break;
   }
+
+
+  // BC0: bX0, BC1: bXm, etc.
   vector<Boundary1D::boundary> boundaries;
   for (string& boundary : Lat[0]->BC) {
     if (boundary == "mirror") {
@@ -332,22 +339,26 @@ int Mesodyn::initial_conditions() {
     }
   }
 
-  boundary.push_back(new Boundary1D(Lat[0], boundaries[0], boundaries[1]));
-  boundary.clear();
+  bounds([this, &mask](int x, int y, int z) mutable {
+    *val_ptr(mask, x, y, z) = 0;
+  });
 
   switch (dimensions) {
   case 1:
     for (size_t i = 0; i < component_no; ++i) {
-      boundary.push_back(new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
-
-      Gaussian_noise* gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev);
-      component.push_back(new Component(Lat[0], gaussian_noise, boundary[i], rho[i]));
-      solver_component.push_back(new Component(Lat[0], gaussian_noise, boundary[i], rho[i]));
+      boundary = new Boundary1D(Lat[0], boundaries[0], boundaries[1]);
+      component.push_back(new Component(Lat[0], boundary, rho[i]));
+      solver_component.push_back(new Component(Lat[0], boundary, rho[i]));
     }
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        Gaussian_noise* gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev, seed);
+        Gaussian_noise* gaussian_noise;
+        if (seed_specified == true) {
+          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev, seed);
+        } else {
+          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev);
+        }
         flux.push_back(new Flux1D(Lat[0], gaussian_noise, D*dt, mask, component[i], component[j]));
         solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D*dt, mask, solver_component[i], solver_component[j]));
       }
@@ -356,16 +367,19 @@ int Mesodyn::initial_conditions() {
     break;
   case 2:
     for (size_t i = 0; i < component_no; ++i) {
-      boundary.push_back(new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
-
-      Gaussian_noise* gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev);
-      component.push_back(new Component(Lat[0], gaussian_noise, boundary[i], rho[i]));
-      solver_component.push_back(new Component(Lat[0], gaussian_noise, boundary[i], rho[i]));
+      boundary = new Boundary2D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3]);
+      component.push_back(new Component(Lat[0], boundary, rho[i]));
+      solver_component.push_back(new Component(Lat[0], boundary, rho[i]));
     }
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        Gaussian_noise* gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev, seed);
+        Gaussian_noise* gaussian_noise;
+        if (seed_specified == true) {
+          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev, seed);
+        } else {
+          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev);
+        }
         flux.push_back(new Flux2D(Lat[0], gaussian_noise, D*dt, mask, component[i], component[j]));
         solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D*dt, mask, solver_component[i], solver_component[j]));
       }
@@ -374,16 +388,19 @@ int Mesodyn::initial_conditions() {
     break;
   case 3:
     for (size_t i = 0; i < component_no; ++i) {
-      boundary.push_back(new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]));
-
-      Gaussian_noise* gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev);
-      component.push_back(new Component(Lat[0], gaussian_noise, boundary[i], rho[i]));
-      solver_component.push_back(new Component(Lat[0], gaussian_noise, boundary[i], rho[i]));
+      boundary = new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]);
+      component.push_back(new Component(Lat[0],  boundary, rho[i]));
+      solver_component.push_back(new Component(Lat[0], boundary, rho[i]));
     }
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        Gaussian_noise* gaussian_noise = new Gaussian_noise(boundary[0], D, M, mean, stddev, seed);
+        Gaussian_noise* gaussian_noise;
+        if (seed_specified == true) {
+          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev, seed);
+        } else {
+          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev);
+        }
         flux.push_back(new Flux3D(Lat[0], gaussian_noise, D*dt, mask, component[i], component[j]));
         solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D*dt, mask, solver_component[i], solver_component[j]));
       }
@@ -514,7 +531,6 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
     if (i != solvent) {
       Real theta = Mol[i]->theta;
       sum_theta += theta;
-
       for (size_t j = 0; j < mon_nr; ++j) {
 
 
@@ -527,7 +543,7 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
         });
 
         skip_bounds([this, &rho, c, mon_theta, sum_of_elements](int x, int y, int z) mutable {
-          *valPtr(rho[c], x, y, z) *= mon_theta / sum_of_elements;
+          *val_ptr(rho[c], x, y, z) *= mon_theta / sum_of_elements;
         });
 
         ++c;
@@ -562,7 +578,7 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
   // If there's only one solvent mon, this problem is easy.
   if (solvent_mons.size() == 1) {
     skip_bounds([this, &rho, residuals, solvent_mons](int x, int y, int z) mutable {
-        *valPtr(rho[solvent_mons[0]], x, y, z) -= val(residuals, x, y, z);
+        *val_ptr(rho[solvent_mons[0]], x, y, z) -= val(residuals, x, y, z);
     });
   } else {
     cerr << "Norming solvents with mutliple monomers is not supported! Please write your own script" << endl;
@@ -730,13 +746,13 @@ void Mesodyn::write_density(vector<Component*>& component) {
     vtk << "Mesodyn output \n";
     vtk << "ASCII\n";
     vtk << "DATASET STRUCTURED_GRID \n";
-    vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
-    vtk << "POINTS " << M << " int\n";
+    vtk << "DIMENSIONS " << MX-2 << " " << MY-2 << " " << MZ-2 << "\n";
+    vtk << "POINTS " << (MX-2) * (MY-2) * (MZ-2) << " int\n";
     skip_bounds([this, &vtk](int x, int y, int z) mutable {
         vtk << x << " " << y <<  " " << z << "\n";
     });
 
-    vtk << "POINT_DATA " << MX * MY * MZ << "\n";
+    vtk << "POINT_DATA " << (MX-2) * (MY-2) * (MZ-2) << "\n";
     vtk << "SCALARS Box_profile float\nLOOKUP_TABLE default \n";
 
     skip_bounds([this, &vtk, all_components](int x, int y, int z) mutable {
@@ -908,7 +924,8 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
   }
 
   transform(A.begin(), A.end(), B.begin(), mu.begin(), [](Real A, Real B) { return A - B ; });
-  gaussian->add_noise(mu);
+
+  //gaussian->add_noise(mu);
 
   return 0;
 }
@@ -927,21 +944,8 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   }
 
   for (int& z: mask_minus) {
-    J_minus[z] = -J_plus[z-jump]; //-D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z]));
+    J_minus[z] = -J_plus[z-jump]; // = -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z] - gaussian->noise[z]));
   }
-
-  /*string jump_char = "";
-
-  if (jump == 1)
-  { jump_char = "Z"; }
-  if (jump == 3)
-  { jump_char = "Y";}
-  if (jump == 9)
-  { jump_char = "X";}
-
-    vector<int> index;
-    index = coordinate(13);
-    cout << index[0] << "," << index[1] << "," << index[2] << " " << jump_char << " minus: " << J_minus[9] << " plus: " << J_plus[9] << endl;*/
 
   transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
   transform(J_minus.begin(), J_minus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
@@ -1047,7 +1051,11 @@ inline int Lattice_Access::val(vector<int>& v, int x, int y, int z) {
   return v[x * JX + y * JY + z * JZ];
 }
 
-inline Real* Lattice_Access::valPtr(vector<Real>& v, int x, int y, int z) {
+inline Real* Lattice_Access::val_ptr(vector<Real>& v, int x, int y, int z) {
+  return &v[x * JX + y * JY + z * JZ];
+}
+
+inline int* Lattice_Access::val_ptr(vector<int>& v, int x, int y, int z) {
   return &v[x * JX + y * JY + z * JZ];
 }
 
@@ -1086,8 +1094,8 @@ inline vector<int> Lattice_Access::coordinate(int n) {
 
 /******* Constructors *******/
 
-Component::Component(Lattice* Lat, Gaussian_noise* gaussian, Boundary1D* boundary, vector<Real>& rho)
-    : Lattice_Access(Lat), rho{rho}, alpha(M), gaussian(gaussian), boundary(boundary) {
+Component::Component(Lattice* Lat, Boundary1D* boundary, vector<Real>& rho)
+    : Lattice_Access(Lat), rho{rho}, alpha(M), boundary(boundary) {
   //This check is implemented multiple times throughout mesodyn because rho and alpha are public.
   if (rho.size() != alpha.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
@@ -1321,7 +1329,7 @@ void Boundary1D::bX0Mirror(vector<Real>& target, int fMY, int fMZ) {
   do {
     y=0;
     do {
-      *valPtr(target, 0, y, z) = val(target, 1, y, z);     //start
+      *val_ptr(target, 0, y, z) = val(target, 1, y, z);     //start
       ++y;
     } while (y < fMY);
     ++z;
@@ -1334,7 +1342,7 @@ void Boundary1D::bXmMirror(vector<Real>& target, int fMY, int fMZ, int fMX) {
   do {
     y=0;
     do {
-      *valPtr(target, fMX - 1, y, z) = val(target, fMX - 2, y, z);     //end
+      *val_ptr(target, fMX - 1, y, z) = val(target, fMX - 2, y, z);     //end
       ++y;
     } while (y < fMY);
   ++z;
@@ -1347,8 +1355,8 @@ void Boundary1D::bXPeriodic(vector<Real>& target, int fMY, int fMZ, int fMX) {
   do {
     y=0;
     do {
-      *valPtr(target, 0, y, z) = val(target, fMX - 2, y, z); //start
-      *valPtr(target, fMX - 1, y, z) = val(target, 1, y, z); //end
+      *val_ptr(target, 0, y, z) = val(target, fMX - 2, y, z); //start
+      *val_ptr(target, fMX - 1, y, z) = val(target, 1, y, z); //end
       ++y;
     } while (y < fMY);
     ++z;
@@ -1361,7 +1369,7 @@ void Boundary2D::bY0Mirror(vector<Real>& target, int fMX, int fMZ) {
   do {
     x=0;
     do {
-      *valPtr(target, x, 0, z) = val(target, x, 1, z);     //start
+      *val_ptr(target, x, 0, z) = val(target, x, 1, z);     //start
       ++x;
     } while (x < fMX);
     ++z;
@@ -1374,7 +1382,7 @@ void Boundary2D::bYmMirror(vector<Real>& target, int fMX, int fMZ, int fMY) {
   do {
     x=0;
     do {
-      *valPtr(target, x, fMY - 1, z) = val(target, x, fMY - 2, z);     //end
+      *val_ptr(target, x, fMY - 1, z) = val(target, x, fMY - 2, z);     //end
       ++x;
     } while (x < fMX);
     ++z;
@@ -1387,8 +1395,8 @@ void Boundary2D::bYPeriodic(vector<Real>& target, int fMX, int fMZ, int fMY) {
   do {
     x=0;
     do {
-      *valPtr(target, x, 0, z) = val(target, x, fMY - 2, z); //start
-      *valPtr(target, x, fMY - 1, z) = val(target, x, 1, z); //end
+      *val_ptr(target, x, 0, z) = val(target, x, fMY - 2, z); //start
+      *val_ptr(target, x, fMY - 1, z) = val(target, x, 1, z); //end
       ++x;
     } while (x < fMX);
     ++z;
@@ -1401,7 +1409,7 @@ void Boundary3D::bZ0Mirror(vector<Real>& target, int fMX, int fMY) {
   do {
     x=0;
     do {
-      *valPtr(target, x, y, 0) = val(target, x, y, 1);     //start
+      *val_ptr(target, x, y, 0) = val(target, x, y, 1);     //start
       ++x;
     } while (x < fMX);
   ++y;
@@ -1414,7 +1422,7 @@ void Boundary3D::bZmMirror(vector<Real>& target, int fMX, int fMY, int fMZ) {
   do {
     x=0;
     do {
-      *valPtr(target, x, y, fMZ - 1) = val(target, x, y, fMZ - 2);     //end
+      *val_ptr(target, x, y, fMZ - 1) = val(target, x, y, fMZ - 2);     //end
       ++x;
     } while (x < fMX);
   ++y;
@@ -1427,8 +1435,8 @@ void Boundary3D::bZPeriodic(vector<Real>& target, int fMX, int fMY, int fMZ) {
   do {
     x=0;
     do {
-      *valPtr(target, x, y, 0) = val(target, x, y, fMZ - 2); //start
-      *valPtr(target, x, y, fMZ - 1) = val(target, x, y, 1); //end
+      *val_ptr(target, x, y, 0) = val(target, x, y, fMZ - 2); //start
+      *val_ptr(target, x, y, fMZ - 1) = val(target, x, y, 1); //end
       ++x;
     } while (x < fMX);
     ++y;

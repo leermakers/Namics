@@ -9,7 +9,7 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
     Lattice_Access(Lat_[0]),
     name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
     D{0.01}, mean{0}, stddev{1*D}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1}, dt{0.1}, initialization_mode{INIT_HOMOGENEOUS},
-    component_no{Sys[0]->SysMolMonList.size()}, RC{0},
+    component_no{Sys[0]->SysMolMonList.size()}, RC{0}, cn_ratio{0.5},
     component(0), flux(0),
     writes{0}, write_vtk{false}
 {
@@ -22,6 +22,7 @@ Mesodyn::Mesodyn(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> 
   KEYS.push_back("seed");
   KEYS.push_back("mean");
   KEYS.push_back("stddev");
+  KEYS.push_back("cn_ratio");
 
   // TODO: implement this properly
   // If the user has asked for vtk output
@@ -111,6 +112,12 @@ bool Mesodyn::CheckInput(int start) {
     }
     if (debug)
       cout << "Stdev is " << stddev << endl;
+
+    if (GetValue("cn_ratio").size() > 0) {
+      cn_ratio = In[0]->Get_Real(GetValue("cn_ratio"), cn_ratio);
+    }
+    if (debug)
+      cout << "Cn_ratio is " << cn_ratio << endl;
   }
 
   return success;
@@ -271,7 +278,7 @@ int Mesodyn::solve_crank_nicolson(vector<Real>& rho) {
         int c = 0;
         for (size_t i = 0; i < component_no; ++i) {
           for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-            solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J);
+            solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio);
             ++c;
           }
         }
@@ -279,7 +286,7 @@ int Mesodyn::solve_crank_nicolson(vector<Real>& rho) {
         c = 0;
         for (size_t j = 0; j < (component_no - 1); ++j) {
           for (size_t i = 1 + j; i < component_no; ++i) {
-            solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, -1.0);
+            solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio, -1.0);
             ++c;
           }
         }
@@ -1135,7 +1142,7 @@ int Component::update_density(vector<Real>& J, int sign) {
   return 0;
 }
 
-int Component::update_density(vector<Real>& rho_old, vector<Real>& J1, vector<Real>& J2, int sign) {
+int Component::update_density(vector<Real>& rho_old, vector<Real>& J1, vector<Real>& J2, Real ratio, int sign) {
   //Implicit update
   if (J1.size() != rho.size() || J1.size() != J2.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
@@ -1143,16 +1150,15 @@ int Component::update_density(vector<Real>& rho_old, vector<Real>& J1, vector<Re
   }
 
   int i = 0;
-
   for (Real& Flux : J1) {
-    rho[i] = rho_old[i] + 0.5 * sign * Flux;
+    rho[i] = rho_old[i] + ratio * sign * Flux;
     ++i;
   }
 
   i = 0;
 
   for (Real& Flux : J2) {
-    rho[i] += 0.5 * sign * Flux;
+    rho[i] += (1-ratio) * sign * Flux;
     ++i;
   }
 

@@ -11,6 +11,7 @@ public:
 	SFNewton();
 
  	virtual ~SFNewton();
+	bool max_g;
 	int nbits;
 	int lineiterations,linetolerance,numIterationsSinceHessian,resetiteration;
 	int print_hessian_at_it;
@@ -102,5 +103,8 @@ public:
 	void DIIS(Real* , Real*, Real*, Real* , Real* ,Real*, int, int , int, int);
 	void conjugate_gradient(Real *, int, int ,Real ) ;
 	void Hd(Real *, Real *, Real *, Real *, Real *, Real*, Real);
+
+private:
+	Real computeresidual(Real*, int);
 };
 #endif

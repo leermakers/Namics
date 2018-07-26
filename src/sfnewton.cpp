@@ -2,7 +2,7 @@
 #include "sfnewton.h"
 #include "tools.h"
 
-SFNewton::SFNewton () {
+SFNewton::SFNewton () : residual{0} {
 
 /*      class for
         unconstrained minimization,
@@ -609,7 +609,8 @@ bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real
 		cout <<"Warning: "<<s<<"iteration not solved. Residual error= " << residual << endl;
 		success=false;
 	}
-	if (e_info || s_info) {
+
+  if ((e_info || s_info) && suppress == false) {
 
 		if (e_info) {
 			if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
@@ -717,13 +718,13 @@ Real* g = (Real*) malloc(nvar*sizeof(Real));
 		cout << "Your guess:";
 	}
 	residuals(x,g);
-	residual=norm2(g,nvar);
+	residual=computeresidual(g,nvar);
 	while (residual > tolerance && it < iterationlimit) {
 		if(it%i_info == 0){
 			printf("it = %i g = %1e \n",it,residual);
 		}
 		YplusisCtimesX(x,g,delta_max,nvar);
-		residual=norm2(g,nvar);
+		residual=computeresidual(g,nvar);
 		//inneriteration(x,g,h,residual,nvar);
 		it++;
 	}
@@ -791,6 +792,26 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
 	}
 }
 
+Real SFNewton::computeresidual(Real* array, int size) {
+  Real residual = 0;
+
+  // Compute residual based on maximum error value
+  if (max_g == true) {
+    auto temp_residual = minmax_element(array, array+size);
+    if(abs(*temp_residual.first) > abs(*temp_residual.second) ) {
+      residual = abs(*temp_residual.first);
+    } else {
+      residual = abs(*temp_residual.second);
+    }
+  } else {
+    // Compute residual based on sum o ferrors
+    Dot(residual,array,array,size);
+    residual=sqrt(residual);
+  }
+
+  return residual;
+}
+
 bool SFNewton::iterate_DIIS(Real*x,int nvar, int m, int iterationlimit,Real tolerance, Real delta_max) {
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
 	bool success;
@@ -805,26 +826,26 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	int k_diis=1;
 	int k=0;
 	Cp(x0,x,nvar);
+  // mol computephi takes long: moltype = monomer
 	residuals(x,g);
 
 	YplusisCtimesX(x,g,-delta_max,nvar);
 	YisAminB(x_x0,x,x0,nvar);
 	Cp(xR,x,nvar);
-	Dot(residual,g,g,nvar);
-	residual=sqrt(residual);
-	if (e_info) printf("DIIS Mesodyn has been notified\n");
+  residual = computeresidual(g, nvar);
+	if (e_info) printf("DIIS has been notified\n");
 	if (e_info) printf("Your guess = %1e \n",residual);
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
 		Cp(x0,x,nvar);
+    //fast: moltype = linear
 		residuals(x,g);
 		k=it % m; k_diis++; //plek voor laatste opslag
 		YplusisCtimesX(x,g,-delta_max,nvar);
 		Cp(xR+k*nvar,x,nvar);
 		YisAminB(x_x0+k*nvar,x,x0,nvar);
 		DIIS(x,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,nvar);
-		Dot(residual,g,g,nvar);
-		residual=sqrt(residual);
+    residual = computeresidual(g, nvar);
 		if(e_info && it%i_info == 0){
 			printf("it = %i g = %1e \n",it,residual);
 		}

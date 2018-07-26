@@ -485,7 +485,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback
 			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMolMonList[i]]->valence,M);
 		}*/
 
-	//Sys[0]->CheckResults(report_errors);
+	Sys[0]->CheckResults(true);
 	return success;
 }
 

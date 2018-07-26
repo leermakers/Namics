@@ -464,6 +464,10 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			}
 			fprintf(fp,"\n"); append=true;
 		} else 	fp=fopen(filename.c_str(),"a");
+		if (fp == NULL) {
+			cerr << "Error trying to open " << filename.c_str() << endl;
+			perror("Error");
+		}
 		int length = OUT_key.size();
 		for (int i=0; i<length; i++) {
 			int int_result=0;
@@ -475,7 +479,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,Real_result,string_result);
 			if (result_nr==0) {fprintf(fp,"NiN\t");}
 			if (result_nr==1) {fprintf(fp,"%i\t",int_result);}
-			if (result_nr==2) {fprintf(fp,"%e\t",Real_result);}
+			if (result_nr==2) {fprintf(fp,"%.10f\t",Real_result);}
 			if (result_nr==3) {
 				if (sub[0]==OUT_prop[i]) {
 					fprintf(fp,"%s\t",string_result.c_str());

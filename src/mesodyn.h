@@ -33,9 +33,12 @@ public:
   //TODO: Template these:
   inline Real val(vector<Real>&, int, int, int);
   inline int val(vector<int>&, int, int, int);
-  inline Real* valPtr(vector<Real>&, int, int, int);
+  inline Real* val_ptr(vector<Real>&, int, int, int);
+  inline int* val_ptr(vector<int>&, int, int, int);
   inline int index(int x, int y, int z);
+  inline vector<int> coordinate(int n);
   inline void skip_bounds( function<void(int,int,int)> );
+  inline void bounds( function<void(int,int,int)> );
 
   const int dimensions;
 
@@ -61,13 +64,12 @@ public:
   Gaussian_noise(Boundary1D*, Real, int, Real, Real, size_t); // Seeded
   int generate();
   int add_noise(vector<Real>&);
+  vector<Real> noise;
 
 private:
   seed_seq seed;
   mt19937 prng;
   normal_distribution<Real> dist;
-  vector<Real> noise;
-
   Boundary1D* boundary;
 };
 
@@ -81,9 +83,9 @@ public:
 
   Boundary1D(Lattice*, boundary, boundary); //1D
   Boundary1D(Lattice*, vector<Real>&, boundary, boundary); //1D
-  ~Boundary1D();
+  virtual ~Boundary1D();
 
-  int update_boundaries(vector<Real>&);
+  virtual int update_boundaries(vector<Real>&);
 
 private:
   function<void(vector<Real>&)> bX0;
@@ -99,9 +101,9 @@ private:
 class Boundary2D: public Boundary1D {
 public:
   Boundary2D(Lattice*, boundary, boundary, boundary, boundary);
-  ~Boundary2D();
+  virtual ~Boundary2D();
 
-  int update_boundaries(vector<Real>&);
+  virtual int update_boundaries(vector<Real>&) override;
 
 private:
   function<void(vector<Real>&)> bY0;
@@ -119,7 +121,7 @@ public:
   Boundary3D(Lattice*, boundary, boundary, boundary, boundary, boundary, boundary);
   ~Boundary3D();
 
-  int update_boundaries(vector<Real>&);
+  virtual int update_boundaries(vector<Real>&) final;
 
 private:
   function<void(vector<Real>&)> bZ0;
@@ -139,10 +141,12 @@ public:
   vector<Real> rho;
   vector<Real> alpha;
 
+  Gaussian_noise* gaussian;
+
   Real rho_at(int, int, int);
   Real alpha_at(int, int, int);
   int update_density(vector<Real>&, int = 1);     //Explicit scheme
-  int update_density(vector<Real>&, vector<Real>&, vector<Real>&, int = 1); //Implicit scheme
+  int update_density(vector<Real>&, vector<Real>&, vector<Real>&, Real ratio, int = 1); //Implicit scheme
   int load_alpha(vector<Real>&);
   int load_rho(vector<Real>&);
   int update_boundaries();
@@ -155,9 +159,10 @@ private:
 class Flux1D : protected Lattice_Access {
 public:
   Flux1D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
-  ~Flux1D();
+  virtual ~Flux1D();
 
-  int langevin_flux();
+  virtual int langevin_flux();
+  //TODO: check everything for 'virtual' errors
 
   Real J_at(int, int, int);
   Real L_at(int, int, int);
@@ -194,9 +199,9 @@ protected:
 class Flux2D : public Flux1D {
 public:
   Flux2D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
-  ~Flux2D();
+  virtual ~Flux2D();
 
-  int langevin_flux();
+  virtual int langevin_flux() override;
 
 
 protected:
@@ -212,7 +217,7 @@ public:
   Flux3D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
   ~Flux3D();
 
-  int langevin_flux();
+  virtual int langevin_flux() final;
 
 private:
   int mask(vector<int>&);
@@ -243,6 +248,7 @@ private:
   Real mean; // mean of gaussian noise (should be 0)
   Real stddev; // stdev of gaussian noise (should be 1*D)
   Real seed;  // seed of gaussian noise
+  bool seed_specified;
   int timesteps; // length of the time evolution
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   Real dt;
@@ -253,6 +259,8 @@ private:
   int RC;
   int solve_explicit(vector<Real>&);
   int solve_crank_nicolson(vector<Real>&);
+  int sanity_check();
+  Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
 
   /* Initialization*/
   enum init {
@@ -270,7 +278,7 @@ private:
   int norm_density(vector<Real>& rho, Real theta);
 
   /* Helper class instances */
-  vector<Boundary1D*> boundary;
+  Boundary1D* boundary;
   vector<Component*> component;
   vector<Component*> solver_component;
   vector<Flux1D*> flux;

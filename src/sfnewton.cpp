@@ -48,7 +48,7 @@ C Copyright (2018) Wageningen University, NL.
  *NO PART OF THIS WORK MAY BE REPRODUCED, EITHER ELECTRONICALLY OF OTHERWISE*
 
 */
-       nbits = numeric_limits<double>::digits;	//nbits=52;
+       nbits = numeric_limits<Real>::digits;	//nbits=52;
        linesearchlimit = iterations=lineiterations=numIterationsSinceHessian = trouble=resetiteration=0;
        trouble = resetiteration = 0;
 	numReverseDirection =0;
@@ -609,7 +609,8 @@ bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real
 		cout <<"Warning: "<<s<<"iteration not solved. Residual error= " << residual << endl;
 		success=false;
 	}
-	if ((e_info || s_info) && suppress == false) {
+
+  if ((e_info || s_info) && suppress == false) {
 
 		if (e_info) {
 			if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
@@ -852,4 +853,104 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
 free(Aij);free(Ci);free(Apij);free(xR);free(x_x0);free(x0);free(g);
 	return success;
+}
+
+void
+SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real tolerance) {
+// Based on An Introduction to the Conjugate Gradient Method Without the Agonizing Pain Edition 1 1/4 - Jonathan Richard Shewchuk
+// CG with Newton-Raphson and Fletcher-Reeves
+	int  k=0, j=0, j_max =linesearchlimit;
+	Real inner_err=0, delta_new=0, delta_old=0, delta_d=0;
+	Real teller=0, noemer=0;
+  Real alpha=0, beta=0;
+	Real rd=0;
+	bool proceed;
+  int iterations=0;
+  Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+  Real* dg = (Real*) malloc(nvar*sizeof(Real)); Zero(dg,nvar);
+  Real* r = (Real*) malloc(nvar*sizeof(Real)); Zero(r,nvar);
+  Real* d = (Real*) malloc(nvar*sizeof(Real)); Zero(d,nvar);
+  Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+  Real* H_d = (Real*) malloc(nvar*sizeof(Real)); Zero(H_d,nvar);
+	//tolerance=1e-7;
+
+	if ( e_info ) {
+		cout<<"Nonlinear conjugate gradients with Newton-Raphson and Fletcher-Reeves has been notified."<<endl;
+		cout<<"Residual error:" << endl;
+		cout << "Your guess:" <<endl;
+	}
+	residuals(x,g);
+
+	for (int z=0; z<nvar; z++) {
+		r[z] = -g[z];
+		d[z]=r[z];
+		delta_new += r[z]*r[z];
+	}
+	accuracy=pow(delta_new,0.5);
+	cout << "i = " << iterations << " |g| = "<< accuracy << endl;
+	while (tolerance < accuracy && iterations<iterationlimit) {
+		j=0;
+		delta_d=0;
+		for (int z=0; z<nvar; z++) delta_d += d[z]*d[z];
+		inner_err = pow(delta_d,0.5);
+		proceed=true;
+    // line search
+		while (proceed) {
+			teller=0;
+			for (int z=0; z<nvar; z++) {
+				teller -= abs(g[z])*d[z];
+				x0[z]=x[z];
+			}
+			Hd(H_d,d,x,x0,g,dg,nvar);
+			noemer=0;
+			for (int z=0; z<nvar; z++) noemer +=H_d[z]*d[z];
+			alpha=teller/noemer;
+			for (int z=0; z<nvar; z++) {x[z]=x0[z]+alpha*d[z];}
+			residuals(x,g);
+			j++;
+			proceed =(j<j_max && alpha*inner_err > tolerance);
+		}
+
+		for (int z=0; z<nvar; z++) r[z]=-g[z];
+		delta_old=delta_new;
+		delta_new=0;
+		for (int z=0; z<nvar; z++) delta_new += r[z]*r[z];
+		beta=delta_new/delta_old;
+		for (int z=0; z<nvar; z++) d[z]=r[z]+beta*d[z];
+		k++;
+		rd=0;
+		for (int z=0; z<nvar; z++) rd +=r[z]*d[z];
+		if (k == nvar || rd<0) {
+			k=0; beta=0;
+			for (int z=0; z<nvar; z++) d[z]=r[z];
+		}
+		iterations++;
+		accuracy = pow(delta_new,0.5);
+		if ( e_info ) {
+			if (iterations%i_info == 0)
+			cout << "i = " << iterations << " |g| = "<< accuracy << "  alpha("<<j<<") = " << alpha << "  beta = " << beta << endl;
+		}
+	}
+  free(H_d); free(g);free(dg);free(r);free(d);free(x0);
+}
+
+void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real nvar) {
+
+	Real epsilon = 2e-8; //Real precision. Machine error =10^-16; epsilon = 2 sqrt(precision)
+	Real normq = norm2(q,nvar);
+	Real normx = norm2(x0,nvar);
+	Real delta = epsilon* (1+normx)/normq;
+
+	for (int i=0; i<nvar; i++) x[i] = x0[i] + delta*q[i];
+	residuals(x,dg);
+  /*
+	valid = true;
+	for (int i=0; i<nvar && valid; i++) {
+		if (!finite(dg[i])) {
+			valid = false;
+			warning("invalid numbers in gradient");
+			dg[i] = 1;
+		}
+	}*/
+	for (int i=0; i<nvar; i++) H_q[i] = (dg[i]-g[i])/delta;
 }

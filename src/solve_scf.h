@@ -60,7 +60,7 @@ public:
 	void push(string,string);
 	void PushOutput();
 	int GetValue(string,int&,Real&,string&);
-	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis};
+	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis,conjugate_gradient};
 	enum inner_iteration_method {super,proceed};
 	enum gradient_method {classical, MESODYN, Picard, custum};
 	iteration_method solver;

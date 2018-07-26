@@ -124,6 +124,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 			method_options.push_back("Picard"); //can be included again when adjusted for charges and guess
 			method_options.push_back("pseudohessian");
 			method_options.push_back("hessian");
+			method_options.push_back("conjugate_gradient");
 			if (!In[0]->Get_string(GetValue("method"),SCF_method,method_options,"In 'solve_scf' the entry for 'method' not recognized: choose from:")) success=false;
 		}
 		if (SCF_method=="hessian" || SCF_method=="pseudohessian") {
@@ -175,6 +176,10 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		if (SCF_method=="Picard") {
 			solver= PICARD;
 			gradient=Picard;
+		}
+		if (SCF_method=="conjugate_gradient") {
+			solver= conjugate_gradient;
+			linesearchlimit=In[0]->Get_int(GetValue("linesearchlimit"),linesearchlimit);
 		}
 		if (GetValue("gradient_type").size()==0) {gradient=classical;} else {
 			vector<string>gradient_options;
@@ -459,6 +464,9 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback
 		break;
 		case PSEUDOHESSIAN:
 			success=iterate(xx,iv,iterationlimit,tolerance,deltamax,deltamin,true);
+		break;
+		case conjugate_gradient:
+			SFNewton::conjugate_gradient(xx,iv,iterationlimit,tolerance);
 		break;
 		default:
 			success = false; cout <<" in SolveMesodyn the iteration method is unknown. " << endl;

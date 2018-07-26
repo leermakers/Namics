@@ -100,10 +100,11 @@ public:
 	bool iterate_Picard(Real*,int,int,Real,Real);
 	bool iterate_DIIS(Real*,int,int, int, Real, Real);
 	void Ax(Real*, Real*, int);
-	void DIIS(Real* , Real*, Real*, Real* , Real* ,Real*, int, int , int, int );
+	void DIIS(Real* , Real*, Real*, Real* , Real* ,Real*, int, int , int, int);
+	void conjugate_gradient(Real *, int, int ,Real ) ;
+	void Hd(Real *, Real *, Real *, Real *, Real *, Real*, Real);
 
 private:
 	Real computeresidual(Real*, int);
-
 };
 #endif

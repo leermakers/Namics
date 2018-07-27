@@ -39,6 +39,12 @@ public:
   inline vector<int> coordinate(int n);
   inline void skip_bounds( function<void(int,int,int)> );
   inline void bounds( function<void(int,int,int)> );
+  inline void x0_boundary( function<void(int, int, int)>);
+  inline void xm_boundary( function<void(int, int, int)>);
+  inline void y0_boundary( function<void(int, int, int)>);
+  inline void ym_boundary( function<void(int, int, int)>);
+  inline void z0_boundary( function<void(int, int, int)>);
+  inline void zm_boundary( function<void(int, int, int)>);
 
   const int dimensions;
 
@@ -92,9 +98,9 @@ private:
   function<void(vector<Real>&)> bXm;
 
   int set_x_boundaries(boundary, boundary, Real = 0);
-  void bX0Mirror(vector<Real>&, int, int);
-  void bXmMirror(vector<Real>&, int, int, int);
-  void bXPeriodic(vector<Real>&, int, int, int);
+  void bX0Mirror(vector<Real>&);
+  void bXmMirror(vector<Real>&);
+  void bXPeriodic(vector<Real>&);
 
 };
 
@@ -110,9 +116,9 @@ private:
   function<void(vector<Real>&)> bYm;
 
   int set_y_boundaries(boundary, boundary, Real = 0);
-  void bY0Mirror(vector<Real>&, int, int);
-  void bYmMirror(vector<Real>&, int, int, int);
-  void bYPeriodic(vector<Real>&, int, int, int);
+  void bY0Mirror(vector<Real>&);
+  void bYmMirror(vector<Real>&);
+  void bYPeriodic(vector<Real>&);
 
 };
 
@@ -121,16 +127,16 @@ public:
   Boundary3D(Lattice*, boundary, boundary, boundary, boundary, boundary, boundary);
   ~Boundary3D();
 
-  virtual int update_boundaries(vector<Real>&) final;
+  virtual int update_boundaries(vector<Real>&) override;
 
 private:
   function<void(vector<Real>&)> bZ0;
   function<void(vector<Real>&)> bZm;
 
   int set_z_boundaries(boundary, boundary, Real = 0);
-  void bZ0Mirror(vector<Real>&, int, int);
-  void bZmMirror(vector<Real>&, int, int, int);
-  void bZPeriodic(vector<Real>&, int, int, int);
+  void bZ0Mirror(vector<Real>&);
+  void bZmMirror(vector<Real>&);
+  void bZPeriodic(vector<Real>&);
 };
 
 class Component : protected Lattice_Access {
@@ -217,7 +223,7 @@ public:
   Flux3D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
   ~Flux3D();
 
-  virtual int langevin_flux() final;
+  virtual int langevin_flux() override;
 
 private:
   int mask(vector<int>&);

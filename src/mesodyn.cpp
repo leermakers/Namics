@@ -7,7 +7,8 @@
 Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : Lattice_Access(Lat_[0]),
       name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
-      D{0.01}, mean{0}, stddev{1 * D}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1}, dt{0.1}, initialization_mode{INIT_HOMOGENEOUS},
+      D{0.01}, mean{0}, stddev{1 * D}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1}, dt{0.1},
+      initialization_mode{INIT_HOMOGENEOUS},
       component_no{Sys[0]->SysMolMonList.size()}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
       writes{0}, write_vtk{false} {
@@ -121,15 +122,16 @@ bool Mesodyn::CheckInput(int start) {
   return success;
 }
 
-//TODO: no noise on support!
-
 /******** Flow control ********/
 
 bool Mesodyn::mesodyn() {
   if (debug)
     cout << "mesodyn in Mesodyn" << endl;
 
-  initial_conditions(); // Initialize densities by running the classical method once.
+  // Initialize densities
+  initial_conditions();
+
+  //Prepare IO
   set_filename();
   write_settings();
 
@@ -138,51 +140,29 @@ bool Mesodyn::mesodyn() {
 
   cout << "Mesodyn is all set, starting calculations.." << endl;
 
-  vector<Real> rho;
-
-  // start Crank-Nicolson using one explicit step
-  solve_explicit(rho);
-
-  int c = 0;
-  for (size_t i = 0; i < component_no; ++i) {
-    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(solver_flux[c]->J);
-      ++c;
-    }
-  }
-
-  c = 0;
-  for (size_t j = 0; j < (component_no - 1); ++j) {
-    for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(solver_flux[c]->J, -1.0);
-      ++c;
-    }
-  }
-
-  int i = 0;
-  for (Component* all_components : component) {
-    all_components->load_rho(solver_component[i]->rho);
-    ++i;
-  }
-
-  i = 0;
-  for (Flux1D* all_fluxes : flux) {
-    all_fluxes->J = solver_flux[i]->J;
-    ++i;
-  }
+  // Do one explicit step before starting the crank nicolson scheme
+  explicit_start();
 
   write_density(solver_component);
   write_output();
 
+  // Prepare callback functions for SolveMesodyn in Newton
+  auto solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
+  auto loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
+
+  /**** Main MesoDyn time loop ****/
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
+
+    norm_theta(component);
+    norm_theta(solver_component);
 
     for (Flux1D* all_fluxes : solver_flux)
       all_fluxes->gaussian->generate();
 
-    solve_crank_nicolson(rho);
+    New[0]->SolveMesodyn(loader_callback, solver_callback);
 
-    sanity_check();
+    //sanity_check();
 
     int i = 0;
     for (Component* all_components : component) {
@@ -201,6 +181,7 @@ bool Mesodyn::mesodyn() {
       ++i;
     }
   } // time loop
+
   return true;
 }
 
@@ -209,92 +190,75 @@ int Mesodyn::sanity_check() {
   //Check mass conservation
   int i = 0;
   for (Component* all_components : component) {
-    if (all_components->theta() != solver_component[i]->theta()) {
-      //find number of digits before the decimal point
-      int digits = log10(all_components->theta()) + 2;
-      //double precision means 15 significant digits
-      int significant_decimals = 15 - digits;
-      //so if the difference is larger than that, print a warning!
-      Real difference = abs((all_components->theta() - solver_component[i]->theta()));
-      if (difference > pow(10, -significant_decimals)) {
-        cerr << "WARNING: Mass of component " << i << " is NOT conserved! ";
-        if (difference > 0)
-          cerr << "You're losing mass, difference: ";
-        else
-          cerr << "You're gaining mass, difference: ";
-        cerr << difference << endl;
+    if ( fabs(all_components->theta() - solver_component[i]->theta() ) > numeric_limits<Real>::epsilon() ) {
+      Real difference = all_components->theta()-solver_component[i]->theta();
+        if (difference != 0) {
+          cerr << "WARNING: Mass of component " << i << " is NOT conserved! ";
+          if (difference > 0)
+            cerr << "You're losing mass, difference: ";
+          else
+            cerr << "You're gaining mass, difference: ";
+          cerr << difference << endl;
+          }
       }
+      ++i;
     }
-    ++i;
+
+  return 0;
+}
+
+void Mesodyn::load_alpha(vector<Real>& alpha, size_t i) {
+    if (i < component_no) {
+      solver_component[i]->load_alpha(alpha);
+    }
+}
+
+Real* Mesodyn::solve_explicit() {
+  for (Component* all_components : solver_component)
+    all_components->update_boundaries();
+
+  for (Flux1D* all_fluxes : solver_flux)
+    all_fluxes->langevin_flux();
+
+  rho.clear();
+  for (Component* all_components : solver_component) {
+    copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
   }
 
-  return 0;
+  return &rho[0];
 }
 
-int Mesodyn::solve_explicit(vector<Real>& rho) {
+Real* Mesodyn::solve_crank_nicolson() {
+  norm_theta(solver_component);
+  norm_theta(component);
+  for (Component* all_components : solver_component)
+    all_components->update_boundaries();
 
-  New[0]->SolveMesodyn(
-      [this](vector<Real>& alpha, size_t i) {
-        if (i < component_no)
-          solver_component[i]->load_alpha(alpha);
-      },
-      [this, &rho]() {
-        for (Component* all_components : solver_component)
-          all_components->update_boundaries();
+  for (Flux1D* all_fluxes : solver_flux)
+    all_fluxes->langevin_flux();
 
-        for (Flux1D* all_fluxes : solver_flux)
-          all_fluxes->langevin_flux();
+  int c = 0;
+  for (size_t i = 0; i < component_no; ++i) {
+    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+      solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio);
+      ++c;
+    }
+  }
 
-        rho.clear();
-        for (Component* all_components : solver_component) {
-          copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
-        }
+  c = 0;
+  for (size_t j = 0; j < (component_no - 1); ++j) {
+    for (size_t i = 1 + j; i < component_no; ++i) {
+      solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio, -1.0);
+      ++c;
+    }
+  }
 
-        return &rho[0];
-      });
+  rho.clear();
+  for (Component* all_components : solver_component) {
+    copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
+  }
 
-  return 0;
-}
-
-int Mesodyn::solve_crank_nicolson(vector<Real>& rho) {
-  New[0]->SolveMesodyn(
-      [this](vector<Real>& alpha, size_t i) {
-        if (i < component_no) {
-          solver_component[i]->load_alpha(alpha);
-        }
-      },
-      [this, &rho]() {
-        for (Component* all_components : solver_component)
-          all_components->update_boundaries();
-
-        for (Flux1D* all_fluxes : solver_flux)
-          all_fluxes->langevin_flux();
-
-        int c = 0;
-        for (size_t i = 0; i < component_no; ++i) {
-          for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-            solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio);
-            ++c;
-          }
-        }
-
-        c = 0;
-        for (size_t j = 0; j < (component_no - 1); ++j) {
-          for (size_t i = 1 + j; i < component_no; ++i) {
-            solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio, -1.0);
-            ++c;
-          }
-        }
-
-        rho.clear();
-        for (Component* all_components : solver_component) {
-          copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
-        }
-
-        return &rho[0];
-      });
-
-  return 0;
+  return &rho[0];
 }
 
 int Mesodyn::initial_conditions() {
@@ -446,7 +410,50 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
+  norm_theta(component);
+  norm_theta(solver_component);
+
   return 0;
+}
+
+void Mesodyn::explicit_start() {
+  // Prepare callbacks
+  auto explicit_solver_callback = bind(&Mesodyn::solve_explicit, this);
+  auto loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
+
+  // start Crank-Nicolson using one explicit step
+  New[0]->SolveMesodyn(loader_callback, explicit_solver_callback);
+
+  // Update densities after first timestep
+  int c = 0;
+  for (size_t i = 0; i < component_no; ++i) {
+    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+      solver_component[i]->update_density(solver_flux[c]->J);
+      ++c;
+    }
+  }
+
+  c = 0;
+  for (size_t j = 0; j < (component_no - 1); ++j) {
+    for (size_t i = 1 + j; i < component_no; ++i) {
+      solver_component[i]->update_density(solver_flux[c]->J, -1.0);
+      ++c;
+    }
+  }
+
+  // Load rho_k+1 into rho_k
+  int i = 0;
+  for (Component* all_components : component) {
+    all_components->load_rho(solver_component[i]->rho);
+    ++i;
+  }
+
+  // Load J_k+1 into J_k
+  i = 0;
+  for (Flux1D* all_fluxes : flux) {
+    all_fluxes->J = solver_flux[i]->J;
+    ++i;
+  }
 }
 
 int Mesodyn::init_rho_equilibrate(vector<vector<Real>>& rho) {
@@ -552,8 +559,10 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
     throw ERROR_FILE_FORMAT;
   }
 
-  /** Re-norm the densities read from file. Errors occur through low precision writing. **/
-  // Doest not work for fixed phibulk
+  return 0;
+}
+
+int Mesodyn::norm_theta(vector<Component*>& component) {
   size_t solvent = (size_t)Sys[0]->solvent;
 
   Real sum_theta{0};
@@ -574,12 +583,12 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
         mon_theta = theta * Mol[i]->fraction(Mol[i]->MolMonList[j]);
 
         Real sum_of_elements{0};
-        skip_bounds([this, &sum_of_elements, rho, c](int x, int y, int z) mutable {
-          sum_of_elements += val(rho[c], x, y, z);
+        skip_bounds([this, &sum_of_elements, component, c](int x, int y, int z) mutable {
+          sum_of_elements += val(component[c]->rho, x, y, z);
         });
 
-        skip_bounds([this, &rho, c, mon_theta, sum_of_elements](int x, int y, int z) mutable {
-          *val_ptr(rho[c], x, y, z) *= mon_theta / sum_of_elements;
+        skip_bounds([this, &component, c, mon_theta, sum_of_elements](int x, int y, int z) mutable {
+          *val_ptr(component[c]->rho, x, y, z) *= mon_theta / sum_of_elements;
         });
 
         ++c;
@@ -601,7 +610,7 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
   //Pool densities per position
   for (int i = 0; i < M; ++i) {
     for (size_t j = 0; j < component_no; ++j)
-      residuals[i] += rho[j][i];
+      residuals[i] += component[j]->rho[i];
   }
 
   // Calculate excesss / defecit
@@ -611,8 +620,8 @@ int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
 
   // If there's only one solvent mon, this problem is easy.
   if (solvent_mons.size() == 1) {
-    skip_bounds([this, &rho, residuals, solvent_mons](int x, int y, int z) mutable {
-      *val_ptr(rho[solvent_mons[0]], x, y, z) -= val(residuals, x, y, z);
+    skip_bounds([this, &component, residuals, solvent_mons](int x, int y, int z) mutable {
+      *val_ptr(component[solvent_mons[0]]->rho, x, y, z) -= val(residuals, x, y, z);
     });
   } else {
     cerr << "Norming solvents with mutliple monomers is not supported! Please write your own script" << endl;

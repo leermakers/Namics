@@ -11,7 +11,7 @@
 #include <cassert>    // making sure all underlying assumptions (e.g. lattice geometry) are satisfied
 #include <functional> // boundary conditions
 #include <algorithm>  // transform, copy, find functions
-#include <limits.h>   // output
+#include <limits>     // output
 #include <unistd.h>   // output
 
 class Boundary1D;
@@ -263,8 +263,10 @@ private:
 
   /* Flow control */
   int RC;
-  int solve_explicit(vector<Real>&);
-  int solve_crank_nicolson(vector<Real>&);
+  Real* solve_explicit();
+  void explicit_start();
+  Real* solve_crank_nicolson();
+  void load_alpha(vector<Real>&, size_t);
   int sanity_check();
   Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
 
@@ -274,6 +276,7 @@ private:
     INIT_FROMFILE,
     INIT_EQUILIBRATE,
   };
+  vector<Real> rho;
   vector<string> tokenize(string, char);
   string read_filename;
   int initial_conditions();
@@ -309,6 +312,10 @@ public:
   ~Mesodyn();
 
   bool mesodyn();
+
+  int norm_theta(vector<Component*>&);
+
+  Real lost;
 
 
   /* Inputs / output class interface functions */

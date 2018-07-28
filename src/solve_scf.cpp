@@ -445,7 +445,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	return success;
 }
 
-bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback, function< Real*() > flux_callback) {
+bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callback, function< Real*() > flux_callback) {
 	if(debug) cout <<"Solve (mesodyn) in  Solve_scf " << endl;
 	//iv should have been set at AllocateMemory.
 	mesodyn_flux = flux_callback;
@@ -485,7 +485,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback
 			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMolMonList[i]]->valence,M);
 		}*/
 
-	Sys[0]->CheckResults(true);
+	Sys[0]->CheckResults(false);
 	return success;
 }
 

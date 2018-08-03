@@ -1,9 +1,4 @@
-//
-// Created by alexander on 7/12/18.
-//
-
 #pragma once
-
 #include <tuple>
 
 struct Point {

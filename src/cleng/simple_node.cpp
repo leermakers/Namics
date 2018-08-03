@@ -1,7 +1,3 @@
-//
-// Created by Alexander Kazakov on 7/10/18.
-//
-
 #include "simple_node.h"
 
 SimpleNode::SimpleNode(const Point &p, int id, Point box_size) :

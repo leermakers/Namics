@@ -1,9 +1,4 @@
-//
-// Created by Alexander Kazakov on 7/10/18.
-//
-
 #pragma once
-
 #include "node.h"
 #include "simple_node.h"
 #include <vector>

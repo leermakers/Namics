@@ -1,7 +1,3 @@
-//
-// Created by Alexander Kazakov on 7/10/18.
-//
-
 #include "monolit.h"
 
 using std::string;

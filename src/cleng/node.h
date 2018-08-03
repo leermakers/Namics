@@ -1,9 +1,4 @@
-//
-// Created by Alexander Kazakov on 7/9/18.
-//
-
 #pragma once
-
 #include "point.h"
 #include <map>
 #include <string>

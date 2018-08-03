@@ -1,10 +1,15 @@
-lat : flat : n_layers :10
+lat : flat : n_layers_x : 10
+lat : flat : n_layers_y : 10
+lat : flat : n_layers_z : 10
+lat : flat : lowerbound_x : periodic
+lat : flat : upperbound_x : periodic
+lat : flat : lowerbound_y : periodic
+lat : flat : upperbound_y : periodic
+lat : flat : lowerbound_z : periodic
+lat : flat : upperbound_z : periodic
 lat : flat : lattice_type : simple_cubic
-//lat : flat : FJC_choices :7
-lat : flat : gradients : 1
-
-mon : A : freedom : pinned
-mon : A : pinned_range : 1;6
+//lat : flat : FJC_choices : 7
+lat : flat : gradients : 3
 
 mon : B : freedom : free
 
@@ -12,22 +17,22 @@ mon : A : chi - B : 0.6
 
 mol : A : composition : (A)4
 mol : A : freedom : restricted
-mol : A : theta : 5
+mol : A : theta : 500
 
 mol : B : composition : (B)4
 mol : B : freedom : solvent
 
-mesodyn : smth : timesteps : 100000
-mesodyn : smth : timebetweensaves : 10000
-mesodyn : smth : diffusionconstant : 0.001
-mesodyn : smth : mean : 1
-mesodyn : smth : stdev : 1
-mesodyn : smth : seed : 1
+mesodyn : smth : timesteps : 800
+mesodyn : smth : timebetweensaves : 1
+mesodyn : smth : diffusionconstant : 0.5
+mesodyn : smth : mean : 0
+mesodyn : smth : stddev : 0.1
+//mesodyn : smth : seed : 1
 
-newton : isaac : method : pseudohessian
+newton : isaac : method : DIIS
 newton : isaac : e_info : true
 newton : isaac : s_info : false
-newton : isaac : i_info : 1
+newton : isaac : i_info : 1000
 newton : isaac : super_e_info : false
 newton : isaac : iterationlimit : 10000
 newton : isaac : m : 4

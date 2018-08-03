@@ -1,0 +1,58 @@
+lat : flat : n_layers_x : 50
+lat : flat : n_layers_y : 50
+lat : flat : n_layers_z : 50
+//lat : flat : lowerbound_x : periodic
+//lat : flat : upperbound_x : periodic
+//lat : flat : lowerbound_y : periodic
+//lat : flat : upperbound_y : periodic
+//lat : flat : lowerbound_z : periodic
+//lat : flat : upperbound_z : periodic
+lat : flat : geometry : planar
+lat : flat : gradients : 3
+lat : flat : lattice_type : simple_cubic
+
+mon : C : freedom : free
+mon : O : freedom : free
+mon : W : freedom : free
+
+mol : lipid : composition : (C)16(O)1(C)2(O)1(C)2(O)1(C)2(O)1(C)2(O)1(C)2(O)1(C)16
+mol : lipid : freedom : restricted
+mol : lipid : theta : 16683.585
+//mol : lipid : theta : 18000
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mon : C : chi-W : 1.5
+mon : C : chi-O : 2
+mon : W : chi-O : -0.5
+output : kal : append : false
+kal : sys : noname : grand_potential
+kal : mol : lipid : theta
+kal : mol : lipid : theta_exc
+kal : lat : flat : n_layers_x
+kal : mol : lipid : chainlength
+kal : mon : C : chi-O
+kal : mol : lipid : mu
+kal : mol : lipid : phibulk
+newton : isaac : i_info : 100
+newton : isaac : e_info : true
+newton : isaac : s_info : false
+newton : isaac : m : 10
+newton : isaac : super_e_info : true
+newton : isaac : super_s_info : true
+newton : isaac : method : DIIS
+newton : isaac : iterationlimit : 20000
+newton : isaac : tolerance : 1e-3
+newton : isaac : deltamax : 0.05
+newton : isaac : stop_criterion : max_of_element_of_|g|
+// how much of the old J gets mixed in the crank-nicolson scheme
+mesodyn : smth : cn_ratio : 0.7
+mesodyn : smth : read_rho: membrane_expanded.pro
+mesodyn : smth : timesteps : 1000
+mesodyn : smth : timebetweensaves : 1
+mesodyn : smth : diffusionconstant : 0.1
+mesodyn : smth : delta_t : 1
+mesodyn : smth : mean : 0
+mesodyn : smth : stddev : 1
+start

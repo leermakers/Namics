@@ -5,7 +5,7 @@ if (debug) cout <<"constructor in Output "<< endl;
 	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
-	KEYS.push_back("use_output_folder");
+	KEYS.push_back("use_output_directory");
 	input_error=false;
 	bin_folder = "bin"; // folder in Namics where the binary is located
 	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
@@ -108,8 +108,8 @@ if (debug) cout << "CheckInput in output " << endl;
 		write_bounds = In[0]->Get_bool(GetValue("write_bounds"),false);
 
 		/*** TRUE IS LINUX ONLY ***/
-		if (GetValue("use_output_folder").size()>0) {
-			use_output_folder = In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
+		if (GetValue("usoutput_folder").size()>0) {
+			In[0]->Get_bool(GetValue("use_output_directory"),use_output_folder);
 		} // default is set in the constructor
 
 		if (success) {
@@ -331,7 +331,8 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	string filename;
 	vector<string> sub;
 	string infilename = In[0]->name;
-	In[0]->split(infilename,'.',sub);
+
+//	In[0]->split(infilename,'.',sub);
 	string key;
 
 	/**** LINUX ONLY ****/
@@ -350,17 +351,18 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		// If we're not in the inputs folder, discard the path and take only the filename
 		if  (occurrences != 0) {
 			size_t found = infilename.find_last_of("/\\");
-			sub[0] = infilename.substr(found+1);
+			In[0]->split(infilename.substr(found+1),'.',sub);
 		}
 	}
 
-    string numc = to_string(subl);
-    string numcc = to_string(subl);
-	
-    if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
-	filename = sub[0].append("_").append(numc).append(".").append(name);
-//	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
-	filename = In[0]->output_info.getOutputPath() + filename;
+	char numc[10];
+        sprintf(numc,"%d",subl);
+	char numcc[10];
+	sprintf(numcc,"%d",start);
+	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
+	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
+	filename = output_folder + filename;
+
 	if (name=="pos") {
 		length=OUT_key.size();
 		FILE *fp;
@@ -427,7 +429,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				key = OUT_key[i];
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 				fprintf(fp,"%s \t",s.c_str());
-			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl; }
+			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl;}
 		}
 		fprintf(fp,"\n");
 		Lat[0] -> PutProfiles(fp,pointer);
@@ -448,6 +450,10 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			}
 			fprintf(fp,"\n"); append=true;
 		} else 	fp=fopen(filename.c_str(),"a");
+		if (fp == NULL) {
+			cerr << "Error trying to open " << filename.c_str() << endl;
+			perror("Error");
+		}
 		int length = OUT_key.size();
 		for (int i=0; i<length; i++) {
 			int int_result=0;
@@ -459,7 +465,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,Real_result,string_result);
 			if (result_nr==0) {fprintf(fp,"NiN\t");}
 			if (result_nr==1) {fprintf(fp,"%i\t",int_result);}
-			if (result_nr==2) {fprintf(fp,"%e\t",Real_result);}
+			if (result_nr==2) {fprintf(fp,"%.10f\t",Real_result);}
 			if (result_nr==3) {
 				if (sub[0]==OUT_prop[i]) {
 					fprintf(fp,"%s\t",string_result.c_str());
@@ -474,11 +480,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	}
 
 	if (name=="vtk") {
-		Real*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0],Size);
-		key = OUT_key[0];
-		string s=key.append(":").append(OUT_name[0]).append(":").append(OUT_prop[0]);
-		if (!(X==NULL))
-		Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
+		if (New[0]->mesodyn == true) {
+			// do nothing, 'cause Mesodyn likes to run its own business.
+		} else {
+			Real*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0],Size);
+			key = OUT_key[0];
+			string s=key.append(":").append(OUT_name[0]).append(":").append(OUT_prop[0]);
+			if (!(X==NULL))
+			Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
+		}
 	}
 
 
@@ -600,8 +610,8 @@ if (debug) cout << "vtk in output " << endl;
 	fprintf(fp, "SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i\n", MX*MY*MZ);
 	fprintf(fp, "SCALARS Box_profile float\nLOOKUP_TABLE default \n");
 
-	for(int i=1; i<MX+1; i++) for(int j=1; j<MY+1; j++) for(int k=1; k<MZ+1; k++)
-		fprintf(fp,"%lf \n",X[i*JX+j*JY+k]);
+	for(int x=1; x<MX+1; x++) for(int y=1; y<MY+1; y++) for(int z=1; z<MZ+1; z++)
+		fprintf(fp,"%lf \n",X[x*JX+y*JY+z]);
 
 	fclose(fp);
 }

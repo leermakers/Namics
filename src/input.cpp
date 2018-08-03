@@ -1,17 +1,18 @@
 #include "input.h"
+
 Input::Input(string name_) {
 	name=name_;
 	KEYS.push_back("start");
 	KEYS.push_back("sys");
-	KEYS.push_back("mol"); 
-	KEYS.push_back("mon"); 
+	KEYS.push_back("mol");
+	KEYS.push_back("mon");
 	KEYS.push_back("alias");
- 	KEYS.push_back("lat"); 
-	KEYS.push_back("newton"); 
-	KEYS.push_back("mesodyn"); 
-	KEYS.push_back("cleng"); 
-	KEYS.push_back("teng"); 
-	KEYS.push_back("output"); 
+ 	KEYS.push_back("lat");
+	KEYS.push_back("newton");
+	KEYS.push_back("mesodyn");
+	KEYS.push_back("cleng");
+	KEYS.push_back("teng");
+	KEYS.push_back("output");
 	KEYS.push_back("var");
 	KEYS.push_back(OutputInfo::IN_CLASS_NAME);
 
@@ -571,7 +572,7 @@ bool Input:: CheckInput(void) {
 
 		if (set[1]=="output") {
 			vector<string> options;
-			options.push_back("ana"); options.push_back("vtk"); options.push_back("kal"); options.push_back("pro"); options.push_back("vec"); options.push_back("pos"); 
+			options.push_back("ana"); options.push_back("vtk"); options.push_back("kal"); options.push_back("pro"); options.push_back("vec"); options.push_back("pos");
 			string option;
 			if (!Get_string(set[2],option,options,"Value for output extension '" + set[2] + "' not allowed. ")) {success=false;}
 			else {

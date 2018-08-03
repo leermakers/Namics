@@ -124,15 +124,9 @@ bool Cleng::CP(transfer tofrom) {
 	int JY=Lat[0]->JY;
 	int M =Lat[0]->M;
 
-    // Not used
-	//int j;
-    //int length;
-	//bool found;
-
     vector<SimpleNode> sn;
     Segment* clamped = Seg[clamp_seg];
     map<int, Point> system_points;
-	// TODO think about simplify
 	switch(tofrom) {
         case to_cleng:
             for (int i = 0; i < n_boxes; i++) {
@@ -259,17 +253,14 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
 bool Cleng::InBoxRange() {
     int up_bondary = 3; int down_bondary = 3;
     // TODO simplify this
-    return    (down_bondary < nodes[rand_part_index]->point().x + shift.x) && (nodes[rand_part_index]->point().x + shift.x < (int)Lat[0]->MX - up_bondary)
-           && (down_bondary < nodes[rand_part_index]->point().y + shift.y) && (nodes[rand_part_index]->point().y + shift.y < (int)Lat[0]->MY - up_bondary)
-           && (down_bondary < nodes[rand_part_index]->point().z + shift.z) && (nodes[rand_part_index]->point().z + shift.z < (int)Lat[0]->MZ - up_bondary);
+    return    (down_bondary < nodes[id_part_for_move]->point().x + shift.x) && (nodes[id_part_for_move]->point().x + shift.x < (int)Lat[0]->MX - up_bondary)
+           && (down_bondary < nodes[id_part_for_move]->point().y + shift.y) && (nodes[id_part_for_move]->point().y + shift.y < (int)Lat[0]->MY - up_bondary)
+           && (down_bondary < nodes[id_part_for_move]->point().z + shift.z) && (nodes[id_part_for_move]->point().z + shift.z < (int)Lat[0]->MZ - up_bondary);
 }
 
 bool Cleng::NotTooClose() {
-    
-    Point MP{nodes[rand_part_index]->point().x + shift.x, nodes[rand_part_index]->point().y+ shift.y, nodes[rand_part_index]->point().z+ shift.z};
-
-    for (auto n : nodes) {
-        //TODO is this equal refactoring (maybe will be problems with monolit)?
+    Point MP{nodes[id_part_for_move]->point().x + shift.x, nodes[id_part_for_move]->point().y+ shift.y, nodes[id_part_for_move]->point().z+ shift.z};
+    for (const auto &n : nodes) {
         if (MP == n->point()) {
             return false;
         }
@@ -277,111 +268,50 @@ bool Cleng::NotTooClose() {
     return true;
 }
 
-bool Cleng::MakeShift1(bool back) {
-    if (debug) cout << "MakeShift1 in Cleng" << endl;
-    bool success = true;
+Point Cleng::PrepareStep() {
+    shift = {GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true)};
 
-    cout << "clamped seg:" << clamp_seg << endl;
-    for (int i=0; i < n_boxes; i++) {
-        cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " " << Seg[clamp_seg]-> py1[i] << " " << Seg[clamp_seg]-> pz1[i] << endl;
-        cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " " << Seg[clamp_seg]-> py2[i] << " " << Seg[clamp_seg]-> pz2[i] << endl;
+    int id_pos_eq0 = GetIntRandomValueExclude(0, 2, 0, false);
+    if (id_pos_eq0 == 0) {
+        shift.x = 0;
+    } else {
+        if (id_pos_eq0 == 1) {
+            shift.y = 0;
+        } else {
+            shift.z = 0;
+        }
     }
-
-    cout << "len X:" << nodes.size() << endl;
-    cout << "len Y:" << nodes.size() << endl;
-    cout << "len Z:" << nodes.size() << endl;
-
-    for (int i=0; i < (int)nodes.size(); i++) {
-        cout << "i:" << i << " X:" << nodes[i]->point().x << " Y:" << nodes[i]->point().y << " Z:" << nodes[i]->point().z << endl;
-    }
-
-    return success;
+    return shift;
 }
+
 
 bool Cleng::MakeShift(bool back) {
     if (debug) cout << "MakeShift in Cleng" << endl;
     bool success = true;
 
     if (!back) {
-        shift = {0, 0, 0};
-        rand_part_index = GetIntRandomValueExclude(0, (int)nodes.size() - 1, 0, false);
-
-        cout << "rand_part_index:" << rand_part_index << endl;
-        cout << "X:" << nodes[rand_part_index]->point().x << endl;
-        cout << "Y:" << nodes[rand_part_index]->point().y << endl;
-        cout << "Z:" << nodes[rand_part_index]->point().z << endl;
-
-//    TODO: rethink physics
-//    pos_array = GetIntRandomValueExclude(0, 2, 0, false);
-//    cout << "pos_array:" << pos_array << endl;
-//    //choosing what direction should I change (x,y or z)
-//    for (int i=0; i<3; i++) {
-//        shift[i] = GetIntRandomValueExclude(-1, 1, 0, true);
-//    }
-//    shift[pos_array] = 0;
-
-        int pos_array = GetIntRandomValueExclude(0, 1, 0, false);
-        cout << "pos_array:" << pos_array << endl;
-
-        if (pos_array == 0) {
-//      z-direction
-            shift = {shift.x, shift.y, GetIntRandomValueExclude(-1, 1, 0, true)};
-        } else {
-//      xy-direction
-            shift = {GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true), shift.z};
-        }
+        shift = PrepareStep();
+        id_part_for_move = GetIntRandomValueExclude(0, (int)nodes.size() - 1, 0, false);
+        cout << "Trying: \n part_id: " << id_part_for_move << " , MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
 
         if (InBoxRange() && NotTooClose()) {
-            nodes[rand_part_index]->shift(shift);
-
+            nodes[id_part_for_move]->shift(shift);
         } else {
-            if (pos_array == 0) {
-//      z-direction
-                shift = {shift.x, shift.y, GetIntRandomValueExclude(-1, 1, 0, true)};
-            } else {
-//      xy-direction
-                shift = {GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true), shift.z};
+            while ( (InBoxRange() && !NotTooClose()) || (!InBoxRange() && NotTooClose()) ) {
+                cout << "Choose another particle id and step..." << endl;
+                id_part_for_move = GetIntRandomValueExclude(0, (int)nodes.size() - 1, 0, false);
+                shift = PrepareStep();
             }
+            nodes[id_part_for_move]->shift(shift);
         }
-
-        cout << "len X:" << nodes.size() << endl;
-        cout << "len Y:" << nodes.size() << endl;
-        cout << "len Z:" << nodes.size() << endl;
-
-
-//    cout << "changed:" << changed << endl;
-        cout << "Shift:" << shift.x << " " << shift.y << " " << shift.z << endl;
-//    cout << "len P:" << P.size() << endl;
-//    cout << "len Sx:" << Sx.size() << endl;
-//    cout << "len Sy:" << Sy.size() << endl;
-//    cout << "len Sz:" << Sz.size() << endl;
-//    cout << "len X:" << nodes.size() << endl;
-//    cout << "len Y:" << nodes.size() << endl;
-//    cout << "len Z:" << nodes.size() << endl;
-    cout << endl;
+        cout << "Finally: \n part_id: " << id_part_for_move << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
     }
     else {
         cout << "MakeShift back" << endl;
-
-        cout << "rand_part_index:" << rand_part_index << endl;
-        cout << "X:" << nodes[rand_part_index]->point().x << endl;
-        cout << "Y:" << nodes[rand_part_index]->point().y << endl;
-        cout << "Z:" << nodes[rand_part_index]->point().z << endl;
-
-        cout << -shift.x << " " << -shift.y << " " << -shift.z << endl;
-        cout << "last particle:" << rand_part_index << endl;
-        // TODO simplify
         Point neg_shift = shift.negate();
-        nodes[rand_part_index]->shift(neg_shift);
-
-        cout << "rand_part_index:" << rand_part_index << endl;
-        cout << "X:" << nodes[rand_part_index]->point().x << endl;
-        cout << "Y:" << nodes[rand_part_index]->point().y << endl;
-        cout << "Z:" << nodes[rand_part_index]->point().z << endl;
-
-        cout << endl;
-
+        nodes[id_part_for_move]->shift(neg_shift);
     }
+
     return success;
 }
 
@@ -396,31 +326,17 @@ bool Cleng::MonteCarlo() {
 // init system outlook
     New[0]->Solve(true);
     WriteOutput(0);
+
     for (int i = 1; i < MCS; i++) { // loop for trials
 
-        //cout << "Step i:" << i << endl;
-
-        //for (int i = 0; i < n_boxes; i++) {
-        //    cout << "Subbox_x" << Seg[clamp_seg]->bx[i] << " " << Seg[clamp_seg]->by[i] << " " << Seg[clamp_seg]->bz[i] << endl;
-        //}
-//            sn.push_back(fromSystemToNode(clamped->px1[i], clamped->py1[i], clamped->pz1[i], 2 * i, box));
-//            sn.push_back(fromSystemToNode(clamped->px2[i], clamped->py2[i], clamped->pz2[i], 2 * i + 1, box));
-//        }
-
         Real my_rand = GetRealRandomValue(0, 1);
-        free_energy_c = Sys[0]-> FreeEnergy;
-        success=CP(to_cleng);
+        free_energy_c = Sys[0] -> FreeEnergy;
+        CP(to_cleng);
         MakeShift(false);
-        success=CP(to_segment);
+        CP(to_segment);
         New[0]->Solve(true);
 
-//        for (int i=0; i < n_boxes; i++) {
-
-//            cout << "################ START" << endl;
-//            cout << "clemped seg pos_x1: " << Seg[clamp_seg]-> px1[i] << " pos_y1:" << Seg[clamp_seg]-> py1[i] << " pos_z1: " << Seg[clamp_seg]-> pz1[i] << endl;
-//            cout << "clemped seg pos_x2: " << Seg[clamp_seg]-> px2[i] << " pos_y2:" << Seg[clamp_seg]-> py2[i]  << " pos_z2: " << Seg[clamp_seg]-> pz2[i] << endl;
-//        }
-        free_energy_t = Sys[0]-> FreeEnergy;
+        free_energy_t = Sys[0] -> FreeEnergy;
 
         cout << "my_rand:" << my_rand << endl;
         cout << "free_energy_c:" << free_energy_c << endl;
@@ -439,11 +355,13 @@ bool Cleng::MonteCarlo() {
         } else {
             cout << "Deny" << endl;
             MakeShift(true);
+            cout << "Done. No saving. \n" << endl;
             continue;
         }
         if ((i % save_interval) == 0) {
             WriteOutput(i);
         }
+    cout << "Done. \n" << endl;
     }
 	return success;
 }

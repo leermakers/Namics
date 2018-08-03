@@ -6,13 +6,8 @@
 #include "../solve_scf.h"
 #include "../system.h"
 #include "../output.h"
-
-
-//#include <map>  //For generating the output of settings
-//#include <cassert>
-//random
 #include <random>
-#include <math.h>       /* exp */
+#include <math.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
@@ -75,7 +70,7 @@ public:
 
     ofstream out;
     Point shift;
-    int rand_part_index;
+    int id_part_for_move;
 
 
     bool MonteCarlo();
@@ -93,8 +88,8 @@ public:
     void PushOutput();
     int GetValue(string, int&, Real&, string&);
     int GetIntRandomValueExclude(int, int, int, bool);
-//  int GetIntRandomValue(int, int);
     Real GetRealRandomValue(int, int);
+    Point PrepareStep();
 
     std::vector<string> KEYS;
     std::vector<string> PARAMETERS;

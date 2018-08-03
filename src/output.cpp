@@ -5,7 +5,7 @@ if (debug) cout <<"constructor in Output "<< endl;
 	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
-	KEYS.push_back("use_output_directory");
+	KEYS.push_back("use_output_folder");
 	input_error=false;
 	bin_folder = "bin"; // folder in Namics where the binary is located
 	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
@@ -108,8 +108,8 @@ if (debug) cout << "CheckInput in output " << endl;
 		write_bounds = In[0]->Get_bool(GetValue("write_bounds"),false);
 
 		/*** TRUE IS LINUX ONLY ***/
-		if (GetValue("usoutput_folder").size()>0) {
-			In[0]->Get_bool(GetValue("use_output_directory"),use_output_folder);
+		if (GetValue("use_output_folder").size()>0) {
+			use_output_folder = In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
 		} // default is set in the constructor
 
 		if (success) {
@@ -331,8 +331,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	string filename;
 	vector<string> sub;
 	string infilename = In[0]->name;
-
-//	In[0]->split(infilename,'.',sub);
+	In[0]->split(infilename,'.',sub);
 	string key;
 
 	/**** LINUX ONLY ****/
@@ -351,18 +350,17 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		// If we're not in the inputs folder, discard the path and take only the filename
 		if  (occurrences != 0) {
 			size_t found = infilename.find_last_of("/\\");
-			In[0]->split(infilename.substr(found+1),'.',sub);
+			sub[0] = infilename.substr(found+1);
 		}
 	}
 
-	char numc[10];
-        sprintf(numc,"%d",subl);
-	char numcc[10];
-	sprintf(numcc,"%d",start);
-	if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
-	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
-	filename = output_folder + filename;
+    string numc = to_string(subl);
+    string numcc = to_string(start);
 
+    if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
+	filename = sub[0].append("_").append(numc).append(".").append(name);
+//	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
+	filename = In[0]->output_info.getOutputPath() + filename;
 	if (name=="pos") {
 		length=OUT_key.size();
 		FILE *fp;

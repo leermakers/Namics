@@ -85,7 +85,7 @@ public:
     bool InBoxRange();
     bool NotTooClose();
     void WriteOutput(int);
-    void PushOutput();
+    void PushOutput(int);
     int GetValue(string, int&, Real&, string&);
     int GetIntRandomValueExclude(int, int, int, bool);
     Real GetRealRandomValue(int, int);

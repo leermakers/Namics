@@ -12,41 +12,41 @@ Variate::Variate(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,
 	KEYS.push_back("free_energy");
 	KEYS.push_back("mu");
 	KEYS.push_back("theta");
-	KEYS.push_back("n");	
+	KEYS.push_back("n");
 	KEYS.push_back("phibulk");
 }
 Variate::~Variate() {
 	DeAllocateMemory();
 }
 void Variate::DeAllocateMemory(){
-if (debug) cout <<"Destructor for variate " + name << endl; 
+if (debug) cout <<"Destructor for variate " + name << endl;
 
 #ifdef CUDA
 
 #else
 
-#endif	
+#endif
 }
 
 void Variate::AllocateMemory() {
 #ifdef CUDA
 
-#else 
+#else
 
 #endif
-	
+
 }
 
 void Variate::PrepareForCalculations() {
-if (debug) cout <<"PrepareForCalculations in Variate " + name << endl; 
+if (debug) cout <<"PrepareForCalculations in Variate " + name << endl;
 
- 
+
 }
 
 
 void Variate::PutParameter(string new_param) {
 if (debug) cout <<"PutParameter in Variate " + name << endl;
-	KEYS.push_back(new_param); 
+	KEYS.push_back(new_param);
 }
 
 bool Variate::CheckInput(int start) {
@@ -85,24 +85,24 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 					if (GetValue("free_energy").size()>0) {
 						R_target=In[0]->Get_Real(GetValue("free_energy"),0); targeting=0; target_nr=0;
 						if (!Sys[0]->PutVarInfo("target","free_energy",R_target)) {
-							success=false; 
+							success=false;
 							cout <<"In var:" + name + ":free_energy, Target value rejected" << endl;
 						}
-					}					
+					}
 					if (GetValue("grand_potential").size()>0) {
 						if (R_target ==-123.0) {
 							R_target=In[0]->Get_Real(GetValue("grand_potential"),0); targeting=0; target_nr=0;
 							if (!Sys[0]->PutVarInfo("target","grand_potential",R_target)) {
-								success=false; 
-								cout <<"In var:" + name + ":grand_potential, target value rejected." << endl; 
+								success=false;
+								cout <<"In var:" + name + ":grand_potential, target value rejected." << endl;
 							}
 						} else {dubbel=true;}
-						
+
 					}
 					if (R_target==-123.0 || dubbel) {
 						success=false;
 						cout <<"In var:" + name + " we expect either 'free_energy' or 'grand_potential' as target a function. " << endl;
-					} 
+					}
 				}
 				break;
 			case 1:
@@ -110,11 +110,11 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 					cout <<"In 'var' lat name " + sub[1] + " not found" << endl; success=false;
 				} else {
 					if (GetValue("scan").size()==0) {
-						success=false; cout <<"in var:" + name + ", the parameter 'scan' is expected. " << endl; 
-						if (GetValue("search").size()>0) cout <<"In var:" + name + ", the parameter 'search' is not allowed. " <<endl; 
+						success=false; cout <<"in var:" + name + ", the parameter 'scan' is expected. " << endl;
+						if (GetValue("search").size()>0) cout <<"In var:" + name + ", the parameter 'search' is not allowed. " <<endl;
 					} else {
 						if (!Lat[0]->PutVarInfo("scan",GetValue("scan"),0)) {
-							success=false; cout <<"In var:" + name + "scan, the value for 'target' is rejected" << endl; 
+							success=false; cout <<"In var:" + name + "scan, the value for 'target' is rejected" << endl;
 						}
 						scanning=1; scan_nr=0;
 					}
@@ -132,24 +132,24 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 							if (sub_[0]==s) {
 								R_target=In[0]->Get_Real(GetValue("mu"),0); targeting=2; target_nr=pos;
 								if (!Mol[pos]->PutVarInfo("target","mu",R_target)) {
-									success=false; cout <<"In var:"+name+":mu, Target value rejected" << endl; 
+									success=false; cout <<"In var:"+name+":mu, Target value rejected" << endl;
 								}
 							} else {
-//cout <<"punt 1 "<< endl; 
+//cout <<"punt 1 "<< endl;
 								target_nr = pos; R_target=12345.0;
 								if (sub_[0]!="mol") {success=false; cout <<"in var:"+name+":mu, target should be specified as mol-'name'. " << endl; }
 								if (!In[0]->InSet(In[0]->MolList,eq_to_mu,sub_[1])) { success=false; cout <<"In 'var:"+name+":mu: mol-'name', 'name' is not valid mol-name. " << endl; }
-								if (success) Mol[pos]->PutVarInfo("target","mu",R_target); 
+								if (success) Mol[pos]->PutVarInfo("target","mu",R_target);
 							}
-//cout <<"punt 2 " << endl; 
+//cout <<"punt 2 " << endl;
 						}
 						if (GetValue("theta").size()>0) {
 							if (R_target ==-123.0) {
 								R_target=In[0]->Get_Real(GetValue("theta"),0); targeting=2; target_nr=pos;
 								if (!Mol[0]->PutVarInfo("target","theta",R_target)) {
 									success=false;
-									cout <<"In var:"+name+":theta, Target value rejected" << endl; 
-								} 
+									cout <<"In var:"+name+":theta, Target value rejected" << endl;
+								}
 							} else {dubbel = true;}
 						}
 						if (GetValue("n").size()>0) {
@@ -157,8 +157,8 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 								R_target=In[0]->Get_Real(GetValue("n"),0); targeting=2; target_nr=pos;
 								if (!Mol[0]->PutVarInfo("target","n",R_target)) {
 									success=false;
-									cout <<"In var:"+name+":n, Target value rejected" << endl; 
-								} 
+									cout <<"In var:"+name+":n, Target value rejected" << endl;
+								}
 							} else {dubbel = true;}
 						}
 						if (GetValue("theta").size()>0) {
@@ -166,24 +166,24 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 								R_target=In[0]->Get_Real(GetValue("phibulk"),0); targeting=2; target_nr=pos;
 								if (!Mol[0]->PutVarInfo("target","phibulk",R_target)) {
 									success=false;
-									cout <<"In var:"+name+":phibulk, Target value rejected" << endl; 
-								} 
+									cout <<"In var:"+name+":phibulk, Target value rejected" << endl;
+								}
 							} else {dubbel = true;}
 						}
 						if (R_target == -123.0) {
 							success=false;
 							cout <<"In var:" + name + ", we need either 'scan' or 'search' as third parameter." << endl;
-							cout <<"or targets selected from {mu, theta, n, phibulk} "  << endl; 
-						} 
+							cout <<"or targets selected from {mu, theta, n, phibulk} "  << endl;
+						}
 					} else {
 						if (GetValue("scan").size()>0) {
 							if (!Mol[pos]->PutVarInfo("scan",GetValue("scan"),0)) {
-								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl; 
+								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl;
 							} else {scanning = 2; scan_nr=pos;}
-						} 
+						}
 						if (GetValue("search").size()>0) {
 							if (!Mol[pos]->PutVarInfo("search",GetValue("search"),0)) {
-								success=false; cout <<"In var:" + name + ":search, the target is rejected " << endl; 
+								success=false; cout <<"In var:" + name + ":search, the target is rejected " << endl;
 							} else {
 								if (Mol[pos]->Var_search_value==3) {
 									eq_to_solvating=2; ets_nr=pos;
@@ -196,7 +196,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 					}
 				}
 				break;
-			case 3: 
+			case 3:
 				if (!In[0]->InSet(In[0]->MonList,pos,sub[1])) {
 					cout <<"in 'var' mon name " + sub[1] + " not found" << endl; success=false;
 				} else {
@@ -207,15 +207,15 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						if (GetValue("scan").size()>0) {
 							scanning=3; scan_nr=pos;
 							if (!Seg[pos]->PutVarInfo("scan",GetValue("scan"),0)) {
-								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl; 
-							} 
-						} 
+								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl;
+							}
+						}
 					}
 				}
 				break;
 			default:
 				success=false;
-				cout <<"In var: keyword info from 'name' " + name + " is not recognised. Choose from 'sys, lat, mol, mon' " <<endl; 
+				cout <<"In var: keyword info from 'name' " + name + " is not recognised. Choose from 'sys, lat, mol, mon' " <<endl;
 				break;
 		}
 		if (scanning>-1) {
@@ -226,28 +226,28 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 			if (GetValue("scale").size() == 0) {scale="linear";} else {scale=GetValue("scale"); }
 			if (scale =="exponential") {
 				if (GetValue("steps").size() ==0) {
-					steps = 1; cout <<"In var: the property 'steps' is set to the default value of '1'"<< endl; 
-				} else { 
-					steps = In[0]->Get_int(GetValue("steps"),1); 
-					if (steps < 1) { 
-						success = false; 
-						cout <<"In var: the property 'steps' should be a positive integer, indicating the number of 'steps' per 'decade' " << endl; 
+					steps = 1; cout <<"In var: the property 'steps' is set to the default value of '1'"<< endl;
+				} else {
+					steps = In[0]->Get_int(GetValue("steps"),1);
+					if (steps < 1) {
+						success = false;
+						cout <<"In var: the property 'steps' should be a positive integer, indicating the number of 'steps' per 'decade' " << endl;
 					}
 				}
 			} else {
 				if (scale=="linear"){
-					if (GetValue("step").size() == 0) {success=false; cout <<"In var: while issueing a 'scan' you need to supply the value for 'step'. "<< endl; } 
+					if (GetValue("step").size() == 0) {success=false; cout <<"In var: while issueing a 'scan' you need to supply the value for 'step'. "<< endl; }
 					else {
 						step=In[0]->Get_Real(GetValue("step"),0);
 						if (step==0) {success=false; cout <<"In var: while issuing a 'scan' the value for 'step' is not recognised or equal to zero. " << endl;}
-					} 
-					if (GetValue("steps").size()!=0) {
-						cout <<"in var: while issuing a 'scan' the value for 'steps' is ignored. You are advised to use 'step' " << endl; 
 					}
-				} else { 
-					success=false; cout <<"In var: property 'scale' should be either 'exponential' or 'linear' and not " + scale << endl; 
+					if (GetValue("steps").size()!=0) {
+						cout <<"in var: while issuing a 'scan' the value for 'steps' is ignored. You are advised to use 'step' " << endl;
+					}
+				} else {
+					success=false; cout <<"In var: property 'scale' should be either 'exponential' or 'linear' and not " + scale << endl;
 				}
-			}		
+			}
 			if (success) {
 				switch(scanning) {
 					case 0:
@@ -256,19 +256,19 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 					case 1:
 						num_of_cals=Lat[0]->PutVarScan(step,end_value);
 						break;
-					case 2: 
+					case 2:
 						num_of_cals=Mol[scan_nr]->PutVarScan(step,end_value,steps,scale);
 						break;
-					case 3: 
+					case 3:
 						num_of_cals=Seg[scan_nr]->PutVarScan(step,end_value,steps,scale);
 						break;
-					default: 
+					default:
 						cout <<"progamming error in variate " << endl;
 						break;
 				}
 				success=num_of_cals>0;
-				cout <<"num of calculations " << num_of_cals << endl; 
-				
+				cout <<"num of calculations " << num_of_cals << endl;
+
 			}
 		} else {
 			if (GetValue("step").size()>0) { cout <<"In var: the 'scan' property is not set and therefore the 'step'-variable is ignored. " << endl; }
@@ -280,13 +280,13 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 			if (scanning==2 && searching==2) {
 				if (scan_nr==search_nr) {
 					if (Mol[scan_nr]->Var_scan_value==Mol[search_nr]->Var_search_value) {
-						cout <<"In var: The search quantity can not be equal to the scan quantity " << endl; 
+						cout <<"In var: The search quantity can not be equal to the scan quantity " << endl;
 						success=false;
 					}
 				}
 			}
 		}
-		
+
 	}
 	return success;
 }
@@ -296,9 +296,9 @@ bool Variate::PutVarScan(int cal_nr) {
 	switch(scanning) {
 		case 0:
 			success=false;
-			cout <<"programming error in PutVarScan" << endl; 
+			cout <<"programming error in PutVarScan" << endl;
 			break;
-		case 1: 
+		case 1:
 			Lat[scan_nr]->UpdateVarInfo(cal_nr);
 			break;
 		case 2:
@@ -317,20 +317,20 @@ bool Variate::PutVarScan(int cal_nr) {
 	}
 	return success;
 }
- 
+
 void Variate::PutValue(Real X) {
 	switch(searching) {
 		case 0:
-			cout <<"programming error in PutValue" << endl; 
+			cout <<"programming error in PutValue" << endl;
 			break;
-		case 1: 
+		case 1:
 			Seg[search_nr]->PutValue(X);
 			break;
 		case 2:
 			Mol[search_nr]->PutValue(X);
 			break;
 		case 3:
-			cout <<"programming error in PutValue" << endl; 
+			cout <<"programming error in PutValue" << endl;
 			break;
 		default:
 			break;
@@ -342,9 +342,9 @@ Real Variate::GetValue(void) {
 	Real X=0;
 	switch(searching) {
 		case 0:
-			cout <<"programming error in GetValue" << endl; 
+			cout <<"programming error in GetValue" << endl;
 			break;
-		case 1: 
+		case 1:
 			X=Seg[search_nr]->GetValue();
 			break;
 		case 2:
@@ -352,7 +352,7 @@ Real Variate::GetValue(void) {
 			X=Mol[search_nr]->GetValue();
 			break;
 		case 3:
-			cout <<"programming error in GetValue" << endl; 
+			cout <<"programming error in GetValue" << endl;
 			break;
 		default:
 			break;
@@ -369,14 +369,14 @@ Real Variate::GetError(void) {
 		case 0:
 			X=Sys[target_nr]->GetError();
 			break;
-		case 1: 
-			cout <<"programming error in GetError" << endl; 
+		case 1:
+			cout <<"programming error in GetError" << endl;
 			break;
 		case 2:
 			if (target_nr>-1) X=Mol[target_nr]->GetError();
 			break;
 		case 3:
-			cout <<"programming error in GetError" << endl; 
+			cout <<"programming error in GetError" << endl;
 			break;
 		default:
 			break;
@@ -387,13 +387,14 @@ Real Variate::GetError(void) {
 }
 
 bool Variate::ResetScanValue(void) {
+	if (debug) cout <<"ResetScanValue in Variate" << endl;
 	bool success=true;
 	switch(scanning) {
 		case 0:
 			success=false;
-			cout <<"programming error in ResetVarScan" << endl; 
+			cout <<"programming error in ResetVarScan" << endl;
 			break;
-		case 1: 
+		case 1:
 			Lat[scan_nr]->ResetInitValue();
 			break;
 		case 2:
@@ -407,7 +408,7 @@ bool Variate::ResetScanValue(void) {
 			} else Seg[scan_nr]->ResetInitValue();
 			break;
 		default:
-			cout <<"programming error in ResetVarScan" << endl; 
+			cout <<"programming error in ResetVarScan" << endl;
 			break;
 	}
 	return success;
@@ -419,32 +420,32 @@ if (debug) cout <<"GetValue in Variate " + name << " " <<parameter << endl;
 	int length = PARAMETERS.size();
 	while (i<length) {
 		if (parameter==PARAMETERS[i]) {
-			return VALUES[i]; 
+			return VALUES[i];
 		}
 		i++;
 	}
-	return "" ; 
+	return "" ;
 }
- 
+
 void Variate::push(string s, Real X) {
 if (debug) cout <<"push (Real) in Variate " + name << endl;
 	Reals.push_back(s);
-	Reals_value.push_back(X); 
+	Reals_value.push_back(X);
 }
 void Variate::push(string s, int X) {
 if (debug) cout <<"push (int) in Variate " + name << endl;
 	ints.push_back(s);
-	ints_value.push_back(X); 
+	ints_value.push_back(X);
 }
 void Variate::push(string s, bool X) {
 if (debug) cout <<"push (boool) in Variate " + name << endl;
 	bools.push_back(s);
-	bools_value.push_back(X); 
+	bools_value.push_back(X);
 }
 void Variate::push(string s, string X) {
 if (debug) cout <<"push (string) in Variate " + name << endl;
 	strings.push_back(s);
-	strings_value.push_back(X); 	
+	strings_value.push_back(X);
 }
 void Variate::PushOutput() {
 if (debug) cout <<"PushOutput in Variate " + name << endl;
@@ -455,7 +456,7 @@ if (debug) cout <<"PushOutput in Variate " + name << endl;
 	Reals.clear();
 	Reals_value.clear();
 	ints.clear();
-	ints_value.clear();  
+	ints_value.clear();
 #ifdef CUDA
 	TransferDataToHost(H_phi,phi,M);
 #endif
@@ -472,7 +473,7 @@ if (debug) cout <<"GetValue (long)  in Variate " + name << endl;
 	int i=0;
 	int length = ints.size();
 	while (i<length) {
-		if (prop==ints[i]) { 
+		if (prop==ints[i]) {
 			int_result=ints_value[i];
 			return 1;
 		}
@@ -481,7 +482,7 @@ if (debug) cout <<"GetValue (long)  in Variate " + name << endl;
 	i=0;
 	length = Reals.size();
 	while (i<length) {
-		if (prop==Reals[i]) { 
+		if (prop==Reals[i]) {
 			Real_result=Reals_value[i];
 			return 2;
 		}
@@ -490,8 +491,8 @@ if (debug) cout <<"GetValue (long)  in Variate " + name << endl;
 	i=0;
 	length = bools.size();
 	while (i<length) {
-		if (prop==bools[i]) { 
-			if (bools_value[i]) string_result="true"; else string_result="false"; 
+		if (prop==bools[i]) {
+			if (bools_value[i]) string_result="true"; else string_result="false";
 			return 3;
 		}
 		i++;
@@ -499,11 +500,11 @@ if (debug) cout <<"GetValue (long)  in Variate " + name << endl;
 	i=0;
 	length = strings.size();
 	while (i<length) {
-		if (prop==strings[i]) { 
-			string_result=strings_value[i]; 
+		if (prop==strings[i]) {
+			string_result=strings_value[i];
 			return 3;
 		}
 		i++;
 	}
-	return 0; 
+	return 0;
 }

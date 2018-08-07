@@ -59,7 +59,7 @@ public:
 	Real minimum;
 
 	virtual void residuals(Real*,Real*); //x,g
-	virtual void inneriteration(Real*,Real*,float*, Real, Real&, Real, int); //x g accuracy nvar 
+	virtual void inneriteration(Real*,Real*,float*, Real, Real&, Real, int); //x g accuracy nvar
 	bool getnewtondirection();
 	int getiterations();
 	bool ispseudohessian();
@@ -99,7 +99,8 @@ public:
 	bool iterate_Picard(Real*,int,int,Real,Real);
 	bool iterate_DIIS(Real*,int,int, int, Real, Real);
 	void Ax(Real*, Real*, int);
-	void DIIS(Real* , Real*, Real*, Real* , Real* ,Real*, int, int , int, int );
-
+	void DIIS(Real* , Real*, Real*, Real* , Real* ,Real*, int, int , int, int);
+	void conjugate_gradient(Real *, int, int ,Real ) ;
+	void Hd(Real *, Real *, Real *, Real *, Real *, Real*, Real);
 };
 #endif

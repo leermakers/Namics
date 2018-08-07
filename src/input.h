@@ -30,6 +30,9 @@ public:
 	std::vector<string> TengList;
 	std::vector<string> VarList;
 	std::vector<std::string> elems;
+	std::vector<string> StateList;
+	std::vector<string> ReactionList;
+	
 	 
 	void PrintList(std::vector<std::string>);
 	std::vector<std::string>& split( std::string , char, std::vector<std::string>&); 

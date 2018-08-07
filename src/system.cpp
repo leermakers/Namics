@@ -1,6 +1,6 @@
 #include "system.h"
-System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,string name_) {
-	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_;
+System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_,vector<Molecule*> Mol_,string name_) {
+	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; Sta=Sta_; Rea=Rea_;
 if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("calculation_type");
 	KEYS.push_back("generate_guess");
@@ -329,6 +329,36 @@ if (debug) cout << "CheckInput for system " << endl;
 				}
 			}
 		}
+	}
+	internal_states=false;
+	if (In[0]->StateList.size()>1) {
+		internal_states=true;
+		int num_of_Seg_with_states=0;
+		int num_of_Eqns =In[0]->ReactionList.size();
+		int num_of_alphabulk_fixed=0;
+		int num_of_states=In[0]->StateList.size();
+		for (int k=0; k<num_of_states; k++) if (Sta[k]->fixed) num_of_alphabulk_fixed++;
+		int length=In[0]->MonList.size();
+		for (int k=0; k<length; k++) if (Seg[k]->state_name.size()>1) num_of_Seg_with_states++;
+		if (num_of_Seg_with_states+num_of_Eqns+num_of_alphabulk_fixed !=num_of_states) {
+			cout << " num_of_Seg_with_states+num_of_Eqns+num_of_alphabulk_fixed !=num_of_states" << endl;
+			if (num_of_alphabulk_fixed==0) {
+				cout << " Consider to define for one of the states an alphabulk value " << endl;
+			} else {
+				if (num_of_alphabulk_fixed>1) {
+					cout << " possibly you have specified too many alphabulk values for multiple states " << endl; 
+				} else {
+					if ( (num_of_Seg_with_states+num_of_Eqns+num_of_alphabulk_fixed > num_of_states) ) {
+						cout <<" Possibly you have defined too many equations ... " << endl; 
+					} else {
+						cout <<" Possibly you have defined too few equations ... " <<endl; 
+					}
+				}
+			}
+			success=false;
+		}
+		
+	
 	}
 	return success;
 }

@@ -8,36 +8,36 @@
 #include "tools.h"
 class Molecule {
 public:
-	Molecule(vector<Input*>,vector<Lattice*>,vector<Segment*>,string); 
+	Molecule(vector<Input*>,vector<Lattice*>,vector<Segment*>,string);
 ~Molecule();
-  
-	string name;  
+
+	string name;
 	vector<Input*> In;
-	vector<Segment*> Seg; 
+	vector<Segment*> Seg;
 	vector<Lattice*> Lat;
 	vector<Alias*> Al;
 	vector<int> MolMonList;
 	vector<int> MolAlList;
 	int start;
-	int n_mol; 
-	int mol_nr; 
-	int n_box; 
+	int n_mol;
+	int mol_nr;
+	int n_box;
 	int var_al_nr;
-	Real Mu; 
+	Real Mu;
 	Real theta;
 	Real theta_range,n_range;
 	Real thata_in_range;
 	Real phibulk;
-	Real fraction(int); 
+	Real fraction(int);
 	string freedom;
-	MoleculeType MolType; 
-	Real n; 
-	Real GN,GN1,GN2; 
+	MoleculeType MolType;
+	Real n;
+	Real GN,GN1,GN2;
 	Real norm;
 	int chainlength,N;
-	bool save_memory; 
-	bool compute_phi_alias; 
-	bool sym_dend; 
+	bool save_memory;
+	bool compute_phi_alias;
+	bool sym_dend;
 	string composition;
 	vector<int> Gnr; //generation-number
 	vector<int> first_s;
@@ -48,9 +48,9 @@ public:
 	vector<int> last_a;
 	vector<int> n_arm;
 	vector<int> mon_nr;
-	vector<int> n_mon; 
+	vector<int> n_mon;
 	vector<int> d_mon; //degeneracy of mon : for dendrimer case.
-	vector<int> molmon_nr; 
+	vector<int> molmon_nr;
 	vector<int> memory;
 	vector<int> last_stored;
 	int *Bx;
@@ -70,7 +70,7 @@ public:
 	int *H_Pz1;
 	int *H_Px2;
 	int *H_Py2;
-	int *H_Pz2;	
+	int *H_Pz2;
 	Real *phi;
 	Real *G1;
 	Real *u;
@@ -86,12 +86,12 @@ public:
 	Real *gn;
 	Real *g1;
 	Real *phitot;
-	Real *H_phitot; 
+	Real *H_phitot;
 	Real *Gg_f;
-	Real *Gg_b; 
-	Real *Gs; 
+	Real *Gg_b;
+	Real *Gs;
 	Real *UNITY;
-	int tag_segment; 
+	int tag_segment;
 	int Var_steps;
 	Real Var_step;
 	Real Var_end_value;
@@ -129,7 +129,7 @@ public:
 	bool UpdateVarInfo(int);
 	Real GetError();
 	Real GetValue();
-	void PutValue(Real);		
+	void PutValue(Real);
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -141,22 +141,22 @@ public:
 	bool Interpret(string,int);
 	bool GenerateTree(string,int,int&,vector<int>,vector<int>);
 	bool GenerateDend(string,int);
-	bool Decomposition(string); 
-	int GetChainlength(void); 
+	bool Decomposition(string);
+	int GetChainlength(void);
 	Real Theta(void);
-	string GetValue(string); 
+	string GetValue(string);
 	int GetMonNr(string);
 	int GetAlNr(string);
-	bool MakeMonList(void);  
+	bool MakeMonList(void);
 	bool IsClamped(void);
 	bool IsPinned(void);
-	bool IsTagged(void); 
-	bool IsCharged(void); 
+	bool IsTagged(void);
+	bool IsCharged(void);
 	Real Charge(void);
 	void DeAllocateMemory(void);
 	void AllocateMemory(void);
-	bool PrepareForCalculations(int*); 
-	bool ComputePhi(); 
+	bool PrepareForCalculations(int*);
+	bool ComputePhi();
 	//void propagate_forward(Real*, Real*, int&, int,int, int);
 	Real* propagate_forward(Real*,int&,int,int,int); //for branched
 	Real* propagate_forward(Real*,int&,int,int,int,int);//for dendrimer
@@ -171,7 +171,7 @@ public:
 	bool ComputeClampLin();
 	//bool ComputePhiLin();
 	bool ComputePhiBra();
-	bool ComputePhiDendrimer(); 
+	bool ComputePhiDendrimer();
 };
 
 #endif

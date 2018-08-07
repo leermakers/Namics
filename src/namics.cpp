@@ -10,6 +10,8 @@
 //#include "newton.h"
 #include "output.h"
 #include "segment.h"
+#include "state.h"
+#include "reaction.h"
 #include "system.h"
 #include "tools.h"
 #include "variate.h"
@@ -99,6 +101,8 @@ int main(int argc, char* argv[]) {
   	vector<Lattice*> Lat;  // Properties of the lattice
   	vector<Molecule*> Mol; // Properties of entire molecule
   	vector<Segment*> Seg;  // Properties of molecule segments
+	vector<State*> Sta;
+	vector<Reaction*> Rea;
   	vector<Solve_scf*> New;   // Solvers and iteration schemes
   	vector<System*> Sys;
   	vector<Variate*> Var;
@@ -135,14 +139,28 @@ int main(int argc, char* argv[]) {
 // Create segment class instance and check inputs (reference above)
     		int n_seg = In[0]->MonList.size();
     		for (int i = 0; i < n_seg; i++)
-      		Seg.push_back(new Segment(In, Lat, In[0]->MonList[i], i, n_seg));
+      			Seg.push_back(new Segment(In, Lat, In[0]->MonList[i], i, n_seg));
     		for (int i = 0; i < n_seg; i++) {
       			for (int k = 0; k < n_seg; k++) {
         			Seg[i]->PutChiKEY(Seg[k]->name);
      			}
-      			if (!Seg[i]->CheckInput(start))
-        			return 0;
+      			if (!Seg[i]->CheckInput(start)) return 0;
     		}
+//Create state class instance and check inputs
+		int n_stat=In[0]->StateList.size();
+		for (int i=0; i<n_stat; i++) {
+			Sta.push_back(new State(In,Seg,In[0]->StateList[i]));
+			//chi values still need to be done.
+			if (!Sta[i]->CheckInput(start)) return 0;
+		}
+
+//Create reaction class instance and check inputs
+		int n_rea=In[0]->ReactionList.size();
+		for (int i=0; i<n_rea; i++) {
+			Rea.push_back(new Reaction(In,Sta,In[0]->ReactionList[i]));
+			if (!Rea[i]->CheckInput(start)) return 0;
+		}
+
 
 // Create segment class instance and check inputs (reference above)
     		int n_mol = In[0]->MolList.size();
@@ -153,7 +171,7 @@ int main(int argc, char* argv[]) {
    		}
 
 // Create system class instance and check inputs (reference above)
-    		Sys.push_back(new System(In, Lat, Seg, Mol, In[0]->SysList[0]));
+    		Sys.push_back(new System(In, Lat, Seg, Sta, Rea, Mol, In[0]->SysList[0]));
     		Sys[0]->cuda = cuda;
     		if (!Sys[0]->CheckInput(start)) {
       			return 0;

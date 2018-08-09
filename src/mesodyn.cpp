@@ -157,8 +157,11 @@ bool Mesodyn::mesodyn() {
     norm_theta(component);
     norm_theta(solver_component);
 
-    for (Flux1D* all_fluxes : solver_flux)
-      all_fluxes->gaussian->generate();
+  //  for (Flux1D* all_fluxes : solver_flux)
+  //    all_fluxes->gaussian->generate();
+
+    for (Gaussian_noise* all_noises : gaussians)
+      all_noises->generate();
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
@@ -210,6 +213,7 @@ int Mesodyn::sanity_check() {
 void Mesodyn::load_alpha(vector<Real>& alpha, size_t i) {
     if (i < component_no) {
       solver_component[i]->load_alpha(alpha);
+      gaussians[i]->add_noise(solver_component[i]->alpha);
     }
 }
 
@@ -388,6 +392,10 @@ int Mesodyn::initial_conditions() {
     break;
   case 3:
     boundary = new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]);
+
+    for (size_t i = 0; i < component_no; ++i) {
+      gaussians.push_back(new Gaussian_noise(boundary, D, M, mean, stddev, seed));
+    }
 
     for (size_t i = 0; i < component_no; ++i) {
       component.push_back(new Component(Lat[0], boundary, rho[i]));
@@ -1012,7 +1020,7 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   }
 
   for (int& z : mask_plus) {
-    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z] + gaussian->noise[z]));
+    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])); // + gaussian->noise[z]));
   }
 
   for (int& z : mask_minus) {

@@ -315,6 +315,8 @@ public:
 
   int norm_theta(vector<Component*>&);
 
+  vector<Gaussian_noise*> gaussians;
+
   Real lost;
 
 

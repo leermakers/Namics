@@ -22,6 +22,8 @@ public:
 	vector<int> bx;
 	vector<int> by;
 	vector<int> bz;
+	vector<string> chi_name;
+	vector<Real> chi;
 	int clamp_nr;
 	int n_seg;
 	int seg_nr;
@@ -32,13 +34,16 @@ public:
 	Real phibulk;
 	string freedom;
 	Real guess_u;
-	vector<bool>state_change;
+	vector<int>state_change;
 	vector<Real>state_valence;
 	vector<string>state_name;
+	vector<int>state_nr; 
 	vector<Real>state_alphabulk; 
+	vector<Real>state_phibulk;
 
 	string filename;
 	bool block;
+	int ns; 
 	int n_pos;
 	int n_box;
 	int* r;
@@ -76,12 +81,16 @@ public:
 	int* H_MASK;
 	Real* H_u;
 	Real* H_phi;
+	Real* H_phi_state;
+	Real* H_alpha;
 	int* P;
 	int* MASK;
-	//Real* G1;
+	Real* G1;
 	Real* phi;
+	Real* phi_state;
 	Real* phi_side;
 	Real* u;
+	Real* alpha;
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -108,7 +117,9 @@ public:
 	bool UpdateVarInfo(int);
 	void PutValue(Real);
 	Real GetValue();
-	int AddState(string,Real,Real); 
+	int AddState(string,Real,Real,bool); 
+	void SetPhiSide();
+	void DoBoltzmann();
+	int PutAlpha(Real*,int);
 };
-
 #endif

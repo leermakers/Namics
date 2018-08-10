@@ -1,8 +1,8 @@
 #include "solve_scf.h"
 #include <iostream>
 
-Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) {
-	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;Var=Var_;
+Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) {
+	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;Var=Var_;  Sta=Sta_; Rea=Rea_;
 if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("method");
 	KEYS.push_back("gradient_type");
@@ -50,9 +50,10 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	int M=Lat[0]->M;
 	if (mesodyn) {
 		iv = Sys[0]->SysMolMonList.size()*M;
-	} else iv = Sys[0]->SysMonList.size() * M;
+	} else {
+		iv = (Sys[0]->ItMonList.size() + In[0]->StateList.size())* M;
+	}
 	if (Sys[0]->charged) iv +=M;
-	if (SCF_method=="DIIS-ext") iv +=M;
 	if (SCF_method=="Picard") iv+=M;
 //	cout <<"iv in allocateMemory: " << iv << endl;
 
@@ -112,7 +113,6 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		if (GetValue("method").size()==0) {SCF_method="pseudohessian";} else {
 			vector<string>method_options;
 			method_options.push_back("DIIS");
-			//method_options.push_back("DIIS-ext"); //can be included again when adjusted for charges and guess
 			method_options.push_back("Picard"); //can be included again when adjusted for charges and guess
 			method_options.push_back("pseudohessian");
 			method_options.push_back("hessian");
@@ -412,6 +412,29 @@ bool Solve_scf::Guess(Real *X, string METHOD, vector<string> MONLIST, bool CHARG
 bool Solve_scf::Solve(bool report_errors) { //going SCF here
 if(debug) cout <<"Solve in  Solve_scf " << endl;
 	bool success=true;
+	int niv = In[0]->ReactionList.size();
+	if (niv>0) {
+		int i_solver=0;
+		if (solver==HESSIAN) i_solver=1;
+		if (solver==PSEUDOHESSIAN) i_solver=2;
+		if (solver==diis) i_solver=3;
+		bool ee_info, ss_info;
+		if (e_info) ee_info=true; else ee_info=false; e_info=false;
+		if (s_info) ss_info=true; else ss_info=false; s_info=false;
+		gradient = WEAK;
+		Real* yy=(Real*) malloc((iv)*sizeof(Real)); Cp(yy,xx,iv);
+		pseudohessian=false;  
+		success=iterate(xx,niv,100,1e-8,0.5,deltamin,true);
+		if (!success) cout <<"iteration for alphabuk values for internal states failed. Check eqns. " << endl; 
+		e_info=ee_info;
+		s_info=ss_info; 
+		if (i_solver==1) solver=HESSIAN;
+		if (i_solver==2) {solver=PSEUDOHESSIAN; pseudohessian=true;}
+		if (i_solver==3) solver=diis;
+		gradient = classical;
+		Cp(xx,yy,iv);
+		free(yy);		
+	}
 	//gradient=classical;
 	//control=proceed;
 	switch(solver) {
@@ -527,11 +550,30 @@ void Solve_scf::residuals(Real* x, Real* g){
 	Real chi;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size(); //also frozen segments
-	int i,j,k;
+	int i,j,k,xi;
 	int jump=0;
 	int lengthMolList=In[0]->MolList.size();
+	int lengthReactionList=In[0]->ReactionList.size();
 	int LENGTH;
 	switch(gradient) {
+		case WEAK:
+			if (debug) cout <<"Residuals for weak iteration " << endl; 
+
+			xi=0;
+			Zero(g,lengthReactionList);
+			//for (i=0; i<lengthReactionList; i++) {
+			//	x[i]=0.5*(1.0+tanh(x[i])); 
+			//}
+
+			for (i=0; i<sysmon_length; i++) {
+				xi=Seg[Sys[0]->SysMonList[i]]->PutAlpha(x,xi);
+			}
+
+			for (i=0; i<lengthReactionList; i++) {
+				g[i]=Rea[i]->Residual_value(); 
+			}
+			
+		break;
 		case MESODYN:
 		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
@@ -635,7 +677,6 @@ void Solve_scf::residuals(Real* x, Real* g){
 			}
 		break;
 		default:
-
 			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
  			ComputePhis();
 
@@ -760,29 +801,43 @@ if(debug) cout <<"PutU in  Solve " << endl;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	alpha=Sys[0]->alpha;
 	if (In[0]->MesodynList.size()>0) {
+/*
 		int i=0; int k=0;
 		int length = In[0]->MolList.size();
 		while (i<length) {
 			int j=0;
 			int LENGTH=Mol[i]->MolMonList.size();
-			while (j<LENGTH) {Cp(Mol[i]->u+j*M,xx+k*M,M); k++; j++;}
+			while (j<LENGTH) {
+				Cp(Mol[i]->u+j*M,xx+k*M,M); 
+				k++; j++;
+			}
 			i++;
+		}
+*/
+		cout <<"Daniel: PutU in sf_solve is modified for Mesodyn. contact frans in case of problems."<<endl; 
+//This code must be modified in case of mon's with internal states.
+		int k=0; 
+		int length = In[0]->MolList.size();
+		for (int i=0; i<length; i++) {
+			int LENGTH=Mol[i]->MolMonList.size();
+			for (int j=0; j<LENGTH; j++) {
+				Cp(Seg[Mol[i]->MolMonList[j]]->u,xx+k*M,M);
+				Seg[Mol[i]->MolMonList[j]]->DoBoltzmann();
+				k++;
+			}
+			Mol[i]->CpBoltzmann();
 		}
 	} else {
 		for (int i=0; i<sysmon_length; i++) {
 			Real *u=Seg[Sys[0]->SysMonList[i]]->u;
-			Cp(u,xx+i*M,M);
-			if (SCF_method == "Picard") Add(u,alpha,M);
-			if (SCF_method == "DIIS-ext") Add(u,xx+sysmon_length*M,M);
+			Cp(u,xx+i*M,M); 
+			Seg[Sys[0]->SysMonList[i]]->DoBoltzmann();			
+			if (SCF_method == "Picard") {cout << " Picard not implemented properly " << endl; }
 		}
 		int i=0;
 		int length = In[0]->MolList.size();
 		while (i<length) {
-			int j=0;
-			int LENGTH=Mol[i]->MolMonList.size();
-			while (j<LENGTH) {
-				Cp(Mol[i]->u+j*M,Seg[Mol[i]->MolMonList[j]]->u,M); j++;
-			}
+			Mol[i]->CpBoltzmann();
 			i++;
 		}
 	}

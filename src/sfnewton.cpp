@@ -812,7 +812,7 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	Cp(xR,x,nvar);
 	Dot(residual,g,g,nvar);
 	residual=sqrt(residual);
-	if (e_info) printf("DIIS Mesodyn has been notified\n");
+	if (e_info) printf("DIIS has been notified\n");
 	if (e_info) printf("Your guess = %1e \n",residual);
 	while (residual > tolerance && it < iterationlimit) {
 		it++;
@@ -887,7 +887,7 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 			for (int z=0; z<nvar; z++) {x[z]=x0[z]+alpha*d[z];}
 			residuals(x,g);
 			j++;
-			proceed =(j<j_max && alpha*inner_err > tolerance);
+			proceed =(j<j_max && alpha*inner_err > 1e-8);
 		}
 
 		for (int z=0; z<nvar; z++) r[z]=-g[z];

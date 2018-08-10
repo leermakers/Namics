@@ -1,4 +1,4 @@
-#include "segment.h"
+#include "segment.h" 
 #include <fstream>
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr;
@@ -31,62 +31,62 @@ if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 	if (freedom != "free"){
 		 free(r);
 	}
-	//free(H_u);
+	free(H_u);
 	free(H_phi);
 	free(H_MASK);
+	free(H_alpha);
+	free(H_phi_state);
 
 #ifdef CUDA
 	if(n_pos>0)
 	cudaFree(P);
-	//cudaFree(u);
+	cudaFree(u);
 	cudaFree(phi);
-	//cudaFree(G1);
+	cudaFree(phi_state);
+	cudaFree(G1);
 	cudaFree(MASK);
 	cudaFree(phi_side);
 #else
-	//free(G1);
+	free(G1);
 	free(phi_side);
-
 #endif
 }
 
 void Segment::AllocateMemory() {
 if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	int M=Lat[0]->M;
-	phibulk =0; //initialisatie van monomer phibulk.
-	//r=(int*) malloc(6*sizeof(int));
-	//if (n_pos>0) {
-	//	H_P = (int*) malloc(n_pos*sizeof(int));
-
-	//}
-	H_u = (Real*) malloc(M*sizeof(Real));
-	H_phi = (Real*) malloc(M*sizeof(Real));
-	H_Zero(H_u,M);
+	ns=state_name.size(); if (ns==0) ns=1;
+	H_u = (Real*) malloc(M*ns*sizeof(Real));
+	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
+	H_phi = (Real*) malloc(M*sizeof(Real)); //use GetPhi to get phi per state
+	H_alpha=(Real*) malloc(M*ns*sizeof(Real));
+	H_Zero(H_u,M*ns);
 	H_Zero(H_phi,M);
 	if (freedom=="free") {
 		H_MASK = (int*) malloc(M*sizeof(int));
 		H_Zero(H_MASK,M);
 	}
 #ifdef CUDA
-	if (n_pos>0) {
-		Px=(int*)AllIntOnDev(n_pos);
-	}
-	//G1=(Real*)AllOnDev(M); //Zero(G1,M);
-	//u=(Real*)AllOnDev(M); Zero(u,M);
+	if (n_pos>0) Px=(int*)AllIntOnDev(n_pos);
+	G1=(Real*)AllOnDev(M); Zero(G1,M);
+	u=(Real*)AllOnDev(M*ns); Zero(u,M*ns);
+	phi_state=(Real*)AllOnDev(M*ns); Zero(phi_state,M*ns);
 	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
-	phi_side=(Real*)AllOnDev(M); Zero(phi_side,M);
+	phi_side=(Real*)AllOnDev(ns*M); Zero(phi_side,ns*M);
+	alpha=(Real*)AllOnDev(ns*M); Zero(alpha,ns*M);
+
 #else
-	if (n_pos>0) {
-		P=H_P;
-	}
+	if (n_pos>0) P=H_P;
 	MASK=H_MASK;
 	phi =H_phi;
 	u = H_u;
-	//G1 = (Real*)malloc(M*sizeof(Real));
-	phi_side = (Real*)malloc(M*sizeof(Real));
-	//Zero(G1,M);
-	Zero(phi_side,M);
+	phi_state = H_phi_state;
+	alpha=H_alpha;
+	G1 = (Real*)malloc(M*sizeof(Real));
+	phi_side = (Real*)malloc(M*ns*sizeof(Real));
+	Zero(G1,M);
+	Zero(phi_side,ns*M);
 #endif
 }
 bool Segment::PrepareForCalculations(int* KSAM) {
@@ -106,14 +106,57 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	if (freedom=="frozen") {
 		Cp(phi,MASK,M);
 	} else Zero(phi,M);
-	//if (freedom=="tagged") Zero(u,M);
-	//Lat[0]->set_bounds(u);
-	//Boltzmann(G1,u,M); //See also molecule equivalent.....
-	//if (freedom=="pinned") Times(G1,G1,MASK,M);
-	//if (freedom=="tagged") Cp(G1,MASK,M);
-	//Lat[0]->set_bounds(G1);
-	//if (!(freedom ==" frozen" || freedom =="tagged" )) Times(G1,G1,KSAM,M);
+
+/*
+	if (freedom=="tagged" || freedom=="clamp" ) Zero(u,M); 
+	
+	if (ns==1) {
+		Lat[0]->set_bounds(u);
+		Boltzmann(G1,u,M); 
+	} else {
+		Zero(G1,M);
+		for (int i=0; i<ns; i++) {
+			Lat[0]->set_bounds(u+M*i);	
+			Boltzmann(alpha,u+M*i,M);
+			Norm(alpha,state_alphabulk[i],M);
+			Add(G1,alpha,M);
+		}
+		for (int i=0; i<ns; i++) Div(alpha+i*ns,G1,M);
+	} */
+
 	return success;
+}
+
+void Segment::DoBoltzmann(){
+	int M=Lat[0]->M;
+	if (freedom=="tagged" || freedom=="clamp" ) Zero(u,M); 
+	
+	if (ns==1) {
+		Lat[0]->set_bounds(u);
+		Boltzmann(G1,u,M); 
+	} else {
+		Zero(G1,M);
+		for (int i=0; i<ns; i++) {
+			Lat[0]->set_bounds(u+M*i);	
+			Boltzmann(alpha,u+M*i,M);
+			Norm(alpha,state_alphabulk[i],M);
+			Add(G1,alpha,M);
+		}
+		for (int i=0; i<ns; i++) Div(alpha+i*ns,G1,M);
+	}
+}
+
+void Segment::SetPhiSide(){
+	int M=Lat[0]->M;
+	if (ns==1) {
+		if (freedom !="frozen") Lat[0]->set_bounds(phi);
+		Lat[0]->Side(phi_side,phi,M);
+	} else {
+		for (int i=0; i<ns; i++) {
+			Times(phi_state+i*M,alpha+i*M,phi,M);
+			Lat[0]->Side(phi_side+i*M,phi_state+i*M,M);
+		}
+	}	
 }
 
 bool Segment::CheckInput(int start) {
@@ -382,6 +425,27 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			}
 		}
 	}
+
+	int length = state_name.size(); 
+	if (length >0 && freedom != "free") {
+		success=false;
+		cout <<" When freedom != 'free' a 'mon' can not have multiple internal states; status violated for mon " << name << endl; 
+	}
+
+
+	length=chi_name.size();
+
+	Real Chi;
+	for (int i=0; i<length; i++) {
+		Chi=-999;
+		if (GetValue("chi-"+chi_name[i]).size()>0) {
+			Chi=In[0]->Get_Real(GetValue("chi-"+chi_name[i]),Chi);
+			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "not valid." << endl; } 
+			if (name==chi_name[i] && Chi!=0) {if (Chi!=-999) cout <<" chi value for chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "value ignored: set to zero!" << endl; Chi=0;}
+			
+		}
+		chi[i]=Chi;
+	} 
 	return success;
 }
 
@@ -637,7 +701,9 @@ if (debug) cout <<"IsTagged for segment " + name << endl;
 
 void Segment::PutChiKEY(string new_name) {
 if (debug) cout <<"PutChiKey " + name << endl;
-	if(name != new_name) KEYS.push_back("chi-" + new_name);
+	KEYS.push_back("chi-" + new_name);
+	chi_name.push_back(new_name);
+	chi.push_back(-999);
 }
 
 string Segment::GetValue(string parameter) {
@@ -683,6 +749,8 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	ints_value.clear();
 	push("freedom",freedom);
 	push("valence",valence);
+	int length=chi_name.size();
+	for (int i=0; i<length; i++) push("chi-"+chi_name[i],chi[i]);
 	if (fixedPsi0) push("Psi0",PSI0);
 	if (freedom=="pinned") push("range",GetValue("pinned_range"));
 	if (freedom=="frozen") push("range",GetValue("frozen_range"));
@@ -769,26 +837,53 @@ void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps) {
 	}
 
 }
-int Segment::AddState(string name,Real alphabulk,Real valence) {
+int Segment::AddState(string name,Real alphabulk,Real valence,bool fixed) {
 	int length = state_name.size();
-	int state_nr=0;
+	int state_number=-1;
 	bool found=false;
 	for (int k=0; k<length; k++) {
 		if (state_name[k]==name) {
 			found=true;
 			state_alphabulk[k]=alphabulk;
 			state_valence[k]=valence;
-			if (alphabulk<0) state_change[k]=false;
-			state_nr=k;
+			if (fixed) state_change[k]=false; else state_change[k]=true; 
+			state_number=k;
 		}
 	}
 	if (!found) {
 		state_name.push_back(name);
 		state_alphabulk.push_back(alphabulk);
+		state_phibulk.push_back(0); 
 		state_valence.push_back(valence);
-		if (alphabulk < 0) 
-		state_change.push_back(false);
-		state_nr=state_name.size();
+		if (fixed) state_change.push_back(false); else state_change.push_back(true); 
+		state_number=state_change.size();
+		length=In[0]->StateList.size();
+		for (int k=0; k<length; k++) {if (name==In[0]->StateList[k]) state_nr.push_back(k);}
 	}
-	return state_nr;
+	return state_number;
+}
+int Segment::PutAlpha(Real* x,int xi){
+	int xxi=xi;
+	int n_s;
+	if (ns==1)n_s=0; else n_s=ns; 
+	if (n_s==0) return xxi;
+	Real sum_alpha=0;
+	Real fixed_value=0; 
+	int niv;	
+	int fixed_state=-1; 
+	for (int i=0; i<n_s; i++) {
+		if (!state_change[i]) {fixed_state=i; fixed_value=state_alphabulk[i];} else state_alphabulk[i]=0;
+	}
+	if (fixed_state>0) niv=n_s-2; else niv=n_s-1;  
+	for (int i=0; i<n_s; i++) {
+		if (state_change[i]&& niv>0) {
+			state_alphabulk[i]=0.5*(1.0+tanh(100*x[xxi]))*(1.0-fixed_value); xxi++; niv--; 
+		}
+		sum_alpha+=state_alphabulk[i];
+	}
+	for (int i=0; i<n_s; i++) {
+		if (state_alphabulk[i]==0) state_alphabulk[i]=1.0-sum_alpha; 	
+	}
+
+	return xxi;
 }

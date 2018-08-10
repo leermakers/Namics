@@ -13,11 +13,13 @@ public:
 	vector<Input*> In;	
 	vector<Segment*> Seg;
 	string name; 
+	vector<string> chi_name;
+	vector<Real> chi;
  
 	Real valence;
 	string mon_name;
-	int mon_nr; 
-	int state_nr;
+	int mon_nr; //number of the monomer to which the state belongs
+	int state_nr; //number of the state of the monomer it belongs to
 	Real alphabulk;
 	bool fixed;
 	bool in_reaction;
@@ -38,12 +40,13 @@ public:
 	Real* GetPointer(string);
 	int GetValue(string,int&,Real&,string&);	
 	void PrepareForCalculations();
-
+	void PutChiKEY(string);
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
 	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string); 
+;
 };
 #endif

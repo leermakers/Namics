@@ -18,13 +18,13 @@ mol : pol : freedom : clamped
 mol : water : composition : (W)1
 mol : water : freedom : solvent
 
-newton : isaac : method : DIIS 
+newton : isaac : method : DIIS
 newton : isaac : m : 4
 newton : isaac : deltamax : 0.1
 newton : isaac : e_info : true
 newton :isaac : iterationlimit: 200
 
-//sys : sacha : GPU : true
+sys : sacha : GPU : true
 output : vtk : append : false
 vtk : mol : pol : phi
 
@@ -49,4 +49,3 @@ pro : mon : X : phi
 //cleng : sascha : save_interval : 1
 
 start
-

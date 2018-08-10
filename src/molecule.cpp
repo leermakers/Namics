@@ -262,9 +262,17 @@ int M=Lat[0]->M;
 	int length = MolMonList.size();
 	int i=0;
 	while (i<length) {
-		if (Seg[MolMonList[i]]->freedom=="tagged" || Seg[MolMonList[i]]->freedom=="clamp" ) Zero(u+i*M,M);
-		Lat[0]->set_bounds(u+i*M);
-		Boltzmann(G1+i*M , u+i*M, M);
+/*
+		//if (Seg[MolMonList[i]]->freedom=="tagged" || Seg[MolMonList[i]]->freedom=="clamp" ) Zero(u+i*M,M);
+		//Lat[0]->set_bounds(u+i*M);
+		//Boltzmann(G1+i*M , u+i*M, M); */
+
+		//if (Seg[MolMonList[i]]->freedom=="tagged" || Seg[MolMonList[i]]->freedom=="clamp" ) Zero(u+i*M,M);
+		//Lat[0]->set_bounds(u+i*M);
+		//Cp(G1+i*M,Seg[MolMonList[i]]->G1,M);
+		//Boltzmann(G1+i*M , u+i*M, M);
+
+
 		if (Seg[MolMonList[i]]->freedom=="pinned") Times(G1+i*M,G1+i*M,Seg[MolMonList[i]]->MASK,M);
 		if (Seg[MolMonList[i]]->freedom=="tagged") Cp(G1+i*M,Seg[MolMonList[i]]->MASK,M);
 		Lat[0]->set_bounds(G1+i*M);
@@ -286,6 +294,19 @@ int M=Lat[0]->M;
 		theta=n_box*chainlength;
 	}
 	return success;
+}
+
+void Molecule::CpBoltzmann() {
+	int M=Lat[0]->M;
+	int length = MolMonList.size();
+	int i=0;
+	while (i<length) {
+		if (Seg[MolMonList[i]]->freedom=="tagged" || Seg[MolMonList[i]]->freedom=="clamp" ) Zero(u+i*M,M);
+		else Cp(u+i*M,Seg[MolMonList[i]]->u,M);
+		//Lat[0]->set_bounds(u+i*M);
+		Cp(G1+i*M,Seg[MolMonList[i]]->G1,M);
+		i++;
+	}
 }
 
 bool Molecule::CheckInput(int start_) {

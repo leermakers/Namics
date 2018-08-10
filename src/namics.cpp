@@ -140,24 +140,38 @@ int main(int argc, char* argv[]) {
     		int n_seg = In[0]->MonList.size();
     		for (int i = 0; i < n_seg; i++)
       			Seg.push_back(new Segment(In, Lat, In[0]->MonList[i], i, n_seg));
+
+//Create state class instance and check inputs
+		int n_stat=In[0]->StateList.size();
+		for (int i=0; i<n_stat; i++) 
+			Sta.push_back(new State(In,Seg,In[0]->StateList[i]));
+
+
     		for (int i = 0; i < n_seg; i++) {
       			for (int k = 0; k < n_seg; k++) {
         			Seg[i]->PutChiKEY(Seg[k]->name);
      			}
+			for (int k = 0; k < n_stat; k++) {
+        			Seg[i]->PutChiKEY(Sta[k]->name);
+     			}
       			if (!Seg[i]->CheckInput(start)) return 0;
     		}
-//Create state class instance and check inputs
-		int n_stat=In[0]->StateList.size();
 		for (int i=0; i<n_stat; i++) {
-			Sta.push_back(new State(In,Seg,In[0]->StateList[i]));
-			//chi values still need to be done.
+      			for (int k = 0; k < n_seg; k++) {
+        			Sta[i]->PutChiKEY(Seg[k]->name);
+     			}			
+			for (int k = 0; k < n_stat; k++) {
+        			Sta[i]->PutChiKEY(Sta[k]->name);
+     			}
 			if (!Sta[i]->CheckInput(start)) return 0;
 		}
+
+
 
 //Create reaction class instance and check inputs
 		int n_rea=In[0]->ReactionList.size();
 		for (int i=0; i<n_rea; i++) {
-			Rea.push_back(new Reaction(In,Sta,In[0]->ReactionList[i]));
+			Rea.push_back(new Reaction(In,Seg,Sta,In[0]->ReactionList[i]));
 			if (!Rea[i]->CheckInput(start)) return 0;
 		}
 
@@ -249,7 +263,7 @@ int main(int argc, char* argv[]) {
     		}
 
 // Create newton class instance and check inputs (reference above)
-    		New.push_back(new Solve_scf(In, Lat, Seg, Mol, Sys, Var, In[0]->NewtonList[0]));
+    		New.push_back(new Solve_scf(In, Lat, Seg, Sta, Rea, Mol, Sys, Var, In[0]->NewtonList[0]));
     		if (!New[0]->CheckInput(start)) {
       			return 0;
     		}

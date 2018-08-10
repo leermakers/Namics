@@ -11,6 +11,7 @@ mon : A : freedom : free
 mon : W : freedom : free
 
 mon : A : chi-S : -6
+state : A_H : chi - S : 5
 
 state : H20 : mon : W
 state : H20 : valence : 0
@@ -26,8 +27,9 @@ state : A_ : valence : -0.5
 reaction : weak : equation : 1(A_)+1(H20)=1(A_H) + 1(OH) 
 reaction : weak : pK : 4
 
-reaction : auto : equation : 2(H20)=1(H)+1(OH)
-reaction : auto : pK : 14
+//reaction : auto : equation : 2(H20)=1(H)+1(OH)
+reaction : auto : equation : 1(H)+1(OH)=2(H20)
+reaction : auto : pK : -14
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent
@@ -43,6 +45,6 @@ pro : mol : pol : phi
 newton : isaac : method : pseudohessian
 newton : isaac : m : 10
 newton : isaac : i_info : 1
-newton : isaac : iterationlimit : 500
+newton : isaac : iterationlimit : 50000
 newton : isaac : tolerance : 1e-7
 start

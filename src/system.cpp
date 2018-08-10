@@ -3,7 +3,7 @@ System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, v
 	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; Sta=Sta_; Rea=Rea_;
 if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("calculation_type");
-	KEYS.push_back("generate_guess");
+	KEYS.push_back("generate_guess"); 
 	KEYS.push_back("initial_guess");
 	KEYS.push_back("guess_inputfile");
 	KEYS.push_back("final_guess");
@@ -181,15 +181,21 @@ if (debug) cout << "CheckInput for system " << endl;
 			if (GPU) cout <<"GPU support is (for the time being) only available for three-gradient calculations " << endl;
 		}
 		if (cuda) {if (!GPU) cout <<" program expect that you are going to use the GPU, but the input is not in line with this (either gradients < 3, or GPU != 'true' : compile without CUDA=1 flag." << endl; success=false;}
-		int i=0;
-		int length = In[0]->MolList.size();
+		
+		int length = In[0]->MonList.size();
+		for (int i=0; i<length; i++) if (Seg[i]->ns<2) StatelessMonList.push_back(i);
+		length = In[0]->MolList.size();
+		int i=0;		
 		while (i<length) {
 			int j=0;
 			int LENGTH=Mol[i]->MolMonList.size();
 			while (j<LENGTH) {
 				SysMolMonList.push_back(Mol[i]->MolMonList[j]);
 				if (!In[0]->InSet(SysMonList,Mol[i]->MolMonList[j])) {
-					if (Seg[Mol[i]->MolMonList[j]]->freedom!="tagged" && Seg[Mol[i]->MolMonList[j]]->freedom!="clamp") SysMonList.push_back(Mol[i]->MolMonList[j]);
+					if (Seg[Mol[i]->MolMonList[j]]->freedom!="tagged" && Seg[Mol[i]->MolMonList[j]]->freedom!="clamp") {
+						SysMonList.push_back(Mol[i]->MolMonList[j]);
+						if (Seg[Mol[i]->MolMonList[j]]->ns<2) ItMonList.push_back(Mol[i]->MolMonList[j]);
+					}
 				}
 				if (Seg[Mol[i]->MolMonList[j]]->freedom=="tagged"){
 					if (In[0]->InSet(SysTagList,Mol[i]->MolMonList[j])) {
@@ -330,7 +336,9 @@ if (debug) cout << "CheckInput for system " << endl;
 			}
 		}
 	}
+
 	internal_states=false;
+	
 	if (In[0]->StateList.size()>1) {
 		internal_states=true;
 		int num_of_Seg_with_states=0;
@@ -459,8 +467,6 @@ if (debug) cout << "PushOutput for system " << endl;
 	push("guess_type",GuessType);
 	push("cuda",cuda);
 	push("solvent",Mol[solvent]->name);
-	int n_mon=In[0]->MonList.size();
-	for(int i=0; i<n_mon; i++) for(int j=0; j<n_mon; j++) if (i!=j) Seg[i]->push("chi-" + Seg[j]->name,CHI[i*n_mon+j]);
 	string s="profile;0"; push("alpha",s);
 	s="profile;1"; push("GrandPotentialDensity",s);
 	s="profile;2"; push("FreeEnergyDensity",s);
@@ -552,7 +558,99 @@ if (debug) cout << "CheckChi_values for system " << endl;
 		cout <<"CHI-value symmetry violated: chi("<<Seg[i]->name<<","<<Seg[k]->name<<") is not equal to chi("<<Seg[k]->name<<","<<Seg[i]->name<<")"<<endl; success=false;
 	}
 	for (int i=0; i<n_seg; i++) {if (CHI[i*n_seg+i]!=0) {cout <<"CHI-values for 'same'-segments (e.g. CHI(x,x) ) should be zero. " << endl; success = false;} }
- 	return success;
+ 
+	int n_segments=In[0]->MonList.size();
+	int n_states=In[0]->StateList.size(); if (n_states==1) n_states=0;	
+	int n_chi = n_segments+n_states;
+
+	//for (int i=0; i<n_segments; i++) 
+	//{for (int k=0; k<n_chi; k++) cout <<Seg[i]-> chi[k] << " "; cout << endl; }
+	//for (int i=0; i<n_states; i++)
+	//{for (int k=0; k<n_chi; k++) cout <<Sta[i]-> chi[k] << " "; cout << endl; }
+	
+	for (int i=0; i<n_segments; i++) for (int j=0; j<n_segments; j++) {	
+		if (Seg[i]->chi[j]==-999 && Seg[j]->chi[i]==-999) { 
+			Seg[i]->chi[j]= Seg[j]->chi[i]=0;
+		} else {		
+			if (Seg[i]->chi[j]!=-999 && Seg[j]->chi[i]==-999) {
+				Seg[j]->chi[i]=Seg[i]->chi[j];
+			} else {
+				if (Seg[i]->chi[j]==-999 && Seg[j]->chi[i]!=-999) {
+					Seg[i]->chi[j]=Seg[j]->chi[i];
+				} else {
+					if (Seg[i]->chi[j]!= Seg[j]->chi[i]) { 
+						success=false;
+						cout << " conflict in chi values! chi(" << Seg[i]->name << "," << Seg[j]->name << ") != chi (" << Seg[j]->name << "," << Seg[i]->name << ")" << endl; 
+					}
+				}
+			}
+		}	
+	}
+
+	
+	for (int i=n_segments; i<n_chi; i++) for (int j=n_segments; j<n_chi; j++) {
+		if (Sta[i-n_segments]->chi[j]==-999 && Sta[j-n_segments]->chi[i]==-999) {
+			Sta[i-n_segments]->chi[j]=Sta[j-n_segments]->chi[i] = Seg[Sta[i-n_segments]->mon_nr]->chi[Sta[j-n_segments]->mon_nr]; 
+		} else {
+			if (Sta[i-n_segments]->chi[j]!=-999 && Sta[j-n_segments]->chi[i]==-999) {
+				Sta[j-n_segments]->chi[i]=Sta[i-n_segments]->chi[j];
+			} else {
+				if (Sta[i-n_segments]->chi[j]==-999 && Sta[j-n_segments]->chi[i]!=-999) {
+					Sta[i-n_segments]->chi[j]=Sta[j-n_segments]->chi[i];
+				} else {
+					if (Sta[i-n_segments]->chi[j]!= Sta[j-n_segments]->chi[i]) { 
+						success=false;
+						cout << " conflict in chi values! chi(" << Sta[i-n_segments]->name << "," << Sta[j-n_segments]->name << ") != chi (" << Sta[j-n_segments]->name << "," << Sta[i-n_segments]->name << ")" << endl; 
+					}
+				}
+			}
+		}
+
+	}
+
+	for (int i=0; i<n_segments; i++) for (int j=n_segments; j<n_chi; j++) {
+		if (Seg[i]->chi[j]==-999 && Sta[j-n_segments]->chi[i]==-999) {
+			Seg[i]->chi[j]= Sta[j-n_segments]->chi[i]= Seg[i]->chi[Sta[j-n_segments]->mon_nr]; 
+		} else {
+			if (Seg[i]->chi[j]!=-999 && Sta[j-n_segments]->chi[i]==-999) {
+				Sta[j-n_segments]->chi[i]=Seg[i]->chi[j];
+			} else {
+				if (Seg[i]->chi[j]==-999 && Sta[j-n_segments]->chi[i]!=-999) {
+					Seg[i]->chi[j]=Sta[j-n_segments]->chi[i];
+				} else {
+					if (Seg[i]->chi[j]!= Sta[j-n_segments]->chi[i]) { 
+						success=false;
+						cout << " conflict in chi values! chi(" << Seg[i]->name << "," <<Sta[j-n_segments]->name << ") != chi (" << Sta[j-n_segments]->name << "," << Seg[i]->name << ")" << endl; 
+					}
+				}
+			}
+		}
+	}
+
+	for (int i=n_segments; i<n_chi; i++) for (int j=0; j<n_segments; j++) {
+		if (Sta[i-n_segments]->chi[j]==-999 && Seg[j]->chi[i]==-999) {
+			Sta[i-n_segments]->chi[j]=Seg[j]->chi[i] = Seg[j]->chi[Sta[i-n_segments]->mon_nr]; 
+		} else {
+			if (Sta[i-n_segments]->chi[j]!=-999 && Seg[j]->chi[i]==-999) {
+				Seg[j]->chi[i]=Sta[i-n_segments]->chi[j];
+			} else {
+				if (Sta[i-n_segments]->chi[j]==-999 && Seg[j]->chi[i]!=-999) {
+					Sta[i-n_segments]->chi[j]=Seg[j]->chi[i];
+				} else {
+					if (Sta[i-n_segments]->chi[j]!= Seg[j]->chi[i]) { 
+						success=false;
+						cout << " conflict in chi values! chi(" << Sta[i-n_segments]->name << "," << Seg[j]->name << ") != chi (" << Seg[j]->name << "," << Sta[i-n_segments]->name << ")" << endl; 
+					}
+				}
+			}
+		}
+		if (Sta[i-n_segments]->mon_nr == j && Seg[j]->chi[i] !=0 && Seg[j]->chi[i] !=-999) {
+			success=false;
+			cout << " chi between mon-type and one of its states is not allowed for chi(" << Sta[i-n_segments]->name << "," << Seg[j]->name << ")" << endl; 
+		}
+	}
+ 	
+	return success;
 }
 
 void System::DoElectrostatics(Real* g, Real* x) {
@@ -728,10 +826,7 @@ Add(phitot,phi_molmon,M);
 		}
 	}
 	int n_seg=In[0]->MonList.size();
-	for (int i=0; i<n_seg; i++) {
-		if (Seg[i]->freedom !="frozen") Lat[0]->set_bounds(Seg[i]->phi);
-		Lat[0]->Side(Seg[i]->phi_side,Seg[i]->phi,M);
-	}
+	for (int i=0; i<n_seg; i++) Seg[i]->SetPhiSide();
 	return success;
 }
 
@@ -820,22 +915,22 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 			Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
 		}
 	}
-/*
+
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++) {
 		Real* phi=Seg[SysMonList[j]]->phi;
 		Real* u=Seg[SysMonList[j]]->u;
 		Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
 	}
-*/
-	for (int i=0; i<n_mol; i++) {
+
+/*	for (int i=0; i<n_mol; i++) {
 		int length=Mol[i]->MolMonList.size(); 
 		for (int j=0; j<length; j++) {
 			Real* phi = Mol[i]->phi+M*j;
-			Real* u =Mol[i]->u+M*j;
+			Real* u =Seg[Mol[i]->MolMonList[j]]->u;
 			Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
 		}
-	}
+	}*/
 
 	for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
 		Real chi;

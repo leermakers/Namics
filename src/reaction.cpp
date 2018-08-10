@@ -1,7 +1,7 @@
 #include "reaction.h"
 
-Reaction::Reaction(vector<Input*> In_,vector<State*> Sta_, string name_) {
-	In=In_; name=name_;   Sta=Sta_; 
+Reaction::Reaction(vector<Input*> In_,vector<Segment*> Seg_, vector<State*> Sta_, string name_) {
+	In=In_; name=name_;   Sta=Sta_; Seg=Seg_;
 	KEYS.push_back("K"); 
 	KEYS.push_back("pK");
 	KEYS.push_back("equation");  
@@ -96,6 +96,9 @@ if (debug) cout <<"CheckInput in Reaction " + name << endl;
 									State_nr.push_back(i); 
 									Sta[i]->in_reaction=true;
 									Seg_nr.push_back(Sta[i]->mon_nr);
+									int state_length=Seg[Sta[i]->mon_nr]->state_name.size();
+									for (int k=0; k<state_length; k++) 
+										if (Seg[Sta[i]->mon_nr]->state_name[k]==state_name) State_in_seg_nr.push_back(k);
 								}
 							}
 							if (!found) {cout << " reaction : " << name << " equation " << equation << " state " << state_name << " not found " << endl; success=false;  }
@@ -138,7 +141,6 @@ if (debug) cout <<"CheckInput in Reaction " + name << endl;
 		success=false;
 		cout <<" reaction : " << name << " equation : " << equation << " not electroneutral. Absolute value appears : " << abs(charge) << endl; 
 	}
-	
 	return success;
 }
  
@@ -239,14 +241,35 @@ if (debug) cout <<"GetValue (long)  in Reaction " + name << endl;
 	return 0; 
 }
 
-Real Reaction::Residual_value() {
+Real Reaction::ChemIntBulk(State* sta) {
+	Real value=0;
+	
+	int mon_length=In[0]->MonList.size();
+	int state_length=In[0]->StateList.size();
+	for (int i=0; i<mon_length; i++) 
+		if (Seg[i]->ns<2) {value+=sta->chi[i]*Seg[i]->phibulk;}
+	for (int i=0; i<state_length; i++) {value+=sta->chi[mon_length+i]*Seg[Sta[i]->mon_nr]->state_phibulk[Sta[i]->state_nr];}
+	return value;
+}
+
+
+Real Reaction::pKeff() {
+	Real value=0;
+	int length=Sto.size();
+	for (int i=0; i<length; i++) {
+		value +=Sto[i]*ChemIntBulk(Sta[i]);
+	}
+	return pK+value/log(10.0);
+}
+
+Real Reaction::Residual_value() { //only working when chi are not state dependent. chem is in log en not log10 but cal for pKeff should be done with ln..
 	Real res_value=0;
 	Real alphab=0;
 	int length=Sto.size();
 	for (int i=0; i<length; i++) {
-		alphab=Seg[Sta_nr[i]]Sta[State_nr[i]]->alphabulk;
-		if (alphab<0 || alphab>1) cout <<"alphabulk out of range: programming error; returning undetermined value to residuals: do not continue" << endl; 
-		else res_value+=Sto[i]*log10(alphab); 
+		//cout << "Seg_nr[i]" << Seg_nr[i] << " State_in_seg_nr [i] " << State_in_seg_nr[i] << endl; 
+		alphab=Seg[Seg_nr[i]]->state_alphabulk[State_in_seg_nr[i]];
+		res_value+=Sto[i]*log10(alphab); 
 	}
-	return res_value+pK;
+	return -1.0+res_value/pKeff();
 }

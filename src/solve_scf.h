@@ -4,6 +4,8 @@
 #include "input.h"
 #include "system.h"
 #include "segment.h"
+#include "state.h"
+#include "reaction.h"
 #include "lattice.h"
 #include "molecule.h"
 #include "tools.h"
@@ -15,7 +17,7 @@ class Solve_scf : public SFNewton {
 public:
 	Solve_scf() {};
 
-	Solve_scf(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Variate*>,string);
+	Solve_scf(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<State*>,vector<Reaction*>,vector<Molecule*>,vector<System*>,vector<Variate*>,string);
 
 	~Solve_scf();
 
@@ -26,6 +28,8 @@ public:
 	vector<Lattice*> Lat;
 	vector<Molecule*> Mol;
 	vector<Variate*> Var;
+	vector<State*> Sta;
+	vector<Reaction*> Rea;
 
 	int start;
 	Real Value_tolerance;
@@ -62,7 +66,7 @@ public:
 	int GetValue(string,int&,Real&,string&);
 	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis,conjugate_gradient};
 	enum inner_iteration_method {super,proceed};
-	enum gradient_method {classical, MESODYN, Picard, custum};
+	enum gradient_method {classical, MESODYN, Picard, custum, WEAK};
 	iteration_method solver;
 	gradient_method gradient;
 	inner_iteration_method control;

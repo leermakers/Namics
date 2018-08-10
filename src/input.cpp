@@ -682,9 +682,9 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(NewtonList,"newton",0,1,start)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
 	if (!TestNum(MonList,"mon",1,1000,start)) {cout << "There must be at least one 'mon name' in input" << endl; success=false;}
 	if (!TestNum(StateList,"state",0,1000,start)) {cout << "There can not be more than 1000 'state name's in input" << endl; success=false;}
-	if (StateList.size()==0) StateList.push_back("noname");
+	//if (StateList.size()==0) StateList.push_back("noname");
 	if (!TestNum(ReactionList,"reaction",0,1000,start)) {cout << "There can not be more than 1000 reaction name's in input" << endl; success=false;}
-	if (ReactionList.size()==0) ReactionList.push_back("noname"); 
+	//if (ReactionList.size()==0) ReactionList.push_back("noname"); 
 	TestNum(AliasList,"alias",0,1000,start);
 	if (AliasList.size()==0) AliasList.push_back("noname");
 	if (!TestNum(MolList,"mol",1,1000,start)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}

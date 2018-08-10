@@ -30,7 +30,7 @@ endif
 #DO NOT EDIT BELOW THIS LINE
 #---------------------------------------------------------------------------------
 
-SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT)) 
+SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 ifdef CUDA
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o)
 else
@@ -71,7 +71,7 @@ $(TARGET): $(OBJECTS)
 
 #Compile
 ifdef CUDA
-$(BUILDDIR)/tools.o: 
+$(BUILDDIR)/tools.o:
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/tools.o $(SRCDIR)/tools.cu
 endif
 

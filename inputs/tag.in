@@ -18,17 +18,15 @@ sys : grad1 : guess-B : 0.5
 mon : A : freedom : free
 mon : B : freedom : free
 mon : A : chi-B : 0.6
-mon : X : freedom : tagged 
+mon : X : freedom : tagged
 mon : X : tagged_filename : particles
 
-mol : A : composition : (A)4 
+mol : A : composition : (A)4
 mol : B : composition : (B)4
 mol : AB : composition : (A)20(X)1(B)20
 mol : A : freedom : restricted
 mol : A : theta : 459
 mol : B : freedom : solvent
-
-
 
 output : kal : append : true
 kal : sys : grad1 : free_energy

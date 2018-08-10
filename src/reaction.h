@@ -2,17 +2,20 @@
 #define REACTIONxH
 #include "namics.h"
 #include "input.h"
+#include "segment.h"
 #include "state.h"
 class Reaction {
 public:
-	Reaction(vector<Input*>,vector<State*>,string);
+	Reaction(vector<Input*>,vector<Segment*>,vector<State*>,string);
 
 ~Reaction();
 	void DeAllocateMemory();
 	void AllocateMemory(int,int);
 	vector<State*> Sta; 
+	vector<Segment*> Seg;
 	vector<int> Sto;
-	vector<int> State_nr; 
+	vector<int> State_nr;
+	vector<int> State_in_seg_nr; 
 	vector<int> Seg_nr; 
 	Real K;
 	Real pK;
@@ -44,6 +47,8 @@ public:
 	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string); 
+	Real ChemIntBulk(State*);
+	Real pKeff();
 	Real Residual_value();
 };
 #endif

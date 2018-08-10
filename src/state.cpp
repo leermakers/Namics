@@ -84,7 +84,20 @@ if (debug) cout <<"CheckInput in State " + name << endl;
 				}
 			}
 		} 
-		state_nr=Seg[mon_nr]->AddState(name,alphabulk,valence);
+		state_nr=Seg[mon_nr]->AddState(name,alphabulk,valence,fixed);
+	}
+	length=chi_name.size();
+	Real Chi;
+	for (int i=0; i<length; i++) {
+		Chi=-999;
+		if (GetValue("chi-"+chi_name[i]).size()>0) {
+			Chi=In[0]->Get_Real(GetValue("chi-"+chi_name[i]),Chi);
+			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "not valid." << endl; } 
+			if (name==chi_name[i] && Chi!=0) {if (Chi!=-999) cout <<" chi value for chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "value ignored: set to zero!" << endl; Chi=0;}
+			
+		} 
+		chi[i]=Chi;
+//if (Chi!=-999) {cout << name << " and " << chi_name[i] << "=" << Chi << endl; }
 	}
 	return success;
 }
@@ -100,6 +113,13 @@ if (debug) cout <<"GetValue in State " + name << endl;
 		i++;
 	}
 	return "" ; 
+}
+
+void State::PutChiKEY(string new_name) {
+if (debug) cout <<"PutChiKey " + name << endl;
+	KEYS.push_back("chi-" + new_name);
+	chi_name.push_back(new_name);
+	chi.push_back(-999);
 }
  
 void State::push(string s, Real X) {
@@ -131,7 +151,11 @@ if (debug) cout <<"PushOutput in State " + name << endl;
 	Reals.clear();
 	Reals_value.clear();
 	ints.clear();
-	ints_value.clear();  
+	ints_value.clear(); 
+	alphabulk=Seg[mon_nr]->state_alphabulk[state_nr];
+	push("alphabulk",alphabulk); 
+	int length=chi_name.size();
+	for (int i=0; i<length; i++) push("chi-"+chi_name[i],chi[i]);
 #ifdef CUDA
 #endif
 }

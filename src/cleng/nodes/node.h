@@ -12,4 +12,5 @@ public:
         return point() < other.point();
     }
     virtual std::string to_string() const = 0;
+    virtual ~Node() = default;
 };

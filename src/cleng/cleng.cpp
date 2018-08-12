@@ -314,7 +314,7 @@ bool Cleng::MakeShift(bool back) {
     if (!back) {
         shift = PrepareStep();
         id_part_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
-        cout << "Trying: \n part_id: " << id_part_for_move << " , MC step: { " << shift.x << ", " << shift.y << ", "
+        cout << "Trying: \n part_id: " << id_part_for_move << ", MC step: { " << shift.x << ", " << shift.y << ", "
              << shift.z << " }" << endl;
 
         if (InBoxRange() && NotTooClose()) {

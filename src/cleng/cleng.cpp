@@ -1,6 +1,6 @@
 #include "cleng.h"
-#include "node_interface/point.h"
-#include "node_interface/monolit.h"
+#include "nodes/point.h"
+#include "nodes/monolit.h"
 #include <map>
 #include <cassert>
 

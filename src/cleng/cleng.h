@@ -1,7 +1,7 @@
 #ifndef CLENGxH
 #define CLENGxH
 #include "../input.h"
-#include "node_interface/simple_node.h"
+#include "nodes/simple_node.h"
 #include "../namics.h"
 #include "../solve_scf.h"
 #include "../system.h"

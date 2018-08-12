@@ -268,15 +268,15 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
 }
 
 bool Cleng::InBoxRange() {
-    int up_bondary = 3;
-    int down_bondary = 3;
+    int up_boundary = 3;
+    int down_boundary = 3;
     // TODO simplify this
-    return (down_bondary < nodes[id_part_for_move]->point().x + shift.x) &&
-           (nodes[id_part_for_move]->point().x + shift.x < (int) Lat[0]->MX - up_bondary)
-           && (down_bondary < nodes[id_part_for_move]->point().y + shift.y) &&
-           (nodes[id_part_for_move]->point().y + shift.y < (int) Lat[0]->MY - up_bondary)
-           && (down_bondary < nodes[id_part_for_move]->point().z + shift.z) &&
-           (nodes[id_part_for_move]->point().z + shift.z < (int) Lat[0]->MZ - up_bondary);
+    return (down_boundary < nodes[id_part_for_move]->point().x + shift.x) &&
+           (nodes[id_part_for_move]->point().x + shift.x < (int) Lat[0]->MX - up_boundary)
+           && (down_boundary < nodes[id_part_for_move]->point().y + shift.y) &&
+           (nodes[id_part_for_move]->point().y + shift.y < (int) Lat[0]->MY - up_boundary)
+           && (down_boundary < nodes[id_part_for_move]->point().z + shift.z) &&
+           (nodes[id_part_for_move]->point().z + shift.z < (int) Lat[0]->MZ - up_boundary);
 }
 
 bool Cleng::NotTooClose() {

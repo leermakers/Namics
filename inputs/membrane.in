@@ -18,7 +18,6 @@ mon : W : freedom : free
 mol : lipid : composition : (C)16((O)1(C)2(O)1)5(C)16
 mol : lipid : freedom : restricted
 mol : lipid : theta : 15683.532026331
-//mol : lipid : theta : 3000
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent
@@ -40,18 +39,18 @@ newton : isaac : e_info : true
 newton : isaac : s_info : false
 newton : isaac : method : DIIS
 newton : isaac : m : 4
-newton : isaac : deltamax : 0.3
+newton : isaac : deltamax : 0.1
 newton : isaac : super_e_info : false
 newton : isaac : super_s_info : false
 newton : isaac : iterationlimit : 20000
-newton : isaac : tolerance : 1e-2
+newton : isaac : tolerance : 7e-4
+newton : isaac : stop_criterion : max_of_element_of_|g|
 
-//newton : isaac : stop_criterion : max_of_element_of_|g|
 // how much of the old J gets mixed in the crank-nicolson scheme
 mesodyn : smth : cn_ratio : 0.5
 mesodyn : smth : read_rho: membrane_builder_0_2_expanded.pro
 mesodyn : smth : timesteps : 20000
-mesodyn : smth : timebetweensaves : 5
+mesodyn : smth : timebetweensaves : 1
 mesodyn : smth : diffusionconstant : 0.1
 mesodyn : smth : delta_t : 0.5
 mesodyn : smth : mean : 0

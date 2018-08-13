@@ -128,7 +128,7 @@ bool Mesodyn::mesodyn() {
   if (debug)
     cout << "mesodyn in Mesodyn" << endl;
 
-  // Initialize densities
+  //   Initialize densities
   initial_conditions();
 
   //Prepare IO
@@ -154,14 +154,14 @@ bool Mesodyn::mesodyn() {
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
-    norm_theta(component);
-    norm_theta(solver_component);
+  //  norm_theta(component);
+  //  norm_theta(solver_component);
 
-  //  for (Flux1D* all_fluxes : solver_flux)
-  //    all_fluxes->gaussian->generate();
-
-    for (Gaussian_noise* all_noises : gaussians)
-      all_noises->generate();
+    if (t > 90) {
+      for (Flux1D* all_fluxes : solver_flux) {
+        all_fluxes->gaussian->generate();
+      }
+    }
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
@@ -213,7 +213,6 @@ int Mesodyn::sanity_check() {
 void Mesodyn::load_alpha(vector<Real>& alpha, size_t i) {
     if (i < component_no) {
       solver_component[i]->load_alpha(alpha);
-      gaussians[i]->add_noise(solver_component[i]->alpha);
     }
 }
 
@@ -233,8 +232,6 @@ Real* Mesodyn::solve_explicit() {
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
-  norm_theta(solver_component);
-  norm_theta(component);
   for (Component* all_components : solver_component)
     all_components->update_boundaries();
 
@@ -344,6 +341,7 @@ int Mesodyn::initial_conditions() {
     }
   }
 
+  Gaussian_noise* gaussian_noise;
 
   switch (dimensions) {
   case 1:
@@ -354,14 +352,14 @@ int Mesodyn::initial_conditions() {
       solver_component.push_back(new Component(Lat[0], boundary, rho[i]));
     }
 
+    if (seed_specified == true) {
+      gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev, seed);
+    } else {
+      gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev);
+    }
+
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        Gaussian_noise* gaussian_noise;
-        if (seed_specified == true) {
-          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev, seed);
-        } else {
-          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev);
-        }
         flux.push_back(new Flux1D(Lat[0], gaussian_noise, D * dt, mask, component[i], component[j]));
         solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
@@ -376,14 +374,14 @@ int Mesodyn::initial_conditions() {
       solver_component.push_back(new Component(Lat[0], boundary, rho[i]));
     }
 
+    if (seed_specified == true) {
+      gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev, seed);
+    } else {
+      gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev);
+    }
+
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        Gaussian_noise* gaussian_noise;
-        if (seed_specified == true) {
-          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev, seed);
-        } else {
-          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev);
-        }
         flux.push_back(new Flux2D(Lat[0], gaussian_noise, D * dt, mask, component[i], component[j]));
         solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
@@ -394,22 +392,18 @@ int Mesodyn::initial_conditions() {
     boundary = new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]);
 
     for (size_t i = 0; i < component_no; ++i) {
-      gaussians.push_back(new Gaussian_noise(boundary, D, M, mean, stddev, seed));
-    }
-
-    for (size_t i = 0; i < component_no; ++i) {
       component.push_back(new Component(Lat[0], boundary, rho[i]));
       solver_component.push_back(new Component(Lat[0], boundary, rho[i]));
     }
 
+    if (seed_specified == true) {
+      gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev, seed);
+    } else {
+      gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev);
+    }
+
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        Gaussian_noise* gaussian_noise;
-        if (seed_specified == true) {
-          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev, seed);
-        } else {
-          gaussian_noise = new Gaussian_noise(boundary, D, M, mean, stddev);
-        }
         flux.push_back(new Flux3D(Lat[0], gaussian_noise, D * dt, mask, component[i], component[j]));
         solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
@@ -1020,7 +1014,7 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   }
 
   for (int& z : mask_plus) {
-    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z])); // + gaussian->noise[z]));
+    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z] + gaussian->noise[z]));
   }
 
   for (int& z : mask_minus) {

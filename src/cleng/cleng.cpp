@@ -267,27 +267,51 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
     return dist(gen);
 }
 
-bool Cleng::InBoxRange() {
-    int up_boundary = 3;
-    int down_boundary = 3;
-    // TODO simplify this
-    return (down_boundary < nodes[id_part_for_move]->point().x + shift.x) &&
-           (nodes[id_part_for_move]->point().x + shift.x < (int) Lat[0]->MX - up_boundary)
-           && (down_boundary < nodes[id_part_for_move]->point().y + shift.y) &&
-           (nodes[id_part_for_move]->point().y + shift.y < (int) Lat[0]->MY - up_boundary)
-           && (down_boundary < nodes[id_part_for_move]->point().z + shift.z) &&
-           (nodes[id_part_for_move]->point().z + shift.z < (int) Lat[0]->MZ - up_boundary);
-}
+bool Cleng::CheckRange_and_distances() {
+    double min_dist = 9;
+    bool result_distances = true;
+    bool result_range = false;
+    int up_boundary = 3; int down_boundary = 3;
+    Point box_wr { Lat[0]->MX - up_boundary, Lat[0]->MY - up_boundary, Lat[0]->MZ - up_boundary };
+    Point MP {
+        nodes[id_part_for_move]->point().x,
+        nodes[id_part_for_move]->point().y,
+        nodes[id_part_for_move]->point().z
+    };
+    Point MPs {
+        nodes[id_part_for_move]->point().x + shift.x,
+        nodes[id_part_for_move]->point().y + shift.y,
+        nodes[id_part_for_move]->point().z + shift.z
+    };
 
-bool Cleng::NotTooClose() {
-    Point MP{nodes[id_part_for_move]->point().x + shift.x, nodes[id_part_for_move]->point().y + shift.y,
-             nodes[id_part_for_move]->point().z + shift.z};
+//    cout << "Try MP : " << MP.to_string() << endl;
+
+    // Distances
+    int i = 0;
     for (const auto &n : nodes) {
-        if (MP == n->point()) {
-            return false;
+        if (MP != n->point()) {
+            double dx = pow(MPs.x - n->point().x, 2);
+            double dy = pow(MPs.y - n->point().y, 2);
+            double dz = pow(MPs.z - n->point().z, 2);
+            double dr = sqrt(dx+dy+dz);
+            if (dr < min_dist) i++;
         }
     }
-    return true;
+    if (i > 0) {
+        result_distances = false;
+    }
+//    result ? cout<<endl : cout << "Distances are not okay...\n" << endl;
+
+    // Range
+    if (
+            (down_boundary < MPs.x) and (MPs.x < box_wr.x) and
+            (down_boundary < MPs.y) and (MPs.y < box_wr.y) and
+            (down_boundary < MPs.z) and (MPs.z < box_wr.z)
+            )
+    {
+        result_range = true;
+    }
+    return result_distances and result_range;
 }
 
 Point Cleng::PrepareStep() {
@@ -314,21 +338,21 @@ bool Cleng::MakeShift(bool back) {
     if (!back) {
         shift = PrepareStep();
         id_part_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
-        cout << "Trying: \n part_id: " << id_part_for_move << ", MC step: { " << shift.x << ", " << shift.y << ", "
-             << shift.z << " }" << endl;
+        cout << "Trying: \n part_id: " << id_part_for_move
+             << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
 
-        if (InBoxRange() && NotTooClose()) {
+        if (CheckRange_and_distances()) {
             nodes[id_part_for_move]->shift(shift);
         } else {
-            while ((InBoxRange() && !NotTooClose()) || (!InBoxRange() && NotTooClose())) {
+            while (!CheckRange_and_distances()) {
                 cout << "Choose another particle id and step..." << endl;
                 id_part_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
                 shift = PrepareStep();
             }
             nodes[id_part_for_move]->shift(shift);
         }
-        cout << "Finally: \n part_id: " << id_part_for_move << ", MC step: { " << shift.x << ", " << shift.y << ", "
-             << shift.z << " }" << endl;
+        cout << "Finally: \n part_id: " << id_part_for_move
+        << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
     } else {
         cout << "MakeShift back" << endl;
         Point neg_shift = shift.negate();
@@ -365,21 +389,25 @@ bool Cleng::MonteCarlo() {
         cout << "free_energy_t:" << free_energy_t << endl;
 
         if (std::isnan(free_energy_t)) {
-            for (int k = 0; k < (int) nodes.size(); k++) {
-                cout << nodes[k]->point().x << " " << nodes[k]->point().y << " " << nodes[k]->point().z << endl;
-            }
+            cout << "Free Energy is nan!!" << endl;
+            MakeShift(true);
             break;
         }
 
 
-        if (my_rand < exp(free_energy_c - free_energy_t)) {
+        if (free_energy_t <= free_energy_c) {
             cout << "Accepted" << endl;
         } else {
-            cout << "Deny" << endl;
-            MakeShift(true);
-            cout << "Done. No saving. \n" << endl;
-            continue;
+            if (my_rand < exp(free_energy_t - free_energy_c)) {
+                cout << "Accepted" << endl;
+            } else {
+                cout << "Deny" << endl;
+                MakeShift(true);
+                cout << "Done. No saving. \n" << endl;
+                continue;
+            }
         }
+
         if ((MS_step % save_interval) == 0) {
             WriteOutput(MS_step);
         }

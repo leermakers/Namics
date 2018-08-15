@@ -80,10 +80,8 @@ public:
     void push(string, bool);
     void push(string, string);
     bool CP(transfer);
-    bool MakeShift1(bool back);
     bool MakeShift(bool back);
-    bool InBoxRange();
-    bool NotTooClose();
+    bool CheckRange_and_distances();
     void WriteOutput(int);
     void PushOutput(int);
     int GetValue(string, int&, Real&, string&);

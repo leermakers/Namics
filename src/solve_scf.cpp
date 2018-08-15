@@ -459,7 +459,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callb
 	switch (solver) {
 		case diis:
 			gradient=MESODYN;
-
+			//Zero(xx,iv);
 			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 		break;
 		case PSEUDOHESSIAN:
@@ -558,9 +558,14 @@ void Solve_scf::residuals(Real* x, Real* g){
 				j=0;
 				LENGTH=Mol[i]->MolMonList.size();
 				while (j<LENGTH) {
+					//Target function: ln(rho/phi) < tolerance
+					for (int z = 0 ; z < M ; ++z) {
+						Real frac = (g+k*M)[z]/(Mol[i]->phi+j*M)[z];
+						(g+k*M)[z] = log( frac );
+					}
 
-					//Target function: rho - phi < tolerance
-					YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M);
+			//Target function: rho - phi < tolerance
+			//	YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,1.0,M);
 
 					Lat[0]->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);

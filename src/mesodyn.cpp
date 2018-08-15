@@ -7,7 +7,7 @@
 Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : Lattice_Access(Lat_[0]),
       name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
-      D{0.01}, mean{0}, stddev{1 * D}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1}, dt{0.1},
+      D{0.01}, mean{0}, stddev{2 * D}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1}, dt{0.1},
       initialization_mode{INIT_HOMOGENEOUS},
       component_no{Sys[0]->SysMolMonList.size()}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
@@ -108,6 +108,8 @@ bool Mesodyn::CheckInput(int start) {
 
     if (GetValue("stddev").size() > 0) {
       stddev = In[0]->Get_Real(GetValue("stddev"), stddev);
+    } else {
+      stddev = 2 * D;
     }
     if (debug)
       cout << "Stdev is " << stddev << endl;
@@ -154,14 +156,14 @@ bool Mesodyn::mesodyn() {
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
-  //  norm_theta(component);
-  //  norm_theta(solver_component);
+    norm_theta(component);
+    norm_theta(solver_component);
 
-    if (t > 90) {
+//    if (t > 100) {
       for (Flux1D* all_fluxes : solver_flux) {
         all_fluxes->gaussian->generate();
       }
-    }
+//    }
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
@@ -414,6 +416,13 @@ int Mesodyn::initial_conditions() {
 
   norm_theta(component);
   norm_theta(solver_component);
+
+  for (size_t i = 0 ; i < component.size() ; ++i) {
+    bounds([this,i](int x, int y, int z) mutable {
+      *val_ptr(component[i]->rho, x, y , z) = 0;
+    });
+}
+
 
   return 0;
 }

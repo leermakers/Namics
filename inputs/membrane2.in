@@ -51,7 +51,7 @@ newton : isaac : stop_criterion : max_of_element_of_|g|
 
 // how much of the old J gets mixed in the crank-nicolson scheme
 mesodyn : smth : cn_ratio : 0.5
-mesodyn : smth : read_rho: membrane_builder_0_2_expanded.pro
+mesodyn : smth : read_vtk: mesodyn-1534361424-rho
 mesodyn : smth : timesteps : 100000
 mesodyn : smth : timebetweensaves : 10
 mesodyn : smth : diffusionconstant : 0.1

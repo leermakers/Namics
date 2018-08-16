@@ -182,7 +182,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		gn=H_gn;
 		mask1=H_mask1; mask2=H_mask2;
 		Bx=H_Bx; By=H_By; Bz=H_Bz;
-		Px1=H_Px1; Py1=H_Py1; Pz1=H_Pz2;
+		Px1=H_Px1; Py1=H_Py1; Pz1=H_Pz1;
 		Px2=H_Px2; Py2=H_Py2; Pz2=H_Pz2;
 		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real));
 		Gg_b = (Real*) malloc(m*2*n_box*sizeof(Real));

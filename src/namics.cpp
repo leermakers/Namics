@@ -5,7 +5,7 @@
 #include "molecule.h"
 #include "namics.h"
 #include "mesodyn.h"
-#include "cleng.h"
+#include "cleng/cleng.h"
 #include "teng.h"
 //#include "newton.h"
 #include "output.h"

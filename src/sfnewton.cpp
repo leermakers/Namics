@@ -823,7 +823,7 @@ Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
 Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
 Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	int it=0;
-	int k_diis=1;
+	int k_diis=0;
 	int k=0;
 	Cp(x0,x,nvar);
   // mol computephi takes long: moltype = monomer
@@ -860,7 +860,7 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 // Based on An Introduction to the Conjugate Gradient Method Without the Agonizing Pain Edition 1 1/4 - Jonathan Richard Shewchuk
 // CG with Newton-Raphson and Fletcher-Reeves
 	int  k=0, j=0, j_max =linesearchlimit;
-	Real inner_err=0, delta_new=0, delta_old=0, delta_d=0;
+	Real inner_err=0, delta_new=0, delta_old=0, delta_d=0, delta_mid = 0;
 	Real teller=0, noemer=0;
   Real alpha=0, beta=0;
 	Real rd=0;
@@ -869,6 +869,7 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
   Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
   Real* dg = (Real*) malloc(nvar*sizeof(Real)); Zero(dg,nvar);
   Real* r = (Real*) malloc(nvar*sizeof(Real)); Zero(r,nvar);
+  Real* r_old = (Real*) malloc(nvar*sizeof(Real)); Zero(r_old,nvar);
   Real* d = (Real*) malloc(nvar*sizeof(Real)); Zero(d,nvar);
   Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
   Real* H_d = (Real*) malloc(nvar*sizeof(Real)); Zero(H_d,nvar);
@@ -876,17 +877,15 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 
 	if ( e_info ) {
 		cout<<"Nonlinear conjugate gradients with Newton-Raphson and Fletcher-Reeves has been notified."<<endl;
-		cout<<"Residual error:" << endl;
-		cout << "Your guess:" <<endl;
 	}
 	residuals(x,g);
-
+  #pragma omp parallel for reduction(+:delta_new)
 	for (int z=0; z<nvar; z++) {
 		r[z] = -g[z];
 		d[z]=r[z];
 		delta_new += r[z]*r[z];
 	}
-	accuracy=pow(delta_new,0.5);
+	accuracy= pow(delta_new,0.5);
 	cout << "i = " << iterations << " |g| = "<< accuracy << endl;
 	while (tolerance < accuracy && iterations<iterationlimit) {
 		j=0;
@@ -897,31 +896,43 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
     // line search
 		while (proceed) {
 			teller=0;
+      #pragma omp parallel for reduction(-:teller)
 			for (int z=0; z<nvar; z++) {
-				teller -= abs(g[z])*d[z];
+				teller -= g[z]*d[z];
 				x0[z]=x[z];
 			}
 			Hd(H_d,d,x,x0,g,dg,nvar);
 			noemer=0;
+      #pragma omp parallel for reduction(+:noemer)
 			for (int z=0; z<nvar; z++) noemer +=H_d[z]*d[z];
 			alpha=teller/noemer;
+      #pragma omp parallel for
 			for (int z=0; z<nvar; z++) {x[z]=x0[z]+alpha*d[z];}
 			residuals(x,g);
 			j++;
-			proceed =(j<j_max && alpha*inner_err > tolerance);
+			proceed =(j<j_max && alpha*inner_err > 1e-8);
 		}
 
+    #pragma omp parallel for
+    for (int z=0; z<nvar; z++) r_old[z]=r[z];
+    #pragma omp parallel for
 		for (int z=0; z<nvar; z++) r[z]=-g[z];
 		delta_old=delta_new;
 		delta_new=0;
+    #pragma omp parallel for reduction(+:delta_mid)
+    for (int z=0; z<nvar; z++) delta_mid += r[z]*r_old[z];
+    #pragma omp parallel for reduction(+:delta_new)
 		for (int z=0; z<nvar; z++) delta_new += r[z]*r[z];
-		beta=delta_new/delta_old;
+		beta =  (delta_new-delta_mid)/delta_old;
+    #pragma omp parallel for
 		for (int z=0; z<nvar; z++) d[z]=r[z]+beta*d[z];
 		k++;
 		rd=0;
+    #pragma omp parallel for reduction(+:rd)
 		for (int z=0; z<nvar; z++) rd +=r[z]*d[z];
-		if (k == nvar || rd<0) {
+		if (k == nvar || rd<=0) {
 			k=0; beta=0;
+      #pragma omp parallel for
 			for (int z=0; z<nvar; z++) d[z]=r[z];
 		}
 		iterations++;
@@ -936,12 +947,13 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 
 void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real nvar) {
 
-	Real epsilon = 2e-8; //Real precision. Machine error =10^-16; epsilon = 2 sqrt(precision)
+	Real epsilon = 2e-8; //double precision. Machine error =10^-16; epsilon = 2 sqrt(precision)
 	Real normq = norm2(q,nvar);
 	Real normx = norm2(x0,nvar);
 	Real delta = epsilon* (1+normx)/normq;
 
-	for (int i=0; i<nvar; i++) x[i] = x0[i] + delta*q[i];
+	for (int i=0; i<nvar; i++)
+    x[i] = x0[i] + delta*q[i];
 	residuals(x,dg);
   /*
 	valid = true;

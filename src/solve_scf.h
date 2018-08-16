@@ -93,7 +93,7 @@ public:
 	bool Guess(Real*,string,vector<string>,bool,int,int,int,int);
 
 	bool Solve(bool);
-	bool SolveMesodyn(function< void(vector<Real>&, int) >, function< Real*() >); //first argument should contain rho
+	bool SolveMesodyn(function< void(vector<Real>&, size_t) >, function< Real*() >); //first argument should contain rho
 	function< Real*() > mesodyn_flux;
 	function< void(vector<Real>&, int) > mesodyn_load_alpha;
 	bool SuperIterate(int,int,int,int);

@@ -11,7 +11,7 @@
 #include <cassert>    // making sure all underlying assumptions (e.g. lattice geometry) are satisfied
 #include <functional> // boundary conditions
 #include <algorithm>  // transform, copy, find functions
-#include <limits.h>   // output
+#include <limits>     // output
 #include <unistd.h>   // output
 
 class Boundary1D;
@@ -39,6 +39,12 @@ public:
   inline vector<int> coordinate(int n);
   inline void skip_bounds( function<void(int,int,int)> );
   inline void bounds( function<void(int,int,int)> );
+  inline void x0_boundary( function<void(int, int, int)>);
+  inline void xm_boundary( function<void(int, int, int)>);
+  inline void y0_boundary( function<void(int, int, int)>);
+  inline void ym_boundary( function<void(int, int, int)>);
+  inline void z0_boundary( function<void(int, int, int)>);
+  inline void zm_boundary( function<void(int, int, int)>);
 
   const int dimensions;
 
@@ -92,9 +98,9 @@ private:
   function<void(vector<Real>&)> bXm;
 
   int set_x_boundaries(boundary, boundary, Real = 0);
-  void bX0Mirror(vector<Real>&, int, int);
-  void bXmMirror(vector<Real>&, int, int, int);
-  void bXPeriodic(vector<Real>&, int, int, int);
+  void bX0Mirror(vector<Real>&);
+  void bXmMirror(vector<Real>&);
+  void bXPeriodic(vector<Real>&);
 
 };
 
@@ -110,9 +116,9 @@ private:
   function<void(vector<Real>&)> bYm;
 
   int set_y_boundaries(boundary, boundary, Real = 0);
-  void bY0Mirror(vector<Real>&, int, int);
-  void bYmMirror(vector<Real>&, int, int, int);
-  void bYPeriodic(vector<Real>&, int, int, int);
+  void bY0Mirror(vector<Real>&);
+  void bYmMirror(vector<Real>&);
+  void bYPeriodic(vector<Real>&);
 
 };
 
@@ -121,16 +127,16 @@ public:
   Boundary3D(Lattice*, boundary, boundary, boundary, boundary, boundary, boundary);
   ~Boundary3D();
 
-  virtual int update_boundaries(vector<Real>&) final;
+  virtual int update_boundaries(vector<Real>&) override;
 
 private:
   function<void(vector<Real>&)> bZ0;
   function<void(vector<Real>&)> bZm;
 
   int set_z_boundaries(boundary, boundary, Real = 0);
-  void bZ0Mirror(vector<Real>&, int, int);
-  void bZmMirror(vector<Real>&, int, int, int);
-  void bZPeriodic(vector<Real>&, int, int, int);
+  void bZ0Mirror(vector<Real>&);
+  void bZmMirror(vector<Real>&);
+  void bZPeriodic(vector<Real>&);
 };
 
 class Component : protected Lattice_Access {
@@ -217,7 +223,7 @@ public:
   Flux3D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
   ~Flux3D();
 
-  virtual int langevin_flux() final;
+  virtual int langevin_flux() override;
 
 private:
   int mask(vector<int>&);
@@ -257,24 +263,29 @@ private:
 
   /* Flow control */
   int RC;
-  int solve_explicit(vector<Real>&);
-  int solve_crank_nicolson(vector<Real>&);
+  Real* solve_explicit();
+  void explicit_start();
+  Real* solve_crank_nicolson();
+  void load_alpha(vector<Real>&, size_t);
   int sanity_check();
   Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
 
   /* Initialization*/
   enum init {
     INIT_HOMOGENEOUS,
-    INIT_FROMFILE,
+    INIT_FROMPRO,
+    INIT_FROMVTK,
     INIT_EQUILIBRATE,
   };
+  vector<Real> rho;
   vector<string> tokenize(string, char);
   string read_filename;
   int initial_conditions();
   vector<Real>&  flux_callback(int);
   int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
   int init_rho_equilibrate(vector< vector<Real> >&);
-  int init_rho_fromfile(vector< vector<Real> >&, string);
+  int init_rho_frompro(vector< vector<Real> >&, string);
+  int init_rho_fromvtk(vector<Real>&, string);
   int norm_density(vector<Real>& rho, Real theta);
 
   /* Helper class instances */
@@ -303,6 +314,10 @@ public:
   ~Mesodyn();
 
   bool mesodyn();
+
+  int norm_theta(vector<Component*>&);
+
+  Real lost;
 
 
   /* Inputs / output class interface functions */

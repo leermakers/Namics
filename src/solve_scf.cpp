@@ -445,7 +445,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	return success;
 }
 
-bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback, function< Real*() > flux_callback) {
+bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callback, function< Real*() > flux_callback) {
 	if(debug) cout <<"Solve (mesodyn) in  Solve_scf " << endl;
 	//iv should have been set at AllocateMemory.
 	mesodyn_flux = flux_callback;
@@ -459,7 +459,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback
 	switch (solver) {
 		case diis:
 			gradient=MESODYN;
-
+			//Zero(xx,iv);
 			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 		break;
 		case PSEUDOHESSIAN:
@@ -485,7 +485,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, int) > alpha_callback
 			YplusisCtimesX(alpha+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMolMonList[i]]->valence,M);
 		}*/
 
-	Sys[0]->CheckResults(true);
+	Sys[0]->CheckResults(false);
 	return success;
 }
 
@@ -558,9 +558,14 @@ void Solve_scf::residuals(Real* x, Real* g){
 				j=0;
 				LENGTH=Mol[i]->MolMonList.size();
 				while (j<LENGTH) {
+					//Target function: ln(rho/phi) < tolerance
+					for (int z = 0 ; z < M ; ++z) {
+						Real frac = (g+k*M)[z]/(Mol[i]->phi+j*M)[z];
+						(g+k*M)[z] = log( frac );
+					}
 
-					//Target function: rho - phi < tolerance
-					YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M);
+			//Target function: rho - phi < tolerance
+			//	YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,1.0,M);
 
 					Lat[0]->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);

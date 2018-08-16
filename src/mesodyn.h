@@ -273,7 +273,8 @@ private:
   /* Initialization*/
   enum init {
     INIT_HOMOGENEOUS,
-    INIT_FROMFILE,
+    INIT_FROMPRO,
+    INIT_FROMVTK,
     INIT_EQUILIBRATE,
   };
   vector<Real> rho;
@@ -283,7 +284,8 @@ private:
   vector<Real>&  flux_callback(int);
   int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
   int init_rho_equilibrate(vector< vector<Real> >&);
-  int init_rho_fromfile(vector< vector<Real> >&, string);
+  int init_rho_frompro(vector< vector<Real> >&, string);
+  int init_rho_fromvtk(vector<Real>&, string);
   int norm_density(vector<Real>& rho, Real theta);
 
   /* Helper class instances */

@@ -15,7 +15,8 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
   KEYS.push_back("delta_t");
-  KEYS.push_back("read_rho");
+  KEYS.push_back("read_pro");
+  KEYS.push_back("read_vtk");
   KEYS.push_back("equilibrate");
   KEYS.push_back("diffusionconstant");
   KEYS.push_back("seed");
@@ -77,12 +78,23 @@ bool Mesodyn::CheckInput(int start) {
         initialization_mode = INIT_EQUILIBRATE;
     }
 
-    if (GetValue("read_rho").size() > 0 && equilibrate)
-      cout << "WARNING: Read_rho overrides equilibrate!" << endl;
+    if (GetValue("read_pro").size() > 0 && equilibrate)
+      cout << "WARNING: read_pro overrides equilibrate!" << endl;
 
-    if (GetValue("read_rho").size() > 0) {
-      read_filename = In[0]->Get_string(GetValue("read_rho"), read_filename);
-      initialization_mode = INIT_FROMFILE;
+    if (GetValue("read_pro").size() > 0) {
+      read_filename = In[0]->Get_string(GetValue("read_pro"), read_filename);
+      initialization_mode = INIT_FROMPRO;
+    }
+    if (debug)
+      cout << "Filename to read rho from is: " << read_filename << endl;
+
+    if (GetValue("read_vtk").size() > 0) {
+      read_filename = In[0]->Get_string(GetValue("read_vtk"), read_filename);
+      if (read_filename.find(".vtk") != string::npos) {
+        cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename accordingly." << endl;
+        exit(0);
+      }
+      initialization_mode = INIT_FROMVTK;
     }
     if (debug)
       cout << "Filename to read rho from is: " << read_filename << endl;
@@ -283,15 +295,21 @@ int Mesodyn::initial_conditions() {
   }
 
   switch (initialization_mode) {
-  case INIT_HOMOGENEOUS:
-    init_rho_homogeneous(rho, mask);
-    break;
-  case INIT_FROMFILE:
-    init_rho_fromfile(rho, read_filename);
-    break;
-  case INIT_EQUILIBRATE:
-    init_rho_equilibrate(rho);
-    break;
+    case INIT_HOMOGENEOUS:
+      init_rho_homogeneous(rho, mask);
+      break;
+    case INIT_FROMPRO:
+      init_rho_frompro(rho, read_filename);
+      break;
+    case INIT_FROMVTK:
+      for (size_t i = 0 ; i < rho.size() ; ++i) {
+        string filename = read_filename + to_string(i) + ".vtk";
+        init_rho_fromvtk(rho[i], filename);
+      }
+      break;
+    case INIT_EQUILIBRATE:
+      init_rho_equilibrate(rho);
+      break;
   }
 
   // BC0: bX0, BC1: bXm, etc.
@@ -491,7 +509,31 @@ vector<string> Mesodyn::tokenize(string line, char delim) {
   return tokens;
 }
 
-int Mesodyn::init_rho_fromfile(vector<vector<Real>>& rho, string filename) {
+int Mesodyn::init_rho_fromvtk(vector<Real>& rho, string filename) {
+  ifstream rho_input;
+  cout << filename << endl;
+  rho_input.open(filename);
+
+  if (!rho_input.is_open()) {
+    cerr << "Error opening file! Is the filename correct? Is there a vtk for each component, ending in [component number].vtk, starting from 0?" << endl;
+    throw ERROR_FILE_FORMAT;
+  }
+
+  string line;
+
+  while (line.find("LOOKUP_TABLE default") == string::npos ) {
+    getline(rho_input, line);
+  }
+
+  skip_bounds([this, &rho_input, &rho, &line](int x, int y, int z) mutable {
+    getline(rho_input, line);
+    *val_ptr(rho, x, y, z) = atof(line.c_str());
+  });
+
+  return 0;
+}
+
+int Mesodyn::init_rho_frompro(vector<vector<Real>>& rho, string filename) {
 
   ifstream rho_input;
   rho_input.open(filename);

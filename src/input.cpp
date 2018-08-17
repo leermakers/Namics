@@ -1,18 +1,20 @@
 #include "input.h"
+
 Input::Input(string name_) {
 	name=name_;
 	KEYS.push_back("start");
 	KEYS.push_back("sys");
-	KEYS.push_back("mol"); 
-	KEYS.push_back("mon"); 
+	KEYS.push_back("mol");
+	KEYS.push_back("mon");
 	KEYS.push_back("alias");
- 	KEYS.push_back("lat"); 
-	KEYS.push_back("newton"); 
-	KEYS.push_back("mesodyn"); 
-	KEYS.push_back("cleng"); 
-	KEYS.push_back("teng"); 
-	KEYS.push_back("output"); 
+ 	KEYS.push_back("lat");
+	KEYS.push_back("newton");
+	KEYS.push_back("mesodyn");
+	KEYS.push_back("cleng");
+	KEYS.push_back("teng");
+	KEYS.push_back("output");
 	KEYS.push_back("var");
+	KEYS.push_back(OutputInfo::IN_CLASS_NAME);
 
 
 	in_file.open(name.c_str()); Input_error=false;
@@ -30,6 +32,7 @@ Input::Input(string name_) {
 			if (add) elems.push_back(SSTR(line_nr).append(":").append(In_line)); else add=true;
 		}
 		in_file.close();
+		parseOutputInfo();
 		if (!CheckInput()) Input_error=true;
 	} else {cout <<  "Inputfile " << name << " is not found. " << endl; Input_error=true; }
 
@@ -569,7 +572,7 @@ bool Input:: CheckInput(void) {
 
 		if (set[1]=="output") {
 			vector<string> options;
-			options.push_back("ana"); options.push_back("vtk"); options.push_back("kal"); options.push_back("pro"); options.push_back("vec"); options.push_back("pos"); 
+			options.push_back("ana"); options.push_back("vtk"); options.push_back("kal"); options.push_back("pro"); options.push_back("vec"); options.push_back("pos");
 			string option;
 			if (!Get_string(set[2],option,options,"Value for output extension '" + set[2] + "' not allowed. ")) {success=false;}
 			else {
@@ -628,7 +631,10 @@ bool Input:: CheckInput(void) {
 		i++;
 	}
 	success=MakeLists(1);
-
+	if (!output_info.isOutputExists()) {
+		cout << "Cannot access output folder '" << output_info.getOutputPath() << "'" << endl;
+		success = false;
+	}
 	return success;
 }
 
@@ -662,4 +668,15 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(VarList,"var",0,10,start))
 	if (VarList.size()==0) VarList.push_back("noname");
 	return success;
+}
+
+void Input::parseOutputInfo() {
+	for (const string &line : elems) {
+		vector<string> param;
+		split(line, ':', param);
+		if (param[1] != OutputInfo::IN_CLASS_NAME) {
+			continue;
+		}
+		output_info.addProperty(param[2], param[3], param[4]);
+	}
 }

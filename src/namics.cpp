@@ -5,7 +5,7 @@
 #include "molecule.h"
 #include "namics.h"
 #include "mesodyn.h"
-#include "cleng.h"
+#include "cleng/cleng.h"
 #include "teng.h"
 //#include "newton.h"
 #include "output.h"
@@ -235,7 +235,6 @@ int main(int argc, char* argv[]) {
     		if (!New[0]->CheckInput(start)) {
       			return 0;
     		}
-    		if (suppress == true) New[0]->e_info = false;
 
 
 //Guesses geometry
@@ -346,7 +345,12 @@ int main(int argc, char* argv[]) {
         			if (!Mes[0]->CheckInput(start)) {
           				return 0;
         			}
-        			Mes[0]->mesodyn();
+              try {
+        			  Mes[0]->mesodyn();
+              } catch (error RC) {
+                cout << "Exiting Mesodyn with error: " << RC << ". Please check the documentation for details." << endl;
+                exit(RC);
+              }
               delete Mes[0];
               Mes.clear();
 				break;

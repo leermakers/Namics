@@ -60,7 +60,7 @@ public:
 	void push(string,string);
 	void PushOutput();
 	int GetValue(string,int&,Real&,string&);
-	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis};
+	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis,conjugate_gradient};
 	enum inner_iteration_method {super,proceed};
 	enum gradient_method {classical, MESODYN, Picard, custum};
 	iteration_method solver;
@@ -93,8 +93,9 @@ public:
 	bool Guess(Real*,string,vector<string>,bool,int,int,int,int);
 
 	bool Solve(bool);
-	bool SolveMesodyn(vector<Real>&, vector<Real>&, function< vector<Real>&(int) >); //first argument should contain rho
-	function< vector<Real>&(int) > flux;
+	bool SolveMesodyn(function< void(vector<Real>&, size_t) >, function< Real*() >); //first argument should contain rho
+	function< Real*() > mesodyn_flux;
+	function< void(vector<Real>&, int) > mesodyn_load_alpha;
 	bool SuperIterate(int,int,int,int);
 	void DeAllocateMemory();
 	void AllocateMemory();

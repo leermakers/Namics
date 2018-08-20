@@ -662,6 +662,7 @@ void System::DoElectrostatics(Real* g, Real* x) {
 bool System::ComputePhis() {
   if (debug)
     cout << "ComputePhis in system" << endl;
+
   int M = Lat[0]->M;
   bool success = true;
 
@@ -689,6 +690,7 @@ bool System::ComputePhis() {
     if (Mol[i]->freedom == "restricted") {
       if (Mol[i]->GN > 0) {
         norm = Mol[i]->n / Mol[i]->GN;
+    //    cout << Mol[i]->GN << endl;
         if (Mol[i]->IsPinned())
           Mol[i]->phibulk = 0;
         else
@@ -699,6 +701,7 @@ bool System::ComputePhis() {
         cout << "GN for molecule " << i << " is not larger than zero..." << endl;
       }
     }
+
     if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {
       if (Mol[i]->GN > 0)
         norm = Mol[i]->n / Mol[i]->GN;
@@ -769,6 +772,7 @@ bool System::ComputePhis() {
   }
 
   Mol[solvent]->phibulk = 1.0 - totphibulk;
+  if (Mol[solvent]->phibulk < 0) {cout <<"Solvent has negative phibulk; outcome uncertain! aborting"<< endl ; exit(0); }
   norm = Mol[solvent]->phibulk / Mol[solvent]->chainlength;
   Mol[solvent]->n = norm * Mol[solvent]->GN;
   Mol[solvent]->theta = Mol[solvent]->n * Mol[solvent]->chainlength;
@@ -800,7 +804,6 @@ bool System::ComputePhis() {
   }
 
   for (int i = 0; i < n_mol; i++) {
-
     int length = Mol[i]->MolMonList.size();
     for (int k = 0; k < length; ++k) {
       Real* phi_mon = Seg[Mol[i]->MolMonList[k]]->phi;
@@ -829,6 +832,7 @@ bool System::ComputePhis() {
       Lat[0]->set_bounds(Seg[i]->phi);
     Lat[0]->Side(Seg[i]->phi_side, Seg[i]->phi, M);
   }
+
   return success;
 }
 

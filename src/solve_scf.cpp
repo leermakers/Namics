@@ -114,9 +114,9 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 			string target;
       target = In[0]->Get_string(GetValue("target_function"), target);
 			using namespace std::placeholders;
-			if ( target == "log" ) target_function = bind(&Solve_scf::gradient_log, this, _1, _2, _3, _4, _5);
-			if ( target == "quotient" ) target_function = bind(&Solve_scf::gradient_quotient, this, _1, _2, _3, _4, _5);
-			if ( target == "minus" ) target_function = bind(&Solve_scf::gradient_minus, this, _1, _2, _3, _4, _5);
+			if ( target.find("log") != string::npos  ) target_function = bind(&Solve_scf::gradient_log, this, _1, _2, _3, _4, _5);
+			else if ( target.find("quotient") != string::npos  ) target_function = bind(&Solve_scf::gradient_quotient, this, _1, _2, _3, _4, _5);
+			else if ( target.find("minus") != string::npos  ) target_function = bind(&Solve_scf::gradient_minus, this, _1, _2, _3, _4, _5);
 			else {
 				cerr << "Target function not found, please choose from log, quotient or minus. Defaulting to minus." << endl;
 			}
@@ -561,7 +561,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 				for (int k=0; k<mon_length; k++) {
 					chi= Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
 					if (chi!=0) {
-						PutAlpha(&temp_alpha[0],Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+						PutAlpha(&temp_alpha[0],Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 					}
 				}
 			mesodyn_load_alpha(temp_alpha, (size_t)i);
@@ -714,7 +714,7 @@ void Solve_scf::gradient_log(Real* g, int k, int M, int i, int j) {
 }
 
 void Solve_scf::gradient_quotient(Real* g, int k, int M, int i, int j) {
-	//Target function: ln(g/phi) < tolerance
+	//Target function: g/phi-1 < tolerance
 	for (int z = 0 ; z < M ; ++z) {
 		Real frac = (g+k*M)[z]/(Mol[i]->phi+j*M)[z];
 		(g+k*M)[z] = frac - 1;

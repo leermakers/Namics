@@ -103,6 +103,11 @@ public:
 	void ComputePhis();
 	bool PutU();
 	void residuals(Real*,Real*);
+	void gradient_log(Real*, int, int, int, int);
+	void gradient_quotient(Real*, int, int, int, int);
+	void gradient_minus(Real*, int, int, int, int);
+	function<void(Real*, int, int, int, int)> target_function;
+
 	void inneriteration(Real*,Real*,float*,Real,Real&,Real,int);
 
 };

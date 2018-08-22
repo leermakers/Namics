@@ -15,6 +15,7 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("max_accuracy_for_hessian_scaling");
 	KEYS.push_back("n_iterations_for_hessian");
 	KEYS.push_back("small_alpha");
+	KEYS.push_back("target_function");
 	KEYS.push_back("max_n_small_alpha");
 	KEYS.push_back("min_accuracy_for_hessian");
 	KEYS.push_back("max_fr_reverse_direction");
@@ -107,6 +108,22 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),s_info);
 		super_i_info=In[0]->Get_bool(GetValue("super_i_info"),i_info);
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
+
+		//TODO: should this go somewhere else?
+		if (GetValue("target_function").size() > 0) {
+			string target;
+      target = In[0]->Get_string(GetValue("target_function"), target);
+			using namespace std::placeholders;
+			if ( target.find("log") != string::npos  ) target_function = bind(&Solve_scf::gradient_log, this, _1, _2, _3, _4, _5);
+			else if ( target.find("quotient") != string::npos  ) target_function = bind(&Solve_scf::gradient_quotient, this, _1, _2, _3, _4, _5);
+			else if ( target.find("minus") != string::npos  ) target_function = bind(&Solve_scf::gradient_minus, this, _1, _2, _3, _4, _5);
+			else {
+				cerr << "Target function not found, please choose from log, quotient or minus. Defaulting to minus." << endl;
+			}
+		} else {
+			using namespace std::placeholders;
+			target_function = bind(&Solve_scf::gradient_minus, this, _1, _2, _3, _4, _5);
+		}
 
 		deltamax=In[0]->Get_Real(GetValue("deltamax"),0.1);
 		super_deltamax=In[0]->Get_Real(GetValue("super_deltamax"),0.5);
@@ -544,7 +561,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 				for (int k=0; k<mon_length; k++) {
 					chi= Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
 					if (chi!=0) {
-						PutAlpha(&temp_alpha[0],Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+						PutAlpha(&temp_alpha[0],Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 					}
 				}
 			mesodyn_load_alpha(temp_alpha, (size_t)i);
@@ -558,15 +575,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 				j=0;
 				LENGTH=Mol[i]->MolMonList.size();
 				while (j<LENGTH) {
-					//Target function: ln(rho/phi) < tolerance
-					for (int z = 0 ; z < M ; ++z) {
-						Real frac = (g+k*M)[z]/(Mol[i]->phi+j*M)[z];
-						(g+k*M)[z] = log( frac );
-					}
-
-			//Target function: rho - phi < tolerance
-			//	YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,1.0,M);
-
+					target_function(g, k, M, i, j);
 					Lat[0]->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 					k++;
@@ -694,6 +703,27 @@ void Solve_scf::residuals(Real* x, Real* g){
 			}
 		break;
 	}
+}
+
+void Solve_scf::gradient_log(Real* g, int k, int M, int i, int j) {
+	//Target function: ln(g/phi) < tolerance
+	for (int z = 0 ; z < M ; ++z) {
+		Real frac = (g+k*M)[z]/(Mol[i]->phi+j*M)[z];
+		(g+k*M)[z] = log( frac );
+	}
+}
+
+void Solve_scf::gradient_quotient(Real* g, int k, int M, int i, int j) {
+	//Target function: g/phi-1 < tolerance
+	for (int z = 0 ; z < M ; ++z) {
+		Real frac = (g+k*M)[z]/(Mol[i]->phi+j*M)[z];
+		(g+k*M)[z] = frac - 1;
+	}
+}
+
+void Solve_scf::gradient_minus(Real* g, int k, int M, int i, int j) {
+	//Target function: g - phi < tolerance
+		YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,1.0,M);
 }
 
 void Solve_scf::inneriteration(Real* x, Real* g, float* h, Real accuracy, Real& deltamax, Real ALPHA, int nvar) {

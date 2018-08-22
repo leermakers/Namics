@@ -35,8 +35,20 @@ bool Teng::MonteCarlo() {
 	t++;
 	New[0]->Solve(true);
 	WriteOutput(t);
+ 	for (int j=0; j<1000; j++){
+	cout << "The random amplitude is:"<< GetRandom(10) << endl;}
 	return success;
 }
+
+int Teng::GetRandom(int maxvalue) {
+	random_device rd;
+	mt19937 gen(rd());
+	uniform_int_distribution<> distance(1,maxvalue);
+        int randomnumber = distance(gen);
+	return randomnumber;
+}
+
+
 
 // Transfer the particle locations from segment to teng, and vice versa.,
 bool Teng::CP(transfer tofrom) {

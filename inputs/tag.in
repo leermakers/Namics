@@ -25,7 +25,7 @@ mol : A : composition : (A)4
 mol : B : composition : (B)4
 mol : AB : composition : (A)20(X)1(B)20
 mol : A : freedom : restricted
-mol : A : theta : 459
+mol : A : theta : 450
 mol : B : freedom : solvent
 
 
@@ -56,7 +56,7 @@ newton : isaac : deltamax : 0.1
 newton : isaac : iterationlimit : 5000
 newton : isaac : tolerance : 1e-7
 
-//teng: ram : MCS :4
-//teng: ram : save_interval :1
+teng: ram : MCS :4
+teng: ram : save_interval :1
 
 start

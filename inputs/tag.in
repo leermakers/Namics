@@ -1,6 +1,5 @@
 lat : hex : gradients : 3
-lat : hex : geometry : planar
-lat : hex : lambda : simple_cubic
+lat : hex : geometry : simple_cubic
 lat : hex : n_layers_x : 10
 lat : hex : n_layers_y : 10
 lat : hex : n_layers_z : 10
@@ -49,12 +48,10 @@ vtk : mon : A : phi
 //pos : output : grad1 : Y
 //pos : output : grad1 : Z
 
-newton :isaac : method : pseudohessian
-newton : isaac : i_info : 25
-newton : isaac : m : 16
-newton : isaac : deltamax : 0.1
-newton : isaac : iterationlimit : 5000
-newton : isaac : tolerance : 1e-7
+newton :isaac : method : hessian
+newton : isaac : i_info : 100
+newton : isaac : iterationlimit : 50000
+newton : isaac : tolerance : 1e-5
 
 teng: ram : MCS :4
 teng: ram : save_interval :1

@@ -65,6 +65,7 @@ vector<int> Z;
   void WriteOutput(int);
   void PushOutput();
   int GetValue(string, int&, Real&, string&);
+  int GetRandom(int);
 
   std::vector<string> KEYS;
   std::vector<string> PARAMETERS;

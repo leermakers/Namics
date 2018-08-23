@@ -155,6 +155,7 @@ bool Mesodyn::mesodyn() {
   cout << "Mesodyn is all set, starting calculations.." << endl;
 
   // Do one explicit step before starting the crank nicolson scheme
+
   explicit_start();
 
   write_density(solver_component);
@@ -435,13 +436,6 @@ int Mesodyn::initial_conditions() {
   norm_theta(component);
   norm_theta(solver_component);
 
-  for (size_t i = 0 ; i < component.size() ; ++i) {
-    bounds([this,i](int x, int y, int z) mutable {
-      *val_ptr(component[i]->rho, x, y , z) = 0;
-    });
-}
-
-
   return 0;
 }
 
@@ -511,7 +505,7 @@ vector<string> Mesodyn::tokenize(string line, char delim) {
 
 int Mesodyn::init_rho_fromvtk(vector<Real>& rho, string filename) {
   ifstream rho_input;
-  cout << filename << endl;
+
   rho_input.open(filename);
 
   if (!rho_input.is_open()) {

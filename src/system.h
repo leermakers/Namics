@@ -22,6 +22,7 @@ public:
 	vector<Lattice*> Lat;
 	vector<int> SysMonList;
 	vector<int> ItMonList;
+	vector<int> ItStateList;
 	vector<int> StatelessMonList;
 	vector<int> SysMolMonList;
 	vector<int> FrozenList;
@@ -51,7 +52,7 @@ public:
 	int solvent;
 	int neutralizer;
 	int tag_segment;
-	int volume;
+	Real volume;
 	bool input_error;
 	bool cuda;
 	bool charged;
@@ -93,6 +94,7 @@ public:
 	string GetMonName(int );
 	bool CheckChi_values(int);
 	bool IsCharged();
+	bool IsUnique(int,int);
 	void AllocateMemory();
 	bool PrepareForCalculations();
 	bool ComputePhis();

@@ -37,7 +37,8 @@ public:
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	Real* GetPointer(string);
+	Real* GetPointer(string,int&);
+	int* GetPointerInt(string,int&);
 	int GetValue(string,int&,Real&,string&);	
 	void PrepareForCalculations();
 

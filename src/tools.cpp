@@ -180,6 +180,10 @@ __global__ void dubble(Real *P, Real *A, Real norm, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]*=norm/A[idx];
 }
+__global__ void minlog(Real *P, Real *A, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) if (A[idx]>0) P[idx]=-log(A[idx]); else P[idx]=0;
+}
 __global__ void boltzmann(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=exp(-A[idx]);
@@ -870,6 +874,17 @@ void Dubble(Real *P, Real *A, Real norm,int M)   {
 #endif
 
 #ifdef CUDA
+void MinLog(Real *P, Real *A, int M)   {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	minlog<<<n_blocks,block_size>>>(P,A,M);
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Boltzmann"<<endl;}
+}
+#else
+void MinLog(Real *P, Real *A, int M)   {
+	for (int i=0; i<M; i++) if (A[i]>0) P[i]=-log(A[i]); else P[i]=0;
+}
+#endif
+#ifdef CUDA
 void Boltzmann(Real *P, Real *A, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	boltzmann<<<n_blocks,block_size>>>(P,A,M);
@@ -990,7 +1005,7 @@ void PutAlpha(Real *g, Real *phi_side, Real chi, Real phibulk, int M)   {
 void Div(Real *P, Real *A, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	div<<<n_blocks,block_size>>>(P,A,M);
-	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at AddDiv"<<endl;}
+	if (cudaSuccess != cudaGetLastError()) {cout <<"problem at Div"<<endl;}
 }
 #else
 void Div(Real *P, Real *A, int M)   {

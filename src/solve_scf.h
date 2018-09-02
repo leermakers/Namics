@@ -79,6 +79,7 @@ public:
 	Real *x_x0;
 #endif
 	Real *xx;
+	int *SIGN; 
 	Real* alpha;
 	bool mesodyn;
 	Real* RHO;
@@ -94,7 +95,7 @@ public:
 	void PutParameter(string);
 	string GetValue(string);
 	void Copy(Real*,Real*,int,int,int,int);
-	bool Guess(Real*,string,vector<string>,bool,int,int,int,int);
+	bool Guess(Real*,string,vector<string>,vector<string>,bool,int,int,int,int);
 
 	bool Solve(bool);
 	bool SolveMesodyn(vector<Real>&, vector<Real>&, function< vector<Real>&(int) >); //first argument should contain rho

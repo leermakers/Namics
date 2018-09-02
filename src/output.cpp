@@ -1,8 +1,8 @@
 #include "output.h"
 #include "time.h"
-Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
+Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
 if (debug) cout <<"constructor in Output "<< endl;
-	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
+	In=In_; Lat = Lat_; Seg=Seg_; Sta=Sta_; Rea=Rea_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_directory");
@@ -141,6 +141,8 @@ int* Output::GetPointerInt(string key, string name, string prop, int &Size) {
 if (debug) cout << "GetPointerInt in output " << endl;
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
+	int statelistlength=In[0]->StateList.size();
+	int reactionlistlength=In[0]->ReactionList.size();
 	//int aliaslistlength;
 	int listlength;
 	int choice;
@@ -150,6 +152,8 @@ if (debug) cout << "GetPointerInt in output " << endl;
 	if  (key=="mon") choice=3;
 	if (key=="lat") choice=4;
 	if (key=="output") choice = 5;
+	if (key=="state") choice=6;
+	if (key=="reaction") choice=7;
 
 	switch(choice) {
 		case 1:
@@ -204,6 +208,34 @@ if (debug) cout << "GetPointerInt in output " << endl;
 				j++;
 			}
 			break;
+		case 6:
+			i=0;
+			while (i<statelistlength){
+				if (name==In[0]->StateList[i]) {
+					listlength= Sta[i]->strings.size();
+					j=0;
+					while (j<listlength) {
+						if (prop==Sta[i]->strings[j]) return Sta[i]->GetPointerInt(Sta[i]->strings_value[j],Size);
+						j++;
+					}
+				}
+				i++;
+			}
+			break;
+		case 7:
+			i=0;
+			while (i<reactionlistlength){
+				if (name==In[0]->ReactionList[i]) {
+					listlength= Rea[i]->strings.size();
+					j=0;
+					while (j<listlength) {
+						if (prop==Rea[i]->strings[j]) return Rea[i]->GetPointerInt(Rea[i]->strings_value[j],Size);
+						j++;
+					}
+				}
+				i++;
+			}
+			break;
 		default:
 			cout << "Program error: in Output, GetPointerInt reaches default...." << endl;
 	}
@@ -213,6 +245,8 @@ Real* Output::GetPointer(string key, string name, string prop, int &Size) {
 if (debug) cout << "GetPointer in output " << endl;
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
+	int statelistlength=In[0]->StateList.size();
+	int reactionlistlength=In[0]->ReactionList.size();
 	//int aliaslistlength;
 	int listlength;
 	int choice;
@@ -222,6 +256,8 @@ if (debug) cout << "GetPointer in output " << endl;
 	if  (key=="mon") choice=3;
 	if (key=="lat") choice=4;
 	if (key=="output") choice = 5;
+	if (key=="state") choice=6;
+	if (key=="reaction") choice=7;
 
 	switch(choice) {
 		case 1:
@@ -276,6 +312,34 @@ if (debug) cout << "GetPointer in output " << endl;
 				if (prop==strings[j]){ Size=SizeVectorReal[j];  return PointerVectorReal[j];}
 			}
 			break;
+		case 6:
+			i=0;
+			while (i<statelistlength){
+				if (name==In[0]->StateList[i]) {
+					listlength= Sta[i]->strings.size();
+					j=0;
+					while (j<listlength) {
+						if (prop==Sta[i]->strings[j]) return Sta[i]->GetPointer(Sta[i]->strings_value[j],Size);
+						j++;
+					}
+				}
+				i++;
+			}
+			break;
+		case 7: 
+			i=0;
+			while (i<reactionlistlength){
+				if (name==In[0]->ReactionList[i]) {
+					listlength= Rea[i]->strings.size();
+					j=0;
+					while (j<listlength) {
+						if (prop==Rea[i]->strings[j]) return Rea[i]->GetPointer(Rea[i]->strings_value[j],Size);
+						j++;
+					}
+				}
+				i++;
+			}
+			break;
 		default:
 			cout << "Program error: in Output, GetPointer reaches default...." << endl;
 	}
@@ -285,14 +349,18 @@ int Output::GetValue(string key, string name, string prop, int &int_result, Real
 if (debug) cout << "GetValue (long) in output " << endl;
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
+	int statelistlength=In[0]->StateList.size();
+	int reactionlistlength=In[0]->ReactionList.size();
 	int choice;
 	int i;
-	if  (key=="sys") choice=1;
-	if  (key=="mol") choice=2;
-	if  (key=="mon") choice=3;
-	if  (key=="newton") choice=4;
-	if  (key=="lat") choice=5;
-	if  (key=="output") choice=6;
+	if (key=="sys") choice=1;
+	if (key=="mol") choice=2;
+	if (key=="mon") choice=3;
+	if (key=="newton") choice=4;
+	if (key=="lat") choice=5;
+	if (key=="output") choice=6;
+	if (key=="state") choice=7;
+	if (key=="reaction") choice=8;
 	switch(choice) {
 		case 1:
 			return Sys[0]->GetValue(prop,int_result,Real_result,string_result);
@@ -319,6 +387,20 @@ if (debug) cout << "GetValue (long) in output " << endl;
 			break;
 		case 6:
 			return GetValue(prop,name,int_result,Real_result,string_result);
+			break;
+		case 7:
+			i=0;
+			while (i<statelistlength){
+				if (name==In[0]->StateList[i]) return Sta[i]->GetValue(prop,int_result,Real_result,string_result);
+				i++;
+			}
+			break;
+		case 8:
+			i=0;
+			while (i<reactionlistlength){
+				if (name==In[0]->ReactionList[i]) return Rea[i]->GetValue(prop,int_result,Real_result,string_result);
+				i++;
+			}
 			break;
 		default:
 			cout << "Program error: in Output, GetValue reaches default...." << endl;
@@ -384,7 +466,8 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			key.clear();
 			string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 			int* X=GetPointerInt(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
-			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of array is rejected " << endl;
+			if (X==NULL) { 
+				cout <<"error; pointer for " + s + " not found: output of array is rejected " << endl;
 			} else {
 				key=OUT_key[i];
 				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]).append(":");
@@ -404,7 +487,8 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			key.clear();
 			string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 			Real* X=GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
-			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of vector is rejected " << endl;
+			if (X==NULL) { 
+				cout <<"error; pointer for '" + s + "' not found: output of vector is rejected " << endl;
 			}  else {
 				key=OUT_key[i];
 				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
@@ -442,7 +526,11 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				key = OUT_key[i];
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 				fprintf(fp,"%s \t",s.c_str());
-			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl; }
+			} else {
+				key = OUT_key[i];
+				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
+				cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity '" + s + "' is rejected. " << endl; 
+			}
 		}
 		fprintf(fp,"\n");
 		Lat[0] -> PutProfiles(fp,pointer);

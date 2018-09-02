@@ -42,6 +42,9 @@ if (debug) cout <<"CheckInput in State " + name << endl;
 	in_reaction =false;
 	alphabulk =-1;
 	valence=0;
+	state_id=-1;
+	state_nr_of_copy =-1;
+	seg_nr_of_copy =-1;
 	success= In[0]->CheckParameters("state",name,start,KEYS,PARAMETERS,VALUES);
 	int length=In[0]->MonList.size();
 	for (int k=0; k<length; k++) {
@@ -49,6 +52,11 @@ if (debug) cout <<"CheckInput in State " + name << endl;
 		success=false;
 		}
 	}
+	int length_StateList=In[0]->StateList.size();
+	for (int k=0; k<length_StateList; k++) {
+		if (In[0]->StateList[k] == name) state_id=k; 
+	}
+	if (state_id<0) cout << "error: state_id is negative " << endl; 
 	if (success) {
 		if (GetValue("mon").size()==0) {
 			cout << "Please specify the 'mon' for state " << name << endl; 
@@ -76,6 +84,7 @@ if (debug) cout <<"CheckInput in State " + name << endl;
 					success=false;
 				}
 			}
+			valence = 0;		
 			if (GetValue("valence").size()>0) {
 				valence=In[0]->Get_Real(GetValue("valence"),valence);
 				if (valence <-10 || valence > 10) {
@@ -84,7 +93,7 @@ if (debug) cout <<"CheckInput in State " + name << endl;
 				}
 			}
 		} 
-		state_nr=Seg[mon_nr]->AddState(name,alphabulk,valence,fixed);
+		state_nr=Seg[mon_nr]->AddState(state_id,alphabulk,valence,fixed);
 	}
 	length=chi_name.size();
 	Real Chi;
@@ -154,14 +163,20 @@ if (debug) cout <<"PushOutput in State " + name << endl;
 	ints_value.clear(); 
 	alphabulk=Seg[mon_nr]->state_alphabulk[state_nr];
 	push("alphabulk",alphabulk); 
+	push("valence",valence);
 	int length=chi_name.size();
 	for (int i=0; i<length; i++) push("chi-"+chi_name[i],chi[i]);
 #ifdef CUDA
 #endif
 }
 
-Real* State::GetPointer(string s) {
+Real* State::GetPointer(string s,int &SIZE) {
 if (debug) cout <<"GetPointer in State " + name << endl;
+	return NULL;
+}
+
+int* State::GetPointerInt(string s,int &SIZE) {
+if (debug) cout <<"GetPointerInt in State " + name << endl;
 	return NULL;
 }
 

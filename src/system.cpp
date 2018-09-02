@@ -5,7 +5,7 @@ if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("calculation_type");
 	KEYS.push_back("generate_guess"); 
 	KEYS.push_back("initial_guess");
-	KEYS.push_back("guess_inputfile");
+	KEYS.push_back("guess_inputfile"); 
 	KEYS.push_back("final_guess");
 	KEYS.push_back("guess_outputfile");
 	KEYS.push_back("GPU");
@@ -139,8 +139,9 @@ if (debug) cout <<"PrepareForCalculations in System " << endl;
 
 	volume = 0;
 	for (int i = 0; i < M ; ++i) {
-		volume += KSAM[i];
+		volume += KSAM[i]*Lat[0]->L[i];
 	}
+	Lat[0]->Accesible_volume=volume;
 
 	n_mol = In[0]->MolList.size();
 	success=Lat[0]->PrepareForCalculations();
@@ -183,9 +184,10 @@ if (debug) cout << "CheckInput for system " << endl;
 		if (cuda) {if (!GPU) cout <<" program expect that you are going to use the GPU, but the input is not in line with this (either gradients < 3, or GPU != 'true' : compile without CUDA=1 flag." << endl; success=false;}
 		
 		int length = In[0]->MonList.size();
-		for (int i=0; i<length; i++) if (Seg[i]->ns<2) StatelessMonList.push_back(i);
+		for (int i=0; i<length; i++) if (Seg[i]->state_name.size()==0) StatelessMonList.push_back(i);
 		length = In[0]->MolList.size();
-		int i=0;		
+		int statelength=In[0]->StateList.size();
+		int i=0;
 		while (i<length) {
 			int j=0;
 			int LENGTH=Mol[i]->MolMonList.size();
@@ -194,7 +196,9 @@ if (debug) cout << "CheckInput for system " << endl;
 				if (!In[0]->InSet(SysMonList,Mol[i]->MolMonList[j])) {
 					if (Seg[Mol[i]->MolMonList[j]]->freedom!="tagged" && Seg[Mol[i]->MolMonList[j]]->freedom!="clamp") {
 						SysMonList.push_back(Mol[i]->MolMonList[j]);
-						if (Seg[Mol[i]->MolMonList[j]]->ns<2) ItMonList.push_back(Mol[i]->MolMonList[j]);
+						if (Seg[Mol[i]->MolMonList[j]]->state_name.size()<1&& IsUnique(Mol[i]->MolMonList[j] ,-1)) {
+							ItMonList.push_back(Mol[i]->MolMonList[j]);
+						}
 					}
 				}
 				if (Seg[Mol[i]->MolMonList[j]]->freedom=="tagged"){
@@ -209,6 +213,8 @@ if (debug) cout << "CheckInput for system " << endl;
 				}
 				j++;
 			}
+
+
 			if (Mol[i]->freedom=="free") phibulktot +=Mol[i]->phibulk;
 			if (Mol[i]->freedom=="solvent") {
 				solvent_found=true; solvent=i;
@@ -220,32 +226,36 @@ if (debug) cout << "CheckInput for system " << endl;
 			}
 			i++;
 		}
+		for (int j=0; j<statelength; j++) {
+			if (IsUnique(-1,j)) {
+				ItStateList.push_back(j);
+//cout <<"itstatelist extended with " << j << endl;
+			}
+		}
 		if (!solvent_found ||( phibulktot >0.99999999 && phibulktot < 1.0000000001)) {
 			cout << "In system '" + name + "' the 'solvent' was not found, while the volume fractions of the bulk do not add up to unity. " << endl;
 			success=false;
 		}
 		if (IsCharged()) {
 			charged=true;
+			neutralizer=-1; 
 			bool neutralizer_needed=false;
-			bool neutralizer_found=false;
-			Real phibulk=0;
+			
 			int length=In[0]->MolList.size();
-			for (int i=0; i<length; i++) {
-				if (Mol[i]->freedom=="neutralizer") {neutralizer_found=true; neutralizer=i;}
-				if (Mol[i]->freedom=="restricted") neutralizer_needed=true;
-				if (Mol[i]->freedom=="free") phibulk+=Mol[i]->Charge()*Mol[i]->phibulk;
-				if (Mol[i]->freedom=="solvent") {
-					if (Mol[i]->IsCharged()) {
-						success=false;
-						cout <<"The solvent is charged and this gives problems with neutralization: problem terminated." << endl;
-					}
+			for (int i=0; i<length; i++) if (Mol[i]->freedom=="neutralizer") neutralizer=i;
+
+			if (neutralizer<0) {
+				Real phibulk=0;
+				for (int i=0; i<length; i++) {
+					if (Mol[i]->freedom=="free") phibulk+=Mol[i]->Charge()*Mol[i]->phibulk;
+					if (Mol[i]->freedom=="restricted" && Mol[i]->IsCharged() && !Mol[i]->IsPinned() ) neutralizer_needed=true;
 				}
-			}
-			if (phibulk!=0 || neutralizer_needed) {
-				if (!neutralizer_found) {
-					cout <<"Neutralizer needed because some molecules have freedom 'restricted' or charge density of 'free' molecules in the bulk is not equal to zero " << endl;
-					success=false;
+
+				if (neutralizer_needed || abs(phibulk) > 1e-4) {
+					cout <<"Neutralizer needed because some un-pinned molecules have freedom 'restricted' and/or overall charge density of 'free' molecules in the bulk is not equal to zero " << endl;
+					success=false; 
 				}
+				
 			}
 		}
 
@@ -369,6 +379,38 @@ if (debug) cout << "CheckInput for system " << endl;
 	
 	}
 	return success;
+}
+
+bool System::IsUnique(int Segnr_, int Statenr_) {
+if (debug) cout << "System::IsUnique: Segnr = " << Segnr_ << " Statenr = " << Statenr_ << endl;
+	bool is_unique = true;
+	bool is_equal=true;
+	if (In[0]->MesodynList.size()>0) return is_unique; 
+	int Segnr=Segnr_,Statenr=Statenr_;
+	int length=0;
+	if (Segnr>-1) length = Seg[Segnr]->chi.size(); else length = Sta[Statenr]->chi.size();
+	int itmonlength = ItMonList.size();
+	int itstatelength = ItStateList.size();
+	if (Statenr<0) for (int i=0; i<itmonlength; i++) {
+		if (is_unique) {
+			for (int k=0; k<length; k++) if (Seg[Segnr]->chi[k]!=Seg[ItMonList[i]]->chi[k] ) is_equal=false; 
+			if (is_equal) {is_unique = false; Seg[Segnr]->unique=false; Seg[Segnr]->seg_nr_of_copy =ItMonList[i];} else is_equal = true; 
+		}
+	} else {
+		for (int i=0; i<itmonlength; i++) {
+			if (is_unique) {
+				for (int k=0; k<length; k++) if (Sta[Statenr]->chi[k]!=Seg[ItMonList[i]]->chi[k] ) is_equal=false; 
+				if (is_equal) {is_unique =false; Sta[Statenr]->unique=false; Sta[Statenr]->seg_nr_of_copy =ItMonList[i];} else is_equal = true;
+			}
+		}
+		for (int i=0; i<itstatelength; i++) {
+			if (is_unique) {
+				for (int k=0; k<length; k++) if (Sta[Statenr]->chi[k]!=Sta[ItStateList[i]]->chi[k] ) is_equal=false; 
+				if (is_equal) {is_unique = false; Sta[Statenr]->unique=false; Sta[Statenr]->state_nr_of_copy =ItStateList[i];} else is_equal = true;
+			}
+		}
+	}
+	return is_unique;
 }
 
 bool System::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
@@ -659,13 +701,20 @@ void System::DoElectrostatics(Real* g, Real* x) {
 	Zero(q,M);
 	Zero(eps,M);
 	for (int i=0; i<n_seg; i++) {
-		YplusisCtimesX(q,Seg[i]->phi,Seg[i]->valence,M);
+		if (Seg[i]->ns <2) {
+			YplusisCtimesX(q,Seg[i]->phi,Seg[i]->valence,M);
+		}
 		YplusisCtimesX(eps,Seg[i]->phi,Seg[i]->epsilon,M);
 	}
+	int statelistlength=In[0]->StateList.size();
+	for (int i=0; i<statelistlength; i++) {
+		YplusisCtimesX(q,Seg[Sta[i]->mon_nr]->phi_state+Sta[i]->state_nr*M,Sta[i]->valence,M);
+	}
+		
 	Div(q,phitot,M);
 	Div(eps,phitot,M);
 	Lat[0]->set_bounds(eps);
-	Cp(psi,x,M); Cp(g,psi,M);
+	//Cp(psi,x,M); Cp(g,psi,M);
 	Lat[0]->set_bounds(psi);
 	if (fixedPsi0) {
 		int length=FrozenList.size();
@@ -678,9 +727,8 @@ void System::DoElectrostatics(Real* g, Real* x) {
 bool System::ComputePhis(){
 if(debug) cout <<"ComputePhis in system" << endl;
 	int M= Lat[0]->M;
+	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi
 	bool success=true;
-
-	Real totphibulk=0;
 	Real norm=0;
 	Zero(phitot,M);
 	int length=FrozenList.size();
@@ -694,19 +742,28 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	}
 	for (int i=0; i<n_mol; i++) {
 		norm=0;
-		int length=Mol[i]->MolMonList.size();
 		if (Mol[i]->freedom=="free") {
 			norm=Mol[i]->phibulk/Mol[i]->chainlength;
-			totphibulk +=Mol[i]->phibulk;
 			Mol[i]->n=norm*Mol[i]->GN;
+			
+			A +=Mol[i]->phibulk*Mol[i]->Charge(); 
+			B +=Mol[i]->phibulk;
 		}
 
 		if (Mol[i]->freedom=="restricted" ) {
 			if (Mol[i]->GN>0) {
-			norm = Mol[i]->n/Mol[i]->GN;
-			if (Mol[i]->IsPinned()) Mol[i]->phibulk = 0; else Mol[i]->phibulk=Mol[i]->chainlength*norm;  totphibulk +=Mol[i]->phibulk;
+				norm = Mol[i]->n/Mol[i]->GN;
+				if (Mol[i]->IsPinned()) {
+					Mol[i]->phibulk = 0; 
+				} else {
+					Mol[i]->phibulk=Mol[i]->chainlength*norm;  
+					A +=Mol[i]->phibulk*Mol[i]->Charge(); 
+					B +=Mol[i]->phibulk;
+				}
 			} else { norm = 0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
 		}
+
+
 		if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {
 			if (Mol[i]->GN>0) norm=Mol[i]->n/Mol[i]->GN; else {norm=0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
 		}
@@ -714,18 +771,22 @@ if(debug) cout <<"ComputePhis in system" << endl;
 			norm=1;
 			Mol[i]->phibulk=0;
 		}
+
 		int k=0;
 		Mol[i]->norm=norm;
+		int length=Mol[i]->MolMonList.size();
+
 		while (k<length) {
 			Real *phi=Mol[i]->phi+k*M;
-			//Real *G1=Seg[Mol[i]->MolMonList[k]]->G1;
-			Real *G1=Mol[i]->G1+k*M;
+			//Real *G1=Mol[i]->G1+k*M;
+			Real *G1=Seg[Mol[i]->MolMonList[k]]->G1;
 			Div(phi,G1,M); if (norm>0) Norm(phi,norm,M);
 if (debug) {
 Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]->MolMonList[k] << ": " << sum << endl;
 }
 			k++;
 		}
+
 		if (Mol[i]->freedom=="range_restricted") {
 			Real *phit=Mol[i]->phitot; Zero(phit,M);
 			int k=0;
@@ -739,7 +800,11 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]-
 			Real theta=Lat[0]->ComputeTheta(phit);
 			norm=Mol[i]->theta_range/theta;
 			Mol[i]->norm = norm;
-			Mol[i]->phibulk=Mol[i]->chainlength*norm; totphibulk +=Mol[i]->phibulk;
+			Mol[i]->phibulk=Mol[i]->chainlength*norm; 
+
+			A +=Mol[i]->phibulk*Mol[i]->Charge(); 
+			B +=Mol[i]->phibulk;
+
 			Mol[i]->n=norm*Mol[i]->GN;
 			Mol[i]->theta=Mol[i]->n*Mol[i]->chainlength;
 			Zero(phit,M);
@@ -754,21 +819,32 @@ Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " 
 			}
 		}
 	}
+	if (charged && neutralizer>-1 ) {
+		//Real phib=0;
+		//for (int i=0; i<n_mol; i++) {
+		//	if (i!=neutralizer && i!=solvent) phib+=Mol[i]->phibulk*Mol[i]->Charge();
+		//}
 
-	if (charged) {
-		Real phib=0;
-		for (int i=0; i<n_mol; i++) {
-			if (i!=neutralizer && i!=solvent) phib+=Mol[i]->phibulk*Mol[i]->Charge();
+		//Mol[neutralizer]->phibulk = -phib/Mol[neutralizer]->Charge();
+		if (Mol[neutralizer]->Charge()==Mol[solvent]->Charge()) {
+			cout << "WARNING: solvent charge equals neutralizer charge; outcome problematic...." << endl; 
+		} else Mol[neutralizer]->phibulk= ((B-1.0)*Mol[solvent]->Charge() -A)/(Mol[neutralizer]->Charge()-Mol[solvent]->Charge());
+		if (Mol[neutralizer]->phibulk<0) {
+			cout << "WARNING: neutralizer has negative phibulk. Consider changing neutralizer...: outcome problematic...." << endl; 
 		}
-		Mol[neutralizer]->phibulk = -phib/Mol[neutralizer]->Charge();
-		totphibulk+=Mol[neutralizer]->phibulk;
+		B+=Mol[neutralizer]->phibulk;
 		norm = Mol[neutralizer]->phibulk/Mol[neutralizer]->chainlength;
 		Mol[neutralizer]->n = norm*Mol[neutralizer]->GN;
+//cout <<"n neutralizer: " << Mol[neutralizer]->n << endl;
+//cout <<"phibulk neutr: " << Mol[neutralizer]->phibulk << endl;  
 		Mol[neutralizer]->theta = Mol[neutralizer]->n*Mol[neutralizer]->chainlength;
 		Mol[neutralizer]->norm=norm;
 	}
 
-	Mol[solvent]->phibulk=1.0-totphibulk;
+	Mol[solvent]->phibulk=1.0-B;
+//cout <<"phibulk solv: " << Mol[solvent]->phibulk << endl; 
+	if (Mol[solvent]->phibulk<0) { cout <<"WARNING: solvent has negative phibulk. outcome problematic " << endl; 
+	}
 	norm=Mol[solvent]->phibulk/Mol[solvent]->chainlength;
 	Mol[solvent]->n=norm*Mol[solvent]->GN;
 	Mol[solvent]->theta=Mol[solvent]->n*Mol[solvent]->chainlength;
@@ -784,7 +860,7 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << solvent << "for mon " << k 
 }
 		k++;
 	}
-	if (charged) {
+	if (charged && neutralizer>-1) {
 		k=0;
 		length = Mol[neutralizer]->MolMonList.size();
 		while (k<length) {
@@ -807,7 +883,7 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << neutralizer << "for mon " <
 			Real* phi_molmon = Mol[i]->phi + k*M;
 			Add(phi_mon,phi_molmon,M);
 			//if (!(Seg[Mol[i]->MolMonList[k]]->freedom == "tagged"))
-Add(phitot,phi_molmon,M);
+			Add(phitot,phi_molmon,M);
 			Add(mol_phitot,phi_molmon,M);
 			Seg[Mol[i]->MolMonList[k]]->phibulk +=Mol[i]->fraction(Mol[i]->MolMonList[k])*Mol[i]->phibulk;
 			k++;
@@ -830,8 +906,9 @@ Add(phitot,phi_molmon,M);
 	return success;
 }
 
-bool System::CheckResults(bool e_info) {
+bool System::CheckResults(bool e_info_) {
 if (debug) cout << "CheckResults for system " << endl;
+	bool e_info=e_info_;
 	bool success=true;
 	FreeEnergy=GetFreeEnergy();
 	GrandPotential=GetGrandPotential();
@@ -879,25 +956,28 @@ if (debug) cout << "CheckResults for system " << endl;
 	return success;
 }
 
-Real System::GetFreeEnergy(void) {
+Real System::GetFreeEnergy(void) { //eqn 2.91 of thesis of J.v.Male;
 if (debug) cout << "GetFreeEnergy for system " << endl;
 	int M=Lat[0]->M;
 	Real FreeEnergy=0;
 	Real* F=FreeEnergyDensity; 
 	Real constant=0;
+	int n_seg=In[0]->MonList.size();
 	int n_mol=In[0]->MolList.size();
+	int n_states=In[0]->StateList.size();
 	//for (int i=0; i<n_mol; i++) Lat[0]->remove_bounds(Mol[i]->phitot);
 	int n_mon=In[0]->MonList.size();
 	for (int i=0; i<n_mon; i++) {
-		Lat[0]->remove_bounds(Seg[i]->phi_side);
+		if (Seg[i]->ns <2) 
+			Lat[0]->remove_bounds(Seg[i]->phi_side);
+		else {
+			for (int j=0; j<Seg[i]->ns; j++) {
+				Lat[0]->remove_bounds(Seg[i]->phi_side+j*M);
+			}
+		}
 	}
 
 	Zero(F,M);
-	if (charged) {
-		Times(F,EE,eps,M); Norm(F,-2.0,M); //EE bevat een deling door 2 en de norm met -2 is two pre-correct de latere deling door 2.
-		AddTimes(F,q,psi,M);
-		Norm(F,0.5,M);
-	}
 
 	for (int i=0; i<n_mol; i++){
 		if (Mol[i]->freedom =="clamped") {
@@ -915,60 +995,72 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 			Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
 		}
 	}
-
+	Real* phi;
+	Real *phi_side;
+	Real* g;
+	Real chi; 
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++) {
-		Real* phi=Seg[SysMonList[j]]->phi;
-		Real* u=Seg[SysMonList[j]]->u;
-		Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
+		phi=Seg[SysMonList[j]]->phi;
+		g=Seg[SysMonList[j]]->G1; MinLog(TEMP,g,M);
+		Times(TEMP,phi,TEMP,M); Norm(TEMP,-1,M); 
+		Add(F,TEMP,M);
 	}
 
-/*	for (int i=0; i<n_mol; i++) {
-		int length=Mol[i]->MolMonList.size(); 
-		for (int j=0; j<length; j++) {
-			Real* phi = Mol[i]->phi+M*j;
-			Real* u =Seg[Mol[i]->MolMonList[j]]->u;
-			Times(TEMP,phi,u,M); Norm(TEMP,-1,M); Add(F,TEMP,M);
-		}
-	}*/
-
-	for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
-		Real chi;
-		if (Seg[k]->freedom=="frozen") chi=CHI[j*n_mon+k]; else  chi = CHI[j*n_mon+k]/2;
-		Real *phi_side = Seg[k]->phi_side;
-		Real *phi = Seg[j]->phi;
-		if (Seg[j]->freedom !="frozen") {Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M);}
-	}
-
-	for (int i=0; i<n_mol; i++){
-		constant=0;
-		int n_molmon=Mol[i]->MolMonList.size();
-		for (int j=0; j<n_molmon; j++) for (int k=0; k<n_molmon; k++) {
-			Real fA=Mol[i]->fraction(Mol[i]->MolMonList[j]);
-			Real fB=Mol[i]->fraction(Mol[i]->MolMonList[k]);
-			if (Mol[i]->IsTagged()) {
-				int N=Mol[i]->chainlength;
-				if (N>1) {fA=fA*N/(N-1); fB=fB*N/(N-1); } else {fA =0; fB=0;}
+	for (int j=0; j<n_seg; j++) {
+		if (Seg[j]->ns<2) {
+			phi=Seg[j]->phi;
+			for (int k=0; k<n_seg; k++) {
+				if (Seg[k]->ns<2) {
+					if (Seg[k]->freedom=="frozen" || Seg[k]->freedom=="clamp" || Seg[k]->freedom=="tagged") chi = Seg[j]->chi[k]; 
+					else chi = Seg[j]->chi[k]/2; //double counted.
+					phi_side=Seg[k]->phi_side; 
+					if (!(Seg[j]->freedom =="frozen" || Seg[j]->freedom=="clamp" || Seg[j]->freedom=="tagged" || chi==0)) {Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M);}
+				}
 			}
-			Real chi = CHI[Mol[i]->MolMonList[j]*n_mon+Mol[i]->MolMonList[k]]/2;
-			constant -=fA*fB*chi;
+			for (int i=0; i<n_states; i++) {
+				chi=Seg[j]->chi[n_seg+i]; //not double counted;
+				phi_side=Seg[Sta[i]->mon_nr]->phi_side+Sta[i]->state_nr*M;
+				if (!(Seg[j]->freedom =="frozen" || Seg[j]->freedom=="clamp" || Seg[j]->freedom=="tagged" || chi==0)) {Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M);}
+			}
 		}
-		Real* phi=Mol[i]->phitot;
-		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
 	}
 
-	Lat[0]->remove_bounds(F); Times(F,F,KSAM,M); 
+	for (int j=0; j<n_states; j++) {
+		phi=Seg[Sta[j]->mon_nr]->phi_state+Sta[j]->state_nr*M;
+		for (int k=0; k<n_seg; k++) if (Seg[k]->ns <2) {
+			chi=Sta[j]->chi[k];
+			if (!(Seg[k]->freedom=="frozen" || Seg[k]->freedom=="clamp" || Seg[k]->freedom=="tagged")) chi=chi/2;
+			phi_side=Seg[k]->phi_side;
+			if (chi!=0) {Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M);}
+		}
+		for (int l=0; l<n_states; l++) {
+			chi=Sta[j]->chi[n_seg+l]/2;
+			phi_side=Seg[Sta[j]->mon_nr]->phi_side+Sta[j]->state_nr*M;
+			if (chi!=0) {Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M);}
+		}
+		//Cp(TEMP,phi,M); Norm(TEMP,log(Seg[Sta[j]->mon_nr]->state_alphabulk[Sta[j]->state_nr]),M); Add(F,TEMP,M);
+	}
+	
+	//Lat[0]->remove_bounds(F); 
+	Times(F,F,KSAM,M); //clean up contributions in frozen and tagged sites.
+
+	if (charged) {
+		Times(TEMP,q,psi,M);
+		Norm(TEMP,0.5,M);
+		Add(F,TEMP,M);
+	}
 	return FreeEnergy+Lat[0]->WeightedSum(F);
 }
 
-Real System::GetGrandPotential(void) {
+Real System::GetGrandPotential(void) { //Eqn 293  
 if (debug) cout << "GetGrandPotential for system " << endl;
 	int M=Lat[0]->M;
 	Real* GP =GrandPotentialDensity;
 	int n_mol=In[0]->MolList.size();
-	int n_mon=In[0]->MonList.size();
+	//int n_mon=In[0]->MonList.size();
 	Zero(GP,M);
-	if (charged) {Times(GP,q,psi,M); Norm(GP,0.5,M);}
+ 
 	for (int i=0; i<n_mol; i++){
 		Real *phi=Mol[i]->phitot;
 		Real phibulk = Mol[i]->phibulk;
@@ -979,25 +1071,92 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 		Add(GP,TEMP,M);
 	}
 	Add(GP,alpha,M);
+	Real phibulkA;
+	Real phibulkB;
+	Real chi;
+	Real *phi;
+	Real *phi_side;
+	int n_seg=In[0]->MonList.size();
+	int n_states=In[0]->StateList.size();
+
+	for (int j=0; j<n_seg; j++) if (!(Seg[j]->freedom=="tagged" || Seg[j]->freedom=="clamp" || Seg[j]->freedom=="frozen" )){
+		if (Seg[j]->ns<2){
+			phi=Seg[j]->phi; 
+			phibulkA=Seg[j]->phibulk;
+			for (int k=0; k<n_seg; k++) if (!(Seg[k]->freedom=="tagged" || Seg[k]->freedom=="clamp" || Seg[k]->freedom=="frozen"  )) {
+				if (Seg[k]->ns < 2) {
+					chi=Seg[j]->chi[k]/2;
+					phi_side=Seg[k]->phi_side;
+					phibulkB=Seg[k]->phibulk;
+					if (chi!=0) {
+						Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
+					}
+				} else {
+					for (int k=0; k<n_states; k++) {
+						chi=Seg[j]->chi[n_seg+k]/2; //not double counte;
+						phi_side=Seg[Sta[k]->mon_nr]->phi_side+Sta[k]->state_nr;
+						phibulkB=Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
+						if (chi!=0) {
+							Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
+						}
+					}
+				}
+			}
+		}
+	}
+	for (int j=0; j<n_states; j++) { 
+		phi=Seg[Sta[j]->mon_nr]->phi_state+Sta[j]->state_nr*M;
+		phibulkA=Seg[Sta[j]->mon_nr]->state_phibulk[Sta[j]->state_nr];
+		for (int k=0; k<n_seg; k++) if (!(Seg[k]->freedom=="frozen" || Seg[k]->freedom=="clamp" || Seg[k]->freedom=="tagged")) { 
+			if (Seg[k]->ns <2) {
+				chi=Sta[j]->chi[k]/2;
+				phibulkB=Seg[k]->phibulk;
+				phi_side=Seg[Sta[j]->mon_nr]->phi_side+Sta[k]->state_nr*M;
+				if (chi!=0) {
+					Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
+				}
+			}
+		}
+		for (int k=0; k<n_states; k++) {
+			chi=Sta[j]->chi[n_seg+k]/2; //double counted
+			phi_side=Seg[Sta[k]->mon_nr]->phi_side+Sta[k]->state_nr*M;
+			phibulkB=Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
+			if (chi!=0) {
+				Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
+			}
+		}
+	}
+
+
+/*
 	int n_sysmon=SysMonList.size();
 	for (int j=0; j<n_sysmon; j++)for (int k=0; k<n_sysmon; k++){
-		if (!(Seg[SysMonList[j]]->freedom=="tagged" || Seg[SysMonList[j]]->freedom=="clamp"  )) { //not sure about this line...
-		Real phibulkA=Seg[SysMonList[j]]->phibulk;
-		Real phibulkB=Seg[SysMonList[k]]->phibulk;
-		Real chi = CHI[SysMonList[j]*n_mon+SysMonList[k]]/2;
-		Real *phi=Seg[SysMonList[j]]->phi;
-		Real *phi_side=Seg[SysMonList[k]]->phi_side;
-		Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
-	}
-	}
+			if (!(Seg[SysMonList[j]]->freedom=="tagged" || Seg[SysMonList[j]]->freedom=="clamp"  )){ 
+			phibulkA=Seg[SysMonList[j]]->phibulk;
+			phibulkB=Seg[SysMonList[k]]->phibulk;
+			chi = CHI[SysMonList[j]*n_mon+SysMonList[k]]/2;
+			phi=Seg[SysMonList[j]]->phi;
+			phi_side=Seg[SysMonList[k]]->phi_side;
+			Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
+		}
+	}*/
+
 	Norm(GP,-1.0,M); //correct the sign.
-	Lat[0]->remove_bounds(GP); Times(GP,GP,KSAM,M);
-	return  Lat[0]->WeightedSum(GP);
+	if (!charged) Times(GP,GP,KSAM,M); //necessary to make sure that there are no contribution from solid, tagged or clamped sites in GP.
+
+if (charged) { 
+	Times(TEMP,EE,eps,M); Norm(TEMP,-2.0,M);
+	AddTimes(TEMP,q,psi,M); Norm(TEMP,-0.5,M); Add(GP,TEMP,M); Times(GP,GP,KSAM,M);
+	Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);
+	Add(GP,TEMP,M); 
+}
+	return  Lat[0]->WeightedSum(GP); 
 
 }
 
 bool System::CreateMu() {
 if (debug) cout << "CreateMu for system " << endl;
+	//int M=Lat[0]->M;
 	bool success=true;
 	Real constant;
 	Real n;
@@ -1032,6 +1191,93 @@ if (debug) cout << "CreateMu for system " << endl;
 		}
 		Mu = Mu - NA*constant;
 
+
+		//Real theta;
+		Real phibulkA;
+		Real phibulkB; 
+		Real FA;
+		Real FB;
+		Real chi; 
+		//Real *phi;
+		//Real *alpha;
+		//int n_states; 
+		//int n_seg = Mol[i]->MolMonList.size(); 
+		int statelistlength=In[0]->StateList.size();
+
+		for (int j=0; j<n_mon; j++) {
+			if (Seg[j]->ns <2) {
+				phibulkA=Seg[j]->phibulk;
+				FA=Mol[i]->fraction(j);
+				if (Mol[i]->IsTagged()) FA=(NA+1)/(NA); //works only in case of homopolymers? 
+				if (Mol[i]->IsClamped())FA=(NA+2)/(NA); //works only when homopolymers are clamped....needs probably a fix.
+				for (int k=0; k<n_mon; k++) {
+					if (Seg[i]->ns<2) {
+						phibulkB=Seg[k]->phibulk;
+						FB=Mol[i]->fraction(k);
+						if (Mol[i]->IsTagged()) FB*=(NA+1)/(NA);
+						if (Mol[i]->IsClamped()) FB*=(NA+2)/(NA);
+						chi=Seg[j]->chi[k]/2;
+						Mu = Mu-NA*chi*((phibulkA-FA)*(phibulkB-FB)-FA*FB);
+
+					} else {
+						for (int l=0; l<statelistlength; l++) {
+							phibulkB=Seg[Sta[l]->mon_nr]->state_phibulk[Sta[l]->state_nr];
+							FB=Mol[i]->fraction(Sta[i]->mon_nr)*Seg[Sta[i]->mon_nr]->state_alphabulk[Sta[l]->state_nr]; 
+							if (Mol[i]->IsTagged()) FB*=(NA+1)/(NA);
+							if (Mol[i]->IsClamped()) FB*=(NA+2)/(NA);	
+							chi=Seg[j]->chi[n_mon+l]/2;
+							Mu = Mu-NA*chi*((phibulkA-FA)*(phibulkB-FB)-FA*FB);			
+						}
+					}
+				}
+			}
+		}
+		for (int j=0; j<statelistlength; j++) { 
+			phibulkA=Seg[Sta[j]->mon_nr]->state_phibulk[Sta[j]->state_nr];
+			FA=Mol[i]->fraction(Sta[j]->mon_nr)*Seg[Sta[j]->mon_nr]->state_alphabulk[Sta[j]->state_nr];
+			if (Mol[i]->IsTagged()) FA*=(NA+1)/(NA);
+			if (Mol[i]->IsClamped())FA*=(NA+2)/(NA);
+			for (int k=0; k<n_mon; k++) if (Seg[k]->ns<2) {
+				phibulkB=Seg[k]->phibulk;
+				FB=Mol[i]->fraction(k);
+				if (Mol[i]->IsTagged()) FB*=(NA+1)/(NA);
+				if (Mol[i]->IsClamped())FB*=(NA+2)/(NA);
+				chi=Sta[j]->chi[k]/2;
+				Mu = Mu-NA*chi*((phibulkA-FA)*(phibulkB-FB)-FA*FB);
+			}
+			for (int k=0; k<statelistlength; k++){
+				phibulkB=Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
+				FB=Mol[i]->fraction(Sta[j]->mon_nr)*Seg[Sta[j]->mon_nr]->state_alphabulk[Sta[j]->state_nr];
+				if (Mol[i]->IsTagged()) FB*=(NA+1)/(NA);
+				if (Mol[i]->IsClamped()) FB*=(NA+2)/(NA);
+				chi=Sta[j]->chi[n_mon+k]/2;
+				Mu = Mu-NA*chi*((phibulkA-FA)*(phibulkB-FB)-FA*FB);
+			}
+		}
+/*
+		for (int j=0; j<n_seg; j++) {
+			phi=Mol[i]->phi+j*M; 
+			n_states=Seg[Mol[i]->MolMonList[j]]->ns;
+			if (n_states >1) {
+				for (int k=0; k<n_states; k++) {
+					alpha=Seg[Mol[i]->MolMonList[j]]->alpha+k*M;
+					Times(TEMP,phi,alpha,M); Times(TEMP,TEMP,KSAM,M);
+					theta=Lat[0]->WeightedSum(TEMP);
+					Mu+=theta*log(Seg[Mol[i]->MolMonList[j]]->state_alphabulk[k])/n;
+				}				
+			}
+		}*/
+
+
+		Mol[i]->Mu=Mu;
+//cout <<"mol" << i << " = " << Mu << endl;
+	}
+	return success;
+}
+
+//TODO //make sure that the tagged positions are not in frozen range.
+
+/* ------------------------------------------------------keep for a while---was in mu'
 		for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
 			Real chi= CHI[j*n_mon+k]/2;
 			Real phibulkA=Seg[j]->phibulk;
@@ -1041,12 +1287,88 @@ if (debug) cout << "CreateMu for system " << endl;
 			if (Mol[i]->IsTagged()) {Fa=Fa*(NA+1)/(NA); Fb=Fb*(NA+1)/NA;}
 			if (Mol[i]->IsClamped()) {Fa=Fa*(NA+2)/(NA); Fb=Fb*(NA+2)/NA;}
 			Mu = Mu-NA*chi*(phibulkA-Fa)*(phibulkB-Fb);
+			//Mu=Mu-NA*chi*phibulkA*phibulkB;
 		}
 
-		Mol[i]->Mu=Mu;
-//cout <<"mol" << i << " = " << Mu << endl;
-	}
-	return success;
-}
+		for (int j=0; j<n_seg; j++) {
+			phi=Mol[i]->phi+j*M;
+			n_states=Seg[j]->ns;
+			if (n_states <2) {
+				theta=Lat[0]->WeightedSum(phi)/n;
+				for (int i=0; i<n_mon; i++) {
+					if (Seg[i]->ns <2) {
+						chi=Seg[j]->chi[i];
+						phibulkB=Seg[i]->phibulk;
+						Mu+=theta*chi*phibulkB; 
+					}
+				}
+				for (int l=0; l<statelistlength; l++) {
+					chi = Seg[j]->chi[n_mon+l];  //not double counting
+					phibulkB = Seg[Sta[l]->mon_nr]->state_phibulk[Sta[l]->state_nr];
+					Mu+=theta*chi*phibulkB; 
+				}
+			} else {
+				for (int k=0;k<n_states; k++) {
+					alpha=Seg[j]->alpha+k*M;
+					Times(TEMP,phi,alpha,M);
+					theta=Lat[0]->WeightedSum(TEMP)/n;
+					Mu+=theta*log(Seg[j]->state_alphabulk[k]);
+				}
+			}
+		}
 
-//TODO //make sure that the tagged positions are not in frozen range.
+		theta = NA;
+		for (int j=0; j<n_mon; j++) {
+			n_states=Seg[j]->ns;
+			if (n_states<2) {
+				phibulkA=Seg[j]->phibulk; 	
+				for (int k=0; k<n_mon; k++) {
+					if (Seg[k]->ns<2) {
+						chi=Seg[j]->chi[k]/2;
+						phibulkB=Seg[k]->phibulk; 
+						Mu-=theta*phibulkA*chi*phibulkB;
+					}
+				}
+				for (int k=0; k<statelistlength; k++) {
+					chi=Seg[j]->chi[n_mon+k];
+					phibulkB=Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
+					Mu-=theta*phibulkA*chi*phibulkB;
+				}
+			}
+		}
+		for (int j=0; j<statelistlength; j++) {
+			phibulkA=Seg[Sta[j]->mon_nr]->state_phibulk[Sta[j]->state_nr];
+			for (int k=0; k<statelistlength; k++) {
+				chi=Sta[j]->chi[n_mon+k]/2;
+				phibulkB=Seg[Sta[j]->mon_nr]->state_phibulk[Sta[j]->state_nr];
+				Mu-=theta*phibulkA*chi*phibulkB; 
+			}
+		}*/
+
+
+/*         ---------------------------in free energy -----------------------
+
+	for (int j=0; j<n_mon; j++) for (int k=0; k<n_mon; k++) {
+		Real chi;
+		if (Seg[k]->freedom=="frozen") chi=CHI[j*n_mon+k]; else  chi = CHI[j*n_mon+k]/2;
+		phi_side = Seg[k]->phi_side;
+		phi = Seg[j]->phi;
+		if (Seg[j]->freedom !="frozen") {Times(TEMP,phi,phi_side,M); Norm(TEMP,chi,M); Add(F,TEMP,M);}
+	}
+
+	for (int i=0; i<n_mol; i++){
+		constant=0;
+		int n_molmon=Mol[i]->MolMonList.size();
+		for (int j=0; j<n_molmon; j++) for (int k=0; k<n_molmon; k++) {
+			Real fA=Mol[i]->fraction(Mol[i]->MolMonList[j]);
+			Real fB=Mol[i]->fraction(Mol[i]->MolMonList[k]);
+			if (Mol[i]->IsTagged()) {
+				int N=Mol[i]->chainlength;
+				if (N>1) {fA=fA*N/(N-1); fB=fB*N/(N-1); } else {fA =0; fB=0;}
+			}
+			Real chi = CHI[Mol[i]->MolMonList[j]*n_mon+Mol[i]->MolMonList[k]]/2;
+			constant -=fA*fB*chi;
+		}
+		Real* phi=Mol[i]->phitot;
+		Cp(TEMP,phi,M); Norm(TEMP,constant,M); Add(F,TEMP,M);
+	}*/ 

@@ -238,7 +238,8 @@ if(debug) cout <<"push (string) in  Newton " << endl;
 	strings_value.push_back(X);
 }
 void Newton::PushOutput() {
-if(debug) cout <<"PushOutput in  Newton " << endl;
+if(!debug) cout <<"PushOutput in  Newton " << endl;
+	Lat[0]->PushOutput();
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -264,6 +265,16 @@ if(debug) cout <<"PushOutput in  Newton " << endl;
 		push("max_n_small_alpha",maxNumSmallAlpha);
 		push("min_accuracy_for_hessian",minAccuracyForHessian);
 	}
+	//Lat[0]->PushOutput();
+	int length = In[0]->MonList.size();
+	for (int i=0; i<length; i++) Seg[i]->PushOutput();
+	length = In[0]->MolList.size();
+	for (int i=0; i<length; i++) {
+		int al_length=Mol[i]->MolAlList.size();
+		for (int k=0; k<al_length; k++) Mol[i]->Al[k]->PushOutput();
+		Mol[i]->PushOutput();
+	}
+	Sys[0]->PushOutput();
 }
 
 int Newton::GetValue(string prop,int &int_result,Real &Real_result,string &string_result){
@@ -304,6 +315,7 @@ if(debug) cout <<"GetValue (long) in  Newton " << endl;
 		}
 		i++;
 	}
+	
 	return 0;
 }
 
@@ -954,12 +966,13 @@ if(debug) cout <<"iterate in Newton" << endl;
 	delete [] h; delete [] reverseDirection;
 }
 
+
 bool Newton::PutU() {
 if(debug) cout <<"PutU in  Newton " << endl;
-	int M=Lat[0]->M;
-
-
+	//int M=Lat[0]->M;
 	bool success=true;
+/*
+	
 	int sysmon_length = Sys[0]->SysMonList.size();
 	alpha=Sys[0]->alpha;
 	if (In[0]->MesodynList.size()>0) {
@@ -988,7 +1001,7 @@ if(debug) cout <<"PutU in  Newton " << endl;
 			}
 			i++;
 		}
-	}
+	}*/
 	return success;
 }
 
@@ -1244,7 +1257,7 @@ bool Newton::SolveMesodyn(vector<Real>& rho, vector<Real>& fAlpha) {
 	Cp(&fAlpha[0],xx,iv);
 	/*if (Sys[0]->charged) {
 		Sys[0]->DoElectrostatics(alpha+sysmon_length*M,xx+sysmon_length*M);
-		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
+		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi);
 	}*/
 
 	for (int i=0; i<sysmon_length; i++) {
@@ -1481,7 +1494,7 @@ void Newton::ComputeG(Real* g){
 
 	if (Sys[0]->charged) {
 		Sys[0]->DoElectrostatics(g+sysmon_length*M,xx+sysmon_length*M);
-		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
+		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi);
 	}
 
 	Cp(g,xx,iv); Zero(alpha,M);
@@ -1515,7 +1528,7 @@ void Newton::ComputeG(Real* g){
 	//	Cp(g+sysmon_length*M,Sys[0]->psi,M);
 	//	Lat[0]->UpdatePsi(Sys[0]->psi,Sys[0]->q,Sys[0]->eps);
 	//	Lat[0]->set_bounds(Sys[0]->psi);
-	//	//Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
+	//	//Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi);
 	//	//YisAminB(g+sysmon_length*M,g+sysmon_length*M,Sys[0]->psi,M);
 	//	YplusisCtimesX(g+sysmon_length*M,Sys[0]->psi,-1.0,M);
 	}

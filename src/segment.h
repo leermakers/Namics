@@ -27,6 +27,9 @@ public:
 	int clamp_nr;
 	int n_seg;
 	int seg_nr;
+	bool unique;
+	int seg_nr_of_copy;
+	int state_nr_of_copy; 
 	Real epsilon;
 	Real valence;
 	Real PSI0;
@@ -36,6 +39,7 @@ public:
 	Real guess_u;
 	vector<int>state_change;
 	vector<Real>state_valence;
+	vector<int>state_id;
 	vector<string>state_name;
 	vector<int>state_nr; 
 	vector<Real>state_alphabulk; 
@@ -117,9 +121,8 @@ public:
 	bool UpdateVarInfo(int);
 	void PutValue(Real);
 	Real GetValue();
-	int AddState(string,Real,Real,bool); 
+	int AddState(int,Real,Real,bool); 
 	void SetPhiSide();
-	void DoBoltzmann();
 	int PutAlpha(Real*,int);
 };
 #endif

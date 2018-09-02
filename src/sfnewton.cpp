@@ -72,6 +72,7 @@ C Copyright (2018) Wageningen University, NL.
 	minAccuracyForHessian=0.1;
 	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); H_Zero(reverseDirection,reverseDirectionRange);
 
+
 }
 
 SFNewton::~SFNewton() {
@@ -502,9 +503,11 @@ if(debug) cout <<"newdirection in Newton" << endl;
 	return accuracy;
 }
 
-void SFNewton::newtrustregion(Real *p0,Real ALPHA, Real &trustregion, Real& trustfactor, Real delta_max, Real delta_min, int nvar){
+void SFNewton::newtrustregion(Real *p0,Real ALPHA_, Real &trustregion, Real& trustfactor, Real delta_max, Real delta_min, int nvar){
 if(debug) cout <<"newtrustregion in Newton" << endl;
-	Real normp0 = norm2(p0,nvar);
+	Real ALPHA=ALPHA_; 
+	Real normp0 =0;
+	normp0= norm2(p0,nvar);
 
 	if ( normp0>0 && trustregion>2*ALPHA*normp0 ) {
 		trustregion = 2*ALPHA*normp0;
@@ -602,7 +605,10 @@ void SFNewton::ResetX(Real* x,int nvar,bool filter) { //done
 }
 
 
-bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real residual, Real tolerance, string s) {
+bool SFNewton::Message(bool e_info_, bool s_info_, int it_, int iterationlimit_,Real residual_, Real tolerance_, string s_) {
+	bool e_info=e_info_, s_info=s_info_; string s=s_; 
+	int it=it_, iterationlimit=iterationlimit_;  
+	Real residual=residual_, tolerance=tolerance_;
 	if (debug) cout <<"Message in  Newton " << endl;
 	bool success=true;
 	if (it == iterationlimit) {
@@ -625,9 +631,15 @@ bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real
 	return success;
 }
 
-bool SFNewton::iterate(Real* x,int nvar,int iterationlimit,Real tolerance, Real delta_max, Real delta_min,bool filter) {
+bool SFNewton::iterate(Real* x,int nvar_,int iterationlimit_,Real tolerance_, Real delta_max_, Real delta_min_,bool filter_) {
 if(debug) cout <<"iterate in SFNewton" << endl;
+	int nvar=nvar_;
+	int iterationlimit=iterationlimit_;
+	Real tolerance=tolerance_;
 	bool success;
+	Real delta_max=delta_max_; 
+	Real delta_min=delta_min_;
+	bool filter=filter_; 
 Real* x0 = (Real*) malloc(nvar*sizeof(Real)); H_Zero(x0,nvar);
 Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
 Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);
@@ -802,7 +814,7 @@ Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
 Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
 Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	int it=0;
-	int k_diis=1;
+	int k_diis=0;
 	int k=0;
 	Cp(x0,x,nvar);
 	residuals(x,g);

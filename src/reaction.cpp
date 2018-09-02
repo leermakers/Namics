@@ -194,8 +194,12 @@ if (debug) cout <<"PushOutput in Reaction " + name << endl;
 #endif
 }
 
-Real* Reaction::GetPointer(string s) {
+Real* Reaction::GetPointer(string s,int &SIZE) {
 if (debug) cout <<"GetPointer in Reaction " + name << endl;
+	return NULL;
+}
+int* Reaction::GetPointerInt(string s, int &SIZE) {
+if (debug) cout <<"GetPointerInt in Reaction " + name << endl;
 	return NULL;
 }
 

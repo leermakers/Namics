@@ -54,8 +54,13 @@ vector<int> Sz;
 vector<int> X;
 vector<int> Y;
 vector<int> Z;
+vector<int> X_bm;
+vector<int> Y_bm;
+vector<int> Z_bm;
 
   bool MonteCarlo();
+  bool ChangeMode();
+  bool IsLegal();
 
   void push(string, Real);
   void push(string, int);
@@ -66,6 +71,7 @@ vector<int> Z;
   void PushOutput();
   int GetValue(string, int&, Real&, string&);
   int GetRandom(int);
+  Real GetRandom(Real);
 
   std::vector<string> KEYS;
   std::vector<string> PARAMETERS;

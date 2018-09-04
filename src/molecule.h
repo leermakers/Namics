@@ -53,6 +53,7 @@ public:
 	vector<int> molmon_nr;
 	vector<int> memory;
 	vector<int> last_stored;
+	vector<Real> mu_state;
 	int *Bx;
 	int *By;
 	int *Bz;
@@ -72,13 +73,13 @@ public:
 	int *H_Py2;
 	int *H_Pz2;
 	Real *phi;
-	Real *G1;
-	Real *u;
+	//Real *G1;
+	//Real *u;
 	Real *rho;
 	Real *H_phi;
 	Real *H_mask1;
 	Real *H_mask2;
-	Real* H_u;
+	//Real* H_u;
 	Real *H_gn;
 	Real *mask1;
 	Real *mask2;
@@ -172,6 +173,10 @@ public:
 	//bool ComputePhiLin();
 	bool ComputePhiBra();
 	bool ComputePhiDendrimer();
+<<<<<<< HEAD
+=======
+	//void CpBoltzmann();
+>>>>>>> local
 };
 
 #endif

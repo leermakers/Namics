@@ -9,7 +9,7 @@ mon : C : pinned_range : 1;6
 mon : O : freedom : free
 mon : W : freedom : free
 
-mol : lipid : composition : (C)16((O)1(C)2)5[(O)1](O)1
+mol : lipid : composition : (C)16((O)1(C)2)5(O)1
 mol : lipid : freedom : restricted
 mol : lipid : theta : 4
 
@@ -55,3 +55,4 @@ var : mol-lipid : step : 0.1
 var : mol-lipid : end_value : 5
 //var : mol-lipid : search : theta
 //var : sys-noname: grand_potential : 0
+

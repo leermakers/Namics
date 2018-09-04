@@ -21,6 +21,8 @@ private:
   const vector<Molecule*> Mol;
   const vector<Segment*> Seg;
   const vector<System*> Sys;
+  const vector<State*> Sta;
+  const vector<Reaction*> Rea;
   const vector<Solve_scf*> New;
   const string brand;
 
@@ -29,7 +31,7 @@ private:
 
 
 public:
-  Teng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
+  Teng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Teng();
 
   int tag_seg;

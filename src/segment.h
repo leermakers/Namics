@@ -22,9 +22,16 @@ public:
 	vector<int> bx;
 	vector<int> by;
 	vector<int> bz;
+
+	vector<string> chi_name;
+	vector<Real> chi;
 	int clamp_nr;
 	int n_seg;
 	int seg_nr;
+	bool unique;
+	int seg_nr_of_copy;
+	int state_nr_of_copy; 
+
 	Real epsilon;
 	Real valence;
 	Real PSI0;
@@ -32,9 +39,19 @@ public:
 	Real phibulk;
 	string freedom;
 	Real guess_u;
+	vector<int>state_change;
+	vector<Real>state_valence;
+	vector<int>state_id;
+	vector<string>state_name;
+	vector<int>state_nr; 
+	vector<Real>state_alphabulk; 
+	vector<Real>state_phibulk;
+	vector<Real>state_theta;
 
 	string filename;
 	bool block;
+	int ns; 
+
 	int n_pos;
 	int n_box;
 	int* r;
@@ -48,6 +65,7 @@ public:
 	int Var_target;
 	string Var_type;
 	int chi_var_seg;
+	int chi_var_state;
 	Real chi_value;
 
 	vector<string> ints;
@@ -72,12 +90,20 @@ public:
 	int* H_MASK;
 	Real* H_u;
 	Real* H_phi;
+
+	Real* H_phi_state;
+	Real* H_alpha;
+
 	int* P;
 	int* MASK;
 	//Real* G1;
 	Real* phi;
+	Real* phi_state;
 	Real* phi_side;
 	Real* u;
+
+	Real* alpha;
+
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -104,6 +130,8 @@ public:
 	bool UpdateVarInfo(int);
 	void PutValue(Real);
 	Real GetValue();
+	int AddState(int,Real,Real,bool); 
+	void SetPhiSide();
+	int PutAlpha(Real*,int);
 };
-
 #endif

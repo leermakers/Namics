@@ -27,8 +27,6 @@ mol : A : freedom : restricted
 mol : A : theta : 450
 mol : B : freedom : solvent
 
-
-
 output : kal : append : true
 kal : sys : grad1 : free_energy
 //kal : output : grad1 : MCS
@@ -57,3 +55,4 @@ teng: ram : MCS :4
 teng: ram : save_interval :1
 
 start
+

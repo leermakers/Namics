@@ -23,6 +23,7 @@ mol : B : freedom : solvent
 newton : isaac : method : DIIS
 newton : isaac : m : 10
 newton : isaac : i_info : 25
+newton : isaac : iterationlimit : 1000
 //newton : isaac : deltamax : 0.1
 output : pro : append : false 
 pro : mon : * : phi

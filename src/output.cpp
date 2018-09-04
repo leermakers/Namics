@@ -1,8 +1,9 @@
+
 #include "output.h"
 #include "time.h"
-Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
+Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
 if (debug) cout <<"constructor in Output "<< endl;
-	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
+	In=In_; Lat = Lat_; Seg=Seg_; Sta=Sta_; Rea=Rea_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");

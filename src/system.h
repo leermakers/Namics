@@ -2,11 +2,13 @@
 #define SYSTEMxH
 #include "namics.h"
 #include "segment.h"
+#include "state.h"
+#include "reaction.h"
 #include "molecule.h"
 #include "lattice.h"
 class System {
 public:
-	System(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,string);
+	System(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<State*>,vector<Reaction*>,vector<Molecule*>,string);
 
 ~System();
 
@@ -14,13 +16,22 @@ public:
 	vector<Input*> In;
 	Real* CHI;
 	vector<Segment*> Seg;
+	vector<State*> Sta;
+	vector<Reaction*> Rea;
 	vector<Molecule*> Mol;
 	vector<Lattice*> Lat;
 	vector<int> SysMonList;
+	vector<int> ItMonList;
+	vector<int> ItStateList;
+	vector<int> StatelessMonList;
 	vector<int> SysMolMonList;
 	vector<int> FrozenList;
 	vector<int> SysTagList;
 	vector<int> SysClampList;
+	vector<int> XmolList;
+	vector<int> XstateList_1;
+	vector<int> XstateList_2;
+	vector<int> Xn_1;
 	Real FreeEnergy;
 	Real GrandPotential;
 	Real* phitot;
@@ -45,10 +56,11 @@ public:
 	int solvent;
 	int neutralizer;
 	int tag_segment;
-	int volume;
+	Real volume;
 	bool input_error;
 	bool cuda;
 	bool charged;
+	bool internal_states;
 	string initial_guess;
 	string guess_inputfile;
 	string final_guess;
@@ -86,6 +98,7 @@ public:
 	string GetMonName(int );
 	bool CheckChi_values(int);
 	bool IsCharged();
+	bool IsUnique(int,int);
 	void AllocateMemory();
 	bool PrepareForCalculations();
 	bool ComputePhis();

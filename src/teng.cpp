@@ -1,12 +1,14 @@
 #include "teng.h"
 #include "output.h"
 
-Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_,  string name_)
+Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_,vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_,  string name_)
     : name{name_},
       In{In_},
       Lat{Lat_},
       Mol{Mol_},
       Seg{Seg_},
+      Sta{Sta_},
+      Rea{Rea_},
       Sys{Sys_},
       New{New_}
 

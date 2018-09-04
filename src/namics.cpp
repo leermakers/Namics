@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
 
 // Create variate class instance and check inputs (reference above)
     		for (int k = 0; k < n_var; k++) {
-      			Var.push_back(new Variate(In, Lat, Seg, Mol, Sys, In[0]->VarList[k]));
+      			Var.push_back(new Variate(In, Lat, Seg, Sta, Rea, Mol, Sys, In[0]->VarList[k]));
       			if (!Var[k]->CheckInput(start)) {
         		return 0;
       			}

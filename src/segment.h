@@ -44,6 +44,7 @@ public:
 	vector<int>state_nr; 
 	vector<Real>state_alphabulk; 
 	vector<Real>state_phibulk;
+	vector<Real>state_theta;
 
 	string filename;
 	bool block;
@@ -61,6 +62,7 @@ public:
 	int Var_target;
 	string Var_type;
 	int chi_var_seg;
+	int chi_var_state;
 	Real chi_value;
 
 	vector<string> ints;

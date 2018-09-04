@@ -277,3 +277,113 @@ Real Reaction::Residual_value() { //only working when chi are not state dependen
 	}
 	return -1.0+res_value/pKeff();
 }
+
+bool Reaction::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
+if (debug) cout << "Reaction::PutVarInfo " << endl;
+	bool success=true;
+	Var_target=-1;
+	Var_type="";
+	if (Var_type_=="scan"){
+		Var_type="scan";
+		if (Var_target_=="pK") {Var_target=0; Var_start_value=pK;}
+	}
+	if (Var_target<0) {success=false; cout <<"In var: for Reaction you can 'scan' {pK} "<<endl; }
+	return success;
+}
+
+int Reaction::PutVarScan(Real step, Real end_value, int steps, string scale_) {
+if (debug) cout << "Reaction::PutVarScan " << endl;
+	num_of_steps=-1;
+	scale=scale_;
+	Var_end_value=end_value;
+	if (scale=="exponential") {
+		cout <<"In var scan: the scale for pK scan should be linear (my guess....)." << endl;
+		return -1;
+	} else {
+		Var_steps=0; Var_step=step;
+		if (step==0) {
+			cout <<"In var scan: of Reaction variable, the value of step can not be zero" << endl;
+			return -1;
+		}
+		num_of_steps=(Var_end_value-Var_start_value)/step+1;
+
+		if (num_of_steps<0) {
+			cout<<"In var scan: (end_value-start_value)/step is negative. This is not allowed. Try changing the sign of the 'step'." << endl;
+			return -1;
+		}
+	}
+
+	return num_of_steps;
+}
+
+bool Reaction::UpdateVarInfo(int step_nr) {
+if (debug) cout << "Reaction::UpdateVarInfo " << endl;
+	bool success=true;
+	switch(Var_target) {
+		case 0:
+			if (scale=="exponential") {
+				cout <<"should not have happened" << endl; 
+			} else {
+				pK=Var_start_value+step_nr*Var_step;
+			}
+			break;
+		default:
+			break;
+	}
+	return success;
+}
+
+bool Reaction::ResetInitValue() {
+if (debug) cout << "Reaction::ResetInitValue() " << endl;
+	bool success=true;
+	switch(Var_target) {
+		case 0:
+			pK=Var_start_value;
+			break;
+		default:
+			cout <<"program error in Reaction:ResetInitValue "<<endl;
+			break;
+	}
+	return success;
+}
+
+void Reaction::PutValue(Real X) {
+if (debug) cout << "Reaction::PutValue() " << endl;
+	switch(Var_target) {
+		case 0:
+			pK=X;
+			break;
+		default:
+			cout <<"program error in Reaction:ResetInitValue "<<endl;
+			break;
+	}
+}
+
+Real Reaction::GetValue() {
+if (debug) cout << "Reaction::GetValue() " << endl;
+	Real X=0;
+	switch(Var_target) {
+		case 0:
+			X=pK; 
+			break;
+		default:
+			cout <<"program error in Reaction:ResetInitValue "<<endl;
+			break;
+	}
+	return X;
+}
+
+Real Reaction::GetError() {
+if (debug) cout << "Reaction::GetError " << endl;
+	Real Error=0;
+	switch (Var_target) {
+		case 0:
+			cout <<"Program error in Reaction::GetVarError" <<endl;
+			break;
+		default:
+			cout <<"Program error in Reaction::GetVarError" <<endl;
+			break;
+	}
+	return Error;
+}
+

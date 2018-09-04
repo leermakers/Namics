@@ -4,11 +4,13 @@
 #include "input.h"
 #include "lattice.h"
 #include "segment.h"
+#include "state.h"
+#include "reaction.h"
 #include "molecule.h"
 #include "system.h"
 class Variate {
 public:
-	Variate(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,string);
+	Variate(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<State*>,vector<Reaction*>,vector<Molecule*>,vector<System*>,string);
 
 ~Variate();
 	void DeAllocateMemory();
@@ -16,6 +18,8 @@ public:
 	vector<Input*> In; 
 	vector<Lattice*> Lat; 
 	vector<Segment*> Seg;
+	vector<State*> Sta;
+	vector<Reaction*> Rea;
 	vector<Molecule*> Mol;
 	vector<System*> Sys;
 

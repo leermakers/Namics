@@ -29,6 +29,21 @@ public:
 	bool fixed;
 	bool in_reaction;
 
+	int Var_steps;
+	Real Var_step;
+	Real Var_end_value;
+	Real Var_start_value;
+	Real Var_start_search_value;
+	int num_of_steps;
+	int Var_target;
+	int Var_scan_value;
+	int Var_search_value;
+	string Var_type;
+	string scale;
+	Real Var_target_value;
+	int chi_var_seg;
+	int chi_var_state;
+
 	vector<string> ints;
 	vector<string> Reals;
 	vector<string> bools;
@@ -53,6 +68,15 @@ public:
 	bool CheckInput(int);
 	void PutParameter(string); 
 	string GetValue(string); 
+	bool PutVarInfo(string,string,Real);
+	int PutVarScan(Real,Real,int,string);
+	bool ResetInitValue();
+	bool UpdateVarInfo(int);
+	Real GetError();
+	Real GetValue();
+	void PutValue(Real);
+
+
 ;
 };
 #endif

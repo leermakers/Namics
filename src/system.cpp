@@ -9,6 +9,7 @@ if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("final_guess");
 	KEYS.push_back("guess_outputfile");
 	KEYS.push_back("GPU");
+	KEYS.push_back("X"); 
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]);
 	charged=false;
@@ -375,8 +376,83 @@ if (debug) cout << "CheckInput for system " << endl;
 			}
 			success=false;
 		}
-		
+	}
 	
+	if (GetValue("X").size()>0){
+		XmolList.clear();
+		XstateList_1.clear();
+		XstateList_2.clear();
+		Xn_1.clear();
+		string s = GetValue("X"); 
+		vector<string> sub;
+		vector<string> SUB; 
+		In[0]->split(s,'-',sub);
+		if (sub[0] !="F") {
+			cout <<"X is the characteristic function specified by user." << endl; 
+			cout <<"Example of how a characteristic function is defined:" << endl; 
+			cout <<"Case 1: no internal states: 'F - molname_1  -molname_2 - ...' "<< endl;
+			cout <<"       Here molname_1 etc are names of molecules in the system. " << endl;
+			cout <<"Case 2: internal states : F - molname_1 -(statename_1,statename_2,#number) - ... " << endl;
+			cout <<"        Note that in ... you can add as many molname's and (...,...,...) combinations as you wish" << endl; 
+			cout <<"Here F = Helmholtz energy. " << endl;
+			cout <<"and the statement '-molname-i' implies that 'mu_i \times n_i' is subtracted from F. " << endl; 
+			cout <<"The (statename_i,statename_j,n) implies that mu_j times n_i times theta_i' is subtracted from F " << endl;
+			cout << endl;  
+			cout <<"Error found: The first item is not the expected 'F' " << endl; success = false; 
+		} else {
+		 	int length_sub = sub.size();
+			int length_mol=In[0]->MolList.size();
+			int length_state=In[0]->StateList.size();
+			for (int i=1; i<length_sub; i++) {
+				SUB.clear();
+				In[0]->split(sub[i],',',SUB);
+				if (SUB.size()==1) {//want to see mol name
+					bool found=false; 
+					for (int k=0; k<length_mol; k++) {
+						if (SUB[0]==In[0]->MolList[k]) {
+							XmolList.push_back(k); found=true;
+						}
+					}
+					if (!found) { success=false;
+						cout <<"In characteristic function X, the entry '" + SUB[0] + "' is not a molecule name " << endl; 
+					}
+				} else { //want to see (statename1,statename2)
+					if (SUB.size()!=3) {
+						cout <<"In characteristic function X, the entry '" + sub[i] + "' is not recognised as '(statename_1, statename_2,n_1 )' " <<endl;
+						success=false; 
+					} else {
+						bool found_1=false, found_2=false;
+						for (int k=0; k<length_state; k++) {
+							if (SUB[0].substr(1,SUB[0].length()-1)==In[0]->StateList[k]) {
+								found_1=true; XstateList_1.push_back(k);
+							}
+							if (SUB[1]==In[0]->StateList[k]) {
+								found_2=true; XstateList_2.push_back(k); 
+							}
+						}
+						int sto=In[0]->Get_int(SUB[2].substr(0,SUB[2].length()-1),-1);
+						if (sto<0) {
+							success=false; 
+							cout<<"In characteristic function X, the entry '" + sub[i] + "' does not include a positive integer at the third argument. " << endl; 
+						} else Xn_1.push_back(sto);
+						if (!(found_1 && found_2)) {
+							cout <<"In characteristic function X, the entry '" + sub[i] + "' is not coding for '(statename_1,statename_2,n_1)" << endl;
+							if (!found_1) cout << "first state name " + SUB[0].substr(1,SUB[0].length()-1) + " does not exist" << endl;
+							if (!found_2) cout << "second state name " + SUB[1] + " does not exist" << endl; 
+							success=false; 
+						}
+					}
+				}
+			}
+//cout <<"this is what I have found" << endl;
+//int length_1= XmolList.size();
+//int length_2= Xn_1.size();
+//cout <<"the molecules that are subtracted are " << endl;
+//for (int i=0; i<length_1; i++) cout <<XmolList[i] << " "; cout <<endl; 
+//cout <<"the states that are subtracted are " << endl;
+//for (int i=0; i<length_2; i++) cout <<XstateList_1[i] <<" " <<XstateList_2[i]<< " " << Xn_1[i] << endl; 
+	
+		}
 	}
 	return success;
 }
@@ -505,10 +581,40 @@ if (debug) cout << "PushOutput for system " << endl;
 	push("temperature",T);
 	push("free_energy",FreeEnergy);
 	push("grand_potential",GrandPotential);
+	Real X=0;
+	if (Xn_1.size()>0 || XmolList.size()>0) {
+		X=FreeEnergy;
+		int length_mol=XmolList.size(); 
+		for (int i=0; i<length_mol; i++){
+			X-=Mol[XmolList[i]]->n*Mol[XmolList[i]]->Mu;
+		}
+		int length_state=Xn_1.size();
+		Real mu=-999;
+		for (int i=0; i<length_state; i++) {
+			length_mol=In[0]->MolList.size();
+			for (int k=0; k<length_mol; k++) {
+				if (Mol[k]->chainlength==1) {
+					int seg=Mol[k]->MolMonList[0];
+					if (Seg[seg]->ns >1) {
+						for (int j=0; j<Seg[seg]->ns; j++) {
+							if (Seg[seg]->state_name[j]==In[0]->StateList[XstateList_2[i]]) {
+								mu=Mol[k]->mu_state[j];
+							}	
+						}
+					}
+				}
+			}
+			if (mu==-999) {cout <<"Failed to find chemical potential for state " + In[0]->StateList[XstateList_2[i]] + ": (not a monomer?) In characteristic function X, mu is set to zero." <<endl; mu=0; }
+			X-=Seg[Sta[XstateList_1[i]]->mon_nr]->state_theta[Sta[XstateList_1[i]]->state_nr]*Xn_1[i]*mu;
+		}
+		push("X",X);
+	}
+cout << " X  = " << X << endl; 
 	push("calculation_type",CalculationType);
 	push("guess_type",GuessType);
 	push("cuda",cuda);
 	push("solvent",Mol[solvent]->name);
+	
 	string s="profile;0"; push("alpha",s);
 	s="profile;1"; push("GrandPotentialDensity",s);
 	s="profile;2"; push("FreeEnergyDensity",s);

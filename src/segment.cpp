@@ -158,6 +158,8 @@ bool Segment::CheckInput(int start) {
 if (debug) cout <<"CheckInput in Segment " + name << endl;
 	bool success;
 	unique=true;
+	chi_var_seg=-1;
+	chi_var_state=-1;
 	seg_nr_of_copy=-1;
 	state_nr_of_copy=-1; 
 	ns=1; 
@@ -447,10 +449,13 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 }
 
 bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
+if (debug) cout << "Segment::PutVarInfo " << endl;
 	bool success=true;
-
+	int length_mon,length_state;
+	int i; 
 	Var_target=-1;
 	chi_var_seg=-1;
+	chi_var_state=-1;
 	Var_type="";
 	if (Var_type_=="scan"){
 		Var_type="scan";
@@ -461,18 +466,33 @@ bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_v
 			In[0]->split(Var_target_,'-',sub);
 			if (sub.size()==2) {
 				if (sub[0]=="chi") {
-					if (In[0]->InSet(In[0]->MonList,chi_var_seg,sub[1])) {
-						Var_target=2; Var_start_value=In[0]->Get_Real(GetValue(Var_target_),0);
-					} else {cout <<"In var: trying to read " + Var_target_ + " failed, because Seg " + sub[1] + "was not found" << endl;}
+					length_mon=In[0]->MonList.size();
+					for (i=0; i<length_mon; i++) {
+						if (sub[1]==In[0]->MonList[i]) {
+							Var_target=2; Var_start_value=chi[i];
+							chi_var_seg=i; 
+						}
+					}
+					if (Var_target!=2) {
+						length_state=In[0]->StateList.size();
+						for (i=0; i<length_state; i++) {
+							if (sub[1]==In[0]->StateList[i]) {
+								Var_target = 2; Var_start_value=chi[i+length_mon];
+								chi_var_state=i;
+							}
+						}
+					}
+					if (Var_target !=2) cout <<"In var: trying to read " + Var_target_ + " failed, because neither Seg " + sub[1] + " nor State " + sub[1] + " were found" << endl;
 				}
 			}
 		}
 	}
-	if (Var_target<0) {success=false; cout <<"In var: for segment you can 'scan' {valence, ePsi0/kT, or a chi-value 'chi-X' with 'X' valid mon : name} "<<endl; }
+	if (Var_target<0) {success=false; cout <<"In var: for segment you can 'scan' {valence, ePsi0/kT, or a chi-value 'chi-X' with 'X' valid mon/state : name} "<<endl; }
 	return success;
 }
 
 int Segment::PutVarScan(Real step, Real end_value, int steps, string scale_) {
+if (debug) cout << "Segment::PutVarScan " << endl;
 	num_of_steps=-1;
 	scale=scale_;
 	Var_end_value=end_value;
@@ -509,7 +529,9 @@ int Segment::PutVarScan(Real step, Real end_value, int steps, string scale_) {
 }
 
 bool Segment::UpdateVarInfo(int step_nr) {
+if (debug) cout << "Segment::UpdateVarInfo() " << endl;
 	bool success=true;
+	int length; 
 	switch(Var_target) {
 		case 0:
 			if (scale=="exponential") {
@@ -537,7 +559,14 @@ bool Segment::UpdateVarInfo(int step_nr) {
 			if (scale=="exponential") {
 				cout <<"In var of chi-parameter, only linear scale is implemented" << endl; success=false;
 			} else {
-				chi_value = Var_start_value+step_nr*Var_step;
+				length = In[0]->MonList.size();
+				if (chi_var_seg>-1) {
+					chi[chi_var_seg]= Var_start_value+step_nr*Var_step;
+				}
+				if (chi_var_state>-1) {
+					chi[length+chi_var_state] =Var_start_value+step_nr*Var_step;
+				}
+				//chi_value = Var_start_value+step_nr*Var_step;
 			}
 			break;
 		default:
@@ -547,7 +576,9 @@ bool Segment::UpdateVarInfo(int step_nr) {
 }
 
 bool Segment::ResetInitValue() {
+if (debug) cout << "Segment::ResetInitValue() " << endl;
 	bool success=true;
+	int length;
 	switch(Var_target) {
 		case 0:
 			valence=Var_start_value;
@@ -555,6 +586,15 @@ bool Segment::ResetInitValue() {
 		case 1:
 			PSI0=Var_start_value;
 			break;
+		case 2:
+			length = In[0]->MonList.size();
+			if (chi_var_seg>-1) {
+				chi[chi_var_seg]= Var_start_value;
+			}
+			if (chi_var_state>-1) {
+				chi[length+chi_var_state] =Var_start_value;
+			}
+			break; 
 		default:
 			cout <<"program error in Seg:ResetInitValue "<<endl;
 			break;
@@ -563,6 +603,8 @@ bool Segment::ResetInitValue() {
 }
 
 void Segment::PutValue(Real X) {
+if (debug) cout << "Segment::PutValue() " << endl;
+	int length; 
 	switch(Var_target) {
 		case 0:
 			valence=X;
@@ -570,14 +612,25 @@ void Segment::PutValue(Real X) {
 		case 1:
 			PSI0=X;
 			break;
+		case 2:
+			length = In[0]->MonList.size();
+			if (chi_var_seg>-1) {
+				chi[chi_var_seg]= X;
+			}
+			if (chi_var_state>-1) {
+				chi[length+chi_var_state] =X;
+			}
+			break; 
 		default:
-			cout <<"program error in Seg:ResetInitValue "<<endl;
+			cout <<"program error in Segment:PutValue "<<endl;
 			break;
 	}
 }
 
 Real Segment::GetValue() {
+if (debug) cout << "Segment::GetValue() " << endl;	
 	Real X=0;
+	int length; 
 	switch(Var_target) {
 		case 0:
 			X=valence;
@@ -585,8 +638,18 @@ Real Segment::GetValue() {
 		case 1:
 			X=PSI0;
 			break;
+		case 2:
+			length = In[0]->MonList.size();
+			if (chi_var_seg>-1) {
+				X=chi[chi_var_seg];
+			}
+			if (chi_var_state>-1) {
+				X=chi[length+chi_var_state];
+			}
+
+			break;
 		default:
-			cout <<"program error in Seg:ResetInitValue "<<endl;
+			cout <<"program error in Segment:GetValue "<<endl;
 			break;
 	}
 	return X;
@@ -752,11 +815,13 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	push("theta_exc",theta-Lat[0]->Accesible_volume*phibulk);
 	push("phibulk",phibulk); 
 	if (ns>1) {
+		state_theta.clear();
 		for (int i=0; i<ns; i++){
 			push("alphabulk-"+state_name[i],state_alphabulk[i]);
 			push("valence-"+state_name[i],state_valence[i]);
 			push("phibulk-"+state_name[i],state_phibulk[i]);
 			theta=Lat[0]->WeightedSum(phi_state+i*M);
+			state_theta.push_back(theta);
 			push("theta-"+state_name[i],theta);
 			push("theta_exc-"+state_name[i],theta-Lat[0]->Accesible_volume*state_phibulk[i]);
 		}

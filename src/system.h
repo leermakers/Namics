@@ -28,6 +28,10 @@ public:
 	vector<int> FrozenList;
 	vector<int> SysTagList;
 	vector<int> SysClampList;
+	vector<int> XmolList;
+	vector<int> XstateList_1;
+	vector<int> XstateList_2;
+	vector<int> Xn_1;
 	Real FreeEnergy;
 	Real GrandPotential;
 	Real* phitot;

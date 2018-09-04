@@ -62,8 +62,10 @@ kal : mol : pol : mu
 kal : mol : water : mu-OH
 kal : mol : water : mu-H
 kal : mol : water : mu-H20
+kal : sys : my : X
 
-//sys : my : X : F-(AH,H)-(AM,OH)-(H20,H20)-(OH,OH)-(H,H)
+sys : my : X : F-na-cl-water-pol-(AH,H,1)-(AM,OH,1)
+//sys : my : X : F-na-cl-water-pol
 
 newton : isaac : method : pseudohessian
 //newton : isaac : m : 10

@@ -96,7 +96,7 @@ public:
 
 	int* P;
 	int* MASK;
-	//Real* G1;
+	Real* G1;
 	Real* phi;
 	Real* phi_state;
 	Real* phi_side;

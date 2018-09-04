@@ -164,20 +164,7 @@ bool Teng::CP(transfer tofrom) {
 // Push outputs from this and other classes to Output class
 void Teng::WriteOutput(int subloop){
       	PushOutput();
-      	Sys[0]->PushOutput(); // needs to be after pushing output for seg.
-      	Lat[0]->PushOutput();
-      	New[0]->PushOutput();
-      	int length = In[0]->MonList.size();
-      	for (int i = 0; i < length; i++)
-        	Seg[i]->PushOutput();
-      	length = In[0]->MolList.size();
-      	for (int i = 0; i < length; i++) {
-        	  int length_al = Mol[i]->MolAlList.size();
-      	    for (int k = 0; k < length_al; k++) {
-          	Mol[i]->Al[k]->PushOutput();
-        	}
-        	Mol[i]->PushOutput();
-       	}
+       New[0]->PushOutput();
       	for (int i = 0; i < n_out; i++) {
         	Out[i]->WriteOutput(subloop);
 	}
@@ -278,7 +265,7 @@ bool Teng::CheckInput(int start) {
    		n_out = In[0]->OutputList.size();
     		if (n_out == 0) cout << "Warning: no output defined!" << endl;
     		for (int i =  0; i < n_out; i++) {
-      			Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], i, n_out));
+      			Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[i], i, n_out));
        			if (!Out[i]->CheckInput(start)) {
         		cout << "input_error in output " << endl;
         		success=false;

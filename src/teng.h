@@ -20,9 +20,9 @@ private:
   const vector<Lattice*> Lat;
   const vector<Molecule*> Mol;
   const vector<Segment*> Seg;
-  const vector<System*> Sys;
   const vector<State*> Sta;
   const vector<Reaction*> Rea;
+  const vector<System*> Sys;
   const vector<Solve_scf*> New;
   const string brand;
 

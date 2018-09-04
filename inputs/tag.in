@@ -10,10 +10,6 @@ lat : hex : upperbound_y : mirror
 lat : hex : lowerbound_z : periodic
 lat : hex : upperbound_z : periodic
 
-sys : grad1 : generate_guess : lamellae
-sys : grad1 : guess-A : -0.5
-sys : grad1 : guess-B : 0.5
-
 mon : A : freedom : free
 mon : B : freedom : free
 mon : A : chi-B : 0.6
@@ -26,25 +22,6 @@ mol : AB : composition : (A)20(X)1(B)20
 mol : A : freedom : restricted
 mol : A : theta : 450
 mol : B : freedom : solvent
-
-output : kal : append : true
-kal : sys : grad1 : free_energy
-//kal : output : grad1 : MCS
-//kal : output : grad1 : t
-
-output : pro : append : true
-pro : mol : AB : phi
-pro : mon : X : phi
-pro : mon : A : phi
-pro : mon : B : phi
-
-output : vtk : write_bounds : true
-vtk : mon : A : phi
-
-//output : pos : append : false
-//pos : output : grad1 : X
-//pos : output : grad1 : Y
-//pos : output : grad1 : Z
 
 newton :isaac : method : hessian
 newton : isaac : i_info : 100

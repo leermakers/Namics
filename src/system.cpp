@@ -633,8 +633,8 @@ if (debug) cout << "PushOutput for system " << endl;
 			X-=Seg[Sta[XstateList_1[i]]->mon_nr]->state_theta[Sta[XstateList_1[i]]->state_nr]*Xn_1[i]*mu;
 		}
 		push("X",X);
-	}
 cout << " X  = " << X << endl; 
+	}
 	push("calculation_type",CalculationType);
 	push("guess_type",GuessType);
 	push("cuda",cuda);

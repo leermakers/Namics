@@ -173,10 +173,6 @@ public:
 	//bool ComputePhiLin();
 	bool ComputePhiBra();
 	bool ComputePhiDendrimer();
-<<<<<<< HEAD
-=======
-	//void CpBoltzmann();
->>>>>>> local
 };
 
 #endif

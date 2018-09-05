@@ -36,7 +36,7 @@ newton : isaac : i_info : 1000
 newton : isaac : super_e_info : false
 newton : isaac : iterationlimit : 10000
 newton : isaac : m : 4
-newton : isaac : deltamax : 0.1
+newton : isaac : deltamax : 0.01
 newton : isaac : tolerance : 1e-5
 output : pro : append : false
 pro : mon : * : phi

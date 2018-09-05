@@ -502,9 +502,11 @@ if(debug) cout <<"newdirection in Newton" << endl;
 	return accuracy;
 }
 
-void SFNewton::newtrustregion(Real *p0,Real ALPHA, Real &trustregion, Real& trustfactor, Real delta_max, Real delta_min, int nvar){
+void SFNewton::newtrustregion(Real *p0,Real ALPHA_, Real &trustregion, Real& trustfactor, Real delta_max, Real delta_min, int nvar){
 if(debug) cout <<"newtrustregion in Newton" << endl;
-	Real normp0 = norm2(p0,nvar);
+	Real ALPHA=ALPHA_; 
+	Real normp0 =0;
+	normp0= norm2(p0,nvar);
 
 	if ( normp0>0 && trustregion>2*ALPHA*normp0 ) {
 		trustregion = 2*ALPHA*normp0;
@@ -602,7 +604,10 @@ void SFNewton::ResetX(Real* x,int nvar,bool filter) { //done
 }
 
 
-bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real residual, Real tolerance, string s) {
+bool SFNewton::Message(bool e_info_, bool s_info_, int it_, int iterationlimit_,Real residual_, Real tolerance_, string s_) {
+	bool e_info=e_info_, s_info=s_info_; string s=s_; 
+	int it=it_, iterationlimit=iterationlimit_;  
+	Real residual=residual_, tolerance=tolerance_;
 	if (debug) cout <<"Message in  Newton " << endl;
 	bool success=true;
 	if (it == iterationlimit) {
@@ -611,6 +616,7 @@ bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real
 	}
 
   if ((e_info || s_info) && suppress == false) {
+
 
 		if (e_info) {
 			if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
@@ -626,9 +632,15 @@ bool SFNewton::Message(bool e_info, bool s_info, int it, int iterationlimit,Real
 	return success;
 }
 
-bool SFNewton::iterate(Real* x,int nvar,int iterationlimit,Real tolerance, Real delta_max, Real delta_min,bool filter) {
+bool SFNewton::iterate(Real* x,int nvar_,int iterationlimit_,Real tolerance_, Real delta_max_, Real delta_min_,bool filter_) {
 if(debug) cout <<"iterate in SFNewton" << endl;
+	int nvar=nvar_;
+	int iterationlimit=iterationlimit_;
+	Real tolerance=tolerance_;
 	bool success;
+	Real delta_max=delta_max_; 
+	Real delta_min=delta_min_;
+	bool filter=filter_; 
 Real* x0 = (Real*) malloc(nvar*sizeof(Real)); H_Zero(x0,nvar);
 Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
 Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);
@@ -832,7 +844,9 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	YplusisCtimesX(x,g,-delta_max,nvar);
 	YisAminB(x_x0,x,x0,nvar);
 	Cp(xR,x,nvar);
+
   residual = computeresidual(g, nvar);
+
 	if (e_info) printf("DIIS has been notified\n");
 	if (e_info) printf("Your guess = %1e \n",residual);
 	while (residual > tolerance && it < iterationlimit) {
@@ -860,7 +874,9 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 // Based on An Introduction to the Conjugate Gradient Method Without the Agonizing Pain Edition 1 1/4 - Jonathan Richard Shewchuk
 // CG with Newton-Raphson and Fletcher-Reeves
 	int  k=0, j=0, j_max =linesearchlimit;
+
 	Real inner_err=0, delta_new=0, delta_old=0, delta_d=0, delta_mid = 0;
+
 	Real teller=0, noemer=0;
   Real alpha=0, beta=0;
 	Real rd=0;
@@ -869,7 +885,9 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
   Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
   Real* dg = (Real*) malloc(nvar*sizeof(Real)); Zero(dg,nvar);
   Real* r = (Real*) malloc(nvar*sizeof(Real)); Zero(r,nvar);
+
   Real* r_old = (Real*) malloc(nvar*sizeof(Real)); Zero(r_old,nvar);
+
   Real* d = (Real*) malloc(nvar*sizeof(Real)); Zero(d,nvar);
   Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
   Real* H_d = (Real*) malloc(nvar*sizeof(Real)); Zero(H_d,nvar);
@@ -877,15 +895,19 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 
 	if ( e_info ) {
 		cout<<"Nonlinear conjugate gradients with Newton-Raphson and Fletcher-Reeves has been notified."<<endl;
+
 	}
 	residuals(x,g);
   #pragma omp parallel for reduction(+:delta_new)
+
 	for (int z=0; z<nvar; z++) {
 		r[z] = -g[z];
 		d[z]=r[z];
 		delta_new += r[z]*r[z];
 	}
+
 	accuracy= pow(delta_new,0.5);
+
 	cout << "i = " << iterations << " |g| = "<< accuracy << endl;
 	while (tolerance < accuracy && iterations<iterationlimit) {
 		j=0;
@@ -896,22 +918,27 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
     // line search
 		while (proceed) {
 			teller=0;
+
       #pragma omp parallel for reduction(-:teller)
 			for (int z=0; z<nvar; z++) {
 				teller -= g[z]*d[z];
+
 				x0[z]=x[z];
 			}
 			Hd(H_d,d,x,x0,g,dg,nvar);
 			noemer=0;
+
       #pragma omp parallel for reduction(+:noemer)
 			for (int z=0; z<nvar; z++) noemer +=H_d[z]*d[z];
 			alpha=teller/noemer;
       #pragma omp parallel for
+
 			for (int z=0; z<nvar; z++) {x[z]=x0[z]+alpha*d[z];}
 			residuals(x,g);
 			j++;
 			proceed =(j<j_max && alpha*inner_err > 1e-8);
 		}
+
 
     #pragma omp parallel for
     for (int z=0; z<nvar; z++) r_old[z]=r[z];
@@ -933,6 +960,7 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 		if (k == nvar || rd<=0) {
 			k=0; beta=0;
       #pragma omp parallel for
+
 			for (int z=0; z<nvar; z++) d[z]=r[z];
 		}
 		iterations++;
@@ -947,13 +975,17 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 
 void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real nvar) {
 
+
 	Real epsilon = 2e-8; //double precision. Machine error =10^-16; epsilon = 2 sqrt(precision)
+
 	Real normq = norm2(q,nvar);
 	Real normx = norm2(x0,nvar);
 	Real delta = epsilon* (1+normx)/normq;
 
+
 	for (int i=0; i<nvar; i++)
     x[i] = x0[i] + delta*q[i];
+
 	residuals(x,dg);
   /*
 	valid = true;

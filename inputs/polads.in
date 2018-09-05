@@ -35,7 +35,7 @@ mesodyn : smth : stddev : 0.5
 mesodyn : smth : seed : 1
 
 newton :isaac : method : DIIS
-newton : isaac : i_info : 5000
+newton : isaac : i_info : 1
 newton : isaac : deltamax : 1.0
 newton : isaac : iterationlimit : 5000
 newton : isaac : tolerance : 1e-5

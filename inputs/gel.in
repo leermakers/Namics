@@ -18,7 +18,9 @@ mol : pol : freedom : clamped
 mol : water : composition : (W)1
 mol : water : freedom : solvent
 
+
 //newton : isaac : method : pseudohessian 
+
 newton : isaac : method : DIIS
 newton : isaac : m : 4
 newton : isaac : deltamax : 0.1
@@ -27,8 +29,10 @@ newton : isaac : e_info : true
 newton :isaac : iterationlimit: 300
 newton :isaac : tolerance : 1e-3
 
+
 //sys : sacha : GPU : true
 out_info : folder : path : out
+
 output : vtk : append : false
 vtk : mol : pol : phi
 
@@ -53,4 +57,3 @@ cleng : sascha : MCS : 20
 cleng : sascha : save_interval : 1
 
 start
-

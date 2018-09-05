@@ -58,6 +58,7 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	}
 	if (Sys[0]->charged) iv +=M;
 	if (SCF_method=="Picard") iv+=M;
+//cout <<"iv " << iv/M << endl; 
 
 #ifdef CUDA
 	xx  = (Real*)AllOnDev(iv);

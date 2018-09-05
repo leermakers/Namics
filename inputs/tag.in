@@ -23,7 +23,7 @@ mol : A : freedom : restricted
 mol : A : theta : 450
 mol : B : freedom : solvent
 
-newton :isaac : method : hessian
+newton :isaac : method : pseudohessian
 newton : isaac : i_info : 100
 newton : isaac : iterationlimit : 50000
 newton : isaac : tolerance : 1e-5

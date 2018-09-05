@@ -64,8 +64,8 @@ kal : mol : water : mu-H
 kal : mol : water : mu-H20
 kal : sys : my : X
 
-sys : my : X : F-na-cl-water-pol-(AH,H,1)-(AM,OH,1)
-//sys : my : X : F-na-cl-water-pol
+//sys : my : X : F1-na-cl-water-pol-(AH,H,1)-(AM,OH,1)
+sys : my : X : F-na-cl-water-pol
 
 newton : isaac : method : pseudohessian
 //newton : isaac : m : 10
@@ -76,4 +76,5 @@ newton : isaac : iterationlimit : 1000
 newton : isaac : deltamax : 0.5
 newton : isaac : tolerance : 1e-7
 start
-newton : isaac : m : 11
+state : H : alphabulk :1e-6
+start

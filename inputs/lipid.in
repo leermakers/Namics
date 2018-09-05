@@ -49,11 +49,10 @@ newton : isaac : m : 12
 start
 mon : C : freedom : free
 start
-//newton : isaac : iterationlimit : 5000
-//newton : isaac : deltamax : 0.05
-//var : mol-lipid : scan : theta
-//var : mol-lipid : step : 0.1
-//var : mol-lipid : end_value : 5
+newton : isaac : iterationlimit : 5000
+var : mol-lipid : scan : theta
+var : mol-lipid : step : -0.1
+var : mol-lipid : end_value : 3
 //var : mol-lipid : search : theta
 //var : sys-noname: grand_potential : 0
 

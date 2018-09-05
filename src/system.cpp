@@ -110,8 +110,7 @@ void System::AllocateMemory() {
 }
 
 bool System::PrepareForCalculations() {
-  if (debug)
-    cout << "PrepareForCalculations in System " << endl;
+  if (debug) cout << "PrepareForCalculations in System " << endl;
   int M = Lat[0]->M;
   bool success = true;
 
@@ -125,7 +124,7 @@ bool System::PrepareForCalculations() {
     cout << " There are un-used monomers in system. Remove them before starting" << endl;
     success = false;
   }
-
+ 
   Zero(KSAM, M);
 
   length = FrozenList.size();
@@ -133,7 +132,7 @@ bool System::PrepareForCalculations() {
     int* MASK = Seg[FrozenList[i]]->MASK;
     Add(KSAM, MASK, M);
   }
-
+ 
   length = SysTagList.size();
   for (int i = 0; i < length; ++i) {
     int* MASK = Seg[SysTagList[i]]->MASK;
@@ -147,13 +146,13 @@ bool System::PrepareForCalculations() {
   }
 
   Invert(KSAM, KSAM, M);
-
 	volume = 0;
-	for (int i = 0; i < M ; ++i) {
-		volume += KSAM[i]*Lat[0]->L[i];
+	for (int i = 0; i < M ; i++) {
+		if (Lat[0]->gradients <3) {
+			volume += KSAM[i]*Lat[0]->L[i];
+		} else volume += KSAM[i];
 	}
 	Lat[0]->Accesible_volume=volume;
-
 
   n_mol = In[0]->MolList.size();
   success = Lat[0]->PrepareForCalculations();
@@ -178,7 +177,7 @@ bool System::PrepareForCalculations() {
   }
   return success;
 }
-
+ 
 string System::GetMonName(int mon_number_I) {
   if (debug)
     cout << "GetMonName for system " << endl;
@@ -407,12 +406,12 @@ if (debug) cout << "CheckInput for system " << endl;
 			cout <<"X is the characteristic function specified by user." << endl; 
 			cout <<"Example of how a characteristic function is defined:" << endl; 
 			cout <<"Case 1: no internal states: 'F - molname_1  -molname_2 - ...' "<< endl;
-			cout <<"       Here molname_1 etc are names of molecules in the system. " << endl;
+			cout <<"Here molname_1 etc are names of molecules in the system. " << endl;
 			cout <<"Case 2: internal states : F - molname_1 -(statename_1,statename_2,#number) - ... " << endl;
-			cout <<"        Note that in ... you can add as many molname's and (...,...,...) combinations as you wish" << endl; 
+			cout <<"Note that in ... you can add as many molname's and (...,...,...) combinations as you wish" << endl; 
 			cout <<"Here F = Helmholtz energy. " << endl;
-			cout <<"and the statement '-molname-i' implies that 'mu_i \times n_i' is subtracted from F. " << endl; 
-			cout <<"The (statename_i,statename_j,n) implies that mu_j times n_i times theta_i' is subtracted from F " << endl;
+			cout <<"and the statement '-molname_i' implies that 'n_i times mu_i' is subtracted from F. " << endl; 
+			cout <<"The (statename_i,statename_j,n) implies that 'n times theta_i times mu_j' is subtracted from F " << endl;
 			cout << endl;  
 			cout <<"Error found: The first item is not the expected 'F' " << endl; success = false; 
 		} else {
@@ -633,7 +632,7 @@ if (debug) cout << "PushOutput for system " << endl;
 			X-=Seg[Sta[XstateList_1[i]]->mon_nr]->state_theta[Sta[XstateList_1[i]]->state_nr]*Xn_1[i]*mu;
 		}
 		push("X",X);
-cout << " X  = " << X << endl; 
+		cout << " X  = " << X << endl; 
 	}
 	push("calculation_type",CalculationType);
 	push("guess_type",GuessType);

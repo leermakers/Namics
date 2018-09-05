@@ -52,11 +52,11 @@ vtk : mon : A : phi
 newton :isaac : method : DIIS
 newton : isaac : i_info : 25
 newton : isaac : m : 16
-newton : isaac : deltamax : 0.75
+newton : isaac : deltamax : 1.0
 newton : isaac : iterationlimit : 50000
-newton : isaac : tolerance : 1e-5
+newton : isaac : tolerance : 1e-6
 
-teng: ram : MCS :4
+teng: ram : MCS : 1000
 teng: ram : save_interval :1
 
 start

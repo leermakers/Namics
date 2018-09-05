@@ -4,6 +4,8 @@
 #include "input.h"
 #include "lattice.h"
 #include "segment.h"
+#include "state.h"
+#include "reaction.h"
 #include "molecule.h"
 #include "system.h"
 #include "solve_scf.h"
@@ -13,7 +15,7 @@
 
 class Output {
 public:
-	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Solve_scf*>,string,int,int);
+	Output(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<State*>,vector<Reaction*>,vector<Molecule*>,vector<System*>,vector<Solve_scf*>,string,int,int);
 
 ~Output();
 
@@ -21,6 +23,8 @@ public:
 	vector<Input*> In;
 	vector<Lattice*> Lat;
 	vector<Segment*> Seg;
+	vector<State*> Sta;
+	vector<Reaction*> Rea;
 	vector<Molecule*> Mol;
 	vector<System*> Sys;
 	vector<Solve_scf*> New;

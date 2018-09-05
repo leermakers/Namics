@@ -1,3 +1,4 @@
+
 #ifndef NAMICSxH
 #define NAMICSxH
 
@@ -78,3 +79,4 @@ enum EngineType {SCF, CLENG, MESODYN, TENG};
 #   error "Unknown compiler"
 #endif
 */
+

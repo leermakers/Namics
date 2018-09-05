@@ -4,7 +4,6 @@
 #include "namics.h"
 #include "solve_scf.h"
 #include "system.h"
-#include "newton.h"   // for...
 #include "output.h"
 #include <random>     // noise generation
 #include <ctime>      // output labling

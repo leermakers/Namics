@@ -88,12 +88,12 @@ bool Teng::ChangeMode(){
 	Real Wavenumber;
 	Real pi=4.0*atan(1.0);
 	for(int i=0;i<n_particles;i++){
-		Amplitude=GetRandom(3.0);
-		Wavenumber=GetRandom(2.0);
+		Amplitude=GetRandom(4.0);
+		Wavenumber=GetRandom(Lat[0]->MX/2.0);
 		X[i]=X[i]+round(0.5-round(GetRandom(1.0)));
 		Y[i]=Y[i]+round(0.5-round(GetRandom(1.0)));
-		Z[i]=Lat[0]->MZ/2 + round(Amplitude*(sin(Wavenumber*pi*X[i]/Lat[0]->MX)*sin(Wavenumber*pi*Y[i]/Lat[0]->MY))); 		//Move should be dependent on the system size rather than arbitrary 10.
-		cout << "Position of particle " << i << ": (" <<X[i] << ","<< Y[i] <<"," << Z[i] <<")" << endl; //Not necessary. Should be in debug.
+		Z[i]=Lat[0]->MZ/2 + round(Amplitude*(sin(Wavenumber*pi*X[i]/Lat[0]->MX)*sin(Wavenumber*pi*Y[i]/Lat[0]->MY)));
+		cout << "Position of particle " << i << ": (" <<X[i] << ","<< Y[i] <<"," << Z[i] <<")" << endl; 
 		}
 	success=CP(to_segment);
 	success=IsLegal();
@@ -106,12 +106,19 @@ bool Teng::ChangeMode(){
 bool Teng::IsLegal(){
 	bool success=true;
 	int i,j;
+	// Checking for particle collisions
 	for(i=0; i<n_particles; i++){
 		for (j=0; j<i; j++){
 		if(i!=j){
-			if(Seg[tag_seg]->H_P[i]==Seg[tag_seg]->H_P[j]) {success=false; cout << "PARTICLES COLLIDED" << endl;}
+			if(Seg[tag_seg]->H_P[i]==Seg[tag_seg]->H_P[j]) {success=false; cout << "Particle collided." << endl;}
 			}
 		}
+	}
+	// Checking for particle out of bounds
+	for(i=0; i<n_particles; i++){
+		if(X[i]>Lat[0]->MX || X[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in x-direction." << endl;}
+		if(Y[i]>Lat[0]->MY || Y[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in y-direction." << endl;}
+		if(Z[i]>Lat[0]->MZ || Z[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in z-direction." << endl;}
 	}
 	return success;
 }
@@ -162,8 +169,8 @@ bool Teng::CP(transfer tofrom) {
 
 // Push outputs from this and other classes to Output class
 void Teng::WriteOutput(int subloop){
-      	PushOutput();
-       New[0]->PushOutput();
+	PushOutput();
+   	New[0]->PushOutput();
       	for (int i = 0; i < n_out; i++) {
         	Out[i]->WriteOutput(subloop);
 	}

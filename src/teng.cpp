@@ -90,7 +90,7 @@ bool Teng::ChangeMode(){
 		Wavenumber=GetRandom(2.0);
 		X[i]=X[i]+round(0.5-round(GetRandom(1.0)));
 		Y[i]=Y[i]+round(0.5-round(GetRandom(1.0)));
-		Z[i]=5 + round(Amplitude*(sin(Wavenumber*pi*X[i]/10.0)*sin(Wavenumber*pi*Y[i]/10.0))); 		//Move should be dependent on the system size rather than arbitrary 10.
+		Z[i]=Lat[0]->MZ/2 + round(Amplitude*(sin(Wavenumber*pi*X[i]/Lat[0]->MX)*sin(Wavenumber*pi*Y[i]/Lat[0]->MY))); 		//Move should be dependent on the system size rather than arbitrary 10.
 		cout << "Position of particle " << i << ": (" <<X[i] << ","<< Y[i] <<"," << Z[i] <<")" << endl; //Not necessary. Should be in debug.
 		}
 	success=CP(to_segment);
@@ -107,8 +107,7 @@ bool Teng::IsLegal(){
 	for(i=0; i<n_particles; i++){
 		for (j=0; j<i; j++){
 		if(i!=j){
-			if(Seg[tag_seg]->H_P[i]==Seg[tag_seg]->H_P[j]) success=false;
-			cout << "PARTICLES COLLIDED" << endl;
+			if(Seg[tag_seg]->H_P[i]==Seg[tag_seg]->H_P[j]) {success=false; cout << "PARTICLES COLLIDED" << endl;}
 			}
 		}
 	}

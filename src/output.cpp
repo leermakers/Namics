@@ -1,5 +1,6 @@
 #include "output.h"
 #include "time.h"
+
 Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
 if (debug) cout <<"constructor in Output "<< endl;
 	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
@@ -269,8 +270,9 @@ if (debug) cout << "GetPointer in output " << endl;
 		case 5:
 			listlength=PointerVectorReal.size();
 			j=0;
-			while (j<listlength) {
+			while (j<listlength) { 
 				if (prop==strings[j]){ Size=SizeVectorReal[j];  return PointerVectorReal[j];}
+				j++;
 			}
 			break;
 		default:

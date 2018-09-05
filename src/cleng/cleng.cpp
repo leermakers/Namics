@@ -26,6 +26,7 @@ Cleng::Cleng(
     KEYS.push_back("save_interval");
     KEYS.push_back("save_filename");
     KEYS.push_back("seed");
+    KEYS.push_back("free_energy_accepted_step");
 
     // Debug.log
     //out.open("debug.out", ios_base::out);
@@ -224,10 +225,12 @@ void Cleng::WriteOutput(int MS_step) {
     Sys[0]->PushOutput(); // needs to be after pushing output for seg.
     Lat[0]->PushOutput();
     New[0]->PushOutput();
+
     mon_length = (int) In[0]->MonList.size();
     for (int i = 0; i < mon_length; i++) {
         Seg[i]->PushOutput();
     }
+
     mol_length = (int) In[0]->MolList.size();
     for (int i = 0; i < mol_length; i++) {
         molal_length = (int) Mol[i]->MolAlList.size();
@@ -236,6 +239,7 @@ void Cleng::WriteOutput(int MS_step) {
         }
         Mol[i]->PushOutput();
     }
+
     // length = In[0]->AliasList.size();
     // for (int i=0; i<length; i++) Al[i]->PushOutput();
 
@@ -366,40 +370,39 @@ bool Cleng::MonteCarlo() {
     if (debug) cout << "Monte Carlo in Cleng" << endl;
     bool success = true;
 
-    Real free_energy_c;
-    Real free_energy_t;
-
 // init system outlook
     New[0]->Solve(true);
+    free_energy_current = Sys[0]->FreeEnergy;
     WriteOutput(0);
 
     for (int MS_step = 1; MS_step < MCS; MS_step++) { // loop for trials
 
         Real my_rand = GetRealRandomValue(0, 1);
-        free_energy_c = Sys[0]->FreeEnergy;
         CP(to_cleng);
         MakeShift(false);
         CP(to_segment);
         New[0]->Solve(true);
 
-        free_energy_t = Sys[0]->FreeEnergy;
+        free_energy_trial = Sys[0]->FreeEnergy;
 
         cout << "my_rand:" << my_rand << endl;
-        cout << "free_energy_c:" << free_energy_c << endl;
-        cout << "free_energy_t:" << free_energy_t << endl;
+        cout << "free_energy_current:" << free_energy_current << endl;
+        cout << "free_energy_trial:" << free_energy_trial << endl;
 
-        if (std::isnan(free_energy_t)) {
+        if (std::isnan(free_energy_trial)) {
             cout << "Free Energy is nan!!" << endl;
             MakeShift(true);
             break;
         }
 
 
-        if (free_energy_t <= free_energy_c) {
+        if (free_energy_trial <= free_energy_current) {
             cout << "Accepted" << endl;
+            free_energy_current = free_energy_trial;
         } else {
-            if (my_rand < exp(free_energy_t - free_energy_c)) {
+            if (my_rand < exp(free_energy_trial - free_energy_current)) {
                 cout << "Accepted" << endl;
+                free_energy_current = free_energy_trial;
             } else {
                 cout << "Deny" << endl;
                 MakeShift(true);
@@ -451,6 +454,8 @@ void Cleng::PushOutput(int MS_step) {
         if (Out[i]->name == "ana" || Out[i]->name == "kal") {
             Out[i]->push("MC_step", MS_step);
             Out[i]->push("MCS", MCS);
+            cout << "Free_energy in pushOut: " << free_energy_current << endl;
+            Out[i]->push("free_energy_accepted_step", free_energy_current);
         }
 
         if (Out[i]->name == "ana" ||

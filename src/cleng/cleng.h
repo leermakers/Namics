@@ -64,13 +64,12 @@ public:
     int* xs = nullptr;
     int* ys = nullptr;
     int* zs = nullptr;
-//    vector<int> X;
-//    vector<int> Y;
-//    vector<int> Z;
 
     ofstream out;
     Point shift;
     int id_part_for_move;
+    Real free_energy_current;
+    Real free_energy_trial;
 
 
     bool MonteCarlo();

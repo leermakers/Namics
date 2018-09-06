@@ -1361,9 +1361,9 @@ if (debug) cout << "CreateMu for system " << endl;
 				phibulkA=Seg[j]->phibulk;
 				FA=Mol[i]->fraction(j);
 				if (Mol[i]->IsTagged()) FA=(NA+1)/(NA); //works only in case of homopolymers? 
-				if (Mol[i]->IsClamped())FA=(NA+2)/(NA); //works only when homopolymers are clamped....needs probably a fix.
+				if (Mol[i]->IsClamped()) FA=(NA+2)/(NA); //works only when homopolymers are clamped....needs probably a fix.
 				for (int k=0; k<n_mon; k++) {
-					if (Seg[i]->ns<2) {
+					if (Seg[k]->ns<2) {
 						phibulkB=Seg[k]->phibulk;
 						FB=Mol[i]->fraction(k);
 						if (Mol[i]->IsTagged()) FB*=(NA+1)/(NA);
@@ -1374,7 +1374,7 @@ if (debug) cout << "CreateMu for system " << endl;
 					} else {
 						for (int l=0; l<statelistlength; l++) {
 							phibulkB=Seg[Sta[l]->mon_nr]->state_phibulk[Sta[l]->state_nr];
-							FB=Mol[i]->fraction(Sta[i]->mon_nr)*Seg[Sta[i]->mon_nr]->state_alphabulk[Sta[l]->state_nr]; 
+							FB=Mol[i]->fraction(Sta[l]->mon_nr)*Seg[Sta[l]->mon_nr]->state_alphabulk[Sta[l]->state_nr]; 
 							if (Mol[i]->IsTagged()) FB*=(NA+1)/(NA);
 							if (Mol[i]->IsClamped()) FB*=(NA+2)/(NA);	
 							chi=Seg[j]->chi[n_mon+l]/2;
@@ -1422,7 +1422,6 @@ if (debug) cout << "CreateMu for system " << endl;
 
 
 		Mol[i]->Mu=Mu;
-//cout <<"mol" << i << " = " << Mu << endl;
 	}
 	return success;
 }

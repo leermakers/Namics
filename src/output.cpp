@@ -1,9 +1,10 @@
+
 #include "output.h"
 #include "time.h"
 
-Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
+Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
 if (debug) cout <<"constructor in Output "<< endl;
-	In=In_; Lat = Lat_; Seg=Seg_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
+	In=In_; Lat = Lat_; Seg=Seg_; Sta=Sta_; Rea=Rea_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");
@@ -465,7 +466,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,Real_result,string_result);
 			if (result_nr==0) {fprintf(fp,"NiN\t");}
 			if (result_nr==1) {fprintf(fp,"%i\t",int_result);}
-			if (result_nr==2) {fprintf(fp,"%.10f\t",Real_result);}
+			if (result_nr==2) {fprintf(fp,"%.16f\t",Real_result);}
 			if (result_nr==3) {
 				if (sub[0]==OUT_prop[i]) {
 					fprintf(fp,"%s\t",string_result.c_str());

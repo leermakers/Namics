@@ -26,7 +26,9 @@ public:
 	int JX,JY,JZ,M;
 	bool all_lattice;
 	int sub_box_on;
-	int volume;
+	Real volume;
+	Real Accesible_volume;
+	
 	int gradients;
 	string lattice_type;
 	string geometry;
@@ -99,11 +101,11 @@ public:
 	void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int);
 	void ComputeGN(Real*, Real*, int*, int*, int*, int*, int*, int*, int, int);
 	Real ComputeTheta(Real*);
-	void UpdateEE(Real*, Real*, Real*);
+	void UpdateEE(Real*, Real*);
 	void UpdatePsi(Real*, Real*, Real* , Real*, int*);
 	void UpdateQ(Real*,Real*,Real*,Real*,int*);
-	bool ReadGuess(string, Real* ,string&, vector<string>&, bool&, int&, int&, int&, int&, int);
-	bool StoreGuess(string,Real*,string, vector<string>, bool,int);
+	bool ReadGuess(string, Real* ,string&, vector<string>&, vector<string>&, bool&, int&, int&, int&, int&, int);
+	bool StoreGuess(string,Real*,string, vector<string>,vector<string>, bool,int);
 	bool PutVarInfo(string,string,Real);
 	bool UpdateVarInfo(int);
 	bool ResetInitValue();

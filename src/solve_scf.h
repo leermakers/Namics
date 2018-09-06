@@ -4,6 +4,8 @@
 #include "input.h"
 #include "system.h"
 #include "segment.h"
+#include "state.h"
+#include "reaction.h"
 #include "lattice.h"
 #include "molecule.h"
 #include "tools.h"
@@ -15,7 +17,7 @@ class Solve_scf : public SFNewton {
 public:
 	Solve_scf() {};
 
-	Solve_scf(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<Molecule*>,vector<System*>,vector<Variate*>,string);
+	Solve_scf(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<State*>,vector<Reaction*>,vector<Molecule*>,vector<System*>,vector<Variate*>,string);
 
 	~Solve_scf();
 
@@ -26,6 +28,8 @@ public:
 	vector<Lattice*> Lat;
 	vector<Molecule*> Mol;
 	vector<Variate*> Var;
+	vector<State*> Sta;
+	vector<Reaction*> Rea;
 
 	int start;
 	Real Value_tolerance;
@@ -62,7 +66,7 @@ public:
 	int GetValue(string,int&,Real&,string&);
 	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis,conjugate_gradient};
 	enum inner_iteration_method {super,proceed};
-	enum gradient_method {classical, MESODYN, Picard, custum};
+	enum gradient_method {classical, MESODYN, Picard, custum, WEAK};
 	iteration_method solver;
 	gradient_method gradient;
 	inner_iteration_method control;
@@ -75,6 +79,7 @@ public:
 	Real *x_x0;
 #endif
 	Real *xx;
+	int *SIGN; 
 	Real* alpha;
 	bool mesodyn;
 	Real* RHO;
@@ -90,10 +95,10 @@ public:
 	void PutParameter(string);
 	string GetValue(string);
 	void Copy(Real*,Real*,int,int,int,int);
-	bool Guess(Real*,string,vector<string>,bool,int,int,int,int);
+	bool Guess(Real*,string,vector<string>,vector<string>,bool,int,int,int,int);
 
 	bool Solve(bool);
-	bool SolveMesodyn(function< void(vector<Real>&, int) >, function< Real*() >); //first argument should contain rho
+	bool SolveMesodyn(function< void(vector<Real>&, size_t) >, function< Real*() >); //first argument should contain rho
 	function< Real*() > mesodyn_flux;
 	function< void(vector<Real>&, int) > mesodyn_load_alpha;
 	bool SuperIterate(int,int,int,int);
@@ -103,6 +108,11 @@ public:
 	void ComputePhis();
 	bool PutU();
 	void residuals(Real*,Real*);
+	void gradient_log(Real*, int, int, int, int);
+	void gradient_quotient(Real*, int, int, int, int);
+	void gradient_minus(Real*, int, int, int, int);
+	function<void(Real*, int, int, int, int)> target_function;
+
 	void inneriteration(Real*,Real*,float*,Real,Real&,Real,int);
 
 };

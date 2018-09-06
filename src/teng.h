@@ -20,6 +20,8 @@ private:
   const vector<Lattice*> Lat;
   const vector<Molecule*> Mol;
   const vector<Segment*> Seg;
+  const vector<State*> Sta;
+  const vector<Reaction*> Rea;
   const vector<System*> Sys;
   const vector<Solve_scf*> New;
   const string brand;
@@ -29,7 +31,7 @@ private:
 
 
 public:
-  Teng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
+  Teng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Teng();
 
   int tag_seg;
@@ -54,8 +56,13 @@ vector<int> Sz;
 vector<int> X;
 vector<int> Y;
 vector<int> Z;
+vector<int> X_bm;
+vector<int> Y_bm;
+vector<int> Z_bm;
 
   bool MonteCarlo();
+  bool ChangeMode();
+  bool IsLegal();
 
   void push(string, Real);
   void push(string, int);
@@ -65,6 +72,8 @@ vector<int> Z;
   void WriteOutput(int);
   void PushOutput();
   int GetValue(string, int&, Real&, string&);
+  int GetRandom(int);
+  Real GetRandom(Real);
 
   std::vector<string> KEYS;
   std::vector<string> PARAMETERS;

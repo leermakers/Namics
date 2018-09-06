@@ -22,8 +22,10 @@ private:
     const string name;
     const vector<Input*> In;
     const vector<Lattice*> Lat;
-    const vector<Molecule*> Mol;
     const vector<Segment*> Seg;
+    const vector<State*> Sta;
+    const vector<Reaction*> Rea;    
+    const vector<Molecule*> Mol;
     const vector<System*> Sys;
     const vector<Solve_scf*> New;
     const string brand;
@@ -33,7 +35,7 @@ private:
     void fillXYZ();
 
 public:
-    Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
+    Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
     ~Cleng();
 
 

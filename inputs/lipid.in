@@ -9,7 +9,7 @@ mon : C : pinned_range : 1;6
 mon : O : freedom : free
 mon : W : freedom : free
 
-mol : lipid : composition : (C)16((O)1(C)2)5[(O)1](O)1
+mol : lipid : composition : (C)16((O)1(C)2)5(O)1
 mol : lipid : freedom : restricted
 mol : lipid : theta : 4
 
@@ -27,7 +27,7 @@ pro : mon : * : phi
 pro : mol : lipid : phi-C
 pro : mol : lipid : phi-O
 output : kal : append : false
-output : kal : use_output_directory : false
+//output : kal : use_output_directory : false
 kal : sys : noname : grand_potential
 kal : mol : lipid : theta
 kal : mol : lipid : theta_exc
@@ -48,10 +48,11 @@ newton : isaac  : super_deltamax : 1
 newton : isaac : m : 12
 start
 mon : C : freedom : free
+start
 newton : isaac : iterationlimit : 5000
-newton : isaac : deltamax : 0.05
 var : mol-lipid : scan : theta
-var : mol-lipid : step : 0.1
-var : mol-lipid : end_value : 5
+var : mol-lipid : step : -0.1
+var : mol-lipid : end_value : 3
 //var : mol-lipid : search : theta
 //var : sys-noname: grand_potential : 0
+

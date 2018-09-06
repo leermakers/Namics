@@ -1,12 +1,14 @@
 #include "teng.h"
 #include "output.h"
 
-Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_,  string name_)
+Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_,vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_,  string name_)
     : name{name_},
       In{In_},
       Lat{Lat_},
       Mol{Mol_},
       Seg{Seg_},
+      Sta{Sta_},
+      Rea{Rea_},
       Sys{Sys_},
       New{New_}
 
@@ -25,16 +27,99 @@ Teng::~Teng() {
 bool Teng::MonteCarlo() {
   if (debug) cout << "Monte Carlo in Teng" << endl;
 	bool success;
-	t=0;
- 	success=CP(to_cleng);
+ 	success=CP(to_teng);
 	New[0]->Solve(true);
-	WriteOutput(t);
-	n_p = X.size();
-	X[0]+=1; Y[0]+=1;
+	Real F_bm = Sys[0]->FreeEnergy;
+	Real F_am;
+	WriteOutput(0);
+		for (int time=1; time<=MCS; time++){
+			//Copy x,y,z to x_bm, y_bm, z_bm
+			cout << "Storing a copy of molecular positions"<< endl;
+			success=CP(to_bm);
+			//Make a montecarlo move
+			cout << "Changing the mode of the particles"<< endl;
+			ChangeMode();
+			//copy moved positions to segment
+			cout << "Copying new mode molecular positions into segment class"<< endl;
+			success=CP(to_segment);
+			//Solve SCF
+			New[0]->Solve(true);
+			F_am = Sys[0]->FreeEnergy;
+			//Decide to accept or reject
+			//Accept
+			cout << F_bm << "	:" << F_am << "	:" << GetRandom(1.0) << endl; 
+			if (F_am-F_bm <= 0 || GetRandom(1.0) < exp(F_am-F_bm)){
+				//Change F_bm to sys->Freeenergy
+				cout << "Monte Carlo move is accepted" << endl;
+				F_bm=Sys[0]->FreeEnergy;
+			//Reject
+			} else{
+				//Copy pos_bm to segment (basically reset configuration)
+				cout << "Monte Carlo move is rejected" << endl;
+				success = CP(reset);
+				//Sys->Freeenergy should be set to F_bm
+				Sys[0]->FreeEnergy = F_bm;
+			}
+			if (time%save_interval ==0)WriteOutput(time);
+		}
+	return success;
+}
+
+int Teng::GetRandom(int maxvalue) {
+	random_device rd;
+	mt19937 gen(rd());
+	uniform_int_distribution<> distance(1,maxvalue);
+        int randomnumber = distance(gen);
+	return randomnumber;
+}
+
+Real Teng::GetRandom(Real maxvalue){
+	random_device rd;
+	mt19937 gen(rd());
+	uniform_real_distribution<> distance(0,maxvalue);
+        Real randomnumber = distance(gen);
+	return randomnumber;
+}
+
+bool Teng::ChangeMode(){
+	bool success=false;
+	while(!success){
+	Real Amplitude;
+	Real Wavenumber;
+	Real pi=4.0*atan(1.0);
+	for(int i=0;i<n_particles;i++){
+		Amplitude=GetRandom(4.0);
+		Wavenumber=GetRandom(Lat[0]->MX/2.0);
+		X[i]=X[i]+round(0.5-round(GetRandom(1.0)));
+		Y[i]=Y[i]+round(0.5-round(GetRandom(1.0)));
+		Z[i]=Lat[0]->MZ/2 + round(Amplitude*(sin(Wavenumber*pi*X[i]/Lat[0]->MX)*sin(Wavenumber*pi*Y[i]/Lat[0]->MY)));
+		cout << "Position of particle " << i << ": (" <<X[i] << ","<< Y[i] <<"," << Z[i] <<")" << endl; 
+		}
 	success=CP(to_segment);
-	t++;
-	New[0]->Solve(true);
-	WriteOutput(t);
+	success=IsLegal();
+	}
+	return success;
+}
+
+// Checks for illegal montecarlo moves. i.e., particle collisions alone. Boundary checky is still not implemented. 
+// However, boundary checks might be redundant in mode based montecarlo as the modes can never be moving particles out of boundary.
+bool Teng::IsLegal(){
+	bool success=true;
+	int i,j;
+	// Checking for particle collisions
+	for(i=0; i<n_particles; i++){
+		for (j=0; j<i; j++){
+		if(i!=j){
+			if(Seg[tag_seg]->H_P[i]==Seg[tag_seg]->H_P[j]) {success=false; cout << "Particle collided." << endl;}
+			}
+		}
+	}
+	// Checking for particle out of bounds
+	for(i=0; i<n_particles; i++){
+		if(X[i]>Lat[0]->MX || X[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in x-direction." << endl;}
+		if(Y[i]>Lat[0]->MY || Y[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in y-direction." << endl;}
+		if(Z[i]>Lat[0]->MZ || Z[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in z-direction." << endl;}
+	}
 	return success;
 }
 
@@ -47,7 +132,7 @@ bool Teng::CP(transfer tofrom) {
 	bool success=true;
 	int i;
 	switch(tofrom) {
-		case to_cleng:
+		case to_teng:
 			for (i=0; i<n_particles; i++) {
 				PX=Seg[tag_seg]->H_P[i]/JX;
 				PY=(Seg[tag_seg]->H_P[i]-PX*JX)/JY;
@@ -62,6 +147,18 @@ bool Teng::CP(transfer tofrom) {
 				Seg[tag_seg]->H_MASK[X[i]*JX+Y[i]*JY+Z[i]]=1;
 			}
 		break;
+		case to_bm:
+			for (i=0; i<n_particles; i++){
+				PX=X[i];PY=Y[i];PZ=Z[i];
+				X_bm.push_back(PX); Y_bm.push_back(PY); Z_bm.push_back(PZ);
+			}
+		break;
+		case reset:
+			for (i=0; i<n_particles; i++){
+				PX=X_bm[i];PY=Y_bm[i];PZ=Z_bm[i];
+				X.push_back(PX); Y.push_back(PY); Z.push_back(PZ);
+			}
+		break;
 		default:
 			success=false;
 			cout <<"error in tranfer" << endl;
@@ -72,21 +169,8 @@ bool Teng::CP(transfer tofrom) {
 
 // Push outputs from this and other classes to Output class
 void Teng::WriteOutput(int subloop){
-      	PushOutput();
-      	Sys[0]->PushOutput(); // needs to be after pushing output for seg.
-      	Lat[0]->PushOutput();
-      	New[0]->PushOutput();
-      	int length = In[0]->MonList.size();
-      	for (int i = 0; i < length; i++)
-        	Seg[i]->PushOutput();
-      	length = In[0]->MolList.size();
-      	for (int i = 0; i < length; i++) {
-        	  int length_al = Mol[i]->MolAlList.size();
-      	    for (int k = 0; k < length_al; k++) {
-          	Mol[i]->Al[k]->PushOutput();
-        	}
-        	Mol[i]->PushOutput();
-       	}
+	PushOutput();
+   	New[0]->PushOutput();
       	for (int i = 0; i < n_out; i++) {
         	Out[i]->WriteOutput(subloop);
 	}
@@ -187,7 +271,7 @@ bool Teng::CheckInput(int start) {
    		n_out = In[0]->OutputList.size();
     		if (n_out == 0) cout << "Warning: no output defined!" << endl;
     		for (int i =  0; i < n_out; i++) {
-      			Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], i, n_out));
+      			Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[i], i, n_out));
        			if (!Out[i]->CheckInput(start)) {
         		cout << "input_error in output " << endl;
         		success=false;

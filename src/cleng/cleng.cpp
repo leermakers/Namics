@@ -10,6 +10,8 @@ Cleng::Cleng(
         vector<Input *> In_,
         vector<Lattice *> Lat_,
         vector<Segment *> Seg_,
+	 vector<State *> Sta_,
+	 vector<Reaction *> Rea_,
         vector<Molecule *> Mol_,
         vector<System *> Sys_,
         vector<Solve_scf *> New_,
@@ -17,8 +19,10 @@ Cleng::Cleng(
 ) : name(name_),
     In(In_),
     Lat(Lat_),
-    Mol(Mol_),
     Seg(Seg_),
+    Sta(Sta_),
+    Rea(Rea_),    
+    Mol(Mol_),
     Sys(Sys_),
     New(New_) {
     if (debug) cout << "Cleng initialized" << endl;
@@ -84,7 +88,7 @@ bool Cleng::CheckInput(int start) {
         if (n_out == 0) cout << "Warning: no output defined!" << endl;
 
         for (int i = 0; i < n_out; i++) {
-            Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], i, n_out));
+            Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[i], i, n_out));
             if (!Out[i]->CheckInput(start)) {
                 cout << "input_error in output " << endl;
                 success = false;
@@ -217,32 +221,8 @@ bool Cleng::CP(transfer tofrom) {
 
 void Cleng::WriteOutput(int MS_step) {
     if (debug) cout << "WriteOutput in Cleng" << endl;
-    int mon_length;
-    int mol_length;
-    int molal_length;
-
     PushOutput(MS_step);
-    Sys[0]->PushOutput(); // needs to be after pushing output for seg.
-    Lat[0]->PushOutput();
     New[0]->PushOutput();
-
-    mon_length = (int) In[0]->MonList.size();
-    for (int i = 0; i < mon_length; i++) {
-        Seg[i]->PushOutput();
-    }
-
-    mol_length = (int) In[0]->MolList.size();
-    for (int i = 0; i < mol_length; i++) {
-        molal_length = (int) Mol[i]->MolAlList.size();
-        for (int k = 0; k < molal_length; k++) {
-            Mol[i]->Al[k]->PushOutput();
-        }
-        Mol[i]->PushOutput();
-    }
-
-    // length = In[0]->AliasList.size();
-    // for (int i=0; i<length; i++) Al[i]->PushOutput();
-
     for (int i = 0; i < n_out; i++) {
         Out[i]->WriteOutput(MS_step);
     }

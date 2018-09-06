@@ -1,5 +1,6 @@
 #pragma once
 #include <tuple>
+#include <string>
 
 struct Point {
 public:

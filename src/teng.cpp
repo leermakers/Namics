@@ -32,6 +32,7 @@ bool Teng::MonteCarlo() {
 	Real F_bm = Sys[0]->FreeEnergy;
 	Real F_am;
 	WriteOutput(0);
+
 		for (int time=1; time<=MCS; time++){
 			//Copy x,y,z to x_bm, y_bm, z_bm
 			cout << "Storing a copy of molecular positions"<< endl;

@@ -28,40 +28,48 @@ bool Teng::MonteCarlo() {
   if (debug) cout << "Monte Carlo in Teng" << endl;
 	bool success;
  	success=CP(to_teng);
+	New[0]->i_info=100;
 	New[0]->Solve(true);
 	Real F_bm = Sys[0]->FreeEnergy;
 	Real F_am;
 	WriteOutput(0);
+	int accepted=0;
+	int rejected=0;
+	Real Percentageaccepted =0;
+	Real Percentagerejected =0;
+	Real acceptance;
 
 		for (int time=1; time<=MCS; time++){
 			//Copy x,y,z to x_bm, y_bm, z_bm
-			cout << "Storing a copy of molecular positions"<< endl;
 			success=CP(to_bm);
 			//Make a montecarlo move
-			cout << "Changing the mode of the particles"<< endl;
 			ChangeMode();
 			//copy moved positions to segment
-			cout << "Copying new mode molecular positions into segment class"<< endl;
 			success=CP(to_segment);
 			//Solve SCF
 			New[0]->Solve(true);
 			F_am = Sys[0]->FreeEnergy;
 			//Decide to accept or reject
 			//Accept
-			cout << F_bm << "	:" << F_am << "	:" << GetRandom(1.0) << endl; 
-			if (F_am-F_bm <= 0 || GetRandom(1.0) < exp(F_am-F_bm)){
+			acceptance=GetRandom(1.0);
+			cout << F_bm << ": Free energy before move.	" << F_am << ": Free energy after move." << endl;
+			cout << "Metropolis energy difference is: " << exp(-1.0*(F_am-F_bm)) << "Acceptance chosen is: " << acceptance << endl; 
+			if (F_am-F_bm <= 0 || acceptance < exp(-1.0*(F_am-F_bm))){
 				//Change F_bm to sys->Freeenergy
-				cout << "Monte Carlo move is accepted" << endl;
 				F_bm=Sys[0]->FreeEnergy;
+				accepted++;
+				Percentageaccepted=accepted/time;
 			//Reject
 			} else{
 				//Copy pos_bm to segment (basically reset configuration)
-				cout << "Monte Carlo move is rejected" << endl;
 				success = CP(reset);
 				//Sys->Freeenergy should be set to F_bm
 				Sys[0]->FreeEnergy = F_bm;
+				rejected++;
+				Percentagerejected=rejected/time;
 			}
 			if (time%save_interval ==0)WriteOutput(time);
+			cout << "MonteCarlo step: "<< time << "		Percentage moves accepted: "<<Percentageaccepted*100  << " 	Number of rejected moves: "<< Percentagerejected*time << endl;
 		}
 	return success;
 }
@@ -70,7 +78,7 @@ int Teng::GetRandom(int maxvalue) {
 	random_device rd;
 	mt19937 gen(rd());
 	uniform_int_distribution<> distance(1,maxvalue);
-        int randomnumber = distance(gen);
+	int randomnumber = distance(gen);
 	return randomnumber;
 }
 
@@ -78,7 +86,7 @@ Real Teng::GetRandom(Real maxvalue){
 	random_device rd;
 	mt19937 gen(rd());
 	uniform_real_distribution<> distance(0,maxvalue);
-        Real randomnumber = distance(gen);
+	Real randomnumber = distance(gen);
 	return randomnumber;
 }
 
@@ -89,12 +97,11 @@ bool Teng::ChangeMode(){
 	Real Wavenumber;
 	Real pi=4.0*atan(1.0);
 	for(int i=0;i<n_particles;i++){
-		Amplitude=GetRandom(4.0);
+		Amplitude=GetRandom(2.0);
 		Wavenumber=GetRandom(Lat[0]->MX/2.0);
 		X[i]=X[i]+round(0.5-round(GetRandom(1.0)));
 		Y[i]=Y[i]+round(0.5-round(GetRandom(1.0)));
-		Z[i]=Lat[0]->MZ/2 + round(Amplitude*(sin(Wavenumber*pi*X[i]/Lat[0]->MX)*sin(Wavenumber*pi*Y[i]/Lat[0]->MY)));
-		cout << "Position of particle " << i << ": (" <<X[i] << ","<< Y[i] <<"," << Z[i] <<")" << endl; 
+		Z[i]=Z[i] + round(Amplitude*(sin(Wavenumber*pi*X[i]/Lat[0]->MX)*sin(Wavenumber*pi*Y[i]/Lat[0]->MY)));
 		}
 	success=CP(to_segment);
 	success=IsLegal();
@@ -107,6 +114,9 @@ bool Teng::ChangeMode(){
 bool Teng::IsLegal(){
 	bool success=true;
 	int i,j;
+	int xbox = Lat[0]->MX;
+	int ybox = Lat[0]->MY;
+	int zbox = Lat[0]->MZ;
 	// Checking for particle collisions
 	for(i=0; i<n_particles; i++){
 		for (j=0; j<i; j++){
@@ -115,6 +125,22 @@ bool Teng::IsLegal(){
 			}
 		}
 	}
+	// Put molecules back in periodic box or reflect them back based on boundaries.
+	for (i=0; i<n_particles; i++){
+		if(X[i]<1 && Lat[0]->BC[0]=="periodic") X[i]+=xbox;
+		if(Y[i]<1 && Lat[0]->BC[2]=="periodic") Y[i]+=ybox;
+		if(Z[i]<1 && Lat[0]->BC[4]=="periodic") Z[i]+=zbox;
+		if(X[i]>xbox && Lat[0]->BC[0]=="periodic") X[i]-=xbox;
+		if(Y[i]>ybox && Lat[0]->BC[2]=="periodic") Y[i]-=ybox;
+		if(Z[i]>zbox && Lat[0]->BC[4]=="periodic") Z[i]-=zbox;
+		if(X[i]<1 && Lat[0]->BC[0]=="mirror") X[i]=1;
+		if(Y[i]<1 && Lat[0]->BC[2]=="mirror") Y[i]=1;
+		if(Z[i]<1 && Lat[0]->BC[4]=="mirror") Z[i]=1;
+		if(X[i]>xbox && Lat[0]->BC[0]=="mirror") X[i]=xbox;
+		if(Y[i]>ybox && Lat[0]->BC[2]=="mirror") Y[i]=ybox;
+		if(Z[i]>zbox && Lat[0]->BC[4]=="mirror") Z[i]=zbox;
+	}
+	
 	// Checking for particle out of bounds
 	for(i=0; i<n_particles; i++){
 		if(X[i]>Lat[0]->MX || X[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in x-direction." << endl;}

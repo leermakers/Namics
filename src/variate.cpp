@@ -1,7 +1,7 @@
 #include "variate.h"
 
-Variate::Variate(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<Molecule*> Mol_,vector<System*>Sys_, string name_) {
-	In=In_; name=name_;   Lat=Lat_; Seg=Seg_, Mol=Mol_; Sys=Sys_;
+Variate::Variate(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*>Sys_, string name_) {
+	In=In_; name=name_;   Lat=Lat_; Seg=Seg_; Sta=Sta_; Rea=Rea_; Mol=Mol_; Sys=Sys_;
 	KEYS.push_back("scan");
 	KEYS.push_back("search");
 	KEYS.push_back("step");
@@ -77,6 +77,8 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 		if (sub[0]=="lat") choice=1;
 		if (sub[0]=="mol") choice=2;
 		if (sub[0]=="mon") choice=3;
+		if (sub[0]=="state") choice = 4;
+		if (sub[0]=="reaction") choice = 5;
 		switch(choice) {
 			case 0:
 				if (!In[0]->InSet(In[0]->SysList,pos,sub[1])) {
@@ -213,6 +215,40 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 					}
 				}
 				break;
+			case 4:
+				if (!In[0]->InSet(In[0]->StateList,pos,sub[1])) {
+					cout <<"in 'var' state name " + sub[1] + " not found" << endl; success=false;
+				} else {
+					if (GetValue("scan").size()==0) {
+						success=false;
+						cout <<"In var:" + name + ", we need a 'scan' parameter." << endl;
+					} else {
+						if (GetValue("scan").size()>0) {
+							scanning=4; scan_nr=pos;
+							if (!Sta[pos]->PutVarInfo("scan",GetValue("scan"),0)) {
+								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl;
+							}
+						}
+					}
+				}
+				break;
+			case 5:
+				if (!In[0]->InSet(In[0]->ReactionList,pos,sub[1])) {
+					cout <<"in 'var' reaction name " + sub[1] + " not found" << endl; success=false;
+				} else {
+					if (GetValue("scan").size()==0) {
+						success=false;
+						cout <<"In var:" + name + ", we need a 'scan' parameter." << endl;
+					} else {
+						if (GetValue("scan").size()>0) {
+							scanning=5; scan_nr=pos;
+							if (!Rea[pos]->PutVarInfo("scan",GetValue("scan"),0)) {
+								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl;
+							}
+						}
+					}
+				}
+				break;
 			default:
 				success=false;
 				cout <<"In var: keyword info from 'name' " + name + " is not recognised. Choose from 'sys, lat, mol, mon' " <<endl;
@@ -262,6 +298,12 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 					case 3:
 						num_of_cals=Seg[scan_nr]->PutVarScan(step,end_value,steps,scale);
 						break;
+					case 4:
+						num_of_cals=Sta[scan_nr]->PutVarScan(step,end_value,steps,scale);
+						break;
+					case 5:
+						num_of_cals=Rea[scan_nr]->PutVarScan(step,end_value,steps,scale);
+						break;
 					default:
 						cout <<"progamming error in variate " << endl;
 						break;
@@ -293,6 +335,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 
 bool Variate::PutVarScan(int cal_nr) {
 	bool success=true;
+	int n_seg; 
 	switch(scanning) {
 		case 0:
 			success=false;
@@ -306,11 +349,32 @@ bool Variate::PutVarScan(int cal_nr) {
 			break;
 		case 3:
 			Seg[scan_nr]->UpdateVarInfo(cal_nr);
-			if (Seg[scan_nr]->chi_var_seg>0) {
-				int n_seg=In[0]->MonList.size();
-				Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg] = Seg[scan_nr]->chi_value;
-				Sys[0]->CHI[scan_nr+n_seg*Seg[scan_nr]->chi_var_seg] =Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg];
-			} else Seg[scan_nr]->ResetInitValue();
+			if (Seg[scan_nr]->chi_var_seg>-1) {
+				n_seg=In[0]->MonList.size();
+				//Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg] = Seg[scan_nr]->chi_value;
+				//Sys[0]->CHI[scan_nr+n_seg*Seg[scan_nr]->chi_var_seg] =Seg[scan_nr]->chi_value;
+				Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg] = Seg[scan_nr]->chi[Seg[scan_nr]->chi_var_seg];
+				Sys[0]->CHI[scan_nr+n_seg*Seg[scan_nr]->chi_var_seg] =Seg[scan_nr]->chi[Seg[scan_nr]->chi_var_seg];
+				Seg[Seg[scan_nr]->chi_var_seg]->chi[scan_nr]=Seg[scan_nr]->chi[Seg[scan_nr]->chi_var_seg];
+			} 
+			if (Seg[scan_nr]->chi_var_state>-1) {
+				n_seg=In[0]->MonList.size();
+				Sta[Seg[scan_nr]->chi_var_state]->chi[scan_nr]=Seg[scan_nr]->chi[n_seg+Seg[scan_nr]->chi_var_state];
+			}
+			break;
+		case 4:
+			Sta[scan_nr]->UpdateVarInfo(cal_nr);
+			if (Sta[scan_nr]->chi_var_seg>-1) {
+				n_seg=In[0]->MonList.size();
+				Seg[Sta[scan_nr]->chi_var_seg]->chi[n_seg+scan_nr]=Sta[scan_nr]->chi[Sta[scan_nr]->chi_var_seg];
+			} 
+			if (Sta[scan_nr]->chi_var_state>-1) {
+				n_seg=In[0]->MonList.size();
+				Sta[Sta[scan_nr]->chi_var_state]->chi[n_seg+scan_nr]=Sta[scan_nr]->chi[n_seg+Sta[scan_nr]->chi_var_state];
+			}
+			break;
+		case 5:
+			Rea[scan_nr]->UpdateVarInfo(cal_nr);
 			break;
 		default:
 			break;
@@ -331,6 +395,12 @@ void Variate::PutValue(Real X) {
 			break;
 		case 3:
 			cout <<"programming error in PutValue" << endl;
+			break;
+		case 4:
+			Sta[search_nr]->PutValue(X);
+			break;
+		case 5:
+			Rea[search_nr]->PutValue(X);
 			break;
 		default:
 			break;
@@ -353,6 +423,12 @@ Real Variate::GetValue(void) {
 			break;
 		case 3:
 			cout <<"programming error in GetValue" << endl;
+			break;
+		case 4:
+			X=Sta[search_nr]->GetValue();
+			break;
+		case 5:
+			X=Rea[search_nr]->GetValue();
 			break;
 		default:
 			break;
@@ -378,6 +454,12 @@ Real Variate::GetError(void) {
 		case 3:
 			cout <<"programming error in GetError" << endl;
 			break;
+		case 4:
+			X=Sta[target_nr]->GetError();
+			break;
+		case 5:
+			X=Rea[target_nr]->GetError();
+			break;
 		default:
 			break;
 	}
@@ -388,6 +470,7 @@ Real Variate::GetError(void) {
 
 bool Variate::ResetScanValue(void) {
 	if (debug) cout <<"ResetScanValue in Variate" << endl;
+	int n_seg; 
 	bool success=true;
 	switch(scanning) {
 		case 0:
@@ -401,11 +484,33 @@ bool Variate::ResetScanValue(void) {
 			Mol[scan_nr]->ResetInitValue();
 			break;
 		case 3:
-			if (Seg[scan_nr]->chi_var_seg>0) {
-				int n_seg=In[0]->MonList.size();
+			Seg[scan_nr]->ResetInitValue();
+			if (Seg[scan_nr]->chi_var_seg>-1) {
+				n_seg=In[0]->MonList.size();
+				//Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg] = Seg[scan_nr]->Var_start_value;
+				//Sys[0]->CHI[scan_nr+n_seg*Seg[scan_nr]->chi_var_seg] =Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg];
 				Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg] = Seg[scan_nr]->Var_start_value;
-				Sys[0]->CHI[scan_nr+n_seg*Seg[scan_nr]->chi_var_seg] =Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg];
-			} else Seg[scan_nr]->ResetInitValue();
+				Sys[0]->CHI[scan_nr+n_seg*Seg[scan_nr]->chi_var_seg] = Seg[scan_nr]->Var_start_value;
+				Seg[Seg[scan_nr]->chi_var_seg]->chi[scan_nr]=Seg[scan_nr]->Var_start_value;
+			}
+			if (Seg[scan_nr]->chi_var_state>-1) {
+				n_seg=In[0]->MonList.size();
+				Sta[Seg[scan_nr]->chi_var_state]->chi[scan_nr]=Seg[scan_nr]->Var_start_value;
+			}			
+			break;
+		case 4:
+			Sta[scan_nr]->ResetInitValue();
+			if (Sta[scan_nr]->chi_var_seg>-1) {
+				n_seg=In[0]->MonList.size();
+				Seg[Sta[scan_nr]->chi_var_seg]->chi[n_seg+scan_nr]=Sta[scan_nr]->Var_start_value;
+			} 
+			if (Sta[scan_nr]->chi_var_state>-1) {
+				n_seg=In[0]->MonList.size();
+				Sta[Sta[scan_nr]->chi_var_state]->chi[n_seg+scan_nr]=Sta[scan_nr]->Var_start_value;
+			}
+			break;
+		case 5:
+			Rea[scan_nr]->ResetInitValue();
 			break;
 		default:
 			cout <<"programming error in ResetVarScan" << endl;

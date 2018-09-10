@@ -290,6 +290,8 @@ bool Lattice::PutSub_box(int mx_, int my_, int mz_,int n_box_) {
 bool Lattice::CheckInput(int start) {
 if (debug) cout <<"CheckInput in lattice " << endl;
 	bool success;
+	gradients=1;
+	fjc=1;
 	MX=MY=MZ=0;
 	sub_box_on=0;
 	mx.push_back(0); my.push_back(0); mz.push_back(0); jx.push_back(0); jy.push_back(0); m.push_back(0); n_box.push_back(0);
@@ -953,6 +955,7 @@ if (debug) cout <<"PushOutput in lattice " << endl;
 	push("gradients",gradients);
 	if (offset_first_layer>0) push("offset_first_layer",offset_first_layer);
 	push("volume",volume);
+	push("accessible volume",Accesible_volume);
 	push("lattice_type",lattice_type);
 	push("bond_length",bond_length);
 	push("FJC_choices",FJC);
@@ -2003,12 +2006,12 @@ Real Lattice::ComputeTheta(Real* phi) {
 	return result;
 }
 
-bool Lattice::ReadGuess(string filename, Real *x ,string &method, vector<string> &monlist, bool &charged, int &mx, int &my, int &mz, int &fjc, int readx) {
+bool Lattice::ReadGuess(string filename, Real *x ,string &method, vector<string> &monlist, vector<string> &statelist, bool &charged, int &mx, int &my, int &mz, int &fjc, int readx) {
 if (debug) cout <<"ReadGuess in output" << endl;
 	bool success=true;
 	ifstream in_file;
 	string s_charge;
-	int num;
+	int num_1,num_2;
 	string name;
 	in_file.open(filename.c_str());
 	if (in_file.is_open()) {
@@ -2017,9 +2020,13 @@ if (debug) cout <<"ReadGuess in output" << endl;
 			in_file>>mx>>my>>mz>>fjc;
 			in_file>>s_charge;
 			if (s_charge=="true") charged=true; else charged=false;
-			in_file>>num;
-			for (int i=0; i<num; i++) {in_file >> name;
+			in_file>>num_1;
+			for (int i=0; i<num_1; i++) {in_file >> name;
 				 monlist.push_back(name);
+			}
+			in_file>>num_2;
+			for (int i=0; i<num_2; i++) {in_file>> name;
+				statelist.push_back(name);
 			}
 //if (readx==1) cout <<"again..."<< endl;
 //cout <<"method " << method << endl;
@@ -2029,7 +2036,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 			if (readx==0) readx=-2; else {
 				int m;
 				if (my==0) {m=(mx+2);} else {if (mz==0) m=(mx+2)*(my+2); else {m=(mx+2)*(my+2)*(mz+2);}}
-				int iv=num*m;
+				int iv=(num_1+num_2)*m;
 				if (charged) iv +=m;
 				for (int i=0; i<iv; i++) {
 					in_file >> x[i];  //cout <<"R i " << i << " " << x[i] << endl;
@@ -2046,12 +2053,13 @@ if (debug) cout <<"ReadGuess in output" << endl;
 	return success;
 }
 
-bool Lattice::StoreGuess(string Filename,Real *x,string method, vector<string> monlist, bool charged, int start) {
+bool Lattice::StoreGuess(string Filename,Real *x,string method, vector<string> monlist,vector<string>statelist, bool charged, int start) {
 if (debug) cout <<"StoreGuess in output" << endl;
 	bool success=true;
 
 	string s;
-	int length = monlist.size();
+	int mon_length = monlist.size();
+	int state_length = statelist.size();
 	string filename;
 	string outfilename;
 	vector<string> sub;
@@ -2073,9 +2081,11 @@ if (debug) cout <<"StoreGuess in output" << endl;
 	fprintf(fp,"%s \n",method.c_str());
 	fprintf(fp," %i \t %i \t %i \t %i \n" ,MX,MY,MZ, fjc);
 	if (charged) fprintf(fp,"%s \n" ,"true"); else  fprintf(fp,"%s \n" ,"false");
-	fprintf(fp,"%i \n",length);
-	for (int i=0; i<length; i++) fprintf(fp,"%s \n",monlist[i].c_str());
-	int iv=length*M;
+	fprintf(fp,"%i \n",mon_length);
+	for (int i=0; i<mon_length; i++) fprintf(fp,"%s \n",monlist[i].c_str());
+	fprintf(fp,"%i \n",state_length);
+	for (int i=0; i<state_length; i++) fprintf(fp,"%s \n",statelist[i].c_str());
+	int iv=(mon_length+state_length)*M;
 	if (charged) iv +=M;
 	for (int i=0; i<iv; i++) fprintf(fp,"%e \n",x[i]);
 	fclose(fp);
@@ -2083,7 +2093,8 @@ if (debug) cout <<"StoreGuess in output" << endl;
 }
 
 
-void Lattice::UpdateEE(Real* EE, Real* psi, Real* eps) {
+
+void Lattice::UpdateEE(Real* EE, Real* psi) {
 	int x,y;
 	Real Exmin,Explus,Eymin,Eyplus;
 	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_bT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.

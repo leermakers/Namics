@@ -1,5 +1,4 @@
 #include "mesodyn.h"
-#include "newton.h"
 
 /* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018 */
 /* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
@@ -788,29 +787,18 @@ void Mesodyn::write_settings() {
 int Mesodyn::write_output() {
   //Implement below for more starts? (OutputList higher numbers?)
 
+/* Output has changed. as you don't use output I have commented it out. New output has more arguments and we need to pass on the argument to mesodyn when you want to use it.
   for (size_t i = 0; i < In[0]->OutputList.size(); ++i) {
     Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], writes, timesteps / timebetweensaves));
     if (!Out[i]->CheckInput(1)) {
       cout << "input_error in output " << endl;
       return 0;
     }
-  }
+  }*/
 
-  Lat[0]->PushOutput();
+  PushOutput();
   New[0]->PushOutput();
-  size_t length = In[0]->MonList.size();
-  for (size_t ii = 0; ii < length; ii++)
-    Seg[ii]->PushOutput();
-  length = In[0]->MolList.size();
-  for (size_t ii = 0; ii < length; ii++) {
-    size_t length_al = Mol[ii]->MolAlList.size();
-    for (size_t kk = 0; kk < length_al; kk++) {
-      Mol[ii]->Al[kk]->PushOutput();
-    }
-    Mol[ii]->PushOutput();
-  }
 
-  Sys[0]->PushOutput(); // needs to be after pushing output for seg.
   for (Output* all_output : Out) {
     all_output->WriteOutput(writes);
     delete all_output;

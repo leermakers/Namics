@@ -5,11 +5,13 @@
 #include "molecule.h"
 #include "namics.h"
 #include "mesodyn.h"
-#include "cleng.h"
+#include "cleng/cleng.h"
 #include "teng.h"
 //#include "newton.h"
 #include "output.h"
 #include "segment.h"
+#include "state.h"
+#include "reaction.h"
 #include "system.h"
 #include "tools.h"
 #include "variate.h"
@@ -18,7 +20,7 @@
 
 string version = "2.1.1.1.1.1.1";
 // meaning:
-// newton version number =1
+// newton version number =2
 // system version number =1
 // lattice version number =1
 // molecule version number =1
@@ -85,6 +87,7 @@ int main(int argc, char* argv[]) {
   	int fjc_old = 0;
   	bool CHARGED = false;
   	vector<string> MONLIST;
+	vector<string> STATELIST;
 
 #ifdef CUDA
   GPU_present();
@@ -99,6 +102,8 @@ int main(int argc, char* argv[]) {
   	vector<Lattice*> Lat;  // Properties of the lattice
   	vector<Molecule*> Mol; // Properties of entire molecule
   	vector<Segment*> Seg;  // Properties of molecule segments
+	vector<State*> Sta;
+	vector<Reaction*> Rea;
   	vector<Solve_scf*> New;   // Solvers and iteration schemes
   	vector<System*> Sys;
   	vector<Variate*> Var;
@@ -135,14 +140,42 @@ int main(int argc, char* argv[]) {
 // Create segment class instance and check inputs (reference above)
     		int n_seg = In[0]->MonList.size();
     		for (int i = 0; i < n_seg; i++)
-      		Seg.push_back(new Segment(In, Lat, In[0]->MonList[i], i, n_seg));
+      			Seg.push_back(new Segment(In, Lat, In[0]->MonList[i], i, n_seg));
+
+//Create state class instance and check inputs
+		int n_stat=In[0]->StateList.size();
+		for (int i=0; i<n_stat; i++) 
+			Sta.push_back(new State(In,Seg,In[0]->StateList[i]));
+
+
     		for (int i = 0; i < n_seg; i++) {
       			for (int k = 0; k < n_seg; k++) {
         			Seg[i]->PutChiKEY(Seg[k]->name);
      			}
-      			if (!Seg[i]->CheckInput(start))
-        			return 0;
+			for (int k = 0; k < n_stat; k++) {
+        			Seg[i]->PutChiKEY(Sta[k]->name);
+     			}
+      			if (!Seg[i]->CheckInput(start)) return 0;
     		}
+		for (int i=0; i<n_stat; i++) {
+      			for (int k = 0; k < n_seg; k++) {
+        			Sta[i]->PutChiKEY(Seg[k]->name);
+     			}			
+			for (int k = 0; k < n_stat; k++) {
+        			Sta[i]->PutChiKEY(Sta[k]->name);
+     			}
+			if (!Sta[i]->CheckInput(start)) return 0;
+		}
+
+
+
+//Create reaction class instance and check inputs
+		int n_rea=In[0]->ReactionList.size();
+		for (int i=0; i<n_rea; i++) {
+			Rea.push_back(new Reaction(In,Seg,Sta,In[0]->ReactionList[i]));
+			if (!Rea[i]->CheckInput(start)) return 0;
+		}
+
 
 // Create segment class instance and check inputs (reference above)
     		int n_mol = In[0]->MolList.size();
@@ -153,7 +186,7 @@ int main(int argc, char* argv[]) {
    		}
 
 // Create system class instance and check inputs (reference above)
-    		Sys.push_back(new System(In, Lat, Seg, Mol, In[0]->SysList[0]));
+    		Sys.push_back(new System(In, Lat, Seg, Sta, Rea, Mol, In[0]->SysList[0]));
     		Sys[0]->cuda = cuda;
     		if (!Sys[0]->CheckInput(start)) {
       			return 0;
@@ -173,7 +206,7 @@ int main(int argc, char* argv[]) {
 
 // Create variate class instance and check inputs (reference above)
     		for (int k = 0; k < n_var; k++) {
-      			Var.push_back(new Variate(In, Lat, Seg, Mol, Sys, In[0]->VarList[k]));
+      			Var.push_back(new Variate(In, Lat, Seg, Sta, Rea, Mol, Sys, In[0]->VarList[k]));
       			if (!Var[k]->CheckInput(start)) {
         		return 0;
       			}
@@ -231,7 +264,7 @@ int main(int argc, char* argv[]) {
     		}
 
 // Create newton class instance and check inputs (reference above)
-    		New.push_back(new Solve_scf(In, Lat, Seg, Mol, Sys, Var, In[0]->NewtonList[0]));
+    		New.push_back(new Solve_scf(In, Lat, Seg, Sta, Rea, Mol, Sys, Var, In[0]->NewtonList[0]));
     		if (!New[0]->CheckInput(start)) {
       			return 0;
     		}
@@ -240,12 +273,14 @@ int main(int argc, char* argv[]) {
 //Guesses geometry
     		if (Sys[0]->initial_guess == "file") {
       			MONLIST.clear();
-      			if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, fjc_old, 0)) {
+			STATELIST.clear();
+      			if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST,STATELIST, CHARGED, MX, MY, MZ, fjc_old, 0)) {
 // last argument 0 is to first checkout sizes of system.
         			return 0;
       			}
 
 			int nummon = MONLIST.size();
+			int numstate=STATELIST.size();
       			int m;
       			if (MY == 0) {
       				m = MX + 2;
@@ -256,16 +291,17 @@ int main(int argc, char* argv[]) {
           				m = (MX + 2) * (MY + 2) * (MZ + 2);
         			}
       			}
-      			int IV = nummon * m;
+      			int IV = (nummon+numstate) * m;
 
       			if (CHARGED)
         			IV += m;
       			if (start > 1){
         			free(X);
-              X = (Real*)malloc(IV * sizeof(Real));
-            }
+              			X = (Real*)malloc(IV * sizeof(Real));
+            		}
       			MONLIST.clear();
-      			Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, CHARGED, MX, MY, MZ, fjc_old, 1);
+			STATELIST.clear();
+      			Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, STATELIST,CHARGED, MX, MY, MZ, fjc_old, 1);
 // last argument 1 is to read guess in X.
 		}
 
@@ -284,7 +320,7 @@ int main(int argc, char* argv[]) {
 		if (In[0]->ClengList.size()>0) {TheEngine=CLENG;}
 		if (In[0]->TengList.size()>0) {TheEngine=TENG;}
 
-		int ii,kk,length,length_al;
+		int ii;
 		int n_out=0;
 		switch(TheEngine) {
 			case SCF:
@@ -295,7 +331,7 @@ int main(int argc, char* argv[]) {
 
 				// Create output class instance and check inputs (reference above)
     				for (int ii = 0; ii < n_out; ii++) {
-      					Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[ii], ii, n_out));
+      					Out.push_back(new Output(In, Lat, Seg,Sta,Rea, Mol, Sys, New, In[0]->OutputList[ii], ii, n_out));
       					if (!Out[ii]->CheckInput(start)) {
         					cout << "input_error in output " << endl;
         					return 0;
@@ -306,29 +342,15 @@ int main(int argc, char* argv[]) {
       					if (scan_nr > -1)
         					Var[scan_nr]->PutVarScan(subloop);
       					New[0]->AllocateMemory();
-      					New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ,fjc_old);
+      					New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
 					if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
-       	  				New[0]->Solve(true);
+						bool print=true;
+       	  				New[0]->Solve(print);
           				} else {
             					if (!debug) cout << "Solve towards superiteration " << endl;
             					New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
          				}
-					Lat[0]->PushOutput();
       					New[0]->PushOutput();
-      					length = In[0]->MonList.size();
-      					for (ii = 0; ii < length; ii++)
-        					Seg[ii]->PushOutput();
-      					length = In[0]->MolList.size();
-      					for (ii = 0; ii < length; ii++) {
-        				  length_al = Mol[ii]->MolAlList.size();
-        				for (kk = 0; kk < length_al; kk++) {
-          				Mol[ii]->Al[kk]->PushOutput();
-        					}
-       			 		Mol[ii]->PushOutput();
-      					}
-      					// length = In[0]->AliasList.size();
-      					// for (ii=0; ii<length; ii++) Al[i]->PushOutput();
-     					Sys[0]->PushOutput(); // needs to be after pushing output for seg.
 
       					for (ii = 0; ii < n_out; ii++) {
         					Out[ii]->WriteOutput(subloop);
@@ -339,7 +361,7 @@ int main(int argc, char* argv[]) {
 				break;
 			case MESODYN:
 				New[0]->AllocateMemory();
-      				New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ,fjc_old);
+      				New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
 				if (debug) cout << "Creating mesodyn" << endl;
         			Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
         			if (!Mes[0]->CheckInput(start)) {
@@ -356,16 +378,16 @@ int main(int argc, char* argv[]) {
 				break;
 			case CLENG:
 				New[0]->AllocateMemory();
-      				New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ,fjc_old);
+      				New[0]->Guess(X, METHOD, MONLIST,STATELIST, CHARGED, MX, MY, MZ,fjc_old); 
 				if (!debug) cout << "Creating Cleng module" << endl;
-				Cle.push_back(new Cleng(In, Lat, Seg, Mol, Sys, New, In[0]->ClengList[0]));
+				Cle.push_back(new Cleng(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->ClengList[0]));
 				if (!Cle[0]->CheckInput(start)) {return 0;}
 				break;
 			case TENG:
 				New[0]->AllocateMemory();
-      				New[0]->Guess(X, METHOD, MONLIST, CHARGED, MX, MY, MZ,fjc_old);
+      				New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
 				cout << "Solving Teng problem" << endl;
-				Ten.push_back(new Teng(In, Lat, Seg, Mol, Sys, New, In[0]->TengList[0]));
+				Ten.push_back(new Teng(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->TengList[0]));
 				if (!Ten[0]->CheckInput(start)) {return 0;}
 				break;
 			default:
@@ -380,25 +402,35 @@ int main(int argc, char* argv[]) {
       			MY = Lat[0]->MY;
       			MZ = Lat[0]->MZ;
       			CHARGED = Sys[0]->charged;
-            int IV_new=New[0]->iv; //check this
+            		int IV_new=New[0]->iv; //check this
       			if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
-                free(X);
-            X = (Real *)malloc(IV_new * sizeof(Real));
-            for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
+                		free(X);
+            		X = (Real *)malloc(IV_new * sizeof(Real));
+            		for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
       			fjc_old=Lat[0]->fjc;
-      			int length = Sys[0]->SysMonList.size();
+      			int mon_length = Sys[0]->ItMonList.size();
+			int state_length=Sys[0]->ItStateList.size();
       			MONLIST.clear();
-      			for (int i = 0; i < length; i++) {
-       			MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
+			STATELIST.clear();
+      			for (int i = 0; i < mon_length; i++) {
+       				MONLIST.push_back(Seg[Sys[0]->ItMonList[i]]->name);
+      			}
+      			for (int i = 0; i < state_length; i++) {
+       				STATELIST.push_back(Sta[Sys[0]->ItStateList[i]]->name);
       			}
     		}
     		if (Sys[0]->final_guess == "file") {
       			MONLIST.clear();
-      			int length = Sys[0]->SysMonList.size();
-      			for (int i = 0; i < length; i++) {
-        			MONLIST.push_back(Seg[Sys[0]->SysMonList[i]]->name);
+			STATELIST.clear();
+      			int mon_length = Sys[0]->ItMonList.size();
+			int state_length=Sys[0]->ItStateList.size();
+      			for (int i = 0; i < mon_length; i++) {
+        			MONLIST.push_back(Seg[Sys[0]->ItMonList[i]]->name);
       			}
-      			Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->SCF_method, MONLIST, Sys[0]->charged, start);
+      			for (int i = 0; i < state_length; i++) {
+        			STATELIST.push_back(Sta[Sys[0]->ItStateList[i]]->name);
+      			}
+      			Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->SCF_method, MONLIST, STATELIST, Sys[0]->charged, start);
    		}
 
 /******** Clear all class instances ********/
@@ -415,6 +447,10 @@ int main(int argc, char* argv[]) {
     		Mol.clear();
     		for (int i = 0; i < n_seg; i++) delete Seg[i];
    	 	  Seg.clear();
+		for (int i=0; i<n_stat; i++) delete Sta[i];
+		  Sta.clear();
+		for (int i=0; i<n_rea; i++) delete Rea[i];
+	          Rea.clear();
     		delete Lat[0];
     		Lat.clear();
 	} //loop over starts.

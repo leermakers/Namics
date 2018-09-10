@@ -1,3 +1,4 @@
+
 #ifndef NAMICSxH
 #define NAMICSxH
 
@@ -43,7 +44,7 @@ extern bool suppress;
 #endif
 
 enum MoleculeType {monomer, linear, branched, dendrimer, comb, ring};
-enum transfer {to_segment,to_cleng};
+enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};
 enum EngineType {SCF, CLENG, MESODYN, TENG};
 
 #endif
@@ -78,3 +79,4 @@ enum EngineType {SCF, CLENG, MESODYN, TENG};
 #   error "Unknown compiler"
 #endif
 */
+

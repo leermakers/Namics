@@ -853,7 +853,7 @@ void Mesodyn::write_density(vector<Component*>& component) {
 /******* INTERFACE ********/
 
 Interface::Interface(Lattice* Lat, Component* A, Component* B)
-  : Lattice_Access(Lat), params(A->rho.size()), A(A), B(B) {}
+  : Lattice_Access(Lat), order_params(A->rho.size()), A(A), B(B) {}
 
 Interface::~Interface() {
   delete A;
@@ -861,14 +861,68 @@ Interface::~Interface() {
 }
 
 int Interface::order_parameters() {
-  if (params.size() != A->rho.size() || params.size() != B->rho.size() )
+  if (order_params.size() != A->rho.size() || order_params.size() != B->rho.size() )
     throw ERROR_SIZE_INCOMPATIBLE;
 
   skip_bounds([this](int x, int y, int z) mutable {
-    *val_ptr(params, x, y, z) = val(A->rho, x, y, z) * val(B->rho, x, y, z);
+    *val_ptr(order_params, x, y, z) = val(A->rho, x, y, z) * val(B->rho, x, y, z);
   });
 
   return 0;
+}
+
+int Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho, int z_slice) {
+  vector<Real> result(MX*MY);
+  int threshold = 70;
+
+  int i = 0 ;
+
+  vector<int> Gx = {1, 0, -1, 2, 0, -2, 1, 0, -1};
+  vector<int> Gy = {1, 2, 1, 0, 0, 0, -1, -2, -1};
+//  vector<int> Gz = {1, 2, 1, 2, 4, 2, 1, 2, 1};
+
+  for (int x = 0; x < MX ; ++x)
+    for (int y = 0 ; y < MY ; ++y) {
+      Real conv_x = convolution(Gx, pixel_at(rho, x, y, z_slice) );
+      Real conv_y = convolution(Gy, pixel_at(rho, x, y, z_slice) );
+      result[i] = abs(conv_x) + abs(conv_y);
+      ++i;
+    }
+
+  for ( Real& all_elements : result ) {
+    if (all_elements < threshold) {
+      all_elements = 0;
+    }
+  }
+
+  return 0;
+}
+
+Real Interface::convolution(vector<int> kernel, vector<Real> voxel) {
+  if (kernel.size() != voxel.size())
+    throw ERROR_SIZE_INCOMPATIBLE;
+
+  Real result = 0;
+
+  for (size_t i = 0 ; i < kernel.size() ; ++i) {
+    result += kernel[i] * voxel[ voxel.size()-i ];
+  }
+
+  return result;
+}
+
+vector<Real> Interface::pixel_at(vector<Real>& rho, int x, int y, int z) {
+  vector<Real> pixel(9);
+
+  int i = 0;
+
+  for (int vertical = 0 ; vertical < 3 ; ++vertical)
+    for (int horizontal = 0 ; horizontal < 3 ; ++horizontal) {
+      pixel[i] = val(rho, x+horizontal, y+vertical, z);
+      ++i;
+    }
+
+  return pixel;
 }
 
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/

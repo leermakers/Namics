@@ -238,11 +238,14 @@ public:
   Interface(Lattice*, Component*, Component*);
   ~Interface();
   int order_parameters();
+  int sobel_edge_detector(Real, vector<Real>&, int);
 
 private:
-  vector<Real> params;
+  vector<Real> order_params;
   Component* A;
   Component* B;
+  Real convolution(vector<int>, vector<Real>);
+  vector<Real> pixel_at(vector<Real>&, int, int, int);
 };
 
 

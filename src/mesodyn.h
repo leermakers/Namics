@@ -234,6 +234,18 @@ protected:
   vector<int> Mask_minus_z;
 };
 
+class Interface : private Lattice_Access {
+public:
+  Interface(Lattice*, Component*, Component*);
+  ~Interface();
+  int order_parameters();
+
+private:
+  vector<Real> params;
+  Component* A;
+  Component* B;
+};
+
 
 class Mesodyn : private Lattice_Access {
 
@@ -303,6 +315,7 @@ private:
   void set_filename();
   void write_settings();
   void write_density(vector<Component*>&);
+  int order_parameters(vector<Real>&, Component*, Component*);
 
   /* Mathematics */
   int factorial (int);

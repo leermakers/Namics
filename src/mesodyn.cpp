@@ -862,6 +862,27 @@ void Mesodyn::write_density(vector<Component*>& component) {
   ++writes;
 }
 
+/******* INTERFACE ********/
+
+Interface::Interface(Lattice* Lat, Component* A, Component* B)
+  : Lattice_Access(Lat), params(A->rho.size()), A(A), B(B) {}
+
+Interface::~Interface() {
+  delete A;
+  delete B;
+}
+
+int Interface::order_parameters() {
+  if (params.size() != A->rho.size() || params.size() != B->rho.size() )
+    throw ERROR_SIZE_INCOMPATIBLE;
+
+  skip_bounds([this](int x, int y, int z) mutable {
+    *val_ptr(params, x, y, z) = val(A->rho, x, y, z) * val(B->rho, x, y, z);
+  });
+
+  return 0;
+}
+
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
 Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component* A, Component* B)

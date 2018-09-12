@@ -2,7 +2,11 @@
 
 Hybrid SCF-MD simulation tool. Package under development.
 
-Developers: F.A.M.Leermakers, R.Varadharajan.
+Developers: 
+F.A.M.Leermakers - Self-consistent field caculation modules.
+R.Varadharajan - teng.cpp
+Daniel Emmery - mesodyn.cpp
+Alexandar kazakzov - Cleng.cpp
 
 TODO 9-4-2018
 -fix cuda for 3d : likely problem is with generating arrays in branched propagator

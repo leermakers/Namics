@@ -8,7 +8,7 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
       D{0.01}, mean{0}, stddev{2 * D}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1}, dt{0.1},
       initialization_mode{INIT_HOMOGENEOUS},
-      component_no{Sys[0]->SysMolMonList.size()}, RC{0}, cn_ratio{0.5},
+      component_no{Sys[0]->SysMolMonList.size()}, edge_detection{false}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
       writes{0}, write_vtk{false} {
   KEYS.push_back("timesteps");
@@ -22,6 +22,7 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   KEYS.push_back("mean");
   KEYS.push_back("stddev");
   KEYS.push_back("cn_ratio");
+  KEYS.push_back("edge_detection");
 
   // TODO: implement this properly
   // If the user has asked for vtk output
@@ -130,6 +131,17 @@ bool Mesodyn::CheckInput(int start) {
     }
     if (debug)
       cout << "Cn_ratio is " << cn_ratio << endl;
+
+    if(GetValue("edge_detection").size() > 0) {
+      vector<string> options;
+			options.push_back("sobel");
+
+			if(GetValue("edge_detection") == options[0]) {
+          edge_detection = true;
+			} else {
+        cout << "edge_detection algorithm " << GetValue("edge_detection") << " not recognized, defaulting to no edge detection" << endl;
+      }
+    }
   }
 
   return success;
@@ -164,6 +176,8 @@ bool Mesodyn::mesodyn() {
   auto solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   auto loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
+  string file = filename.str(); // TODO: remove
+
   /**** Main MesoDyn time loop ****/
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
@@ -171,11 +185,9 @@ bool Mesodyn::mesodyn() {
     norm_theta(component);
     norm_theta(solver_component);
 
-//    if (t > 100) {
       for (Flux1D* all_fluxes : solver_flux) {
         all_fluxes->gaussian->generate();
       }
-//    }
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
@@ -197,7 +209,12 @@ bool Mesodyn::mesodyn() {
       all_fluxes->J = solver_flux[i]->J;
       ++i;
     }
+
+    interface->detect_edges();
+    interface->write_edges(file);
   } // time loop
+
+
 
   return true;
 }
@@ -434,6 +451,8 @@ int Mesodyn::initial_conditions() {
 
   norm_theta(component);
   norm_theta(solver_component);
+
+  interface = new Interface(Lat[0], component);
 
   return 0;
 }
@@ -852,74 +871,168 @@ void Mesodyn::write_density(vector<Component*>& component) {
 
 /******* INTERFACE ********/
 
-Interface::Interface(Lattice* Lat, Component* A, Component* B)
-  : Lattice_Access(Lat), order_params(A->rho.size()), A(A), B(B) {}
+Interface::Interface(Lattice* Lat, vector<Component*> components)
+  : Lattice_Access(Lat), component(components), order_params(component[0]->rho.size()) {}
 
 Interface::~Interface() {
-  delete A;
-  delete B;
+  for (Component* all_components : component)
+    delete all_components;
+  component.clear();
 }
 
-int Interface::order_parameters() {
+int Interface::order_parameters(Component* A, Component* B) {
   if (order_params.size() != A->rho.size() || order_params.size() != B->rho.size() )
     throw ERROR_SIZE_INCOMPATIBLE;
 
-  skip_bounds([this](int x, int y, int z) mutable {
+  skip_bounds([this, A, B](int x, int y, int z) mutable {
     *val_ptr(order_params, x, y, z) = val(A->rho, x, y, z) * val(B->rho, x, y, z);
   });
 
   return 0;
 }
 
-int Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho, int z_slice) {
-  vector<Real> result(MX*MY);
-  int threshold = 70;
+int Interface::detect_edges() {
+  edges.clear();
+  edges = sobel_edge_detector(0, component[1]->rho);
+  for (Real& all_values : edges)
+    cout << all_values << endl;
+  return 0;
+}
 
-  int i = 0 ;
+int Interface::write_edges(string FILENAME) {
+  ostringstream filename;
+  filename << FILENAME;
+  ofstream testfile;
+  time_t rawtime;
+  time(&rawtime);
+  filename << "test" << rawtime << ".vtk";
+  testfile.open( filename.str() );
 
-  vector<int> Gx = {1, 0, -1, 2, 0, -2, 1, 0, -1};
-  vector<int> Gy = {1, 2, 1, 0, 0, 0, -1, -2, -1};
-//  vector<int> Gz = {1, 2, 1, 2, 4, 2, 1, 2, 1};
+  ostringstream vtk;
 
-  for (int x = 0; x < MX ; ++x)
-    for (int y = 0 ; y < MY ; ++y) {
-      Real conv_x = convolution(Gx, pixel_at(rho, x, y, z_slice) );
-      Real conv_y = convolution(Gy, pixel_at(rho, x, y, z_slice) );
-      result[i] = abs(conv_x) + abs(conv_y);
-      ++i;
-    }
+  vtk << "# vtk DataFile Version 3.0 \n";
+  vtk << "Mesodyn output \n";
+  vtk << "ASCII\n";
+  vtk << "DATASET STRUCTURED_GRID \n";
+  vtk << "DIMENSIONS " << MX-3 << " " << MY-3 << " " << MZ-3 << "\n";
+  vtk << "POINTS " << (MX-3) * (MY-3) * (MZ-3) << " int\n";
 
-  for ( Real& all_elements : result ) {
-    if (all_elements < threshold) {
-      all_elements = 0;
-    }
+  for (int x = 0; x < MX - 3; ++x)
+    for (int y = 0; y < MY - 3; ++y)
+      for (int z = 0 ; z < MZ - 3 ; ++z )
+        vtk << x << " " << y << " " << z << "\n";
+
+  vtk << "POINT_DATA " << (MX-3) * (MY-3) * (MZ-3) << "\n";
+  vtk << "SCALARS Box_profile float\nLOOKUP_TABLE default \n";
+
+  for (Real& all_values : edges) {
+    vtk << all_values << "\n";
   }
+
+  testfile << vtk.str();
+
+  testfile.flush();
+  testfile.close();
 
   return 0;
 }
 
-Real Interface::convolution(vector<int> kernel, vector<Real> voxel) {
-  if (kernel.size() != voxel.size())
-    throw ERROR_SIZE_INCOMPATIBLE;
+vector<Real> Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho) {
+  vector<Real> result((MX - 3) * (MY - 3) * (MZ - 3));
+  int threshold = tolerance;
 
-  Real result = 0;
+  int i = 0;
 
-  for (size_t i = 0 ; i < kernel.size() ; ++i) {
-    result += kernel[i] * voxel[ voxel.size()-i ];
-  }
+  vector<int> Gx_minus = {-1, -3, -1, -3, -6, -3, -1, -3, -1};
+  vector<int> Gx_mid = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  vector<int> Gx_plus = {1, 3, 1, 3, 6, 3, 1, 3, 1};
+  vector<int> Gy_minus = {1, 3, 1, 0, 0, 0, -1, -3, -1};
+  vector<int> Gy_mid = {3, 6, 3, 0, 0, 0, -3, -6, -3};
+  vector<int> Gy_plus = {1, 3, 1, 0, 0, 0, -1, -3, -1};
+  vector<int> Gz_minus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
+  vector<int> Gz_mid = {-3, 0, 3, -6, 0, 6, -3, 0, 3};
+  vector<int> Gz_plus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
+
+  for (int x = 0; x < MX - 3; ++x)
+    for (int y = 0; y < MY - 3; ++y)
+      for (int z = 0 ; z < MZ - 3 ; ++z ) {
+        Real conv_x = convolution(Gx_minus, get_pixel_xy(rho, x, y, z));
+        conv_x += convolution(Gx_mid, get_pixel_xy(rho, x, y, z+1));
+        conv_x += convolution(Gx_plus, get_pixel_xy(rho, x, y, z+2));
+
+        Real conv_y = convolution(Gy_minus, get_pixel_xy(rho, x, y, z));
+        conv_y += convolution(Gy_mid, get_pixel_xy(rho, x, y, z+1));
+        conv_y += convolution(Gy_plus, get_pixel_xy(rho, x, y, z+2));
+
+        Real conv_z = convolution(Gz_minus, get_pixel_xz(rho, x, y, z));
+        conv_z += convolution(Gz_mid, get_pixel_xz(rho, x, y+1, z));
+        conv_z += convolution(Gz_plus, get_pixel_xz(rho, x, y+2, z));
+
+        result[i] = abs(conv_x) + abs(conv_y) + abs(conv_z);
+        ++i;
+    }
+
+  //normalize between 0 and 255
+  Real min = *min_element(result.begin(), result.end());
+  Real max = *max_element(result.begin(), result.end());
+
+  for (Real& all_elements : result)
+    all_elements = (255 - 0) * ((all_elements - min) / (max - min)) + 0;
+
+  //cut-off at threshold
+  for (Real& all_elements : result)
+    if (all_elements < threshold) {
+      all_elements = 0;
+    }
 
   return result;
 }
 
-vector<Real> Interface::pixel_at(vector<Real>& rho, int x, int y, int z) {
+vector<Real> Interface::gaussian_blur(vector<Real>& rho, int z_slice) {
+  vector<Real> result( (MX-2)*(MY-2) );
+//  Real factor = 1/256;
+  vector<int> Gx = {1, 4, 6, 4, 1, 4, 16, 24, 16, 4, 6, 24, 36, 24, 6, 4, 16, 24, 16, 4, 1, 4, 6, 4, 1};
+  return result;
+}
+
+Real Interface::convolution(vector<int> kernel, vector<Real> pixel) {
+  if (kernel.size() != pixel.size()) {
+    cerr << "Convolution: pixel and kernel not of equal size!" << endl;
+    throw ERROR_SIZE_INCOMPATIBLE;
+  }
+
+  Real accumulator = 0;
+
+  for (size_t i = 0 ; i < kernel.size() ; ++i) {
+    accumulator += kernel[i] * pixel[i];
+  }
+
+  return accumulator;
+}
+
+vector<Real> Interface::get_pixel_xy(vector<Real>& rho, int x, int y, int z) {
   vector<Real> pixel(9);
 
   int i = 0;
 
   for (int vertical = 0 ; vertical < 3 ; ++vertical)
     for (int horizontal = 0 ; horizontal < 3 ; ++horizontal) {
-      pixel[i] = val(rho, x+horizontal, y+vertical, z);
-      ++i;
+        pixel[i] = val(rho, x+horizontal, y+vertical, z);
+        ++i;
+    }
+
+  return pixel;
+}
+
+vector<Real> Interface::get_pixel_xz(vector<Real>& rho, int x, int y, int z) {
+  vector<Real> pixel(9);
+
+  int i = 0;
+
+  for (int horizontal = 0 ; horizontal < 3 ; ++horizontal)
+    for (int depth = 0 ; depth < 3 ; ++depth) {
+        pixel[i] = val(rho, x+horizontal, y, z+depth);
+        ++i;
     }
 
   return pixel;

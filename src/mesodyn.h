@@ -235,17 +235,22 @@ protected:
 
 class Interface : private Lattice_Access {
 public:
-  Interface(Lattice*, Component*, Component*);
+  Interface(Lattice*, vector<Component*>);
   ~Interface();
-  int order_parameters();
-  int sobel_edge_detector(Real, vector<Real>&, int);
+  int order_parameters(Component*, Component*);
+  int detect_edges();
+  int write_edges(string);
 
 private:
+  vector<Component*> component;
   vector<Real> order_params;
-  Component* A;
-  Component* B;
+  vector<Real> edges;
+
+  vector<Real> sobel_edge_detector(Real, vector<Real>&);
+  vector<Real> gaussian_blur(vector<Real>&, int);
   Real convolution(vector<int>, vector<Real>);
-  vector<Real> pixel_at(vector<Real>&, int, int, int);
+  vector<Real> get_pixel_xy(vector<Real>&, int, int, int);
+  vector<Real> get_pixel_xz(vector<Real>&, int, int, int);
 };
 
 
@@ -274,6 +279,8 @@ private:
   Real dt;
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
+  bool edge_detection;
+  function<void(vector<Real>&)> edge_detector;
 
   /* Flow control */
   int RC;
@@ -304,6 +311,7 @@ private:
 
   /* Helper class instances */
   Boundary1D* boundary;
+  Interface* interface;
   vector<Component*> component;
   vector<Component*> solver_component;
   vector<Flux1D*> flux;

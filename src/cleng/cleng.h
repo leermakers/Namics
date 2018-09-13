@@ -69,7 +69,7 @@ public:
 
     ofstream out;
     Point shift;
-    int id_part_for_move;
+    int id_node_for_move;
     Real free_energy_current;
     Real free_energy_trial;
 
@@ -82,9 +82,9 @@ public:
     void push(string, string);
     bool CP(transfer);
     bool MakeShift(bool back);
-    bool CheckRange_and_distances();
-    void WriteOutput(int);
-    void PushOutput(int);
+    bool Checks(bool, bool);
+    void WriteOutput(int, Real);
+    void PushOutput(int, Real);
     int GetValue(string, int&, Real&, string&);
     int GetIntRandomValueExclude(int, int, int, bool);
     Real GetRealRandomValue(int, int);
@@ -96,5 +96,18 @@ public:
     bool CheckInput(int);
     void PutParameter(string);
     string GetValue(string);
+
+    Real GetN_times_mu() {
+        int n_mol=(int)In[0]->MolList.size();
+        Real n_times_mu=0;
+        for (int i=0; i<n_mol; i++) {
+            Real Mu=Mol[i]->Mu;
+            Real n=Mol[i]->n;
+            if (Mol[i]->IsClamped()) n=Mol[i]->n_box;
+            n_times_mu +=  n*Mu;
+        }
+        return n_times_mu;
+    }
+
 };
 #endif

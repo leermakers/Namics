@@ -71,6 +71,7 @@ vector<int> Z_bm;
   bool CP(transfer);
   void WriteOutput(int);
   void PushOutput();
+  void WritePdb(int);
   int GetValue(string, int&, Real&, string&);
   int GetRandom(int);
   Real GetRandom(Real);

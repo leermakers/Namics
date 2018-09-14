@@ -238,7 +238,7 @@ public:
   Interface(Lattice*, vector<Component*>);
   ~Interface();
   int order_parameters(Component*, Component*);
-  int detect_edges();
+  int detect_edges(int);
   int write_edges(string);
 
 private:
@@ -249,8 +249,8 @@ private:
   vector<Real> sobel_edge_detector(Real, vector<Real>&);
   vector<Real> gaussian_blur(vector<Real>&, int);
   Real convolution(vector<int>, vector<Real>);
-  vector<Real> get_pixel_xy(vector<Real>&, int, int, int);
-  vector<Real> get_pixel_xz(vector<Real>&, int, int, int);
+  vector<Real> get_xy_plane(vector<Real>&, int, int, int, int = 3);
+  vector<Real> get_xz_plane(vector<Real>&, int, int, int, int = 3);
 };
 
 
@@ -280,7 +280,9 @@ private:
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
   bool edge_detection;
-  function<void(vector<Real>&)> edge_detector;
+  function<void(vector<Real>&)> edge_detector; //TODO: remove?
+  int edge_detection_threshold;
+
 
   /* Flow control */
   int RC;

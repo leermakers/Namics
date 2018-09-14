@@ -129,17 +129,16 @@ bool Cleng::CP(transfer tofrom) {
     int JY = Lat[0]->JY;
     int M = Lat[0]->M;
 
-    vector<SimpleNode> sn;
     Segment *clamped = Seg[clamp_seg];
     map<int, Point> system_points;
     switch (tofrom) {
         case to_cleng:
+            simpleNodeList.clear();
             for (int i = 0; i < n_boxes; i++) {
-                sn.push_back(fromSystemToNode(clamped->px1[i], clamped->py1[i], clamped->pz1[i], 2 * i, box));
-                sn.push_back(fromSystemToNode(clamped->px2[i], clamped->py2[i], clamped->pz2[i], 2 * i + 1, box));
+                simpleNodeList.push_back(fromSystemToNode(clamped->px1[i], clamped->py1[i], clamped->pz1[i], 2 * i, box));
+                simpleNodeList.push_back(fromSystemToNode(clamped->px2[i], clamped->py2[i], clamped->pz2[i], 2 * i + 1, box));
             }
-
-            nodes = createNodes(sn);
+            nodes = createNodes(simpleNodeList);
             for (auto &&n : nodes) {
                 cout << n->to_string() << endl;
             }
@@ -250,61 +249,84 @@ Real Cleng::GetRealRandomValue(int min_value, int max_value) {
     return dist(gen);
 }
 
-bool Cleng::Checks(bool checkCollapsing, bool checkRange) {
+Real Cleng::GetN_times_mu() {
+    int n_mol=(int)In[0]->MolList.size();
+    Real n_times_mu=0;
+    for (int i=0; i<n_mol; i++) {
+        Real Mu=Mol[i]->Mu;
+        Real n=Mol[i]->n;
+        if (Mol[i]->IsClamped()) n=Mol[i]->n_box;
+        n_times_mu +=  n*Mu;
+    }
+    return n_times_mu;
+}
+
+bool Cleng::InSubBoxRange() {
+    bool in_subbox_range = false;
+    int not_in_subbox_range = 0;
+    Point sub_box = {sub_box_size, sub_box_size, sub_box_size};  // change it in future
+    for (int id = 0; id < n_boxes; id++ ) {
+        auto sn1 = simpleNodeList[2*id];
+        auto sn2 = simpleNodeList[2*id+1];
+        Point different = sn2.point() - sn1.point();
+        if (sub_box < different) not_in_subbox_range ++;
+    }
+    if (not_in_subbox_range == 0) in_subbox_range = true;
+    cout << "InSubBoxRange: " << in_subbox_range << endl;
+    return in_subbox_range;
+}
+
+bool Cleng::NotCollapsing() {
     bool not_collapsing = false;
-    bool in_range = false;
-    int up_boundary = 3; int down_boundary = 3;
-    Point box_wr { Lat[0]->MX - up_boundary, Lat[0]->MY - up_boundary, Lat[0]->MZ - up_boundary };
-    Point MP {
-        nodes[id_node_for_move]->point().x,
-        nodes[id_node_for_move]->point().y,
-        nodes[id_node_for_move]->point().z
-    };
-    Point MPs {
-        nodes[id_node_for_move]->point().x + shift.x,
-        nodes[id_node_for_move]->point().y + shift.y,
-        nodes[id_node_for_move]->point().z + shift.z
-    };
-
-    // SubBoxRange
-    // Implementation here
-
-
-    // check distances between all nodes => preventing collapsing
-    double min_dist = 9; // minimal distance between nodes
-    if (checkCollapsing) {
-        int i = 0;
-        for (const auto &n : nodes) {
-            if (MP != n->point()) {
-                double dx = pow(MPs.x - n->point().x, 2);
-                double dy = pow(MPs.y - n->point().y, 2);
-                double dz = pow(MPs.z - n->point().z, 2);
-                double dr = sqrt(dx + dy + dz);
-                if (dr < min_dist) i++;
-            }
+    Point MP (nodes[id_node_for_move]->point());
+    Point MPs (nodes[id_node_for_move]->point() + shift);
+    double min_dist = 2; // minimal distance between nodes
+    int i = 0;
+    for (const auto &n : nodes) {
+        if (MP != n->point()) {
+            Real distance = MPs.distance(n->point());
+            if (distance < min_dist) i++;
         }
-        if (i == 0) {
-            not_collapsing = true;
-        }
-//    result ? cout<<endl : cout << "Distances are not okay...\n" << endl;
-    } else {
+    }
+    if (i == 0) {
         not_collapsing = true;
     }
+    cout << "NotCollapsing: " << not_collapsing << endl;
+    return not_collapsing;
+}
+
+bool Cleng::InRange() {
+    bool in_range = false;
+    Point box = {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
+    Point down_boundary = { 3, 3, 3};
+    Point up_boundary   = { 3, 3, 3};
+    Point box_wr = box - up_boundary;
+    Point MPs (nodes[id_node_for_move]->point() + shift);
+    if (down_boundary < MPs and MPs < box_wr) in_range = true;
+    cout << "InRange: " << in_range << endl;
+    return in_range;
+}
+
+
+
+bool Cleng::Checks() {
+    bool in_subbox_range;
+    bool not_collapsing;
+    bool in_range;
+
+    // SubBoxRange
+    in_subbox_range = InSubBoxRange();
+    // check distances between all nodes => preventing collapsing
+    not_collapsing = NotCollapsing();
 
     // check distance between all nodes and constrains (walls)
-    if (checkRange) {
-        if (
-                (down_boundary < MPs.x) and (MPs.x < box_wr.x) and
-                (down_boundary < MPs.y) and (MPs.y < box_wr.y) and
-                (down_boundary < MPs.z) and (MPs.z < box_wr.z)
-                )
-        {
-            in_range = true;
-        }
+    //TODO: check the periodicy of system => true or false;
+    if (false) {
+        in_range = InRange();
     } else {
         in_range = true;
     }
-    return not_collapsing and in_range;
+    return not_collapsing and in_range and in_subbox_range;
 }
 
 Point Cleng::PrepareStep() {
@@ -333,15 +355,10 @@ bool Cleng::MakeShift(bool back) {
         id_node_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
         cout << "Trying: \n part_id: " << id_node_for_move
              << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
-        //TODO: check the periodicy of system => true or false;
-        bool checkCollapsing = true;
-        bool checkRange = false;
-
-
-        if (Checks(checkCollapsing, checkRange)) {
+        if (Checks()) {
             nodes[id_node_for_move]->shift(shift);
         } else {
-            while (!Checks(checkCollapsing, checkRange)) {
+            while (!Checks()) {
                 cout << "Choose another particle id and step..." << endl;
                 id_node_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
                 shift = PrepareStep();
@@ -369,7 +386,7 @@ bool Cleng::MonteCarlo() {
 
 // init system outlook
     New[0]->Solve(true);
-    free_energy_current = Sys[0]->GetFreeEnergy() - Cleng::GetN_times_mu();
+    free_energy_current = Sys[0]->GetFreeEnergy() - GetN_times_mu();
     WriteOutput(0,exp_diff);
 
     for (int MS_step = 1; MS_step < MCS; MS_step++) { // loop for trials
@@ -377,7 +394,7 @@ bool Cleng::MonteCarlo() {
         MakeShift(false);
         CP(to_segment);
         New[0]->Solve(true);
-        free_energy_trial = Sys[0]->GetFreeEnergy() - Cleng::GetN_times_mu();
+        free_energy_trial = Sys[0]->GetFreeEnergy() - GetN_times_mu();
 
         assert(!std::isnan(free_energy_trial));
         cout << "free_energy_current: " << free_energy_current << endl;
@@ -415,6 +432,11 @@ bool Cleng::MonteCarlo() {
         }
         cout << "Done. \n" << endl;
     }
+
+    cout << "Finally:" << endl;
+    cout << "Accepted %: " << 100* (accepted / MCS) << endl;
+    cout << "Rejected %: " << 100* (rejected / MCS) << endl;
+
     return success;
 }
 

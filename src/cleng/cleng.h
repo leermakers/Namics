@@ -53,14 +53,8 @@ public:
     vector<Output*> Out;
 
 
-    int PX;
-    int PY;
-    int PZ;
-
     vector<int> P;
-    vector<int> Sx;
-    vector<int> Sy;
-    vector<int> Sz;
+    vector<SimpleNode> simpleNodeList;
     vector<std::shared_ptr<Node>> nodes;
     // temporary arrays for keep nodes coordinates for output
     int* xs = nullptr;
@@ -82,12 +76,16 @@ public:
     void push(string, string);
     bool CP(transfer);
     bool MakeShift(bool back);
-    bool Checks(bool, bool);
+    bool Checks();
+    bool InSubBoxRange();
+    bool NotCollapsing();
+    bool InRange();
     void WriteOutput(int, Real);
     void PushOutput(int, Real);
     int GetValue(string, int&, Real&, string&);
     int GetIntRandomValueExclude(int, int, int, bool);
     Real GetRealRandomValue(int, int);
+    Real GetN_times_mu();
     Point PrepareStep();
 
     std::vector<string> KEYS;
@@ -96,18 +94,6 @@ public:
     bool CheckInput(int);
     void PutParameter(string);
     string GetValue(string);
-
-    Real GetN_times_mu() {
-        int n_mol=(int)In[0]->MolList.size();
-        Real n_times_mu=0;
-        for (int i=0; i<n_mol; i++) {
-            Real Mu=Mol[i]->Mu;
-            Real n=Mol[i]->n;
-            if (Mol[i]->IsClamped()) n=Mol[i]->n_box;
-            n_times_mu +=  n*Mu;
-        }
-        return n_times_mu;
-    }
 
 };
 #endif

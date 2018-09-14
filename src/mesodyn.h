@@ -247,8 +247,10 @@ private:
   vector<Real> edges;
 
   vector<Real> sobel_edge_detector(Real, vector<Real>&);
-  vector<Real> gaussian_blur(vector<Real>&, int);
+  vector<Real> gaussian_blur(vector<Real>&);
+  //TODO: template this
   Real convolution(vector<int>, vector<Real>);
+  Real convolution(vector<Real>, vector<Real>);
   vector<Real> get_xy_plane(vector<Real>&, int, int, int, int = 3);
   vector<Real> get_xz_plane(vector<Real>&, int, int, int, int = 3);
 };
@@ -270,13 +272,13 @@ private:
 
   /* Read from file */
   Real D; // diffusionconstant
+  Real dt;
   Real mean; // mean of gaussian noise (should be 0)
   Real stddev; // stdev of gaussian noise (should be 1*D)
   Real seed;  // seed of gaussian noise
   bool seed_specified;
   int timesteps; // length of the time evolution
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
-  Real dt;
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
   bool edge_detection;

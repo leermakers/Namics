@@ -6,7 +6,7 @@
 Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : Lattice_Access(Lat_[0]),
       name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
-      D{0.01}, mean{0}, stddev{2 * D}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1}, dt{0.1},
+      D{0.01}, dt{0.1}, mean{0}, stddev{2 * D * sqrt(dt)}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1},
       initialization_mode{INIT_HOMOGENEOUS},
       component_no{Sys[0]->SysMolMonList.size()}, edge_detection{false}, edge_detection_threshold{50}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
@@ -121,10 +121,7 @@ bool Mesodyn::CheckInput(int start) {
 
     if (GetValue("stddev").size() > 0) {
       stddev = In[0]->Get_Real(GetValue("stddev"), stddev);
-    } else {
-      stddev = 2 * D;
     }
-
     if (debug)
       cout << "Stdev is " << stddev << endl;
 
@@ -204,6 +201,13 @@ bool Mesodyn::mesodyn() {
       all_components->load_rho(solver_component[i]->rho);
       ++i;
     }
+
+    //TODO: remove this check?
+    skip_bounds([this](int x, int y, int z) mutable {
+    for (Component* all_components : solver_component)
+      if (val(all_components->rho, x, y, z) < 0 || val(rho, x, y, z) > 1 )
+        cerr << "CRITICAL ERROR IN DENSITIES AT " << x << "," << y << "," << z  << endl;
+    });
 
     if (t % timebetweensaves == 0) {
       write_density(component);
@@ -903,7 +907,9 @@ int Interface::order_parameters(Component* A, Component* B) {
 
 int Interface::detect_edges(int threshold) {
   edges.clear();
-  edges = sobel_edge_detector(threshold, component[1]->rho);
+  vector<Real> temp((MX-3)*(MY-3)*(MZ-3));
+  temp = gaussian_blur(component[0]->rho);
+  edges = sobel_edge_detector(threshold, temp);
   return 0;
 }
 
@@ -998,36 +1004,52 @@ vector<Real> Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho) {
   return result;
 }
 
-vector<Real> Interface::gaussian_blur(vector<Real>& rho, int z_slice) {
-  vector<Real> result( (MX-2)*(MY-2) );
-  Real factor = 1/16;
-  vector<int> G1 = {1, 2, 1, 2, 4, 2, 1, 2, 1};
-  vector<int> G2 = {1, 1, 1, 1, 2, 1, 1, 1, 1};
-  vector<int> G3 = {1, 1, 1, 1, 2, 1, 1, 1, 1};
+vector<Real> Interface::gaussian_blur(vector<Real>& rho) {
+  vector<Real> result( (MX-3)*(MY-3)*(MY-3) );
+  vector<Real> G1 = {1, 2, 1, 2, 4, 2, 1, 2, 1};
+  vector<Real> G2 = {1, 1, 1, 1, 2, 1, 1, 1, 1};
+  vector<Real> G3 = {1, 1, 1, 1, 2, 1, 1, 1, 1};
 
-  for (int& all_values : G1)
-    all_values *= factor;
+  for (Real& all_values : G1)
+    all_values = all_values * 1/16;
 
-  for (int& all_values : G2)
-    all_values *= factor;
+  for (Real& all_values : G2)
+    all_values = all_values * 1/16;
 
-  for (int& all_values : G3)
-    all_values *= factor;
+  for (Real& all_values : G3)
+    all_values = all_values * 1/16;
 
   int i{0};
+
   for (int x = 0; x < MX - 3; ++x)
     for (int y = 0; y < MY - 3; ++y)
       for (int z = 0 ; z < MZ - 3 ; ++z ) {
         Real conv_1 = convolution(G1, get_xy_plane(rho, x, y, z));
         Real conv_2 = convolution(G2, get_xy_plane(rho, x, y, z+1));
         Real conv_3 = convolution(G3, get_xy_plane(rho, x, y, z+2));
-        *val_ptr(rho, x, y , z) = (conv_1 + conv_2 + conv_3)/
+        result[i] = (conv_1 + conv_2 + conv_3);
         ++i;
     }
   return result;
 }
 
 Real Interface::convolution(vector<int> kernel, vector<Real> pixel) {
+  if (kernel.size() != pixel.size()) {
+    cerr << "Convolution: pixel and kernel not of equal size!" << endl;
+    throw ERROR_SIZE_INCOMPATIBLE;
+  }
+
+  Real accumulator = 0;
+
+  for (size_t i = 0 ; i < kernel.size() ; ++i) {
+    accumulator += kernel[i] * pixel[i];
+  }
+
+  return accumulator;
+}
+
+//TODO: template this
+Real Interface::convolution(vector<Real> kernel, vector<Real> pixel) {
   if (kernel.size() != pixel.size()) {
     cerr << "Convolution: pixel and kernel not of equal size!" << endl;
     throw ERROR_SIZE_INCOMPATIBLE;
@@ -1337,6 +1359,7 @@ int Component::update_density(vector<Real>& rho_old, vector<Real>& J1, vector<Re
   skip_bounds([this, J2, ratio, sign](int x, int y, int z) mutable {
     *val_ptr(rho, x, y, z) = val(rho, x, y, z) + (1 - ratio) * sign * val(J2, x, y, z);
   });
+
   return 0;
 }
 

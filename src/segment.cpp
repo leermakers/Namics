@@ -26,20 +26,16 @@ void Segment::DeAllocateMemory(void){
 if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 
 //if (n_pos>0) cout <<"problem for n_pos " <<endl;
-	if(n_pos>0)
-	free(H_P);
-	if (freedom != "free"){
-		 free(r);
-	}
-	//free(H_u);
+	if(n_pos>0) free(H_P);
+	if (freedom != "free") free(r);
+	free(H_u);
 	free(H_phi);
 	free(H_MASK);
 	free(H_alpha);
 	free(H_phi_state);
 
 #ifdef CUDA
-	if(n_pos>0)
-	cudaFree(P);
+	if(n_pos>0) cudaFree(P);
 	cudaFree(u);
 	cudaFree(phi);
 	cudaFree(phi_state);
@@ -56,8 +52,8 @@ void Segment::AllocateMemory() {
 if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	int M=Lat[0]->M;
 	ns=state_name.size(); if (ns==0) ns=1;
-	H_u = (Real*) malloc(M*ns*sizeof(Real));
-	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
+	H_u = (Real*) malloc(M*ns*sizeof(Real)); 
+ 	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
 	H_phi = (Real*) malloc(M*sizeof(Real)); 
 	H_alpha=(Real*) malloc(M*ns*sizeof(Real));
 	H_Zero(H_u,M*ns);
@@ -126,7 +122,8 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	} 
 
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
-	if (freedom=="tagged") Cp(G1,MASK,M);
+	if (freedom=="tagged") {Cp(G1,MASK,M);
+	}
 	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);
 
 	return success;
@@ -158,6 +155,7 @@ if (debug) cout <<"SetPhiSide in Segment " + name << endl;
 bool Segment::CheckInput(int start) {
 if (debug) cout <<"CheckInput in Segment " + name << endl;
 	bool success;
+	block=false;
 	unique=true;
 	chi_var_seg=-1;
 	chi_var_state=-1;
@@ -167,8 +165,8 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	string s;
 	vector<string>options;
 	guess_u=0;
-
 	n_pos=0;
+
 	fixedPsi0=false;
 	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {
@@ -191,7 +189,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				}
 			}
 		} else {
-			r=(int*) malloc(6*sizeof(int));
+			r=(int*) malloc(6*sizeof(int)); Zero(r,6);
 		}
 
 		if (freedom =="clamp" ) {
@@ -277,7 +275,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 							}
 							bx.push_back((px2[i]+px1[i]-mx)/2);
 							by.push_back((py2[i]+py1[i]-mx)/2);
-							bz.push_back((pz2[i]+pz1[i]-mx)/2);
+							bz.push_back((pz2[i]+pz1[i]-mx)/2);//box is equal in size in x y and z. 
 						}
 					}
 				} else {
@@ -374,7 +372,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			}
 		}
 		if (freedom!="free") {
-			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
+			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int)); Zero(H_MASK,Lat[0]->M);
 			if (freedom=="clamp") {
 				int JX=Lat[0]->JX;
 				int JY=Lat[0]->JY;

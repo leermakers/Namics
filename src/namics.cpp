@@ -344,8 +344,8 @@ int main(int argc, char* argv[]) {
       					New[0]->AllocateMemory();
       					New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
 					if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
-						bool print=true;
-       	  				New[0]->Solve(print);
+						//bool print=true;
+       	  				New[0]->Solve(true);
           				} else {
             					if (!debug) cout << "Solve towards superiteration " << endl;
             					New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);

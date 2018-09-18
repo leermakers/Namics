@@ -19,7 +19,10 @@
 
 #include <iomanip>
 using namespace std;
+//these are our options.
 typedef double Real;
+//typedef long double Real;
+//typedef foat Real;
 #ifdef CUDA
 //#include <cuda.h>
 //#include <cublas_v2.h>

@@ -21,7 +21,6 @@ void Molecule :: DeAllocateMemory(){
 if (debug) cout <<"Destructor for Mol " + name << endl;
 	if (H_phi!=NULL) free(H_phi);
 	free(H_phitot);
-	//free(H_u);
 	if (freedom=="clamped") {
 		free(H_Bx);
 		free(H_By);
@@ -56,8 +55,6 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 		cudaFree(rho);
 		cudaFree(phi);
 	} else {
-		//cudaFree(u);
-		//cudaFree(G1);
 		cudaFree(Gg_f);
 		cudaFree(Gg_b);
 		cudaFree(phi);
@@ -69,7 +66,6 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 		free(rho);
 		free(g1);
 	}
-	//free(G1);
 	free(UNITY);
 	free(Gg_f);
 	free(Gg_b);
@@ -103,6 +99,7 @@ void Molecule:: AllocateMemory() {
 if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	int M=Lat[0]->M;
 	int m=0;
+	int n_box=0;
 	if (freedom=="clamped") {	
 		m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
 		n_box = Seg[mon_nr[0]]->n_box;
@@ -130,9 +127,6 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	}
 
 	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
-//cout <<"molmonlist.size in mol" << MolMonList.size() << endl;
-	//H_u = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
-	//Zero(H_u, M*MolMonList.size());
 	H_phitot = (Real*) malloc(M*sizeof(Real));
 	if (freedom=="clamped") {
 		H_Bx=(int*) malloc(n_box*sizeof(int));
@@ -171,8 +165,6 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	} else {
 		Gg_f=(Real*)AllOnDev(M*N);
 		Gg_b=(Real*)AllOnDev(M*2);
-		//u=(Real*)AllOnDev(M*MolMonList.size()); Zero(u,M);
-		//G1=(Real*)AllOnDev(M*MolMonList.size()); Zero(G1,M);
 		phi=(Real*)AllOnDev(M*MolMonList.size());
 		rho=phi;
 		if (save_memory) Gs =(Real*)AllOnDev(M*2);
@@ -187,12 +179,12 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Bx=H_Bx; By=H_By; Bz=H_Bz;
 		Px1=H_Px1; Py1=H_Py1; Pz1=H_Pz1;
 		Px2=H_Px2; Py2=H_Py2; Pz2=H_Pz2;
-		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real));
-		Gg_b = (Real*) malloc(m*2*n_box*sizeof(Real));
+		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real)); Zero(Gg_f,m*N*n_box);
+		Gg_b = (Real*) malloc(m*2*n_box*sizeof(Real)); Zero(Gg_b,m*2*n_box);
 
-		g1=(Real*) malloc(m*n_box*sizeof(Real));
-		rho=(Real*)malloc(m*n_box*MolMonList.size()*sizeof(Real));
-		if (save_memory) Gs=(Real*) malloc(m*n_box*2*sizeof(Real));
+		g1=(Real*) malloc(m*n_box*sizeof(Real)); Zero(g1,m*n_box); 
+		rho=(Real*)malloc(m*n_box*MolMonList.size()*sizeof(Real)); Zero(rho,m*n_box*MolMonList.size());
+		if (save_memory) {Gs=(Real*) malloc(m*n_box*2*sizeof(Real)); Zero(Gs,m*n_box*2);}
 		phi=H_phi;
 	} else {
 		Gg_f = (Real*) malloc(M*N*sizeof(Real));
@@ -201,12 +193,10 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Zero(Gg_b,2*M);
 		phi=H_phi;
 		rho=phi;
-		if (save_memory) Gs=(Real*) malloc(2*M*sizeof(Real));
+		if (save_memory) {Gs=(Real*) malloc(2*M*sizeof(Real)); Zero(Gs,2*M);}
 	}
-	//u = H_u;
-	//G1 = (Real*)malloc(M*MolMonList.size()*sizeof(Real));
 	phitot = H_phitot;
-	UNITY = (Real*) malloc(M*sizeof(Real));
+	UNITY = (Real*) malloc(M*sizeof(Real)); Zero(UNITY,M);
 #endif
 
 	if (save_memory) Zero(Gs,2*M);
@@ -259,6 +249,7 @@ int M=Lat[0]->M;
 	for (int i=0; i<length_al; i++) Al[i]->PrepareForCalculations();
 	bool success=true;
 	Zero(phitot,M);
+	
 	//int length = MolMonList.size();
 	//int i=0;
 	//while (i<length) {
@@ -293,12 +284,18 @@ int M=Lat[0]->M;
 		n = n_box;
 		theta=n_box*chainlength;
 	}
+		
+	
 	return success;
 }
 
 bool Molecule::CheckInput(int start_) {
 if (debug) cout <<"Molecule:: CheckInput" << endl;
 start=start_;
+phibulk=0;
+n=0; 
+theta=0;
+norm=0;
 var_al_nr=-1;
 if (debug) cout <<"CheckInput for Mol " + name << endl;
 	bool success=true;

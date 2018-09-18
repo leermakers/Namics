@@ -59,7 +59,7 @@ void System::AllocateMemory() {
   //H_GN_A = new Real[n_box];
   //H_GN_B = new Real[n_box];
 
-  H_GrandPotentialDensity = (Real*)malloc(M * sizeof(Real));
+  H_GrandPotentialDensity = (Real*)malloc(M * sizeof(Real)); Zero( H_GrandPotentialDensity,M);
   H_FreeEnergyDensity = (Real*)malloc(M * sizeof(Real));
   H_alpha = (Real*)malloc(M * sizeof(Real));
   if (charged) {
@@ -505,7 +505,7 @@ if (debug) cout << "System::IsUnique: Segnr = " << Segnr_ << " Statenr = " << St
 }
 
 bool System::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
-if (debug) cout << "System::PutVarInfo " << endl;
+if (!debug) cout << "System::PutVarInfo " << endl;
 	bool success=true;
 	Var_target=-1;
 	if (Var_type_ !="target") success=false;
@@ -900,6 +900,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 
 		if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {
 			if (Mol[i]->GN>0) norm=Mol[i]->n/Mol[i]->GN; else {norm=0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
+			Mol[i]->phibulk=0;
 		}
 		if (Mol[i]->IsClamped() ) {
 			norm=1;
@@ -911,13 +912,17 @@ if(debug) cout <<"ComputePhis in system" << endl;
 		int length=Mol[i]->MolMonList.size();
 
 		while (k<length) {
-			Real *phi=Mol[i]->phi+k*M;
-			//Real *G1=Mol[i]->G1+k*M;
-			Real *G1=Seg[Mol[i]->MolMonList[k]]->G1;
-			Div(phi,G1,M); if (norm>0) Norm(phi,norm,M);
+			if (!(Seg[Mol[i]->MolMonList[k]]->freedom=="clamp"||Mol[i]->freedom=="frozen")) {
+				Real *phi=Mol[i]->phi+k*M;
+				//Real *G1=Mol[i]->G1+k*M;
+				Real *G1=Seg[Mol[i]->MolMonList[k]]->G1;
+				Div(phi,G1,M); 
+				if (norm>0) Norm(phi,norm,M);
+			
 if (debug) {
 Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]->MolMonList[k] << ": " << sum << endl;
 }
+			}
 			k++;
 		}
 
@@ -1042,11 +1047,13 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << neutralizer << "for mon " <
 
 bool System::CheckResults(bool e_info_) {
 if (debug) cout << "CheckResults for system " << endl;
-	bool e_info=e_info_;
+	
+	bool e_info=e_info_; 
 	bool success=true;
 	FreeEnergy=GetFreeEnergy();
 	GrandPotential=GetGrandPotential();
 	CreateMu();
+
 	if (e_info) cout <<endl;
 	if (e_info) {
 		cout <<"free energy                 = " << FreeEnergy << endl;
@@ -1194,16 +1201,18 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 	int n_mol=In[0]->MolList.size();
 	//int n_mon=In[0]->MonList.size();
 	Zero(GP,M);
+
  
 	for (int i=0; i<n_mol; i++){
 		Real *phi=Mol[i]->phitot;
-		Real phibulk = Mol[i]->phibulk;
+		Real phibulk= Mol[i]->phibulk;
 		int N=Mol[i]->chainlength;
-		if (Mol[i]->IsTagged()) N--; //One segment of the tagged molecule is tagged and then removed from GP through KSAM
-		if (Mol[i]->IsClamped()) N=N-2;
+		if (Mol[i]->IsTagged()) {N--; phibulk=0;} //One segment of the tagged molecule is tagged and then removed from GP through KSAM
+		if (Mol[i]->IsClamped()) {N=N-2; phibulk =0;}
 		Cp(TEMP,phi,M); YisAplusC(TEMP,TEMP,-phibulk,M); Norm(TEMP,1.0/N,M); //GP has wrong sign. will be corrected at end of this routine;
 		Add(GP,TEMP,M);
 	}
+
 	Add(GP,alpha,M);
 	Real phibulkA;
 	Real phibulkB;
@@ -1212,7 +1221,7 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 	Real *phi_side;
 	int n_seg=In[0]->MonList.size();
 	int n_states=In[0]->StateList.size();
-
+ 
 	for (int j=0; j<n_seg; j++) if (!(Seg[j]->freedom=="tagged" || Seg[j]->freedom=="clamp" || Seg[j]->freedom=="frozen" )){
 		if (Seg[j]->ns<2){
 			phi=Seg[j]->phi; 
@@ -1238,6 +1247,7 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 			}
 		}
 	}
+
 	for (int j=0; j<n_states; j++) { 
 		phi=Seg[Sta[j]->mon_nr]->phi_state+Sta[j]->state_nr*M;
 		phibulkA=Seg[Sta[j]->mon_nr]->state_phibulk[Sta[j]->state_nr];
@@ -1284,7 +1294,7 @@ if (charged) {
 	Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);
 	Add(GP,TEMP,M); 
 }
-	return  Lat[0]->WeightedSum(GP); 
+	return  Lat[0]->WeightedSum(GrandPotentialDensity); 
 
 }
 

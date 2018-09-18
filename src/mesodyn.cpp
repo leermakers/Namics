@@ -868,7 +868,7 @@ void Mesodyn::write_density(vector<Component*>& component) {
     });
 
     vtk << "POINT_DATA " << (MX - 2) * (MY - 2) * (MZ - 2) << "\n";
-    vtk << "SCALARS Box_profile float\nLOOKUP_TABLE default \n";
+    vtk << "SCALARS Component_" << component_count << " float\nLOOKUP_TABLE default \n";
 
     skip_bounds([this, &vtk, all_components](int x, int y, int z) mutable {
       vtk << val(all_components->rho, x, y, z) << "\n";
@@ -928,16 +928,16 @@ int Interface::write_edges(string FILENAME) {
   vtk << "Mesodyn output \n";
   vtk << "ASCII\n";
   vtk << "DATASET STRUCTURED_GRID \n";
-  vtk << "DIMENSIONS " << MX-3 << " " << MY-3 << " " << MZ-3 << "\n";
-  vtk << "POINTS " << (MX-3) * (MY-3) * (MZ-3) << " int\n";
+  vtk << "DIMENSIONS " << MX-2 << " " << MY-2 << " " << MZ-2 << "\n";
+  vtk << "POINTS " << (MX-2) * (MY-2) * (MZ-2) << " int\n";
 
-  for (int x = 0; x < MX - 3; ++x)
-    for (int y = 0; y < MY - 3; ++y)
-      for (int z = 0 ; z < MZ - 3 ; ++z )
+  for (int x = 1; x < MX - 1; ++x)
+    for (int y = 1; y < MY - 1; ++y)
+      for (int z = 1 ; z < MZ - 1 ; ++z )
         vtk << x << " " << y << " " << z << "\n";
 
-  vtk << "POINT_DATA " << (MX-3) * (MY-3) * (MZ-3) << "\n";
-  vtk << "SCALARS Box_profile float\nLOOKUP_TABLE default \n";
+  vtk << "POINT_DATA " << (MX-2) * (MY-2) * (MZ-2) << "\n";
+  vtk << "SCALARS Sobel float\nLOOKUP_TABLE default \n";
 
   for (Real& all_values : edges) {
     vtk << all_values << "\n";
@@ -952,26 +952,26 @@ int Interface::write_edges(string FILENAME) {
 }
 
 vector<Real> Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho) {
-  vector<Real> result((MX - 3) * (MY - 3) * (MZ - 3));
+  vector<Real> result((MX - 2) * (MY - 2) * (MZ - 2));
   int threshold = tolerance;
 
   int i = 0;
 
-  vector<int> Gx_minus = {-1, -3, -1, -3, -6, -3, -1, -3, -1};
-  vector<int> Gx_mid = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  vector<int> Gx_plus = {1, 3, 1, 3, 6, 3, 1, 3, 1};
+  vector<int> Gy_minus = {-1, -3, -1, -3, -6, -3, -1, -3, -1};
+  vector<int> Gy_mid = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  vector<int> Gy_plus = {1, 3, 1, 3, 6, 3, 1, 3, 1};
 
-  vector<int> Gy_minus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
-  vector<int> Gy_mid = {-3, 0, 3, -6, 0, 6, -3, 0, 3};
-  vector<int> Gy_plus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
+  vector<int> Gx_minus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
+  vector<int> Gx_mid = {-3, 0, 3, -6, 0, 6, -3, 0, 3};
+  vector<int> Gx_plus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
 
   vector<int> Gz_minus = {1, 3, 1, 0, 0, 0, -1, -3, -1};
   vector<int> Gz_mid = {3, 6, 3, 0, 0, 0, -3, -6, -3};
   vector<int> Gz_plus = {1, 3, 1, 0, 0, 0, -1, -3, -1};
 
-  for (int x = 0; x < MX - 3; ++x)
-    for (int y = 0; y < MY - 3; ++y)
-      for (int z = 0 ; z < MZ - 3 ; ++z ) {
+  for (int x = 0; x < MX - 2; ++x)
+    for (int y = 0; y < MY - 2; ++y)
+      for (int z = 0 ; z < MZ - 2 ; ++z ) {
         Real conv_x = convolution(Gx_minus, get_xy_plane(rho, x, y, z));
         conv_x += convolution(Gx_mid, get_xy_plane(rho, x, y, z+1));
         conv_x += convolution(Gx_plus, get_xy_plane(rho, x, y, z+2));

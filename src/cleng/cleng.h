@@ -56,7 +56,7 @@ public:
 
 
     vector<int> P;
-    vector<SimpleNode> simpleNodeList;
+    vector<shared_ptr<SimpleNode>> simpleNodeList;
     vector<std::shared_ptr<Node>> nodes;
     // temporary arrays for keep nodes coordinates for output
     int* xs = nullptr;

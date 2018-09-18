@@ -12,5 +12,6 @@ public:
         return point() < other.point();
     }
     virtual std::string to_string() const = 0;
+    virtual bool inSubBoxRange(Point const &subBoxRange) const = 0;
     virtual ~Node() = default;
 };

@@ -280,7 +280,7 @@ bool Cleng::NotCollapsing() {
     bool not_collapsing = false;
     Point MP (nodes[id_node_for_move]->point());
     Point MPs (nodes[id_node_for_move]->point() + shift);
-    double min_dist = 2; // minimal distance between nodes
+    double min_dist = 4; // minimal distance between nodes
     int i = 0;
     for (const auto &n : nodes) {
         if (MP != n->point()) {
@@ -307,6 +307,14 @@ bool Cleng::InRange() {
     return in_range;
 }
 
+void Cleng::make_BC() {
+//    make boundary condition point => BC = {1,1,1} => minor; BC = {0,0,0} => periodic
+    BC = {
+            Lat[0]->BC[0] == "mirror",
+            Lat[0]->BC[2] == "mirror",
+            Lat[0]->BC[4] == "mirror",
+    };
+}
 
 
 bool Cleng::Checks() {
@@ -320,10 +328,9 @@ bool Cleng::Checks() {
     not_collapsing = NotCollapsing();
 
     // check distance between all nodes and constrains (walls)
-    //TODO: check the periodicy of system => true or false;
-    if (false) {
+    if (BC.x and BC.y and BC.z) { // BC.x, BC.y, BC.z = mirror
         in_range = InRange();
-    } else {
+    } else { // BC.x and/or BC.y and/or BC.z != mirror
         in_range = true;
     }
     return not_collapsing and in_range and in_subbox_range;
@@ -362,6 +369,8 @@ bool Cleng::MakeShift(bool back) {
                 cout << "Choose another particle id and step..." << endl;
                 id_node_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
                 shift = PrepareStep();
+                cout << "Trying: \n part_id: " << id_node_for_move
+                     << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
             }
             nodes[id_node_for_move]->shift(shift);
         }
@@ -383,6 +392,7 @@ bool Cleng::MonteCarlo() {
     Real accepted=0.0;
     Real rejected=0.0;
     Real exp_diff=0.0;
+    make_BC();
 
 // init system outlook
     New[0]->Solve(true);

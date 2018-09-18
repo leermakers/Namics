@@ -50,6 +50,8 @@ public:
     int t;
     int save_interval;
     string save_filename;
+    Point BC;
+
     vector<Output*> Out;
 
 
@@ -82,6 +84,7 @@ public:
     bool InRange();
     void WriteOutput(int, Real);
     void PushOutput(int, Real);
+    void make_BC();
     int GetValue(string, int&, Real&, string&);
     int GetIntRandomValueExclude(int, int, int, bool);
     Real GetRealRandomValue(int, int);

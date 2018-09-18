@@ -169,7 +169,6 @@ bool Mesodyn::mesodyn() {
   cout << "Mesodyn is all set, starting calculations.." << endl;
 
   // Do one explicit step before starting the crank nicolson scheme
-
   explicit_start();
 
   write_density(solver_component);
@@ -179,24 +178,50 @@ bool Mesodyn::mesodyn() {
   auto solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   auto loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
-  string file = filename.str(); // TODO: remove
+  string file = filename.str(); // TODO: fix implementation below and remove
 
   /**** Main MesoDyn time loop ****/
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
-    norm_theta(component);
-    norm_theta(solver_component);
-
-      for (Flux1D* all_fluxes : solver_flux) {
-        all_fluxes->gaussian->generate();
-      }
+    for (Flux1D* all_fluxes : solver_flux)
+      all_fluxes->gaussian->generate();
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
     //sanity_check();
 
+    //Calculate and add noise flux
+
     int i = 0;
+    for (Flux1D* all_fluxes : flux) {
+      all_fluxes->J = solver_flux[i]->J;
+      ++i;
+    }
+
+/*    for (Flux1D* all_fluxes : solver_flux) {
+      all_fluxes->mu.clear();
+      all_fluxes->gaussian->add_noise(all_fluxes->mu);
+      all_fluxes->langevin_flux();
+    }
+
+    int c = 0;
+    for (size_t i = 0; i < component_no; ++i) {
+      for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+        solver_component[i]->update_density(solver_flux[c]->J);
+        ++c;
+      }
+    }
+
+    c = 0;
+    for (size_t j = 0; j < (component_no - 1); ++j) {
+      for (size_t i = 1 + j; i < component_no; ++i) {
+        solver_component[i]->update_density(solver_flux[c]->J, -1.0);
+        ++c;
+      }
+    }*/
+
+    i = 0;
     for (Component* all_components : component) {
       all_components->load_rho(solver_component[i]->rho);
       ++i;
@@ -217,12 +242,6 @@ bool Mesodyn::mesodyn() {
         interface->detect_edges(edge_detection_threshold);
         interface->write_edges(file);
       }
-    }
-
-    i = 0;
-    for (Flux1D* all_fluxes : flux) {
-      all_fluxes->J = solver_flux[i]->J;
-      ++i;
     }
 
   } // time loop
@@ -909,7 +928,7 @@ int Interface::detect_edges(int threshold) {
   edges.clear();
   vector<Real> temp((MX-3)*(MY-3)*(MZ-3));
   temp = gaussian_blur(component[0]->rho);
-  edges = sobel_edge_detector(threshold, temp);
+  edges = sobel_edge_detector(threshold, component[0]->rho);
   return 0;
 }
 
@@ -957,13 +976,13 @@ vector<Real> Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho) {
 
   int i = 0;
 
-  vector<int> Gy_minus = {-1, -3, -1, -3, -6, -3, -1, -3, -1};
-  vector<int> Gy_mid = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  vector<int> Gy_plus = {1, 3, 1, 3, 6, 3, 1, 3, 1};
+  vector<int> Gx_minus = {-1, -3, -1, -3, -6, -3, -1, -3, -1};
+  vector<int> Gx_mid = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  vector<int> Gx_plus = {1, 3, 1, 3, 6, 3, 1, 3, 1};
 
-  vector<int> Gx_minus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
-  vector<int> Gx_mid = {-3, 0, 3, -6, 0, 6, -3, 0, 3};
-  vector<int> Gx_plus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
+  vector<int> Gy_minus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
+  vector<int> Gy_mid = {-3, 0, 3, -6, 0, 6, -3, 0, 3};
+  vector<int> Gy_plus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
 
   vector<int> Gz_minus = {1, 3, 1, 0, 0, 0, -1, -3, -1};
   vector<int> Gz_mid = {3, 6, 3, 0, 0, 0, -3, -6, -3};
@@ -1069,8 +1088,8 @@ vector<Real> Interface::get_xy_plane(vector<Real>& rho, int x, int y, int z, int
 
   int i = 0;
 
-  for (int vertical = 0 ; vertical < size ; ++vertical)
-    for (int horizontal = 0 ; horizontal < size ; ++horizontal) {
+  for (int horizontal = 0 ; horizontal < size ; ++horizontal)
+    for (int vertical = 0 ; vertical < size ; ++vertical) {
         pixel[i] = val(rho, x+horizontal, y+vertical, z);
         ++i;
     }
@@ -1095,7 +1114,7 @@ vector<Real> Interface::get_xz_plane(vector<Real>& rho, int x, int y, int z, int
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
 Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component* A, Component* B)
-    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), gaussian{gaussian}, A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX} {
+    : Lattice_Access(Lat), mu(M), J_plus(M), J_minus(M), J(M), gaussian{gaussian}, A{A}, B{B}, L(M), D{D}, JX{Lat->JX} {
   Flux1D::mask(mask);
 }
 

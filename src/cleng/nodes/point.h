@@ -40,9 +40,19 @@ public:
         return x != p.x || y != p.y || z != p.z;
     }
 
+    bool less_all_elements_than(const Point& p) const {
+        return x < p.x and y < p.y and z < p.z;
+    }
+
+    bool more_all_elements_than(const Point& p) const {
+        return x > p.x and y > p.y and z > p.z;
+    }
+
     bool operator <(const Point& other) const {
         return std::make_tuple(x, y, z) < std::make_tuple(other.x, other.y, other.z);
     }
+
+
     std::string to_string() const {
         return "{ " + std::to_string(this->x) + ", " + std::to_string(this->y) + ", " + std::to_string(this->z) + " }";
     }

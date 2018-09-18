@@ -98,19 +98,19 @@ bool Cleng::CheckInput(int start) {
     return success;
 }
 
-SimpleNode fromSystemToNode(int x, int y, int z, int id, const Point &box) {
-    return SimpleNode({x, y, z}, id, box);
+shared_ptr<SimpleNode> fromSystemToNode(int x, int y, int z, int id, const Point &box) {
+    return make_shared<SimpleNode>(Point(x, y, z), id, box);
 }
 
-vector<shared_ptr<Node>> createNodes(const vector<SimpleNode> &simple_nodes) {
+vector<shared_ptr<Node>> createNodes(const vector<shared_ptr<SimpleNode>> &simple_nodes) {
     vector<shared_ptr<Node>> result;
-    map<SimpleNode, vector<SimpleNode>> m;
+    map<SimpleNode, vector<shared_ptr<SimpleNode>>> m;
     for (auto &&n  : simple_nodes) {
-        m[n].push_back(n);
+        m[*n].push_back(n);
     }
     for (auto &&entry : m) {
         if (entry.second.size() == 1) {
-            result.push_back(make_shared<SimpleNode>(entry.first));
+            result.push_back(entry.second[0]);
         } else {
             result.push_back(make_shared<Monolit>(entry.second));
         }
@@ -135,8 +135,13 @@ bool Cleng::CP(transfer tofrom) {
         case to_cleng:
             simpleNodeList.clear();
             for (int i = 0; i < n_boxes; i++) {
-                simpleNodeList.push_back(fromSystemToNode(clamped->px1[i], clamped->py1[i], clamped->pz1[i], 2 * i, box));
-                simpleNodeList.push_back(fromSystemToNode(clamped->px2[i], clamped->py2[i], clamped->pz2[i], 2 * i + 1, box));
+                auto first_node = fromSystemToNode(clamped->px1[i], clamped->py1[i], clamped->pz1[i], 2 * i, box);
+                auto second_node = fromSystemToNode(clamped->px2[i], clamped->py2[i], clamped->pz2[i], 2 * i + 1, box);
+                first_node->set_cnode(second_node);
+                second_node->set_cnode(first_node);
+                //
+                simpleNodeList.push_back(first_node);
+                simpleNodeList.push_back(second_node);
             }
             nodes = createNodes(simpleNodeList);
             for (auto &&n : nodes) {
@@ -265,12 +270,13 @@ bool Cleng::InSubBoxRange() {
     bool in_subbox_range = false;
     int not_in_subbox_range = 0;
     Point sub_box = {sub_box_size, sub_box_size, sub_box_size};  // change it in future
-    for (int id = 0; id < n_boxes; id++ ) {
-        auto sn1 = simpleNodeList[2*id];
-        auto sn2 = simpleNodeList[2*id+1];
-        Point different = sn2.point() - sn1.point();
-        if (sub_box < different) not_in_subbox_range ++;
+    //TODO need correct implementation
+
+    for (auto &&n : nodes) {
+        cout << "output :" << n->inSubBoxRange(sub_box) << endl;
+        if(!n->inSubBoxRange(sub_box)) not_in_subbox_range ++;
     }
+
     if (not_in_subbox_range == 0) in_subbox_range = true;
     cout << "InSubBoxRange: " << in_subbox_range << endl;
     return in_subbox_range;

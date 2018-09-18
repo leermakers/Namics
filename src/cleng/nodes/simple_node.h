@@ -1,10 +1,13 @@
 #pragma once
 #include "node.h"
 #include "point.h"
+#include <memory>
+
+using std::shared_ptr;
 
 class SimpleNode : public Node {
 public:
-    SimpleNode(const Point& p, int id, Point box_size);
+    SimpleNode(const Point &p, int id, Point box_size);
 
     void shift(const Point& shift) override;
 
@@ -14,8 +17,13 @@ public:
 
     void pushSystemPoints(std::map<int, Point> &pointsById) const override;
 
+    void set_cnode(shared_ptr<SimpleNode> coupled_node);
+
+    bool inSubBoxRange(Point const &subBoxRange) const override;
+
 private:
     Point system_point;
     Point box_size;
     int id;
+    shared_ptr<SimpleNode> cnode;
 };

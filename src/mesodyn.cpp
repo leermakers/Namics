@@ -174,6 +174,8 @@ bool Mesodyn::mesodyn() {
   write_density(solver_component);
   write_output();
 
+  Gaussian_noise* gaussian = solver_flux[0]->gaussian;
+
   // Prepare callback functions for SolveMesodyn in Newton
   auto solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   auto loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
@@ -183,9 +185,6 @@ bool Mesodyn::mesodyn() {
   /**** Main MesoDyn time loop ****/
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
-
-    for (Flux1D* all_fluxes : solver_flux)
-      all_fluxes->gaussian->generate();
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
@@ -199,9 +198,13 @@ bool Mesodyn::mesodyn() {
       ++i;
     }
 
-/*    for (Flux1D* all_fluxes : solver_flux) {
-      all_fluxes->mu.clear();
-      all_fluxes->gaussian->add_noise(all_fluxes->mu);
+    for (Component* all_components : solver_component) {
+      gaussian->generate();
+      fill(all_components->alpha.begin(), all_components->alpha.end(), 0);
+      gaussian->add_noise(all_components->alpha);
+    }
+
+    for (Flux1D* all_fluxes : solver_flux) {
       all_fluxes->langevin_flux();
     }
 
@@ -219,7 +222,7 @@ bool Mesodyn::mesodyn() {
         solver_component[i]->update_density(solver_flux[c]->J, -1.0);
         ++c;
       }
-    }*/
+    }
 
     i = 0;
     for (Component* all_components : component) {
@@ -227,11 +230,20 @@ bool Mesodyn::mesodyn() {
       ++i;
     }
 
+    i = 0;
+    for (Flux1D* all_fluxes : flux) {
+      transform(all_fluxes->J.begin(), all_fluxes->J.end(), solver_flux[i]->J.begin(), all_fluxes->J.begin(), [](Real A, Real B) { return A + B; });
+      ++i;
+    }
+
     //TODO: remove this check?
     skip_bounds([this](int x, int y, int z) mutable {
-    for (Component* all_components : solver_component)
-      if (val(all_components->rho, x, y, z) < 0 || val(rho, x, y, z) > 1 )
-        cerr << "CRITICAL ERROR IN DENSITIES AT " << x << "," << y << "," << z  << endl;
+      for (Component* all_components : solver_component) {
+        if (val(all_components->rho, x, y, z) < 0)
+          cerr << "CRITICAL ERROR (rho < 0) IN DENSITIES AT " << x << "," << y << "," << z  << endl;
+        if (val(all_components->rho, x, y, z) > 1)
+          cerr << "CRITICAL ERROR (rho > 1) IN DENSITIES AT " << x << "," << y << "," << z  << endl;
+      }
     });
 
     if (t % timebetweensaves == 0) {
@@ -256,7 +268,7 @@ int Mesodyn::sanity_check() {
   //Check mass conservation
   int i = 0;
   for (Component* all_components : component) {
-    if ( fabs(all_components->theta() - solver_component[i]->theta() ) > numeric_limits<Real>::epsilon() ) {
+    if ( fabs(all_components->theta() - solver_component[i]->theta() ) > numeric_limits<Real>::epsilon()) {
       Real difference = all_components->theta()-solver_component[i]->theta();
         if (difference != 0) {
           cerr << "WARNING: Mass of component " << i << " is NOT conserved! ";
@@ -1114,7 +1126,7 @@ vector<Real> Interface::get_xz_plane(vector<Real>& rho, int x, int y, int z, int
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
 Flux1D::Flux1D(Lattice* Lat, Gaussian_noise* gaussian, Real D, vector<int>& mask, Component* A, Component* B)
-    : Lattice_Access(Lat), mu(M), J_plus(M), J_minus(M), J(M), gaussian{gaussian}, A{A}, B{B}, L(M), D{D}, JX{Lat->JX} {
+    : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), gaussian{gaussian}, A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX} {
   Flux1D::mask(mask);
 }
 
@@ -1308,7 +1320,7 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   }
 
   for (int& z : mask_plus) {
-    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z] + gaussian->noise[z]));
+    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
   }
 
   for (int& z : mask_minus) {

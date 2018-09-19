@@ -1,12 +1,12 @@
-lat : flat : n_layers_x : 10
-lat : flat : n_layers_y : 10
-lat : flat : n_layers_z : 10
-lat : flat : lowerbound_x : mirror
-lat : flat : upperbound_x : mirror
-lat : flat : lowerbound_y : mirror
-lat : flat : upperbound_y : mirror
-lat : flat : lowerbound_z : mirror
-lat : flat : upperbound_z : mirror
+lat : flat : n_layers_x : 20
+lat : flat : n_layers_y : 20
+lat : flat : n_layers_z : 20
+lat : flat : lowerbound_x : periodic
+lat : flat : upperbound_x : periodic
+lat : flat : lowerbound_y : periodic
+lat : flat : upperbound_y : periodic
+lat : flat : lowerbound_z : periodic
+lat : flat : upperbound_z : periodic
 lat : flat : lattice_type : simple_cubic
 lat : flat : gradients : 3
 
@@ -14,32 +14,32 @@ mon : B : freedom : free
 
 mon : A : chi - B : 0.6
 
-mon : C : freedom : free
-mon : D : chi-C : 0.6
-mon : D : chi-A : 0.6
-mon : C : chi-B : 0.6
+//mon : C : freedom : free
+//mon : D : chi-C : 0.6
+//mon : D : chi-A : 0.6
+//mon : C : chi-B : 0.6
 
-mol : CD : composition : (C)20(D)20
-mol : CD : freedom : restricted
-mol : CD : theta : 120
+//mol : CD : composition : (C)20(D)20
+//mol : CD : freedom : restricted
+//mol : CD : theta : 120
 mol : A : composition : (A)4
 mol : A : freedom : restricted
-mol : A : theta : 440
-//mol : A : theta : 500
+//mol : A : theta : 440
+mol : A : theta : 4000
 
 mol : B : composition : (B)4
 mol : B : freedom : solvent
 
-mesodyn : smth : timesteps : 75000
+mesodyn : smth : timesteps : 100000
 mesodyn : smth : timebetweensaves : 500
 mesodyn : smth : diffusionconstant : 1
 //mesodyn : smth : delta_t : 0.1
-//mesodyn : smth : read_vtk : mesodyn-1537273585-rho
+//mesodyn : smth : read_vtk : mesodyn-1537348197-rho
 mesodyn : smth : edge_detection : sobel
 mesodyn : smth : edge_detection_threshold : 0
 mesodyn : smth : cn_ratio : 0.5
 //cn_ratio : 1 = only old
-//mesodyn : smth : seed : 1
+mesodyn : smth : seed : 1
 
 //other options:
 //seed, mean, stddev, read_vtk, read_pro

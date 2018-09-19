@@ -169,8 +169,6 @@ public:
   virtual int langevin_flux();
   //TODO: check everything for 'virtual' errors
 
-  vector<Real> mu;
-
   Real J_at(int, int, int);
   Real L_at(int, int, int);
   Real mu_at(int, int, int);
@@ -196,6 +194,7 @@ protected:
   Component* B;
 
   vector<Real> L;
+  vector<Real> mu;
   const Real D;
   const int JX;
   vector<int> Mask_plus_x;

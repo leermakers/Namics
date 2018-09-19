@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "cleng.h"
 #include "nodes/point.h"
 #include "nodes/monolit.h"
@@ -16,20 +18,20 @@ Cleng::Cleng(
         vector<System *> Sys_,
         vector<Solve_scf *> New_,
         string name_
-) : name(name_),
-    In(In_),
-    Lat(Lat_),
-    Seg(Seg_),
-    Sta(Sta_),
-    Rea(Rea_),    
-    Mol(Mol_),
-    Sys(Sys_),
-    New(New_) {
+) : name(std::move(name_)),
+    In(std::move(In_)),
+    Lat(std::move(Lat_)),
+    Seg(std::move(Seg_)),
+    Sta(std::move(Sta_)),
+    Rea(std::move(Rea_)),
+    Mol(std::move(Mol_)),
+    Sys(std::move(Sys_)),
+    New(std::move(New_)) {
     if (debug) cout << "Cleng initialized" << endl;
-    KEYS.push_back("MCS");
-    KEYS.push_back("save_interval");
-    KEYS.push_back("save_filename");
-    KEYS.push_back("seed");
+    KEYS.emplace_back("MCS");
+    KEYS.emplace_back("save_interval");
+    KEYS.emplace_back("save_filename");
+    KEYS.emplace_back("seed");
 
     // Debug.log
     //out.open("debug.out", ios_base::out);
@@ -46,24 +48,24 @@ Cleng::~Cleng() {
 
 bool Cleng::CheckInput(int start) {
     if (debug) cout << "CheckInput in Cleng" << endl;
-    bool success = true;
+    bool success;
 
     success = In[0]->CheckParameters("cleng", name, start, KEYS, PARAMETERS, VALUES);
     if (success) {
         vector<string> options;
-        if (GetValue("MCS").size() > 0) {
+        if (!GetValue("MCS").empty()) {
             success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000,
                                      "The number of timesteps should be between 1 and 10000");
         }
         if (debug) cout << "MCS is " << MCS << endl;
 
-        if (GetValue("save_interval").size() > 0) {
+        if (!GetValue("save_interval").empty()) {
             success = In[0]->Get_int(GetValue("save_interval"), save_interval, 1, MCS,
                                      "The save interval nr should be between 1 and 100");
         }
         if (debug) cout << "Save_interval " << save_interval << endl;
 
-        if (Sys[0]->SysClampList.size() < 1) {
+        if (Sys[0]->SysClampList.empty()) {
             cout << "Cleng needs to have clamped molecules in the system" << endl;
             success = false;
         } else {
@@ -79,11 +81,11 @@ bool Cleng::CheckInput(int start) {
             sub_box_size = Seg[clamp_seg]->mx;
         }
         clp_mol = -1;
-        int length = In[0]->MolList.size();
+        int length = (int)In[0]->MolList.size();
         for (int i = 0; i < length; i++) if (Mol[i]->freedom == "clamped") clp_mol = i;
     }
     if (success) {
-        n_out = In[0]->OutputList.size();
+        n_out = (int)In[0]->OutputList.size();
         if (n_out == 0) cout << "Warning: no output defined!" << endl;
 
         for (int i = 0; i < n_out; i++) {
@@ -270,7 +272,6 @@ bool Cleng::InSubBoxRange() {
     bool in_subbox_range = false;
     int not_in_subbox_range = 0;
     Point sub_box = {sub_box_size, sub_box_size, sub_box_size};  // change it in future
-    //TODO need correct implementation
 
     for (auto &&n : nodes) {
         cout << "output :" << n->inSubBoxRange(sub_box) << endl;
@@ -278,7 +279,6 @@ bool Cleng::InSubBoxRange() {
     }
 
     if (not_in_subbox_range == 0) in_subbox_range = true;
-    cout << "InSubBoxRange: " << in_subbox_range << endl;
     return in_subbox_range;
 }
 
@@ -297,7 +297,6 @@ bool Cleng::NotCollapsing() {
     if (i == 0) {
         not_collapsing = true;
     }
-    cout << "NotCollapsing: " << not_collapsing << endl;
     return not_collapsing;
 }
 
@@ -305,11 +304,13 @@ bool Cleng::InRange() {
     bool in_range = false;
     Point box = {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
     Point down_boundary = { 3, 3, 3};
-    Point up_boundary   = { 3, 3, 3};
-    Point box_wr = box - up_boundary;
+    Point up_boundary   = box - down_boundary;
     Point MPs (nodes[id_node_for_move]->point() + shift);
-    if (down_boundary < MPs and MPs < box_wr) in_range = true;
-    cout << "InRange: " << in_range << endl;
+
+    cout << "MPs" << MPs.to_string() << endl;
+    cout << "down bound" << down_boundary.to_string() << endl;
+    cout << "up boundary bound" << up_boundary.to_string() << endl;
+    if ((down_boundary.less_all_elements_than(MPs)) and (MPs.less_all_elements_than(up_boundary))) in_range = true;
     return in_range;
 }
 
@@ -329,7 +330,13 @@ bool Cleng::Checks() {
     bool in_range;
 
     // SubBoxRange
-    in_subbox_range = InSubBoxRange();
+//    in_subbox_range = InSubBoxRange();
+    in_subbox_range = true;
+//    if (!in_subbox_range) {
+//        MakeShift(true);
+//        return false;
+//    }
+
     // check distances between all nodes => preventing collapsing
     not_collapsing = NotCollapsing();
 
@@ -339,6 +346,7 @@ bool Cleng::Checks() {
     } else { // BC.x and/or BC.y and/or BC.z != mirror
         in_range = true;
     }
+    cout << "not_collapsing: " << not_collapsing << " in_range: " << in_range <<  " in_subbox_range: " << in_subbox_range << endl;
     return not_collapsing and in_range and in_subbox_range;
 }
 
@@ -413,6 +421,14 @@ bool Cleng::MonteCarlo() {
         free_energy_trial = Sys[0]->GetFreeEnergy() - GetN_times_mu();
 
         assert(!std::isnan(free_energy_trial));
+        for (auto &&n : nodes) {
+            cout << "n: " << n->point().to_string() << endl;
+            assert((n->point().x > 3) and (n->point().x < 18));
+            assert((n->point().y > 3) and (n->point().y < 18));
+            assert((n->point().z > 3) and (n->point().z < 18));
+        }
+
+
         cout << "free_energy_current: " << free_energy_current << endl;
         cout << "free_energy_trial: " << free_energy_trial << endl;
 
@@ -450,8 +466,8 @@ bool Cleng::MonteCarlo() {
     }
 
     cout << "Finally:" << endl;
-    cout << "Accepted %: " << 100* (accepted / MCS) << endl;
-    cout << "Rejected %: " << 100* (rejected / MCS) << endl;
+    cout << "Accepted %: " << 100* (accepted / (MCS-1)) << endl;
+    cout << "Rejected %: " << 100* (rejected / (MCS-1)) << endl;
 
     return success;
 }
@@ -462,7 +478,7 @@ void Cleng::PutParameter(string new_param) {
 
 string Cleng::GetValue(string parameter) {
     int i = 0;
-    int length = PARAMETERS.size();
+    int length = (int)PARAMETERS.size();
     while (i < length) {
         if (parameter == PARAMETERS[i]) {
             return VALUES[i];
@@ -514,17 +530,17 @@ void Cleng::PushOutput(int MS_step, Real exp_diff) {
             fillXYZ();
 //			point=X.data();
             Out[i]->PointerVectorInt.push_back(xs);
-            Out[i]->SizeVectorInt.push_back(nodes.size());
+            Out[i]->SizeVectorInt.push_back((int)nodes.size());
             s = "array;1";
             Out[i]->push("Y", s);
 //			point = Y.data();
             Out[i]->PointerVectorInt.push_back(ys);
-            Out[i]->SizeVectorInt.push_back(nodes.size());
+            Out[i]->SizeVectorInt.push_back((int)nodes.size());
             s = "array;2";
             Out[i]->push("Z", s);
 //			point=Z.data();
             Out[i]->PointerVectorInt.push_back(zs);
-            Out[i]->SizeVectorInt.push_back(nodes.size());
+            Out[i]->SizeVectorInt.push_back((int)nodes.size());
         }
     }
 }

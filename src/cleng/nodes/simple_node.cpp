@@ -31,21 +31,29 @@ void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {
 }
 
 bool SimpleNode::inSubBoxRange(Point const &subBoxRange) const {
+
+//    cout << "Point: " << this->to_string() << " cnode: " << cnode->to_string() << endl;
+//    Real dist = system_point.distance(cnode->system_point);
+
+    cout << "Point: " << this->point().to_string() << " cnode: " << cnode->point().to_string() << endl;
+    Real dist = point().distance(cnode->point());
+
+//    Real dist = point().distance(cnode->point());
+    Point distance_origin = {(int)dist, (int)dist, (int)dist};
+    Point distance = {(int)dist+2, (int)dist+2, (int)dist+2};
+//    cout << "dist: " << dist << endl;
+    cout << "Point distance_origin: " << distance_origin.to_string() << endl;
+    cout << "Point distance: " << distance.to_string() << endl;
+    cout << "subbox_range: " << subBoxRange.to_string() << endl;
+    if ( distance > subBoxRange ) {
+        cout << "Too far away from each other nodes: " << this->id << " and " << cnode->id << endl;
+        return false;
+    }
+    if ( distance == subBoxRange) {
+        cout << "Too far away from each other nodes: " << this->id << " and " << cnode->id << endl;
+        return false;
+    }
     return true;
-    //TODO need correct implementation
-//    bool res;
-//    bool res1;
-//    Point res_point;
-//    Point res_point1;
-//    cout << "cnode :" << cnode->to_string() << endl;
-//    res = (point() - cnode->point()).less_all_elements_than(subBoxRange);
-//    res1 = (point() - cnode->point()).more_all_elements_than(subBoxRange);
-//
-//    cout << "res: " << res << " res1: " << res1 << endl;
-//    res_point = point() - cnode->point();
-//    res_point1 = point() - cnode->point() - subBoxRange;
-//    cout << "In simpleNode: point - cnode " << (res_point).to_string() << endl;
-//    cout << "In simpleNode: point - cnode - subBoxRange " << (res_point1).to_string() << endl;
-//    return res and res1;
+
 }
 

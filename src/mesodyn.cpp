@@ -174,8 +174,6 @@ bool Mesodyn::mesodyn() {
   write_density(solver_component);
   write_output();
 
-  Gaussian_noise* gaussian = solver_flux[0]->gaussian;
-
   // Prepare callback functions for SolveMesodyn in Newton
   auto solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   auto loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
@@ -198,41 +196,11 @@ bool Mesodyn::mesodyn() {
       ++i;
     }
 
-    for (Component* all_components : solver_component) {
-      gaussian->generate();
-      fill(all_components->alpha.begin(), all_components->alpha.end(), 0);
-      gaussian->add_noise(all_components->alpha);
-    }
-
-    for (Flux1D* all_fluxes : solver_flux) {
-      all_fluxes->langevin_flux();
-    }
-
-    int c = 0;
-    for (size_t i = 0; i < component_no; ++i) {
-      for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-        solver_component[i]->update_density(solver_flux[c]->J);
-        ++c;
-      }
-    }
-
-    c = 0;
-    for (size_t j = 0; j < (component_no - 1); ++j) {
-      for (size_t i = 1 + j; i < component_no; ++i) {
-        solver_component[i]->update_density(solver_flux[c]->J, -1.0);
-        ++c;
-      }
-    }
+    noise_flux();
 
     i = 0;
     for (Component* all_components : component) {
       all_components->load_rho(solver_component[i]->rho);
-      ++i;
-    }
-
-    i = 0;
-    for (Flux1D* all_fluxes : flux) {
-      transform(all_fluxes->J.begin(), all_fluxes->J.end(), solver_flux[i]->J.begin(), all_fluxes->J.begin(), [](Real A, Real B) { return A + B; });
       ++i;
     }
 
@@ -261,6 +229,44 @@ bool Mesodyn::mesodyn() {
 
 
   return true;
+}
+
+int Mesodyn::noise_flux() {
+  Gaussian_noise* gaussian = solver_flux[0]->gaussian;
+
+  for (Component* all_components : solver_component) {
+    gaussian->generate();
+    fill(all_components->alpha.begin(), all_components->alpha.end(), 0);
+    gaussian->add_noise(all_components->alpha);
+  }
+
+  for (Flux1D* all_fluxes : solver_flux) {
+    all_fluxes->langevin_flux();
+  }
+
+  int c = 0;
+  for (size_t i = 0; i < component_no; ++i) {
+    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+      solver_component[i]->update_density(solver_flux[c]->J);
+      ++c;
+    }
+  }
+
+  c = 0;
+  for (size_t j = 0; j < (component_no - 1); ++j) {
+    for (size_t i = 1 + j; i < component_no; ++i) {
+      solver_component[i]->update_density(solver_flux[c]->J, -1.0);
+      ++c;
+    }
+  }
+
+  int i = 0;
+  for (Flux1D* all_fluxes : flux) {
+    transform(all_fluxes->J.begin(), all_fluxes->J.end(), solver_flux[i]->J.begin(), all_fluxes->J.begin(), [](Real A, Real B) { return A + B; });
+    ++i;
+  }
+
+  return 0;
 }
 
 int Mesodyn::sanity_check() {

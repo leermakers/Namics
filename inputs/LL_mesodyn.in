@@ -1,6 +1,6 @@
-lat : flat : n_layers_x : 20
-lat : flat : n_layers_y : 20
-lat : flat : n_layers_z : 20
+lat : flat : n_layers_x : 10
+lat : flat : n_layers_y : 10
+lat : flat : n_layers_z : 10
 lat : flat : lowerbound_x : periodic
 lat : flat : upperbound_x : periodic
 lat : flat : lowerbound_y : periodic
@@ -12,7 +12,7 @@ lat : flat : gradients : 3
 
 mon : B : freedom : free
 
-mon : A : chi - B : 0.6
+mon : A : chi - B : 0.58
 
 //mon : C : freedom : free
 //mon : D : chi-C : 0.6
@@ -25,16 +25,16 @@ mon : A : chi - B : 0.6
 mol : A : composition : (A)4
 mol : A : freedom : restricted
 //mol : A : theta : 440
-mol : A : theta : 4000
+mol : A : theta : 500
 
 mol : B : composition : (B)4
 mol : B : freedom : solvent
 
 mesodyn : smth : timesteps : 100000
-mesodyn : smth : timebetweensaves : 500
+mesodyn : smth : timebetweensaves : 100
 mesodyn : smth : diffusionconstant : 1
 //mesodyn : smth : delta_t : 0.1
-//mesodyn : smth : read_vtk : mesodyn-1537348197-rho
+mesodyn : smth : read_vtk : mesodyn-1537348197-rho
 mesodyn : smth : edge_detection : sobel
 mesodyn : smth : edge_detection_threshold : 0
 mesodyn : smth : cn_ratio : 0.5

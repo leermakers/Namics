@@ -290,6 +290,7 @@ private:
   int RC;
   Real* solve_explicit();
   void explicit_start();
+  int noise_flux();
   Real* solve_crank_nicolson();
   void load_alpha(vector<Real>&, size_t);
   int sanity_check();

@@ -504,7 +504,7 @@ if(debug) cout <<"newdirection in Newton" << endl;
 
 void SFNewton::newtrustregion(Real *p0,Real ALPHA_, Real &trustregion, Real& trustfactor, Real delta_max, Real delta_min, int nvar){
 if(debug) cout <<"newtrustregion in Newton" << endl;
-	Real ALPHA=ALPHA_; 
+	Real ALPHA=ALPHA_;
 	Real normp0 =0;
 	normp0= norm2(p0,nvar);
 
@@ -605,8 +605,8 @@ void SFNewton::ResetX(Real* x,int nvar,bool filter) { //done
 
 
 bool SFNewton::Message(bool e_info_, bool s_info_, int it_, int iterationlimit_,Real residual_, Real tolerance_, string s_) {
-	bool e_info=e_info_, s_info=s_info_; string s=s_; 
-	int it=it_, iterationlimit=iterationlimit_;  
+	bool e_info=e_info_, s_info=s_info_; string s=s_;
+	int it=it_, iterationlimit=iterationlimit_;
 	Real residual=residual_, tolerance=tolerance_;
 	if (debug) cout <<"Message in  Newton " << endl;
 	bool success=true;
@@ -620,7 +620,7 @@ bool SFNewton::Message(bool e_info_, bool s_info_, int it_, int iterationlimit_,
 
 		if (e_info) {
 			if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
-			if (it < iterationlimit/10) cout <<"That was easy." << endl;
+			if (it < iterationlimit/10) cout <<"That was the easy part." << endl;
 			if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
 			if (it <2 && iterationlimit >1 ) cout <<"You hit the nail on the head." << endl;
 			if (residual > tolerance) { cout << " Iterations failed." << endl;
@@ -638,9 +638,9 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 	int iterationlimit=iterationlimit_;
 	Real tolerance=tolerance_;
 	bool success;
-	Real delta_max=delta_max_; 
+	Real delta_max=delta_max_;
 	Real delta_min=delta_min_;
-	bool filter=filter_; 
+	bool filter=filter_;
 Real* x0 = (Real*) malloc(nvar*sizeof(Real)); H_Zero(x0,nvar);
 Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
 Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);

@@ -268,18 +268,21 @@ Real Cleng::GetN_times_mu() {
     return n_times_mu;
 }
 
-bool Cleng::InSubBoxRange() {
-    bool in_subbox_range = false;
+void Cleng::makeInSubBoxRange() {
     int not_in_subbox_range = 0;
     Point sub_box = {sub_box_size, sub_box_size, sub_box_size};  // change it in future
 
     for (auto &&n : nodes) {
-        cout << "output :" << n->inSubBoxRange(sub_box) << endl;
         if(!n->inSubBoxRange(sub_box)) not_in_subbox_range ++;
     }
-
-    if (not_in_subbox_range == 0) in_subbox_range = true;
-    return in_subbox_range;
+    cout << "not_in_subbox_range: " << not_in_subbox_range << endl;
+    if (not_in_subbox_range != 0) {
+        cout << "MakeShift back!" << endl;
+        MakeShift(true);
+        for (auto &&n : nodes) {
+            cout << n->to_string() << endl;
+        }
+    }
 }
 
 bool Cleng::NotCollapsing() {
@@ -325,17 +328,8 @@ void Cleng::make_BC() {
 
 
 bool Cleng::Checks() {
-    bool in_subbox_range;
     bool not_collapsing;
     bool in_range;
-
-    // SubBoxRange
-//    in_subbox_range = InSubBoxRange();
-    in_subbox_range = true;
-//    if (!in_subbox_range) {
-//        MakeShift(true);
-//        return false;
-//    }
 
     // check distances between all nodes => preventing collapsing
     not_collapsing = NotCollapsing();
@@ -346,8 +340,8 @@ bool Cleng::Checks() {
     } else { // BC.x and/or BC.y and/or BC.z != mirror
         in_range = true;
     }
-    cout << "not_collapsing: " << not_collapsing << " in_range: " << in_range <<  " in_subbox_range: " << in_subbox_range << endl;
-    return not_collapsing and in_range and in_subbox_range;
+    cout << "not_collapsing: " << not_collapsing << " in_range: " << in_range << endl;
+    return not_collapsing and in_range;
 }
 
 Point Cleng::PrepareStep() {
@@ -374,21 +368,23 @@ bool Cleng::MakeShift(bool back) {
     if (!back) {
         shift = PrepareStep();
         id_node_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
-        cout << "Trying: \n part_id: " << id_node_for_move
+        cout << "Trying: \n node_id: " << id_node_for_move
              << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
         if (Checks()) {
             nodes[id_node_for_move]->shift(shift);
+            makeInSubBoxRange();
         } else {
             while (!Checks()) {
                 cout << "Choose another particle id and step..." << endl;
                 id_node_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
                 shift = PrepareStep();
-                cout << "Trying: \n part_id: " << id_node_for_move
+                cout << "Trying: \n node_id: " << id_node_for_move
                      << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
             }
             nodes[id_node_for_move]->shift(shift);
+            makeInSubBoxRange();
         }
-        cout << "Finally: \n part_id: " << id_node_for_move
+        cout << "Finally: \n node_id: " << id_node_for_move
         << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
     } else {
         cout << "MakeShift back" << endl;
@@ -423,9 +419,9 @@ bool Cleng::MonteCarlo() {
         assert(!std::isnan(free_energy_trial));
         for (auto &&n : nodes) {
             cout << "n: " << n->point().to_string() << endl;
-            assert((n->point().x > 3) and (n->point().x < 18));
-            assert((n->point().y > 3) and (n->point().y < 18));
-            assert((n->point().z > 3) and (n->point().z < 18));
+            assert((n->point().x > 3) and (n->point().x < 28));
+            assert((n->point().y > 3) and (n->point().y < 28));
+            assert((n->point().z > 3) and (n->point().z < 28));
         }
 
 

@@ -38,10 +38,8 @@ bool SimpleNode::inSubBoxRange(Point const &subBoxRange) const {
     cout << "Point: " << this->point().to_string() << " cnode: " << cnode->point().to_string() << endl;
     Real dist = point().distance(cnode->point());
 
-//    Real dist = point().distance(cnode->point());
     Point distance_origin = {(int)dist, (int)dist, (int)dist};
     Point distance = {(int)dist+2, (int)dist+2, (int)dist+2};
-//    cout << "dist: " << dist << endl;
     cout << "Point distance_origin: " << distance_origin.to_string() << endl;
     cout << "Point distance: " << distance.to_string() << endl;
     cout << "subbox_range: " << subBoxRange.to_string() << endl;
@@ -54,6 +52,4 @@ bool SimpleNode::inSubBoxRange(Point const &subBoxRange) const {
         return false;
     }
     return true;
-
 }
-

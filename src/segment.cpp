@@ -31,7 +31,7 @@ if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 	if (freedom != "free"){
 		 free(r);
 	}
-	//free(H_u);
+	free(H_u);
 	free(H_phi);
 	free(H_MASK);
 	free(H_alpha);
@@ -158,6 +158,7 @@ if (debug) cout <<"SetPhiSide in Segment " + name << endl;
 bool Segment::CheckInput(int start) {
 if (debug) cout <<"CheckInput in Segment " + name << endl;
 	bool success;
+	block=false;
 	unique=true;
 	chi_var_seg=-1;
 	chi_var_state=-1;
@@ -301,7 +302,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int));
+					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos); 
 					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
 				}
 			}
@@ -310,7 +311,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int));
+					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
 					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
@@ -330,7 +331,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int));
+					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
 					success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),name,s);
 				}
 			}
@@ -339,7 +340,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int));
+					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
 					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
@@ -359,7 +360,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int));
+					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
 					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),name,s);
 				}
 			}
@@ -368,13 +369,13 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 			 	if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int));
+					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
 			 		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
 		}
 		if (freedom!="free") {
-			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
+			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int)); Zero(H_MASK,Lat[0]->M);
 			if (freedom=="clamp") {
 				int JX=Lat[0]->JX;
 				int JY=Lat[0]->JY;

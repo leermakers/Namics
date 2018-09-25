@@ -704,6 +704,7 @@ if (debug) cout << "printlist in output " << endl;
 
 int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result, string& string_result) {
   int i = 0;
+  int_result=0;
   int length = ints.size();
   while (i < length) {
     if (prop == ints[i]) {
@@ -713,6 +714,7 @@ int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result
     i++;
   }
   i = 0;
+  Real_result=0.0;
   length = Reals.size();
   while (i < length) {
     if (prop == Reals[i]) {
@@ -722,6 +724,7 @@ int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result
     i++;
   }
   i = 0;
+  string_result="false";
   length = bools.size();
   while (i < length) {
     if (prop == bools[i]) {

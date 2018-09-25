@@ -129,11 +129,11 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		//N=chainlength; //in case of dendrimers this is not correct. Way fewer EDF needed in this case.
 	}
 
-	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
+	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); Zero(H_phi,M*MolMonList.size());
 //cout <<"molmonlist.size in mol" << MolMonList.size() << endl;
 	//H_u = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
 	//Zero(H_u, M*MolMonList.size());
-	H_phitot = (Real*) malloc(M*sizeof(Real));
+	H_phitot = (Real*) malloc(M*sizeof(Real)); Zero(H_phitot,M);
 	if (freedom=="clamped") {
 		H_Bx=(int*) malloc(n_box*sizeof(int));
 		H_By=(int*) malloc(n_box*sizeof(int));
@@ -162,17 +162,15 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		mask1=(Real*)AllOnDev(n_box*m);
 		mask2=(Real*)AllOnDev(n_box*m);
 		gn =(Real*)AllOnDev(n_box);
-		Gg_f=(Real*)AllOnDev(m*n_box*N);
-		Gg_b=(Real*)AllOnDev(m*n_box*2);
-		g1=(Real*)AllOnDev(m*n_box);
-		rho=(Real*)AllOnDev(m*n_box*MolMonList.size());
-		phi=(Real*)AllOnDev(M*MolMonList.size());
-		if (save_memory) Gs=(Real*)AllOnDev(m*n_box*2);
+		Gg_f=(Real*)AllOnDev(m*n_box*N); Zero(Gg_f,m*n_box*N);
+		Gg_b=(Real*)AllOnDev(m*n_box*2); Zero(Gg_b,m*n_box*2);
+		g1=(Real*)AllOnDev(m*n_box); Zero(g1,m*n_box);
+		rho=(Real*)AllOnDev(m*n_box*MolMonList.size()); Zero(rho,m*n_box,MolMonList.size());
+		phi=(Real*)AllOnDev(M*MolMonList.size()); Zero(phi,M*MolMonList.size());
+		if (save_memory) {Gs=(Real*)AllOnDev(m*n_box*2); Zero(Gs,m*n_box*2);}
 	} else {
 		Gg_f=(Real*)AllOnDev(M*N);
 		Gg_b=(Real*)AllOnDev(M*2);
-		//u=(Real*)AllOnDev(M*MolMonList.size()); Zero(u,M);
-		//G1=(Real*)AllOnDev(M*MolMonList.size()); Zero(G1,M);
 		phi=(Real*)AllOnDev(M*MolMonList.size());
 		rho=phi;
 		if (save_memory) Gs =(Real*)AllOnDev(M*2);
@@ -187,12 +185,12 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Bx=H_Bx; By=H_By; Bz=H_Bz;
 		Px1=H_Px1; Py1=H_Py1; Pz1=H_Pz1;
 		Px2=H_Px2; Py2=H_Py2; Pz2=H_Pz2;
-		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real));
-		Gg_b = (Real*) malloc(m*2*n_box*sizeof(Real));
+		Gg_f = (Real*) malloc(m*N*n_box*sizeof(Real)); Zero(Gg_f,m*N*n_box);
+		Gg_b = (Real*) malloc(m*2*n_box*sizeof(Real)); Zero(Gg_b,m*2*n_box);
 
-		g1=(Real*) malloc(m*n_box*sizeof(Real));
-		rho=(Real*)malloc(m*n_box*MolMonList.size()*sizeof(Real));
-		if (save_memory) Gs=(Real*) malloc(m*n_box*2*sizeof(Real));
+		g1=(Real*) malloc(m*n_box*sizeof(Real)); Zero(g1,m*n_box);
+		rho=(Real*)malloc(m*n_box*MolMonList.size()*sizeof(Real)); Zero(rho,m*n_box*MolMonList.size());
+		if (save_memory) {Gs=(Real*) malloc(m*n_box*2*sizeof(Real));Zero(Gs,m*n_box*2);}
 		phi=H_phi;
 	} else {
 		Gg_f = (Real*) malloc(M*N*sizeof(Real));

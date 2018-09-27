@@ -50,12 +50,14 @@ newton : isaac : iterationlimit : 20000
 newton : isaac : tolerance : 1e-4
 newton : isaac : stop_criterion : max_of_element_of_|g|
 
-// how much of the old J gets mixed in the crank-nicolson scheme
+//Mesodyn options:
+// timesteps, timebetweensaves, delta_t, read_pro, read_vtk, equilibrate, diffusionconstant, seed
+// mean, stddev, cn_ratio ( 1 = only old ), edge_detection, edge_detection_threshold
+
 mesodyn : smth : cn_ratio : 0.5
-//mesodyn : smth : read_pro: membrane_builder_0_2_expanded.pro
-//mesodyn : smth : read_vtk : mesodyn-1534361424-rho
 mesodyn : smth : timesteps : 100000
 mesodyn : smth : timebetweensaves : 50
 mesodyn : smth : diffusionconstant : 0.1
 mesodyn : smth : delta_t : 1
+mesodyn : smth : seed : 2
 start

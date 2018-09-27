@@ -1,4 +1,4 @@
-#include "segment.h" 
+#include "segment.h"
 #include <fstream>
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr;
@@ -31,7 +31,7 @@ if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 	if (freedom != "free"){
 		 free(r);
 	}
-	//free(H_u);
+	free(H_u);
 	free(H_phi);
 	free(H_MASK);
 	free(H_alpha);
@@ -58,7 +58,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	ns=state_name.size(); if (ns==0) ns=1;
 	H_u = (Real*) malloc(M*ns*sizeof(Real));
 	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
-	H_phi = (Real*) malloc(M*sizeof(Real)); 
+	H_phi = (Real*) malloc(M*sizeof(Real));
 	H_alpha=(Real*) malloc(M*ns*sizeof(Real));
 	H_Zero(H_u,M*ns);
 	H_Zero(H_phi,M);
@@ -110,20 +110,20 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 
 	if (freedom=="tagged" || freedom=="clamp" ) Zero(u,M); //no internal states for these segments.
-	
+
 	if (ns==1) {
 		Lat[0]->set_bounds(u);
-		Boltzmann(G1,u,M); 
+		Boltzmann(G1,u,M);
 	} else {
 		Zero(G1,M);
 		for (int i=0; i<ns; i++) {
-			Lat[0]->set_bounds(u+M*i);	
+			Lat[0]->set_bounds(u+M*i);
 			Boltzmann(alpha+M*i,u+M*i,M);
 			Norm(alpha+M*i,state_alphabulk[i],M);
 			Add(G1,alpha+M*i,M);
 		}
 		for (int i=0; i<ns; i++) Div(alpha+i*M,G1,M);
-	} 
+	}
 
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
 	if (freedom=="tagged") Cp(G1,MASK,M);
@@ -149,10 +149,10 @@ if (debug) cout <<"SetPhiSide in Segment " + name << endl;
 		//cout <<" seg " << name << endl;
 		//for (int i=0; i<ns; i++) {
 		//	cout <<"alphabulk " << state_alphabulk[i] << "valence " << state_valence[i] << endl;
-		//	for (int z=0; z<M; z++) cout <<  "phi("<< z<< ")= " << phi_state[z+i*M] << endl; 
+		//	for (int z=0; z<M; z++) cout <<  "phi("<< z<< ")= " << phi_state[z+i*M] << endl;
 		//}
-	} 
-	
+	}
+
 }
 
 bool Segment::CheckInput(int start) {
@@ -162,8 +162,8 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	chi_var_seg=-1;
 	chi_var_state=-1;
 	seg_nr_of_copy=-1;
-	state_nr_of_copy=-1; 
-	ns=1; 
+	state_nr_of_copy=-1;
+	ns=1;
 	string s;
 	vector<string>options;
 	guess_u=0;
@@ -427,10 +427,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		}
 	}
 
-	int length = state_name.size(); 
+	int length = state_name.size();
 	if (length >0 && (freedom == "frozen"||freedom=="tagged"||freedom=="clamp")) {
 		success=false;
-		cout <<" When freedom = {frozen,tagged,clamp} a 'mon' can not have multiple internal states; status violated for mon " << name << endl; 
+		cout <<" When freedom = {frozen,tagged,clamp} a 'mon' can not have multiple internal states; status violated for mon " << name << endl;
 	}
 
 	length=chi_name.size();
@@ -440,12 +440,12 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		Chi=-999;
 		if (GetValue("chi-"+chi_name[i]).size()>0) {
 			Chi=In[0]->Get_Real(GetValue("chi-"+chi_name[i]),Chi);
-			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "not valid." << endl; } 
+			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "not valid." << endl; }
 			if (name==chi_name[i] && Chi!=0) {if (Chi!=-999) cout <<" chi value for chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "value ignored: set to zero!" << endl; Chi=0;}
-			
+
 		}
 		chi[i]=Chi;
-	} 
+	}
 	return success;
 }
 
@@ -454,7 +454,7 @@ if (debug) cout << "Segment::PutVarInfo " << endl;
 	bool success=true;
 
 	int length_mon,length_state;
-	int i; 
+	int i;
 
 	Var_target=-1;
 	chi_var_seg=-1;
@@ -473,7 +473,7 @@ if (debug) cout << "Segment::PutVarInfo " << endl;
 					for (i=0; i<length_mon; i++) {
 						if (sub[1]==In[0]->MonList[i]) {
 							Var_target=2; Var_start_value=chi[i];
-							chi_var_seg=i; 
+							chi_var_seg=i;
 						}
 					}
 					if (Var_target!=2) {
@@ -534,7 +534,7 @@ if (debug) cout << "Segment::PutVarScan " << endl;
 bool Segment::UpdateVarInfo(int step_nr) {
 if (debug) cout << "Segment::UpdateVarInfo() " << endl;
 	bool success=true;
-	int length; 
+	int length;
 	switch(Var_target) {
 		case 0:
 			if (scale=="exponential") {
@@ -597,7 +597,7 @@ if (debug) cout << "Segment::ResetInitValue() " << endl;
 			if (chi_var_state>-1) {
 				chi[length+chi_var_state] =Var_start_value;
 			}
-			break; 
+			break;
 		default:
 			cout <<"program error in Seg:ResetInitValue "<<endl;
 			break;
@@ -607,7 +607,7 @@ if (debug) cout << "Segment::ResetInitValue() " << endl;
 
 void Segment::PutValue(Real X) {
 if (debug) cout << "Segment::PutValue() " << endl;
-	int length; 
+	int length;
 	switch(Var_target) {
 		case 0:
 			valence=X;
@@ -623,7 +623,7 @@ if (debug) cout << "Segment::PutValue() " << endl;
 			if (chi_var_state>-1) {
 				chi[length+chi_var_state] =X;
 			}
-			break; 
+			break;
 		default:
 			cout <<"program error in Segment:PutValue "<<endl;
 			break;
@@ -631,9 +631,9 @@ if (debug) cout << "Segment::PutValue() " << endl;
 }
 
 Real Segment::GetValue() {
-if (debug) cout << "Segment::GetValue() " << endl;	
+if (debug) cout << "Segment::GetValue() " << endl;
 	Real X=0;
-	int length; 
+	int length;
 	switch(Var_target) {
 		case 0:
 			X=valence;
@@ -816,7 +816,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	Real theta = Lat[0]->WeightedSum(phi);
 	push("theta",theta);
 	push("theta_exc",theta-Lat[0]->Accesible_volume*phibulk);
-	push("phibulk",phibulk); 
+	push("phibulk",phibulk);
 	if (ns>1) {
 		state_theta.clear();
 		for (int i=0; i<ns; i++){
@@ -838,24 +838,24 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	string profile="profile;0"; push("phi",profile);
 
 	profile="profile;1"; push("G1",profile);
-	int k=1; 
-	string s; 
+	int k=1;
+	string s;
 	string str;
-	if (ns >1) { 
-		for (int i=0; i<ns; i++) { k++;	
+	if (ns >1) {
+		for (int i=0; i<ns; i++) { k++;
 			stringstream ss; ss<<k; str=ss.str();
 			s="profile;"+str; push("phi-"+state_name[i],s);
 		}
-		for (int i=0; i<ns; i++) { k++;	
+		for (int i=0; i<ns; i++) { k++;
 			stringstream ss; ss<<k; str=ss.str();
 			s="profile;"+str; push("alpha-"+state_name[i],s);
 		}
-		for (int i=0; i<ns; i++) { k++;	
+		for (int i=0; i<ns; i++) { k++;
 			stringstream ss; ss<<k; str=ss.str();
 			s="profile;"+str; push("u-"+state_name[i],s);
 		}
 	}
-	
+
 
 #ifdef CUDA
 	int M = Lat[0]->M;
@@ -887,7 +887,7 @@ if (debug) cout <<"Get Pointer for segment " + name << endl;
 			stringstream ss; ss<<i+2*ns+2; string str=ss.str();
 			if (sub[1]==str) return u+i*M;
 		}
-	} 
+	}
 
 	} else {//sub[0]=="vector" ..do not forget to set SIZE before returning the pointer.
 	}
@@ -964,7 +964,7 @@ if (debug) cout <<"AddState " << id_ <<" to seg " << name << endl;
 			found=true;
 			state_alphabulk[k]=alphabulk;
 			state_valence[k]=valence;
-			if (fixed) state_change[k]=false; else state_change[k]=true; 
+			if (fixed) state_change[k]=false; else state_change[k]=true;
 			state_number=k;
 		}
 	}
@@ -972,9 +972,9 @@ if (debug) cout <<"AddState " << id_ <<" to seg " << name << endl;
 		state_id.push_back(ID);
 		state_name.push_back(In[0]->StateList[ID]);
 		state_alphabulk.push_back(alphabulk);
-		state_phibulk.push_back(0); 
+		state_phibulk.push_back(0);
 		state_valence.push_back(valence);
-		if (fixed) state_change.push_back(false); else state_change.push_back(true); 
+		if (fixed) state_change.push_back(false); else state_change.push_back(true);
 		state_number=state_change.size()-1;
 		length=In[0]->StateList.size();
 		for (int k=0; k<length; k++) {if (name==In[0]->StateList[k]) state_nr.push_back(k);}
@@ -992,24 +992,24 @@ if (debug) cout <<"AddState " << id_ <<" to seg " << name << endl;
 int Segment::PutAlpha(Real* x,int xi){
 	int xxi=xi;
 	int n_s;
-	if (ns==1) n_s=0; else n_s=ns; 
+	if (ns==1) n_s=0; else n_s=ns;
 	if (n_s==0) return xxi;
 	Real sum_alpha=0;
-	Real fixed_value=0; 
+	Real fixed_value=0;
 	int niv=1;
-	int n_free=n_s-1; 	
- 
+	int n_free=n_s-1;
+
 	for (int i=0; i<n_s; i++) {
 		if (!state_change[i]) {fixed_value+=state_alphabulk[i]; n_free--;} else state_alphabulk[i]=0; 	}
- 
+
 	for (int i=0; i<n_s; i++) {
 		if (state_change[i] && niv>0 && n_free>0) {
-			state_alphabulk[i]=0.5*(1.0+tanh(10*(x[xxi])))*(1.0-fixed_value); xxi++; niv--; 
+			state_alphabulk[i]=0.5*(1.0+tanh(10*(x[xxi])))*(1.0-fixed_value); xxi++; niv--;
 		}
 		sum_alpha+=state_alphabulk[i];
 	}
 	for (int i=0; i<n_s; i++) {
-		if (state_alphabulk[i]==0) state_alphabulk[i]=1.0-sum_alpha; 	
+		if (state_alphabulk[i]==0) state_alphabulk[i]=1.0-sum_alpha;
 	}
 
 	return xxi;

@@ -36,11 +36,16 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
 }
 
 Mesodyn::~Mesodyn() {
-  for (size_t i = 0; i < flux.size(); ++i)
+  delete flux[0]->gaussian;
+  for (size_t i = 0; i < flux.size(); ++i) {
     delete flux[i];
+    delete solver_flux[i];
+  }
   flux.clear();
-  for (size_t i = 0; i < component.size(); ++i)
+  for (size_t i = 0; i < component.size(); ++i) {
     delete component[i];
+    delete solver_component[i];
+  }
   component.clear();
   delete boundary;
 }
@@ -198,12 +203,6 @@ bool Mesodyn::mesodyn() {
 
     noise_flux();
 
-    i = 0;
-    for (Component* all_components : component) {
-      all_components->load_rho(solver_component[i]->rho);
-      ++i;
-    }
-
     //TODO: remove this check?
     skip_bounds([this](int x, int y, int z) mutable {
       for (Component* all_components : solver_component) {
@@ -213,6 +212,12 @@ bool Mesodyn::mesodyn() {
           cerr << "CRITICAL ERROR (rho > 1) IN DENSITIES AT " << x << "," << y << "," << z  << endl;
       }
     });
+
+    i = 0;
+    for (Component* all_components : component) {
+      all_components->load_rho(solver_component[i]->rho);
+      ++i;
+    }
 
     if (t % timebetweensaves == 0) {
       write_density(component);
@@ -226,8 +231,6 @@ bool Mesodyn::mesodyn() {
 
   } // time loop
 
-
-
   return true;
 }
 
@@ -236,6 +239,7 @@ int Mesodyn::noise_flux() {
 
   for (Component* all_components : solver_component) {
     gaussian->generate();
+    //Zero all alpha's
     fill(all_components->alpha.begin(), all_components->alpha.end(), 0);
     gaussian->add_noise(all_components->alpha);
   }
@@ -370,7 +374,7 @@ int Mesodyn::initial_conditions() {
       break;
     case INIT_FROMVTK:
       for (size_t i = 0 ; i < rho.size() ; ++i) {
-        string filename = read_filename + to_string(i) + ".vtk";
+        string filename = read_filename + to_string(i+1) + ".vtk";
         init_rho_fromvtk(rho[i], filename);
       }
       break;
@@ -451,7 +455,6 @@ int Mesodyn::initial_conditions() {
         solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
-
     break;
   case 2:
     boundary = new Boundary2D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3]);
@@ -473,7 +476,6 @@ int Mesodyn::initial_conditions() {
         solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
-
     break;
   case 3:
     boundary = new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]);
@@ -495,7 +497,6 @@ int Mesodyn::initial_conditions() {
         solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
-
     break;
   }
 
@@ -578,7 +579,7 @@ int Mesodyn::init_rho_fromvtk(vector<Real>& rho, string filename) {
   rho_input.open(filename);
 
   if (!rho_input.is_open()) {
-    cerr << "Error opening file! Is the filename correct? Is there a vtk for each component, ending in [component number].vtk, starting from 0?" << endl;
+    cerr << "Error opening file! Is the filename correct? Is there a vtk for each component, ending in [component number].vtk, starting from 1?" << endl;
     throw ERROR_FILE_FORMAT;
   }
 

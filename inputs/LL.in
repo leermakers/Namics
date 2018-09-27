@@ -25,7 +25,7 @@ newton : isaac : m : 10
 newton : isaac : i_info : 25
 newton : isaac : iterationlimit : 1000
 //newton : isaac : deltamax : 0.1
-output : pro : append : false 
+output : pro : append : false
 pro : mon : * : phi
 pro : mol : * : phi
 start

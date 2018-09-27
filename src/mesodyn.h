@@ -233,6 +233,28 @@ protected:
   vector<int> Mask_minus_z;
 };
 
+class Interface : private Lattice_Access {
+public:
+  Interface(Lattice*, vector<Component*>);
+  ~Interface();
+  int order_parameters(Component*, Component*);
+  int detect_edges(int);
+  int write_edges(string);
+
+private:
+  vector<Component*> component;
+  vector<Real> order_params;
+  vector<Real> edges;
+
+  vector<Real> sobel_edge_detector(Real, vector<Real>&);
+  vector<Real> gaussian_blur(vector<Real>&);
+  //TODO: template this
+  Real convolution(vector<int>, vector<Real>);
+  Real convolution(vector<Real>, vector<Real>);
+  vector<Real> get_xy_plane(vector<Real>&, int, int, int, int = 3);
+  vector<Real> get_xz_plane(vector<Real>&, int, int, int, int = 3);
+};
+
 
 class Mesodyn : private Lattice_Access {
 
@@ -250,20 +272,25 @@ private:
 
   /* Read from file */
   Real D; // diffusionconstant
+  Real dt;
   Real mean; // mean of gaussian noise (should be 0)
   Real stddev; // stdev of gaussian noise (should be 1*D)
   Real seed;  // seed of gaussian noise
   bool seed_specified;
   int timesteps; // length of the time evolution
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
-  Real dt;
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
+  bool edge_detection;
+  function<void(vector<Real>&)> edge_detector; //TODO: remove?
+  int edge_detection_threshold;
+
 
   /* Flow control */
   int RC;
   Real* solve_explicit();
   void explicit_start();
+  int noise_flux();
   Real* solve_crank_nicolson();
   void load_alpha(vector<Real>&, size_t);
   int sanity_check();
@@ -289,6 +316,7 @@ private:
 
   /* Helper class instances */
   Boundary1D* boundary;
+  Interface* interface;
   vector<Component*> component;
   vector<Component*> solver_component;
   vector<Flux1D*> flux;
@@ -302,6 +330,7 @@ private:
   void set_filename();
   void write_settings();
   void write_density(vector<Component*>&);
+  int order_parameters(vector<Real>&, Component*, Component*);
 
   /* Mathematics */
   int factorial (int);

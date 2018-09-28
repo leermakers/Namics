@@ -205,11 +205,13 @@ bool Mesodyn::mesodyn() {
 
     //TODO: remove this check?
     skip_bounds([this](int x, int y, int z) mutable {
+      int c {0};
       for (Component* all_components : solver_component) {
         if (val(all_components->rho, x, y, z) < 0)
-          cerr << "CRITICAL ERROR (rho < 0) IN DENSITIES AT " << x << "," << y << "," << z  << endl;
+          cerr << "CRITICAL ERROR (rho < 0) IN DENSITIES OF COMPONENT "<< c << " AT " << x << "," << y << "," << z  << endl;
         if (val(all_components->rho, x, y, z) > 1)
-          cerr << "CRITICAL ERROR (rho > 1) IN DENSITIES AT " << x << "," << y << "," << z  << endl;
+          cerr << "CRITICAL ERROR (rho > 1) IN DENSITIES OF COMPONENT "<< c << " AT " << x << "," << y << "," << z  << endl;
+        ++c;
       }
     });
 

@@ -2,4 +2,5 @@
 make
 cp ./bin/namics ./inputs/
 cd inputs/
-./namics tag.in
+./namics tag5
+#valgrind --track-origins=yes ./namics tag_x52.in

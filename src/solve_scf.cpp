@@ -603,11 +603,14 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 	s_info=super_s_info;
 	i_info=super_i_info;
 	tolerance=super_tolerance;
+	cout << "super tolerance and super deltamax: " << super_tolerance << "\t" << super_deltamax << endl;
 	solver=diis;
-	    success=iterate_DIIS(x,1,m,iterationlimit,tolerance,deltamax);
+	    success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax);
+	//    success=iterate_DIIS(x,1,m,iterationlimit,super_tolerance,super_deltamax);
 	//success=iterate(x,1,super_iterationlimit,super_tolerance,super_deltamax,deltamin,false);	//iterate is called with just one iteration variable
 	return success;
 }
+
 
 void Solve_scf::residuals(Real* x, Real* g){
  if (debug) cout <<"residuals in Solve_scf " << endl;

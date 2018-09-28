@@ -825,8 +825,9 @@ Real SFNewton::computeresidual(Real* array, int size) {
   return residual;
 }
 
-bool SFNewton::iterate_DIIS(Real*x,int nvar, int m, int iterationlimit,Real tolerance, Real delta_max) {
+bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
+int nvar=nvar_;
 	bool success;
 Real* Aij = (Real*) malloc(m*m*sizeof(Real)); Zero(Aij,m*m);
 Real* Ci = (Real*) malloc(m*sizeof(Real)); Zero(Ci,m);
@@ -867,6 +868,47 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	}
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
 free(Aij);free(Ci);free(Apij);free(xR);free(x_x0);free(x0);free(g);
+	return success;
+}
+
+bool SFNewton::iterate_RF(Real*x, int nvar_,int iterationlimit,Real tolerance, Real delta_max) {
+if(debug) cout <<"Iterate_RF in SFNewton " << endl;
+	int nvar=nvar_;
+	bool success;
+	Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+	Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+	Real a, b, c, fa, fb, fc, res;
+	int k,it;
+	
+	residuals(x,g);
+	a=x[0];
+	fa=g[0];
+	x[0]=x[0]+delta_max;
+	residuals(x,g);
+	b=x[0];
+	fb=g[0];
+	if(fa==fb){success=false; cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;}
+	c = a - ((fa*(a-b))/(fa-fb));
+	x[0]=c;
+	residuals(x,g);
+	fc=g[0]; res=fc;
+	k=0; it=0;
+
+	while((k<iterationlimit) && (abs(res)>tolerance)){
+		c = a-((fa*(a-b))/(fa-fb)); x[0]=c;residuals(x,g);fc=g[0];
+		if(fc*fb<0){
+		b=c; x[0]=b; residuals(x,g); fb=g[0]; res=fb;
+		} else { 
+		a=c; x[0]=a; residuals(x,g); fa=g[0]; res=fa;
+		}
+		k++; it=k;
+		if(fa==fb){success=false; cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;}
+	cout << "In Regula-Falsi iteration step: " << k << "\t Residual: " <<	res << endl;
+	}
+
+
+	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
+	free(x0);free(g);
 	return success;
 }
 

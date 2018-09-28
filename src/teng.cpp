@@ -28,44 +28,44 @@ Teng::~Teng() {
 bool Teng::MonteCarlo() {
   if (debug) cout << "Monte Carlo in Teng" << endl;
 	bool success;
+	bool solved=false;
+	int time =0;
+	Real* copyitvar;
+	copyitvar = (Real*) malloc(New[0]->iv*sizeof(Real));
  	success=CP(to_teng);
 	New[0]->i_info=100;
-	New[0]->Solve(true);
-	Real F_bm = Sys[0]->FreeEnergy;
-	Real G_bm = Sys[0]->GrandPotential;
+	solved=New[0]->Solve(true);
+	for (int i=0; i<New[0]->iv; i++){copyitvar[i] = New[0]->xx[i];}
+	Real F_bm = Sys[0]->FreeEnergy; //Real G_bm = Sys[0]->GrandPotential;
 	Real F_am;
-	WriteOutput(0);
+	WriteOutput(time);
 	Real accepted=0.0;
 	Real rejected=0.0;
 	Real Percentageaccepted =0.0;
 	Real Percentagerejected =0.0;
 	Real acceptance;
+	
 
-		for (int time=1; time<=MCS; time++){
+		for (time=1; time<=MCS; time++){
 			success=CP(to_bm);
 			ChangeMode();
-			New[0]->Solve(true);
+			solved = New[0]->Solve(true);
 			F_am = Sys[0]->FreeEnergy;
 			
 			acceptance=GetRandom(1.0);
-			cout << F_bm << ": is Free energy before move.	" << F_am << ": is Free energy after move." << endl;
-			cout << "Metropolis energy difference is: " << exp(-1.0*(F_am-F_bm)) << "     Acceptance chosen is: " << acceptance << endl; 
 
-			if (F_am-F_bm <= 0 || acceptance < exp(-1.0*(F_am-F_bm))){
-				F_bm=Sys[0]->FreeEnergy; G_bm=Sys[0]->GrandPotential;
-				accepted+=1.0;
-				cout << "Number of MC moves accepted so far: " << accepted << endl;
-			} else{
-				success = CP(reset);
-				success = CP(to_segment);
-				cout << "Move rejected, so solving for old position." << endl;
-				//New[0]->Solve(true);
-				//F_bm=Sys[0]->FreeEnergy;
-				Sys[0]->FreeEnergy=F_bm;
-				Sys[0]->GrandPotential=G_bm;
-				rejected+=1.0;
-				cout << "Number of MC moves rejected so far: " << rejected << endl;
-			}
+				if ((F_am-F_bm <= 0 || acceptance<exp(-1.0*(F_am-F_bm))) && solved){
+					F_bm=Sys[0]->FreeEnergy; // G_bm=Sys[0]->GrandPotential;
+					for (int i=0; i<New[0]->iv; i++){copyitvar[i] = New[0]->xx[i];}
+					accepted+=1.0;
+					cout << "Accepted. Number of MC moves accepted so far: " << accepted << endl;
+				} else{
+					success = CP(reset); success = CP(to_segment);
+					for(int j=0; j<New[0]->iv; j++) {New[0]->xx[j]=copyitvar[j];}
+					solved=New[0]->Solve(true);F_bm=Sys[0]->FreeEnergy;//	G_bm=Sys[0]->GrandPotential;
+					rejected+=1.0;
+					cout << "Rejected. Number of MC moves rejected so far: " << rejected << endl;
+				}
 
 			Percentageaccepted=accepted/time;
 			Percentagerejected=rejected/time;
@@ -94,22 +94,26 @@ Real Teng::GetRandom(Real maxvalue){
 
 bool Teng::ChangeMode(){
 	bool success=false;
+	bool copy=false;
 	while(!success){
 	Real Amplitude;
 	Real Wavenumber;
 	Real pi=4.0*atan(1.0);
 	Amplitude=GetRandom(1.0);
 	Wavenumber=round(GetRandom(Lat[0]->MZ/2.0))*2; //creates even wavenumbers in uniform space
+
+	//TODO : Select random number of particles and translate them randomly
+
 if(debug) cout << "amplitude: " << Amplitude <<" \t wavenumber: " << Wavenumber << endl;
 	for(int i=0;i<n_particles;i++){
 		X[i]=X[i]+round(0.5-round(GetRandom(1.0)));
 		Y[i]=Y[i]+round(0.5-round(GetRandom(1.0)));
 		Z[i]=Z[i]+round(Amplitude*(sin(Wavenumber*pi*X[i]/Lat[0]->MX)*sin(Wavenumber*pi*Y[i]/Lat[0]->MY)));
 		}
-	success=CP(to_segment);
 	success=IsLegal();
+	if(success) copy=CP(to_segment);
 	}
-	return success;
+	return copy;
 }
 
 // Checks for illegal montecarlo moves. i.e., particle collisions alone. Boundary checky is still not implemented. 
@@ -120,14 +124,6 @@ bool Teng::IsLegal(){
 	int xbox = Lat[0]->MX;
 	int ybox = Lat[0]->MY;
 	int zbox = Lat[0]->MZ;
-	// Checking for particle collisions
-	for(i=0; i<n_particles; i++){
-		for (j=0; j<i; j++){
-		if(i!=j){
-			if(Seg[tag_seg]->H_P[i]==Seg[tag_seg]->H_P[j]) {success=CP(reset); success=false; cout << "Particle collided." << endl;}
-			}
-		}
-	}
 	// Put molecules back in periodic box or reflect them back based on boundaries.
 	for (i=0; i<n_particles; i++){
 		if(X[i]<1 && Lat[0]->BC[0]=="periodic") X[i]+=xbox;
@@ -149,6 +145,14 @@ bool Teng::IsLegal(){
 		if(X[i]>Lat[0]->MX || X[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in x-direction." << endl;}
 		if(Y[i]>Lat[0]->MY || Y[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in y-direction." << endl;}
 		if(Z[i]>Lat[0]->MZ || Z[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in z-direction." << endl;}
+	}
+	// Checking for particle collisions again
+	for(i=0; i<n_particles; i++){
+		for (j=0; j<i; j++){
+		if(i!=j){
+			if(X[i]==X[j] && Y[i]==Y[j] && Z[i]==Z[j]) {success=CP(reset); success=false; cout << "Particle collided." << endl;}
+			}
+		}
 	}
 	return success;
 }
@@ -173,6 +177,7 @@ bool Teng::CP(transfer tofrom) {
 		break;
 		case to_segment:
 			Zero(Seg[tag_seg]->H_MASK,M);  //TODO: (Ram) Not sure If I have to remove the mask, all calculations use H_P after this.
+			Zero(Seg[tag_seg]->H_P,n_particles);
 			for (i=0; i<n_particles; i++) {
 				Seg[tag_seg]->H_P[i]=X[i]*JX+Y[i]*JY+Z[i];
 				Seg[tag_seg]->H_MASK[X[i]*JX+Y[i]*JY+Z[i]]=1;
@@ -197,7 +202,8 @@ bool Teng::CP(transfer tofrom) {
 }
 
 // Push outputs from this and other classes to Output class
-void Teng::WriteOutput(int subloop){
+void Teng::WriteOutput(int subloop_){
+	int subloop=subloop_;
 	PushOutput();
 	WritePdb(subloop);
    	New[0]->PushOutput();

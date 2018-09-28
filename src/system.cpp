@@ -900,6 +900,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 
 		if (Mol[i]->IsTagged() || Mol[i]->IsPinned()) {
 			if (Mol[i]->GN>0) norm=Mol[i]->n/Mol[i]->GN; else {norm=0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
+			Mol[i]->phibulk=0;
 		}
 		if (Mol[i]->IsClamped() ) {
 			norm=1;

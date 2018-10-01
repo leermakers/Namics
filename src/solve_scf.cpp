@@ -543,6 +543,8 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callb
 	mesodyn_flux = flux_callback;
 	mesodyn_load_alpha = alpha_callback;
 
+//	Zero(xx,iv);
+
   mesodyn =true;
 	gradient=MESODYN;
 

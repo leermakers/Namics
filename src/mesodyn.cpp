@@ -191,8 +191,6 @@ bool Mesodyn::mesodyn() {
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
-    //sanity_check();
-
     //Calculate and add noise flux
 
     int i = 0;
@@ -203,17 +201,7 @@ bool Mesodyn::mesodyn() {
 
     noise_flux();
 
-    //TODO: remove this check?
-    skip_bounds([this](int x, int y, int z) mutable {
-      int c {0};
-      for (Component* all_components : solver_component) {
-        if (val(all_components->rho, x, y, z) < 0)
-          cerr << "CRITICAL ERROR (rho < 0) IN DENSITIES OF COMPONENT "<< c << " AT " << x << "," << y << "," << z  << endl;
-        if (val(all_components->rho, x, y, z) > 1)
-          cerr << "CRITICAL ERROR (rho > 1) IN DENSITIES OF COMPONENT "<< c << " AT " << x << "," << y << "," << z  << endl;
-        ++c;
-      }
-    });
+    sanity_check();
 
     i = 0;
     for (Component* all_components : component) {
@@ -278,21 +266,33 @@ int Mesodyn::noise_flux() {
 int Mesodyn::sanity_check() {
 
   //Check mass conservation
-  int i = 0;
-  for (Component* all_components : component) {
-    if ( fabs(all_components->theta() - solver_component[i]->theta() ) > numeric_limits<Real>::epsilon()) {
-      Real difference = all_components->theta()-solver_component[i]->theta();
-        if (difference != 0) {
-          cerr << "WARNING: Mass of component " << i << " is NOT conserved! ";
-          if (difference > 0)
-            cerr << "You're losing mass, difference: ";
-          else
-            cerr << "You're gaining mass, difference: ";
-          cerr << difference << endl;
-          }
+
+  //TODO: remove this check?
+  skip_bounds([this](int x, int y, int z) mutable {
+    int c {0};
+    for (Component* all_components : solver_component) {
+      if (val(all_components->rho, x, y, z) < 0)
+        cerr << "CRITICAL ERROR (rho < 0) IN DENSITIES OF COMPONENT "<< c << " AT " << x << "," << y << "," << z  << endl;
+      if (val(all_components->rho, x, y, z) > 1) {
+        cerr << "CRITICAL ERROR (rho > 1) IN DENSITIES OF COMPONENT "<< c << " AT " << x << "," << y << "," << z  << endl;
       }
-      ++i;
+      ++c;
     }
+  });
+
+/*  Real sum {0};
+  for (int z = 0; z < M ; ++z) {
+    sum = 0;
+    for (Component* all_components : solver_component) {
+      sum += all_components->rho[z];
+    }
+    if (sum > 1.000000001 || sum < 0.99999999) {
+      //cerr << sum << endl;
+      cerr << "CRITICAL ERROR: LOCAL DENSITIES DO NOT SUM TO 1" << endl;
+      cin.get();
+      break;
+    }
+  }*/
 
   return 0;
 }
@@ -319,16 +319,24 @@ Real* Mesodyn::solve_explicit() {
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
+  int c = 0;
+
+  for (Component* all_components : solver_component) {
+    all_components->load_rho(component[c]->rho);
+    ++c;
+  }
+
   for (Component* all_components : solver_component)
     all_components->update_boundaries();
+
 
   for (Flux1D* all_fluxes : solver_flux)
     all_fluxes->langevin_flux();
 
-  int c = 0;
+  c = 0;
   for (size_t i = 0; i < component_no; ++i) {
     for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio);
+      solver_component[i]->update_density(flux[c]->J, solver_flux[c]->J, cn_ratio);
       ++c;
     }
   }
@@ -336,7 +344,7 @@ Real* Mesodyn::solve_crank_nicolson() {
   c = 0;
   for (size_t j = 0; j < (component_no - 1); ++j) {
     for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio, -1.0);
+      solver_component[i]->update_density(flux[c]->J, solver_flux[c]->J, cn_ratio, -1.0);
       ++c;
     }
   }
@@ -502,8 +510,8 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
-  norm_theta(component);
-  norm_theta(solver_component);
+  //norm_theta(component);
+  //norm_theta(solver_component);
 
   if (edge_detection)
     interface = new Interface(Lat[0], component);
@@ -1333,7 +1341,7 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   }
 
   for (int& z : mask_minus) {
-    J_minus[z] = -J_plus[z - jump]; // = -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z] - gaussian->noise[z]));
+    J_minus[z] = -J_plus[z - jump]; //-D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); // = -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z] - gaussian->noise[z]));
     // We have to do it this way because otherwise the noise will be trouble
   }
 
@@ -1385,15 +1393,15 @@ int Component::update_density(vector<Real>& J, int sign) {
   return 0;
 }
 
-int Component::update_density(vector<Real>& rho_old, vector<Real>& J1, vector<Real>& J2, Real ratio, int sign) {
+int Component::update_density(vector<Real>& J1, vector<Real>& J2, Real ratio, int sign) {
   //Implicit update
   if (J1.size() != rho.size() || J1.size() != J2.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
     return 1;
   }
 
-  skip_bounds([this, J1, ratio, sign, rho_old](int x, int y, int z) mutable {
-    *val_ptr(rho, x, y, z) = (val(rho_old, x, y, z) + ratio * sign * val(J1, x, y, z));
+  skip_bounds([this, J1, ratio, sign](int x, int y, int z) mutable {
+    *val_ptr(rho, x, y, z) = (val(rho, x, y, z) + ratio * sign * val(J1, x, y, z));
   });
 
   skip_bounds([this, J2, ratio, sign](int x, int y, int z) mutable {

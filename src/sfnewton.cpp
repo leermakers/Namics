@@ -879,7 +879,7 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	Real a, b, c, fa, fb, fc, res;
 	int k,it;
-	
+
 	residuals(x,g);
 	a=x[0];
 	fa=g[0];
@@ -898,7 +898,7 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 		c = a-((fa*(a-b))/(fa-fb)); x[0]=c;residuals(x,g);fc=g[0];
 		if(fc*fb<0){
 		b=c; x[0]=b; residuals(x,g); fb=g[0]; res=fb;
-		} else { 
+		} else {
 		a=c; x[0]=a; residuals(x,g); fa=g[0]; res=fa;
 		}
 		k++; it=k;
@@ -941,7 +941,6 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 
 	}
 	residuals(x,g);
-  #pragma omp parallel for reduction(+:delta_new)
 
 	for (int z=0; z<nvar; z++) {
 		r[z] = -g[z];
@@ -962,7 +961,6 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 		while (proceed) {
 			teller=0;
 
-      #pragma omp parallel for reduction(-:teller)
 			for (int z=0; z<nvar; z++) {
 				teller -= g[z]*d[z];
 
@@ -971,10 +969,8 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 			Hd(H_d,d,x,x0,g,dg,nvar);
 			noemer=0;
 
-      #pragma omp parallel for reduction(+:noemer)
 			for (int z=0; z<nvar; z++) noemer +=H_d[z]*d[z];
 			alpha=teller/noemer;
-      #pragma omp parallel for
 
 			for (int z=0; z<nvar; z++) {x[z]=x0[z]+alpha*d[z];}
 			residuals(x,g);
@@ -983,26 +979,19 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 		}
 
 
-    #pragma omp parallel for
     for (int z=0; z<nvar; z++) r_old[z]=r[z];
-    #pragma omp parallel for
 		for (int z=0; z<nvar; z++) r[z]=-g[z];
 		delta_old=delta_new;
 		delta_new=0;
-    #pragma omp parallel for reduction(+:delta_mid)
     for (int z=0; z<nvar; z++) delta_mid += r[z]*r_old[z];
-    #pragma omp parallel for reduction(+:delta_new)
 		for (int z=0; z<nvar; z++) delta_new += r[z]*r[z];
 		beta =  (delta_new-delta_mid)/delta_old;
-    #pragma omp parallel for
 		for (int z=0; z<nvar; z++) d[z]=r[z]+beta*d[z];
 		k++;
 		rd=0;
-    #pragma omp parallel for reduction(+:rd)
 		for (int z=0; z<nvar; z++) rd +=r[z]*d[z];
 		if (k == nvar || rd<=0) {
 			k=0; beta=0;
-      #pragma omp parallel for
 
 			for (int z=0; z<nvar; z++) d[z]=r[z];
 		}

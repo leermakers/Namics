@@ -311,6 +311,9 @@ private:
   int init_rho_frompro(vector< vector<Real> >&, string);
   int init_rho_fromvtk(vector<Real>&, string);
   int norm_density(vector<Real>& rho, Real theta);
+  void set_update_lists();
+  vector<vector<int>> update_plus;
+  vector<vector<int>> update_minus;
 
   /* Helper class instances */
   Boundary1D* boundary;
@@ -352,11 +355,6 @@ public:
   vector<int> ints_value;
   vector<bool> bools_value;
   vector<string> strings_value;
-  void push(string, Real);
-  void push(string, int);
-  void push(string, bool);
-  void push(string, string);
-  void PushOutput();
   int GetValue(string, int&, Real&, string&);
   int write_output();
 
@@ -364,7 +362,6 @@ public:
   std::vector<string> PARAMETERS;
   std::vector<string> VALUES;
   bool CheckInput(int);
-  void PutParameter(string);
   string GetValue(string);
 };
 #endif

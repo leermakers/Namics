@@ -30,6 +30,8 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
     write_vtk = true;
   }
 
+  set_update_lists();
+
   if (debug)
     cout << "Mesodyn initialized." << endl;
 }
@@ -240,21 +242,11 @@ int Mesodyn::noise_flux() {
     all_fluxes->langevin_flux();
   }
 
-  int c = 0;
-  for (size_t i = 0; i < component_no; ++i) {
-    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(solver_flux[c]->J);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_plus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J);
 
-  c = 0;
-  for (size_t j = 0; j < (component_no - 1); ++j) {
-    for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(solver_flux[c]->J, -1.0);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_minus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J, -1);
 
   int i = 0;
   for (Flux1D* all_fluxes : flux) {
@@ -268,19 +260,6 @@ int Mesodyn::noise_flux() {
 int Mesodyn::sanity_check() {
 
   //Check mass conservation
-
-  //TODO: remove this check?
-/*  skip_bounds([this](int x, int y, int z) mutable {
-    int c {0};
-    for (Component* all_components : solver_component) {
-      if (val(all_components->rho, x, y, z) < 0)
-        cerr << "CRITICAL ERROR (rho < 0) IN DENSITIES OF COMPONENT "<< c << " AT " << x << "," << y << "," << z  << endl;
-      if (val(all_components->rho, x, y, z) > 1) {
-        cerr << "CRITICAL ERROR (rho > 1) IN DENSITIES OF COMPONENT "<< c << " AT " << x << "," << y << "," << z  << endl;
-      }
-      ++c;
-    }
-  });*/
 
   Real sum {0};
   for (int z = 0; z < M ; ++z) {
@@ -348,21 +327,11 @@ Real* Mesodyn::solve_crank_nicolson() {
   for (Flux1D* all_fluxes : solver_flux)
     all_fluxes->langevin_flux();
 
-  c = 0;
-  for (size_t i = 0; i < component_no; ++i) {
-    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(flux[c]->J, solver_flux[c]->J, cn_ratio);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_plus)
+      solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio);
 
-  c = 0;
-  for (size_t j = 0; j < (component_no - 1); ++j) {
-    for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(flux[c]->J, solver_flux[c]->J, cn_ratio, -1.0);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_minus)
+      solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio, -1);
 
   rho.clear();
   for (Component* all_components : solver_component) {
@@ -522,13 +491,38 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
-  //norm_theta(component);
-  //norm_theta(solver_component);
+  norm_theta(component);
+  norm_theta(solver_component);
 
   if (edge_detection)
     interface = new Interface(Lat[0], component);
 
   return 0;
+}
+
+void Mesodyn::set_update_lists() {
+  int c = 0;
+  vector<int> temp;
+  for (size_t i = 0; i < component_no; ++i) {
+    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+      temp.push_back(i);
+      temp.push_back(c);
+      update_plus.push_back(temp);
+      temp.clear();
+      ++c;
+    }
+  }
+
+  c = 0;
+  for (size_t j = 0; j < (component_no - 1); ++j) {
+    for (size_t i = 1 + j; i < component_no; ++i) {
+      temp.push_back(i);
+      temp.push_back(c);
+      update_minus.push_back(temp);
+      temp.clear();
+      ++c;
+    }
+  }
 }
 
 void Mesodyn::explicit_start() {
@@ -540,21 +534,11 @@ void Mesodyn::explicit_start() {
   New[0]->SolveMesodyn(loader_callback, explicit_solver_callback);
 
   // Update densities after first timestep
-  int c = 0;
-  for (size_t i = 0; i < component_no; ++i) {
-    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(solver_flux[c]->J);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_plus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J);
 
-  c = 0;
-  for (size_t j = 0; j < (component_no - 1); ++j) {
-    for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(solver_flux[c]->J, -1.0);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_minus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J, -1);
 
   // Load rho_k+1 into rho_k
   int i = 0;
@@ -1760,47 +1744,7 @@ int Mesodyn::combinations(int n, int k) {
 
 /***** IO *****/
 
-void Mesodyn::PutParameter(string new_param) { KEYS.push_back(new_param); }
-string Mesodyn::GetValue(string parameter) {
-  int i = 0;
-  int length = PARAMETERS.size();
-  while (i < length) {
-    if (parameter == PARAMETERS[i]) {
-      return VALUES[i];
-    }
-    i++;
-  }
-  return "";
-}
-void Mesodyn::push(string s, Real X) {
-  Reals.push_back(s);
-  Reals_value.push_back(X);
-}
-void Mesodyn::push(string s, int X) {
-  ints.push_back(s);
-  ints_value.push_back(X);
-}
-void Mesodyn::push(string s, bool X) {
-  bools.push_back(s);
-  bools_value.push_back(X);
-}
-void Mesodyn::push(string s, string X) {
-  strings.push_back(s);
-  strings_value.push_back(X);
-}
-void Mesodyn::PushOutput() {
-  strings.clear();
-  strings_value.clear();
-  bools.clear();
-  bools_value.clear();
-  Reals.clear();
-  Reals_value.clear();
-  ints.clear();
-  ints_value.clear();
-}
-
-int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result,
-                      string& string_result) {
+int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result, string& string_result) {
   int i = 0;
   int length = ints.size();
   while (i < length) {
@@ -1841,4 +1785,17 @@ int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result,
     i++;
   }
   return 0;
+}
+
+string Mesodyn::GetValue(string parameter){
+if (debug) cout << "GetValue in lattice " << endl;
+	int i=0;
+	int length = PARAMETERS.size();
+	while (i<length) {
+		if (parameter==PARAMETERS[i]) {
+			return VALUES[i];
+		}
+		i++;
+	}
+	return "" ;
 }

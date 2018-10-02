@@ -28,7 +28,7 @@ public:
 		DELTA_MAX,
 	};
 
-	bool attempt_DIIS_rescue(function< void(vector<Real>&, size_t) >, function< Real*() >);
+	bool attempt_DIIS_rescue();
 	rescue rescue_status;
 
 	string name;

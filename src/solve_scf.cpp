@@ -538,15 +538,13 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	return success;
 }
 
-bool Solve_scf::attempt_DIIS_rescue(function< void(vector<Real>&, size_t) > alpha_callback, function< Real*() > flux_callback) {
+bool Solve_scf::attempt_DIIS_rescue() {
 	cout << "Attempting rescue!" << endl;
 	switch (rescue_status) {
 		case NONE:
 			cout << "Zeroing iteration variables." << endl;
 			Zero(xx,iv);
 			rescue_status = ZERO;
-			cout << "Restarting iteration." << endl;
-			SolveMesodyn(alpha_callback, flux_callback);
 			break;
 		case ZERO:
 			cout << "Adjusting memory depth." << endl;
@@ -554,8 +552,6 @@ bool Solve_scf::attempt_DIIS_rescue(function< void(vector<Real>&, size_t) > alph
 			cout << "Zeroing iteration variables." << endl;
 			Zero(xx,iv);
 			rescue_status = M;
-			cout << "Restarting iteration." << endl;
-			SolveMesodyn(alpha_callback, flux_callback);
 			break;
 		case M:
 			cout << "Decreasing delta_max." << endl;
@@ -563,8 +559,6 @@ bool Solve_scf::attempt_DIIS_rescue(function< void(vector<Real>&, size_t) > alph
 			cout << "Zeroing iteration variables." << endl;
 			Zero(xx,iv);
 			rescue_status = DELTA_MAX;
-			cout << "Restarting iteration." << endl;
-			SolveMesodyn(alpha_callback, flux_callback);
 			break;
 		case DELTA_MAX:
 			cerr << "Exhausted all rescue options. Crash is imminent, exiting." << endl;
@@ -600,22 +594,30 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callb
 				if (error == -1)
 				{
 					cerr << "Mesodyn solver detected GN not larger than 0." << endl;
-					attempt_DIIS_rescue(alpha_callback, flux_callback);
+					attempt_DIIS_rescue();
+					cout << "Restarting iteration." << endl;
+					SolveMesodyn(alpha_callback, flux_callback);
 				}
 				if (error == -2)
 				{
 					cerr << "Detected nan in U in Ax." << endl;
-					attempt_DIIS_rescue(alpha_callback, flux_callback);
+					attempt_DIIS_rescue();
+					cout << "Restarting iteration." << endl;
+					SolveMesodyn(alpha_callback, flux_callback);
 				}
 				if (error == -3)
 				{
 					cerr << "Detected nan in svdcmp." << endl;
-					attempt_DIIS_rescue(alpha_callback, flux_callback);
+					attempt_DIIS_rescue();
+					cout << "Restarting iteration." << endl;
+					SolveMesodyn(alpha_callback, flux_callback);
 				}
 			}
 			if (success == false) {
 				cerr << "Detected failure to converge" << endl;
-				attempt_DIIS_rescue(alpha_callback, flux_callback);
+				attempt_DIIS_rescue();
+				cout << "Restarting iteration." << endl;
+				SolveMesodyn(alpha_callback, flux_callback);
 			}	else {
 				m = old_m;
 				deltamax = old_deltamax;

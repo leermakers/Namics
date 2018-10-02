@@ -237,14 +237,11 @@ class Interface : private Lattice_Access {
 public:
   Interface(Lattice*, vector<Component*>);
   ~Interface();
-  int order_parameters(Component*, Component*);
   int detect_edges(int);
-  int write_edges(string);
+  vector<Real> edges;
 
 private:
   vector<Component*> component;
-  vector<Real> order_params;
-  vector<Real> edges;
 
   vector<Real> sobel_edge_detector(Real, vector<Real>&);
   vector<Real> gaussian_blur(vector<Real>&);
@@ -303,7 +300,6 @@ private:
     INIT_HOMOGENEOUS,
     INIT_FROMPRO,
     INIT_FROMVTK,
-    INIT_EQUILIBRATE,
   };
   Real system_volume;
   vector<Real> rho;
@@ -312,7 +308,6 @@ private:
   int initial_conditions();
   vector<Real>&  flux_callback(int);
   int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
-  int init_rho_equilibrate(vector< vector<Real> >&);
   int init_rho_frompro(vector< vector<Real> >&, string);
   int init_rho_fromvtk(vector<Real>&, string);
   int norm_density(vector<Real>& rho, Real theta);
@@ -326,14 +321,11 @@ private:
   vector<Flux1D*> solver_flux;
 
   /* Mesodyn specific output */
-  ofstream mesodyn_output;
   ostringstream filename;
   int writes;
   bool write_vtk;
   void set_filename();
-  void write_settings();
-  void write_density(vector<Component*>&);
-  int order_parameters(vector<Real>&, Component*, Component*);
+  Real order_parameter;
 
   /* Mathematics */
   int factorial (int);

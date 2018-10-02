@@ -10,13 +10,12 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       initialization_mode{INIT_HOMOGENEOUS},
       component_no{Sys[0]->SysMolMonList.size()}, edge_detection{false}, edge_detection_threshold{50}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
-      writes{0}, write_vtk{false} {
+      writes{0}, write_vtk{false}, order_parameter{0} {
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
   KEYS.push_back("delta_t");
   KEYS.push_back("read_pro");
   KEYS.push_back("read_vtk");
-  KEYS.push_back("equilibrate");
   KEYS.push_back("diffusionconstant");
   KEYS.push_back("seed");
   KEYS.push_back("mean");
@@ -77,15 +76,6 @@ bool Mesodyn::CheckInput(int start) {
     }
     if (debug)
       cout << "Delta t is " << dt << endl;
-
-    bool equilibrate = false;
-    if (GetValue("equilibrate").size() > 0) {
-      if (In[0]->Get_bool(GetValue("equilibrate"), equilibrate))
-        initialization_mode = INIT_EQUILIBRATE;
-    }
-
-    if (GetValue("read_pro").size() > 0 && equilibrate)
-      cout << "WARNING: read_pro overrides equilibrate!" << endl;
 
     if (GetValue("read_pro").size() > 0) {
       read_filename = In[0]->Get_string(GetValue("read_pro"), read_filename);
@@ -166,17 +156,15 @@ bool Mesodyn::mesodyn() {
 
   //Prepare IO
   set_filename();
-  write_settings();
 
   // write initial conditions
-  write_density(solver_component);
+  write_output();
 
   cout << "Mesodyn is all set, starting calculations.." << endl;
 
   // Do one explicit step before starting the crank nicolson scheme
   explicit_start();
 
-  write_density(solver_component);
   write_output();
 
   // Prepare callback functions for SolveMesodyn in Newton
@@ -204,9 +192,7 @@ bool Mesodyn::mesodyn() {
     sanity_check();
 
     //TODO: Generalize order parameter to 1D and 2D
-    Real order_parameter {0};
-
-    skip_bounds([this, &order_parameter](int x, int y, int z) mutable {
+    skip_bounds([this](int x, int y, int z) mutable {
       Real local_parameter {0};
       for (size_t i = 0; i < component_no - 1; ++i)
         for (size_t j = i + 1; j < component_no; ++j) {
@@ -230,15 +216,11 @@ bool Mesodyn::mesodyn() {
     }
 
     if (t % timebetweensaves == 0) {
-      write_density(component);
-      write_output();
-
       if (edge_detection) {
         interface->detect_edges(edge_detection_threshold);
-        interface->write_edges(file);
       }
+      write_output();
     }
-
   } // time loop
 
   return true;
@@ -421,9 +403,6 @@ int Mesodyn::initial_conditions() {
         init_rho_fromvtk(rho[i], filename);
       }
       break;
-    case INIT_EQUILIBRATE:
-      init_rho_equilibrate(rho);
-      break;
   }
 
   // BC0: bX0, BC1: bXm, etc.
@@ -590,16 +569,6 @@ void Mesodyn::explicit_start() {
     all_fluxes->J = solver_flux[i]->J;
     ++i;
   }
-}
-
-int Mesodyn::init_rho_equilibrate(vector<vector<Real>>& rho) {
-  cout << "Equilibrating.." << endl;
-  New[0]->Solve(true);
-  for (size_t i = 0; i < component_no; ++i) {
-    for (int z = 0; z < M; ++z)
-      rho[i][z] = *(Seg[i]->H_phi + z);
-  }
-  return 0;
 }
 
 vector<string> Mesodyn::tokenize(string line, char delim) {
@@ -873,31 +842,6 @@ void Mesodyn::set_filename() {
   filename << rawtime;
 }
 
-void Mesodyn::write_settings() {
-  ostringstream settings_filename;
-
-  settings_filename << filename.str() << "-settings.dat";
-
-  mesodyn_output.open(settings_filename.str());
-
-  mesodyn_output.precision(16);
-
-  /* Output settings */
-
-  ostringstream settings;
-
-  settings << "Settings for mesodyn, read from file:,\n";
-  settings << "Timesteps," << timesteps << ",\n";
-  settings << "Time between saves," << timebetweensaves << ",\n";
-  settings << "Diffusion constant," << D << ",\n";
-  settings << "Seed for noise," << seed << ",\n";
-  settings << "Mean for noise," << mean << ",\n";
-  settings << "Stddev for noise," << stddev << ",\n";
-
-  mesodyn_output << settings.str();
-  mesodyn_output.close();
-}
-
 int Mesodyn::write_output() {
   //Implement below for more starts? (OutputList higher numbers?)
 
@@ -909,64 +853,47 @@ int Mesodyn::write_output() {
     }
   }
 
-  PushOutput();
   New[0]->PushOutput();
 
   for (Output* all_output : Out) {
+    all_output->push("order_parameter",order_parameter);
+    all_output->push("timesteps", timesteps);
+    all_output->push("timebetweensaves", timebetweensaves);
+    all_output->push("diffusionconstant", D);
+    all_output->push("seed", seed);
+    all_output->push("mean", mean);
+    all_output->push("stddev", stddev);
+    all_output->push("delta_t", dt);
+    all_output->push("cn_ratio", cn_ratio);
+
+    if (edge_detection) {
+      ostringstream vtk_filename;
+      vtk_filename << filename.str() << "-edges" << writes << ".vtk";
+      all_output->vtk_structured_grid(vtk_filename.str(), &interface->edges[0]);
+    }
+
+    int component_count{1};
+    for (Component* all_components : solver_component) {
+      ostringstream vtk_filename;
+      vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
+      all_output->vtk_structured_grid(vtk_filename.str(), &all_components->rho[0]);
+      ++component_count;
+    }
+    ++writes;
+
     all_output->WriteOutput(writes);
     delete all_output;
   }
+
   Out.clear();
 
   return 0;
 }
 
-void Mesodyn::write_density(vector<Component*>& component) {
-  // Could also do this by overwriting the denisties in ... I think Mol..? right before it pushes the densities written by vtk in output.
-  // Right now output does nothing with the vtk function when mesodyn is running.
-
-  int component_count{1};
-  for (Component* all_components : component) {
-
-    ostringstream vtk_filename;
-    vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
-
-    mesodyn_output.open(vtk_filename.str());
-
-    /* Generate headers for rho entries */
-
-    ostringstream vtk;
-
-    vtk << "# vtk DataFile Version 3.0 \n";
-    vtk << "Mesodyn output \n";
-    vtk << "ASCII\n";
-    vtk << "DATASET STRUCTURED_GRID \n";
-    vtk << "DIMENSIONS " << MX - 2 << " " << MY - 2 << " " << MZ - 2 << "\n";
-    vtk << "POINTS " << (MX - 2) * (MY - 2) * (MZ - 2) << " int\n";
-    skip_bounds([this, &vtk](int x, int y, int z) mutable {
-      vtk << x << " " << y << " " << z << "\n";
-    });
-
-    vtk << "POINT_DATA " << (MX - 2) * (MY - 2) * (MZ - 2) << "\n";
-    vtk << "SCALARS Component_" << component_count << " float\nLOOKUP_TABLE default \n";
-
-    skip_bounds([this, &vtk, all_components](int x, int y, int z) mutable {
-      vtk << val(all_components->rho, x, y, z) << "\n";
-    });
-
-    mesodyn_output << vtk.str();
-    mesodyn_output.flush();
-
-    mesodyn_output.close();
-    ++component_count;
-  }
-  ++writes;
-}
-
 /******* INTERFACE ********/
 
 Interface::Interface(Lattice* Lat, vector<Component*> components)
-  : Lattice_Access(Lat), component(components), order_params(component[0]->rho.size()) {}
+  : Lattice_Access(Lat), component(components) {}
 
 Interface::~Interface() {
   for (Component* all_components : component)
@@ -974,60 +901,11 @@ Interface::~Interface() {
   component.clear();
 }
 
-int Interface::order_parameters(Component* A, Component* B) {
-  if (order_params.size() != A->rho.size() || order_params.size() != B->rho.size() )
-    throw ERROR_SIZE_INCOMPATIBLE;
-
-  skip_bounds([this, A, B](int x, int y, int z) mutable {
-    *val_ptr(order_params, x, y, z) = val(A->rho, x, y, z) - val(B->rho, x, y, z);
-  });
-
-  return 0;
-}
-
 int Interface::detect_edges(int threshold) {
   edges.clear();
   vector<Real> temp((MX-3)*(MY-3)*(MZ-3));
   temp = gaussian_blur(component[0]->rho);
   edges = sobel_edge_detector(threshold, component[0]->rho);
-  return 0;
-}
-
-int Interface::write_edges(string FILENAME) {
-  ostringstream filename;
-  filename << FILENAME;
-  ofstream testfile;
-  time_t rawtime;
-  time(&rawtime);
-  filename << "test" << rawtime << ".vtk";
-  testfile.open( filename.str() );
-
-  ostringstream vtk;
-
-  vtk << "# vtk DataFile Version 3.0 \n";
-  vtk << "Mesodyn output \n";
-  vtk << "ASCII\n";
-  vtk << "DATASET STRUCTURED_GRID \n";
-  vtk << "DIMENSIONS " << MX-2 << " " << MY-2 << " " << MZ-2 << "\n";
-  vtk << "POINTS " << (MX-2) * (MY-2) * (MZ-2) << " int\n";
-
-  for (int x = 1; x < MX - 1; ++x)
-    for (int y = 1; y < MY - 1; ++y)
-      for (int z = 1 ; z < MZ - 1 ; ++z )
-        vtk << x << " " << y << " " << z << "\n";
-
-  vtk << "POINT_DATA " << (MX-2) * (MY-2) * (MZ-2) << "\n";
-  vtk << "SCALARS Sobel float\nLOOKUP_TABLE default \n";
-
-  for (Real& all_values : edges) {
-    vtk << all_values << "\n";
-  }
-
-  testfile << vtk.str();
-
-  testfile.flush();
-  testfile.close();
-
   return 0;
 }
 
@@ -1920,6 +1798,7 @@ void Mesodyn::PushOutput() {
   ints.clear();
   ints_value.clear();
 }
+
 int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result,
                       string& string_result) {
   int i = 0;

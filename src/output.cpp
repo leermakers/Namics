@@ -615,6 +615,44 @@ if (debug) cout << "vtk in output " << endl;
 	fclose(fp);
 }
 
+void Output::vtk_structured_grid(string filename, Real *X) {
+	if (debug) cout << "vtk_structed_grid in output " << endl;
+
+	ofstream output;
+	output.open(filename);
+
+	ostringstream vtk;
+
+	int MX = Lat[0]->MX;
+	int MY = Lat[0]->MY;
+	int MZ = Lat[0]->MZ;
+
+	vtk << "# vtk DataFile Version 4.2 \n";
+	vtk << "Mesodyn output \n";
+	vtk << "ASCII\n";
+	vtk << "DATASET STRUCTURED_GRID \n";
+	vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
+	vtk << "POINTS " << MX * MY * MZ << " int\n";
+
+	for (int x = 1; x < MX + 1; ++x)
+		for (int y = 1; y < MY + 1; ++y)
+			for (int z = 1 ; z < MZ + 1 ; ++z )
+				vtk << x << " " << y << " " << z << "\n";
+
+	vtk << "POINT_DATA " << MX * MY * MZ << "\n";
+	vtk << "SCALARS Sobel float\nLOOKUP_TABLE default \n";
+
+	for (int x = 1; x < MX + 1; ++x)
+		for (int y = 1; y < MY + 1; ++y)
+			for (int z = 1 ; z < MZ + 1 ; ++z )
+				vtk << X[x*Lat[0]->JX+y*Lat[0]->JY+z*Lat[0]->JZ] << "\n";
+
+	output << vtk.str();
+	output.flush();
+
+	output.close();
+}
+
 
 void Output::density(){
 if (debug) cout << "density in output " << endl;

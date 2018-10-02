@@ -303,6 +303,7 @@ private:
     INIT_FROMVTK,
     INIT_EQUILIBRATE,
   };
+  Real system_volume;
   vector<Real> rho;
   vector<string> tokenize(string, char);
   string read_filename;

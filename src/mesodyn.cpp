@@ -203,6 +203,26 @@ bool Mesodyn::mesodyn() {
 
     sanity_check();
 
+    //TODO: Generalize order parameter to 1D and 2D
+    Real order_parameter {0};
+
+    skip_bounds([this, &order_parameter](int x, int y, int z) mutable {
+      Real local_parameter {0};
+      for (size_t i = 0; i < component_no - 1; ++i)
+        for (size_t j = i + 1; j < component_no; ++j) {
+          Real difference {0};
+          difference = val(solver_component[i]->rho, x, y, z) - val(solver_component[j]->rho, x, y, z);
+          local_parameter += (pow(difference,2));
+        }
+      order_parameter += local_parameter;
+    });
+
+    if (dimensions > 2 )
+      // a more general implementation of boundary-less volume can be found elsewhere in this module (search sys volume)
+      order_parameter /= ((MX-2)*(MY-2)*(MZ-2));
+
+    cout << "Order parameter: " << order_parameter << endl;
+
     i = 0;
     for (Component* all_components : component) {
       all_components->load_rho(solver_component[i]->rho);
@@ -300,6 +320,7 @@ int Mesodyn::sanity_check() {
   }
 
   if (dimensions > 2 )
+    //TODO: Generalize to more dimensions
     // a more general implementation of boundary-less volume can be found elsewhere in this module (search sys volume)
     if ( sum - ((MX-2)*(MY-2)*(MZ-2)) > 0.00000001 ) {
       cerr << "CRITICAL ERROR: MASS NOT CONSERVED! SUM THETA != M." << endl;
@@ -959,7 +980,7 @@ int Interface::order_parameters(Component* A, Component* B) {
     throw ERROR_SIZE_INCOMPATIBLE;
 
   skip_bounds([this, A, B](int x, int y, int z) mutable {
-    *val_ptr(order_params, x, y, z) = val(A->rho, x, y, z) * val(B->rho, x, y, z);
+    *val_ptr(order_params, x, y, z) = val(A->rho, x, y, z) - val(B->rho, x, y, z);
   });
 
   return 0;

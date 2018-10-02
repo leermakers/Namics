@@ -330,10 +330,12 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	int Size=0;
 	string s;
 	string filename;
+	string outfile;
 	vector<string> sub;
 	string infilename = In[0]->name;
 	In[0]->split(infilename,'.',sub);
 	string key;
+	outfile = sub[0];
 
 	/**** LINUX ONLY ****/
 	if (use_output_folder == true) {
@@ -343,15 +345,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		string slash = "/";
 
 		// Check if we have any slashes in the filename (are we in inputs, or higher up?)
-		while ((start = infilename.find(slash, start)) != string::npos) {
+		while ((start = outfile.find(slash, start)) != string::npos) {
     	++occurrences;
     	start += slash.length();
 		}
 
 		// If we're not in the inputs folder, discard the path and take only the filename
 		if  (occurrences != 0) {
-			size_t found = infilename.find_last_of("/\\");
-			sub[0] = infilename.substr(found+1);
+			size_t found = outfile.find_last_of("/\\");
+			sub[0] = outfile.substr(found+1);
 		}
 	}
 

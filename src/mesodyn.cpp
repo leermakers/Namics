@@ -3,9 +3,9 @@
 /* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018 */
 /* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
 
-Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
+Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : Lattice_Access(Lat_[0]),
-      name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
+      name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sta{Sta_}, Rea{Rea_}, Sys{Sys_}, New{New_},
       D{0.01}, dt{0.1}, mean{0}, stddev{2 * D * sqrt(dt)}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1},
       initialization_mode{INIT_HOMOGENEOUS},
       component_no{Sys[0]->SysMolMonList.size()}, edge_detection{false}, edge_detection_threshold{50}, RC{0}, cn_ratio{0.5},
@@ -901,14 +901,13 @@ void Mesodyn::write_settings() {
 int Mesodyn::write_output() {
   //Implement below for more starts? (OutputList higher numbers?)
 
-/* Output has changed. as you don't use output I have commented it out. New output has more arguments and we need to pass on the argument to mesodyn when you want to use it.
   for (size_t i = 0; i < In[0]->OutputList.size(); ++i) {
-    Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], writes, timesteps / timebetweensaves));
+    Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[i], writes, timesteps / timebetweensaves));
     if (!Out[i]->CheckInput(1)) {
       cout << "input_error in output " << endl;
       return 0;
     }
-  }*/
+  }
 
   PushOutput();
   New[0]->PushOutput();

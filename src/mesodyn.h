@@ -265,6 +265,8 @@ private:
   const vector<Lattice*> Lat;
   const vector<Molecule*> Mol;
   const vector<Segment*> Seg;
+  const vector<State*> Sta;
+	const vector<Reaction*> Rea;
   const vector<System*> Sys;
   const vector<Solve_scf*> New;
   vector <Output*> Out;
@@ -339,7 +341,7 @@ private:
 
 
 public:
-  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
+  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Mesodyn();
 
   bool mesodyn();

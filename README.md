@@ -8,7 +8,7 @@ R.Varadharajan - teng.cpp
 Daniel Emmery - mesodyn.cpp  
 Alexandar kazakzov - Cleng.cpp  
 
-#### TODO 9-4-2018
+## TODO 9-4-2018
 - Fix cuda for 3d : likely problem is with generating arrays in branched propagator  
 - In solve_scf: target function  
 	- g(i) = phit-1/phit and give \alpha weighting with \phi, may give better performance...  

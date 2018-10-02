@@ -612,6 +612,13 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callb
 					cout << "Restarting iteration." << endl;
 					SolveMesodyn(alpha_callback, flux_callback);
 				}
+				if (error == -4)
+				{
+					cerr << "Detected negative phibulk." << endl;
+					attempt_DIIS_rescue();
+					cout << "Restarting iteration." << endl;
+					SolveMesodyn(alpha_callback, flux_callback);
+				}
 			}
 			if (success == false) {
 				cerr << "Detected failure to converge" << endl;

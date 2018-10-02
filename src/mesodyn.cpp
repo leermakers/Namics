@@ -268,7 +268,7 @@ int Mesodyn::sanity_check() {
   //Check mass conservation
 
   //TODO: remove this check?
-  skip_bounds([this](int x, int y, int z) mutable {
+/*  skip_bounds([this](int x, int y, int z) mutable {
     int c {0};
     for (Component* all_components : solver_component) {
       if (val(all_components->rho, x, y, z) < 0)
@@ -278,9 +278,9 @@ int Mesodyn::sanity_check() {
       }
       ++c;
     }
-  });
+  });*/
 
-/*  Real sum {0};
+  Real sum {0};
   for (int z = 0; z < M ; ++z) {
     sum = 0;
     for (Component* all_components : solver_component) {
@@ -292,7 +292,19 @@ int Mesodyn::sanity_check() {
       cin.get();
       break;
     }
-  }*/
+  }
+
+  sum = 0;
+  for (Component* all_components : solver_component) {
+    sum += all_components->theta();
+  }
+
+  if (dimensions > 2 )
+    // a more general implementation of boundary-less volume can be found elsewhere in this module (search sys volume)
+    if ( sum - ((MX-2)*(MY-2)*(MZ-2)) > 0.00000001 ) {
+      cerr << "CRITICAL ERROR: MASS NOT CONSERVED! SUM THETA != M." << endl;
+      cerr << "Difference: " << sum - ((MX-2)*(MY-2)*(MZ-2)) << endl;
+    }
 
   return 0;
 }

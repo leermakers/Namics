@@ -894,7 +894,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 					A +=Mol[i]->phibulk*Mol[i]->Charge();
 					B +=Mol[i]->phibulk;
 				}
-			} else { norm = 0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
+			} else { norm = 0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; throw -1;}
 		}
 
 

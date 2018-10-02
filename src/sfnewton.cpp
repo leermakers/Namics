@@ -760,8 +760,12 @@ Real *S = new Real[N];
 	}
 
 	for (int i=0; i<N; i++)
-		for (int j=0; j<N; j++)
+		for (int j=0; j<N; j++) {
+      if (A[i*N + j] !=  A[i*N + j]) //If it contains NaNs
+        throw -2;
 			U[j][i] = A[i*N + j];
+    }
+
   if (N > 1) {
 		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
   		svdcmp(U, N, N, S, V);

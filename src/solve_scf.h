@@ -21,6 +21,16 @@ public:
 
 	~Solve_scf();
 
+	enum rescue {
+		NONE,
+		ZERO,
+		M,
+		DELTA_MAX,
+	};
+
+	bool attempt_DIIS_rescue(function< void(vector<Real>&, size_t) >, function< Real*() >);
+	rescue rescue_status;
+
 	string name;
 	vector<Input*> In;
 	vector<System*> Sys;
@@ -79,7 +89,7 @@ public:
 	Real *x_x0;
 #endif
 	Real *xx;
-	int *SIGN; 
+	int *SIGN;
 	Real* alpha;
 	bool mesodyn;
 	Real* RHO;

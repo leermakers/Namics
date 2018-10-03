@@ -117,7 +117,6 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		super_i_info=In[0]->Get_bool(GetValue("super_i_info"),i_info);
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
 
-		//TODO: should this go somewhere else?
 		if (GetValue("target_function").size() > 0) {
 			string target;
       target = In[0]->Get_string(GetValue("target_function"), target);

@@ -1,7 +1,7 @@
 #include "molecule.h"
- 
 
-Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) { 
+
+Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
 	In=In_; Seg=Seg_; name=name_;  Lat=Lat_;
 if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("freedom");
@@ -103,7 +103,7 @@ void Molecule:: AllocateMemory() {
 if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	int M=Lat[0]->M;
 	int m=0;
-	if (freedom=="clamped") {	
+	if (freedom=="clamped") {
 		m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
 		n_box = Seg[mon_nr[0]]->n_box;
 	}
@@ -1420,7 +1420,7 @@ if (debug) cout <<"Molecule:: Charge" << endl;
 			for (int j=0; j<length_states; j++) charge +=Seg[mon_nr[i]]->state_alphabulk[j]*Seg[mon_nr[i]]->state_valence[j]*n_mon[i];
 		} else	charge +=Seg[mon_nr[i]]->valence*n_mon[i];
 	}
-//cout <<"mol " << name << "charge " << charge << endl; 
+//cout <<"mol " << name << "charge " << charge << endl;
 	return charge/chainlength;
 }
 
@@ -1435,12 +1435,12 @@ if (debug) cout <<"IsCharged for Mol " + name << endl;
 		if (Seg[mon_nr[i]]->state_name.size()>0) {
 			length_states=Seg[mon_nr[i]]->state_name.size();
 			for (int j=0; j<length_states; j++) {if (Seg[mon_nr[i]]->state_valence[j]!=0) ischarged=true; }
-		} else 
+		} else
 		charge +=n_mon[i]*Seg[mon_nr[i]]->valence;
 		i++;
 	}
 	if (charge !=0) ischarged=true;
-	return ischarged; 
+	return ischarged;
 }
 
 void Molecule::PutParameter(string new_param) {
@@ -1493,8 +1493,6 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
-	n=norm*GN;
-	theta=n*chainlength;
 	push("theta",theta);
 	Real thetaexc=theta-phibulk*Lat[0]->Accesible_volume;
 	push("theta_exc",thetaexc);
@@ -1503,7 +1501,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	push("phibulk",phibulk);
 	push("mu",Mu);
 	if (chainlength==1) {
-		int seg=MolMonList[0]; 
+		int seg=MolMonList[0];
 		if (Seg[seg]->ns >1) {
 			if (mu_state.size() ==0) for (int i=0; i<Seg[seg]->ns; i++) mu_state.push_back(Mu);
 			for (int i=0; i<Seg[seg]->ns; i++) {
@@ -1635,7 +1633,7 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 				success=ComputeClampLin();
 				Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
 			} else success=ComputePhiBra();
-			break;
+    	break;
 		case branched:
 			success=ComputePhiBra();
 			break;
@@ -1816,7 +1814,7 @@ bool Molecule::ComputeClampLin(){
 		Cp(Gg_f,mask1,m*n_box); //first block just contains the clamp
 	}
 	for (int i=1; i<blocks-1; i++) {
-		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box); 
+		Lat[0]->DistributeG1(Seg[mon_nr[i]]->G1,g1,Bx,By,Bz,n_box);
 		//Lat[0]->DistributeG1(G1+molmon_nr[i]*M,g1,Bx,By,Bz,n_box);
 		//propagate_forward(Gg_f,g1,s,n_mon[i],i,m*n_box);
 		propagate_forward(g1,s,i,0,m*n_box);
@@ -1944,7 +1942,6 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 		} else {
 			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 			//Glast=propagate_forward(G1+molmon_nr[k]*M,s,k,generation,M);
-
 		}
 		k++;
 	}
@@ -2153,7 +2150,7 @@ bool Molecule::ComputePhiDendrimer() {
 			int b0=first_b[a], bN=last_b[a];
 			for (int b=b0; b<=bN; b++) {
 				Glast=propagate_forward(Seg[mon_nr[b]]->G1,s,b,g,a,M);
-				//Glast=propagate_forward(G1+molmon_nr[b]*M,s,b,g,a,M);			
+				//Glast=propagate_forward(G1+molmon_nr[b]*M,s,b,g,a,M);
 			}
 			Cp(GS,Glast,M);
 			Lat[0] ->propagate(GS,UNITY,0,1,M);

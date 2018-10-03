@@ -291,6 +291,7 @@ private:
   Real* solve_crank_nicolson();
   void load_alpha(vector<Real>&, size_t);
   int sanity_check();
+  Real calculate_order_parameter();
   Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
 
   /* Initialization*/

@@ -164,9 +164,6 @@ bool Mesodyn::mesodyn() {
   //Prepare IO
   set_filename();
 
-  // write initial conditions
-  write_output();
-
   cout << "Mesodyn is all set, starting calculations.." << endl;
 
   // Do one explicit step before starting the crank nicolson scheme
@@ -196,20 +193,7 @@ bool Mesodyn::mesodyn() {
 
     sanity_check();
 
-    skip_bounds([this](int x, int y, int z) mutable {
-      Real local_parameter {0};
-      for (size_t i = 0; i < component_no - 1; ++i)
-        for (size_t j = i + 1; j < component_no; ++j) {
-          Real difference {0};
-          difference = val(solver_component[i]->rho, x, y, z) - val(solver_component[j]->rho, x, y, z);
-          local_parameter += (pow(difference,2));
-        }
-      order_parameter += local_parameter;
-    });
-
-    order_parameter /= boundaryless_volume;
-
-    cout << "Order parameter: " << order_parameter << endl;
+    cout << "Order parameter: " << calculate_order_parameter() << endl;
 
     i = 0;
     for (Component* all_components : component) {
@@ -253,6 +237,22 @@ void Mesodyn::set_update_lists() {
   }
 }
 
+Real Mesodyn::calculate_order_parameter() {
+  skip_bounds([this](int x, int y, int z) mutable {
+    Real local_parameter {0};
+    for (size_t i = 0; i < component_no - 1; ++i)
+      for (size_t j = i + 1; j < component_no; ++j) {
+        Real difference {0};
+        difference = val(solver_component[i]->rho, x, y, z) - val(solver_component[j]->rho, x, y, z);
+        local_parameter += (pow(difference,2));
+      }
+    order_parameter += local_parameter;
+  });
+
+  order_parameter /= boundaryless_volume;
+
+  return order_parameter;
+}
 
 int Mesodyn::noise_flux() {
   Gaussian_noise* gaussian = solver_flux[0]->gaussian;
@@ -285,28 +285,31 @@ int Mesodyn::noise_flux() {
 
 int Mesodyn::sanity_check() {
 
-  //Check mass conservation
-
+  //Check local mass conservation
   Real sum {0};
-  for (int z = 0; z < M ; ++z) {
+
+  skip_bounds([this, sum](int x, int y, int z) mutable {
     sum = 0;
     for (Component* all_components : solver_component) {
-      sum += all_components->rho[z];
+      sum += val(all_components->rho, x, y, z);
+      //And check for negative numbers
+      if ( val(all_components->rho, x, y, z) > 1 ||  val(all_components->rho, x, y, z) < 0)
+        cerr << "CRITICAL ERROR: COMPONENT DENSITY > 1 || < 0" << endl;
     }
-    if (sum > 1.000000001 || sum < 0.99999999) {
+    if (sum > (1+New[0]->tolerance) || sum < (1-New[0]->tolerance)) {
       //cerr << sum << endl;
-      cerr << "CRITICAL ERROR: LOCAL DENSITIES DO NOT SUM TO 1" << endl;
-      cin.get();
-      break;
+      cerr << "CRITICAL ERROR: LOCAL DENSITIES DO NOT SUM TO 1, DIFFERENCE: " << sum-1 << endl;
+      cerr << "Location: " << x << " " << y << " " << z << endl;
     }
-  }
+  });
 
+  //Check global mass conservation
   sum = 0;
   for (Component* all_components : solver_component) {
     sum += all_components->theta();
   }
 
-  if ( sum - boundaryless_volume > 0.00000001 ) {
+  if ( sum - boundaryless_volume > 0+New[0]->tolerance ) {
     cerr << "CRITICAL ERROR: MASS NOT CONSERVED! SUM THETA != M." << endl;
     cerr << "Difference: " << sum - ((MX-2)*(MY-2)*(MZ-2)) << endl;
   }
@@ -512,8 +515,8 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
-  norm_theta(component);
-  norm_theta(solver_component);
+//  norm_theta(component);
+  //norm_theta(solver_component);
 
   if (edge_detection)
     interface = new Interface(Lat[0], component);

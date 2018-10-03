@@ -28,6 +28,7 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("m");
 	KEYS.push_back("super_deltamax");
 	max_g = false; // compute g based on max error
+	rescue_status = NONE;
 }
 
 Solve_scf::~Solve_scf() {
@@ -537,22 +538,99 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	return success;
 }
 
+bool Solve_scf::attempt_DIIS_rescue() {
+	cout << "Attempting rescue!" << endl;
+	switch (rescue_status) {
+		case NONE:
+			cout << "Zeroing iteration variables." << endl;
+			Zero(xx,iv);
+			rescue_status = ZERO;
+			break;
+		case ZERO:
+			cout << "Adjusting memory depth." << endl;
+			m *= 0.5;
+			cout << "Zeroing iteration variables." << endl;
+			Zero(xx,iv);
+			rescue_status = M;
+			break;
+		case M:
+			cout << "Decreasing delta_max." << endl;
+			deltamax *= 0.1;
+			cout << "Zeroing iteration variables." << endl;
+			Zero(xx,iv);
+			rescue_status = DELTA_MAX;
+			break;
+		case DELTA_MAX:
+			cerr << "Exhausted all rescue options. Crash is imminent, exiting." << endl;
+			exit(0);
+			break;
+	}
+	return true;
+}
+
 bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callback, function< Real*() > flux_callback) {
 	if(debug) cout <<"Solve (mesodyn) in  Solve_scf " << endl;
 	//iv should have been set at AllocateMemory.
 	mesodyn_flux = flux_callback;
 	mesodyn_load_alpha = alpha_callback;
 
+//	Zero(xx,iv);
+
   mesodyn =true;
 	gradient=MESODYN;
 
 	bool success=true;
 
+	int old_m = m;
+	Real old_deltamax = deltamax;
+
 	switch (solver) {
 		case diis:
 			gradient=MESODYN;
-			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
-		break;
+			try {
+				success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+			}
+			catch (int error) {
+				if (error == -1)
+				{
+					cerr << "Mesodyn solver detected GN not larger than 0." << endl;
+					attempt_DIIS_rescue();
+					cout << "Restarting iteration." << endl;
+					SolveMesodyn(alpha_callback, flux_callback);
+				}
+				if (error == -2)
+				{
+					cerr << "Detected nan in U in Ax." << endl;
+					attempt_DIIS_rescue();
+					cout << "Restarting iteration." << endl;
+					SolveMesodyn(alpha_callback, flux_callback);
+				}
+				if (error == -3)
+				{
+					cerr << "Detected nan in svdcmp." << endl;
+					attempt_DIIS_rescue();
+					cout << "Restarting iteration." << endl;
+					SolveMesodyn(alpha_callback, flux_callback);
+				}
+				if (error == -4)
+				{
+					cerr << "Detected negative phibulk." << endl;
+					attempt_DIIS_rescue();
+					cout << "Restarting iteration." << endl;
+					SolveMesodyn(alpha_callback, flux_callback);
+				}
+			}
+			if (success == false) {
+				cerr << "Detected failure to converge" << endl;
+				attempt_DIIS_rescue();
+				cout << "Restarting iteration." << endl;
+				SolveMesodyn(alpha_callback, flux_callback);
+			}	else {
+				m = old_m;
+				deltamax = old_deltamax;
+				rescue_status = NONE;
+			}
+			break;
 		case PSEUDOHESSIAN:
 			success=iterate(xx,iv,iterationlimit,tolerance,deltamax,deltamin,true);
 		break;

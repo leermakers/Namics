@@ -894,7 +894,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 					A +=Mol[i]->phibulk*Mol[i]->Charge();
 					B +=Mol[i]->phibulk;
 				}
-			} else { norm = 0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; }
+			} else { norm = 0; cout <<"GN for molecule " << i << " is not larger than zero..." << endl; throw -1;}
 		}
 
 
@@ -978,7 +978,9 @@ Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " 
 
 	Mol[solvent]->phibulk=1.0-B;
 //cout <<"phibulk solv: " << Mol[solvent]->phibulk << endl;
-	if (Mol[solvent]->phibulk<0) { cout <<"WARNING: solvent has negative phibulk. outcome problematic " << endl;
+	if (Mol[solvent]->phibulk<0) {
+		cout <<"WARNING: solvent has negative phibulk. outcome problematic " << endl;
+		throw -4;
 	}
 	norm=Mol[solvent]->phibulk/Mol[solvent]->chainlength;
 	Mol[solvent]->n=norm*Mol[solvent]->GN;

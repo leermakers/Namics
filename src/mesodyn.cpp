@@ -3,20 +3,19 @@
 /* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018 */
 /* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
 
-Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
+Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : Lattice_Access(Lat_[0]),
-      name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
+      name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sta{Sta_}, Rea{Rea_}, Sys{Sys_}, New{New_},
       D{0.01}, dt{0.1}, mean{0}, stddev{2 * D * sqrt(dt)}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1},
       initialization_mode{INIT_HOMOGENEOUS},
       component_no{Sys[0]->SysMolMonList.size()}, edge_detection{false}, edge_detection_threshold{50}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
-      writes{0}, write_vtk{false} {
+      writes{0}, write_vtk{false}, order_parameter{0} {
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
   KEYS.push_back("delta_t");
   KEYS.push_back("read_pro");
   KEYS.push_back("read_vtk");
-  KEYS.push_back("equilibrate");
   KEYS.push_back("diffusionconstant");
   KEYS.push_back("seed");
   KEYS.push_back("mean");
@@ -30,6 +29,8 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   if (std::find(In[0]->OutputList.begin(), In[0]->OutputList.end(), "vtk") != In[0]->OutputList.end()) {
     write_vtk = true;
   }
+
+  set_update_lists();
 
   if (debug)
     cout << "Mesodyn initialized." << endl;
@@ -77,15 +78,6 @@ bool Mesodyn::CheckInput(int start) {
     }
     if (debug)
       cout << "Delta t is " << dt << endl;
-
-    bool equilibrate = false;
-    if (GetValue("equilibrate").size() > 0) {
-      if (In[0]->Get_bool(GetValue("equilibrate"), equilibrate))
-        initialization_mode = INIT_EQUILIBRATE;
-    }
-
-    if (GetValue("read_pro").size() > 0 && equilibrate)
-      cout << "WARNING: read_pro overrides equilibrate!" << endl;
 
     if (GetValue("read_pro").size() > 0) {
       read_filename = In[0]->Get_string(GetValue("read_pro"), read_filename);
@@ -166,17 +158,15 @@ bool Mesodyn::mesodyn() {
 
   //Prepare IO
   set_filename();
-  write_settings();
 
   // write initial conditions
-  write_density(solver_component);
+  write_output();
 
   cout << "Mesodyn is all set, starting calculations.." << endl;
 
   // Do one explicit step before starting the crank nicolson scheme
   explicit_start();
 
-  write_density(solver_component);
   write_output();
 
   // Prepare callback functions for SolveMesodyn in Newton
@@ -191,8 +181,6 @@ bool Mesodyn::mesodyn() {
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
-    //sanity_check();
-
     //Calculate and add noise flux
 
     int i = 0;
@@ -203,15 +191,25 @@ bool Mesodyn::mesodyn() {
 
     noise_flux();
 
-    //TODO: remove this check?
+    sanity_check();
+
+    //TODO: Generalize order parameter to 1D and 2D
     skip_bounds([this](int x, int y, int z) mutable {
-      for (Component* all_components : solver_component) {
-        if (val(all_components->rho, x, y, z) < 0)
-          cerr << "CRITICAL ERROR (rho < 0) IN DENSITIES AT " << x << "," << y << "," << z  << endl;
-        if (val(all_components->rho, x, y, z) > 1)
-          cerr << "CRITICAL ERROR (rho > 1) IN DENSITIES AT " << x << "," << y << "," << z  << endl;
-      }
+      Real local_parameter {0};
+      for (size_t i = 0; i < component_no - 1; ++i)
+        for (size_t j = i + 1; j < component_no; ++j) {
+          Real difference {0};
+          difference = val(solver_component[i]->rho, x, y, z) - val(solver_component[j]->rho, x, y, z);
+          local_parameter += (pow(difference,2));
+        }
+      order_parameter += local_parameter;
     });
+
+    if (dimensions > 2 )
+      // a more general implementation of boundary-less volume can be found elsewhere in this module (search sys volume)
+      order_parameter /= ((MX-2)*(MY-2)*(MZ-2));
+
+    cout << "Order parameter: " << order_parameter << endl;
 
     i = 0;
     for (Component* all_components : component) {
@@ -220,15 +218,11 @@ bool Mesodyn::mesodyn() {
     }
 
     if (t % timebetweensaves == 0) {
-      write_density(component);
-      write_output();
-
       if (edge_detection) {
         interface->detect_edges(edge_detection_threshold);
-        interface->write_edges(file);
       }
+      write_output();
     }
-
   } // time loop
 
   return true;
@@ -248,21 +242,11 @@ int Mesodyn::noise_flux() {
     all_fluxes->langevin_flux();
   }
 
-  int c = 0;
-  for (size_t i = 0; i < component_no; ++i) {
-    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(solver_flux[c]->J);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_plus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J);
 
-  c = 0;
-  for (size_t j = 0; j < (component_no - 1); ++j) {
-    for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(solver_flux[c]->J, -1.0);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_minus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J, -1);
 
   int i = 0;
   for (Flux1D* all_fluxes : flux) {
@@ -276,20 +260,32 @@ int Mesodyn::noise_flux() {
 int Mesodyn::sanity_check() {
 
   //Check mass conservation
-  int i = 0;
-  for (Component* all_components : component) {
-    if ( fabs(all_components->theta() - solver_component[i]->theta() ) > numeric_limits<Real>::epsilon()) {
-      Real difference = all_components->theta()-solver_component[i]->theta();
-        if (difference != 0) {
-          cerr << "WARNING: Mass of component " << i << " is NOT conserved! ";
-          if (difference > 0)
-            cerr << "You're losing mass, difference: ";
-          else
-            cerr << "You're gaining mass, difference: ";
-          cerr << difference << endl;
-          }
-      }
-      ++i;
+
+  Real sum {0};
+  for (int z = 0; z < M ; ++z) {
+    sum = 0;
+    for (Component* all_components : solver_component) {
+      sum += all_components->rho[z];
+    }
+    if (sum > 1.000000001 || sum < 0.99999999) {
+      //cerr << sum << endl;
+      cerr << "CRITICAL ERROR: LOCAL DENSITIES DO NOT SUM TO 1" << endl;
+      cin.get();
+      break;
+    }
+  }
+
+  sum = 0;
+  for (Component* all_components : solver_component) {
+    sum += all_components->theta();
+  }
+
+  if (dimensions > 2 )
+    //TODO: Generalize to more dimensions
+    // a more general implementation of boundary-less volume can be found elsewhere in this module (search sys volume)
+    if ( sum - ((MX-2)*(MY-2)*(MZ-2)) > 0.00000001 ) {
+      cerr << "CRITICAL ERROR: MASS NOT CONSERVED! SUM THETA != M." << endl;
+      cerr << "Difference: " << sum - ((MX-2)*(MY-2)*(MZ-2)) << endl;
     }
 
   return 0;
@@ -317,27 +313,25 @@ Real* Mesodyn::solve_explicit() {
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
+  int c = 0;
+
+  for (Component* all_components : solver_component) {
+    all_components->load_rho(component[c]->rho);
+    ++c;
+  }
+
   for (Component* all_components : solver_component)
     all_components->update_boundaries();
+
 
   for (Flux1D* all_fluxes : solver_flux)
     all_fluxes->langevin_flux();
 
-  int c = 0;
-  for (size_t i = 0; i < component_no; ++i) {
-    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_plus)
+      solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio);
 
-  c = 0;
-  for (size_t j = 0; j < (component_no - 1); ++j) {
-    for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio, -1.0);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_minus)
+      solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio, -1);
 
   rho.clear();
   for (Component* all_components : solver_component) {
@@ -377,9 +371,6 @@ int Mesodyn::initial_conditions() {
         string filename = read_filename + to_string(i+1) + ".vtk";
         init_rho_fromvtk(rho[i], filename);
       }
-      break;
-    case INIT_EQUILIBRATE:
-      init_rho_equilibrate(rho);
       break;
   }
 
@@ -509,6 +500,31 @@ int Mesodyn::initial_conditions() {
   return 0;
 }
 
+void Mesodyn::set_update_lists() {
+  int c = 0;
+  vector<int> temp;
+  for (size_t i = 0; i < component_no; ++i) {
+    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+      temp.push_back(i);
+      temp.push_back(c);
+      update_plus.push_back(temp);
+      temp.clear();
+      ++c;
+    }
+  }
+
+  c = 0;
+  for (size_t j = 0; j < (component_no - 1); ++j) {
+    for (size_t i = 1 + j; i < component_no; ++i) {
+      temp.push_back(i);
+      temp.push_back(c);
+      update_minus.push_back(temp);
+      temp.clear();
+      ++c;
+    }
+  }
+}
+
 void Mesodyn::explicit_start() {
   // Prepare callbacks
   auto explicit_solver_callback = bind(&Mesodyn::solve_explicit, this);
@@ -518,21 +534,11 @@ void Mesodyn::explicit_start() {
   New[0]->SolveMesodyn(loader_callback, explicit_solver_callback);
 
   // Update densities after first timestep
-  int c = 0;
-  for (size_t i = 0; i < component_no; ++i) {
-    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(solver_flux[c]->J);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_plus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J);
 
-  c = 0;
-  for (size_t j = 0; j < (component_no - 1); ++j) {
-    for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(solver_flux[c]->J, -1.0);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_minus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J, -1);
 
   // Load rho_k+1 into rho_k
   int i = 0;
@@ -547,16 +553,6 @@ void Mesodyn::explicit_start() {
     all_fluxes->J = solver_flux[i]->J;
     ++i;
   }
-}
-
-int Mesodyn::init_rho_equilibrate(vector<vector<Real>>& rho) {
-  cout << "Equilibrating.." << endl;
-  New[0]->Solve(true);
-  for (size_t i = 0; i < component_no; ++i) {
-    for (int z = 0; z < M; ++z)
-      rho[i][z] = *(Seg[i]->H_phi + z);
-  }
-  return 0;
 }
 
 vector<string> Mesodyn::tokenize(string line, char delim) {
@@ -830,101 +826,58 @@ void Mesodyn::set_filename() {
   filename << rawtime;
 }
 
-void Mesodyn::write_settings() {
-  ostringstream settings_filename;
-
-  settings_filename << filename.str() << "-settings.dat";
-
-  mesodyn_output.open(settings_filename.str());
-
-  mesodyn_output.precision(16);
-
-  /* Output settings */
-
-  ostringstream settings;
-
-  settings << "Settings for mesodyn, read from file:,\n";
-  settings << "Timesteps," << timesteps << ",\n";
-  settings << "Time between saves," << timebetweensaves << ",\n";
-  settings << "Diffusion constant," << D << ",\n";
-  settings << "Seed for noise," << seed << ",\n";
-  settings << "Mean for noise," << mean << ",\n";
-  settings << "Stddev for noise," << stddev << ",\n";
-
-  mesodyn_output << settings.str();
-  mesodyn_output.close();
-}
-
 int Mesodyn::write_output() {
   //Implement below for more starts? (OutputList higher numbers?)
 
-/* Output has changed. as you don't use output I have commented it out. New output has more arguments and we need to pass on the argument to mesodyn when you want to use it.
   for (size_t i = 0; i < In[0]->OutputList.size(); ++i) {
-    Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], writes, timesteps / timebetweensaves));
+    Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[i], writes, timesteps / timebetweensaves));
     if (!Out[i]->CheckInput(1)) {
       cout << "input_error in output " << endl;
       return 0;
     }
-  }*/
+  }
 
-  PushOutput();
   New[0]->PushOutput();
 
   for (Output* all_output : Out) {
+    all_output->push("order_parameter",order_parameter);
+    all_output->push("timesteps", timesteps);
+    all_output->push("timebetweensaves", timebetweensaves);
+    all_output->push("diffusionconstant", D);
+    all_output->push("seed", seed);
+    all_output->push("mean", mean);
+    all_output->push("stddev", stddev);
+    all_output->push("delta_t", dt);
+    all_output->push("cn_ratio", cn_ratio);
+
+    if (edge_detection) {
+      ostringstream vtk_filename;
+      vtk_filename << filename.str() << "-edges" << writes << ".vtk";
+      all_output->vtk_structured_grid(vtk_filename.str(), &interface->edges[0]);
+    }
+
+    int component_count{1};
+    for (Component* all_components : solver_component) {
+      ostringstream vtk_filename;
+      vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
+      all_output->vtk_structured_grid(vtk_filename.str(), &all_components->rho[0]);
+      ++component_count;
+    }
+    ++writes;
+
     all_output->WriteOutput(writes);
     delete all_output;
   }
+
   Out.clear();
 
   return 0;
 }
 
-void Mesodyn::write_density(vector<Component*>& component) {
-  // Could also do this by overwriting the denisties in ... I think Mol..? right before it pushes the densities written by vtk in output.
-  // Right now output does nothing with the vtk function when mesodyn is running.
-
-  int component_count{1};
-  for (Component* all_components : component) {
-
-    ostringstream vtk_filename;
-    vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
-
-    mesodyn_output.open(vtk_filename.str());
-
-    /* Generate headers for rho entries */
-
-    ostringstream vtk;
-
-    vtk << "# vtk DataFile Version 3.0 \n";
-    vtk << "Mesodyn output \n";
-    vtk << "ASCII\n";
-    vtk << "DATASET STRUCTURED_GRID \n";
-    vtk << "DIMENSIONS " << MX - 2 << " " << MY - 2 << " " << MZ - 2 << "\n";
-    vtk << "POINTS " << (MX - 2) * (MY - 2) * (MZ - 2) << " int\n";
-    skip_bounds([this, &vtk](int x, int y, int z) mutable {
-      vtk << x << " " << y << " " << z << "\n";
-    });
-
-    vtk << "POINT_DATA " << (MX - 2) * (MY - 2) * (MZ - 2) << "\n";
-    vtk << "SCALARS Component_" << component_count << " float\nLOOKUP_TABLE default \n";
-
-    skip_bounds([this, &vtk, all_components](int x, int y, int z) mutable {
-      vtk << val(all_components->rho, x, y, z) << "\n";
-    });
-
-    mesodyn_output << vtk.str();
-    mesodyn_output.flush();
-
-    mesodyn_output.close();
-    ++component_count;
-  }
-  ++writes;
-}
-
 /******* INTERFACE ********/
 
 Interface::Interface(Lattice* Lat, vector<Component*> components)
-  : Lattice_Access(Lat), component(components), order_params(component[0]->rho.size()) {}
+  : Lattice_Access(Lat), component(components) {}
 
 Interface::~Interface() {
   for (Component* all_components : component)
@@ -932,60 +885,11 @@ Interface::~Interface() {
   component.clear();
 }
 
-int Interface::order_parameters(Component* A, Component* B) {
-  if (order_params.size() != A->rho.size() || order_params.size() != B->rho.size() )
-    throw ERROR_SIZE_INCOMPATIBLE;
-
-  skip_bounds([this, A, B](int x, int y, int z) mutable {
-    *val_ptr(order_params, x, y, z) = val(A->rho, x, y, z) * val(B->rho, x, y, z);
-  });
-
-  return 0;
-}
-
 int Interface::detect_edges(int threshold) {
   edges.clear();
   vector<Real> temp((MX-3)*(MY-3)*(MZ-3));
   temp = gaussian_blur(component[0]->rho);
   edges = sobel_edge_detector(threshold, component[0]->rho);
-  return 0;
-}
-
-int Interface::write_edges(string FILENAME) {
-  ostringstream filename;
-  filename << FILENAME;
-  ofstream testfile;
-  time_t rawtime;
-  time(&rawtime);
-  filename << "test" << rawtime << ".vtk";
-  testfile.open( filename.str() );
-
-  ostringstream vtk;
-
-  vtk << "# vtk DataFile Version 3.0 \n";
-  vtk << "Mesodyn output \n";
-  vtk << "ASCII\n";
-  vtk << "DATASET STRUCTURED_GRID \n";
-  vtk << "DIMENSIONS " << MX-2 << " " << MY-2 << " " << MZ-2 << "\n";
-  vtk << "POINTS " << (MX-2) * (MY-2) * (MZ-2) << " int\n";
-
-  for (int x = 1; x < MX - 1; ++x)
-    for (int y = 1; y < MY - 1; ++y)
-      for (int z = 1 ; z < MZ - 1 ; ++z )
-        vtk << x << " " << y << " " << z << "\n";
-
-  vtk << "POINT_DATA " << (MX-2) * (MY-2) * (MZ-2) << "\n";
-  vtk << "SCALARS Sobel float\nLOOKUP_TABLE default \n";
-
-  for (Real& all_values : edges) {
-    vtk << all_values << "\n";
-  }
-
-  testfile << vtk.str();
-
-  testfile.flush();
-  testfile.close();
-
   return 0;
 }
 
@@ -1331,7 +1235,7 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   }
 
   for (int& z : mask_minus) {
-    J_minus[z] = -J_plus[z - jump]; // = -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z] - gaussian->noise[z]));
+    J_minus[z] = -J_plus[z - jump]; //-D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); // = -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z] - gaussian->noise[z]));
     // We have to do it this way because otherwise the noise will be trouble
   }
 
@@ -1383,15 +1287,15 @@ int Component::update_density(vector<Real>& J, int sign) {
   return 0;
 }
 
-int Component::update_density(vector<Real>& rho_old, vector<Real>& J1, vector<Real>& J2, Real ratio, int sign) {
+int Component::update_density(vector<Real>& J1, vector<Real>& J2, Real ratio, int sign) {
   //Implicit update
   if (J1.size() != rho.size() || J1.size() != J2.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
     return 1;
   }
 
-  skip_bounds([this, J1, ratio, sign, rho_old](int x, int y, int z) mutable {
-    *val_ptr(rho, x, y, z) = (val(rho_old, x, y, z) + ratio * sign * val(J1, x, y, z));
+  skip_bounds([this, J1, ratio, sign](int x, int y, int z) mutable {
+    *val_ptr(rho, x, y, z) = (val(rho, x, y, z) + ratio * sign * val(J1, x, y, z));
   });
 
   skip_bounds([this, J2, ratio, sign](int x, int y, int z) mutable {
@@ -1840,46 +1744,7 @@ int Mesodyn::combinations(int n, int k) {
 
 /***** IO *****/
 
-void Mesodyn::PutParameter(string new_param) { KEYS.push_back(new_param); }
-string Mesodyn::GetValue(string parameter) {
-  int i = 0;
-  int length = PARAMETERS.size();
-  while (i < length) {
-    if (parameter == PARAMETERS[i]) {
-      return VALUES[i];
-    }
-    i++;
-  }
-  return "";
-}
-void Mesodyn::push(string s, Real X) {
-  Reals.push_back(s);
-  Reals_value.push_back(X);
-}
-void Mesodyn::push(string s, int X) {
-  ints.push_back(s);
-  ints_value.push_back(X);
-}
-void Mesodyn::push(string s, bool X) {
-  bools.push_back(s);
-  bools_value.push_back(X);
-}
-void Mesodyn::push(string s, string X) {
-  strings.push_back(s);
-  strings_value.push_back(X);
-}
-void Mesodyn::PushOutput() {
-  strings.clear();
-  strings_value.clear();
-  bools.clear();
-  bools_value.clear();
-  Reals.clear();
-  Reals_value.clear();
-  ints.clear();
-  ints_value.clear();
-}
-int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result,
-                      string& string_result) {
+int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result, string& string_result) {
   int i = 0;
   int length = ints.size();
   while (i < length) {
@@ -1920,4 +1785,17 @@ int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result,
     i++;
   }
   return 0;
+}
+
+string Mesodyn::GetValue(string parameter){
+if (debug) cout << "GetValue in lattice " << endl;
+	int i=0;
+	int length = PARAMETERS.size();
+	while (i<length) {
+		if (parameter==PARAMETERS[i]) {
+			return VALUES[i];
+		}
+		i++;
+	}
+	return "" ;
 }

@@ -151,7 +151,7 @@ public:
   Real rho_at(int, int, int);
   Real alpha_at(int, int, int);
   int update_density(vector<Real>&, int = 1);     //Explicit scheme
-  int update_density(vector<Real>&, vector<Real>&, vector<Real>&, Real ratio, int = 1); //Implicit scheme
+  int update_density(vector<Real>&, vector<Real>&, Real ratio, int = 1); //Implicit scheme
   int load_alpha(vector<Real>&);
   int load_rho(vector<Real>&);
   int update_boundaries();
@@ -237,14 +237,11 @@ class Interface : private Lattice_Access {
 public:
   Interface(Lattice*, vector<Component*>);
   ~Interface();
-  int order_parameters(Component*, Component*);
   int detect_edges(int);
-  int write_edges(string);
+  vector<Real> edges;
 
 private:
   vector<Component*> component;
-  vector<Real> order_params;
-  vector<Real> edges;
 
   vector<Real> sobel_edge_detector(Real, vector<Real>&);
   vector<Real> gaussian_blur(vector<Real>&);
@@ -265,6 +262,8 @@ private:
   const vector<Lattice*> Lat;
   const vector<Molecule*> Mol;
   const vector<Segment*> Seg;
+  const vector<State*> Sta;
+	const vector<Reaction*> Rea;
   const vector<System*> Sys;
   const vector<Solve_scf*> New;
   vector <Output*> Out;
@@ -301,18 +300,20 @@ private:
     INIT_HOMOGENEOUS,
     INIT_FROMPRO,
     INIT_FROMVTK,
-    INIT_EQUILIBRATE,
   };
+  Real system_volume;
   vector<Real> rho;
   vector<string> tokenize(string, char);
   string read_filename;
   int initial_conditions();
   vector<Real>&  flux_callback(int);
   int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
-  int init_rho_equilibrate(vector< vector<Real> >&);
   int init_rho_frompro(vector< vector<Real> >&, string);
   int init_rho_fromvtk(vector<Real>&, string);
   int norm_density(vector<Real>& rho, Real theta);
+  void set_update_lists();
+  vector<vector<int>> update_plus;
+  vector<vector<int>> update_minus;
 
   /* Helper class instances */
   Boundary1D* boundary;
@@ -323,14 +324,11 @@ private:
   vector<Flux1D*> solver_flux;
 
   /* Mesodyn specific output */
-  ofstream mesodyn_output;
   ostringstream filename;
   int writes;
   bool write_vtk;
   void set_filename();
-  void write_settings();
-  void write_density(vector<Component*>&);
-  int order_parameters(vector<Real>&, Component*, Component*);
+  Real order_parameter;
 
   /* Mathematics */
   int factorial (int);
@@ -338,7 +336,7 @@ private:
 
 
 public:
-  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
+  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Mesodyn();
 
   bool mesodyn();
@@ -357,11 +355,6 @@ public:
   vector<int> ints_value;
   vector<bool> bools_value;
   vector<string> strings_value;
-  void push(string, Real);
-  void push(string, int);
-  void push(string, bool);
-  void push(string, string);
-  void PushOutput();
   int GetValue(string, int&, Real&, string&);
   int write_output();
 
@@ -369,7 +362,6 @@ public:
   std::vector<string> PARAMETERS;
   std::vector<string> VALUES;
   bool CheckInput(int);
-  void PutParameter(string);
   string GetValue(string);
 };
 #endif

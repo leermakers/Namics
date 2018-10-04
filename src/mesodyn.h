@@ -167,7 +167,6 @@ public:
   virtual ~Flux1D();
 
   virtual int langevin_flux();
-  //TODO: check everything for 'virtual' errors
 
   Real J_at(int, int, int);
   Real L_at(int, int, int);
@@ -281,7 +280,6 @@ private:
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
   bool edge_detection;
-  function<void(vector<Real>&)> edge_detector; //TODO: remove?
   int edge_detection_threshold;
 
 
@@ -293,6 +291,7 @@ private:
   Real* solve_crank_nicolson();
   void load_alpha(vector<Real>&, size_t);
   int sanity_check();
+  Real calculate_order_parameter();
   Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
 
   /* Initialization*/
@@ -314,6 +313,7 @@ private:
   void set_update_lists();
   vector<vector<int>> update_plus;
   vector<vector<int>> update_minus;
+  Real boundaryless_volume;
 
   /* Helper class instances */
   Boundary1D* boundary;

@@ -1,6 +1,6 @@
-lat : flat : n_layers_x : 50
-lat : flat : n_layers_y : 50
-lat : flat : n_layers_z : 50
+lat : flat : n_layers_x : 20
+lat : flat : n_layers_y : 20
+lat : flat : n_layers_z : 20
 lat : flat : lowerbound_x : periodic
 lat : flat : upperbound_x : periodic
 lat : flat : lowerbound_y : periodic
@@ -14,12 +14,20 @@ mon : B : freedom : free
 
 mon : A : chi - B : 0.7
 
-mol : A : composition : (A)3
+mol : A : composition : (A)4
 mol : A : freedom : restricted
-mol : A : theta : 62500
+mol : A : theta : 4000
 
-mol : B : composition : (B)3
+mol : B : composition : (B)4
 mol : B : freedom : solvent
+
+output : kal : append : false
+kal : sys : noname : grand_potential
+kal : sys : noname : free_energy
+kal : mol : A : mu
+kal : mol : A : phibulk
+kal : mol : B : mu
+kal : mol : B : phibulk
 
 
 // Mesodyn options:
@@ -27,9 +35,12 @@ mol : B : freedom : solvent
 // mean, stddev, cn_ratio ( 1 = only old ), edge_detection, edge_detection_threshold
 
 mesodyn : smth : timesteps : 100000
-mesodyn : smth : timebetweensaves : 100
+mesodyn : smth : timebetweensaves : 30
 mesodyn : smth : diffusionconstant : 1
 //mesodyn : smth : delta_t : 0.1
+mesodyn : smth : seed : 1
+
+kal : output : mesodyn : order_parameter
 
 newton : isaac : method : DIIS
 newton : isaac : e_info : true

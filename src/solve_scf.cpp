@@ -117,7 +117,6 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		super_i_info=In[0]->Get_bool(GetValue("super_i_info"),i_info);
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
 
-		//TODO: should this go somewhere else?
 		if (GetValue("target_function").size() > 0) {
 			string target;
       target = In[0]->Get_string(GetValue("target_function"), target);
@@ -581,7 +580,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callb
 
 	bool success=true;
 
-	int old_m = m;
+	//int old_m = m;
 	Real old_deltamax = deltamax;
 
 	switch (solver) {
@@ -593,7 +592,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callb
 			catch (int error) {
 				if (error == -1)
 				{
-					cerr << "Mesodyn solver detected GN not larger than 0." << endl;
+					cerr << "Detected GN not larger than 0." << endl;
 					attempt_DIIS_rescue();
 					cout << "Restarting iteration." << endl;
 					SolveMesodyn(alpha_callback, flux_callback);
@@ -626,7 +625,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callb
 				cout << "Restarting iteration." << endl;
 				SolveMesodyn(alpha_callback, flux_callback);
 			}	else {
-				m = old_m;
+				//m = old_m;
 				deltamax = old_deltamax;
 				rescue_status = NONE;
 			}
@@ -748,6 +747,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 			RHO = mesodyn_flux();
 
 			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
+
 			i=k=0;
 			while (i<lengthMolList) {
 				j=0;

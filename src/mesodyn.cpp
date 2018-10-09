@@ -515,8 +515,8 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
-//  norm_theta(component);
-  //norm_theta(solver_component);
+  norm_theta(component);
+  norm_theta(solver_component);
 
   if (edge_detection)
     interface = new Interface(Lat[0], component);

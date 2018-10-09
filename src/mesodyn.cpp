@@ -169,6 +169,9 @@ bool Mesodyn::mesodyn() {
   // Do one explicit step before starting the crank nicolson scheme
   explicit_start();
 
+  if (edge_detection) {
+    interface->detect_edges(edge_detection_threshold);
+  }
   write_output();
 
   // Prepare callback functions for SolveMesodyn in Newton
@@ -850,7 +853,7 @@ int Mesodyn::write_output() {
     for (Component* all_components : solver_component) {
       ostringstream vtk_filename;
       vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
-      all_output->vtk_structured_grid(vtk_filename.str(), &all_components->rho[0]);
+      all_output->vtk_structured_grid(vtk_filename.str(), &all_components->rho[0], component_count);
       ++component_count;
     }
     ++writes;
@@ -885,10 +888,8 @@ int Interface::detect_edges(int threshold) {
 
 vector<Real> Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho) {
   //TODO: Generalize to 2D and 1D or add warning?
-  vector<Real> result((MX - 2) * (MY - 2) * (MZ - 2));
+  vector<Real> result(MX*MY*MZ);
   int threshold = tolerance;
-
-  int i = 0;
 
   vector<Real> Gx_minus = {-1, -3, -1, -3, -6, -3, -1, -3, -1};
   vector<Real> Gx_mid = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -917,8 +918,7 @@ vector<Real> Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho) {
         conv_z += convolution(Gz_mid, get_xz_plane(rho, x, y+1, z));
         conv_z += convolution(Gz_plus, get_xz_plane(rho, x, y+2, z));
 
-        result[i] = abs(conv_x) + abs(conv_y) + abs(conv_z);
-        ++i;
+        *val_ptr(result, x+1, y+1, z+1) = abs(conv_x) + abs(conv_y) + abs(conv_z);
     }
 
   //normalize between 0 and 255

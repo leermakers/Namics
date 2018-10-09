@@ -615,7 +615,7 @@ if (debug) cout << "vtk in output " << endl;
 	fclose(fp);
 }
 
-void Output::vtk_structured_grid(string filename, Real *X) {
+void Output::vtk_structured_grid(string filename, Real *X, int component_count) {
 	if (debug) cout << "vtk_structed_grid in output " << endl;
 
 	ofstream output;
@@ -640,7 +640,7 @@ void Output::vtk_structured_grid(string filename, Real *X) {
 				vtk << x << " " << y << " " << z << "\n";
 
 	vtk << "POINT_DATA " << MX * MY * MZ << "\n";
-	vtk << "SCALARS Sobel float\nLOOKUP_TABLE default \n";
+	vtk << "SCALARS component_" << component_count << " float\nLOOKUP_TABLE default \n";
 
 	for (int x = 1; x < MX + 1; ++x)
 		for (int y = 1; y < MY + 1; ++y)

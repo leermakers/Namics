@@ -844,9 +844,13 @@ int Mesodyn::write_output() {
     all_output->push("cn_ratio", cn_ratio);
 
     if (edge_detection) {
-      ostringstream vtk_filename;
-      vtk_filename << filename.str() << "-edges" << writes << ".vtk";
-      all_output->vtk_structured_grid(vtk_filename.str(), &interface->edges[0]);
+      int c {1};
+      for (vector<Real> all_edge_vectors: interface->edges) {
+        ostringstream vtk_filename;
+        vtk_filename << filename.str() << "-edges" << c << "-" << writes << ".vtk";
+        all_output->vtk_structured_grid(vtk_filename.str(), &all_edge_vectors[0], 0);
+        ++c;
+      }
     }
 
     int component_count{1};
@@ -870,7 +874,7 @@ int Mesodyn::write_output() {
 /******* INTERFACE ********/
 
 Interface::Interface(Lattice* Lat, vector<Component*> components)
-  : Lattice_Access(Lat), component(components) {}
+  : Lattice_Access(Lat), edges(components.size()), component(components) {}
 
 Interface::~Interface() {
   for (Component* all_components : component)
@@ -880,9 +884,10 @@ Interface::~Interface() {
 
 int Interface::detect_edges(int threshold) {
   edges.clear();
-  vector<Real> temp((MX-3)*(MY-3)*(MZ-3));
-  temp = gaussian_blur(component[0]->rho);
-  edges = sobel_edge_detector(threshold, component[0]->rho);
+  //vector<Real> temp((MX-3)*(MY-3)*(MZ-3));
+  //temp = gaussian_blur(component[0]->rho);
+  for (Component* all_components : component)
+    edges.push_back(sobel_edge_detector(threshold, all_components->rho));
   return 0;
 }
 

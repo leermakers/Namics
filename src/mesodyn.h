@@ -237,7 +237,7 @@ public:
   Interface(Lattice*, vector<Component*>);
   ~Interface();
   int detect_edges(int);
-  vector<Real> edges;
+  vector< vector<Real> > edges;
 
 private:
   vector<Component*> component;

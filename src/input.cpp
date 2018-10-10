@@ -30,7 +30,8 @@ Input::Input(string name_) {
 			In_line.erase(std::remove(In_line.begin(), In_line.end(), ' '), In_line.end());
 			if (In_line.length()==0) add = false;
 			if (In_line.length()>2) {if (In_line.substr(0,2) == "//") {add = false;}}
-			if (add) elems.push_back(SSTR(line_nr).append(":").append(In_line)); else add=true;
+//			if (add) elems.push_back(SSTR(line_nr).append(":").append(In_line)); else add=true;
+			if (add) elems.push_back(std::to_string(line_nr).append(":").append(In_line)); else add=true;
 		}
 		in_file.close();
 		parseOutputInfo();

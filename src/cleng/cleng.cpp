@@ -268,21 +268,19 @@ Real Cleng::GetN_times_mu() {
     return n_times_mu;
 }
 
-void Cleng::makeInSubBoxRange() {
+bool Cleng::InSubBoxRange() {
     int not_in_subbox_range = 0;
     Point sub_box = {sub_box_size, sub_box_size, sub_box_size};  // change it in future
+    if(!nodes[id_node_for_move]->inSubBoxRange(sub_box, shift)) not_in_subbox_range ++;
 
-    for (auto &&n : nodes) {
-        if(!n->inSubBoxRange(sub_box)) not_in_subbox_range ++;
-    }
+
     cout << "not_in_subbox_range: " << not_in_subbox_range << endl;
+
     if (not_in_subbox_range != 0) {
-        cout << "MakeShift back!" << endl;
-        MakeShift(true);
-        for (auto &&n : nodes) {
-            cout << n->to_string() << endl;
-        }
+        cout << "There are nodes not in subbox_range!" << endl;
+        return false;
     }
+    return true;
 }
 
 bool Cleng::NotCollapsing() {
@@ -330,6 +328,10 @@ void Cleng::make_BC() {
 bool Cleng::Checks() {
     bool not_collapsing;
     bool in_range;
+    bool in_subbox_range;
+
+    // check subbox_ranges
+    in_subbox_range = InSubBoxRange();
 
     // check distances between all nodes => preventing collapsing
     not_collapsing = NotCollapsing();
@@ -340,8 +342,8 @@ bool Cleng::Checks() {
     } else { // BC.x and/or BC.y and/or BC.z != mirror
         in_range = true;
     }
-    cout << "not_collapsing: " << not_collapsing << " in_range: " << in_range << endl;
-    return not_collapsing and in_range;
+    cout << "not_collapsing: " << not_collapsing << " in_range: " << in_range << " in_subbox_range: " << in_subbox_range << endl;
+    return not_collapsing and in_range and in_subbox_range;
 }
 
 Point Cleng::PrepareStep() {
@@ -372,7 +374,6 @@ bool Cleng::MakeShift(bool back) {
              << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
         if (Checks()) {
             nodes[id_node_for_move]->shift(shift);
-            makeInSubBoxRange();
         } else {
             while (!Checks()) {
                 cout << "Choose another particle id and step..." << endl;
@@ -382,7 +383,6 @@ bool Cleng::MakeShift(bool back) {
                      << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
             }
             nodes[id_node_for_move]->shift(shift);
-            makeInSubBoxRange();
         }
         cout << "Finally: \n node_id: " << id_node_for_move
         << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
@@ -390,6 +390,7 @@ bool Cleng::MakeShift(bool back) {
         cout << "MakeShift back" << endl;
         Point neg_shift = shift.negate();
         nodes[id_node_for_move]->shift(neg_shift);
+
     }
 
     return success;

@@ -79,6 +79,7 @@ public:
     bool CP(transfer);
     bool MakeShift(bool back);
     bool Checks();
+    bool InSubBoxRange();
     void makeInSubBoxRange();
     bool NotCollapsing();
     bool InRange();

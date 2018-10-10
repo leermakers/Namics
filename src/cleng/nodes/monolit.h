@@ -15,6 +15,8 @@ public:
 
     Point point() const override;
 
+//    Real distance(Point const &point) const override;
+
     void shift(const Point &shift) override;
 
     void pushSystemPoints(std::map<int, Point> &pointsById) const override;

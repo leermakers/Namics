@@ -9,7 +9,7 @@ class SimpleNode : public Node {
 public:
     SimpleNode(const Point &p, int id, Point box_size);
 
-    void shift(const Point& shift) override;
+    void shift(const Point &shift) override;
 
     std::string to_string() const override;
 
@@ -20,6 +20,10 @@ public:
     void set_cnode(shared_ptr<SimpleNode> coupled_node);
 
     bool inSubBoxRange(Point const &subBoxRange) const override;
+
+    Real distance(Point const &point) const;
+
+    Point get_system_point() const;
 
 private:
     Point system_point;

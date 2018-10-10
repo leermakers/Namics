@@ -289,7 +289,7 @@ bool Cleng::NotCollapsing() {
     bool not_collapsing = false;
     Point MP (nodes[id_node_for_move]->point());
     Point MPs (nodes[id_node_for_move]->point() + shift);
-    double min_dist = 4; // minimal distance between nodes
+    double min_dist = 6; // minimal distance between nodes
     int i = 0;
     for (const auto &n : nodes) {
         if (MP != n->point()) {
@@ -406,23 +406,29 @@ bool Cleng::MonteCarlo() {
 
 // init system outlook
     New[0]->Solve(true);
+    CP(to_cleng);
     free_energy_current = Sys[0]->GetFreeEnergy() - GetN_times_mu();
     WriteOutput(0,exp_diff);
 
     for (int MS_step = 1; MS_step < MCS; MS_step++) { // loop for trials
-        CP(to_cleng);
+
         MakeShift(false);
         CP(to_segment);
+
+        for (auto &&n : nodes) {
+            cout << n->to_string() << endl;
+        }
+
         New[0]->Solve(true);
         free_energy_trial = Sys[0]->GetFreeEnergy() - GetN_times_mu();
 
         assert(!std::isnan(free_energy_trial));
-        for (auto &&n : nodes) {
-            cout << "n: " << n->point().to_string() << endl;
-            assert((n->point().x > 3) and (n->point().x < 28));
-            assert((n->point().y > 3) and (n->point().y < 28));
-            assert((n->point().z > 3) and (n->point().z < 28));
-        }
+//        for (auto &&n : nodes) {
+//            cout << "n: " << n->point().to_string() << endl;
+//            assert((n->point().x > 3) and (n->point().x < 28));
+//            assert((n->point().y > 3) and (n->point().y < 28));
+//            assert((n->point().z > 3) and (n->point().z < 28));
+//        }
 
 
         cout << "free_energy_current: " << free_energy_current << endl;

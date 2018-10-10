@@ -41,4 +41,16 @@ bool Monolit::inSubBoxRange(Point const &subBoxRange) const {
     return true;
 }
 
+//Real Monolit::distance(Point const &point) const {
+//    // return the biggest distance
+//    Real distance=0.0;
+//    for (auto &&n : m_nodes) {
+//        if (distance < n->distance(point)) {
+//            distance =n->distance(point);
+//        }
+//
+//    }
+//    return distance;
+//}
+
 

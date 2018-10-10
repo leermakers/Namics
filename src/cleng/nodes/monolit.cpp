@@ -32,25 +32,13 @@ string Monolit::to_string() const {
     return res;
 }
 
-bool Monolit::inSubBoxRange(Point const &subBoxRange) const {
+bool Monolit::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
     for (auto &&n : m_nodes) {
-        if (!n->inSubBoxRange(subBoxRange)) {
+        if (!n->inSubBoxRange(subBoxRange, shift)) {
             return false;
         }
     }
     return true;
 }
-
-//Real Monolit::distance(Point const &point) const {
-//    // return the biggest distance
-//    Real distance=0.0;
-//    for (auto &&n : m_nodes) {
-//        if (distance < n->distance(point)) {
-//            distance =n->distance(point);
-//        }
-//
-//    }
-//    return distance;
-//}
 
 

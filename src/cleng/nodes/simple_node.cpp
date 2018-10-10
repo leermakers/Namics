@@ -32,15 +32,11 @@ void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {
     cnode = std::move(coupled_node);
 }
 
-bool SimpleNode::inSubBoxRange(Point const &subBoxRange) const {
+bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
+    Point current_node = this->get_system_point();
+    cout << "Point: " << (current_node+shift).to_string() << " cnode: " << cnode->to_string() << endl;
 
-//    cout << "Point: " << this->to_string() << " cnode: " << cnode->to_string() << endl;
-//    Real dist = system_point.distance(cnode->system_point);
-
-//    cout << "Point: " << this->point().to_string() << " cnode: " << cnode->point().to_string() << endl;
-    cout << "Point: " << this->to_string() << " cnode: " << cnode->to_string() << endl;
-//    Real dist = point().distance(cnode->point());
-    Real dist = distance(cnode->get_system_point());
+    Real dist = distance(cnode->get_system_point(), shift);
 
     Point distance_origin = {(int)dist, (int)dist, (int)dist};
     Point distance = {(int)dist+2, (int)dist+2, (int)dist+2};
@@ -58,9 +54,9 @@ bool SimpleNode::inSubBoxRange(Point const &subBoxRange) const {
     return true;
 }
 
-Real SimpleNode::distance(Point const &point) const {
-    Real dx = pow(this->system_point.x - point.x, 2);
-    Real dy = pow(this->system_point.y - point.y, 2);
-    Real dz = pow(this->system_point.z - point.z, 2);
+Real SimpleNode::distance(Point const &point, const Point &shift) const {
+    Real dx = pow(this->system_point.x + shift.x - point.x, 2);
+    Real dy = pow(this->system_point.y + shift.y - point.y, 2);
+    Real dz = pow(this->system_point.z + shift.z - point.z, 2);
     return sqrt(dx + dy + dz);
 }

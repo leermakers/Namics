@@ -23,17 +23,21 @@ enum error {
 };
 
 class Lattice_Access {
-
 public:
 
   Lattice_Access(Lattice*);
   ~Lattice_Access();
 
-  //TODO: Template these:
-  inline Real val(vector<Real>&, int, int, int);
-  inline int val(vector<int>&, int, int, int);
-  inline Real* val_ptr(vector<Real>&, int, int, int);
-  inline int* val_ptr(vector<int>&, int, int, int);
+  template <typename T>
+  inline T val(vector<T>& v, int x, int y, int z) {
+      return v[x * JX + y * JY + z * JZ];
+  }
+
+  template <typename T>
+  inline T* val_ptr(vector<T>& v, int x, int y, int z) {
+      return &v[x * JX + y * JY + z * JZ];
+  }
+
   inline int index(int x, int y, int z);
   inline vector<int> coordinate(int n);
   inline void skip_bounds( function<void(int,int,int)> );
@@ -244,8 +248,6 @@ private:
 
   vector<Real> sobel_edge_detector(Real, vector<Real>&);
   vector<Real> gaussian_blur(vector<Real>&);
-  //TODO: template this
-  Real convolution(vector<int>, vector<Real>);
   Real convolution(vector<Real>, vector<Real>);
   vector<Real> get_xy_plane(vector<Real>&, int, int, int, int = 3);
   vector<Real> get_xz_plane(vector<Real>&, int, int, int, int = 3);

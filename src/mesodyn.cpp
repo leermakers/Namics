@@ -1432,22 +1432,6 @@ inline void Lattice_Access::zm_boundary(function<void(int, int, int)> function) 
   } while (y < MY - 1);
 }
 
-inline Real Lattice_Access::val(vector<Real>& v, int x, int y, int z) {
-  return v[x * JX + y * JY + z * JZ];
-}
-
-inline int Lattice_Access::val(vector<int>& v, int x, int y, int z) {
-  return v[x * JX + y * JY + z * JZ];
-}
-
-inline Real* Lattice_Access::val_ptr(vector<Real>& v, int x, int y, int z) {
-  return &v[x * JX + y * JY + z * JZ];
-}
-
-inline int* Lattice_Access::val_ptr(vector<int>& v, int x, int y, int z) {
-  return &v[x * JX + y * JY + z * JZ];
-}
-
 int Lattice_Access::setMY(Lattice* Lat) {
   //used by constructor
   if (dimensions < 2)

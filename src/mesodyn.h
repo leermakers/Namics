@@ -236,24 +236,6 @@ protected:
   vector<int> Mask_minus_z;
 };
 
-class Interface : private Lattice_Access {
-public:
-  Interface(Lattice*, vector<Component*>);
-  ~Interface();
-  int detect_edges(int);
-  vector< vector<Real> > edges;
-
-private:
-  vector<Component*> component;
-
-  vector<Real> sobel_edge_detector(Real, vector<Real>&);
-  vector<Real> gaussian_blur(vector<Real>&);
-  Real convolution(vector<Real>, vector<Real>);
-  vector<Real> get_xy_plane(vector<Real>&, int, int, int, int = 3);
-  vector<Real> get_xz_plane(vector<Real>&, int, int, int, int = 3);
-};
-
-
 class Mesodyn : private Lattice_Access {
 
 private:
@@ -281,8 +263,6 @@ private:
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
-  bool edge_detection;
-  int edge_detection_threshold;
 
 
   /* Flow control */
@@ -319,7 +299,6 @@ private:
 
   /* Helper class instances */
   Boundary1D* boundary;
-  Interface* interface;
   vector<Component*> component;
   vector<Component*> solver_component;
   vector<Flux1D*> flux;

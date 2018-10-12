@@ -8,7 +8,7 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sta{Sta_}, Rea{Rea_}, Sys{Sys_}, New{New_},
       D{0.01}, dt{0.1}, mean{0}, stddev{2 * D * sqrt(dt)}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1},
       initialization_mode{INIT_HOMOGENEOUS},
-      component_no{Sys[0]->SysMolMonList.size()}, edge_detection{false}, edge_detection_threshold{50}, RC{0}, cn_ratio{0.5},
+      component_no{Sys[0]->SysMolMonList.size()}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
       writes{0}, write_vtk{false}, order_parameter{0} {
   KEYS.push_back("timesteps");
@@ -21,8 +21,6 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   KEYS.push_back("mean");
   KEYS.push_back("stddev");
   KEYS.push_back("cn_ratio");
-  KEYS.push_back("edge_detection");
-  KEYS.push_back("edge_detection_threshold");
 
   // TODO: implement this properly
   // If the user has asked for vtk output
@@ -132,21 +130,6 @@ bool Mesodyn::CheckInput(int start) {
     }
     if (debug)
       cout << "Cn_ratio is " << cn_ratio << endl;
-
-    if(GetValue("edge_detection").size() > 0) {
-      vector<string> options;
-			options.push_back("sobel");
-
-			if(GetValue("edge_detection") == options[0]) {
-          edge_detection = true;
-			} else {
-        cout << "edge_detection algorithm " << GetValue("edge_detection") << " not recognized, defaulting to no edge detection" << endl;
-      }
-    }
-
-    if(GetValue("edge_detection_threshold").size() > 0) {
-      edge_detection_threshold = In[0]->Get_int(GetValue("edge_detection_threshold"), edge_detection_threshold);
-    }
   }
 
   return success;
@@ -169,9 +152,6 @@ bool Mesodyn::mesodyn() {
   // Do one explicit step before starting the crank nicolson scheme
   explicit_start();
 
-  if (edge_detection) {
-    interface->detect_edges(edge_detection_threshold);
-  }
   write_output();
 
   // Prepare callback functions for SolveMesodyn in Newton
@@ -205,9 +185,6 @@ bool Mesodyn::mesodyn() {
     }
 
     if (t % timebetweensaves == 0) {
-      if (edge_detection) {
-        interface->detect_edges(edge_detection_threshold);
-      }
       write_output();
     }
   } // time loop
@@ -520,9 +497,6 @@ int Mesodyn::initial_conditions() {
 
   norm_theta(component);
   norm_theta(solver_component);
-
-  if (edge_detection)
-    interface = new Interface(Lat[0], component);
 
   return 0;
 }
@@ -843,16 +817,6 @@ int Mesodyn::write_output() {
     all_output->push("delta_t", dt);
     all_output->push("cn_ratio", cn_ratio);
 
-    if (edge_detection) {
-      int c {1};
-      for (vector<Real> all_edge_vectors: interface->edges) {
-        ostringstream vtk_filename;
-        vtk_filename << filename.str() << "-edges" << c << "-" << writes << ".vtk";
-        all_output->vtk_structured_grid(vtk_filename.str(), &all_edge_vectors[0], 0);
-        ++c;
-      }
-    }
-
     int component_count{1};
     for (Component* all_components : solver_component) {
       ostringstream vtk_filename;
@@ -869,149 +833,6 @@ int Mesodyn::write_output() {
   Out.clear();
 
   return 0;
-}
-
-/******* INTERFACE ********/
-
-Interface::Interface(Lattice* Lat, vector<Component*> components)
-  : Lattice_Access(Lat), edges(components.size()), component(components) {}
-
-Interface::~Interface() {
-  for (Component* all_components : component)
-    delete all_components;
-  component.clear();
-}
-
-int Interface::detect_edges(int threshold) {
-  edges.clear();
-  //vector<Real> temp((MX-3)*(MY-3)*(MZ-3));
-  //temp = gaussian_blur(component[0]->rho);
-  for (Component* all_components : component)
-    edges.push_back(sobel_edge_detector(threshold, all_components->rho));
-  return 0;
-}
-
-vector<Real> Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho) {
-  //TODO: Generalize to 2D and 1D or add warning?
-  vector<Real> result(MX*MY*MZ);
-  int threshold = tolerance;
-
-  vector<Real> Gx_minus = {-1, -3, -1, -3, -6, -3, -1, -3, -1};
-  vector<Real> Gx_mid = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  vector<Real> Gx_plus = {1, 3, 1, 3, 6, 3, 1, 3, 1};
-
-  vector<Real> Gy_minus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
-  vector<Real> Gy_mid = {-3, 0, 3, -6, 0, 6, -3, 0, 3};
-  vector<Real> Gy_plus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
-
-  vector<Real> Gz_minus = {1, 3, 1, 0, 0, 0, -1, -3, -1};
-  vector<Real> Gz_mid = {3, 6, 3, 0, 0, 0, -3, -6, -3};
-  vector<Real> Gz_plus = {1, 3, 1, 0, 0, 0, -1, -3, -1};
-
-  for (int x = 0; x < MX - 2; ++x)
-    for (int y = 0; y < MY - 2; ++y)
-      for (int z = 0 ; z < MZ - 2 ; ++z ) {
-        Real conv_x = convolution(Gx_minus, get_xy_plane(rho, x, y, z));
-        conv_x += convolution(Gx_mid, get_xy_plane(rho, x, y, z+1));
-        conv_x += convolution(Gx_plus, get_xy_plane(rho, x, y, z+2));
-
-        Real conv_y = convolution(Gy_minus, get_xy_plane(rho, x, y, z));
-        conv_y += convolution(Gy_mid, get_xy_plane(rho, x, y, z+1));
-        conv_y += convolution(Gy_plus, get_xy_plane(rho, x, y, z+2));
-
-        Real conv_z = convolution(Gz_minus, get_xz_plane(rho, x, y, z));
-        conv_z += convolution(Gz_mid, get_xz_plane(rho, x, y+1, z));
-        conv_z += convolution(Gz_plus, get_xz_plane(rho, x, y+2, z));
-
-        *val_ptr(result, x+1, y+1, z+1) = abs(conv_x) + abs(conv_y) + abs(conv_z);
-    }
-
-  //normalize between 0 and 255
-  Real min = *min_element(result.begin(), result.end());
-  Real max = *max_element(result.begin(), result.end());
-
-  for (Real& all_elements : result)
-    all_elements = (255 - 0) * ((all_elements - min) / (max - min)) + 0;
-
-  //cut-off at threshold
-  for (Real& all_elements : result)
-    if (all_elements < threshold) {
-      all_elements = 0;
-    }
-
-  return result;
-}
-
-vector<Real> Interface::gaussian_blur(vector<Real>& rho) {
-  vector<Real> result( (MX-3)*(MY-3)*(MY-3) );
-  vector<Real> G1 = {1, 2, 1, 2, 4, 2, 1, 2, 1};
-  vector<Real> G2 = {1, 1, 1, 1, 2, 1, 1, 1, 1};
-  vector<Real> G3 = {1, 1, 1, 1, 2, 1, 1, 1, 1};
-
-  for (Real& all_values : G1)
-    all_values = all_values * 1/16;
-
-  for (Real& all_values : G2)
-    all_values = all_values * 1/16;
-
-  for (Real& all_values : G3)
-    all_values = all_values * 1/16;
-
-  int i{0};
-
-  for (int x = 0; x < MX - 3; ++x)
-    for (int y = 0; y < MY - 3; ++y)
-      for (int z = 0 ; z < MZ - 3 ; ++z ) {
-        Real conv_1 = convolution(G1, get_xy_plane(rho, x, y, z));
-        Real conv_2 = convolution(G2, get_xy_plane(rho, x, y, z+1));
-        Real conv_3 = convolution(G3, get_xy_plane(rho, x, y, z+2));
-        result[i] = (conv_1 + conv_2 + conv_3);
-        ++i;
-    }
-  return result;
-}
-
-Real Interface::convolution(vector<Real> kernel, vector<Real> pixel) {
-  if (kernel.size() != pixel.size()) {
-    cerr << "Convolution: pixel and kernel not of equal size!" << endl;
-    throw ERROR_SIZE_INCOMPATIBLE;
-  }
-
-  Real accumulator = 0;
-
-  for (size_t i = 0 ; i < kernel.size() ; ++i) {
-    accumulator += kernel[i] * pixel[i];
-  }
-
-  return accumulator;
-}
-
-vector<Real> Interface::get_xy_plane(vector<Real>& rho, int x, int y, int z, int size) {
-  vector<Real> pixel(size*size);
-
-  int i = 0;
-
-  for (int horizontal = 0 ; horizontal < size ; ++horizontal)
-    for (int vertical = 0 ; vertical < size ; ++vertical) {
-        pixel[i] = val(rho, x+horizontal, y+vertical, z);
-        ++i;
-    }
-
-  return pixel;
-}
-
-vector<Real> Interface::get_xz_plane(vector<Real>& rho, int x, int y, int z, int size) {
-  vector<Real> pixel(size*size);
-
-  int i = 0;
-
-  for (int horizontal = 0 ; horizontal < size ; ++horizontal)
-    for (int depth = 0 ; depth < size ; ++depth) {
-        pixel[i] = val(rho, x+horizontal, y, z+depth);
-        ++i;
-    }
-
-  return pixel;
 }
 
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/

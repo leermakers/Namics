@@ -75,6 +75,7 @@ C Copyright (2018) Wageningen University, NL.
 }
 
 SFNewton::~SFNewton() {
+  free(reverseDirection);
 }
 
 void SFNewton::residuals(Real*,Real*){}
@@ -504,7 +505,7 @@ if(debug) cout <<"newdirection in Newton" << endl;
 
 void SFNewton::newtrustregion(Real *p0,Real ALPHA_, Real &trustregion, Real& trustfactor, Real delta_max, Real delta_min, int nvar){
 if(debug) cout <<"newtrustregion in Newton" << endl;
-	Real ALPHA=ALPHA_; 
+	Real ALPHA=ALPHA_;
 	Real normp0 =0;
 	normp0= norm2(p0,nvar);
 
@@ -605,8 +606,8 @@ void SFNewton::ResetX(Real* x,int nvar,bool filter) { //done
 
 
 bool SFNewton::Message(bool e_info_, bool s_info_, int it_, int iterationlimit_,Real residual_, Real tolerance_, string s_) {
-	bool e_info=e_info_, s_info=s_info_; string s=s_; 
-	int it=it_, iterationlimit=iterationlimit_;  
+	bool e_info=e_info_, s_info=s_info_; string s=s_;
+	int it=it_, iterationlimit=iterationlimit_;
 	Real residual=residual_, tolerance=tolerance_;
 	if (debug) cout <<"Message in  Newton " << endl;
 	bool success=true;
@@ -638,9 +639,9 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 	int iterationlimit=iterationlimit_;
 	Real tolerance=tolerance_;
 	bool success;
-	Real delta_max=delta_max_; 
+	Real delta_max=delta_max_;
 	Real delta_min=delta_min_;
-	bool filter=filter_; 
+	bool filter=filter_;
 Real* x0 = (Real*) malloc(nvar*sizeof(Real)); H_Zero(x0,nvar);
 Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
 Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);
@@ -759,8 +760,12 @@ Real *S = new Real[N];
 	}
 
 	for (int i=0; i<N; i++)
-		for (int j=0; j<N; j++)
+		for (int j=0; j<N; j++) {
+      if (A[i*N + j] !=  A[i*N + j]) //If it contains NaNs
+        throw -2;
 			U[j][i] = A[i*N + j];
+    }
+
   if (N > 1) {
 		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
   		svdcmp(U, N, N, S, V);
@@ -824,8 +829,9 @@ Real SFNewton::computeresidual(Real* array, int size) {
   return residual;
 }
 
-bool SFNewton::iterate_DIIS(Real*x,int nvar, int m, int iterationlimit,Real tolerance, Real delta_max) {
+bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
+int nvar=nvar_;
 	bool success;
 Real* Aij = (Real*) malloc(m*m*sizeof(Real)); Zero(Aij,m*m);
 Real* Ci = (Real*) malloc(m*sizeof(Real)); Zero(Ci,m);
@@ -869,6 +875,47 @@ free(Aij);free(Ci);free(Apij);free(xR);free(x_x0);free(x0);free(g);
 	return success;
 }
 
+bool SFNewton::iterate_RF(Real*x, int nvar_,int iterationlimit,Real tolerance, Real delta_max) {
+if(debug) cout <<"Iterate_RF in SFNewton " << endl;
+	int nvar=nvar_;
+	bool success;
+	Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+	Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+	Real a, b, c, fa, fb, fc, res;
+	int k,it;
+
+	residuals(x,g);
+	a=x[0];
+	fa=g[0];
+	x[0]=x[0]+delta_max;
+	residuals(x,g);
+	b=x[0];
+	fb=g[0];
+	if(fa==fb){success=false; cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;}
+	c = a - ((fa*(a-b))/(fa-fb));
+	x[0]=c;
+	residuals(x,g);
+	fc=g[0]; res=fc;
+	k=0; it=0;
+
+	while((k<iterationlimit) && (abs(res)>tolerance)){
+		c = a-((fa*(a-b))/(fa-fb)); x[0]=c;residuals(x,g);fc=g[0];
+		if(fc*fb<0){
+		b=c; x[0]=b; residuals(x,g); fb=g[0]; res=fb;
+		} else {
+		a=c; x[0]=a; residuals(x,g); fa=g[0]; res=fa;
+		}
+		k++; it=k;
+		if(fa==fb){success=false; cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;}
+	cout << "In Regula-Falsi iteration step: " << k << "\t Residual: " <<	res << endl;
+	}
+
+
+	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
+	free(x0);free(g);
+	return success;
+}
+
 void
 SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real tolerance) {
 // Based on An Introduction to the Conjugate Gradient Method Without the Agonizing Pain Edition 1 1/4 - Jonathan Richard Shewchuk
@@ -898,7 +945,6 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 
 	}
 	residuals(x,g);
-  #pragma omp parallel for reduction(+:delta_new)
 
 	for (int z=0; z<nvar; z++) {
 		r[z] = -g[z];
@@ -919,7 +965,6 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 		while (proceed) {
 			teller=0;
 
-      #pragma omp parallel for reduction(-:teller)
 			for (int z=0; z<nvar; z++) {
 				teller -= g[z]*d[z];
 
@@ -928,10 +973,8 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 			Hd(H_d,d,x,x0,g,dg,nvar);
 			noemer=0;
 
-      #pragma omp parallel for reduction(+:noemer)
 			for (int z=0; z<nvar; z++) noemer +=H_d[z]*d[z];
 			alpha=teller/noemer;
-      #pragma omp parallel for
 
 			for (int z=0; z<nvar; z++) {x[z]=x0[z]+alpha*d[z];}
 			residuals(x,g);
@@ -940,26 +983,19 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 		}
 
 
-    #pragma omp parallel for
     for (int z=0; z<nvar; z++) r_old[z]=r[z];
-    #pragma omp parallel for
 		for (int z=0; z<nvar; z++) r[z]=-g[z];
 		delta_old=delta_new;
 		delta_new=0;
-    #pragma omp parallel for reduction(+:delta_mid)
     for (int z=0; z<nvar; z++) delta_mid += r[z]*r_old[z];
-    #pragma omp parallel for reduction(+:delta_new)
 		for (int z=0; z<nvar; z++) delta_new += r[z]*r[z];
 		beta =  (delta_new-delta_mid)/delta_old;
-    #pragma omp parallel for
 		for (int z=0; z<nvar; z++) d[z]=r[z]+beta*d[z];
 		k++;
 		rd=0;
-    #pragma omp parallel for reduction(+:rd)
 		for (int z=0; z<nvar; z++) rd +=r[z]*d[z];
 		if (k == nvar || rd<=0) {
 			k=0; beta=0;
-      #pragma omp parallel for
 
 			for (int z=0; z<nvar; z++) d[z]=r[z];
 		}

@@ -3,25 +3,26 @@
 /* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018 */
 /* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
 
-Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
+Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : Lattice_Access(Lat_[0]),
-      name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sys{Sys_}, New{New_},
-      D{0.01}, mean{0}, stddev{2 * D}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1}, dt{0.1},
+      name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sta{Sta_}, Rea{Rea_}, Sys{Sys_}, New{New_},
+      D{0.01}, dt{0.1}, mean{0}, stddev{2 * D * sqrt(dt)}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1},
       initialization_mode{INIT_HOMOGENEOUS},
-      component_no{Sys[0]->SysMolMonList.size()}, RC{0}, cn_ratio{0.5},
+      component_no{Sys[0]->SysMolMonList.size()}, edge_detection{false}, edge_detection_threshold{50}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
-      writes{0}, write_vtk{false} {
+      writes{0}, write_vtk{false}, order_parameter{0} {
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
   KEYS.push_back("delta_t");
   KEYS.push_back("read_pro");
   KEYS.push_back("read_vtk");
-  KEYS.push_back("equilibrate");
   KEYS.push_back("diffusionconstant");
   KEYS.push_back("seed");
   KEYS.push_back("mean");
   KEYS.push_back("stddev");
   KEYS.push_back("cn_ratio");
+  KEYS.push_back("edge_detection");
+  KEYS.push_back("edge_detection_threshold");
 
   // TODO: implement this properly
   // If the user has asked for vtk output
@@ -29,16 +30,28 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
     write_vtk = true;
   }
 
+  set_update_lists();
+
+  Sys[0]->PrepareForCalculations(); // to get the correct KSAM and volume.
+
+  // The right hand side of the minus sign calculates the volume of the boundaries. I know, it's hideous, but it works for all dimensions.
+  boundaryless_volume = Sys[0]->volume - ((2 * dimensions - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * dimensions) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, dimensions));
+
   if (debug)
     cout << "Mesodyn initialized." << endl;
 }
 
 Mesodyn::~Mesodyn() {
-  for (size_t i = 0; i < flux.size(); ++i)
+  delete flux[0]->gaussian;
+  for (size_t i = 0; i < flux.size(); ++i) {
     delete flux[i];
+    delete solver_flux[i];
+  }
   flux.clear();
-  for (size_t i = 0; i < component.size(); ++i)
+  for (size_t i = 0; i < component.size(); ++i) {
     delete component[i];
+    delete solver_component[i];
+  }
   component.clear();
   delete boundary;
 }
@@ -70,15 +83,6 @@ bool Mesodyn::CheckInput(int start) {
     }
     if (debug)
       cout << "Delta t is " << dt << endl;
-
-    bool equilibrate = false;
-    if (GetValue("equilibrate").size() > 0) {
-      if (In[0]->Get_bool(GetValue("equilibrate"), equilibrate))
-        initialization_mode = INIT_EQUILIBRATE;
-    }
-
-    if (GetValue("read_pro").size() > 0 && equilibrate)
-      cout << "WARNING: read_pro overrides equilibrate!" << endl;
 
     if (GetValue("read_pro").size() > 0) {
       read_filename = In[0]->Get_string(GetValue("read_pro"), read_filename);
@@ -119,8 +123,6 @@ bool Mesodyn::CheckInput(int start) {
 
     if (GetValue("stddev").size() > 0) {
       stddev = In[0]->Get_Real(GetValue("stddev"), stddev);
-    } else {
-      stddev = 2 * D;
     }
     if (debug)
       cout << "Stdev is " << stddev << endl;
@@ -130,6 +132,21 @@ bool Mesodyn::CheckInput(int start) {
     }
     if (debug)
       cout << "Cn_ratio is " << cn_ratio << endl;
+
+    if(GetValue("edge_detection").size() > 0) {
+      vector<string> options;
+			options.push_back("sobel");
+
+			if(GetValue("edge_detection") == options[0]) {
+          edge_detection = true;
+			} else {
+        cout << "edge_detection algorithm " << GetValue("edge_detection") << " not recognized, defaulting to no edge detection" << endl;
+      }
+    }
+
+    if(GetValue("edge_detection_threshold").size() > 0) {
+      edge_detection_threshold = In[0]->Get_int(GetValue("edge_detection_threshold"), edge_detection_threshold);
+    }
   }
 
   return success;
@@ -146,18 +163,12 @@ bool Mesodyn::mesodyn() {
 
   //Prepare IO
   set_filename();
-  write_settings();
-
-  // write initial conditions
-  write_density(solver_component);
 
   cout << "Mesodyn is all set, starting calculations.." << endl;
 
   // Do one explicit step before starting the crank nicolson scheme
-
   explicit_start();
 
-  write_density(solver_component);
   write_output();
 
   // Prepare callback functions for SolveMesodyn in Newton
@@ -168,58 +179,140 @@ bool Mesodyn::mesodyn() {
   for (int t = 1; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
-    norm_theta(component);
-    norm_theta(solver_component);
-
-//    if (t > 100) {
-      for (Flux1D* all_fluxes : solver_flux) {
-        all_fluxes->gaussian->generate();
-      }
-//    }
-
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
-    //sanity_check();
+    //Calculate and add noise flux
 
     int i = 0;
+    for (Flux1D* all_fluxes : flux) {
+      all_fluxes->J = solver_flux[i]->J;
+      ++i;
+    }
+
+    noise_flux();
+
+    sanity_check();
+
+    cout << "Order parameter: " << calculate_order_parameter() << endl;
+
+    i = 0;
     for (Component* all_components : component) {
       all_components->load_rho(solver_component[i]->rho);
       ++i;
     }
 
     if (t % timebetweensaves == 0) {
-      write_density(component);
+      if (edge_detection) {
+        interface->detect_edges(edge_detection_threshold);
+      }
       write_output();
-    }
-
-    i = 0;
-    for (Flux1D* all_fluxes : flux) {
-      all_fluxes->J = solver_flux[i]->J;
-      ++i;
     }
   } // time loop
 
   return true;
 }
 
+void Mesodyn::set_update_lists() {
+  int c = 0;
+  vector<int> temp;
+  for (size_t i = 0; i < component_no; ++i) {
+    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
+      temp.push_back(i);
+      temp.push_back(c);
+      update_plus.push_back(temp);
+      temp.clear();
+      ++c;
+    }
+  }
+
+  c = 0;
+  for (size_t j = 0; j < (component_no - 1); ++j) {
+    for (size_t i = 1 + j; i < component_no; ++i) {
+      temp.push_back(i);
+      temp.push_back(c);
+      update_minus.push_back(temp);
+      temp.clear();
+      ++c;
+    }
+  }
+}
+
+Real Mesodyn::calculate_order_parameter() {
+  skip_bounds([this](int x, int y, int z) mutable {
+    Real local_parameter {0};
+    for (size_t i = 0; i < component_no - 1; ++i)
+      for (size_t j = i + 1; j < component_no; ++j) {
+        Real difference {0};
+        difference = val(solver_component[i]->rho, x, y, z) - val(solver_component[j]->rho, x, y, z);
+        local_parameter += (pow(difference,2));
+      }
+    order_parameter += local_parameter;
+  });
+
+  order_parameter /= boundaryless_volume;
+
+  return order_parameter;
+}
+
+int Mesodyn::noise_flux() {
+  Gaussian_noise* gaussian = solver_flux[0]->gaussian;
+
+  for (Component* all_components : solver_component) {
+    gaussian->generate();
+    //Zero all alpha's
+    fill(all_components->alpha.begin(), all_components->alpha.end(), 0);
+    gaussian->add_noise(all_components->alpha);
+  }
+
+  for (Flux1D* all_fluxes : solver_flux) {
+    all_fluxes->langevin_flux();
+  }
+
+  for (vector<int>& i : update_plus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J);
+
+  for (vector<int>& i : update_minus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J, -1);
+
+  int i = 0;
+  for (Flux1D* all_fluxes : flux) {
+    transform(all_fluxes->J.begin(), all_fluxes->J.end(), solver_flux[i]->J.begin(), all_fluxes->J.begin(), [](Real A, Real B) { return A + B; });
+    ++i;
+  }
+
+  return 0;
+}
+
 int Mesodyn::sanity_check() {
 
-  //Check mass conservation
-  int i = 0;
-  for (Component* all_components : component) {
-    if ( fabs(all_components->theta() - solver_component[i]->theta() ) > numeric_limits<Real>::epsilon() ) {
-      Real difference = all_components->theta()-solver_component[i]->theta();
-        if (difference != 0) {
-          cerr << "WARNING: Mass of component " << i << " is NOT conserved! ";
-          if (difference > 0)
-            cerr << "You're losing mass, difference: ";
-          else
-            cerr << "You're gaining mass, difference: ";
-          cerr << difference << endl;
-          }
-      }
-      ++i;
+  //Check local mass conservation
+  Real sum {0};
+
+  skip_bounds([this, sum](int x, int y, int z) mutable {
+    sum = 0;
+    for (Component* all_components : solver_component) {
+      sum += val(all_components->rho, x, y, z);
+      //And check for negative numbers
+      if ( val(all_components->rho, x, y, z) > 1 ||  val(all_components->rho, x, y, z) < 0)
+        cerr << "CRITICAL ERROR: COMPONENT DENSITY > 1 || < 0" << endl;
     }
+    if (sum > (1+New[0]->tolerance) || sum < (1-New[0]->tolerance)) {
+      //cerr << sum << endl;
+      cerr << "CRITICAL ERROR: LOCAL DENSITIES DO NOT SUM TO 1, DIFFERENCE: " << sum-1 << endl;
+      cerr << "Location: " << x << " " << y << " " << z << endl;
+    }
+  });
+
+  //Check global mass conservation
+  sum = 0;
+  for (Component* all_components : solver_component) {
+    sum += all_components->theta();
+  }
+
+  if ( sum - boundaryless_volume > 0+New[0]->tolerance ) {
+    cerr << "CRITICAL ERROR: MASS NOT CONSERVED! SUM THETA != M." << endl;
+    cerr << "Difference: " << sum - ((MX-2)*(MY-2)*(MZ-2)) << endl;
+  }
 
   return 0;
 }
@@ -246,27 +339,25 @@ Real* Mesodyn::solve_explicit() {
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
+  int c = 0;
+
+  for (Component* all_components : solver_component) {
+    all_components->load_rho(component[c]->rho);
+    ++c;
+  }
+
   for (Component* all_components : solver_component)
     all_components->update_boundaries();
+
 
   for (Flux1D* all_fluxes : solver_flux)
     all_fluxes->langevin_flux();
 
-  int c = 0;
-  for (size_t i = 0; i < component_no; ++i) {
-    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_plus)
+      solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio);
 
-  c = 0;
-  for (size_t j = 0; j < (component_no - 1); ++j) {
-    for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(component[i]->rho, flux[c]->J, solver_flux[c]->J, cn_ratio, -1.0);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_minus)
+      solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio, -1);
 
   rho.clear();
   for (Component* all_components : solver_component) {
@@ -286,9 +377,7 @@ int Mesodyn::initial_conditions() {
 
   vector<vector<Real>> rho(component_no, vector<Real>(M));
 
-  Sys[0]->PrepareForCalculations(); // to get the correct KSAM.
-
-  //TODO: once KSAM becomes a vector, this loop won't be nessecary anymore, just pass KSAM to the flux constructor.
+  //once KSAM becomes a vector, this loop won't be nessecary anymore, just pass KSAM to the flux constructor.
   vector<int> mask(M);
   for (int i = 0; i < M; ++i) {
     mask[i] = *(Sys[0]->KSAM + i);
@@ -303,12 +392,9 @@ int Mesodyn::initial_conditions() {
       break;
     case INIT_FROMVTK:
       for (size_t i = 0 ; i < rho.size() ; ++i) {
-        string filename = read_filename + to_string(i) + ".vtk";
+        string filename = read_filename + to_string(i+1) + ".vtk";
         init_rho_fromvtk(rho[i], filename);
       }
-      break;
-    case INIT_EQUILIBRATE:
-      init_rho_equilibrate(rho);
       break;
   }
 
@@ -384,7 +470,6 @@ int Mesodyn::initial_conditions() {
         solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
-
     break;
   case 2:
     boundary = new Boundary2D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3]);
@@ -406,7 +491,6 @@ int Mesodyn::initial_conditions() {
         solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
-
     break;
   case 3:
     boundary = new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]);
@@ -428,12 +512,14 @@ int Mesodyn::initial_conditions() {
         solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
-
     break;
   }
 
-  norm_theta(component);
-  norm_theta(solver_component);
+//  norm_theta(component);
+  //norm_theta(solver_component);
+
+  if (edge_detection)
+    interface = new Interface(Lat[0], component);
 
   return 0;
 }
@@ -447,21 +533,11 @@ void Mesodyn::explicit_start() {
   New[0]->SolveMesodyn(loader_callback, explicit_solver_callback);
 
   // Update densities after first timestep
-  int c = 0;
-  for (size_t i = 0; i < component_no; ++i) {
-    for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      solver_component[i]->update_density(solver_flux[c]->J);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_plus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J);
 
-  c = 0;
-  for (size_t j = 0; j < (component_no - 1); ++j) {
-    for (size_t i = 1 + j; i < component_no; ++i) {
-      solver_component[i]->update_density(solver_flux[c]->J, -1.0);
-      ++c;
-    }
-  }
+  for (vector<int>& i : update_minus)
+      solver_component[i[0]]->update_density(solver_flux[i[1]]->J, -1);
 
   // Load rho_k+1 into rho_k
   int i = 0;
@@ -476,16 +552,6 @@ void Mesodyn::explicit_start() {
     all_fluxes->J = solver_flux[i]->J;
     ++i;
   }
-}
-
-int Mesodyn::init_rho_equilibrate(vector<vector<Real>>& rho) {
-  cout << "Equilibrating.." << endl;
-  New[0]->Solve(true);
-  for (size_t i = 0; i < component_no; ++i) {
-    for (int z = 0; z < M; ++z)
-      rho[i][z] = *(Seg[i]->H_phi + z);
-  }
-  return 0;
 }
 
 vector<string> Mesodyn::tokenize(string line, char delim) {
@@ -508,7 +574,7 @@ int Mesodyn::init_rho_fromvtk(vector<Real>& rho, string filename) {
   rho_input.open(filename);
 
   if (!rho_input.is_open()) {
-    cerr << "Error opening file! Is the filename correct? Is there a vtk for each component, ending in [component number].vtk, starting from 0?" << endl;
+    cerr << "Error opening file! Is the filename correct? Is there a vtk for each component, ending in [component number].vtk, starting from 1?" << endl;
     throw ERROR_FILE_FORMAT;
   }
 
@@ -647,8 +713,6 @@ int Mesodyn::norm_theta(vector<Component*>& component) {
     }
   }
 
-  // Adjust solvent so that sum at position = 1
-
   // We now know the total density and can adjust the solvent accodingly to add up to 1.
   // Let's first find out how much there is to adjust.
   vector<Real> residuals(M);
@@ -680,13 +744,6 @@ int Mesodyn::norm_theta(vector<Component*>& component) {
 int Mesodyn::init_rho_homogeneous(vector<vector<Real>>& rho, vector<int>& mask) {
   size_t solvent = (size_t)Sys[0]->solvent; // Find which mol is the solvent
 
-  int tMX = Lat[0]->MX;
-  int tMY = Lat[0]->MY;
-  int tMZ = Lat[0]->MZ;
-
-  // The right hand side of the minus sign calculates the volume of the boundaries. I know, it's hideous.
-  int volume = Sys[0]->volume - ((2 * dimensions - 4) * tMX * tMY + 2 * tMX * tMZ + 2 * tMY * tMZ + (-2 + 2 * dimensions) * (tMX + tMY + tMZ) + pow(2, dimensions));
-
   Real sum_theta{0};
   vector<Real> solvent_mons;
   int c{0};
@@ -706,7 +763,7 @@ int Mesodyn::init_rho_homogeneous(vector<vector<Real>>& rho, vector<int>& mask) 
             if (mask[z] == 0)
               rho[i][z] = 0;
             else
-              rho[c][z] = mon_theta / volume;
+              rho[c][z] = mon_theta / boundaryless_volume;
           }
         }
         ++c;
@@ -722,12 +779,12 @@ int Mesodyn::init_rho_homogeneous(vector<vector<Real>>& rho, vector<int>& mask) 
 
   for (size_t i = 0; i < solvent_mons.size(); ++i) {
     Real mon_theta{0};
-    mon_theta = (volume - sum_theta) * Mol[solvent_mol]->fraction(Mol[solvent_mol]->MolMonList[i]);
+    mon_theta = (boundaryless_volume - sum_theta) * Mol[solvent_mol]->fraction(Mol[solvent_mol]->MolMonList[i]);
     for (int z = 0; z < M; ++z) {
       if (mask[z] == 0)
         rho[solvent][z] = 0;
       else
-        rho[solvent_mons[i]][z] = mon_theta / volume;
+        rho[solvent_mons[i]][z] = mon_theta / boundaryless_volume;
     }
   }
 
@@ -759,95 +816,197 @@ void Mesodyn::set_filename() {
   filename << rawtime;
 }
 
-void Mesodyn::write_settings() {
-  ostringstream settings_filename;
-
-  settings_filename << filename.str() << "-settings.dat";
-
-  mesodyn_output.open(settings_filename.str());
-
-  mesodyn_output.precision(16);
-
-  /* Output settings */
-
-  ostringstream settings;
-
-  settings << "Settings for mesodyn, read from file:,\n";
-  settings << "Timesteps," << timesteps << ",\n";
-  settings << "Time between saves," << timebetweensaves << ",\n";
-  settings << "Diffusion constant," << D << ",\n";
-  settings << "Seed for noise," << seed << ",\n";
-  settings << "Mean for noise," << mean << ",\n";
-  settings << "Stddev for noise," << stddev << ",\n";
-
-  mesodyn_output << settings.str();
-  mesodyn_output.close();
-}
-
 int Mesodyn::write_output() {
   //Implement below for more starts? (OutputList higher numbers?)
 
-/* Output has changed. as you don't use output I have commented it out. New output has more arguments and we need to pass on the argument to mesodyn when you want to use it.
   for (size_t i = 0; i < In[0]->OutputList.size(); ++i) {
-    Out.push_back(new Output(In, Lat, Seg, Mol, Sys, New, In[0]->OutputList[i], writes, timesteps / timebetweensaves));
+    Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[i], writes, timesteps / timebetweensaves));
     if (!Out[i]->CheckInput(1)) {
       cout << "input_error in output " << endl;
       return 0;
     }
-  }*/
+  }
 
-  PushOutput();
   New[0]->PushOutput();
 
   for (Output* all_output : Out) {
+    all_output->push("order_parameter",order_parameter);
+    all_output->push("timesteps", timesteps);
+    all_output->push("timebetweensaves", timebetweensaves);
+    all_output->push("diffusionconstant", D);
+    all_output->push("seed", seed);
+    all_output->push("mean", mean);
+    all_output->push("stddev", stddev);
+    all_output->push("delta_t", dt);
+    all_output->push("cn_ratio", cn_ratio);
+
+    if (edge_detection) {
+      ostringstream vtk_filename;
+      vtk_filename << filename.str() << "-edges" << writes << ".vtk";
+      all_output->vtk_structured_grid(vtk_filename.str(), &interface->edges[0]);
+    }
+
+    int component_count{1};
+    for (Component* all_components : solver_component) {
+      ostringstream vtk_filename;
+      vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
+      all_output->vtk_structured_grid(vtk_filename.str(), &all_components->rho[0]);
+      ++component_count;
+    }
+    ++writes;
+
     all_output->WriteOutput(writes);
     delete all_output;
   }
+
   Out.clear();
 
   return 0;
 }
 
-void Mesodyn::write_density(vector<Component*>& component) {
-  // Could also do this by overwriting the denisties in ... I think Mol..? right before it pushes the densities written by vtk in output.
-  // Right now output does nothing with the vtk function when mesodyn is running.
+/******* INTERFACE ********/
 
-  int component_count{1};
-  for (Component* all_components : component) {
+Interface::Interface(Lattice* Lat, vector<Component*> components)
+  : Lattice_Access(Lat), component(components) {}
 
-    ostringstream vtk_filename;
-    vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
+Interface::~Interface() {
+  for (Component* all_components : component)
+    delete all_components;
+  component.clear();
+}
 
-    mesodyn_output.open(vtk_filename.str());
+int Interface::detect_edges(int threshold) {
+  edges.clear();
+  vector<Real> temp((MX-3)*(MY-3)*(MZ-3));
+  temp = gaussian_blur(component[0]->rho);
+  edges = sobel_edge_detector(threshold, component[0]->rho);
+  return 0;
+}
 
-    /* Generate headers for rho entries */
+vector<Real> Interface::sobel_edge_detector(Real tolerance, vector<Real>& rho) {
+  //TODO: Generalize to 2D and 1D or add warning?
+  vector<Real> result((MX - 2) * (MY - 2) * (MZ - 2));
+  int threshold = tolerance;
 
-    ostringstream vtk;
+  int i = 0;
 
-    vtk << "# vtk DataFile Version 3.0 \n";
-    vtk << "Mesodyn output \n";
-    vtk << "ASCII\n";
-    vtk << "DATASET STRUCTURED_GRID \n";
-    vtk << "DIMENSIONS " << MX - 2 << " " << MY - 2 << " " << MZ - 2 << "\n";
-    vtk << "POINTS " << (MX - 2) * (MY - 2) * (MZ - 2) << " int\n";
-    skip_bounds([this, &vtk](int x, int y, int z) mutable {
-      vtk << x << " " << y << " " << z << "\n";
-    });
+  vector<Real> Gx_minus = {-1, -3, -1, -3, -6, -3, -1, -3, -1};
+  vector<Real> Gx_mid = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  vector<Real> Gx_plus = {1, 3, 1, 3, 6, 3, 1, 3, 1};
 
-    vtk << "POINT_DATA " << (MX - 2) * (MY - 2) * (MZ - 2) << "\n";
-    vtk << "SCALARS Box_profile float\nLOOKUP_TABLE default \n";
+  vector<Real> Gy_minus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
+  vector<Real> Gy_mid = {-3, 0, 3, -6, 0, 6, -3, 0, 3};
+  vector<Real> Gy_plus = {-1, 0, 1, -3, 0, 3, -1, 0, 1};
 
-    skip_bounds([this, &vtk, all_components](int x, int y, int z) mutable {
-      vtk << val(all_components->rho, x, y, z) << "\n";
-    });
+  vector<Real> Gz_minus = {1, 3, 1, 0, 0, 0, -1, -3, -1};
+  vector<Real> Gz_mid = {3, 6, 3, 0, 0, 0, -3, -6, -3};
+  vector<Real> Gz_plus = {1, 3, 1, 0, 0, 0, -1, -3, -1};
 
-    mesodyn_output << vtk.str();
-    mesodyn_output.flush();
+  for (int x = 0; x < MX - 2; ++x)
+    for (int y = 0; y < MY - 2; ++y)
+      for (int z = 0 ; z < MZ - 2 ; ++z ) {
+        Real conv_x = convolution(Gx_minus, get_xy_plane(rho, x, y, z));
+        conv_x += convolution(Gx_mid, get_xy_plane(rho, x, y, z+1));
+        conv_x += convolution(Gx_plus, get_xy_plane(rho, x, y, z+2));
 
-    mesodyn_output.close();
-    ++component_count;
+        Real conv_y = convolution(Gy_minus, get_xy_plane(rho, x, y, z));
+        conv_y += convolution(Gy_mid, get_xy_plane(rho, x, y, z+1));
+        conv_y += convolution(Gy_plus, get_xy_plane(rho, x, y, z+2));
+
+        Real conv_z = convolution(Gz_minus, get_xz_plane(rho, x, y, z));
+        conv_z += convolution(Gz_mid, get_xz_plane(rho, x, y+1, z));
+        conv_z += convolution(Gz_plus, get_xz_plane(rho, x, y+2, z));
+
+        result[i] = abs(conv_x) + abs(conv_y) + abs(conv_z);
+        ++i;
+    }
+
+  //normalize between 0 and 255
+  Real min = *min_element(result.begin(), result.end());
+  Real max = *max_element(result.begin(), result.end());
+
+  for (Real& all_elements : result)
+    all_elements = (255 - 0) * ((all_elements - min) / (max - min)) + 0;
+
+  //cut-off at threshold
+  for (Real& all_elements : result)
+    if (all_elements < threshold) {
+      all_elements = 0;
+    }
+
+  return result;
+}
+
+vector<Real> Interface::gaussian_blur(vector<Real>& rho) {
+  vector<Real> result( (MX-3)*(MY-3)*(MY-3) );
+  vector<Real> G1 = {1, 2, 1, 2, 4, 2, 1, 2, 1};
+  vector<Real> G2 = {1, 1, 1, 1, 2, 1, 1, 1, 1};
+  vector<Real> G3 = {1, 1, 1, 1, 2, 1, 1, 1, 1};
+
+  for (Real& all_values : G1)
+    all_values = all_values * 1/16;
+
+  for (Real& all_values : G2)
+    all_values = all_values * 1/16;
+
+  for (Real& all_values : G3)
+    all_values = all_values * 1/16;
+
+  int i{0};
+
+  for (int x = 0; x < MX - 3; ++x)
+    for (int y = 0; y < MY - 3; ++y)
+      for (int z = 0 ; z < MZ - 3 ; ++z ) {
+        Real conv_1 = convolution(G1, get_xy_plane(rho, x, y, z));
+        Real conv_2 = convolution(G2, get_xy_plane(rho, x, y, z+1));
+        Real conv_3 = convolution(G3, get_xy_plane(rho, x, y, z+2));
+        result[i] = (conv_1 + conv_2 + conv_3);
+        ++i;
+    }
+  return result;
+}
+
+Real Interface::convolution(vector<Real> kernel, vector<Real> pixel) {
+  if (kernel.size() != pixel.size()) {
+    cerr << "Convolution: pixel and kernel not of equal size!" << endl;
+    throw ERROR_SIZE_INCOMPATIBLE;
   }
-  ++writes;
+
+  Real accumulator = 0;
+
+  for (size_t i = 0 ; i < kernel.size() ; ++i) {
+    accumulator += kernel[i] * pixel[i];
+  }
+
+  return accumulator;
+}
+
+vector<Real> Interface::get_xy_plane(vector<Real>& rho, int x, int y, int z, int size) {
+  vector<Real> pixel(size*size);
+
+  int i = 0;
+
+  for (int horizontal = 0 ; horizontal < size ; ++horizontal)
+    for (int vertical = 0 ; vertical < size ; ++vertical) {
+        pixel[i] = val(rho, x+horizontal, y+vertical, z);
+        ++i;
+    }
+
+  return pixel;
+}
+
+vector<Real> Interface::get_xz_plane(vector<Real>& rho, int x, int y, int z, int size) {
+  vector<Real> pixel(size*size);
+
+  int i = 0;
+
+  for (int horizontal = 0 ; horizontal < size ; ++horizontal)
+    for (int depth = 0 ; depth < size ; ++depth) {
+        pixel[i] = val(rho, x+horizontal, y, z+depth);
+        ++i;
+    }
+
+  return pixel;
 }
 
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
@@ -1047,11 +1206,11 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   }
 
   for (int& z : mask_plus) {
-    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z] + gaussian->noise[z]));
+    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
   }
 
   for (int& z : mask_minus) {
-    J_minus[z] = -J_plus[z - jump]; // = -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z] - gaussian->noise[z]));
+    J_minus[z] = -J_plus[z - jump]; //-D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); // = -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z] - gaussian->noise[z]));
     // We have to do it this way because otherwise the noise will be trouble
   }
 
@@ -1103,20 +1262,21 @@ int Component::update_density(vector<Real>& J, int sign) {
   return 0;
 }
 
-int Component::update_density(vector<Real>& rho_old, vector<Real>& J1, vector<Real>& J2, Real ratio, int sign) {
+int Component::update_density(vector<Real>& J1, vector<Real>& J2, Real ratio, int sign) {
   //Implicit update
   if (J1.size() != rho.size() || J1.size() != J2.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
     return 1;
   }
 
-  skip_bounds([this, J1, ratio, sign, rho_old](int x, int y, int z) mutable {
-    *val_ptr(rho, x, y, z) = (val(rho_old, x, y, z) + ratio * sign * val(J1, x, y, z));
+  skip_bounds([this, J1, ratio, sign](int x, int y, int z) mutable {
+    *val_ptr(rho, x, y, z) = (val(rho, x, y, z) + ratio * sign * val(J1, x, y, z));
   });
 
   skip_bounds([this, J2, ratio, sign](int x, int y, int z) mutable {
     *val_ptr(rho, x, y, z) = val(rho, x, y, z) + (1 - ratio) * sign * val(J2, x, y, z);
   });
+
   return 0;
 }
 
@@ -1559,46 +1719,7 @@ int Mesodyn::combinations(int n, int k) {
 
 /***** IO *****/
 
-void Mesodyn::PutParameter(string new_param) { KEYS.push_back(new_param); }
-string Mesodyn::GetValue(string parameter) {
-  int i = 0;
-  int length = PARAMETERS.size();
-  while (i < length) {
-    if (parameter == PARAMETERS[i]) {
-      return VALUES[i];
-    }
-    i++;
-  }
-  return "";
-}
-void Mesodyn::push(string s, Real X) {
-  Reals.push_back(s);
-  Reals_value.push_back(X);
-}
-void Mesodyn::push(string s, int X) {
-  ints.push_back(s);
-  ints_value.push_back(X);
-}
-void Mesodyn::push(string s, bool X) {
-  bools.push_back(s);
-  bools_value.push_back(X);
-}
-void Mesodyn::push(string s, string X) {
-  strings.push_back(s);
-  strings_value.push_back(X);
-}
-void Mesodyn::PushOutput() {
-  strings.clear();
-  strings_value.clear();
-  bools.clear();
-  bools_value.clear();
-  Reals.clear();
-  Reals_value.clear();
-  ints.clear();
-  ints_value.clear();
-}
-int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result,
-                      string& string_result) {
+int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result, string& string_result) {
   int i = 0;
   int length = ints.size();
   while (i < length) {
@@ -1639,4 +1760,17 @@ int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result,
     i++;
   }
   return 0;
+}
+
+string Mesodyn::GetValue(string parameter){
+if (debug) cout << "GetValue in lattice " << endl;
+	int i=0;
+	int length = PARAMETERS.size();
+	while (i<length) {
+		if (parameter==PARAMETERS[i]) {
+			return VALUES[i];
+		}
+		i++;
+	}
+	return "" ;
 }

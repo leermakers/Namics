@@ -345,15 +345,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		string slash = "/";
 
 		// Check if we have any slashes in the filename (are we in inputs, or higher up?)
-		while ((start = infilename.find(slash, start)) != string::npos) {
+		while ((start = sub[0].find(slash, start)) != string::npos) {
     	++occurrences;
     	start += slash.length();
 		}
 
 		// If we're not in the inputs folder, discard the path and take only the filename
 		if  (occurrences != 0) {
-			size_t found = infilename.find_last_of("/\\");
-			sub[0] = infilename.substr(found+1);
+			size_t found = sub[0].find_last_of("/\\");
+			sub[0] = sub[0].substr(found+1);
 		}
 	}
 
@@ -617,6 +617,44 @@ if (debug) cout << "vtk in output " << endl;
 	fclose(fp);
 }
 
+void Output::vtk_structured_grid(string filename, Real *X) {
+	if (debug) cout << "vtk_structed_grid in output " << endl;
+
+	ofstream output;
+	output.open(filename);
+
+	ostringstream vtk;
+
+	int MX = Lat[0]->MX;
+	int MY = Lat[0]->MY;
+	int MZ = Lat[0]->MZ;
+
+	vtk << "# vtk DataFile Version 4.2 \n";
+	vtk << "Mesodyn output \n";
+	vtk << "ASCII\n";
+	vtk << "DATASET STRUCTURED_GRID \n";
+	vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
+	vtk << "POINTS " << MX * MY * MZ << " int\n";
+
+	for (int x = 1; x < MX + 1; ++x)
+		for (int y = 1; y < MY + 1; ++y)
+			for (int z = 1 ; z < MZ + 1 ; ++z )
+				vtk << x << " " << y << " " << z << "\n";
+
+	vtk << "POINT_DATA " << MX * MY * MZ << "\n";
+	vtk << "SCALARS Sobel float\nLOOKUP_TABLE default \n";
+
+	for (int x = 1; x < MX + 1; ++x)
+		for (int y = 1; y < MY + 1; ++y)
+			for (int z = 1 ; z < MZ + 1 ; ++z )
+				vtk << X[x*Lat[0]->JX+y*Lat[0]->JY+z*Lat[0]->JZ] << "\n";
+
+	output << vtk.str();
+	output.flush();
+
+	output.close();
+}
+
 
 void Output::density(){
 if (debug) cout << "density in output " << endl;
@@ -706,6 +744,7 @@ if (debug) cout << "printlist in output " << endl;
 
 int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result, string& string_result) {
   int i = 0;
+  int_result=0;
   int length = ints.size();
   while (i < length) {
     if (prop == ints[i]) {
@@ -715,6 +754,7 @@ int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result
     i++;
   }
   i = 0;
+  Real_result=0.0;
   length = Reals.size();
   while (i < length) {
     if (prop == Reals[i]) {
@@ -724,6 +764,7 @@ int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result
     i++;
   }
   i = 0;
+  string_result="false";
   length = bools.size();
   while (i < length) {
     if (prop == bools[i]) {

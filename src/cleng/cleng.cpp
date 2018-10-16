@@ -290,6 +290,7 @@ bool Cleng::NotCollapsing() {
     double min_dist = 6; // minimal distance between nodes
     int i = 0;
     for (const auto &n : nodes) {
+// REDO IT FOR SYSTEM BOX_L
         if (MP != n->point()) {
             Real distance = MPs.distance(n->point());
             if (distance < min_dist) i++;

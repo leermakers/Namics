@@ -33,16 +33,9 @@ void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {
 }
 
 bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
-    Point current_node = this->get_system_point();
-    cout << "Point: " << (current_node+shift).to_string() << " cnode: " << cnode->to_string() << endl;
-
     Real dist = distance(cnode->get_system_point(), shift);
-
-    Point distance_origin = {(int)dist, (int)dist, (int)dist};
     Point distance = {(int)dist+2, (int)dist+2, (int)dist+2};
-    cout << "Point distance_origin: " << distance_origin.to_string() << endl;
-    cout << "Point distance: " << distance.to_string() << endl;
-    cout << "subbox_range: " << subBoxRange.to_string() << endl;
+
     if ( distance > subBoxRange ) {
         cout << "Too far away from each other nodes: " << this->id << " and " << cnode->id << endl;
         return false;

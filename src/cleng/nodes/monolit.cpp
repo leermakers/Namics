@@ -41,4 +41,3 @@ bool Monolit::inSubBoxRange(const Point &subBoxRange, const Point &shift) const 
     return true;
 }
 
-

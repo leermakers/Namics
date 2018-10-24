@@ -23,17 +23,21 @@ enum error {
 };
 
 class Lattice_Access {
-
 public:
 
   Lattice_Access(Lattice*);
   ~Lattice_Access();
 
-  //TODO: Template these:
-  inline Real val(vector<Real>&, int, int, int);
-  inline int val(vector<int>&, int, int, int);
-  inline Real* val_ptr(vector<Real>&, int, int, int);
-  inline int* val_ptr(vector<int>&, int, int, int);
+  template <typename T>
+  inline T val(vector<T>& v, int x, int y, int z) {
+      return v[x * JX + y * JY + z * JZ];
+  }
+
+  template <typename T>
+  inline T* val_ptr(vector<T>& v, int x, int y, int z) {
+      return &v[x * JX + y * JY + z * JZ];
+  }
+
   inline int index(int x, int y, int z);
   inline vector<int> coordinate(int n);
   inline void skip_bounds( function<void(int,int,int)> );
@@ -167,7 +171,6 @@ public:
   virtual ~Flux1D();
 
   virtual int langevin_flux();
-  //TODO: check everything for 'virtual' errors
 
   Real J_at(int, int, int);
   Real L_at(int, int, int);
@@ -233,26 +236,6 @@ protected:
   vector<int> Mask_minus_z;
 };
 
-class Interface : private Lattice_Access {
-public:
-  Interface(Lattice*, vector<Component*>);
-  ~Interface();
-  int detect_edges(int);
-  vector<Real> edges;
-
-private:
-  vector<Component*> component;
-
-  vector<Real> sobel_edge_detector(Real, vector<Real>&);
-  vector<Real> gaussian_blur(vector<Real>&);
-  //TODO: template this
-  Real convolution(vector<int>, vector<Real>);
-  Real convolution(vector<Real>, vector<Real>);
-  vector<Real> get_xy_plane(vector<Real>&, int, int, int, int = 3);
-  vector<Real> get_xz_plane(vector<Real>&, int, int, int, int = 3);
-};
-
-
 class Mesodyn : private Lattice_Access {
 
 private:
@@ -280,9 +263,6 @@ private:
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
-  bool edge_detection;
-  function<void(vector<Real>&)> edge_detector; //TODO: remove?
-  int edge_detection_threshold;
 
 
   /* Flow control */
@@ -293,6 +273,7 @@ private:
   Real* solve_crank_nicolson();
   void load_alpha(vector<Real>&, size_t);
   int sanity_check();
+  Real calculate_order_parameter();
   Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
 
   /* Initialization*/
@@ -314,10 +295,10 @@ private:
   void set_update_lists();
   vector<vector<int>> update_plus;
   vector<vector<int>> update_minus;
+  Real boundaryless_volume;
 
   /* Helper class instances */
   Boundary1D* boundary;
-  Interface* interface;
   vector<Component*> component;
   vector<Component*> solver_component;
   vector<Flux1D*> flux;

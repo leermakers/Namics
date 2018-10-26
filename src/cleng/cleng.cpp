@@ -5,6 +5,7 @@
 #include "nodes/monolit.h"
 #include <map>
 #include <cassert>
+#include <fstream>
 
 using namespace std;
 
@@ -29,6 +30,7 @@ Cleng::Cleng(
     New(std::move(New_)) {
     if (debug) cout << "Cleng initialized" << endl;
     KEYS.emplace_back("MCS");
+    KEYS.emplace_back("delta_step");
     KEYS.emplace_back("save_interval");
     KEYS.emplace_back("save_filename");
     KEYS.emplace_back("seed");
@@ -58,6 +60,12 @@ bool Cleng::CheckInput(int start) {
                                      "The number of timesteps should be between 1 and 10000");
         }
         if (debug) cout << "MCS is " << MCS << endl;
+
+        if (!GetValue("delta_step").empty()) {
+            success = In[0]->Get_int(GetValue("delta_step"), delta_step, 1, 10,
+                                     "The number of delta_step should be between 1 and 10");
+        }
+        if (debug) cout << "delta_step is " << delta_step << endl;
 
         if (!GetValue("save_interval").empty()) {
             success = In[0]->Get_int(GetValue("save_interval"), save_interval, 1, MCS,
@@ -233,7 +241,7 @@ void Cleng::WriteOutput(int MS_step, Real exp_diff) {
     }
 }
 
-int Cleng::GetIntRandomValueExclude(int min_value, int max_value, int exclude_value, bool need_exclude) {
+int Cleng::GetRandomIntValueExcludeValue(int min_value, int max_value, int exclude_value, bool need_exclude) {
     if (debug) cout << "Int GetRandomValue in Cleng" << endl;
     int out;
     random_device rd;
@@ -243,6 +251,33 @@ int Cleng::GetIntRandomValueExclude(int min_value, int max_value, int exclude_va
     if (need_exclude) {
         while (out == exclude_value) {
             out = dist(gen);
+        }
+    }
+    return out;
+}
+
+int Cleng::GetRandomIntValueExcludeArray(int min_value, int max_value, vector<int> exclude_values, bool need_exclude) {
+    if (debug) cout << "Int GetRandomValue in Cleng" << endl;
+    int out;
+    random_device rd;
+    default_random_engine gen(rd());
+    uniform_int_distribution<> dist(min_value, max_value);
+
+    out = dist(gen);
+
+    if (need_exclude) {
+        int coincidence = 0;
+        for (auto exclude_value : exclude_values) {
+            if (out == exclude_value) coincidence ++;
+        }
+        if (coincidence > 0) {
+            while (coincidence != 0) {
+                out = dist(gen);
+                coincidence = 0;
+                for (auto exclude_value : exclude_values) {
+                    if (out == exclude_value) coincidence ++;
+                }
+            }
         }
     }
     return out;
@@ -272,8 +307,6 @@ bool Cleng::InSubBoxRange() {
     int not_in_subbox_range = 0;
     Point sub_box = {sub_box_size, sub_box_size, sub_box_size};  // change it in future
     if(!nodes[id_node_for_move]->inSubBoxRange(sub_box, shift)) not_in_subbox_range ++;
-
-
     cout << "not_in_subbox_range: " << not_in_subbox_range << endl;
 
     if (not_in_subbox_range != 0) {
@@ -287,10 +320,11 @@ bool Cleng::NotCollapsing() {
     bool not_collapsing = false;
     Point MP (nodes[id_node_for_move]->point());
     Point MPs (nodes[id_node_for_move]->point() + shift);
-    double min_dist = 6; // minimal distance between nodes
+//    cout << "MP: "  << MP.to_string() << endl;
+//    cout << "MPs: " << MPs.to_string() << endl;
+    double min_dist = 1; // minimal distance between nodes
     int i = 0;
     for (const auto &n : nodes) {
-// REDO IT FOR SYSTEM BOX_L
         if (MP != n->point()) {
             Real distance = MPs.distance(n->point());
             if (distance < min_dist) i++;
@@ -347,18 +381,32 @@ bool Cleng::Checks() {
     return not_collapsing and in_range and in_subbox_range;
 }
 
-Point Cleng::PrepareStep() {
-    shift = {GetIntRandomValueExclude(-1, 1, 0, true), GetIntRandomValueExclude(-1, 1, 0, true),
-             GetIntRandomValueExclude(-1, 1, 0, true)};
+vector<int> make_exclude_array(int step) {
+    vector<int> result;
+    for (int i = -step+1; i<step; i++)
+    {
+        result.push_back(i);
+    }
+    return result;
+}
 
-    int id_pos_eq0 = GetIntRandomValueExclude(0, 2, 0, false);
-    if (id_pos_eq0 == 0) {
-        shift.x = 0;
-    } else {
-        if (id_pos_eq0 == 1) {
-            shift.y = 0;
+Point Cleng::PrepareStep() {
+    shift = {
+            GetRandomIntValueExcludeArray(-delta_step, delta_step, make_exclude_array(delta_step), true),
+            GetRandomIntValueExcludeArray(-delta_step, delta_step, make_exclude_array(delta_step), true),
+            GetRandomIntValueExcludeArray(-delta_step, delta_step, make_exclude_array(delta_step), true)
+    };
+
+    if ((delta_step % 2) == 1) {
+        int id_pos_eq0 = GetRandomIntValueExcludeValue(0, 2, 0, false);
+        if (id_pos_eq0 == 0) {
+            shift.x = 0;
         } else {
-            shift.z = 0;
+            if (id_pos_eq0 == 1) {
+                shift.y = 0;
+            } else {
+                shift.z = 0;
+            }
         }
     }
     return shift;
@@ -370,7 +418,7 @@ bool Cleng::MakeShift(bool back) {
 
     if (!back) {
         shift = PrepareStep();
-        id_node_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
+        id_node_for_move = GetRandomIntValueExcludeValue(0, (int) nodes.size() - 1, 0, false);
         cout << "Trying: \n node_id: " << id_node_for_move
              << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
         if (Checks()) {
@@ -378,7 +426,7 @@ bool Cleng::MakeShift(bool back) {
         } else {
             while (!Checks()) {
                 cout << "Choose another particle id and step..." << endl;
-                id_node_for_move = GetIntRandomValueExclude(0, (int) nodes.size() - 1, 0, false);
+                id_node_for_move = GetRandomIntValueExcludeValue(0, (int) nodes.size() - 1, 0, false);
                 shift = PrepareStep();
                 cout << "Trying: \n node_id: " << id_node_for_move
                      << ", MC step: { " << shift.x << ", " << shift.y << ", " << shift.z << " }" << endl;
@@ -391,9 +439,7 @@ bool Cleng::MakeShift(bool back) {
         cout << "MakeShift back" << endl;
         Point neg_shift = shift.negate();
         nodes[id_node_for_move]->shift(neg_shift);
-
     }
-
     return success;
 }
 
@@ -425,13 +471,6 @@ bool Cleng::MonteCarlo() {
         free_energy_trial = Sys[0]->GetFreeEnergy() - GetN_times_mu();
 
         assert(!std::isnan(free_energy_trial));
-//        for (auto &&n : nodes) {
-//            cout << "n: " << n->point().to_string() << endl;
-//            assert((n->point().x > 3) and (n->point().x < 28));
-//            assert((n->point().y > 3) and (n->point().y < 28));
-//            assert((n->point().z > 3) and (n->point().z < 28));
-//        }
-
 
         cout << "free_energy_current: " << free_energy_current << endl;
         cout << "free_energy_trial: " << free_energy_trial << endl;
@@ -442,10 +481,10 @@ bool Cleng::MonteCarlo() {
             accepted ++;
         } else {
             Real acceptance = GetRealRandomValue(0, 1);
-            cout << "acceptance: " << acceptance << endl;
-            cout << "diff: " << free_energy_trial - free_energy_current << endl;
-            exp_diff = exp(-1.0 * (free_energy_trial - free_energy_current));
-            cout << "exp(diff): " << exp_diff << endl;
+//            cout << "acceptance: " << acceptance << endl;
+//            cout << "diff: " << free_energy_trial - free_energy_current << endl;
+//            exp_diff = exp(-1.0 * (free_energy_trial - free_energy_current));
+//            cout << "exp(diff): " << exp_diff << endl;
 
             if (acceptance < exp(-1.0 * (free_energy_trial - free_energy_current))) {
                 cout << "Accepted" << endl;
@@ -460,11 +499,12 @@ bool Cleng::MonteCarlo() {
             }
         }
         cout << "MonteCarlo steps: " << MS_step << endl;
-        cout << "Accepted %: " << 100* (accepted / MS_step) << endl;
-        cout << "Rejected %: " << 100* (rejected / MS_step) << endl;
+        cout << "Accepted %: " << 100 * (accepted / MS_step) << endl;
+        cout << "Rejected %: " << 100 * (rejected / MS_step) << endl;
 
         if ((MS_step % save_interval) == 0) {
             WriteOutput(MS_step, exp_diff);
+            WriteClampedNodeDistance(MS_step);
         }
         cout << "Done. \n" << endl;
     }
@@ -563,4 +603,38 @@ void Cleng::fillXYZ() {
         ys[i] = nodes[i]->point().y;
         zs[i] = nodes[i]->point().z;
     }
+}
+
+void Cleng::WriteClampedNodeDistance(int MS_step) {
+    vector<Real> distPerMC;
+    int i = 0;
+    for (auto &&SN :  simpleNodeList) {
+        if (!(i%2)) {
+//            cout << "!!!!SN: " << SN->to_string() << " cnode: "
+//                 << SN->get_cnode()->to_string() << endl;
+//            cout << "!!!!SN: " << SN->get_system_point().to_string() << " cnode: "
+//                 << SN->get_cnode()->get_system_point().to_string() << endl;
+//            cout << "Distance: " << SN->distance(SN->get_cnode()->get_system_point()) << endl;
+            distPerMC.push_back(SN->distance(SN->get_cnode()->get_system_point()));
+        }
+        i ++;
+    }
+//    cout << "Finally: " << endl;
+//    cout << "Size of distPerMC: " << distPerMC.size() << endl;
+
+    string filename;
+    vector<string> sub;
+    string infilename = In[0]->name;
+    In[0]->split(infilename,'.',sub);
+    filename=sub[0].append(".");
+//    filename = sub[0].append("_").append(".").append(name);
+    filename = In[0]->output_info.getOutputPath() + filename;
+    ofstream outfile;
+    outfile.open(filename+"cleng_pos", std::ios_base::app);
+
+    outfile << MS_step << " ";
+    for ( auto n : distPerMC ) {
+        outfile << n << " ";
+    }
+    outfile << endl;
 }

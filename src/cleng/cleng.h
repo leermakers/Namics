@@ -29,9 +29,8 @@ private:
     const vector<System*> Sys;
     const vector<Solve_scf*> New;
     const string brand;
-
     Real seed;
-    void prepareOutputFile();
+
     void fillXYZ();
 
 public:
@@ -46,6 +45,7 @@ public:
     int n_out;
     int sub_box_size;
     int MCS;
+    int delta_step;
     int n_p;
     int t;
     int save_interval;
@@ -80,14 +80,15 @@ public:
     bool MakeShift(bool back);
     bool Checks();
     bool InSubBoxRange();
-    void makeInSubBoxRange();
     bool NotCollapsing();
     bool InRange();
     void WriteOutput(int, Real);
+    void WriteClampedNodeDistance(int);
     void PushOutput(int, Real);
     void make_BC();
     int GetValue(string, int&, Real&, string&);
-    int GetIntRandomValueExclude(int, int, int, bool);
+    int GetRandomIntValueExcludeValue(int, int, int, bool);
+    int GetRandomIntValueExcludeArray(int, int, vector<int>, bool);
     Real GetRealRandomValue(int, int);
     Real GetN_times_mu();
     Point PrepareStep();

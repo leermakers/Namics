@@ -32,8 +32,12 @@ void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {
     cnode = std::move(coupled_node);
 }
 
+shared_ptr<SimpleNode> SimpleNode::get_cnode() {
+    return this->cnode;
+}
+
 bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
-    Real dist = distance(cnode->get_system_point(), shift);
+    Real dist = distance_with_shift(cnode->get_system_point(), shift);
     Point distance = {(int)dist+2, (int)dist+2, (int)dist+2};
 
     if ( distance > subBoxRange ) {
@@ -47,9 +51,16 @@ bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) con
     return true;
 }
 
-Real SimpleNode::distance(Point const &point, const Point &shift) const {
+Real SimpleNode::distance_with_shift(const Point &point, const Point &shift) const {
     Real dx = pow(this->system_point.x + shift.x - point.x, 2);
     Real dy = pow(this->system_point.y + shift.y - point.y, 2);
     Real dz = pow(this->system_point.z + shift.z - point.z, 2);
+    return sqrt(dx + dy + dz);
+}
+
+Real SimpleNode::distance(const Point &other) const {
+    Real dx = pow(this->system_point.x - other.x, 2);
+    Real dy = pow(this->system_point.y - other.y, 2);
+    Real dz = pow(this->system_point.z - other.z, 2);
     return sqrt(dx + dy + dz);
 }

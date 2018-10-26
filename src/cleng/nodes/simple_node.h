@@ -19,9 +19,13 @@ public:
 
     void set_cnode(shared_ptr<SimpleNode> coupled_node);
 
+    shared_ptr<SimpleNode> get_cnode();
+
     bool inSubBoxRange(const Point &subBoxRange, const Point &shift) const override;
 
-    Real distance(Point const &point, const Point &shift) const;
+    Real distance_with_shift(const Point &point, const Point &shift) const;
+
+    Real distance(const Point &other) const;
 
     Point get_system_point() const;
 

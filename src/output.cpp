@@ -376,7 +376,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]).append(":");
 				fprintf(fp,"%s",s.c_str()); fprintf(fp,"%d\t",subl);
 				int length_vec=Size;
-				for (int j=0; j<length_vec; j++) fprintf(fp,"%i \t",X[j]);
+				for (int j=0; j<length_vec; j++) fprintf(fp,"%i\t",X[j]);
 				fprintf(fp,"\n");
 			}
 		}
@@ -394,9 +394,9 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			}  else {
 				key=OUT_key[i];
 				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
-				fprintf(fp,"%s \t",s.c_str());
+				fprintf(fp,"%s\t",s.c_str());
 				int length_vec=Size;
-				for (int j=0; j<length_vec; j++) fprintf(fp,"%e \t",X[j]);
+				for (int j=0; j<length_vec; j++) fprintf(fp,"%e\t",X[j]);
 				fprintf(fp,"\n");
 			}
 		}
@@ -409,18 +409,18 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		int length=OUT_key.size();
 		switch(Lat[0]->gradients) {
 			case 1:
-				fprintf(fp,"x \t");
+				fprintf(fp,"x\t");
 				break;
 			case 2:
-				fprintf(fp,"x \t y \t");
+				fprintf(fp,"x\t y\t");
 				break;
 			case 3:
-				fprintf(fp,"x \t y \t z \t");
+				fprintf(fp,"x\t y\t z\t");
 				break;
 			default:
 				break;
 		}
-		//fprintf(fp,"x \t y \t z \t");
+		//fprintf(fp,"x\t y\t z\t");
 		for (int i=0; i<length; i++) {
 			Real*  X = GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
 			if (X!=NULL) {
@@ -445,7 +445,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			for (int i=0; i<length; i++) {
 				key=OUT_key[i];
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
-				fprintf(fp,"%s \t",s.c_str());
+				fprintf(fp,"%s\t",s.c_str());
 			}
 			fprintf(fp,"\n"); append=true;
 		} else 	fp=fopen(filename.c_str(),"a");

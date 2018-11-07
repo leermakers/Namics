@@ -858,21 +858,21 @@ if (debug) cout << "vtk in lattice " << endl;
 			cout << "for system with one gradient there is no VTK output available " << endl;
 			break;
 		case 2:
-			fprintf(fp,"# vtk DataFile Version 3.0 \nvtk output \nASCII \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i\n",MX,MY,1);
-			fprintf(fp,"SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i\n",MX*MY);
-			fprintf(fp,"SCALARS %s double \nLOOKUP_TABLE default \n",id.c_str());
+			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MX,MY,1);
+			fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",MX*MY);
+			fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
 			for (i=1; i<MX+1; i++)
 			for (j=1; j<MY+1; j++)
-			fprintf(fp,"%f \n",X[i*JX+j]);
+			fprintf(fp,"%f\n",X[i*JX+j]);
 			break;
 		case 3:
-			fprintf(fp,"# vtk DataFile Version 3.0  \nvtk output \nASCII \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i\n",MX,MY,MZ);
-			fprintf(fp,"SPACING 1 1 1 \nORIGIN 0 0 0 \nPOINT_DATA %i\n",MX*MY*MZ);
-			fprintf(fp,"SCALARS %s double \nLOOKUP_TABLE default \n",id.c_str());
+			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MX,MY,MZ);
+			fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",MX*MY*MZ);
+			fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
 			for (i=1; i<MX+1; i++)
 			for (j=1; j<MY+1; j++)
 			for (k=1; k<MZ+1; k++)
-			fprintf(fp,"%f \n",X[i*JX+j*JY+k]);
+			fprintf(fp,"%f\n",X[i*JX+j*JY+k]);
 			break;
 		default:
 			break;
@@ -886,16 +886,16 @@ if (debug) cout <<"PutProfiles in lattice " << endl;
 	switch(gradients) {
 		case 1:
 			for (x=0; x<M; x++){
-				if (fjc==1) fprintf(pf,"%i \t",x); else fprintf(pf,"%e \t",1.0*(x+1)/fjc-1.0);
-				for (i=0; i<length; i++) fprintf(pf,"%e \t",X[i][x]);
+				if (fjc==1) fprintf(pf,"%i\t",x); else fprintf(pf,"%e\t",1.0*(x+1)/fjc-1.0);
+				for (i=0; i<length; i++) fprintf(pf,"%e\t",X[i][x]);
 				fprintf(pf,"\n");
 			}
 			break;
 		case 2:
 			for (x=1; x<MX+1; x++)
 			for (y=1; y<MY+1; y++){
-				fprintf(pf,"%i \t %i \t",x,y);
-				for (i=0; i<length; i++) fprintf(pf,"%e \t",X[i][x*JX+y]);
+				fprintf(pf,"%i\t%i\t",x,y);
+				for (i=0; i<length; i++) fprintf(pf,"%e\t",X[i][x*JX+y]);
 				fprintf(pf,"\n");
 			}
 			break;
@@ -903,8 +903,8 @@ if (debug) cout <<"PutProfiles in lattice " << endl;
 			for (x=1; x<MX+1; x++)
 			for (y=1; y<MY+1; y++)
 			for (z=1; z<MZ+1; z++) {
-				fprintf(pf,"%i \t %i \t %i \t",x,y,z);
-				for (i=0; i<length; i++) fprintf(pf,"%e \t",X[i][x*JX+y*JY+z]);
+				fprintf(pf,"%i\t%i\t%i\t",x,y,z);
+				for (i=0; i<length; i++) fprintf(pf,"%e\t",X[i][x*JX+y*JY+z]);
 				fprintf(pf,"\n");
 			}
 			break;
@@ -2078,16 +2078,16 @@ if (debug) cout <<"StoreGuess in output" << endl;
 	}
 	FILE *fp;
 	fp=fopen(filename.c_str(),"w");
-	fprintf(fp,"%s \n",method.c_str());
-	fprintf(fp," %i \t %i \t %i \t %i \n" ,MX,MY,MZ, fjc);
-	if (charged) fprintf(fp,"%s \n" ,"true"); else  fprintf(fp,"%s \n" ,"false");
-	fprintf(fp,"%i \n",mon_length);
-	for (int i=0; i<mon_length; i++) fprintf(fp,"%s \n",monlist[i].c_str());
-	fprintf(fp,"%i \n",state_length);
-	for (int i=0; i<state_length; i++) fprintf(fp,"%s \n",statelist[i].c_str());
+	fprintf(fp,"%s\n",method.c_str());
+	fprintf(fp," %i\t%i\t%i\t%i\n" ,MX,MY,MZ, fjc);
+	if (charged) fprintf(fp,"%s\n" ,"true"); else  fprintf(fp,"%s\n" ,"false");
+	fprintf(fp,"%i\n",mon_length);
+	for (int i=0; i<mon_length; i++) fprintf(fp,"%s\n",monlist[i].c_str());
+	fprintf(fp,"%i\n",state_length);
+	for (int i=0; i<state_length; i++) fprintf(fp,"%s\n",statelist[i].c_str());
 	int iv=(mon_length+state_length)*M;
 	if (charged) iv +=M;
-	for (int i=0; i<iv; i++) fprintf(fp,"%e \n",x[i]);
+	for (int i=0; i<iv; i++) fprintf(fp,"%e\n",x[i]);
 	fclose(fp);
 	return success;
 }

@@ -412,10 +412,10 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				fprintf(fp,"x\t");
 				break;
 			case 2:
-				fprintf(fp,"x\t y\t");
+				fprintf(fp,"x\ty\t");
 				break;
 			case 3:
-				fprintf(fp,"x\t y\t z\t");
+				fprintf(fp,"x\ty\tz\t");
 				break;
 			default:
 				break;

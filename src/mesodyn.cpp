@@ -368,12 +368,31 @@ int Mesodyn::initial_conditions() {
       init_rho_homogeneous(rho, mask);
       break;
     case INIT_FROMPRO:
-      init_rho_frompro(rho, read_filename);
-      break;
+      {
+        Reader reader(read_filename);
+
+        if (reader.filetype != Reader::PRO)
+          throw ERROR_FILE_FORMAT;
+
+        if ( (reader.MX+2)*(reader.MY+2)*(reader.MZ+2) != (size_t)M)
+          throw ERROR_SIZE_INCOMPATIBLE;
+
+        for (size_t i = 0; i < reader.multicomponent_rho.size() ; ++i)
+          rho[i] = reader.with_bounds(reader.multicomponent_rho[i]);
+        break;
+      }
     case INIT_FROMVTK:
       for (size_t i = 0 ; i < rho.size() ; ++i) {
         string filename = read_filename + to_string(i+1) + ".vtk";
-        init_rho_fromvtk(rho[i], filename);
+        Reader reader(filename);
+
+        if (reader.filetype != Reader::VTK)
+          throw ERROR_FILE_FORMAT;
+
+        if ( (reader.MX+2)*(reader.MY+2)*(reader.MZ+2) != (size_t)M)
+          throw ERROR_SIZE_INCOMPATIBLE;
+
+        rho[i] = reader.with_bounds(reader.rho);
       }
       break;
   }
@@ -529,126 +548,6 @@ void Mesodyn::explicit_start() {
     all_fluxes->J = solver_flux[i]->J;
     ++i;
   }
-}
-
-vector<string> Mesodyn::tokenize(string line, char delim) {
-  istringstream stream{line};
-
-  vector<string> tokens;
-  string token;
-
-  //Read lines as tokens (tab delimited)
-  while (getline(stream, token, delim)) {
-    tokens.push_back(token);
-  }
-
-  return tokens;
-}
-
-int Mesodyn::init_rho_fromvtk(vector<Real>& rho, string filename) {
-  ifstream rho_input;
-
-  rho_input.open(filename);
-
-  if (!rho_input.is_open()) {
-    cerr << "Error opening file! Is the filename correct? Is there a vtk for each component, ending in [component number].vtk, starting from 1?" << endl;
-    throw ERROR_FILE_FORMAT;
-  }
-
-  string line;
-
-  while (line.find("LOOKUP_TABLE default") == string::npos ) {
-    getline(rho_input, line);
-  }
-
-  skip_bounds([this, &rho_input, &rho, &line](int x, int y, int z) mutable {
-    getline(rho_input, line);
-    *val_ptr(rho, x, y, z) = atof(line.c_str());
-  });
-
-  return 0;
-}
-
-int Mesodyn::init_rho_frompro(vector<vector<Real>>& rho, string filename) {
-
-  ifstream rho_input;
-  rho_input.open(filename);
-
-  if (!rho_input.is_open()) {
-    cerr << "Error opening file! Is the filename correct?" << endl;
-    throw ERROR_FILE_FORMAT;
-  }
-
-  size_t i{1};
-
-  //Discard rows that contain coordinates (will cause out of bounds read below)
-  switch (dimensions) {
-  case 1:
-    i = 1;
-    break;
-  case 2:
-    i = 2;
-    break;
-  case 3:
-    i = 3;
-    break;
-  }
-
-  //Find in which column the density profile starts
-  //This depends on the fact that the first mon output is phi
-  string line;
-  getline(rho_input, line);
-
-  if (line.find('\t') == string::npos) {
-    cerr << "Wrong delimiter! Please use tabs.";
-    throw ERROR_FILE_FORMAT;
-  }
-
-  vector<string> tokens = tokenize(line, '\t');
-  int first_column{-1};
-  int last_column{0};
-  bool found = false;
-  for (; i < tokens.size(); ++i) {
-    vector<string> header_tokens = tokenize(tokens[i], ':');
-    if (header_tokens.size() == 3) {
-      if (header_tokens[0] == "mol" && header_tokens[2].size() > 3)
-        if (header_tokens[2].substr(0, 4) == "phi-") {
-          if (first_column == -1)
-            first_column = i;
-          found = true;
-          last_column = i;
-        }
-    }
-  }
-
-  if (found != true) {
-    cerr << "No headers in the format mol:[molecule]:phi-[monomer]." << endl;
-    throw ERROR_FILE_FORMAT;
-  }
-
-  if (component_no != (size_t)(last_column - first_column + 1)) {
-    cerr << "Not enough components detected in the headers, please adjust .pro file accordingly." << endl;
-    throw ERROR_FILE_FORMAT;
-  }
-
-  int z{0};
-  //Read lines one at a time
-  while (getline(rho_input, line)) {
-
-    vector<string> tokens = tokenize(line, '\t');
-    //Read all densities into rho.
-    for (size_t i = 0; i < component_no; ++i) {
-      rho[i][z] = atof(tokens[first_column + i].c_str());
-    }
-    ++z;
-  }
-
-  if (z != M) { // +1 because z starts at 0 (would be M=1)
-    cerr << "Input densities not of length M (" << z << "/" << M << ")" << endl;
-    throw ERROR_FILE_FORMAT;
-  }
-
-  return 0;
 }
 
 int Mesodyn::norm_theta(vector<Component*>& component) {

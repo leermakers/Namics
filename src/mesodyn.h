@@ -5,6 +5,7 @@
 #include "solve_scf.h"
 #include "system.h"
 #include "output.h"
+#include "lattice.h"
 #include <random>     // noise generation
 #include <ctime>      // output labling
 #include <cassert>    // making sure all underlying assumptions (e.g. lattice geometry) are satisfied

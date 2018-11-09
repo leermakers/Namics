@@ -769,6 +769,7 @@ vector<string> Reader::tokenize(string line, char delim) {
   return tokens;
 }
 
+//WARNING: VTK IS WRITTEN AND THUS READ WITHOUT BOUNDS
 int Reader::init_rho_fromvtk(string filename) {
   rho.clear();
 
@@ -847,6 +848,7 @@ vector<double> Reader::with_bounds(vector<double> rho) {
 	return output;
 }
 
+//WARNING: PRO IS WRITTEN AND THUS READ WITH BOUNDS
 vector<string> Reader::init_rho_frompro(string filename) {
   vector<string> headers;
   ifstream rho_input;
@@ -924,11 +926,11 @@ vector<string> Reader::init_rho_frompro(string filename) {
 
     switch (dimensions) {
       case 3:
-        MZ = atof(tokens[2].c_str());
+        MZ = atof(tokens[2].c_str())+1;
       case 2:
-        MY = atof(tokens[1].c_str());
+        MY = atof(tokens[1].c_str())+1;
       case 1:
-        MX = atof(tokens[0].c_str());
+        MX = atof(tokens[0].c_str())+1;
         break;
     }
   }

@@ -378,7 +378,7 @@ int Mesodyn::initial_conditions() {
           throw ERROR_SIZE_INCOMPATIBLE;
 
         for (size_t i = 0; i < reader.multicomponent_rho.size() ; ++i)
-          rho[i] = reader.with_bounds(reader.multicomponent_rho[i]);
+          rho[i] = reader.multicomponent_rho[i];
         break;
       }
     case INIT_FROMVTK:

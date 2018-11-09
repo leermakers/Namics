@@ -290,8 +290,6 @@ private:
   int initial_conditions();
   vector<Real>&  flux_callback(int);
   int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
-  int init_rho_frompro(vector< vector<Real> >&, string);
-  int init_rho_fromvtk(vector<Real>&, string);
   int norm_density(vector<Real>& rho, Real theta);
   void set_update_lists();
   vector<vector<int>> update_plus;

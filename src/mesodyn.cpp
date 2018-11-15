@@ -514,8 +514,21 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
-  norm_theta(component);
-  norm_theta(solver_component);
+  for (Component* all_density_vectors : component) {
+	int n = 0;
+        for (Real& all_values : all_density_vectors->rho) {
+		vector<int> coordinate = Lattice_Access::coordinate(n);
+	     cout << coordinate[0] << " " << coordinate[1] << " " << coordinate[2] << " ";
+              cout << all_values << endl;
+              ++n;
+        }
+        cin.get();
+        }
+
+
+
+//  norm_theta(component);
+//  norm_theta(solver_component);
 
   return 0;
 }
@@ -1080,76 +1093,76 @@ inline void Lattice_Access::bounds(function<void(int, int, int)> function) {
 
 inline void Lattice_Access::x0_boundary(function<void(int, int, int)> function) {
   int x = 0;
-  int y = 1;
-  int z = 1;
+  int y = 0;
+  int z = 0;
   do {
-    y = 1;
+    y = 0;
     do {
       function(x, y, z);
       ++y;
-    } while (y < MY - 1);
+    } while (y < MY);
     ++z;
-  } while (z < MZ - 1);
+  } while (z < MZ);
 }
 
 inline void Lattice_Access::xm_boundary(function<void(int, int, int)> function) {
-  int x = MX - 1, y = 1, z = 1;
+  int x = MX - 1, y = 0, z = 0;
   do {
-    y = 1;
+    y = 0;
     do {
       function(x, y, z);
       ++y;
-    } while (y < MY - 1);
+    } while (y < MY);
     ++z;
-  } while (z < MZ - 1);
+  } while (z < MZ);
 }
 
 inline void Lattice_Access::y0_boundary(function<void(int, int, int)> function) {
-  int x = 1, y = 0, z = 1;
+  int x = 0, y = 0, z = 0;
   do {
-    x = 1;
+    x = 0;
     do {
       function(x, y, z);
       ++x;
-    } while (x < MX - 1);
+    } while (x < MX);
     ++z;
-  } while (z < MZ - 1);
+  } while (z < MZ);
 }
 
 inline void Lattice_Access::ym_boundary(function<void(int, int, int)> function) {
-  int x = 1, y = MY - 1, z = 1;
+  int x = 0, y = MY - 1, z = 0;
   do {
-    x = 1;
+    x = 0;
     do {
       function(x, y, z);
       ++x;
-    } while (x < MX - 1);
+    } while (x < MX);
     ++z;
-  } while (z < MZ - 1);
+  } while (z < MZ);
 }
 
 inline void Lattice_Access::z0_boundary(function<void(int, int, int)> function) {
-  int x = 1, y = 1, z = 0;
+  int x = 0, y = 0, z = 0;
   do {
-    x = 1;
+    x = 0;
     do {
       function(x, y, z);
       ++x;
-    } while (x < MX - 1);
+    } while (x < MX);
     ++y;
-  } while (y < MY - 1);
+  } while (y < MY);
 }
 
 inline void Lattice_Access::zm_boundary(function<void(int, int, int)> function) {
-  int x = 1, y = 1, z = MZ - 1;
+  int x = 0, y = 0, z = MZ - 1;
   do {
-    x = 1;
+    x = 0;
     do {
       function(x, y, z);
       ++x;
-    } while (x < MX - 1);
+    } while (x < MX);
     ++y;
-  } while (y < MY - 1);
+  } while (y < MY);
 }
 
 int Lattice_Access::setMY(Lattice* Lat) {

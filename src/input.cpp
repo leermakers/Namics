@@ -735,6 +735,10 @@ Reader::Reader(string filename) : dimensions(0), filetype(NONE), rho(0), multico
         JX=(MZ)*(MY); JY=(MZ); JZ=1;
         break;
     }
+
+		//Values are in the wrong order (blocks of x form y, blocks of y form z), sort everything (to blocks of z form y, blocks of y form x).
+		if (extension == "pro")
+			adjust_pro_indexing();
 }
 
 Reader::~Reader() {
@@ -802,11 +806,11 @@ int Reader::init_rho_fromvtk(string filename) {
 
   switch (dimensions) {
     case 3:
-      MZ = atof(tokens[3].c_str());
+      MZ = atof(tokens[3].c_str())+1;
     case 2:
-      MY = atof(tokens[2].c_str());
+      MY = atof(tokens[2].c_str())+1;
     case 1:
-      MX = atof(tokens[1].c_str());
+      MX = atof(tokens[1].c_str())+1;
       break;
   }
 
@@ -832,11 +836,11 @@ inline void Reader::skip_bounds(function<void(int, int, int)> function) {
 			do {
 				function(x, y, z);
 				++x;
-			} while (x < MX + 1);
+			} while (x < MX-1);
 			++y;
-		} while (y < MY + 1);
+		} while (y < MY-1);
 		++z;
-	} while (z < MZ + 1);
+	} while (z < MZ-1);
 }
 
 vector<double> Reader::with_bounds(vector<double> rho) {
@@ -918,22 +922,50 @@ vector<string> Reader::init_rho_frompro(string filename) {
   //Read lines one at a time
   while (getline(rho_input, line)) {
 
-    vector<string> tokens = tokenize(line, '\t');
+    tokens = tokenize(line, '\t');
     //Read all densities into rho.
     for (size_t i = 0; i < component_no; ++i) {
       multicomponent_rho[i].push_back(atof(tokens[first_column + i].c_str()));
     }
-
-    switch (dimensions) {
-      case 3:
-        MZ = atof(tokens[2].c_str())+1;
-      case 2:
-        MY = atof(tokens[1].c_str())+1;
-      case 1:
-        MX = atof(tokens[0].c_str())+1;
-        break;
-    }
   }
 
+	switch (dimensions) {
+		case 3:
+			MZ = atof(tokens[2].c_str())+1;
+		case 2:
+			MY = atof(tokens[1].c_str())+1;
+		case 1:
+			MX = atof(tokens[0].c_str())+1;
+			break;
+	}
+
   return headers;
+}
+
+void Reader::adjust_pro_indexing() {
+
+	vector< vector<double> > adjusted_rho(multicomponent_rho.size());
+	for (vector<double>& all_components : adjusted_rho)
+		all_components.resize(multicomponent_rho[0].size());
+
+	int n = 0;
+	size_t x{0};
+	size_t y{0};
+	size_t z{0};
+	do {
+		y = 0;
+		do {
+			x = 0;
+			do {
+				for (size_t c = 0 ; c < multicomponent_rho.size() ; ++c)
+					*val_ptr(adjusted_rho[c], x, y, z) = multicomponent_rho[c][n];
+				++n;
+				++x;
+			} while (x < MX);
+			++y;
+		} while (y < MY);
+		++z;
+	} while (z < MZ);
+
+	multicomponent_rho = adjusted_rho;
 }

@@ -134,6 +134,7 @@ private:
 
   int init_rho_fromvtk(string);
   vector<string> init_rho_frompro(string);
+	void adjust_pro_indexing();
 };
 
 #endif

@@ -377,8 +377,8 @@ int Mesodyn::initial_conditions() {
         if ( ((reader.MX)*(reader.MY)*(reader.MZ)) != (size_t)M)
           throw ERROR_SIZE_INCOMPATIBLE;
 
-        for (size_t i = 0; i < reader.multicomponent_rho.size() ; ++i)
-          rho[i] = reader.multicomponent_rho[i];
+      //  for (size_t i = 0; i < reader.multicomponent_rho.size() ; ++i)
+        rho = reader.multicomponent_rho;
         break;
       }
     case INIT_FROMVTK:
@@ -514,21 +514,8 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
-  for (Component* all_density_vectors : component) {
-	int n = 0;
-        for (Real& all_values : all_density_vectors->rho) {
-		vector<int> coordinate = Lattice_Access::coordinate(n);
-	     cout << coordinate[0] << " " << coordinate[1] << " " << coordinate[2] << " ";
-              cout << all_values << endl;
-              ++n;
-        }
-        cin.get();
-        }
-
-
-
-//  norm_theta(component);
-//  norm_theta(solver_component);
+  norm_theta(component);
+  norm_theta(solver_component);
 
   return 0;
 }
@@ -1031,6 +1018,7 @@ int Component::load_rho(vector<Real>& rho) {
 int Component::update_boundaries() {
   boundary->update_boundaries(alpha);
   boundary->update_boundaries(rho);
+
   return 0;
 }
 
@@ -1242,6 +1230,7 @@ int Boundary3D::update_boundaries(vector<Real>& target) {
   Boundary2D::update_boundaries(target);
   bZ0(target);
   bZm(target);
+
   return 0;
 }
 
@@ -1355,12 +1344,15 @@ void Boundary1D::bXmMirror(vector<Real>& target) {
 }
 
 void Boundary1D::bXPeriodic(vector<Real>& target) {
+
   x0_boundary([this, &target](int x, int y, int z) mutable {
     *val_ptr(target, x, y, z) = val(target, MX - 2, y, z); //start
   });
+
   xm_boundary([this, &target](int x, int y, int z) mutable {
     *val_ptr(target, x, y, z) = val(target, 1, y, z); //end
   });
+
 }
 
 void Boundary2D::bY0Mirror(vector<Real>& target) {

@@ -717,6 +717,7 @@ Reader::Reader(string filename) : dimensions(0), filetype(NONE), rho(0), multico
     if (extension == "vtk") {
       filetype = VTK;
       init_rho_fromvtk(filename);
+			rho = with_bounds(rho);
     } else if (extension == "pro") {
       filetype = PRO;
       headers = init_rho_frompro(filename);

@@ -377,7 +377,6 @@ int Mesodyn::initial_conditions() {
         if ( ((reader.MX)*(reader.MY)*(reader.MZ)) != (size_t)M)
           throw ERROR_SIZE_INCOMPATIBLE;
 
-      //  for (size_t i = 0; i < reader.multicomponent_rho.size() ; ++i)
         rho = reader.multicomponent_rho;
         break;
       }
@@ -392,7 +391,7 @@ int Mesodyn::initial_conditions() {
         if ( (reader.MX+2)*(reader.MY+2)*(reader.MZ+2) != (size_t)M)
           throw ERROR_SIZE_INCOMPATIBLE;
 
-        rho[i] = reader.with_bounds(reader.rho);
+        rho[i] = reader.rho;
       }
       break;
   }

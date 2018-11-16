@@ -152,14 +152,12 @@ bool Mesodyn::mesodyn() {
   // Do one explicit step before starting the crank nicolson scheme
   explicit_start();
 
-  write_output();
-
   // Prepare callback functions for SolveMesodyn in Newton
   auto solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   auto loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
   /**** Main MesoDyn time loop ****/
-  for (int t = 1; t < timesteps; t++) {
+  for (int t = 0; t < timesteps; t++) {
     cout << "MESODYN: t = " << t << endl;
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
@@ -388,7 +386,7 @@ int Mesodyn::initial_conditions() {
         if (reader.filetype != Reader::VTK)
           throw ERROR_FILE_FORMAT;
 
-        if ( (reader.MX+2)*(reader.MY+2)*(reader.MZ+2) != (size_t)M)
+        if ( (reader.MX)*(reader.MY)*(reader.MZ) != (size_t)M)
           throw ERROR_SIZE_INCOMPATIBLE;
 
         rho[i] = reader.rho;

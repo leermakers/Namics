@@ -717,7 +717,6 @@ Reader::Reader(string filename) : dimensions(0), filetype(NONE), rho(0), multico
     if (extension == "vtk") {
       filetype = VTK;
       init_rho_fromvtk(filename);
-			rho = with_bounds(rho);
     } else if (extension == "pro") {
       filetype = PRO;
       headers = init_rho_frompro(filename);
@@ -740,6 +739,8 @@ Reader::Reader(string filename) : dimensions(0), filetype(NONE), rho(0), multico
 		//Values are in the wrong order (blocks of x form y, blocks of y form z), sort everything (to blocks of z form y, blocks of y form x).
 		if (extension == "pro")
 			adjust_pro_indexing();
+		if (extension == "vtk")
+			rho = with_bounds(rho);
 }
 
 Reader::~Reader() {
@@ -807,11 +808,11 @@ int Reader::init_rho_fromvtk(string filename) {
 
   switch (dimensions) {
     case 3:
-      MZ = atof(tokens[3].c_str())+1;
+      MZ = atof(tokens[3].c_str())+2;
     case 2:
-      MY = atof(tokens[2].c_str())+1;
+      MY = atof(tokens[2].c_str())+2;
     case 1:
-      MX = atof(tokens[1].c_str())+1;
+      MX = atof(tokens[1].c_str())+2;
       break;
   }
 
@@ -833,23 +834,27 @@ inline void Reader::skip_bounds(function<void(int, int, int)> function) {
 	do {
 		y = 1;
 		do {
-			x = 1;
+			z = 1;
 			do {
 				function(x, y, z);
-				++x;
-			} while (x < MX-2);
+				++z;
+			} while (z < MZ-1);
 			++y;
-		} while (y < MY-2);
-		++z;
-	} while (z < MZ-2);
+		} while (y < MY-1);
+		++x;
+	} while (x < MX-1);
 }
 
 vector<double> Reader::with_bounds(vector<double> rho) {
+	
 	size_t M_bounds = (MX)*(MY)*(MZ);
 	vector<double> output(M_bounds);
-	skip_bounds([this, &output, &rho](int x, int y, int z) mutable {
-		*val_ptr(output, x, y, z) = val(rho, x, y , z);
+	int n = 0;
+	skip_bounds([this, rho, &output, &n](int x, int y, int z) mutable {
+		*val_ptr(output, x, y, z) = rho[n];
+		++n;
 	});
+
 	return output;
 }
 

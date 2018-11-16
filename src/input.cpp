@@ -837,15 +837,15 @@ inline void Reader::skip_bounds(function<void(int, int, int)> function) {
 			do {
 				function(x, y, z);
 				++x;
-			} while (x < MX-1);
+			} while (x < MX-2);
 			++y;
-		} while (y < MY-1);
+		} while (y < MY-2);
 		++z;
-	} while (z < MZ-1);
+	} while (z < MZ-2);
 }
 
 vector<double> Reader::with_bounds(vector<double> rho) {
-	size_t M_bounds = (MX+2)*(MY+2)*(MZ+2);
+	size_t M_bounds = (MX)*(MY)*(MZ);
 	vector<double> output(M_bounds);
 	skip_bounds([this, &output, &rho](int x, int y, int z) mutable {
 		*val_ptr(output, x, y, z) = val(rho, x, y , z);

@@ -514,6 +514,8 @@ int Mesodyn::initial_conditions() {
   norm_theta(component);
   norm_theta(solver_component);
 
+  Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
+
   return 0;
 }
 
@@ -692,41 +694,36 @@ void Mesodyn::set_filename() {
 int Mesodyn::write_output() {
   //Implement below for more starts? (OutputList higher numbers?)
 
-  for (size_t i = 0; i < In[0]->OutputList.size(); ++i) {
-    Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[i], writes, timesteps / timebetweensaves));
-    if (!Out[i]->CheckInput(1)) {
+    if (!Out[0]->CheckInput(1)) {
       cout << "input_error in output " << endl;
       return 0;
     }
-  }
 
-  New[0]->PushOutput();
+    Out[0]->output_nr = writes;
+    Out[0]->n_output = timesteps / timebetweensaves;
 
-  for (Output* all_output : Out) {
-    all_output->push("order_parameter",order_parameter);
-    all_output->push("timesteps", timesteps);
-    all_output->push("timebetweensaves", timebetweensaves);
-    all_output->push("diffusionconstant", D);
-    all_output->push("seed", seed);
-    all_output->push("mean", mean);
-    all_output->push("stddev", stddev);
-    all_output->push("delta_t", dt);
-    all_output->push("cn_ratio", cn_ratio);
+    New[0]->PushOutput();
+
+    Out[0]->push("order_parameter",order_parameter);
+    Out[0]->push("timesteps", timesteps);
+    Out[0]->push("timebetweensaves", timebetweensaves);
+    Out[0]->push("diffusionconstant", D);
+    Out[0]->push("seed", seed);
+    Out[0]->push("mean", mean);
+    Out[0]->push("stddev", stddev);
+    Out[0]->push("delta_t", dt);
+    Out[0]->push("cn_ratio", cn_ratio);
 
     int component_count{1};
     for (Component* all_components : solver_component) {
       ostringstream vtk_filename;
       vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
-      all_output->vtk_structured_grid(vtk_filename.str(), &all_components->rho[0], component_count);
+      Out[0]->vtk_structured_grid(vtk_filename.str(), &all_components->rho[0], component_count);
       ++component_count;
     }
     ++writes;
 
-    all_output->WriteOutput(writes);
-    delete all_output;
-  }
-
-  Out.clear();
+    Out[0]->WriteOutput(writes);
 
   return 0;
 }

@@ -902,6 +902,7 @@ void Add(Real *P, Real *A, int M)    {
 }
 #else
 void Add(Real *P, Real *A, int M)   {
+  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i]+=A[i];
 }
 #endif
@@ -913,6 +914,7 @@ void Add(int *P, int *A, int M)    {
 }
 #else
 void Add(int *P, int *A, int M)   {
+  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i]+=A[i];
 }
 #endif

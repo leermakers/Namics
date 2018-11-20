@@ -16,7 +16,7 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -g -O3 -std=c++11 -fopenmp
+CFLAGS      := -Wall -g -O3 -std=c++11 -fopenmp -ftree-vectorize -ftree-vectorizer-verbose=5 -ftree-parallelize-loops=4
 LIB         := -lm -lpthread -lgomp
 INC         := -I/usr/local/include
 #INCDEP      := -I$(INCDIR)
@@ -87,4 +87,3 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 
 #Non-File Targets
 .PHONY: all remake clean cleaner resources
-

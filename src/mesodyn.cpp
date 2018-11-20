@@ -920,12 +920,8 @@ int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
 
 int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump) {
 
-  for (Real& i : J_minus) {
-    i = 0;
-  }
-  for (Real& i : J_plus) {
-    i = 0;
-  }
+  fill(J_minus.begin(), J_minus.end(), 0);
+  fill(J_plus.begin(), J_plus.end(), 0);
 
   for (int& z : mask_plus) {
     J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));

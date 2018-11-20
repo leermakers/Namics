@@ -654,7 +654,6 @@ void Dot(Real &result, Real *x,Real *y, int M)   {
 #else
 void Dot(Real &result, Real *x,Real *y, int M)   {
 	result=0.0;
-  #pragma omp parallel for reduction(+:result)
  	for (int i=0; i<M; i++) result +=x[i]*y[i];
 }
 #endif
@@ -703,7 +702,6 @@ void AddTimes(Real *P, Real *A, Real *B, int M)   {
 }
 #else
 void AddTimes(Real *P, Real *A, Real *B, int M)   {
-  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i]+=A[i]*B[i];
 }
 #endif
@@ -716,7 +714,6 @@ void Times(Real *P, Real *A, Real *B, int M)   {
 }
 #else
 void Times(Real *P, Real *A, Real *B, int M)   {
-  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i]=A[i]*B[i];
 }
 #endif
@@ -728,7 +725,6 @@ void Times(Real *P, Real *A, int *B, int M)   {
 }
 #else
 void Times(Real *P, Real *A, int *B, int M)   {
-  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i]=A[i]*B[i];
 }
 #endif
@@ -741,7 +737,6 @@ void Norm(Real *P, Real C, int M)   {
 }
 #else
 void Norm(Real *P, Real C, int M)   {
-  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i] *= C;
 }
 #endif
@@ -802,7 +797,6 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 }
 #else
 void Cp(Real *P,Real *A, int M)   {
-  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i] = A[i];
 }
 #endif
@@ -815,7 +809,6 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 }
 #else
 void Cp(Real *P,int *A, int M)   {
-  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i] = 1.0*A[i];
 }
 #endif
@@ -862,7 +855,6 @@ void YplusisCtimesX(Real *Y, Real *X, Real C, int M)   {
 }
 #else
 void YplusisCtimesX(Real *Y, Real *X, Real C, int M)    {
-  #pragma omp parallel for
 	for (int i=0; i<M; i++) Y[i] += C*X[i];
 }
 #endif
@@ -910,7 +902,6 @@ void Add(Real *P, Real *A, int M)    {
 }
 #else
 void Add(Real *P, Real *A, int M)   {
-  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i]+=A[i];
 }
 #endif
@@ -922,7 +913,6 @@ void Add(int *P, int *A, int M)    {
 }
 #else
 void Add(int *P, int *A, int M)   {
-  #pragma omp parallel for
 	for (int i=0; i<M; i++) P[i]+=A[i];
 }
 #endif

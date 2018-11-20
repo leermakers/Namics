@@ -28,6 +28,9 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
     write_vtk = true;
   }
 
+  //Apparently this step takes a ton of time.
+  Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
+
   set_update_lists();
 
   Sys[0]->PrepareForCalculations(); // to get the correct KSAM and volume.
@@ -514,8 +517,6 @@ int Mesodyn::initial_conditions() {
   norm_theta(component);
   norm_theta(solver_component);
 
-  Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
-
   return 0;
 }
 
@@ -920,9 +921,14 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   fill(J_minus.begin(), J_minus.end(), 0);
   fill(J_plus.begin(), J_plus.end(), 0);
 
-  #pragma omp parallel for
-  for (vector<int>::iterator z = mask_plus.begin() ; z < mask_plus.end(); ++z) { //int& z : mask_plus) {
-    J_plus[(*z)] = -D * ((L[(*z)] + L[(*z) + jump]) * (mu[(*z) + jump] - mu[(*z)]));
+  for (vector<int>::iterator itt = mask_plus.begin() ; itt < mask_plus.end(); ++itt) { //int& z : mask_plus) {
+    auto z = *itt;
+    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
+  }
+
+  for (vector<int>::iterator itt = mask_minus.begin() ; itt < mask_minus.end(); ++itt) { //int& z : mask_plus) {
+    auto z = *itt;
+    J_minus[z] = -J_plus[z - jump];
   }
 
 

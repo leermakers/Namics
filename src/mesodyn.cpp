@@ -920,14 +920,21 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   fill(J_minus.begin(), J_minus.end(), 0);
   fill(J_plus.begin(), J_plus.end(), 0);
 
-  for (int& z : mask_plus) {
+  #pragma omp parallel for
+  for (vector<int>::iterator z = mask_plus.begin() ; z < mask_plus.end(); ++z) { //int& z : mask_plus) {
+    J_plus[(*z)] = -D * ((L[(*z)] + L[(*z) + jump]) * (mu[(*z) + jump] - mu[(*z)]));
+  }
+
+
+/*  for (int& z : mask_plus) {
     J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
   }
 
   for (int& z : mask_minus) {
     J_minus[z] = -J_plus[z - jump]; //-D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); // = -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z] - gaussian->noise[z]));
     // We have to do it this way because otherwise the noise will be trouble
-  }
+  }*/
+
 
   transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
   transform(J_minus.begin(), J_minus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });

@@ -1713,7 +1713,8 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 				Cp(Gg_f+first_s[generation]*M,G1,M);
 			}
 			 s++;
-		} 	}
+		}
+	}
 	if (save_memory) {
 		return Gg_f+last_stored[block]*M;
 	} else return Gg_f+(s-1)*M;
@@ -1910,8 +1911,7 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 	Real* GS= (Real*) malloc(3*M*sizeof(Real));
 
 	Real* Glast=NULL;
-	int k=b0;
-	while (k<=bN) {
+	for (int k = b0; k<=bN ; ++k) {
 		if (b0<k && k<bN) {
 			if (Gnr[k]==generation ){
 				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
@@ -1943,7 +1943,6 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 			//Glast=propagate_forward(G1+molmon_nr[k]*M,s,k,generation,M);
 		}
-		k++;
 	}
 	free(GS);
 	return Glast;

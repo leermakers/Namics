@@ -42,6 +42,7 @@ public:
   inline int index(int x, int y, int z);
   inline vector<int> coordinate(int n);
   inline void skip_bounds( function<void(int,int,int)> );
+  inline void par_skip_bounds( function<void(int,int,int)> );
   inline void bounds( function<void(int,int,int)> );
   inline void x0_boundary( function<void(int, int, int)>);
   inline void xm_boundary( function<void(int, int, int)>);

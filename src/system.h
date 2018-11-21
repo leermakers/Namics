@@ -6,6 +6,7 @@
 #include "reaction.h"
 #include "molecule.h"
 #include "lattice.h"
+
 class System {
 public:
 	System(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<State*>,vector<Reaction*>,vector<Molecule*>,string);

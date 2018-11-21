@@ -1,4 +1,5 @@
 #include "system.h"
+#include "tools.h"
 
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_,vector<Molecule*> Mol_,string name_) {
 	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; Sta=Sta_; Rea=Rea_;
@@ -863,7 +864,6 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	int M= Lat[0]->M;
 	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi
 	bool success=true;
-	Real norm=0;
 	Zero(phitot,M);
 	int length=FrozenList.size();
 	for (int i=0; i<length; i++) {
@@ -874,8 +874,9 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	for (int i=0; i<n_mol; i++) {
 		success=Mol[i]->ComputePhi();
 	}
+
 	for (int i=0; i<n_mol; i++) {
-		norm=0;
+		Real norm=0;
 		if (Mol[i]->freedom=="free") {
 			norm=Mol[i]->phibulk/Mol[i]->chainlength;
 			Mol[i]->n=norm*Mol[i]->GN;
@@ -968,7 +969,7 @@ Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " 
 			cout << "WARNING: neutralizer has negative phibulk. Consider changing neutralizer...: outcome problematic...." << endl;
 		}
 		B+=Mol[neutralizer]->phibulk;
-		norm = Mol[neutralizer]->phibulk/Mol[neutralizer]->chainlength;
+		Real norm = Mol[neutralizer]->phibulk/Mol[neutralizer]->chainlength;
 		Mol[neutralizer]->n = norm*Mol[neutralizer]->GN;
 //cout <<"n neutralizer: " << Mol[neutralizer]->n << endl;
 //cout <<"phibulk neutr: " << Mol[neutralizer]->phibulk << endl;
@@ -982,7 +983,7 @@ Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " 
 		cout <<"WARNING: solvent has negative phibulk. outcome problematic " << endl;
 		throw -4;
 	}
-	norm=Mol[solvent]->phibulk/Mol[solvent]->chainlength;
+	Real norm=Mol[solvent]->phibulk/Mol[solvent]->chainlength;
 	Mol[solvent]->n=norm*Mol[solvent]->GN;
 	Mol[solvent]->theta=Mol[solvent]->n*Mol[solvent]->chainlength;
 	Mol[solvent]->norm=norm;

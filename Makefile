@@ -16,9 +16,9 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -g -O3 -std=c++11 -fopenmp -ftree-vectorize -ftree-vectorizer-verbose=5 -ftree-parallelize-loops=4
+CFLAGS      := -Wall -Ofast -std=c++11 -fopenmp -march=native# -fno-signed-zeros -fno-trapping-math -frename-registers -march=native -fomit-frame-pointer
 LIB         := -lm -lpthread -lgomp
-INC         := -I/usr/local/include
+INC         := -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
 	LIB        += -lcuda -lcudart

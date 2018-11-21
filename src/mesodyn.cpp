@@ -1,5 +1,6 @@
 #include "mesodyn.h"
 
+
 /* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018 */
 /* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
 
@@ -257,7 +258,7 @@ int Mesodyn::noise_flux() {
 
   int i = 0;
   for (Flux1D* all_fluxes : flux) {
-    transform(all_fluxes->J.begin(), all_fluxes->J.end(), solver_flux[i]->J.begin(), all_fluxes->J.begin(), [](Real A, Real B) { return A + B; });
+    transform(all_fluxes->J.begin(), all_fluxes->J.end(), solver_flux[i]->J.begin(), all_fluxes->J.begin(), std::plus<Real>());
     ++i;
   }
 
@@ -861,9 +862,7 @@ int Flux3D::mask(vector<int>& mask_in) {
 int Flux1D::langevin_flux() {
 
   //Zero (with bounds checking) vector J before use
-  for (Real& i : J) {
-    i = 0;
-  }
+  fill(J.begin(), J.end(), 0);
 
   if (A->rho.size() != J.size()) {
     //already checked: A.alpha.size = B.alpha.size and A.rho.size = B.rho.size
@@ -921,29 +920,20 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
   fill(J_minus.begin(), J_minus.end(), 0);
   fill(J_plus.begin(), J_plus.end(), 0);
 
-  for (vector<int>::iterator itt = mask_plus.begin() ; itt < mask_plus.end(); ++itt) { //int& z : mask_plus) {
+
+  for (vector<int>::iterator itt = mask_plus.begin() ; itt < mask_plus.end(); ++itt) {
     auto z = *itt;
     J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
   }
 
-  for (vector<int>::iterator itt = mask_minus.begin() ; itt < mask_minus.end(); ++itt) { //int& z : mask_plus) {
+  for (vector<int>::iterator itt = mask_minus.begin() ; itt < mask_minus.end(); ++itt) {
     auto z = *itt;
     J_minus[z] = -J_plus[z - jump];
   }
 
 
-/*  for (int& z : mask_plus) {
-    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
-  }
-
-  for (int& z : mask_minus) {
-    J_minus[z] = -J_plus[z - jump]; //-D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z])); // = -D * ((L[z - jump] + L[z]) * (mu[z - jump] - mu[z] - gaussian->noise[z]));
-    // We have to do it this way because otherwise the noise will be trouble
-  }*/
-
-
-  transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
-  transform(J_minus.begin(), J_minus.end(), J.begin(), J.begin(), [](Real A, Real B) { return A + B; });
+  transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), std::plus<Real>());
+  transform(J_minus.begin(), J_minus.end(), J.begin(), J.begin(), std::plus<Real>());
 
   return 0;
 }
@@ -997,11 +987,11 @@ int Component::update_density(vector<Real>& J1, vector<Real>& J2, Real ratio, in
     return 1;
   }
 
-  skip_bounds([this, J1, ratio, sign](int x, int y, int z) mutable {
+  par_skip_bounds([this, J1, ratio, sign](int x, int y, int z) mutable {
     *val_ptr(rho, x, y, z) = (val(rho, x, y, z) + ratio * sign * val(J1, x, y, z));
   });
 
-  skip_bounds([this, J2, ratio, sign](int x, int y, int z) mutable {
+  par_skip_bounds([this, J2, ratio, sign](int x, int y, int z) mutable {
     *val_ptr(rho, x, y, z) = val(rho, x, y, z) + (1 - ratio) * sign * val(J2, x, y, z);
   });
 
@@ -1048,22 +1038,41 @@ Lattice_Access::Lattice_Access(Lattice* Lat)
 Lattice_Access::~Lattice_Access() {
 }
 
+inline void Lattice_Access::par_skip_bounds(function<void(int, int, int)> function) {
+  int x{1};
+  int y{1};
+
+  #pragma omp parallel for private(y,x)
+  for ( int z = 1 ; z < MZ-1 ; ++z ) {
+      y = 1;
+      do {
+        x = 1;
+        do {
+          function(x, y, z);
+          ++x;
+        } while (x < MX - 1);
+        ++y;
+      } while (y < MY - 1);
+  }
+}
+
 inline void Lattice_Access::skip_bounds(function<void(int, int, int)> function) {
   int x{1};
   int y{1};
   int z{1};
+
   do {
-    y = 1;
-    do {
-      x = 1;
+      y = 1;
       do {
-        function(x, y, z);
-        ++x;
-      } while (x < MX - 1);
-      ++y;
-    } while (y < MY - 1);
-    ++z;
-  } while (z < MZ - 1);
+        x = 1;
+        do {
+          function(x, y, z);
+          ++x;
+        } while (x < MX - 1);
+        ++y;
+      } while (y < MY - 1);
+      ++z;
+    } while (z < MZ - 1);
 }
 
 inline void Lattice_Access::bounds(function<void(int, int, int)> function) {

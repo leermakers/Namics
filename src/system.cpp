@@ -194,11 +194,20 @@ if (debug) cout << "CheckInput for system " << endl;
 	if (success) {
 		success=CheckChi_values(In[0]->MonList.size());
 		GPU=In[0]->Get_bool(GetValue("GPU"),false);
-		if (GPU) {if (!cuda) cout << "You should compile the program using the CUDA=1 flag: GPU calculations are impossible; proceed with CPU computations..." << endl; GPU=false; }
+		if (GPU)
+			if (!cuda) {
+				cout << "You should compile the program using the CUDA=1 flag: GPU calculations are impossible; proceed with CPU computations..." << endl;
+				GPU=false;
+			}
 		if (Lat[0]->gradients<3) {
 			if (GPU) cout <<"GPU support is (for the time being) only available for three-gradient calculations " << endl;
 		}
-		if (cuda) {if (!GPU) cout <<" program expect that you are going to use the GPU, but the input is not in line with this (either gradients < 3, or GPU != 'true' : compile without CUDA=1 flag." << endl; success=false;}
+		if (cuda) {
+			if (!GPU) {
+				cout <<"Namics expects that you are going to use the GPU, but the input is not in line with this (either gradients < 3, or GPU != 'true' : compile without CUDA=1 flag." << endl;
+				success=false;
+			}
+		}
 
 		int length = In[0]->MonList.size();
 		for (int i=0; i<length; i++) if (Seg[i]->state_name.size()==0) StatelessMonList.push_back(i);

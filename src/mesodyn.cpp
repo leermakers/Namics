@@ -12,16 +12,16 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       component_no{Sys[0]->SysMolMonList.size()}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
       writes{0}, write_vtk{false}, order_parameter{0} {
-  KEYS.push_back("timesteps");
-  KEYS.push_back("timebetweensaves");
-  KEYS.push_back("delta_t");
-  KEYS.push_back("read_pro");
-  KEYS.push_back("read_vtk");
-  KEYS.push_back("diffusionconstant");
-  KEYS.push_back("seed");
-  KEYS.push_back("mean");
-  KEYS.push_back("stddev");
-  KEYS.push_back("cn_ratio");
+  KEYS.emplace_back("timesteps");
+  KEYS.emplace_back("timebetweensaves");
+  KEYS.emplace_back("delta_t");
+  KEYS.emplace_back("read_pro");
+  KEYS.emplace_back("read_vtk");
+  KEYS.emplace_back("diffusionconstant");
+  KEYS.emplace_back("seed");
+  KEYS.emplace_back("mean");
+  KEYS.emplace_back("stddev");
+  KEYS.emplace_back("cn_ratio");
 
   // TODO: implement this properly
   // If the user has asked for vtk output
@@ -30,17 +30,58 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   }
 
   //Apparently this step takes a ton of time.
-  Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
+  Out.emplace_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
 
   set_update_lists();
 
-  Sys[0]->PrepareForCalculations(); // to get the correct KSAM and volume.
+//  Sys[0]->PrepareForCalculations(); // to get the correct KSAM and volume.
+  get_mask();
 
   // The right hand side of the minus sign calculates the volume of the boundaries. I know, it's hideous, but it works for all dimensions.
   boundaryless_volume = Sys[0]->volume - ((2 * dimensions - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * dimensions) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, dimensions));
+}
 
-  if (debug)
-    cout << "Mesodyn initialized." << endl;
+void Mesodyn::get_mask() {
+  int M = Lat[0]->M;
+
+  Sys[0]->FrozenList.clear();
+  int length = In[0]->MonList.size();
+  for (int i = 0; i < length; i++) {
+    if (Seg[i]->freedom == "frozen")
+      Sys[0]->FrozenList.push_back(i);
+  }
+  if (Sys[0]->FrozenList.size() + Sys[0]->SysMonList.size() + Sys[0]->SysTagList.size() + Sys[0]->SysClampList.size() != In[0]->MonList.size()) {
+    cout << " There are un-used monomers in system. Remove them before starting" << endl;
+  }
+
+  Zero(Sys[0]->KSAM, M);
+
+  length = Sys[0]->FrozenList.size();
+  for (int i = 0; i < length; ++i) {
+    int* MASK = Seg[Sys[0]->FrozenList[i]]->MASK;
+    Add(Sys[0]->KSAM, MASK, M);
+  }
+
+  length = Sys[0]->SysTagList.size();
+  for (int i = 0; i < length; ++i) {
+    int* MASK = Seg[Sys[0]->SysTagList[i]]->MASK;
+    Add(Sys[0]->KSAM, MASK, M);
+  }
+
+  length = Sys[0]->SysClampList.size();
+  for (int i = 0; i < length; ++i) {
+    int* MASK = Seg[Sys[0]->SysClampList[i]]->MASK;
+    Add(Sys[0]->KSAM, MASK, M);
+  }
+
+  Invert(Sys[0]->KSAM, Sys[0]->KSAM, M);
+  Sys[0]->volume = 0;
+  for (int i = 0; i < M ; i++) {
+    if (Lat[0]->gradients <3) {
+      Sys[0]->volume += Sys[0]->KSAM[i]*Lat[0]->L[i];
+    } else Sys[0]->volume += Sys[0]->KSAM[i];
+  }
+  Lat[0]->Accesible_volume=Sys[0]->volume;
 }
 
 Mesodyn::~Mesodyn() {
@@ -59,8 +100,6 @@ Mesodyn::~Mesodyn() {
 }
 
 bool Mesodyn::CheckInput(int start) {
-  if (debug)
-    cout << "CheckInput in Mesodyn" << endl;
   bool success = true;
 
   /* When adding new items here, please add them to the function prepareOutputFile()*/
@@ -71,27 +110,19 @@ bool Mesodyn::CheckInput(int start) {
     if (GetValue("timesteps").size() > 0) {
       success = In[0]->Get_int(GetValue("timesteps"), timesteps, 1, 100000000, "The number of timesteps should be between 1 and 10000");
     }
-    if (debug)
-      cout << "Timesteps is " << timesteps << endl;
 
     if (GetValue("timebetweensaves").size() > 0) {
       timebetweensaves = In[0]->Get_int(GetValue("timebetweensaves"), timebetweensaves);
     }
-    if (debug)
-      cout << "Time bewteen saves is " << timebetweensaves << endl;
 
     if (GetValue("delta_t").size() > 0) {
       dt = In[0]->Get_Real(GetValue("delta_t"), dt);
     }
-    if (debug)
-      cout << "Delta t is " << dt << endl;
 
     if (GetValue("read_pro").size() > 0) {
       read_filename = In[0]->Get_string(GetValue("read_pro"), read_filename);
       initialization_mode = INIT_FROMPRO;
     }
-    if (debug)
-      cout << "Filename to read rho from is: " << read_filename << endl;
 
     if (GetValue("read_vtk").size() > 0) {
       read_filename = In[0]->Get_string(GetValue("read_vtk"), read_filename);
@@ -101,39 +132,27 @@ bool Mesodyn::CheckInput(int start) {
       }
       initialization_mode = INIT_FROMVTK;
     }
-    if (debug)
-      cout << "Filename to read rho from is: " << read_filename << endl;
 
     if (GetValue("diffusionconstant").size() > 0) {
       D = In[0]->Get_Real(GetValue("diffusionconstant"), D);
     }
-    if (debug)
-      cout << "Diffusion const is " << D << endl;
 
     if (GetValue("seed").size() > 0) {
       seed_specified = true;
       seed = In[0]->Get_Real(GetValue("seed"), seed);
     }
-    if (debug)
-      cout << "Seed is " << seed << endl;
 
     if (GetValue("mean").size() > 0) {
       mean = In[0]->Get_Real(GetValue("mean"), mean);
     }
-    if (debug)
-      cout << "Mean is " << mean << endl;
 
     if (GetValue("stddev").size() > 0) {
       stddev = In[0]->Get_Real(GetValue("stddev"), stddev);
     }
-    if (debug)
-      cout << "Stdev is " << stddev << endl;
 
     if (GetValue("cn_ratio").size() > 0) {
       cn_ratio = In[0]->Get_Real(GetValue("cn_ratio"), cn_ratio);
     }
-    if (debug)
-      cout << "Cn_ratio is " << cn_ratio << endl;
   }
 
   return success;
@@ -142,8 +161,6 @@ bool Mesodyn::CheckInput(int start) {
 /******** Flow control ********/
 
 bool Mesodyn::mesodyn() {
-  if (debug)
-    cout << "mesodyn in Mesodyn" << endl;
 
   //   Initialize densities
   initial_conditions();
@@ -199,9 +216,9 @@ void Mesodyn::set_update_lists() {
   vector<int> temp;
   for (size_t i = 0; i < component_no; ++i) {
     for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      temp.push_back(i);
-      temp.push_back(c);
-      update_plus.push_back(temp);
+      temp.emplace_back(i);
+      temp.emplace_back(c);
+      update_plus.emplace_back(temp);
       temp.clear();
       ++c;
     }
@@ -210,9 +227,9 @@ void Mesodyn::set_update_lists() {
   c = 0;
   for (size_t j = 0; j < (component_no - 1); ++j) {
     for (size_t i = 1 + j; i < component_no; ++i) {
-      temp.push_back(i);
-      temp.push_back(c);
-      update_minus.push_back(temp);
+      temp.emplace_back(i);
+      temp.emplace_back(c);
+      update_minus.emplace_back(temp);
       temp.clear();
       ++c;
     }
@@ -402,10 +419,10 @@ int Mesodyn::initial_conditions() {
   vector<Boundary1D::boundary> boundaries;
   for (string& boundary : Lat[0]->BC) {
     if (boundary == "mirror") {
-      boundaries.push_back(Boundary1D::MIRROR);
+      boundaries.emplace_back(Boundary1D::MIRROR);
     }
     if (boundary == "periodic") {
-      boundaries.push_back(Boundary1D::PERIODIC);
+      boundaries.emplace_back(Boundary1D::PERIODIC);
     }
   }
 
@@ -454,8 +471,8 @@ int Mesodyn::initial_conditions() {
     boundary = new Boundary1D(Lat[0], boundaries[0], boundaries[1]);
 
     for (size_t i = 0; i < component_no; ++i) {
-      component.push_back(new Component(Lat[0], boundary, rho[i]));
-      solver_component.push_back(new Component(Lat[0], boundary, rho[i]));
+      component.emplace_back(new Component(Lat[0], boundary, rho[i]));
+      solver_component.emplace_back(new Component(Lat[0], boundary, rho[i]));
     }
 
     if (seed_specified == true) {
@@ -466,8 +483,8 @@ int Mesodyn::initial_conditions() {
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        flux.push_back(new Flux1D(Lat[0], gaussian_noise, D * dt, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux1D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
+        flux.emplace_back(new Flux1D(Lat[0], gaussian_noise, D * dt, mask, component[i], component[j]));
+        solver_flux.emplace_back(new Flux1D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
     break;
@@ -475,8 +492,8 @@ int Mesodyn::initial_conditions() {
     boundary = new Boundary2D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3]);
 
     for (size_t i = 0; i < component_no; ++i) {
-      component.push_back(new Component(Lat[0], boundary, rho[i]));
-      solver_component.push_back(new Component(Lat[0], boundary, rho[i]));
+      component.emplace_back(new Component(Lat[0], boundary, rho[i]));
+      solver_component.emplace_back(new Component(Lat[0], boundary, rho[i]));
     }
 
     if (seed_specified == true) {
@@ -487,8 +504,8 @@ int Mesodyn::initial_conditions() {
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        flux.push_back(new Flux2D(Lat[0], gaussian_noise, D * dt, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux2D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
+        flux.emplace_back(new Flux2D(Lat[0], gaussian_noise, D * dt, mask, component[i], component[j]));
+        solver_flux.emplace_back(new Flux2D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
     break;
@@ -496,8 +513,8 @@ int Mesodyn::initial_conditions() {
     boundary = new Boundary3D(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]);
 
     for (size_t i = 0; i < component_no; ++i) {
-      component.push_back(new Component(Lat[0], boundary, rho[i]));
-      solver_component.push_back(new Component(Lat[0], boundary, rho[i]));
+      component.emplace_back(new Component(Lat[0], boundary, rho[i]));
+      solver_component.emplace_back(new Component(Lat[0], boundary, rho[i]));
     }
 
     if (seed_specified == true) {
@@ -508,8 +525,8 @@ int Mesodyn::initial_conditions() {
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        flux.push_back(new Flux3D(Lat[0], gaussian_noise, D * dt, mask, component[i], component[j]));
-        solver_flux.push_back(new Flux3D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
+        flux.emplace_back(new Flux3D(Lat[0], gaussian_noise, D * dt, mask, component[i], component[j]));
+        solver_flux.emplace_back(new Flux3D(Lat[0], gaussian_noise, D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
     break;
@@ -584,7 +601,7 @@ int Mesodyn::norm_theta(vector<Component*>& component) {
       }
     } else {
       for (size_t j = 0; j < mon_nr; ++j) {
-        solvent_mons.push_back(c);
+        solvent_mons.emplace_back(c);
         ++c;
       }
     }
@@ -648,7 +665,7 @@ int Mesodyn::init_rho_homogeneous(vector<vector<Real>>& rho, vector<int>& mask) 
     } else {
       solvent_mol = i;
       for (size_t j = 0; j < mon_nr; ++j) {
-        solvent_mons.push_back(c);
+        solvent_mons.emplace_back(c);
         ++c;
       }
     }
@@ -778,10 +795,10 @@ int Flux1D::mask(vector<int>& mask_in) {
   skip_bounds([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y, z) == 1) {
       if (val(mask_in, x + 1, y, z) == 1) {
-        Mask_plus_x.push_back(index(x, y, z));
+        Mask_plus_x.emplace_back(index(x, y, z));
       }
       if (val(mask_in, x - 1, y, z) == 1) {
-        Mask_minus_x.push_back(index(x, y, z));
+        Mask_minus_x.emplace_back(index(x, y, z));
       }
     }
   });
@@ -789,11 +806,11 @@ int Flux1D::mask(vector<int>& mask_in) {
   //for the x-boundary:
   x0_boundary([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x+1, y, z) == 1 && val(mask_in, x, y, z) == 1)
-    Mask_plus_x.push_back(index(x, y, z));
+    Mask_plus_x.emplace_back(index(x, y, z));
   });
   xm_boundary([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x-1, y, z) == 1 && val(mask_in, x, y, z) == 1)
-    Mask_minus_x.push_back(index(x, y, z));
+    Mask_minus_x.emplace_back(index(x, y, z));
   });
 
   return 0;
@@ -809,20 +826,20 @@ int Flux2D::mask(vector<int>& mask_in) {
   skip_bounds([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y, z) == 1) {
       if (val(mask_in, x, y + 1, z) == 1)
-        Mask_plus_y.push_back(index(x, y, z));
+        Mask_plus_y.emplace_back(index(x, y, z));
       if (val(mask_in, x, y - 1, z) == 1)
-        Mask_minus_y.push_back(index(x, y, z));
+        Mask_minus_y.emplace_back(index(x, y, z));
     }
   });
 
   //for the y-boundary:
   y0_boundary([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y+1, z) == 1 && val(mask_in, x, y, z) == 1)
-    Mask_plus_y.push_back(index(x, y, z));
+    Mask_plus_y.emplace_back(index(x, y, z));
   });
   ym_boundary([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y-1, z) == 1 && val(mask_in, x, y, z) == 1)
-    Mask_minus_y.push_back(index(x, y, z));
+    Mask_minus_y.emplace_back(index(x, y, z));
   });
 
   return 0;
@@ -838,10 +855,10 @@ int Flux3D::mask(vector<int>& mask_in) {
   skip_bounds([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y, z) == 1) {
       if (val(mask_in, x, y, z + 1) == 1) {
-        Mask_plus_z.push_back(index(x, y, z));
+        Mask_plus_z.emplace_back(index(x, y, z));
       }
       if (val(mask_in, x, y, z - 1) == 1) {
-        Mask_minus_z.push_back(index(x, y, z));
+        Mask_minus_z.emplace_back(index(x, y, z));
       }
     }
   });
@@ -849,11 +866,11 @@ int Flux3D::mask(vector<int>& mask_in) {
   //for the z-boundary:
   z0_boundary([this, mask_in](int x, int y, int z) mutable {
       if (val(mask_in, x, y, z+1) == 1 && val(mask_in, x, y, z) == 1)
-        Mask_plus_z.push_back(index(x, y, z));
+        Mask_plus_z.emplace_back(index(x, y, z));
   });
   zm_boundary([this, mask_in](int x, int y, int z) mutable {
       if (val(mask_in, x, y, z-1) == 1 && val(mask_in, x, y, z) == 1)
-        Mask_minus_z.push_back(index(x, y, z));
+        Mask_minus_z.emplace_back(index(x, y, z));
   });
 
   return 0;
@@ -1489,7 +1506,6 @@ int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result, string& s
 }
 
 string Mesodyn::GetValue(string parameter){
-if (debug) cout << "GetValue in lattice " << endl;
 	int i=0;
 	int length = PARAMETERS.size();
 	while (i<length) {

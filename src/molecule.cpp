@@ -178,7 +178,6 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	phitot=(Real*)AllOnDev(M);
 	UNITY = (Real*)AllonDev(M);
 #else
-
 	if (freedom=="clamped") {
 		gn=H_gn;
 		mask1=H_mask1; mask2=H_mask2;
@@ -1676,7 +1675,8 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 		int k,k0,t0,v0,t;
 		int n=memory[block]; if (block>0) n-=memory[block-1];
 		int n0=0; if (block>0) n0=memory[block-1];
-		if (s==first_s[generation]) { s++;
+		if (s==first_s[generation]) {
+			s++;
 			Cp(Gs+M,G1,M); Cp(Gs,G1,M); Cp(Gg_f+n0*M,Gs+M,M); last_stored[block]=n0;
 		} else {
 			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
@@ -1782,9 +1782,11 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
 	} else {
 		for (int k=0; k<N; k++) {
-			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M); else Cp(Gg_b+(s%2)*M,G1,M);
-
-			AddTimes(rho+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M);
+			if (s<chainlength-1)
+				Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
+			else
+				Cp(Gg_b+(s%2)*M,G1,M);
+			AddTimes(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
@@ -2085,7 +2087,6 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M); else Cp(Gg_b+(s%2)*M,G1,M);
-
 			AddTimes(rho+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M);
 			if (compute_phi_alias) {
 				int length = MolAlList.size();

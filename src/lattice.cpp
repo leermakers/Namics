@@ -32,14 +32,14 @@ if (debug) cout <<"lattice destructor " << endl;
 
 void Lattice::DeAllocateMemory(void) {
 if (debug) cout <<"DeAllocateMemory in lattice " << endl;
-	if (all_lattice) {
-	       if (fjc==1) {
+	 if (fjc==1) {
+		 if (gradients<3) {
 			free(lambda_1);
 			free(lambda1);
 			free(lambda0);
 			free(L);
-		} else {free(L); free(LAMBDA); }
-	}
+		}
+	} else {free(L); free(LAMBDA); }
 #ifdef CUDA
 	//if (gradients==3) X=(Real*)AllonDev(M);
 	if (gradients==3) cudaFree(X);
@@ -56,12 +56,12 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	PutM();
 	DeAllocateMemory();
 	if (fjc==1) {
-	if (gradients<3) {
+		if (gradients<3) {
 		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
 		lambda_1=(Real*)malloc(M*sizeof(Real)); Zero(lambda_1,M);
 		lambda1=(Real*)malloc(M*sizeof(Real)); Zero(lambda1,M);
 		lambda0=(Real*)malloc(M*sizeof(Real)); Zero(lambda0,M);
-	}
+		}
 	} else {
 		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
 		LAMBDA =(Real*)malloc(FJC*M*sizeof(Real)); Zero(LAMBDA,FJC*M);

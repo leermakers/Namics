@@ -16,13 +16,13 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -Ofast -std=c++11 -fopenmp -march=native# -fno-signed-zeros -fno-trapping-math -frename-registers -march=native -fomit-frame-pointer
+CFLAGS      := -Wall -Ofast -std=c++14 -fopenmp -march=native -ftree-parallelize-loops=12
 LIB         := -lm -lpthread -lgomp
 INC         := -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
 	LIB        += -lcuda -lcudart
-	NVCCFLAGS   := -DCUDA
+	NVCCFLAGS   := -DCUDA=1
 endif
 
 # %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@

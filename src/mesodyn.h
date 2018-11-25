@@ -72,8 +72,8 @@ class Gaussian_noise {
   //Makes sure that we keep generating new numbers, instead of the same over and over.
 
 public:
-  Gaussian_noise(Boundary1D*, Real, int, Real, Real); // Not seeded (32 bits of randomness)
-  Gaussian_noise(Boundary1D*, Real, int, Real, Real, size_t); // Seeded
+  Gaussian_noise(shared_ptr<Boundary1D>, Real, int, Real, Real); // Not seeded (32 bits of randomness)
+  Gaussian_noise(shared_ptr<Boundary1D>, Real, int, Real, Real, size_t); // Seeded
   int generate();
   int add_noise(vector<Real>&);
   vector<Real> noise;
@@ -82,7 +82,7 @@ private:
   seed_seq seed;
   mt19937 prng;
   normal_distribution<Real> dist;
-  unique_ptr<Boundary1D> boundary;
+  shared_ptr<Boundary1D> boundary;
 };
 
 class Boundary1D : protected Lattice_Access {
@@ -147,13 +147,11 @@ private:
 
 class Component : protected Lattice_Access {
 public:
-  Component(Lattice*, Boundary1D*, vector<Real>&); //1D
+  Component(Lattice*, shared_ptr<Boundary1D>, vector<Real>&); //1D
   ~Component();
 
   vector<Real> rho;
   vector<Real> alpha;
-
-  Gaussian_noise* gaussian;
 
   Real rho_at(int, int, int);
   Real alpha_at(int, int, int);
@@ -165,12 +163,12 @@ public:
   Real theta();
 
 private:
-  unique_ptr<Boundary1D> boundary;
+  shared_ptr<Boundary1D> boundary;
 };
 
 class Flux1D : protected Lattice_Access {
 public:
-  Flux1D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
+  Flux1D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   virtual ~Flux1D();
 
   virtual int langevin_flux();
@@ -188,16 +186,14 @@ public:
   vector<Real> J_minus;
   vector<Real> J;
 
-  shared_ptr<Gaussian_noise> gaussian;
-
 
 protected:
   int onsager_coefficient(vector<Real>&, vector<Real>&);
   int potential_difference(vector<Real>&, vector<Real>&);
   int langevin_flux(vector<int>&, vector<int>&, int);
   int mask(vector<int>&);
-  unique_ptr<Component> A;
-  unique_ptr<Component> B;
+  shared_ptr<Component> A;
+  shared_ptr<Component> B;
 
   vector<Real> L;
   vector<Real> mu;
@@ -209,7 +205,7 @@ protected:
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
+  Flux2D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   virtual ~Flux2D();
 
   virtual int langevin_flux() override;
@@ -225,7 +221,7 @@ protected:
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
+  Flux3D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   ~Flux3D();
 
   virtual int langevin_flux() override;
@@ -300,11 +296,12 @@ private:
   Real boundaryless_volume;
 
   /* Helper class instances */
-  Boundary1D* boundary;
-  vector<Component*> component;
-  vector<Component*> solver_component;
-  vector<Flux1D*> flux;
-  vector<Flux1D*> solver_flux;
+  unique_ptr<Gaussian_noise> gaussian;
+  shared_ptr<Boundary1D> boundary;
+  vector< shared_ptr<Component> > component;
+  vector< shared_ptr<Component> > solver_component;
+  vector< unique_ptr<Flux1D> > flux;
+  vector< unique_ptr<Flux1D> > solver_flux;
 
   /* Mesodyn specific output */
   ostringstream filename;
@@ -324,7 +321,7 @@ public:
 
   bool mesodyn();
 
-  int norm_theta(vector<Component*>&);
+  int norm_theta(vector< shared_ptr<Component> >&);
 
   Real lost;
 

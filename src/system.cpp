@@ -204,7 +204,7 @@ if (debug) cout << "CheckInput for system " << endl;
 		}
 		if (cuda) {
 			if (!GPU) {
-				cout <<"Namics expects that you are going to use the GPU, but the input is not in line with this (either gradients < 3, or GPU != 'true' : compile without CUDA=1 flag." << endl;
+				cout <<"Namics expects that you are going to use the GPU, but the input is not in line with this (either gradients < 3, or GPU != 'true' : compile without CUDA=1 flag or enable GPU in your input file." << endl;
 				success=false;
 			}
 		}

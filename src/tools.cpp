@@ -21,7 +21,7 @@ __device__ void atomicAdd(Real* address, Real val, Real dummy)
                                __longlong_as_double(assumed)));
     } while (assumed != old);
     //return __longlong_as_double(old);
-    if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at atomicAdd: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+    //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at atomicAdd: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
@@ -43,7 +43,7 @@ __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int 
 			pM+=M;
 		}
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at distributeg1: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at distributeg1: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 
@@ -69,7 +69,7 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 			pM+=M;
 		}
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at collectphi: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at collectphi: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 __global__ void dot(Real *X, Real *Y, Real *Z, int M)   {
@@ -85,7 +85,7 @@ __global__ void dot(Real *X, Real *Y, Real *Z, int M)   {
       __syncthreads();
    }
    if (threadIdx.x == 0) Z[threadIdx.x] = tmp[0];
-   if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at dot: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+   //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at dot: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 __global__ void sum(Real *X, Real *Z, int M)   {
@@ -101,109 +101,108 @@ __global__ void sum(Real *X, Real *Z, int M)   {
       __syncthreads();
    }
    if (threadIdx.x == 0) Z[threadIdx.x] = tmp[0];
-   if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at sum (Real*, Real*, int): " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+   //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at sum (Real*, Real*, int): " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 
 __global__ void composition(Real *phi, Real *Gf, Real *Gb, Real* G1, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (G1[idx]>0) phi[idx] += C*Gf[idx]*Gb[idx]/G1[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at composition: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at composition: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void times(Real *P, Real *A, Real *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=A[idx]*B[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at times: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at times: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void times(Real *P, Real *A, int *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=A[idx]*B[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at times: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at times: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void addtimes(Real *P, Real *A, Real *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx]*B[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at addtimes: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void norm(Real *P, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] *= C;
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at norm: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at norm: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void zero(Real *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0.0;
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at zero: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at zero: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void unity(Real *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0;
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at unity: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at unity: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void zero(int *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0;
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at zero: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at zero: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void cp (Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = A[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at cp: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at cp: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void cp (Real *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0*A[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at cp: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at cp: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void yisaplusctimesb(Real *Y, Real *A,Real *B, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]+ C * B[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yisaplusctimesb: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yisaplusctimesb: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void yisaminb(Real *Y, Real *A,Real *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]-B[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yisaminb: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yisaminb: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void yisaplusc(Real *Y, Real *A, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]+C;
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yisaplusc: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yisaplusc: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void yisaplusb(Real *Y, Real *A,Real *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]+B[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yisaplusb: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yisaplusb: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void yplusisctimesx(Real *Y, Real *X, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] += C*X[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yplusisctimesx: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at yplusisctimesx: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void updatealpha(Real *Y, Real *X, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] += C*(X[idx]-1.0);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at updatealpha: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at updatealpha: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void picard(Real *Y, Real *X, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = C*Y[idx]+(1-C)*X[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at picard: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at picard: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void add(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at add: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at add: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void add(int *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at add: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at add: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void dubble(Real *P, Real *A, Real norm, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]*=norm/A[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at dubble: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at dubble: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void minlog(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -212,17 +211,17 @@ __global__ void minlog(Real *P, Real *A, int M)   {
 __global__ void boltzmann(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=exp(-A[idx]);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at boltzmann: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at boltzmann: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void overwritec(Real* P, int* Mask, Real X,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (Mask[idx]==1) P[idx] = X ; else P[idx]=0;
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at overwritec: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at overwritec: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void overwritea(Real* P, int* Mask, Real* A,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (Mask[idx]==1) P[idx] = A[idx] ; else P[idx]=0;
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at overwritea: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at overwritea: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 __global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
@@ -247,7 +246,7 @@ __global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real
 			(e_x[idx]+ex[idx]+e_y[idx]+ey[idx]+e_z[idx]+ez[idx]+6*e[idx])*psi[idx])/C;
 		g[idx] -=q[idx];
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at upq: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at upq: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -271,52 +270,52 @@ __global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Re
 			C*q[idx])/(e_x[idx]+ex[idx]+e_y[idx]+ey[idx]+e_z[idx]+ez[idx]+6*e[idx]);
 		q[idx] -=psi[idx];
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at uppsi: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at uppsi: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 __global__ void invert(int *SKAM, int *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at invert: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at invert: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void invert(Real *SKAM, Real *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at invert: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at invert: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void addgradsquare(Real *EE, Real* X,  Real* Y, Real* Z, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) EE[idx]+=pow(X[idx]-Y[idx],2)+pow(Y[idx]-Z[idx],2);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at addgradsquare: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at addgradsquare: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void putalpha(Real *g,Real *phitot,Real *phi_side,Real chi,Real phibulk,int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (phitot[idx]>0) g[idx] = g[idx] - chi*(phi_side[idx]/phitot[idx]-phibulk);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at putalpha: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at putalpha: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 __global__ void putalpha(Real *g,Real *phi_side,Real chi,Real phibulk,int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) g[idx] = g[idx] - chi*(phi_side[idx]-phibulk);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at putalpha: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at putalpha: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 __global__ void div(Real *P,Real *A,int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (A[idx]>0) P[idx] /=A[idx];
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at div: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at div: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void oneminusphitot(Real *g, Real *phitot, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) g[idx]= 1/phitot[idx]-1;
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at oneminusphitot: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at oneminusphitot: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void addg(Real *g, Real *phitot, Real *alpha, int M)    {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) {
 		if (phitot[idx]>0) g[idx]= g[idx] -alpha[idx] +1/phitot[idx]-1; else g[idx]=0;
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at addg: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at addg: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 //__global__ void computegn(Real *GN, Real* G, int M, int n_box)   {
@@ -328,7 +327,7 @@ __global__ void addg(Real *g, Real *phitot, Real *alpha, int M)    {
 
 void TransferDataToHost(Real *H, Real *D, int M)    {
 	cudaMemcpy(H, D, sizeof(Real)*M,cudaMemcpyDeviceToHost);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at TransferDataToHost: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at TransferDataToHost: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 void TransferDataToDevice(Real *H, Real *D, int M)    {
 	cudaMemcpy(D, H, sizeof(Real)*M,cudaMemcpyHostToDevice);
@@ -342,9 +341,7 @@ void TransferIntDataToDevice(int *H, int *D, int M)     {
 	cudaMemcpy(D, H, sizeof(int)*M,cudaMemcpyHostToDevice);
   if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at TransferIntDataToDevice: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
-#endif
 
-#ifdef CUDA
 __global__ void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int idx, jx_mmx=jx*mmx, jx_bxm=jx*bxm, bx1_jx=bx1*jx;
 	int yi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
@@ -353,7 +350,7 @@ __global__ void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, i
 		P[idx]=P[bx1_jx+idx];
 		P[jx_mmx+idx]=P[jx_bxm+idx];
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at bx: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at bx: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int idx, jx_mmx=jx*mmx;
@@ -363,7 +360,7 @@ __global__ void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, 
 		P[idx]=0;
 		P[jx_mmx+idx]=0;
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_x: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_x: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 	int idx, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
@@ -373,7 +370,7 @@ __global__ void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, i
 		P[idx]=P[jy_by1+idx];
 		P[jy_mmy+idx]=P[jy_bym+idx];
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at by: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at by: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 	int idx, jy_mmy=jy*mmy;
@@ -383,7 +380,7 @@ __global__ void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, 
 		P[idx]=0;
 		P[jy_mmy+idx]=0;
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_y: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_y: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
@@ -392,7 +389,7 @@ __global__ void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, i
 		P[idx]=P[idx+bz1];
 		P[idx+mmz]=P[idx+bzm];
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at bz: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at bz: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
@@ -401,7 +398,7 @@ __global__ void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, 
 		P[idx]=0;
 		P[idx+mmz]=0;
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_z: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_z: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int idx, jx_mmx=jx*mmx, jx_bxm=jx*bxm, bx1_jx=bx1*jx;
@@ -411,7 +408,7 @@ __global__ void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, in
 		P[idx]=P[bx1_jx+idx];
 		P[jx_mmx+idx]=P[jx_bxm+idx];
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at bx: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at bx: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int idx, jx_mmx=jx*mmx;
@@ -421,7 +418,7 @@ __global__ void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, i
 		P[idx]=0;
 		P[jx_mmx+idx]=0;
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_x: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_x: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 	int idx, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
@@ -431,7 +428,7 @@ __global__ void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, in
 		P[idx]=P[jy_by1+idx];
 		P[jy_mmy+idx]=P[jy_bym+idx];
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at by: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at by: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 	int idx, jy_mmy=jy*mmy;
@@ -441,7 +438,7 @@ __global__ void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, i
 		P[idx]=0;
 		P[jy_mmy+idx]=0;
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_y: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_y: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
@@ -450,7 +447,7 @@ __global__ void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, in
 		P[idx]=P[idx+bz1];
 		P[idx+mmz]=P[idx+bzm];
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at bz: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at bz: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 __global__ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
@@ -459,7 +456,7 @@ __global__ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, i
 		P[idx]=0;
 		P[idx+mmz]=0;
 	}
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_z: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at b_z: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 #else
 void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -626,16 +623,15 @@ int *AllIntOnDev(int N)    {
 
 #ifdef CUDA
 void Dot(Real &result, Real *x,Real *y, int M)   {
-/**/
 	Real *H_XXX=(Real*) malloc(M*sizeof(Real));
 	Real *H_YYY=(Real*) malloc(M*sizeof(Real));
 	TransferDataToHost(H_XXX, x, M);
 	TransferDataToHost(H_YYY, y, M);
-	result=H_Dot(H_XXX,H_YYY,M);
+  result=H_Dot(H_XXX,H_YYY,M);
 	free(H_XXX);
 	free(H_YYY);
-  	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Dot: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
-/**/
+  	//if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Dot: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+}
 
 
 /*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
@@ -650,7 +646,6 @@ void Dot(Real &result, Real *x,Real *y, int M)   {
 	cudaFree(D_XX);
 	if (cudaSuccess != cudaPeekAtLastError()) cout <<"Problem at Dot" << endl;
 */
-}
 #else
 void Dot(Real &result, Real *x,Real *y, int M)   {
 	result=0.0;
@@ -665,7 +660,6 @@ void Sum(Real &result, Real *x, int M)   {
 	Real *H_XXX=(Real*) malloc(M*sizeof(Real));
 	TransferDataToHost(H_XXX, x, M);
 	result=H_Sum(H_XXX,M);
-	if (debug) cout <<"Host sum =" << result << endl;
 	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
  	free(H_XXX);
   	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Sum: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
@@ -686,15 +680,7 @@ void Sum(Real &result, Real *x, int M)   {
 	cudaFree(D_XX);
 */
 }
-#else
-void Sum(Real &result, Real *x,int M)   {
-if (debug) cout <<"Sum in absence of cuda" << endl;
-	result=0;
- 	for (int i=0; i<M; i++) result +=x[i];
-}
-#endif
 
-#ifdef CUDA
 void AddTimes(Real *P, Real *A, Real *B, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	addtimes<<<n_blocks,block_size>>>(P,A,B,M);
@@ -1114,7 +1100,12 @@ void ColPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, i
 //#endif
 
 #ifdef CUDA
-void SetBoundaries(Real *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
+template void SetBoundaries<int>(int*, int, int, int, int, int, int, int, int, int, int, int);
+template void SetBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int);
+
+template <typename T>
+void SetBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
+  printf("here");
 	dim3 dimBlock(16,16);
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
@@ -1125,29 +1116,11 @@ void SetBoundaries(Real *P, int jx, int jy, int bx1, int bxm, int by1, int bym, 
 	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at SetBoundaries: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
-void SetBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
-	dim3 dimBlock(16,16);
-	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
-	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	bx<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
-	by<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
-	bz<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
-	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at SetBoundaries: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
-}
+template void RemoveBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int);
+template void RemoveBoundaries<int>(int*, int, int, int, int, int, int, int, int, int, int, int);
 
-void RemoveBoundaries(Real *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
-	dim3 dimBlock(16,16);
-	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
-	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	b_x<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
-	b_y<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
-	b_z<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
-	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at RemoveBoundaries: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
-}
-
-void RemoveBoundaries(int *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
+template <typename T>
+void RemoveBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
 	dim3 dimBlock(16,16);
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
@@ -1445,273 +1418,4 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
     }
     free((void*) rv1);
     return(1);
-}
-
-int modern_svdcmp(Real** a, int m, int n, Real *w, Real** v)
-{
-    if (debug) cout << "modern_svdcmp in tools" << endl;
-    int flag, i, its, j, jj, k, l, nm;
-    Real c, f, h, s, x, y, z;
-    Real anorm = 0.0, g = 0.0, scale = 0.0;
-
-    if (m < n)
-    {
-        fprintf(stderr, "#rows must be > #cols \n");
-        return(0);
-    }
-
-    vector<Real> rv1(n);
-
-/* Householder reduction to bidiagonal form */
-    for (i = 0; i < n; i++)
-    {
-        /* left-hand reduction */
-        l = i + 1;
-        rv1.push_back( scale * g );
-
-        g = s = scale = 0.0;
-        if (i < m)
-        {
-            for (k = i; k < m; k++)
-                scale += fabs((Real)a[k][i]);
-            if (scale)
-            {
-                for (k = i; k < m; k++)
-                {
-                    a[k][i] = (Real)((Real)a[k][i]/scale);
-                    s += ((Real)a[k][i] * (Real)a[k][i]);
-                }
-                f = (Real)a[i][i];
-                g = -SIGN(sqrt(s), f);
-                h = f * g - s;
-                a[i][i] = (Real)(f - g);
-                if (i != n - 1)
-                {
-                    for (j = l; j < n; j++)
-                    {
-                        for (s = 0.0, k = i; k < m; k++)
-                            s += ((Real)a[k][i] * (Real)a[k][j]);
-                        f = s / h;
-                        for (k = i; k < m; k++)
-                            a[k][j] += (Real)(f * (Real)a[k][i]);
-                    }
-                }
-                for (k = i; k < m; k++)
-                    a[k][i] = (Real)((Real)a[k][i]*scale);
-            }
-        }
-        w[i] = (Real)(scale * g);
-
-        /* right-hand reduction */
-        g = s = scale = 0.0;
-        if (i < m && i != n - 1)
-        {
-            for (k = l; k < n; k++)
-                scale += fabs((Real)a[i][k]);
-            if (scale)
-            {
-                for (k = l; k < n; k++)
-                {
-                    a[i][k] = (Real)((Real)a[i][k]/scale);
-                    s += ((Real)a[i][k] * (Real)a[i][k]);
-                }
-                f = (Real)a[i][l];
-                g = -SIGN(sqrt(s), f);
-                h = f * g - s;
-                a[i][l] = (Real)(f - g);
-                for (k = l; k < n; k++)
-                    rv1[k] = (Real)a[i][k] / h;
-                if (i != m - 1)
-                {
-                    for (j = l; j < m; j++)
-                    {
-                        for (s = 0.0, k = l; k < n; k++)
-                            s += ((Real)a[j][k] * (Real)a[i][k]);
-                        for (k = l; k < n; k++)
-                            a[j][k] += (Real)(s * rv1[k]);
-                    }
-                }
-                for (k = l; k < n; k++)
-                    a[i][k] = (Real)((Real)a[i][k]*scale);
-            }
-        }
-        anorm = MAX(anorm, (fabs((Real)w[i]) + fabs(rv1[i])));
-    }
-
-    /* accumulate the right-hand transformation */
-    for (i = n - 1; i >= 0; i--)
-    {
-        if (i < n - 1)
-        {
-            if (g)
-            {
-                for (j = l; j < n; j++){
-                    v[j][i] = (Real)(((Real)a[i][j] / (Real)a[i][l]) / g);
-                  }
-                    /* Real division to avoid underflow */
-                for (j = l; j < n; j++)
-                {
-                    for (s = 0.0, k = l; k < n; k++)
-                        s += ((Real)a[i][k] * (Real)v[k][j]);
-                    for (k = l; k < n; k++)
-                        v[k][j] += (Real)(s * (Real)v[k][i]);
-                }
-            }
-            for (j = l; j < n; j++)
-                v[i][j] = v[j][i] = 0.0;
-        }
-        v[i][i] = 1.0;
-        g = rv1[i];
-        l = i;
-    }
-
-    /* accumulate the left-hand transformation */
-    for (i = n - 1; i >= 0; i--)
-    {
-        l = i + 1;
-        g = (Real)w[i];
-        if (i < n - 1)
-            for (j = l; j < n; j++)
-                a[i][j] = 0.0;
-        if (g)
-        {
-            g = 1.0 / g;
-            if (i != n - 1)
-            {
-                for (j = l; j < n; j++)
-                {
-                    for (s = 0.0, k = l; k < m; k++)
-                        s += ((Real)a[k][i] * (Real)a[k][j]);
-                    f = (s / (Real)a[i][i]) * g;
-                    for (k = i; k < m; k++)
-                        a[k][j] += (Real)(f * (Real)a[k][i]);
-                }
-            }
-            for (j = i; j < m; j++)
-                a[j][i] = (Real)((Real)a[j][i]*g);
-        }
-        else
-        {
-            for (j = i; j < m; j++)
-                a[j][i] = 0.0;
-        }
-        ++a[i][i];
-    }
-
-    /* diagonalize the bidiagonal form */
-    for (k = n - 1; k >= 0; k--)
-    {                             /* loop over singular values */
-        for (its = 0; its < 30; its++)
-        {                         /* loop over allowed iterations */
-            flag = 1;
-            for (l = k; l >= 0; l--)
-            {                     /* test for splitting */
-                nm = l - 1;
-                if (fabs(rv1[l]) + anorm == anorm)
-                {
-                    flag = 0;
-                    break;
-                }
-                if (fabs((Real)w[nm]) + anorm == anorm)
-                    break;
-            }
-            if (flag)
-            {
-                c = 0.0;
-                s = 1.0;
-                for (i = l; i <= k; i++)
-                {
-                    f = s * rv1[i];
-                    if (fabs(f) + anorm != anorm)
-                    {
-                        g = (Real)w[i];
-                        h = PYTHAG(f, g);
-                        w[i] = (Real)h;
-                        h = 1.0 / h;
-                        c = g * h;
-                        s = (- f * h);
-                        for (j = 0; j < m; j++)
-                        {
-                            y = (Real)a[j][nm];
-                            z = (Real)a[j][i];
-                            a[j][nm] = (Real)(y * c + z * s);
-                            a[j][i] = (Real)(z * c - y * s);
-                        }
-                    }
-                }
-            }
-            z = (Real)w[k];
-            if (l == k)
-            {                  /* convergence */
-                if (z < 0.0)
-                {              /* make singular value nonnegative */
-                    w[k] = (Real)(-z);
-                    for (j = 0; j < n; j++)
-                        v[j][k] = (-v[j][k]);
-                }
-                break;
-            }
-            if (its >= 30) {
-                fprintf(stderr, "No convergence after 30! iterations \n");
-                return 0;
-            }
-
-            /* shift from bottom 2 x 2 minor */
-            x = (Real)w[l];
-            nm = k - 1;
-            y = (Real)w[nm];
-            g = rv1[nm];
-            h = rv1[k];
-            f = ((y - z) * (y + z) + (g - h) * (g + h)) / (2.0 * h * y);
-            g = PYTHAG(f, 1.0);
-            f = ((x - z) * (x + z) + h * ((y / (f + SIGN(g, f))) - h)) / x;
-
-            /* next QR transformation */
-            c = s = 1.0;
-            for (j = l; j <= nm; j++)
-            {
-                i = j + 1;
-                g = rv1[i];
-                y = (Real)w[i];
-                h = s * g;
-                g = c * g;
-                z = PYTHAG(f, h);
-                rv1[j] = z;
-                c = f / z;
-                s = h / z;
-                f = x * c + g * s;
-                g = g * c - x * s;
-                h = y * s;
-                y = y * c;
-                for (jj = 0; jj < n; jj++)
-                {
-                    x = (Real)v[jj][j];
-                    z = (Real)v[jj][i];
-                    v[jj][j] = (Real)(x * c + z * s);
-                    v[jj][i] = (Real)(z * c - x * s);
-                }
-                z = PYTHAG(f, h);
-                w[j] = (Real)z;
-                if (z)
-                {
-                    z = 1.0 / z;
-                    c = f * z;
-                    s = h * z;
-                }
-                f = (c * g) + (s * y);
-                x = (c * y) - (s * g);
-                for (jj = 0; jj < m; jj++)
-                {
-                    y = (Real)a[jj][j];
-                    z = (Real)a[jj][i];
-                    a[jj][j] = (Real)(y * c + z * s);
-                    a[jj][i] = (Real)(z * c - y * s);
-                }
-            }
-            rv1[l] = 0.0;
-            rv1[k] = f;
-            w[k] = (Real)x;
-        }
-    }
-    return 0;
 }

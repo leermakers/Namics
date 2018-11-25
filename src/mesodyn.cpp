@@ -85,7 +85,6 @@ void Mesodyn::get_mask() {
 }
 
 Mesodyn::~Mesodyn() {
-  delete flux[0]->gaussian;
   for (size_t i = 0; i < flux.size(); ++i) {
     delete flux[i];
     delete solver_flux[i];
@@ -254,7 +253,7 @@ Real Mesodyn::calculate_order_parameter() {
 }
 
 int Mesodyn::noise_flux() {
-  Gaussian_noise* gaussian = solver_flux[0]->gaussian;
+  shared_ptr<Gaussian_noise> gaussian = solver_flux[0]->gaussian;
 
   for (Component* all_components : solver_component) {
     gaussian->generate();

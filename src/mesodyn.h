@@ -13,6 +13,7 @@
 #include <algorithm>  // transform, copy, find functions
 #include <limits>     // output
 #include <unistd.h>   // output
+#include <memory>
 
 class Boundary1D;
 
@@ -81,7 +82,7 @@ private:
   seed_seq seed;
   mt19937 prng;
   normal_distribution<Real> dist;
-  Boundary1D* boundary;
+  unique_ptr<Boundary1D> boundary;
 };
 
 class Boundary1D : protected Lattice_Access {
@@ -164,7 +165,7 @@ public:
   Real theta();
 
 private:
-  Boundary1D* boundary;
+  unique_ptr<Boundary1D> boundary;
 };
 
 class Flux1D : protected Lattice_Access {
@@ -187,7 +188,7 @@ public:
   vector<Real> J_minus;
   vector<Real> J;
 
-  Gaussian_noise* gaussian;
+  shared_ptr<Gaussian_noise> gaussian;
 
 
 protected:
@@ -195,8 +196,8 @@ protected:
   int potential_difference(vector<Real>&, vector<Real>&);
   int langevin_flux(vector<int>&, vector<int>&, int);
   int mask(vector<int>&);
-  Component* A;
-  Component* B;
+  unique_ptr<Component> A;
+  unique_ptr<Component> B;
 
   vector<Real> L;
   vector<Real> mu;

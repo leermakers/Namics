@@ -38,7 +38,7 @@ System::~System() {
     cudaFree(eps);
     cudaFree(q);
     cudaFree(EE);
-    cudeFree(psiMask);
+    cudaFree(psiMask);
   }
 #else
   free(phitot);
@@ -668,6 +668,7 @@ if (debug) cout << "PushOutput for system " << endl;
 		s="profile;5"; push("eps",s);
 	}
 #ifdef CUDA
+	int M = Lat[0]->M;
   TransferDataToHost(H_alpha, alpha, M);
   TransferDataToHost(H_GrandPotentialDensity, GrandPotentialDensity, M);
   TransferDataToHost(H_FreeEnergyDensity, FreeEnergyDensity, M);

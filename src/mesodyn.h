@@ -267,7 +267,6 @@ private:
   /* Flow control */
   int RC;
   Real* solve_explicit();
-  void get_mask();
   void explicit_start();
   int noise_flux();
   Real* solve_crank_nicolson();

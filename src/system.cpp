@@ -110,9 +110,8 @@ void System::AllocateMemory() {
     Mol[i]->AllocateMemory();
 }
 
-bool System::PrepareForCalculations() {
-  if (debug) cout << "PrepareForCalculations in System " << endl;
-  int M = Lat[0]->M;
+bool System::generate_mask() {
+	int M = Lat[0]->M;
   bool success = true;
 
   FrozenList.clear();
@@ -155,6 +154,17 @@ bool System::PrepareForCalculations() {
 	}
 	Lat[0]->Accesible_volume=volume;
 
+	return success;
+}
+
+bool System::PrepareForCalculations() {
+  if (debug) cout << "PrepareForCalculations in System " << endl;
+
+	bool success = true;
+	int M = Lat[0]->M;
+
+	success = generate_mask();
+
   n_mol = In[0]->MolList.size();
   success = Lat[0]->PrepareForCalculations();
   int n_mon = In[0]->MonList.size();
@@ -166,7 +176,7 @@ bool System::PrepareForCalculations() {
     success = Mol[i]->PrepareForCalculations(KSAM);
   }
   if (charged) {
-    length = FrozenList.size();
+    int length = FrozenList.size();
     Zero(psiMask, M);
     fixedPsi0 = false;
     for (int i = 0; i < length; ++i) {

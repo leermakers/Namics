@@ -102,6 +102,7 @@ public:
 	bool IsUnique(int,int);
 	void AllocateMemory();
 	bool PrepareForCalculations();
+	bool generate_mask();
 	bool ComputePhis();
 	void DoElectrostatics(Real*,Real*);
 	bool CheckResults(bool);

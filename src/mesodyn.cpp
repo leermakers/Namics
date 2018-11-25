@@ -34,54 +34,11 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
 
   set_update_lists();
 
-//  Sys[0]->PrepareForCalculations(); // to get the correct KSAM and volume.
-  get_mask();
+  // to get the correct KSAM and volume.
+  Sys[0]->generate_mask();
 
   // The right hand side of the minus sign calculates the volume of the boundaries. I know, it's hideous, but it works for all dimensions.
   boundaryless_volume = Sys[0]->volume - ((2 * dimensions - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * dimensions) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, dimensions));
-}
-
-void Mesodyn::get_mask() {
-  int M = Lat[0]->M;
-
-  Sys[0]->FrozenList.clear();
-  int length = In[0]->MonList.size();
-  for (int i = 0; i < length; i++) {
-    if (Seg[i]->freedom == "frozen")
-      Sys[0]->FrozenList.push_back(i);
-  }
-  if (Sys[0]->FrozenList.size() + Sys[0]->SysMonList.size() + Sys[0]->SysTagList.size() + Sys[0]->SysClampList.size() != In[0]->MonList.size()) {
-    cout << " There are un-used monomers in system. Remove them before starting" << endl;
-  }
-
-  Zero(Sys[0]->KSAM, M);
-
-  length = Sys[0]->FrozenList.size();
-  for (int i = 0; i < length; ++i) {
-    int* MASK = Seg[Sys[0]->FrozenList[i]]->MASK;
-    Add(Sys[0]->KSAM, MASK, M);
-  }
-
-  length = Sys[0]->SysTagList.size();
-  for (int i = 0; i < length; ++i) {
-    int* MASK = Seg[Sys[0]->SysTagList[i]]->MASK;
-    Add(Sys[0]->KSAM, MASK, M);
-  }
-
-  length = Sys[0]->SysClampList.size();
-  for (int i = 0; i < length; ++i) {
-    int* MASK = Seg[Sys[0]->SysClampList[i]]->MASK;
-    Add(Sys[0]->KSAM, MASK, M);
-  }
-
-  Invert(Sys[0]->KSAM, Sys[0]->KSAM, M);
-  Sys[0]->volume = 0;
-  for (int i = 0; i < M ; i++) {
-    if (Lat[0]->gradients <3) {
-      Sys[0]->volume += Sys[0]->KSAM[i]*Lat[0]->L[i];
-    } else Sys[0]->volume += Sys[0]->KSAM[i];
-  }
-  Lat[0]->Accesible_volume=Sys[0]->volume;
 }
 
 Mesodyn::~Mesodyn() {
@@ -284,7 +241,6 @@ int Mesodyn::sanity_check() {
         cerr << "CRITICAL ERROR: COMPONENT DENSITY > 1 || < 0" << endl;
     }
     if (sum > (1+New[0]->tolerance) || sum < (1-New[0]->tolerance)) {
-      //cerr << sum << endl;
       cerr << "CRITICAL ERROR: LOCAL DENSITIES DO NOT SUM TO 1, DIFFERENCE: " << sum-1 << endl;
       cerr << "Location: " << x << " " << y << " " << z << endl;
     }

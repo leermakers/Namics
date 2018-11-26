@@ -200,9 +200,10 @@ int main(int argc, char* argv[]) {
     		int n_search = 0;
     		int n_scan = 0;
     		int n_ets = 0;
+		int n_bm =0;
     		int n_etm = 0;
     		int n_target = 0;
-    		int search_nr = -1, scan_nr = -1, target_nr = -1, ets_nr = -1, etm_nr = -1;
+    		int search_nr = -1, scan_nr = -1, target_nr = -1, ets_nr = -1, bm_nr=-1, etm_nr = -1;
 
 // Create variate class instance and check inputs (reference above)
     		for (int k = 0; k < n_var; k++) {
@@ -227,6 +228,10 @@ int main(int argc, char* argv[]) {
         			ets_nr = k;
         			n_ets++;
       			}
+      			if (Var[k]->balance_membraning > -1) {
+        			bm_nr = k;
+        			n_bm++;
+      			}
       			if (Var[k]->eq_to_mu > -1) {
         			etm_nr = k;
         			n_etm++;
@@ -242,8 +247,12 @@ int main(int argc, char* argv[]) {
       			cout << "too many equate_to_solvent's in var statements. The limit is 1 " << endl;
       			return 0;
     		}
+    		if (n_bm > 1) {
+      			cout << "too many balance membrane's in var statements. The limit is 1 " << endl;
+      			return 0;
+    		}
     		if (n_search > 1) {
-      			cout << "too many 'search'es in var statements. The limit is 1 " << endl;
+      			cout << "too many 'searches' in var statements. The limit is 1 " << endl;
       			return 0;
     		}
     		if (n_scan > 1) {
@@ -348,7 +357,7 @@ int main(int argc, char* argv[]) {
        	  				New[0]->Solve(true);
           				} else {
             					if (!debug) cout << "Solve towards superiteration " << endl;
-            					New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr);
+            					New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr, bm_nr);
          				}
       					New[0]->PushOutput();
 

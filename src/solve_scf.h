@@ -87,6 +87,7 @@ public:
 	int value_target;
 	int value_ets,old_value_ets;
 	int value_etm,old_value_etm;
+	int value_bm,old_value_bm;
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -101,7 +102,7 @@ public:
 	bool SolveMesodyn(function< void(vector<Real>&, size_t) >, function< Real*() >); //first argument should contain rho
 	function< Real*() > mesodyn_flux;
 	function< void(vector<Real>&, int) > mesodyn_load_alpha;
-	bool SuperIterate(int,int,int,int);
+	bool SuperIterate(int,int,int,int,int);
 	void DeAllocateMemory();
 	void AllocateMemory();
 	bool PrepareForCalculations(void);

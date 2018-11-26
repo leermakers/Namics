@@ -34,6 +34,8 @@ public:
 	vector<int> Xn_1;
 	Real FreeEnergy;
 	Real GrandPotential;
+	Real KJ0;
+	Real Kbar;
 	Real* phitot;
 	int* KSAM;
 	Real* eps;
@@ -106,6 +108,7 @@ public:
 	bool CheckResults(bool);
 	Real GetFreeEnergy();
 	Real GetGrandPotential();
+	Real GetSpontaneousCurvature();
 	bool CreateMu();
 	bool PutVarInfo(string,string,Real);
 	Real GetError();

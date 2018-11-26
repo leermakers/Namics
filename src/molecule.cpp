@@ -478,6 +478,18 @@ if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 				cout <<"In var: searching for theta to equate to solvent can only be done for a molecule with 'freedom' restricted" << endl;
 			}
 		}
+		if (Var_target_=="balance") {
+			Var_search_value=4; Var_start_search_value=theta;
+			if (freedom=="solvent") {
+				cout <<"in var: searching for theta to balance membrane can not be done for a molecule with 'freedom' solvent " << endl;
+				success=false;
+			}
+			if (freedom!="restricted") {
+				success=false;
+				cout <<"In var: searching for theta to balance membrane can only be done for a molecule with 'freedom' restricted" << endl;
+			}
+		}		
+
 		if (Var_search_value == -1) {
 			cout <<"In var: searching value for molecule was not recognized. Choose from {theta, n, phibulk, equate_to_solvent}. " << endl;
 			return false;

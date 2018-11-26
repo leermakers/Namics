@@ -55,4 +55,5 @@ var : mol-lipid : step : -0.1
 var : mol-lipid : end_value : 3
 //var : mol-lipid : search : theta
 //var : sys-noname: grand_potential : 0
+//var : mol-add : search : balance-membrane
 

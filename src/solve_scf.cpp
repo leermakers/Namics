@@ -581,7 +581,7 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callb
 }
 
 
-bool Solve_scf::SuperIterate(int search, int target,int ets,int etm) {
+bool Solve_scf::SuperIterate(int search, int target,int ets,int etm, int bm) {
 if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 	Real* x = (Real*) malloc(sizeof(Real)); H_Zero(x,1);
 	bool success;
@@ -589,13 +589,13 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 	value_target=target;
 	value_ets=ets;
 	value_etm=etm;
-	if (ets==-1 && etm==-1)  {                  //pick up initial guess;
+	value_bm =bm;
+	if (ets==-1 && etm==-1 && bm ==-1)  {                  //pick up initial guess;
 		x[0] =Var[search]->GetValue();
 	} else {
-		if (ets>-1)
-			x[0] = Var[ets]->GetValue();
-		else
-			x[0]=Var[etm]->GetValue();
+		if (ets>-1) x[0] = Var[ets]->GetValue();
+		if (etm>-1) x[0] = Var[etm]->GetValue();
+		if (bm>-1) x[0] = Var[bm]->GetValue();
 	}
 	gradient=custum; 				//the proper gradient is used
 	control=super;				//this is for inneriteration
@@ -686,16 +686,15 @@ void Solve_scf::residuals(Real* x, Real* g){
 		break;
 		case custum:
 			if (debug) cout <<"Residuals in custum mode in Solve_scf " << endl;
-			if (value_ets==-1 && value_etm==-1) 			//guess from newton is stored in place.
+			if (value_ets==-1 && value_etm==-1 && value_bm==-1) 			//guess from newton is stored in place.
 				Var[value_search]->PutValue(x[0]);
 			else {
-				if (value_ets>-1)
-					Var[value_ets]->PutValue(x[0]);
-				else
-					Var[value_etm]->PutValue(x[0]);
+				if (value_ets>-1) Var[value_ets]->PutValue(x[0]);
+				if (value_etm>-1) Var[value_etm]->PutValue(x[0]);
+				if (value_bm>-1) Var[value_bm]->PutValue(x[0]);
 			}
 
-			if (value_ets==-1||value_search<0 || value_etm>-1) {
+			if (value_ets==-1|| value_search<0 || value_etm>-1 || value_bm>-1) {
 				control=proceed;					//prepare for solving scf eqns. (both for inneriteration and residuals)
 				gradient=classical;
 				if (SCF_method=="hessian") {hessian=true; pseudohessian=false; solver=HESSIAN;}
@@ -715,20 +714,21 @@ void Solve_scf::residuals(Real* x, Real* g){
 				i_info=super_i_info;
 				s_info=super_s_info;
 			} else {
+				old_value_bm=value_bm;
 				old_value_ets=value_ets;				//prepare of next level of super-iteration.
 				old_value_etm=value_etm;
-				SuperIterate(value_search,value_target,-1,-1);	//go to superiteration with new ets and etm values
+				SuperIterate(value_search,value_target,-1,-1,-1);	//go to superiteration with new ets and etm values
 				value_ets = old_value_ets;				//reset conditions so that old iteration can continue
 				value_etm=old_value_etm;
+				value_bm=old_value_bm;
 			}
 
-			if (value_ets==-1 && value_etm==-1) {			//get value for gradient.
+			if (value_ets==-1 && value_etm==-1 && value_bm==-1) {			//get value for gradient.
 				g[0]=Var[value_target]->GetError();
 			} else {
-				if (value_ets>-1)
-					g[0]=Var[value_ets]->GetError();
-				else
-					g[0]=Var[value_etm]->GetError();
+				if (value_ets>-1) g[0]=Var[value_ets]->GetError();
+				if (value_etm>-1) g[0]=Var[value_etm]->GetError();
+				if (value_bm>-1) g[0]=Var[value_bm]->GetError();
 			}
 		break;
 		case Picard:

@@ -1194,6 +1194,12 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 	return FreeEnergy+Lat[0]->WeightedSum(F);
 }
 
+Real System::GetSpontaneousCurvature() {
+	Real* GP =GrandPotentialDensity;	
+	cout <<"Get spontaneous Curvature not yet inplemented in system " << endl; 
+	return 0; 
+};
+
 Real System::GetGrandPotential(void) { //Eqn 293  
 if (debug) cout << "GetGrandPotential for system " << endl;
 	int M=Lat[0]->M;
@@ -1297,6 +1303,7 @@ if (charged) {
 	return  Lat[0]->WeightedSum(GrandPotentialDensity); 
 
 }
+
 
 bool System::CreateMu() {
 if (debug) cout << "CreateMu for system " << endl;

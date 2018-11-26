@@ -17,6 +17,7 @@ extern const int block_size;
 __global__ void distributeg1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 __global__ void collectphi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 __global__ void sum(Real*, Real*, int);
+__global__ void sum(int*, int*, int);
 __global__ void dot(Real*, Real*, Real*, int);
 __global__ void composition(Real*, Real*, Real*, Real*, Real, int);
 __global__ void times(Real*, Real*, Real*, int);
@@ -71,6 +72,7 @@ __global__ void bz(int*, int, int, int, int, int, int, int);
 __global__ void b_z(int*, int, int, int, int, int, int, int);
 void Dot(Real&, Real*, Real*, int);
 void Sum(Real&, Real*, int);
+void Sum(int&, int*, int);
 bool GPU_present();
 Real* AllOnDev(int);
 int* AllIntOnDev(int);
@@ -109,8 +111,10 @@ template <typename T>
 inline void SetBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
 template <typename T>
 inline void RemoveBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
+namespace tools {
 void DistributeG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
+}
 void OverwriteC(Real*, int*, Real, int);
 void OverwriteA(Real*, int*, Real*, int);
 void UpQ(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
@@ -129,7 +133,7 @@ inline void Add(T* P, T* A, int M) {
 }
 
 template <typename T>
-inline void Sum(Real &result, T *x,int M)   {
+inline void Sum(T &result, T *x,int M)   {
   result = 0;
   for (int i=0; i<M; i++) result +=x[i];
 }
@@ -186,8 +190,10 @@ void Div(Real*, Real*, int);
 void AddG(Real*, Real*, Real*, int);
 void OneMinusPhitot(Real*, Real*, int);
 void ComputeGN(Real*, Real*, int, int);
-void DisG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
-void ColPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
+namespace tools {
+void DistributeG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
+void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
+}
 void OverwriteC(Real*, int*, Real, int);
 void OverwriteA(Real*, int*, Real*, int);
 void UpQ(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
@@ -223,13 +229,14 @@ inline Real H_Sum(T* H, int M) {
 template <typename T>
 inline Real H_Dot(T* A, T* B, int M) {
   Real Sum=0;
-	for (int i=0; i<M; i++) Sum+=A[i]*B[i];
+	for (int i = 0; i<M; i++)
+    Sum += A[i]*B[i];
   return Sum;
 }
 
 template <typename T>
 inline void H_Invert(T* KSAM, T* MASK, int M) {
-  std::transform(MASK, MASK + M, KSAM, KSAM, [](Real A, Real B) { if (A==0) return 1.0; else return 0.0; });
+  transform(MASK, MASK + M, KSAM, KSAM, [](Real A, Real B) {if (A==0) return 1.0; else return 0.0;});
 }
 
 Real pythag(Real, Real);

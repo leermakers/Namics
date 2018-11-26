@@ -57,7 +57,7 @@ public:
 	int solvent;
 	int neutralizer;
 	int tag_segment;
-	Real volume;
+	int volume;
 	bool input_error;
 	bool cuda;
 	bool charged;

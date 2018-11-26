@@ -73,13 +73,13 @@ void System::AllocateMemory() {
   GrandPotentialDensity = (Real*)AllOnDev(M);
   FreeEnergyDensity = (Real*)AllOnDev(M);
   TEMP = (Real*)AllOnDev(M);
-  KSAM = (int*)AllOnDev(M);
+  KSAM = (int*)AllIntOnDev(M);
   if (charged) {
     psi = (Real*)AllOnDev(M);
     q = (Real*)AllOnDev(M);
     eps = (Real*)AllOnDev(M);
     EE = (Real*)AllOnDev(M);
-    psiMask = (int*)AllOnDev(M);
+    psiMask = (int*)AllIntOnDev(M);
   }
 #else
   phitot = (Real*)malloc(M * sizeof(Real));
@@ -129,29 +129,38 @@ bool System::generate_mask() {
 
   length = FrozenList.size();
   for (int i = 0; i < length; ++i) {
-    int* MASK = Seg[FrozenList[i]]->MASK;
-    Add(KSAM, MASK, M);
+		#ifdef CUDA
+		TransferIntDataToDevice(Seg[FrozenList[i]]->H_MASK, Seg[FrozenList[i]]->MASK, M);
+		#endif
+    Add(KSAM, Seg[FrozenList[i]]->MASK, M);
   }
 
   length = SysTagList.size();
   for (int i = 0; i < length; ++i) {
-    int* MASK = Seg[SysTagList[i]]->MASK;
-    Add(KSAM, MASK, M);
+		#ifdef CUDA
+		TransferIntDataToDevice(Seg[SysTagList[i]]->H_MASK, Seg[SysTagList[i]]->MASK, M);
+		#endif
+    Add(KSAM, Seg[SysTagList[i]]->MASK, M);
   }
 
   length = SysClampList.size();
   for (int i = 0; i < length; ++i) {
-    int* MASK = Seg[SysClampList[i]]->MASK;
-    Add(KSAM, MASK, M);
+		#ifdef CUDA
+		TransferIntDataToDevice(Seg[SysClampList[i]]->H_MASK, Seg[SysClampList[i]]->MASK, M);
+		#endif
+    Add(KSAM, Seg[SysClampList[i]]->MASK, M);
   }
 
   Invert(KSAM, KSAM, M);
-	volume = 0;
-	for (int i = 0; i < M ; i++) {
-		if (Lat[0]->gradients <3) {
+
+	if (Lat[0]->gradients <3) {
+		for (int i = 0; i < M ; i++) {
 			volume += KSAM[i]*Lat[0]->L[i];
-		} else volume += KSAM[i];
+		}
+	} else {
+		Sum(volume, KSAM, M);
 	}
+
 	Lat[0]->Accesible_volume=volume;
 
 	return success;
@@ -214,7 +223,7 @@ if (debug) cout << "CheckInput for system " << endl;
 		}
 		if (cuda) {
 			if (!GPU) {
-				cout <<"Namics expects that you are going to use the GPU, but the input is not in line with this (either gradients < 3, or GPU != 'true' : compile without CUDA=1 flag or enable GPU in your input file." << endl;
+				cout <<"Please enable GPU in the input file (SYS : BRAND : GPU : true)." << endl;
 				success=false;
 			}
 		}

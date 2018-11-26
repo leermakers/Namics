@@ -48,7 +48,7 @@ __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int 
 
 
 __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
-  Real dummy{0};
+  Real dummy = 0;
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
@@ -90,6 +90,22 @@ __global__ void dot(Real *X, Real *Y, Real *Z, int M)   {
 
 __global__ void sum(Real *X, Real *Z, int M)   {
    __shared__ Real tmp[block_size];
+   int idx = blockDim.x * blockIdx.x + threadIdx.x;
+   int l_idx = threadIdx.x;
+
+   if (idx < M) tmp[l_idx] = X[idx];
+   __syncthreads();
+
+   for (int s = blockDim.x/2; s > 0; s /= 2) {
+      if (l_idx < s) tmp[l_idx] += tmp[l_idx + s];
+      __syncthreads();
+   }
+   if (threadIdx.x == 0) Z[threadIdx.x] = tmp[0];
+   //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at sum (Real*, Real*, int): " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+}
+
+__global__ void sum(int *X, int *Z, int M)   {
+   __shared__ int tmp[block_size];
    int idx = blockDim.x * blockIdx.x + threadIdx.x;
    int l_idx = threadIdx.x;
 
@@ -276,7 +292,7 @@ __global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Re
 __global__ void invert(int *SKAM, int *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) SKAM[idx]=(MASK[idx]-1)*(MASK[idx]-1);
-  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at invert: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+//  if (cudaSuccess != cudaPeekAtLastError()) {printf("problem at invert: "); printf(cudaGetErrorString(cudaGetLastError()));}
 }
 __global__ void invert(Real *SKAM, Real *MASK, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -655,30 +671,25 @@ void Dot(Real &result, Real *x,Real *y, int M)   {
 
 #ifdef CUDA
 void Sum(Real &result, Real *x, int M)   {
-
-/**/
-	Real *H_XXX=(Real*) malloc(M*sizeof(Real));
+	/*Real *H_XXX=(Real*) malloc(M*sizeof(Real));
 	TransferDataToHost(H_XXX, x, M);
 	result=H_Sum(H_XXX,M);
 	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
  	free(H_XXX);
-  	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Sum: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
-/**/
+  	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Sum: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}*/
+  int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+  sum<<<n_blocks,block_size>>>(&result, x, M);
+}
 
-/*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	Real *D_XX=AllOnDev(n_blocks);
-	Zero(D_XX,n_blocks);
-	Real *H_XX=(Real*) malloc(n_blocks*sizeof(Real));
-	sum<<<n_blocks,block_size>>>(x,D_XX,M);
-	cudaThreadSynchronize();
-	TransferDataToHost(H_XX, D_XX,n_blocks);
-	result=0; for (int i=0; i<n_blocks; i++) {result+=H_XX[i];}
-	if (cudaSuccess != cudaPeekAtLastError()) cout <<"Problem at Sum" << endl;
-	for (int i=0; i<n_blocks; i++) if (isnan(H_XX[i])) cout <<" At " << i << " NaN" << endl;
-
-	free(H_XX);
-	cudaFree(D_XX);
-*/
+void Sum(int &result, int *x, int M)   {
+/*	int *H_XXX=(int*) malloc(M*sizeof(int));
+	TransferIntDataToHost(H_XXX, x, M);
+	result=H_Sum(H_XXX,M);
+	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
+ 	free(H_XXX);
+  	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Sum: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}*/
+  int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+  sum<<<n_blocks,block_size>>>(&result, x, M);
 }
 
 void AddTimes(Real *P, Real *A, Real *B, int M)   {
@@ -722,7 +733,7 @@ void Norm(Real *P, Real C, int M)   {
 void Composition(Real *phi, Real *Gf, Real *Gb, Real* G1, Real C, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	composition<<<n_blocks,block_size>>>(phi,Gf,Gb,G1,C,M);
-	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Zero: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Composition: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 #else
 void Composition(Real *phi, Real *Gf, Real *Gb, Real* G1, Real C, int M)   {
@@ -734,7 +745,7 @@ void Composition(Real *phi, Real *Gf, Real *Gb, Real* G1, Real C, int M)   {
 void Unity(Real* P, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	unity<<<n_blocks,block_size>>>(P,M);
-	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Zero: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+	if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at Unity: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 #else
 void Unity(Real* P, int M)   {
@@ -1030,9 +1041,10 @@ void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 }
 #endif
 
+namespace tools {
 
 #ifdef CUDA
-void DisG1(Real* G1, Real* g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void DistributeG1(Real* G1, Real* g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	//int n_blocks=(n_box)/block_size + ((n_box)%block_size == 0 ? 0:1);
 	//distributeg1<<<n_blocks,block_size>>>(G1,g1,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
         dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
@@ -1041,7 +1053,7 @@ void DisG1(Real* G1, Real* g1, int* Bx, int* By, int* Bz, int MM, int M, int n_b
 
 }
 #else
-void DisG1(Real* G1, Real* g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void DistributeG1(Real* G1, Real* g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int pos_l=-M;
 	int pos_x,pos_y,pos_z;
 	int Bxp,Byp,Bzp;
@@ -1060,7 +1072,7 @@ void DisG1(Real* G1, Real* g1, int* Bx, int* By, int* Bz, int MM, int M, int n_b
 #endif
 
 #ifdef CUDA
-void ColPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void CollectPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	//int n_blocks=(n_box)/block_size + ((n_box)%block_size == 0 ? 0:1);
 	//collectphi<<<n_blocks,block_size>>>(phi,GN,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
  	 dim3 blocks(ceil(Mx/8.0),ceil(My/8.0),ceil(Mz/8.0));
@@ -1068,7 +1080,7 @@ void ColPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, i
         collectphi<<<blocks,blockdim>>>(phi,GN,rho,Bx,By,Bz,MM,M,n_box,Mx,My,Mz,MX,MY,MZ,jx,jy,JX,JY);
 }
 #else
-void ColPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
+void CollectPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int pos_l=-M;
 	int pos_x,pos_y,pos_z;
 	int Bxp,Byp,Bzp;
@@ -1086,7 +1098,7 @@ void ColPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, i
 }
 
 #endif
-
+}
 
 //#ifdef CUDA
 //void ComputeGN(Real *GN, Real *G, int M, int n_box)   {
@@ -1105,7 +1117,6 @@ template void SetBoundaries<Real>(Real*, int, int, int, int, int, int, int, int,
 
 template <typename T>
 void SetBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
-  printf("here");
 	dim3 dimBlock(16,16);
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);

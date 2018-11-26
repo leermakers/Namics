@@ -827,7 +827,12 @@ int Reader::init_rho_fromvtk(string filename) {
   return 0;
 }
 
-inline void Reader::skip_bounds(function<void(int, int, int)> function) {
+vector<double> Reader::with_bounds(vector<double> rho) {
+
+	size_t M_bounds = (MX)*(MY)*(MZ);
+	vector<double> output(M_bounds);
+	int n = 0;
+
 	size_t x{1};
 	size_t y{1};
 	size_t z{1};
@@ -836,25 +841,15 @@ inline void Reader::skip_bounds(function<void(int, int, int)> function) {
 		do {
 			z = 1;
 			do {
-				function(x, y, z);
+				*val_ptr(output, x, y, z) = rho[n];
+				++n;
 				++z;
 			} while (z < MZ-1);
 			++y;
 		} while (y < MY-1);
 		++x;
 	} while (x < MX-1);
-}
-
-vector<double> Reader::with_bounds(vector<double> rho) {
 	
-	size_t M_bounds = (MX)*(MY)*(MZ);
-	vector<double> output(M_bounds);
-	int n = 0;
-	skip_bounds([this, rho, &output, &n](int x, int y, int z) mutable {
-		*val_ptr(output, x, y, z) = rho[n];
-		++n;
-	});
-
 	return output;
 }
 

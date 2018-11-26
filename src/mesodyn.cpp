@@ -320,11 +320,24 @@ int Mesodyn::initial_conditions() {
 
   vector<vector<Real>> rho(component_no, vector<Real>(M));
 
-  //once KSAM becomes a vector, this loop won't be nessecary anymore, just pass KSAM to the flux constructor.
   vector<int> mask(M);
+
+  #ifdef CUDA
+  for (int i = 0 ; i < M; ++i)
+   TransferIntDataToHost(&mask[i],&Sys[0]->KSAM[i], 0);
+  H_Invert(&mask[0],&mask[0],M);
+  Sys[0]->volume = H_Sum(&mask[0],M);
+  for (int i = 0; i < M; ++i)
+    TransferIntDataToDevice(&mask[i],&Sys[0]->KSAM[i], 0);
+  #else
+  //once KSAM becomes a vector, this loop won't be nessecary anymore, just pass KSAM to the flux constructor.
   for (int i = 0; i < M; ++i) {
     mask[i] = *(Sys[0]->KSAM + i);
   }
+  #endif
+
+/*  for (auto values : mask)
+    cout << values << endl;*/
 
   switch (initialization_mode) {
     case INIT_HOMOGENEOUS:

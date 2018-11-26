@@ -165,7 +165,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Gg_f=(Real*)AllOnDev(m*n_box*N); Zero(Gg_f,m*n_box*N);
 		Gg_b=(Real*)AllOnDev(m*n_box*2); Zero(Gg_b,m*n_box*2);
 		g1=(Real*)AllOnDev(m*n_box); Zero(g1,m*n_box);
-		rho=(Real*)AllOnDev(m*n_box*MolMonList.size()); Zero(rho,m*n_box,MolMonList.size());
+		rho=(Real*)AllOnDev(m*n_box*MolMonList.size()); Zero(rho,m*n_box*MolMonList.size());
 		phi=(Real*)AllOnDev(M*MolMonList.size()); Zero(phi,M*MolMonList.size());
 		if (save_memory) {Gs=(Real*)AllOnDev(m*n_box*2); Zero(Gs,m*n_box*2);}
 	} else {
@@ -176,7 +176,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		if (save_memory) Gs =(Real*)AllOnDev(M*2);
 	}
 	phitot=(Real*)AllOnDev(M);
-	UNITY = (Real*)AllonDev(M);
+	UNITY = (Real*)AllOnDev(M);
 #else
 	if (freedom=="clamped") {
 		gn=H_gn;
@@ -239,16 +239,16 @@ int M=Lat[0]->M;
 #ifdef CUDA
 		TransferDataToDevice(H_mask1,mask1,m*n_box);
 		TransferDataToDevice(H_mask2,mask2,m*n_box);
-		TransferDataToDevice(H_Bx,Bx,n_box);
-		TransferDataToDevice(H_By,By,n_box);
-		TransferDataToDevice(H_Bz,Bz,n_box);
-		TransferDataToDevice(H_Px1,Px1,n_box);
-		TransferDataToDevice(H_Py1,Py1,n_box);
-		TransferDataToDevice(H_Pz1,Pz1,n_box);
-		TransferDataToDevice(H_Px2,Px2,n_box);
-		TransferDataToDevice(H_Py2,Py2,n_box);
-		TransferDataToDevice(H_Pz2,Pz2,n_box);
-		TransferDataToDevice(H_u, u, MolMonList.size()*M);
+		TransferIntDataToDevice(H_Bx,Bx,n_box);
+		TransferIntDataToDevice(H_By,By,n_box);
+		TransferIntDataToDevice(H_Bz,Bz,n_box);
+		TransferIntDataToDevice(H_Px1,Px1,n_box);
+		TransferIntDataToDevice(H_Py1,Py1,n_box);
+		TransferIntDataToDevice(H_Px2,Px2,n_box);
+		TransferIntDataToDevice(H_Pz1,Pz1,n_box);
+		TransferIntDataToDevice(H_Py2,Py2,n_box);
+		TransferIntDataToDevice(H_Pz2,Pz2,n_box);
+	//	TransferIntDataToDevice(H_u,u, (int)MolMonList.size()*M);
 #endif
 	}
 	Cp(UNITY,KSAM,M);
@@ -1524,7 +1524,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		s="profile;"+str; push(Al[i]->name+"-phi",s);
 	}
 	s="vector;0"; push("gn",s);
-#ifdef CUDA
+#ifdef Cuda
+int M = Lat[0]->M;
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
 #endif

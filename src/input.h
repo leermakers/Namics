@@ -105,7 +105,7 @@ public:
   vector<string> headers;
 
   void get_rho(vector<double>&);
-  void get_rho(vector<vector<double>>&);
+  void get_rho(vector< vector<double> >&);
 
   template <typename T>
   inline T val(vector<T>& v, int x, int y, int z) {
@@ -117,10 +117,10 @@ public:
     return &v[x * JX + y * JY + z * JZ];
   }
 
-	inline void skip_bounds(function<void(int, int, int)>);
-
   vector<double> rho;
-  vector<vector<double>> multicomponent_rho;
+  vector< vector<double> > multicomponent_rho;
+
+//	void skip_bounds(function<void(int, int, int)>);
 
   static vector<string> tokenize(string, char);
 

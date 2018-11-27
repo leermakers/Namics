@@ -21,7 +21,7 @@ Cleng::Cleng(
     Lat(Lat_),
     Seg(Seg_),
     Sta(Sta_),
-    Rea(Rea_),    
+    Rea(Rea_),
     Mol(Mol_),
     Sys(Sys_),
     New(New_) {

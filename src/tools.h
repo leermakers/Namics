@@ -55,9 +55,9 @@ __global__ void overwritea(Real*, int*, Real*, int);
 __global__ void upq(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
 __global__ void uppsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
 template <typename T>
-inline void TransferDataToHost(T*, T*, int);
+void TransferDataToHost(T*, T*, int);
 template <typename T>
-inline void TransferDataToDevice(T*, T*, int);
+void TransferDataToDevice(T*, T*, int);
 __global__ void bx(Real*, int, int, int, int, int, int, int);
 __global__ void b_x(Real*, int, int, int, int, int, int, int);
 __global__ void by(Real*, int, int, int, int, int, int, int);
@@ -108,9 +108,9 @@ void AddG(Real*, Real*, Real*, int);
 void OneMinusPhitot(Real*, Real*, int);
 void ComputeGN(Real*, Real*, int, int);
 template <typename T>
-inline void SetBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
+void SetBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
 template <typename T>
-inline void RemoveBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
+void RemoveBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
 namespace tools {
 void DistributeG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);

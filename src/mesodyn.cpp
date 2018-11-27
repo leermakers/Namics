@@ -35,7 +35,7 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   set_update_lists();
 
   // to get the correct KSAM and volume.
-  Sys[0]->generate_mask();
+  Sys[0]->PrepareForCalculations();
 
   // The right hand side of the minus sign calculates the volume of the boundaries. I know, it's hideous, but it works for all dimensions.
   boundaryless_volume = Sys[0]->volume - ((2 * dimensions - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * dimensions) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, dimensions));
@@ -323,12 +323,7 @@ int Mesodyn::initial_conditions() {
   vector<int> mask(M);
 
   #ifdef CUDA
-  for (int i = 0 ; i < M; ++i)
-   TransferDataToHost(&mask[i],&Sys[0]->KSAM[i], 0);
-  H_Invert(&mask[0],&mask[0],M);
-  Sys[0]->volume = H_Sum(&mask[0],M);
-  for (int i = 0; i < M; ++i)
-    TransferDataToDevice(&mask[i],&Sys[0]->KSAM[i], 0);
+  TransferDataToHost(&mask[0],Sys[0]->KSAM, M);
   #else
   //once KSAM becomes a vector, this loop won't be nessecary anymore, just pass KSAM to the flux constructor.
   for (int i = 0; i < M; ++i) {

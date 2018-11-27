@@ -233,8 +233,8 @@ int M=Lat[0]->M;
 			H_Px2[i]=Seg[mon_nr[0]]->px2[i];
 			H_Py2[i]=Seg[mon_nr[0]]->py2[i];
 			H_Pz2[i]=Seg[mon_nr[0]]->pz2[i];
-			H_mask1[i*m + jx*(Px1[i]-Bx[i])+jy*(Py1[i]-By[i])+(Pz1[i]-Bz[i])]=1;
-			H_mask2[i*m + jx*(Px2[i]-Bx[i])+jy*(Py2[i]-By[i])+(Pz2[i]-Bz[i])]=1;
+			H_mask1[i*m + jx*(H_Px1[i]-H_Bx[i])+jy*(H_Py1[i]-H_By[i])+(H_Pz1[i]-H_Bz[i])]=1;
+			H_mask2[i*m + jx*(H_Px2[i]-H_Bx[i])+jy*(H_Py2[i]-H_By[i])+(H_Pz2[i]-H_Bz[i])]=1;
 		}
 #ifdef CUDA
 		TransferDataToDevice(H_mask1,mask1,m*n_box);

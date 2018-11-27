@@ -96,12 +96,12 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 	int M=Lat[0]->M;
 #ifdef CUDA
-	TransferIntDataToDevice(H_MASK, MASK, 0);
+	TransferDataToDevice(H_MASK, MASK, 0);
 	TransferDataToDevice(H_u, u, 0);
 //}
-	//TransferIntDataToDevice(H_Px, Px, n_pos);
-	//TransferIntDataToDevice(H_Py, Py, n_pos);
-	//TransferIntDataToDevice(H_Pz, Pz, n_pos);
+	//TransferDataToDevice(H_Px, Px, n_pos);
+	//TransferDataToDevice(H_Py, Py, n_pos);
+	//TransferDataToDevice(H_Pz, Pz, n_pos);
 #endif
 
 	bool success=true;

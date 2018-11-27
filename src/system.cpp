@@ -130,7 +130,7 @@ bool System::generate_mask() {
   length = FrozenList.size();
   for (int i = 0; i < length; ++i) {
 		#ifdef CUDA
-		TransferIntDataToDevice(Seg[FrozenList[i]]->H_MASK, Seg[FrozenList[i]]->MASK, M);
+		TransferDataToDevice(Seg[FrozenList[i]]->H_MASK, Seg[FrozenList[i]]->MASK, M);
 		#endif
     Add(KSAM, Seg[FrozenList[i]]->MASK, M);
   }
@@ -138,7 +138,7 @@ bool System::generate_mask() {
   length = SysTagList.size();
   for (int i = 0; i < length; ++i) {
 		#ifdef CUDA
-		TransferIntDataToDevice(Seg[SysTagList[i]]->H_MASK, Seg[SysTagList[i]]->MASK, M);
+		TransferDataToDevice(Seg[SysTagList[i]]->H_MASK, Seg[SysTagList[i]]->MASK, M);
 		#endif
     Add(KSAM, Seg[SysTagList[i]]->MASK, M);
   }
@@ -146,7 +146,7 @@ bool System::generate_mask() {
   length = SysClampList.size();
   for (int i = 0; i < length; ++i) {
 		#ifdef CUDA
-		TransferIntDataToDevice(Seg[SysClampList[i]]->H_MASK, Seg[SysClampList[i]]->MASK, M);
+		TransferDataToDevice(Seg[SysClampList[i]]->H_MASK, Seg[SysClampList[i]]->MASK, M);
 		#endif
     Add(KSAM, Seg[SysClampList[i]]->MASK, M);
   }

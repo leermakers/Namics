@@ -239,16 +239,16 @@ int M=Lat[0]->M;
 #ifdef CUDA
 		TransferDataToDevice(H_mask1,mask1,m*n_box);
 		TransferDataToDevice(H_mask2,mask2,m*n_box);
-		TransferIntDataToDevice(H_Bx,Bx,n_box);
-		TransferIntDataToDevice(H_By,By,n_box);
-		TransferIntDataToDevice(H_Bz,Bz,n_box);
-		TransferIntDataToDevice(H_Px1,Px1,n_box);
-		TransferIntDataToDevice(H_Py1,Py1,n_box);
-		TransferIntDataToDevice(H_Px2,Px2,n_box);
-		TransferIntDataToDevice(H_Pz1,Pz1,n_box);
-		TransferIntDataToDevice(H_Py2,Py2,n_box);
-		TransferIntDataToDevice(H_Pz2,Pz2,n_box);
-	//	TransferIntDataToDevice(H_u,u, (int)MolMonList.size()*M);
+		TransferDataToDevice(H_Bx,Bx,n_box);
+		TransferDataToDevice(H_By,By,n_box);
+		TransferDataToDevice(H_Bz,Bz,n_box);
+		TransferDataToDevice(H_Px1,Px1,n_box);
+		TransferDataToDevice(H_Py1,Py1,n_box);
+		TransferDataToDevice(H_Px2,Px2,n_box);
+		TransferDataToDevice(H_Pz1,Pz1,n_box);
+		TransferDataToDevice(H_Py2,Py2,n_box);
+		TransferDataToDevice(H_Pz2,Pz2,n_box);
+	//	TransferDataToDevice(H_u,u, (int)MolMonList.size()*M);
 #endif
 	}
 	Cp(UNITY,KSAM,M);

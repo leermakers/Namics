@@ -324,11 +324,11 @@ int Mesodyn::initial_conditions() {
 
   #ifdef CUDA
   for (int i = 0 ; i < M; ++i)
-   TransferIntDataToHost(&mask[i],&Sys[0]->KSAM[i], 0);
+   TransferDataToHost(&mask[i],&Sys[0]->KSAM[i], 0);
   H_Invert(&mask[0],&mask[0],M);
   Sys[0]->volume = H_Sum(&mask[0],M);
   for (int i = 0; i < M; ++i)
-    TransferIntDataToDevice(&mask[i],&Sys[0]->KSAM[i], 0);
+    TransferDataToDevice(&mask[i],&Sys[0]->KSAM[i], 0);
   #else
   //once KSAM becomes a vector, this loop won't be nessecary anymore, just pass KSAM to the flux constructor.
   for (int i = 0; i < M; ++i) {

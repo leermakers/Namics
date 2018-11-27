@@ -54,10 +54,10 @@ __global__ void overwritec(Real*, int*, Real, int);
 __global__ void overwritea(Real*, int*, Real*, int);
 __global__ void upq(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
 __global__ void uppsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
-void TransferDataToHost(Real*, Real*, int);
-void TransferDataToDevice(Real*, Real*, int);
-void TransferIntDataToHost(int*, int*, int);
-void TransferIntDataToDevice(int*, int*, int);
+template <typename T>
+inline void TransferDataToHost(T*, T*, int);
+template <typename T>
+inline void TransferDataToDevice(T*, T*, int);
 __global__ void bx(Real*, int, int, int, int, int, int, int);
 __global__ void b_x(Real*, int, int, int, int, int, int, int);
 __global__ void by(Real*, int, int, int, int, int, int, int);
@@ -74,8 +74,8 @@ void Dot(Real&, Real*, Real*, int);
 void Sum(Real&, Real*, int);
 void Sum(int&, int*, int);
 bool GPU_present();
-Real* AllOnDev(int);
 int* AllIntOnDev(int);
+Real* AllOnDev(int);
 void AddTimes(Real*, Real*, Real*, int);
 void Times(Real*, Real*, Real*, int);
 void Times(Real*, Real*, int*, int);

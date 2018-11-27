@@ -341,21 +341,24 @@ __global__ void addg(Real *g, Real *phitot, Real *alpha, int M)    {
 //	}
 //}
 
-void TransferDataToHost(Real *H, Real *D, int M)    {
-	cudaMemcpy(H, D, sizeof(Real)*M,cudaMemcpyDeviceToHost);
-  //if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at TransferDataToHost: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
+//Define types allowed by TransferDataToHost
+template void TransferDataToHost<Real>(Real*, Real*, int);
+template void TransferDataToHost<int>(int*, int*, int);
+
+template<typename T>
+void TransferDataToHost(T *H, T *D, int M)    {
+	cudaMemcpy(H, D, sizeof(T)*M,cudaMemcpyDeviceToHost);
+  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at TransferDataToHost: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
-void TransferDataToDevice(Real *H, Real *D, int M)    {
-	cudaMemcpy(D, H, sizeof(Real)*M,cudaMemcpyHostToDevice);
+
+//Define types allowed by TransferDataToDevice
+template void TransferDataToDevice<Real>(Real*, Real*, int);
+template void TransferDataToDevice<int>(int*, int*, int);
+
+template<typename T>
+void TransferDataToDevice(T *H, T *D, int M)    {
+	cudaMemcpy(D, H, sizeof(T)*M,cudaMemcpyHostToDevice);
   if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at TransferDataToDevice: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
-}
-void TransferIntDataToHost(int *H, int *D, int M)   {
-	cudaMemcpy(H, D, sizeof(int)*M,cudaMemcpyDeviceToHost);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at TransferIntDataToHost: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
-}
-void TransferIntDataToDevice(int *H, int *D, int M)     {
-	cudaMemcpy(D, H, sizeof(int)*M,cudaMemcpyHostToDevice);
-  if (cudaSuccess != cudaPeekAtLastError()) {cout <<"problem at TransferIntDataToDevice: " <<  cudaGetErrorString(cudaGetLastError()) << endl;}
 }
 
 __global__ void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -612,18 +615,21 @@ bool GPU_present()    {
 
 
 #ifdef CUDA
-Real *AllOnDev(int N)    {
-	Real *X;
-	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(Real)*N))
-	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
-	return X;
-}
-int *AllIntOnDev(int N)    {
-	int *X;
+
+int* AllIntOnDev(int N) {
+  int* X;
 	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(int)*N))
 	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
 	return X;
 }
+
+Real* AllOnDev(int N) {
+  Real* X;
+	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(Real)*N))
+	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
+	return X;
+}
+
 #else
 Real *AllOnDev(int N)    {
 	Real *X=NULL;
@@ -683,7 +689,7 @@ void Sum(Real &result, Real *x, int M)   {
 
 void Sum(int &result, int *x, int M)   {
 /*	int *H_XXX=(int*) malloc(M*sizeof(int));
-	TransferIntDataToHost(H_XXX, x, M);
+	TransferDataToHost(H_XXX, x, M);
 	result=H_Sum(H_XXX,M);
 	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
  	free(H_XXX);

@@ -27,6 +27,8 @@ __global__ void norm(Real*, Real, int);
 __global__ void zero(Real*, int);
 __global__ void zero(int*, int);
 __global__ void unity(Real*, int);
+__global__ void assign(Real *, Real*, int);
+__global__ void assign(Real *, Real, int);
 __global__ void cp(Real*, Real*, int);
 __global__ void cp(Real*, int*, int);
 __global__ void yisaplusctimesb(Real*, Real*, Real*, Real, int);
@@ -77,7 +79,7 @@ bool GPU_present();
 int* AllIntOnDev(int);
 Real* AllOnDev(int);
 int* AllManagedIntOnDev(int);
-Real* AllManagedOnDev(int);
+Real* AllOnDev(int);
 void AddTimes(Real*, Real*, Real*, int);
 void Times(Real*, Real*, Real*, int);
 void Times(Real*, Real*, int*, int);
@@ -162,5 +164,8 @@ template<typename T>
 void H_PutAlpha(T *g, T *phitot, T *phi_side, T chi, T phibulk, int M)   {
 	for (int i=0; i<M; i++) if (phitot[i]>0) g[i] = g[i] - chi*(phi_side[i]/phitot[i]-phibulk);
 }
+
+Real pythag(Real, Real);
+int svdcmp(Real**, int, int, Real*, Real**);
 
 #endif

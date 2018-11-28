@@ -67,7 +67,7 @@ void System::AllocateMemory() {
     H_psi = (Real*)malloc(M * sizeof(Real));
   }
 #ifdef CUDA
-  phitot = (Real*)AllManagedOnDev(M);
+  phitot = (Real*)AllOnDev(M);
   alpha = (Real*)AllOnDev(M);
   GrandPotentialDensity = (Real*)AllOnDev(M);
   FreeEnergyDensity = (Real*)AllOnDev(M);

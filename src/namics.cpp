@@ -34,7 +34,7 @@ Real k_B = 1.38065e-23;
 Real k_BT = k_B * T;
 Real eps0 = 8.85418e-12;
 Real PIE = 3.14159265;
-
+int DEBUG_BREAK = 1;
 //Used for command line switches
 bool debug = false;
 bool suppress = false;
@@ -167,8 +167,6 @@ int main(int argc, char* argv[]) {
 			if (!Sta[i]->CheckInput(start)) return 0;
 		}
 
-
-
 //Create reaction class instance and check inputs
 		int n_rea=In[0]->ReactionList.size();
 		for (int i=0; i<n_rea; i++) {
@@ -233,6 +231,7 @@ int main(int argc, char* argv[]) {
       			}
 		}
 
+
 // Error code for faulty variate class creation
 		if (n_etm > 1) {
       			cout << "too many equate_to_mu's in var statements. The limit is 1 " << endl;
@@ -269,16 +268,14 @@ int main(int argc, char* argv[]) {
       			return 0;
     		}
 
-
 //Guesses geometry
     		if (Sys[0]->initial_guess == "file") {
       			MONLIST.clear();
-			STATELIST.clear();
+			      STATELIST.clear();
       			if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST,STATELIST, CHARGED, MX, MY, MZ, fjc_old, 0)) {
 // last argument 0 is to first checkout sizes of system.
         			return 0;
       			}
-
 			int nummon = MONLIST.size();
 			int numstate=STATELIST.size();
       			int m;

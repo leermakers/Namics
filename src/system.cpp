@@ -59,7 +59,6 @@ void System::AllocateMemory() {
   int M = Lat[0]->M;
   //H_GN_A = new Real[n_box];
   //H_GN_B = new Real[n_box];
-
   H_GrandPotentialDensity = (Real*)malloc(M * sizeof(Real));
   H_FreeEnergyDensity = (Real*)malloc(M * sizeof(Real));
   H_alpha = (Real*)malloc(M * sizeof(Real));
@@ -68,12 +67,13 @@ void System::AllocateMemory() {
     H_psi = (Real*)malloc(M * sizeof(Real));
   }
 #ifdef CUDA
-  phitot = (Real*)AllOnDev(M);
+  phitot = (Real*)AllManagedOnDev(M);
   alpha = (Real*)AllOnDev(M);
   GrandPotentialDensity = (Real*)AllOnDev(M);
   FreeEnergyDensity = (Real*)AllOnDev(M);
   TEMP = (Real*)AllOnDev(M);
   KSAM = (int*)AllIntOnDev(M);
+	Zero(KSAM, M);
   if (charged) {
     psi = (Real*)AllOnDev(M);
     q = (Real*)AllOnDev(M);

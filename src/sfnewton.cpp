@@ -1,6 +1,6 @@
 #include <iostream>
 #include "sfnewton.h"
-#include "tools.h"
+#include "tools_host.h"
 
 SFNewton::SFNewton () : residual{0} {
 
@@ -70,7 +70,7 @@ C Copyright (2018) Wageningen University, NL.
 	maxFrReverseDirection=0.4;
 	numIterationsForHessian=100;
 	minAccuracyForHessian=0.1;
-	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); H_Zero(reverseDirection,reverseDirectionRange);
+	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); Zero(reverseDirection,reverseDirectionRange);
 
 }
 
@@ -326,7 +326,7 @@ if(debug) cout <<"direction in Newton " << endl;
 void SFNewton::startderivatives(float *h, Real *g, Real *x, int nvar){ //done
 if(debug) cout <<"startderivatives in Newton" << endl;
 	float diagonal = 1+norm2(g,nvar);
-	H_Zero(h,nvar*nvar);
+	Zero(h,nvar*nvar);
 	for (int i=0; i<nvar; i++) {
 		h[i+nvar*i] = diagonal;
 	}
@@ -643,11 +643,11 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 	Real delta_max=delta_max_;
 	Real delta_min=delta_min_;
 	bool filter=filter_;
-Real* x0 = (Real*) malloc(nvar*sizeof(Real)); H_Zero(x0,nvar);
-Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
-Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);
-Real* p0 = (Real*) malloc(nvar*sizeof(Real));H_Zero(p0,nvar);
-Real* g0  = (Real*) malloc(nvar*sizeof(Real));H_Zero(g0,nvar);
+Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+Real* p = (Real*) malloc(nvar*sizeof(Real));Zero(p,nvar);
+Real* p0 = (Real*) malloc(nvar*sizeof(Real));Zero(p0,nvar);
+Real* g0  = (Real*) malloc(nvar*sizeof(Real));Zero(g0,nvar);
 mask = (int*) malloc(nvar*sizeof(int));
 	if (nvar<1) {cout << "newton has nothing to do; returning the problem" << endl; return false;}
 	int it=0;
@@ -682,7 +682,7 @@ mask = (int*) malloc(nvar*sizeof(int));
 		}
 	}
 
-float* h = (float*) malloc(nvar*nvar*sizeof(float)); H_Zero(h,nvar*nvar);
+float* h = (float*) malloc(nvar*nvar*sizeof(float)); Zero(h,nvar*nvar);
 
 	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
 	minimum=newfunction(g,x,nvar);

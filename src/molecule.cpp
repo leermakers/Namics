@@ -129,11 +129,11 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		//N=chainlength; //in case of dendrimers this is not correct. Way fewer EDF needed in this case.
 	}
 
-	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); Zero(H_phi,M*MolMonList.size());
+	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); H_Zero(H_phi,M*MolMonList.size());
 //cout <<"molmonlist.size in mol" << MolMonList.size() << endl;
 	//H_u = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
 	//Zero(H_u, M*MolMonList.size());
-	H_phitot = (Real*) malloc(M*sizeof(Real)); Zero(H_phitot,M);
+	H_phitot = (Real*) malloc(M*sizeof(Real)); H_Zero(H_phitot,M);
 	if (freedom=="clamped") {
 		H_Bx=(int*) malloc(n_box*sizeof(int));
 		H_By=(int*) malloc(n_box*sizeof(int));
@@ -166,12 +166,12 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Gg_b=(Real*)AllOnDev(m*n_box*2); Zero(Gg_b,m*n_box*2);
 		g1=(Real*)AllOnDev(m*n_box); Zero(g1,m*n_box);
 		rho=(Real*)AllOnDev(m*n_box*MolMonList.size()); Zero(rho,m*n_box*MolMonList.size());
-		phi=(Real*)AllOnDev(M*MolMonList.size()); Zero(phi,M*MolMonList.size());
+		phi=(Real*)AllManagedOnDev(M*MolMonList.size()); Zero(phi,M*MolMonList.size());
 		if (save_memory) {Gs=(Real*)AllOnDev(m*n_box*2); Zero(Gs,m*n_box*2);}
 	} else {
 		Gg_f=(Real*)AllOnDev(M*N);
 		Gg_b=(Real*)AllOnDev(M*2);
-		phi=(Real*)AllOnDev(M*MolMonList.size());
+		phi=(Real*)AllManagedOnDev(M*MolMonList.size());
 		rho=phi;
 		if (save_memory) Gs =(Real*)AllOnDev(M*2);
 	}

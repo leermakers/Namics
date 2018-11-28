@@ -74,9 +74,8 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	phi_state=(Real*)AllOnDev(M*ns); Zero(phi_state,M*ns);
 	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
-	phi_side=(Real*)AllOnDev(ns*M); Zero(phi_side,ns*M);
+	phi_side=(Real*)AllManagedOnDev(ns*M); Zero(phi_side,ns*M);
 	alpha=(Real*)AllOnDev(ns*M); Zero(alpha,ns*M);
-
 #else
 	if (n_pos>0) P=H_P;
 	MASK=H_MASK;
@@ -1013,6 +1012,5 @@ int Segment::PutAlpha(Real* x,int xi){
 	for (int i=0; i<n_s; i++) {
 		if (state_alphabulk[i]==0) state_alphabulk[i]=1.0-sum_alpha;
 	}
-
 	return xxi;
 }

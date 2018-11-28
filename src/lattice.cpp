@@ -32,15 +32,15 @@ if (debug) cout <<"lattice destructor " << endl;
 
 void Lattice::DeAllocateMemory(void) {
 if (debug) cout <<"DeAllocateMemory in lattice " << endl;
-	 if (fjc==1) {
-		 if (gradients<3) {
+	if (all_lattice) {
+		if (fjc==1) {
 			free(lambda_1);
 			free(lambda1);
 			free(lambda0);
 			free(L);
-		}
-	} else {
-		free(L); free(LAMBDA);
+		} else {
+			free(L); free(LAMBDA);
+		} 
 	}
 #ifdef CUDA
 //	if (gradients==3) X=(Real*)AllOnDev(M);
@@ -1835,6 +1835,7 @@ Real Lattice::ComputeTheta(Real* phi) {
 	if (gradients<3 && geometry !="planar") Dot(result,phi,L,M); else {if (fjc==1) Sum(result,phi,M); else  Dot(result,phi,L,M);}
 	return result;
 }
+
 
 bool Lattice::ReadGuess(string filename, Real *x ,string &method, vector<string> &monlist, vector<string> &statelist, bool &charged, int &mx, int &my, int &mz, int &fjc, int readx) {
 if (debug) cout <<"ReadGuess in output" << endl;

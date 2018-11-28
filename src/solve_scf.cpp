@@ -61,13 +61,15 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 //cout <<"iv " << iv/M << endl;
 
 #ifdef CUDA
-	xx  = (Real*)AllOnDev(iv);
-	x0  = (Real*)AllOnDev(iv);
-	g   = (Real*)AllOnDev(iv);
-	xR  = (Real*)AllOnDev(m*iv);
-	x_x0= (Real*)AllOnDev(m*iv);
+	xx  = (Real*)AllManagedOnDev(iv);
+	x0  = (Real*)AllManagedOnDev(iv);
+	g   = (Real*)AllManagedOnDev(iv);
+	xR  = (Real*)AllManagedOnDev(m*iv);
+	x_x0= (Real*)AllManagedOnDev(m*iv);
+#else
+	xx=(Real*) malloc(iv*sizeof(Real));
 #endif
-	xx=(Real*) malloc(iv*sizeof(Real)); Zero(xx,iv);
+	Zero(xx,iv);
 	Sys[0]->AllocateMemory();
 }
 
@@ -581,7 +583,6 @@ bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callb
 		case diis:
 			gradient=MESODYN;
 			try {
-
 				success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 			}
 			catch (int error) {
@@ -695,6 +696,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 
 	switch(gradient) {
 		case WEAK:
+			//WARNING CUDA USERS
+			//THE g THAT WE GET IS __NOT__ THE ONE DECLARED IN THIS BASE CLASS, BUT THE ONE PASSED FOM THE DERIVED CLASS
+			//TRANSFER G LIKE SO IF NEEDED: TransferDataToDevice(g, Solve_scf::g, iv);
 			if (debug) cout <<"Residuals for weak iteration " << endl;
 
 			xi=0;
@@ -718,33 +722,49 @@ void Solve_scf::residuals(Real* x, Real* g){
 			ComputePhis();
 			vector<Real> temp_alpha(M);
 			for (size_t i = 0; i < Sys[0]->SysMolMonList.size() ; i++) {
-
 				for (int j = 0; j < M ; ++j)
 					temp_alpha[j] = xx[j+i*M];
-
 				for (int k=0; k<mon_length; k++) {
 					chi = Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
 					if (chi!=0)
-						PutAlpha(&temp_alpha[0],Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+						H_PutAlpha(&temp_alpha[0],Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 				}
-
 				mesodyn_load_alpha(temp_alpha, (size_t)i);
 			}
 
 			RHO = mesodyn_flux();
-			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
+			//THE g THAT WE GET IS __NOT__ THE ONE DECLARED IN THIS BASE CLASS, BUT THE ONE PASSED FOM THE DERIVED CLASS
+			H_Cp(g,RHO,iv);
+
+			#ifdef CUDA
+				TransferDataToDevice(g, Solve_scf::g, iv);
+			#endif
+
 			size_t k = 0;
 			for (size_t i = 0 ; i < In[0]->MolList.size() ; ++i) {
 				for (size_t a = 0 ; a < Mol[i]->MolMonList.size(); ++a) {
-					target_function(g, k, M, i, a);
+					//target_function(g, k, M, i, a);
+					#ifdef CUDA
+					YplusisCtimesX(Solve_scf::g+k*M,Mol[i]->phi+a*M,-1.0,M);
+					Lat[0]->remove_bounds(Solve_scf::g+k*M);
+					Times(Solve_scf::g+k*M,Solve_scf::g+k*M,Sys[0]->KSAM,M);
+					#else
+					YplusisCtimesX(g+k*M,Mol[i]->phi+a*M,-1.0,M);
 					Lat[0]->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
+					#endif
 					k++;
 				}
 			}
+			#ifdef CUDA
+				TransferDataToHost(g, Solve_scf::g, iv);
+			#endif
 		}
 		break;
 		case custum:
+			//WARNING CUDA USERS
+			//THE g THAT WE GET IS __NOT__ THE ONE DECLARED IN THIS BASE CLASS, BUT THE ONE PASSED FOM THE DERIVED CLASS
+			//TRANSFER G LIKE SO IF NEEDED: TransferDataToDevice(g, Solve_scf::g, iv);
 			if (debug) cout <<"Residuals in custum mode in Solve_scf " << endl;
 			if (value_ets==-1 && value_etm==-1) 			//guess from newton is stored in place.
 				Var[value_search]->PutValue(x[0]);
@@ -793,6 +813,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 		break;
 		case Picard:
 		{
+			//WARNING CUDA USERS
+			//THE g THAT WE GET IS __NOT__ THE ONE DECLARED IN THIS BASE CLASS, BUT THE ONE PASSED FOM THE DERIVED CLASS
+			//TRANSFER G LIKE SO IF NEEDED: TransferDataToDevice(g, Solve_scf::g, iv);
 			if (debug) cout <<"Residuals in Picard mode in Solve_scf " << endl;
 			int jump=sysmon_length;
 			if (Sys[0]->charged) jump++;

@@ -28,8 +28,7 @@ INC         := -I/usr/local/include -I/usr/include
 ifdef CUDA
 	LIB        += -lcuda -lcudart
 	CFLAGS     += -DCUDA
-	NVCCFLAGS   := -DCUDA
-	cp $(SRCDIR)/tools.cpp $(SRCDIR)/tools.cu
+	NVCCFLAGS  := -DCUDA
 endif
 
 # %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@

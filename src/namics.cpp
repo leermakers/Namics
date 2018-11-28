@@ -391,6 +391,10 @@ int main(int argc, char* argv[]) {
 				cout <<"TheEngine is unknown. Programming error " << endl; return 0;
 				break;
 		}
+
+        for (auto all_segments : Seg)
+          all_segments->prepared = false;
+
     		if (scan_nr > -1)
       			Var[scan_nr]->ResetScanValue();
     		if (Sys[0]->initial_guess == "previous_result") {

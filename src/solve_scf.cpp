@@ -754,6 +754,12 @@ void Solve_scf::residuals(Real* x, Real* g){
 					k++;
 				}
 			}
+
+			#ifdef CUDA
+			cudaFree(temp_alpha);
+			#else
+			free(temp_alpha);
+			#endif
 		}
 		break;
 		case custum:

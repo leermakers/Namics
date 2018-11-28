@@ -650,7 +650,7 @@ if(debug) cout <<"iterate in SFNewton" << endl;
   Real* p0 = (Real*) AllOnDev(nvar);Zero(p0,nvar);
   Real* g0  = (Real*) AllOnDev(nvar);Zero(g0,nvar);
   mask = (int*) AllOnDev(nvar);
-  float* h = (float*) malloc(nvar*nvar); H_Zero(h,nvar*nvar);
+  float* h = (float*) AllOnDev(nvar*nvar); H_Zero(h,nvar*nvar);
   #else
   Real* x0 = (Real*) malloc(nvar); Zero(x0,nvar);
   Real* g = (Real*) malloc(nvar); Zero(g,nvar);
@@ -721,8 +721,13 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 	if (e_info) printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
 	success=Message(e_info,s_info,it,iterationlimit,accuracy,tolerance,"");
 	ResetX(x,nvar,filter);
-free(x0);free(g);free(p);free(p0);free(g0);free(h);
-free(mask); mask = NULL;
+  #ifdef CUDA
+  cudaFree(x0);cudaFree(g);cudaFree(p);cudaFree(p0);cudaFree(g0);cudaFree(h);cudaFree(mask);
+  #else
+  free(x0);free(g);free(p);free(p0);free(g0);free(h);free(mask);
+  #endif
+
+  mask = NULL;
 	return success;
 }
 
@@ -758,7 +763,11 @@ Real* g = (Real*) malloc(nvar*sizeof(Real));
 		it++;
 	}
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
+  #ifdef CUDA
+  cudaFree(h); cudaFree(g);
+  #else
 free(h); free(g);
+#endif
 	return success;
 }
 
@@ -862,6 +871,10 @@ Real SFNewton::computeresidual(Real* array, int size) {
     residual = H_Dot(H_array,H_array,size);
     residual=sqrt(residual);
   }
+
+  #ifdef CUDA
+    free (H_array);
+  #endif
 
   return residual;
 }
@@ -967,7 +980,11 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 
 
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
+  #ifdef CUDA
+  cudaFree(x0);cudaFree(g);
+  #else
 	free(x0);free(g);
+  #endif
 	return success;
 }
 
@@ -1069,7 +1086,11 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 			cout << "i = " << iterations << " |g| = "<< accuracy << "  alpha("<<j<<") = " << alpha << "  beta = " << beta << endl;
 		}
 	}
-  free(H_d); free(g);free(dg);free(r);free(d);free(x0);
+  #ifdef CUDA
+  cudaFree(H_d); cudaFree(g);cudaFree(dg);cudaFree(r);cudaFree(r_old);cudaFree(d);cudaFree(x0);
+  #else
+  free(H_d); free(g);free(dg);free(r);free(r_old);free(d);free(x0);
+  #endif
 }
 
 void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real nvar) {

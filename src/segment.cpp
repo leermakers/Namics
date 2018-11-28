@@ -1,7 +1,7 @@
 #include "segment.h"
 #include <fstream>
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
-	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr;
+	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; prepared = 0;
 if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("freedom");
 	KEYS.push_back("valence");
@@ -95,8 +95,11 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 	int M=Lat[0]->M;
 #ifdef CUDA
+	if (prepared == 0) {
 	TransferDataToDevice(H_MASK, MASK, 0);
 	TransferDataToDevice(H_u, u, 0);
+	prepared = 1;
+}
 //}
 	//TransferDataToDevice(H_Px, Px, n_pos);
 	//TransferDataToDevice(H_Py, Py, n_pos);

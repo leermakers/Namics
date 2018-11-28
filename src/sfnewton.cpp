@@ -863,8 +863,6 @@ Real SFNewton::computeresidual(Real* array, int size) {
     residual=sqrt(residual);
   }
 
-  free (H_array);
-
   return residual;
 }
 

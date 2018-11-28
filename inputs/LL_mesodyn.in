@@ -1,6 +1,6 @@
-lat : flat : n_layers_x : 20
-lat : flat : n_layers_y : 20
-lat : flat : n_layers_z : 20
+lat : flat : n_layers_x : 200
+lat : flat : n_layers_y : 200
+lat : flat : n_layers_z : 12
 lat : flat : lowerbound_x : periodic
 lat : flat : upperbound_x : periodic
 lat : flat : lowerbound_y : periodic
@@ -9,6 +9,8 @@ lat : flat : lowerbound_z : periodic
 lat : flat : upperbound_z : periodic
 lat : flat : lattice_type : simple_cubic
 lat : flat : gradients : 3
+
+sys : UNKNOWN : GPU : true
 
 mon : B : freedom : free
 
@@ -34,7 +36,7 @@ kal : mol : B : phibulk
 // timesteps, timebetweensaves, delta_t, read_pro, read_vtk, equilibrate, diffusionconstant, seed
 // mean, stddev, cn_ratio ( 1 = only old ), edge_detection, edge_detection_threshold
 
-mesodyn : smth : timesteps : 100000
+mesodyn : smth : timesteps : 4
 mesodyn : smth : timebetweensaves : 30
 mesodyn : smth : diffusionconstant : 1
 //mesodyn : smth : delta_t : 0.1

@@ -28,7 +28,7 @@ public:
 	int sub_box_on;
 	Real volume;
 	Real Accesible_volume;
-	
+
 	int gradients;
 	string lattice_type;
 	string geometry;
@@ -87,10 +87,13 @@ public:
 	void AllocateMemory(void);
 	bool PrepareForCalculations(void);
 	void propagate(Real*,Real*, int, int,int);
-	void remove_bounds(Real*);
-	void remove_bounds(int*);
-	void set_bounds(Real*);
-	void set_bounds(int*);
+
+	template <typename T>
+	void remove_bounds(T*);
+
+	template <typename T>
+	void set_bounds(T*);
+
 	void Side(Real *, Real *, int);
 	bool ReadRange(int*, int*, int&, bool&, string, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
@@ -111,5 +114,4 @@ public:
 	bool ResetInitValue();
 	int PutVarScan(int, int);
 };
-
 #endif

@@ -1,5 +1,10 @@
 #Compiler and Linker
-CC          := g++
+ifdef GCC_8
+CC          :=g++-8
+else
+CC					:=g++
+endif
+
 NVCC        :=nvcc
 
 #The Target Binary Program
@@ -16,13 +21,14 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -g -O3 -std=c++11 -fopenmp
+CFLAGS      := -Wall -Ofast -std=c++14 -fopenmp -march=native #-ftree-parallelize-loops=12
 LIB         := -lm -lpthread -lgomp
-INC         := -I/usr/local/include
+INC         := -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
 	LIB        += -lcuda -lcudart
-	NVCCFLAGS   := -DCUDA
+	CFLAGS     += -DCUDA
+	NVCCFLAGS  := -DCUDA
 endif
 
 # %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@
@@ -87,4 +93,3 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 
 #Non-File Targets
 .PHONY: all remake clean cleaner resources
-

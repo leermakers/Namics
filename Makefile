@@ -1,5 +1,10 @@
 #Compiler and Linker
-CC          := g++
+ifdef GCC_8
+CC          :=g++-8
+else
+CC					:=g++
+endif
+
 NVCC        :=nvcc
 
 #The Target Binary Program
@@ -24,6 +29,7 @@ ifdef CUDA
 	LIB        += -lcuda -lcudart
 	CFLAGS     += -DCUDA
 	NVCCFLAGS   := -DCUDA
+	cp $(SRCDIR)/tools.cpp $(SRCDIR)/tools.cu
 endif
 
 # %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@

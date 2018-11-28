@@ -403,7 +403,11 @@ int main(int argc, char* argv[]) {
       			if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
                 		free(X);
             		X = (Real *)malloc(IV_new * sizeof(Real));
+                #ifdef CUDA
+                TransferDataToHost(X, New[0]->xx, IV_new);
+                #else
             		for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
+                #endif
       			fjc_old=Lat[0]->fjc;
       			int mon_length = Sys[0]->ItMonList.size();
 			int state_length=Sys[0]->ItStateList.size();

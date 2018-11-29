@@ -144,6 +144,14 @@ __global__ void unity(Real *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0;
 }
+__global__ void assign(Real *P, Real* T, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx] = T[idx];
+}
+__global__ void assign(Real *P, Real T, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx] = T;
+}
 __global__ void zero(int *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0;
@@ -567,26 +575,12 @@ bool GPU_present()    {
 
 int* AllIntOnDev(int N) {
   int* X;
-	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(int)*N))
-	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
-	return X;
-}
-
-Real* AllOnDev(int N) {
-  Real* X;
-	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(Real)*N))
-	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
-	return X;
-}
-
-int* AllManagedIntOnDev(int N) {
-  int* X;
 	if (cudaSuccess != cudaMallocManaged((void **) &X, sizeof(int)*N))
 	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
 	return X;
 }
 
-Real* AllManagedOnDev(int N) {
+Real* AllOnDev(int N) {
   Real* X;
 	if (cudaSuccess != cudaMallocManaged((void **) &X, sizeof(Real)*N))
 	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
@@ -660,6 +654,16 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 void Unity(Real* P, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	unity<<<n_blocks,block_size>>>(P,M);
+}
+
+void Assign(Real* P, Real* T, int M)   {
+int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	assign<<<n_blocks,block_size>>>(P,T,M);
+}
+
+void Assign(Real* P, Real T, int M)   {
+int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	assign<<<n_blocks,block_size>>>(P,T,M);
 }
 
 void Zero(Real* P, int M)   {

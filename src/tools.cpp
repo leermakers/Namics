@@ -144,6 +144,14 @@ __global__ void unity(Real *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0;
 }
+__global__ void assign(Real *P, Real* T, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx] = T[idx];
+}
+__global__ void assign(Real *P, Real T, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx] = T;
+}
 __global__ void zero(int *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0;
@@ -172,6 +180,7 @@ __global__ void yisaplusb(Real *Y, Real *A,Real *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]+B[idx];
 }
+
 __global__ void yplusisctimesx(Real *Y, Real *X, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] += C*X[idx];
@@ -544,10 +553,21 @@ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 #endif
 
 #ifdef CUDA
-bool GPU_present()    {
+bool GPU_present(int deviceIndex)    {
 	cudaDeviceReset();
-	int deviceCount =0; cuDeviceGetCount(&deviceCount);
-   	if (deviceCount ==0) printf("There is no device supporting Cuda.\n"); else cudaDeviceReset();
+	int deviceCount =0;
+	cuDeviceGetCount(&deviceCount);
+   	if (deviceCount ==0) printf("There is no device supporting Cuda.\n");
+	else {
+		cudaDeviceReset();
+		if (deviceIndex > deviceCount-1) {
+			cerr << "Error: tried to set device index to " << deviceIndex << " but the highest index number available is " << deviceCount-1
+			<< ". Defaulting to 0. Press enter to continue, or CTRL+c to abort." << endl;
+			cin.get();
+			deviceIndex = 0;
+		}
+		cudaSetDevice(deviceIndex);
+	}
 	//if (deviceCount>0) {
 	//	stat = cublasCreate(&handle);
 	//	if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS handle creation failed \n");}
@@ -660,6 +680,16 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 void Unity(Real* P, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	unity<<<n_blocks,block_size>>>(P,M);
+}
+
+void Assign(Real* P, Real* T, int M)   {
+int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	assign<<<n_blocks,block_size>>>(P,T,M);
+}
+
+void Assign(Real* P, Real T, int M)   {
+int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	assign<<<n_blocks,block_size>>>(P,T,M);
 }
 
 void Zero(Real* P, int M)   {

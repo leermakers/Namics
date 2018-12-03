@@ -146,6 +146,16 @@ void Unity(T* P, int M)   {
 }
 
 template<typename T>
+void Assign(T* P, T C, int M)   {
+  std::fill(P, P+M, C);
+}
+
+template<typename T>
+void Assign(T* P, T* C, int M)   {
+  std::copy(P, P+M, C);
+}
+
+template<typename T>
 void YisAplusCtimesB(T *Y, T *A, T*B, T C, int M)   {
 	for (int i=0; i<M; i++) Y[i]=A[i]+C*B[i];
 }

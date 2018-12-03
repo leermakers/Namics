@@ -21,7 +21,7 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -Ofast -std=c++14 -fopenmp -march=native #-ftree-parallelize-loops=12
+CFLAGS      := -Wall -Ofast -g -std=c++14 -fopenmp -march=native #-ftree-parallelize-loops=12
 LIB         := -lm -lpthread -lgomp
 INC         := -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)

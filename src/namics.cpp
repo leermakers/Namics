@@ -37,13 +37,11 @@ Real PIE = 3.14159265;
 int DEBUG_BREAK = 1;
 //Used for command line switches
 bool debug = false;
-bool suppress = false;
 
 //Output when the user malforms input. Update when adding new command line switches.
 void improperInput() {
   cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;
   cerr << "-d Enables debugging mode." << endl;
-  cerr << "-s Suppresses newton's extra output." << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -71,9 +69,18 @@ int main(int argc, char* argv[]) {
     		debug = true;
  	 }
 
-  	if ( find(args.begin(), args.end(), "-s") != args.end() ) {
-    		suppress = true;
-  	}
+	int cudaDeviceIndex = 0;
+
+	  //If the switch -GPU is given, select GPU.
+  	if ( find(args.begin(), args.end(), "-GPU") != args.end() ) {
+		  try {
+		  	cudaDeviceIndex = load_argument_value(args, "-GPU", cudaDeviceIndex);
+		  }
+		  catch (int) {
+			improperInput();
+			exit(0);
+		  }
+ 	 }
 
   	bool cuda;
   	int start = 0;
@@ -90,7 +97,7 @@ int main(int argc, char* argv[]) {
 	vector<string> STATELIST;
 
 #ifdef CUDA
-  GPU_present();
+  GPU_present(cudaDeviceIndex);
   cuda = true;
 #else
   cuda = false;
@@ -391,6 +398,10 @@ int main(int argc, char* argv[]) {
 				cout <<"TheEngine is unknown. Programming error " << endl; return 0;
 				break;
 		}
+
+        for (auto all_segments : Seg)
+          all_segments->prepared = false;
+
     		if (scan_nr > -1)
       			Var[scan_nr]->ResetScanValue();
     		if (Sys[0]->initial_guess == "previous_result") {
@@ -403,7 +414,11 @@ int main(int argc, char* argv[]) {
       			if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
                 		free(X);
             		X = (Real *)malloc(IV_new * sizeof(Real));
+                #ifdef CUDA
+                TransferDataToHost(X, New[0]->xx, IV_new);
+                #else
             		for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
+                #endif
       			fjc_old=Lat[0]->fjc;
       			int mon_length = Sys[0]->ItMonList.size();
 			int state_length=Sys[0]->ItStateList.size();

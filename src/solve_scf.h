@@ -110,7 +110,7 @@ public:
 	bool Solve(bool);
 	bool SolveMesodyn(function< void(vector<Real>&, size_t) >, function< Real*() >); //first argument should contain rho
 	function< Real*() > mesodyn_flux;
-	function< void(vector<Real>&, int) > mesodyn_load_alpha;
+	function< void(vector<Real>&, size_t) > mesodyn_load_alpha;
 	bool SuperIterate(int,int,int,int);
 	void DeAllocateMemory();
 	void AllocateMemory();

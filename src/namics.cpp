@@ -69,6 +69,14 @@ int main(int argc, char* argv[]) {
     		debug = true;
  	 }
 
+	int cudaDeviceIndex = 0;
+
+	  //If the switch -GPU is given, select GPU.
+  	if ( find(args.begin(), args.end(), "-GPU") != args.end() ) {
+    		cudaDeviceIndex = load_argument_value("-GPU",cudaDeviceIndex);
+ 	 }
+
+
   	bool cuda;
   	int start = 0;
   	int n_starts = 0;
@@ -84,7 +92,7 @@ int main(int argc, char* argv[]) {
 	vector<string> STATELIST;
 
 #ifdef CUDA
-  GPU_present();
+  GPU_present(cudaDeviceIndex);
   cuda = true;
 #else
   cuda = false;

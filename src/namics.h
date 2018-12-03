@@ -45,6 +45,25 @@ extern Real PIE;
 extern int DEBUG_BREAK;
 extern Real eps0;
 extern bool debug;
+
+//used for loading input from command line.
+template<typename T>
+  auto load_argument_value(string argument, T t) -> decltype(t) {
+    vector<string>::iterator position;
+    position = find(args.begin(), args.end(), argument);
+    if ( position != args.end() ) {
+      ++position;
+      if (position != args.end() && (*position)[0] != '-') {
+        istringstream ss(*position);
+        ss >> t;
+        return t;
+      }
+    }
+    //else
+    improper_input();
+    return t;
+  }
+
 //extern Real factor;
 #endif
 

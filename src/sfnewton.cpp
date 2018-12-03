@@ -617,7 +617,7 @@ bool SFNewton::Message(bool e_info_, bool s_info_, int it_, int iterationlimit_,
 		success=false;
 	}
 
-  if ((e_info || s_info) && suppress == false) {
+  if ((e_info || s_info)) {
 
 
 		if (e_info) {

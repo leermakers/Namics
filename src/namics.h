@@ -45,7 +45,6 @@ extern Real PIE;
 extern int DEBUG_BREAK;
 extern Real eps0;
 extern bool debug;
-extern bool suppress;
 //extern Real factor;
 #endif
 

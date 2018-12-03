@@ -37,13 +37,11 @@ Real PIE = 3.14159265;
 int DEBUG_BREAK = 1;
 //Used for command line switches
 bool debug = false;
-bool suppress = false;
 
 //Output when the user malforms input. Update when adding new command line switches.
 void improperInput() {
   cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;
   cerr << "-d Enables debugging mode." << endl;
-  cerr << "-s Suppresses newton's extra output." << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -70,10 +68,6 @@ int main(int argc, char* argv[]) {
   	if ( find(args.begin(), args.end(), "-d") != args.end() ) {
     		debug = true;
  	 }
-
-  	if ( find(args.begin(), args.end(), "-s") != args.end() ) {
-    		suppress = true;
-  	}
 
   	bool cuda;
   	int start = 0;

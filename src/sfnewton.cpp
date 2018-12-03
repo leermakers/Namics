@@ -649,16 +649,16 @@ if(debug) cout <<"iterate in SFNewton" << endl;
   Real* p = (Real*) AllOnDev(nvar);Zero(p,nvar);
   Real* p0 = (Real*) AllOnDev(nvar);Zero(p0,nvar);
   Real* g0  = (Real*) AllOnDev(nvar);Zero(g0,nvar);
-  mask = (int*) AllOnDev(nvar);
+  mask = (int*) AllIntOnDev(nvar);
   float* h = (float*) AllOnDev(nvar*nvar); H_Zero(h,nvar*nvar);
   #else
-  Real* x0 = (Real*) malloc(nvar); Zero(x0,nvar);
-  Real* g = (Real*) malloc(nvar); Zero(g,nvar);
-  Real* p = (Real*) malloc(nvar);Zero(p,nvar);
-  Real* p0 = (Real*) malloc(nvar);Zero(p0,nvar);
-  Real* g0  = (Real*) malloc(nvar);Zero(g0,nvar);
-  mask = (int*) malloc(nvar);
-  float* h = (float*) malloc(nvar*nvar); Zero(h,nvar*nvar);
+  Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+  Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+  Real* p = (Real*) malloc(nvar*sizeof(Real)); Zero(p,nvar);
+  Real* p0 = (Real*) malloc(nvar*sizeof(Real)); Zero(p0,nvar);
+  Real* g0  = (Real*) malloc(nvar*sizeof(Real)); Zero(g0,nvar);
+  mask = (int*) malloc(nvar*sizeof(int));
+  float* h = (float*) malloc(nvar*nvar*sizeof(float)); Zero(h,nvar*nvar);
   #endif
 
 	if (nvar<1) {cout << "newton has nothing to do; returning the problem" << endl; return false;}

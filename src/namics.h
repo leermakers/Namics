@@ -46,9 +46,13 @@ extern int DEBUG_BREAK;
 extern Real eps0;
 extern bool debug;
 
-//used for loading input from command line.
+//extern Real factor;
+#endif
+
+//used for loading input from command line, usage: variable = load_argument_value(args, "<commandline switch>", variable).
+//where variable is the variable to load input into. Automatically selects the correct datatype to return.
 template<typename T>
-  auto load_argument_value(string argument, T t) -> decltype(t) {
+  auto load_argument_value(vector<string> args, string argument, T t) -> decltype(t) {
     vector<string>::iterator position;
     position = find(args.begin(), args.end(), argument);
     if ( position != args.end() ) {
@@ -60,12 +64,9 @@ template<typename T>
       }
     }
     //else
-    improper_input();
-    return t;
+    cerr << "Did not find a value for argument " << argument << "." << endl;
+    throw 0;
   }
-
-//extern Real factor;
-#endif
 
 enum MoleculeType {monomer, linear, branched, dendrimer, comb, ring};
 enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};

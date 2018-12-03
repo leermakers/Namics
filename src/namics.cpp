@@ -73,9 +73,14 @@ int main(int argc, char* argv[]) {
 
 	  //If the switch -GPU is given, select GPU.
   	if ( find(args.begin(), args.end(), "-GPU") != args.end() ) {
-    		cudaDeviceIndex = load_argument_value("-GPU",cudaDeviceIndex);
+		  try {
+		  	cudaDeviceIndex = load_argument_value(args, "-GPU", cudaDeviceIndex);
+		  }
+		  catch (int) {
+			improperInput();
+			exit(0);
+		  }
  	 }
-
 
   	bool cuda;
   	int start = 0;

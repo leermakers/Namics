@@ -561,8 +561,9 @@ bool GPU_present(int deviceIndex)    {
 	else {
 		cudaDeviceReset();
 		if (deviceIndex > deviceCount-1) {
-			cerr << "Error: tried to set device index to " << deviceIndex << "but the highest index number available is " << deviceCount-1
-			<< ". Defaulting to 0." << endl;
+			cerr << "Error: tried to set device index to " << deviceIndex << " but the highest index number available is " << deviceCount-1
+			<< ". Defaulting to 0. Press enter to continue, or CTRL+c to abort." << endl;
+			cin.get();
 			deviceIndex = 0;
 		}
 		cudaSetDevice(deviceIndex);

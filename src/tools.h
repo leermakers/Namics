@@ -75,7 +75,7 @@ __global__ void b_z(int*, int, int, int, int, int, int, int);
 void Dot(Real&, Real*, Real*, int);
 void Sum(Real&, Real*, int);
 void Sum(int&, int*, int);
-bool GPU_present();
+bool GPU_present(int);
 int* AllIntOnDev(int);
 Real* AllOnDev(int);
 int* AllManagedIntOnDev(int);

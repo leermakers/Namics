@@ -180,6 +180,7 @@ __global__ void yisaplusb(Real *Y, Real *A,Real *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] = A[idx]+B[idx];
 }
+
 __global__ void yplusisctimesx(Real *Y, Real *X, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] += C*X[idx];
@@ -552,10 +553,20 @@ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 #endif
 
 #ifdef CUDA
-bool GPU_present()    {
+bool GPU_present(int deviceIndex)    {
 	cudaDeviceReset();
-	int deviceCount =0; cuDeviceGetCount(&deviceCount);
-   	if (deviceCount ==0) printf("There is no device supporting Cuda.\n"); else cudaDeviceReset();
+	int deviceCount =0;
+	cuDeviceGetCount(&deviceCount);
+   	if (deviceCount ==0) printf("There is no device supporting Cuda.\n");
+	else {
+		cudaDeviceReset();
+		if (deviceIndex > deviceCount-1) {
+			cerr << "Error: tried to set device index to " << deviceIndex << "but the highest index number available is " << deviceCount-1
+			<< ". Defaulting to 0." << endl;
+			deviceIndex = 0;
+		}
+		cudaSetDevice(deviceIndex);
+	}
 	//if (deviceCount>0) {
 	//	stat = cublasCreate(&handle);
 	//	if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS handle creation failed \n");}
@@ -575,12 +586,26 @@ bool GPU_present()    {
 
 int* AllIntOnDev(int N) {
   int* X;
-	if (cudaSuccess != cudaMallocManaged((void **) &X, sizeof(int)*N))
+	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(int)*N))
 	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
 	return X;
 }
 
 Real* AllOnDev(int N) {
+  Real* X;
+	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(Real)*N))
+	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
+	return X;
+}
+
+int* AllManagedIntOnDev(int N) {
+  int* X;
+	if (cudaSuccess != cudaMallocManaged((void **) &X, sizeof(int)*N))
+	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
+	return X;
+}
+
+Real* AllManagedOnDev(int N) {
   Real* X;
 	if (cudaSuccess != cudaMallocManaged((void **) &X, sizeof(Real)*N))
 	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");

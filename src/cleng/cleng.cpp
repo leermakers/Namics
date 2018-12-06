@@ -6,6 +6,7 @@
 #include <map>
 #include <cassert>
 #include <fstream>
+#include "./checkpoint/checkpoint.h"
 
 using namespace std;
 
@@ -513,6 +514,10 @@ bool Cleng::MonteCarlo() {
     cout << "Accepted %: " << 100* (accepted / (MCS-1)) << endl;
     cout << "Rejected %: " << 100* (rejected / (MCS-1)) << endl;
 
+    cout << "Saving checkpoint ..." << endl;
+    Checkpoint checkpoint;
+    checkpoint.saveCheckpoint();
+
     return success;
 }
 
@@ -624,13 +629,16 @@ void Cleng::WriteClampedNodeDistance(int MS_step) {
 
     string filename;
     vector<string> sub;
+
     string infilename = In[0]->name;
     In[0]->split(infilename,'.',sub);
-    filename=sub[0].append(".");
+    filename=sub[0];
 //    filename = sub[0].append("_").append(".").append(name);
-    filename = In[0]->output_info.getOutputPath() + filename;
+
+//    filename = In[0]->output_info.getOutputPath()+ In[0]->name;
     ofstream outfile;
-    outfile.open(filename+"cleng_pos", std::ios_base::app);
+    cout << "FILENAME: " << filename << endl;
+    outfile.open(filename+".cleng_pos", std::ios_base::app);
 
     outfile << MS_step << " ";
     for ( auto n : distPerMC ) {

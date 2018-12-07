@@ -2,7 +2,7 @@
 ifdef GCC_8
 CC          :=g++-8
 else
-CC					:=g++
+CC			:=g++
 endif
 
 NVCC        :=nvcc
@@ -21,14 +21,18 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -Ofast -g -std=c++14 -fopenmp -march=native #-ftree-parallelize-loops=12
+CFLAGS      := -Wall -Ofast -g -std=c++14 -fopenmp -march=native -ftree-parallelize-loops=12
 LIB         := -lm -lpthread -lgomp
 INC         := -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
 	LIB        += -lcuda -lcudart
 	CFLAGS     += -DCUDA
-	NVCCFLAGS  := -DCUDA
+	NVCCFLAGS  := -std=c++14 -DCUDA
+	ifdef PAR_MESODYN
+		CFLAGS += -DPAR_MESODYN
+		NVCCFLAGS += -ccbin gcc-5 --expt-relaxed-constexpr -DPAR_MESODYN
+	endif
 endif
 
 # %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@
@@ -37,10 +41,14 @@ endif
 #---------------------------------------------------------------------------------
 
 SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+ifdef PAR_MESODYN
+OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o $(BUILDDIR)/mesodyn.o)
+else
 ifdef CUDA
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o)
 else
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)))
+endif
 endif
 
 #Defauilt Make
@@ -76,11 +84,16 @@ $(TARGET): $(OBJECTS)
 
 
 #Compile
+ifdef PAR_MESODYN
+$(BUILDDIR)/tools.o:
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/tools.o $(SRCDIR)/tools.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/mesodyn.o $(SRCDIR)/mesodyn.cu
+else
 ifdef CUDA
 $(BUILDDIR)/tools.o:
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/tools.o $(SRCDIR)/tools.cu
 endif
-
+endif
 
 $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(dir $@)

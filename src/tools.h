@@ -27,8 +27,8 @@ __global__ void norm(Real*, Real, int);
 __global__ void zero(Real*, int);
 __global__ void zero(int*, int);
 __global__ void unity(Real*, int);
-__global__ void assign(Real *, Real*, int);
-__global__ void assign(Real *, Real, int);
+__global__ void flux_min(Real *, Real*, int, int);
+__global__ void flux(Real*, Real*, Real*, int, int, int);
 __global__ void cp(Real*, Real*, int);
 __global__ void cp(Real*, int*, int);
 __global__ void yisaplusctimesb(Real*, Real*, Real*, Real, int);
@@ -83,6 +83,8 @@ Real* AllOnDev(int);
 void AddTimes(Real*, Real*, Real*, int);
 void Times(Real*, Real*, Real*, int);
 void Times(Real*, Real*, int*, int);
+void Flux_min(Real*, Real*, int, int);
+void Flux(Real*, Real*, Real*, int, int, int);
 void Composition(Real*, Real*, Real*, Real*, Real, int);
 void Norm(Real*, Real, int);
 void Zero(Real*, int);
@@ -123,6 +125,31 @@ void OverwriteC(Real*, int*, Real, int);
 void OverwriteA(Real*, int*, Real*, int);
 void UpQ(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
 void UpPsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
+
+struct saxpy_functor
+{
+    const double a;
+
+    saxpy_functor(double _a) : a(_a) {}
+
+    __host__ __device__
+        double operator()(const double& x, const double& y) const { 
+            return a * x + y;
+        }
+};
+
+struct const_multiply_functor
+{
+    const double a;
+
+    const_multiply_functor(double _a) : a(_a) {}
+
+    __host__ __device__
+        double operator()(const double& x, const double& y) const { 
+            return a * x * y;
+        }
+};
+
 
 #else
 

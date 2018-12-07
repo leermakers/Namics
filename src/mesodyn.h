@@ -15,6 +15,21 @@
 #include <unistd.h>   // output
 #include <memory>
 
+#ifdef PAR_MESODYN
+#include <thrust/device_vector.h>
+#include <thrust/transform.h>
+#include <thrust/copy.h>
+#include <thrust/fill.h>
+#include <thrust/device_ptr.h>
+namespace stl = thrust;
+#else
+namespace stl = std;
+namespace std {
+  template<typename T> using host_vector = vector<T>;   
+  template<typename T> using device_vector = vector<T>;   
+}
+#endif
+
 class Boundary1D;
 
 enum error {
@@ -30,13 +45,34 @@ public:
   Lattice_Access(Lattice*);
   ~Lattice_Access();
 
-  template <typename T>
-  inline T val(vector<T>& v, int x, int y, int z) {
+#ifdef PAR_MESODYN
+    template <typename T>
+  inline T val(stl::device_vector<T>& v, int x, int y, int z) {
       return v[x * JX + y * JY + z * JZ];
   }
 
   template <typename T>
-  inline T* val_ptr(vector<T>& v, int x, int y, int z) {
+  inline T* val_ptr(stl::device_vector<T>& v, int x, int y, int z) {
+      return thrust::raw_pointer_cast(&v[x * JX + y * JY + z * JZ]);
+  }
+    template <typename T>
+  inline T val(stl::host_vector<T>& v, int x, int y, int z) {
+      return v[x * JX + y * JY + z * JZ];
+  }
+
+  template <typename T>
+  inline T* val_ptr(stl::host_vector<T>& v, int x, int y, int z) {
+      return &v[x * JX + y * JY + z * JZ];
+  }
+#endif
+
+      template <typename T>
+  inline T val(std::vector<T>& v, int x, int y, int z) {
+      return v[x * JX + y * JY + z * JZ];
+  }
+
+  template <typename T>
+  inline T* val_ptr(std::vector<T>& v, int x, int y, int z) {
       return &v[x * JX + y * JY + z * JZ];
   }
 
@@ -53,6 +89,7 @@ public:
   inline void zm_boundary( function<void(int, int, int)>);
 
   const int dimensions;
+  Lattice* Lat;
 
 private:
   const int JX;
@@ -74,9 +111,9 @@ class Gaussian_noise {
 public:
   Gaussian_noise(shared_ptr<Boundary1D>, Real, int, Real, Real); // Not seeded (32 bits of randomness)
   Gaussian_noise(shared_ptr<Boundary1D>, Real, int, Real, Real, size_t); // Seeded
-  int generate();
-  int add_noise(vector<Real>&);
-  vector<Real> noise;
+  int generate(size_t);
+  int add_noise(stl::device_vector<Real>&);
+  stl::device_vector<Real> noise;
 
 private:
   seed_seq seed;
@@ -85,7 +122,7 @@ private:
   shared_ptr<Boundary1D> boundary;
 };
 
-class Boundary1D : protected Lattice_Access {
+class Boundary1D : public Lattice_Access {
 public:
 
   enum boundary {
@@ -147,18 +184,23 @@ private:
 
 class Component : protected Lattice_Access {
 public:
-  Component(Lattice*, shared_ptr<Boundary1D>, vector<Real>&); //1D
+  Component(Lattice*, shared_ptr<Boundary1D>, stl::host_vector<Real>&); //1D
   ~Component();
 
-  vector<Real> rho;
-  vector<Real> alpha;
+  stl::device_vector<Real> rho;
+  stl::device_vector<Real> alpha;
+
+  Real* rho_ptr;
+  Real* alpha_ptr;
 
   Real rho_at(int, int, int);
   Real alpha_at(int, int, int);
-  int update_density(vector<Real>&, int = 1);     //Explicit scheme
-  int update_density(vector<Real>&, vector<Real>&, Real ratio, int = 1); //Implicit scheme
-  int load_alpha(vector<Real>&);
-  int load_rho(vector<Real>&);
+  int update_density(stl::device_vector<Real>&, int = 1);     //Explicit scheme
+  int update_density(stl::device_vector<Real>&, stl::device_vector<Real>&, Real ratio, int = 1); //Implicit scheme
+  int load_alpha(stl::device_vector<Real>);
+  int load_alpha(Real*);
+  int load_rho(stl::device_vector<Real>);
+  int load_rho(Real*);
   int update_boundaries();
   Real theta();
 
@@ -168,7 +210,7 @@ private:
 
 class Flux1D : protected Lattice_Access {
 public:
-  Flux1D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux1D(Lattice*, Real, stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   virtual ~Flux1D();
 
   virtual int langevin_flux();
@@ -182,57 +224,58 @@ public:
     ERROR_NOT_IMPLEMENTED,
   };
 
-  vector<Real> J_plus;
-  vector<Real> J_minus;
-  vector<Real> J;
+  stl::device_vector<Real> J_plus;
+  stl::device_vector<Real> J_minus;
+  stl::device_vector<Real> J;
 
 
 protected:
-  int onsager_coefficient(vector<Real>&, vector<Real>&);
-  int potential_difference(vector<Real>&, vector<Real>&);
-  int langevin_flux(vector<int>&, vector<int>&, int);
-  int mask(vector<int>&);
+  int onsager_coefficient(stl::device_vector<Real>&, stl::device_vector<Real>&);
+  int potential_difference(stl::device_vector<Real>&, stl::device_vector<Real>&);
+  int langevin_flux(stl::host_vector<int>&, stl::host_vector<int>&, int);
+  int mask(stl::host_vector<int>&);
   shared_ptr<Component> A;
   shared_ptr<Component> B;
 
-  vector<Real> L;
-  vector<Real> mu;
+  stl::device_vector<Real> L;
+  stl::device_vector<Real> mu;
   const Real D;
   const int JX;
-  vector<int> Mask_plus_x;
-  vector<int> Mask_minus_x;
+  stl::host_vector<int> Mask_plus_x;
+  stl::host_vector<int> Mask_minus_x;
 };
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux2D(Lattice*, Real, stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   virtual ~Flux2D();
 
   virtual int langevin_flux() override;
 
 
 protected:
-  int mask(vector<int>&);
+  int mask(stl::host_vector<int>&);
   const int JY;
-  vector<int> Mask_plus_y;
-  vector<int> Mask_minus_y;
+  stl::host_vector<int> Mask_plus_y;
+  stl::host_vector<int> Mask_minus_y;
 
 };
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux3D(Lattice*, Real, stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   ~Flux3D();
 
   virtual int langevin_flux() override;
 
 private:
-  int mask(vector<int>&);
+  int mask(stl::host_vector<int>&);
 
 protected:
   const int JZ;
-  vector<int> Mask_plus_z;
-  vector<int> Mask_minus_z;
+  stl::host_vector<int> Mask_plus_z;
+  stl::host_vector<int> Mask_minus_z;
+  stl::device_vector<int> GPU_mask;
 };
 
 class Mesodyn : private Lattice_Access {
@@ -270,7 +313,7 @@ private:
   void explicit_start();
   int noise_flux();
   Real* solve_crank_nicolson();
-  void load_alpha(vector<Real>&, size_t);
+  void load_alpha(Real*, size_t);
   int sanity_check();
   Real calculate_order_parameter();
   Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
@@ -282,12 +325,12 @@ private:
     INIT_FROMVTK,
   };
   Real system_volume;
-  vector<Real> rho;
+  stl::device_vector<Real> rho;
   vector<string> tokenize(string, char);
   string read_filename;
   int initial_conditions();
   vector<Real>&  flux_callback(int);
-  int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
+  int init_rho_homogeneous(stl::host_vector<stl::host_vector<Real>>&,stl::host_vector<int>&);
   int norm_density(vector<Real>& rho, Real theta);
   void set_update_lists();
   vector<vector<int>> update_plus;

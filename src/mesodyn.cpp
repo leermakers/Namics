@@ -12,16 +12,16 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       component_no{Sys[0]->SysMolMonList.size()}, RC{0}, cn_ratio{0.5},
       component(0), flux(0),
       writes{0}, write_vtk{false}, order_parameter{0} {
-  KEYS.emplace_back("timesteps");
-  KEYS.emplace_back("timebetweensaves");
-  KEYS.emplace_back("delta_t");
-  KEYS.emplace_back("read_pro");
-  KEYS.emplace_back("read_vtk");
-  KEYS.emplace_back("diffusionconstant");
-  KEYS.emplace_back("seed");
-  KEYS.emplace_back("mean");
-  KEYS.emplace_back("stddev");
-  KEYS.emplace_back("cn_ratio");
+  KEYS.push_back("timesteps");
+  KEYS.push_back("timebetweensaves");
+  KEYS.push_back("delta_t");
+  KEYS.push_back("read_pro");
+  KEYS.push_back("read_vtk");
+  KEYS.push_back("diffusionconstant");
+  KEYS.push_back("seed");
+  KEYS.push_back("mean");
+  KEYS.push_back("stddev");
+  KEYS.push_back("cn_ratio");
 
   // TODO: implement this properly
   // If the user has asked for vtk output
@@ -30,7 +30,7 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   }
 
   //Apparently this step takes a ton of time.
-  Out.emplace_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
+  Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
 
   set_update_lists();
 
@@ -120,8 +120,8 @@ bool Mesodyn::mesodyn() {
   explicit_start();
 
   // Prepare callback functions for SolveMesodyn in Newton
-  auto solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
-  auto loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
+  function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
+  function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
   /**** Main MesoDyn time loop ****/
   for (int t = 0; t < timesteps; t++) {
@@ -139,9 +139,9 @@ bool Mesodyn::mesodyn() {
 
     noise_flux();
 
-    sanity_check();
+    //sanity_check();
 
-    cout << "Order parameter: " << calculate_order_parameter() << endl;
+    //cout << "Order parameter: " << calculate_order_parameter() << endl;
 
     i = 0;
     for (auto all_components : component) {
@@ -162,9 +162,9 @@ void Mesodyn::set_update_lists() {
   vector<int> temp;
   for (size_t i = 0; i < component_no; ++i) {
     for (size_t j = 0; j < (component_no - 1) - i; ++j) {
-      temp.emplace_back(i);
-      temp.emplace_back(c);
-      update_plus.emplace_back(temp);
+      temp.push_back(i);
+      temp.push_back(c);
+      update_plus.push_back(temp);
       temp.clear();
       ++c;
     }
@@ -173,9 +173,9 @@ void Mesodyn::set_update_lists() {
   c = 0;
   for (size_t j = 0; j < (component_no - 1); ++j) {
     for (size_t i = 1 + j; i < component_no; ++i) {
-      temp.emplace_back(i);
-      temp.emplace_back(c);
-      update_minus.emplace_back(temp);
+      temp.push_back(i);
+      temp.push_back(c);
+      update_minus.push_back(temp);
       temp.clear();
       ++c;
     }
@@ -202,9 +202,9 @@ Real Mesodyn::calculate_order_parameter() {
 int Mesodyn::noise_flux() {
 
   for (auto all_components : solver_component) {
-    gaussian->generate();
+    gaussian->generate(M);
     //Zero all alpha's
-    fill(all_components->alpha.begin(), all_components->alpha.end(), 0);
+    stl::fill(all_components->alpha.begin(), all_components->alpha.end(), 0);
     gaussian->add_noise(all_components->alpha);
   }
 
@@ -220,7 +220,7 @@ int Mesodyn::noise_flux() {
 
   int i = 0;
   for (auto& all_fluxes : flux) {
-    transform(all_fluxes->J.begin(), all_fluxes->J.end(), solver_flux[i]->J.begin(), all_fluxes->J.begin(), std::plus<Real>());
+    stl::transform(all_fluxes->J.begin(), all_fluxes->J.end(), solver_flux[i]->J.begin(), all_fluxes->J.begin(), std::plus<Real>());
     ++i;
   }
 
@@ -260,7 +260,7 @@ int Mesodyn::sanity_check() {
   return 0;
 }
 
-void Mesodyn::load_alpha(vector<Real>& alpha, size_t i) {
+void Mesodyn::load_alpha(Real* alpha, size_t i) {
     if (i < component_no) {
       solver_component[i]->load_alpha(alpha);
     }
@@ -275,10 +275,15 @@ Real* Mesodyn::solve_explicit() {
 
   rho.clear();
   for (auto all_components : solver_component) {
-    copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
+    stl::copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
   }
 
+
+  #ifdef PAR_MESODYN
+  return stl::raw_pointer_cast(&rho[0]);
+  #else
   return &rho[0];
+  #endif
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
@@ -304,10 +309,14 @@ Real* Mesodyn::solve_crank_nicolson() {
 
   rho.clear();
   for (auto all_components : solver_component) {
-    copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
+    stl::copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
   }
 
+  #ifdef PAR_MESODYN
+  return stl::raw_pointer_cast(&rho[0]);
+  #else
   return &rho[0];
+  #endif
 }
 
 int Mesodyn::initial_conditions() {
@@ -318,21 +327,13 @@ int Mesodyn::initial_conditions() {
       Seg[i]->freedom = "free";
   }
 
-  vector<vector<Real>> rho(component_no, vector<Real>(M));
+  stl::host_vector<stl::host_vector<Real>> rho(component_no, stl::host_vector<Real>(M));
 
-  vector<int> mask(M);
+  stl::device_vector<int> temp_mask(M);
 
-  #ifdef CUDA
-  TransferDataToHost(&mask[0],Sys[0]->KSAM, M);
-  #else
-  //once KSAM becomes a vector, this loop won't be nessecary anymore, just pass KSAM to the flux constructor.
-  for (int i = 0; i < M; ++i) {
-    mask[i] = *(Sys[0]->KSAM + i);
-  }
-  #endif
+  stl::copy(Sys[0]->KSAM, Sys[0]->KSAM+M, temp_mask.begin());
 
-/*  for (auto values : mask)
-    cout << values << endl;*/
+  stl::host_vector<int> mask = temp_mask;
 
   switch (initialization_mode) {
     case INIT_HOMOGENEOUS:
@@ -371,10 +372,10 @@ int Mesodyn::initial_conditions() {
   vector<Boundary1D::boundary> boundaries;
   for (string& boundary : Lat[0]->BC) {
     if (boundary == "mirror") {
-      boundaries.emplace_back(Boundary1D::MIRROR);
+      boundaries.push_back(Boundary1D::MIRROR);
     }
     if (boundary == "periodic") {
-      boundaries.emplace_back(Boundary1D::PERIODIC);
+      boundaries.push_back(Boundary1D::PERIODIC);
     }
   }
 
@@ -421,8 +422,8 @@ int Mesodyn::initial_conditions() {
     Mesodyn::boundary = make_shared<Boundary1D>(Lat[0], boundaries[0], boundaries[1]);
 
     for (size_t i = 0; i < component_no; ++i) {
-      component.emplace_back(make_shared<Component>(Lat[0], boundary, rho[i]));
-      solver_component.emplace_back(make_shared<Component>(Lat[0], boundary, rho[i]));
+      component.push_back(make_shared<Component>(Lat[0], boundary, rho[i]));
+      solver_component.push_back(make_shared<Component>(Lat[0], boundary, rho[i]));
     }
 
     if (seed_specified == true) {
@@ -433,8 +434,8 @@ int Mesodyn::initial_conditions() {
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        flux.emplace_back(new Flux1D(Lat[0], D * dt, mask, component[i], component[j]));
-        solver_flux.emplace_back(new Flux1D(Lat[0], D * dt, mask, solver_component[i], solver_component[j]));
+        flux.push_back(make_unique<Flux1D>(Lat[0], D * dt, mask, component[i], component[j]));
+        solver_flux.push_back(make_unique<Flux1D>(Lat[0], D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
     break;
@@ -442,8 +443,8 @@ int Mesodyn::initial_conditions() {
     Mesodyn::boundary = make_shared<Boundary2D>(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3]);
 
     for (size_t i = 0; i < component_no; ++i) {
-      component.emplace_back(make_shared<Component>(Lat[0], boundary, rho[i]));
-      solver_component.emplace_back(make_shared<Component>(Lat[0], boundary, rho[i]));
+      component.push_back(make_shared<Component>(Lat[0], boundary, rho[i]));
+      solver_component.push_back(make_shared<Component>(Lat[0], boundary, rho[i]));
     }
 
     if (seed_specified == true) {
@@ -454,8 +455,8 @@ int Mesodyn::initial_conditions() {
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        flux.emplace_back(new Flux2D(Lat[0], D * dt, mask, component[i], component[j]));
-        solver_flux.emplace_back(new Flux2D(Lat[0], D * dt, mask, solver_component[i], solver_component[j]));
+        flux.push_back(make_unique<Flux2D>(Lat[0], D * dt, mask, component[i], component[j]));
+        solver_flux.push_back(make_unique<Flux2D>(Lat[0], D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
     break;
@@ -463,8 +464,8 @@ int Mesodyn::initial_conditions() {
       Mesodyn::boundary = make_shared<Boundary3D>(Lat[0], boundaries[0], boundaries[1], boundaries[2], boundaries[3], boundaries[4], boundaries[5]);
 
     for (size_t i = 0; i < component_no; ++i) {
-      component.emplace_back(make_shared<Component>(Lat[0], boundary, rho[i]));
-      solver_component.emplace_back(make_shared<Component>(Lat[0], boundary, rho[i]));
+      component.push_back(make_shared<Component>(Lat[0], boundary, rho[i]));
+      solver_component.push_back(make_shared<Component>(Lat[0], boundary, rho[i]));
     }
 
     if (seed_specified == true) {
@@ -475,15 +476,15 @@ int Mesodyn::initial_conditions() {
 
     for (size_t i = 0; i < component_no - 1; ++i) {
       for (size_t j = i + 1; j < component_no; ++j) {
-        flux.emplace_back(new Flux3D(Lat[0], D * dt, mask, component[i], component[j]));
-        solver_flux.emplace_back(new Flux3D(Lat[0], D * dt, mask, solver_component[i], solver_component[j]));
+        flux.push_back(make_unique<Flux3D>(Lat[0], D * dt, mask, component[i], component[j]));
+        solver_flux.push_back(make_unique<Flux3D>(Lat[0], D * dt, mask, solver_component[i], solver_component[j]));
       }
     }
     break;
   }
 
-  norm_theta(component);
-  norm_theta(solver_component);
+  //norm_theta(component);
+  //norm_theta(solver_component);
 
   return 0;
 }
@@ -543,15 +544,17 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
           sum_of_elements += val(component[c]->rho, x, y, z);
         });
 
-        skip_bounds([this, &component, c, mon_theta, sum_of_elements](int x, int y, int z) mutable {
-          *val_ptr(component[c]->rho, x, y, z) *= mon_theta / sum_of_elements;
-        });
+        #ifdef PAR_MESODYN
+        Norm( thrust::raw_pointer_cast(&component[c]->rho[0]), mon_theta / sum_of_elements, M);
+        #else
+        Norm( &component[c]->rho[0], mon_theta / sum_of_elements, M);
+        #endif
 
         ++c;
       }
     } else {
       for (size_t j = 0; j < mon_nr; ++j) {
-        solvent_mons.emplace_back(c);
+        solvent_mons.push_back(c);
         ++c;
       }
     }
@@ -559,18 +562,15 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
 
   // We now know the total density and can adjust the solvent accodingly to add up to 1.
   // Let's first find out how much there is to adjust.
-  vector<Real> residuals(M);
+  stl::device_vector<Real> residuals(M);
 
   //Pool densities per position
-  for (int i = 0; i < M; ++i) {
-    for (size_t j = 0; j < component_no; ++j)
-      residuals[i] += component[j]->rho[i];
-  }
+  for (size_t j = 0; j < component_no; ++j)
+    stl::transform(residuals.begin(), residuals.end(), component[j]->rho.begin(), residuals.begin(), stl::plus<Real>());
 
   // Calculate excesss / defecit
-  for (Real& i : residuals) {
-    i -= 1;
-  }
+  for (stl::device_vector<Real>::iterator itt = residuals.begin() ; itt < residuals.end() ; ++itt)
+    *itt -= 1;
 
   // If there's only one solvent mon, this problem is easy.
   if (solvent_mons.size() == 1) {
@@ -585,7 +585,7 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
   return 0;
 }
 
-int Mesodyn::init_rho_homogeneous(vector<vector<Real>>& rho, vector<int>& mask) {
+int Mesodyn::init_rho_homogeneous(stl::host_vector<stl::host_vector<Real>>& rho ,stl::host_vector<int>& mask) {
   size_t solvent = (size_t)Sys[0]->solvent; // Find which mol is the solvent
 
   Real sum_theta{0};
@@ -615,7 +615,7 @@ int Mesodyn::init_rho_homogeneous(vector<vector<Real>>& rho, vector<int>& mask) 
     } else {
       solvent_mol = i;
       for (size_t j = 0; j < mon_nr; ++j) {
-        solvent_mons.emplace_back(c);
+        solvent_mons.push_back(c);
         ++c;
       }
     }
@@ -685,9 +685,10 @@ int Mesodyn::write_output() {
 
     int component_count{1};
     for (auto all_components : solver_component) {
+      stl::host_vector<Real> t_rho = all_components->rho;
       ostringstream vtk_filename;
       vtk_filename << filename.str() << "-rho" << component_count << "-" << writes << ".vtk";
-      Out[0]->vtk_structured_grid(vtk_filename.str(), &all_components->rho[0], component_count);
+      Out[0]->vtk_structured_grid(vtk_filename.str(), &t_rho[0], component_count);
       ++component_count;
     }
     ++writes;
@@ -699,18 +700,18 @@ int Mesodyn::write_output() {
 
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
-Flux1D::Flux1D(Lattice* Lat, Real D, vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
+Flux1D::Flux1D(Lattice* Lat, Real D, stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
     : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX} {
   Flux1D::mask(mask);
 }
 
-Flux2D::Flux2D(Lattice* Lat, Real D, vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
+Flux2D::Flux2D(Lattice* Lat, Real D, stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
     : Flux1D(Lat, D, mask, A, B), JY{Lat->JY} {
   Flux2D::mask(mask);
 }
 
-Flux3D::Flux3D(Lattice* Lat, Real D, vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
-    : Flux2D(Lat, D, mask, A, B), JZ{Lat->JZ} {
+Flux3D::Flux3D(Lattice* Lat, Real D, stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
+    : Flux2D(Lat, D, mask, A, B), GPU_mask(M), JZ{Lat->JZ} {
   Flux3D::mask(mask);
 }
 
@@ -735,20 +736,19 @@ Real Flux1D::mu_at(int x, int y, int z) {
   return val(mu, x, y, z);
 }
 
-int Flux1D::mask(vector<int>& mask_in) {
+int Flux1D::mask(stl::host_vector<int>& mask_in) {
   if ((int)mask_in.size() != M) {
     throw ERROR_SIZE_INCOMPATIBLE;
-    return 1;
   }
 
   // No fluxes will ever be calculated going from the boundary into the system
   skip_bounds([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y, z) == 1) {
       if (val(mask_in, x + 1, y, z) == 1) {
-        Mask_plus_x.emplace_back(index(x, y, z));
+        Mask_plus_x.push_back(index(x, y, z));
       }
       if (val(mask_in, x - 1, y, z) == 1) {
-        Mask_minus_x.emplace_back(index(x, y, z));
+        Mask_minus_x.push_back(index(x, y, z));
       }
     }
   });
@@ -756,59 +756,57 @@ int Flux1D::mask(vector<int>& mask_in) {
   //for the x-boundary:
   x0_boundary([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x+1, y, z) == 1 && val(mask_in, x, y, z) == 1)
-    Mask_plus_x.emplace_back(index(x, y, z));
+    Mask_plus_x.push_back(index(x, y, z));
   });
   xm_boundary([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x-1, y, z) == 1 && val(mask_in, x, y, z) == 1)
-    Mask_minus_x.emplace_back(index(x, y, z));
+    Mask_minus_x.push_back(index(x, y, z));
   });
 
   return 0;
 }
 
-int Flux2D::mask(vector<int>& mask_in) {
+int Flux2D::mask(stl::host_vector<int>& mask_in) {
   if ((int)mask_in.size() != M) {
     throw ERROR_SIZE_INCOMPATIBLE;
-    return 1;
   }
 
   // No fluxes will ever be calculated going from the boundary into the system
   skip_bounds([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y, z) == 1) {
       if (val(mask_in, x, y + 1, z) == 1)
-        Mask_plus_y.emplace_back(index(x, y, z));
+        Mask_plus_y.push_back(index(x, y, z));
       if (val(mask_in, x, y - 1, z) == 1)
-        Mask_minus_y.emplace_back(index(x, y, z));
+        Mask_minus_y.push_back(index(x, y, z));
     }
   });
 
   //for the y-boundary:
   y0_boundary([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y+1, z) == 1 && val(mask_in, x, y, z) == 1)
-    Mask_plus_y.emplace_back(index(x, y, z));
+    Mask_plus_y.push_back(index(x, y, z));
   });
   ym_boundary([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y-1, z) == 1 && val(mask_in, x, y, z) == 1)
-    Mask_minus_y.emplace_back(index(x, y, z));
+    Mask_minus_y.push_back(index(x, y, z));
   });
 
   return 0;
 }
 
-int Flux3D::mask(vector<int>& mask_in) {
+int Flux3D::mask(stl::host_vector<int>& mask_in) {
   if ((int)mask_in.size() != M) {
     throw ERROR_SIZE_INCOMPATIBLE;
-    return 1;
   }
 
   // No fluxes will ever be calculated going from the boundary into the system, messing up periodic boundaries
   skip_bounds([this, mask_in](int x, int y, int z) mutable {
     if (val(mask_in, x, y, z) == 1) {
       if (val(mask_in, x, y, z + 1) == 1) {
-        Mask_plus_z.emplace_back(index(x, y, z));
+        Mask_plus_z.push_back(index(x, y, z));
       }
       if (val(mask_in, x, y, z - 1) == 1) {
-        Mask_minus_z.emplace_back(index(x, y, z));
+        Mask_minus_z.push_back(index(x, y, z));
       }
     }
   });
@@ -816,11 +814,11 @@ int Flux3D::mask(vector<int>& mask_in) {
   //for the z-boundary:
   z0_boundary([this, mask_in](int x, int y, int z) mutable {
       if (val(mask_in, x, y, z+1) == 1 && val(mask_in, x, y, z) == 1)
-        Mask_plus_z.emplace_back(index(x, y, z));
+        Mask_plus_z.push_back(index(x, y, z));
   });
   zm_boundary([this, mask_in](int x, int y, int z) mutable {
       if (val(mask_in, x, y, z-1) == 1 && val(mask_in, x, y, z) == 1)
-        Mask_minus_z.emplace_back(index(x, y, z));
+        Mask_minus_z.push_back(index(x, y, z));
   });
 
   return 0;
@@ -829,7 +827,7 @@ int Flux3D::mask(vector<int>& mask_in) {
 int Flux1D::langevin_flux() {
 
   //Zero (with bounds checking) vector J before use
-  fill(J.begin(), J.end(), 0);
+  stl::fill(J.begin(), J.end(), 0);
 
   if (A->rho.size() != J.size()) {
     //already checked: A.alpha.size = B.alpha.size and A.rho.size = B.rho.size
@@ -859,34 +857,48 @@ int Flux3D::langevin_flux() {
   return 0;
 }
 
-int Flux1D::onsager_coefficient(vector<Real>& A, vector<Real>& B) {
-  //TODO: maybe do this in propagator style inline / per J calculation to preserve memory
+int Flux1D::onsager_coefficient(stl::device_vector<Real>& A, stl::device_vector<Real>& B) {
+
+  if (A.size() != B.size()) {
+    throw ERROR_SIZE_INCOMPATIBLE;
+  }
+  stl::transform(A.begin(), A.end(), B.begin(), L.begin(), stl::multiplies<Real>());
+
+  return 0;
+}
+
+int Flux1D::potential_difference(stl::device_vector<Real>& A, stl::device_vector<Real>& B) {
 
   if (A.size() != B.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
 
-  transform(A.begin(), A.end(), B.begin(), L.begin(), [](Real A, Real B) { return A * B; });
-  return 0;
-}
-
-int Flux1D::potential_difference(vector<Real>& A, vector<Real>& B) {
-  //TODO: maybe do this in propagator style inline / per J calculation to preserve memory
-
-  if (A.size() != B.size()) {
-    throw ERROR_SIZE_INCOMPATIBLE;
-  }
-
-  transform(A.begin(), A.end(), B.begin(), mu.begin(), [](Real A, Real B) { return A - B; });
+  stl::transform(A.begin(), A.end(), B.begin(), mu.begin(), stl::minus<Real>());
 
   return 0;
 }
 
-int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int jump) {
+int Flux1D::langevin_flux(stl::host_vector<int>& mask_plus, stl::host_vector<int>& mask_minus, int jump) {
 
-  fill(J_minus.begin(), J_minus.end(), 0);
-  fill(J_plus.begin(), J_plus.end(), 0);
+  stl::fill(J_minus.begin(), J_minus.end(), 0);
+  stl::fill(J_plus.begin(), J_plus.end(), 0);
 
+  #ifdef PAR_MESODYN
+
+  stl::device_vector<Real> t_mu(M);
+
+  stl::transform(mu.begin()+jump, mu.end(), mu.begin(), t_mu.begin(), stl::minus<Real>());
+
+  stl::device_vector<Real> t_L(M);
+  stl::transform(L.begin(), L.end()-jump, L.begin()+jump, t_L.begin(), stl::plus<Real>());
+
+  stl::transform(t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), const_multiply_functor(-D) );
+
+
+  stl::copy(J_plus.begin(), J_plus.end()-jump, J_minus.begin()+jump);
+  stl::transform(J_minus.begin(), J_minus.end(), J_minus.begin(), stl::negate<Real>());
+
+  #else
 
   for (vector<int>::iterator itt = mask_plus.begin() ; itt < mask_plus.end(); ++itt) {
     auto z = *itt;
@@ -898,9 +910,10 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
     J_minus[z] = -J_plus[z - jump];
   }
 
+  #endif
 
-  transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), std::plus<Real>());
-  transform(J_minus.begin(), J_minus.end(), J.begin(), J.begin(), std::plus<Real>());
+  stl::transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), stl::plus<Real>());
+  stl::transform(J_minus.begin(), J_minus.end(), J.begin(), J.begin(), stl::plus<Real>());
 
   return 0;
 }
@@ -909,12 +922,22 @@ int Flux1D::langevin_flux(vector<int>& mask_plus, vector<int>& mask_minus, int j
 
 /******* Constructors *******/
 
-Component::Component(Lattice* Lat, shared_ptr<Boundary1D> boundary, vector<Real>& rho)
-    : Lattice_Access(Lat), rho{rho}, alpha(M), boundary(boundary) {
+Component::Component(Lattice* Lat, shared_ptr<Boundary1D> boundary, stl::host_vector<Real>& rho)
+    : Lattice_Access(Lat), rho(M), alpha(M), boundary(boundary) {
   //This check is implemented multiple times throughout mesodyn because rho and alpha are public.
   if (rho.size() != alpha.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
+
+  this->rho = rho;
+
+  #ifdef PAR_MESODYN
+  rho_ptr = thrust::raw_pointer_cast(&this->rho[0]);
+  alpha_ptr = thrust::raw_pointer_cast(&this->alpha[0]);
+  #else
+  rho_ptr = &Component::rho[0];
+  alpha_ptr = &Component::alpha[0];
+  #endif
 
   update_boundaries();
 }
@@ -932,68 +955,72 @@ Real Component::alpha_at(int x, int y, int z) {
   return val(alpha, x, y, z);
 }
 
-int Component::update_density(vector<Real>& J, int sign) {
+int Component::update_density(stl::device_vector<Real>& J, int sign) {
   //Explicit update
 
   if (J.size() != rho.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
-    return 1;
   }
 
-  skip_bounds([this, J, sign](int x, int y, int z) mutable {
-    *val_ptr(rho, x, y, z) += val(J, x, y, z) * sign;
-  });
+  stl::transform(J.begin(), J.end(), rho.begin(), rho.begin(), saxpy_functor(sign) );
 
   return 0;
 }
 
-int Component::update_density(vector<Real>& J1, vector<Real>& J2, Real ratio, int sign) {
+int Component::update_density(stl::device_vector<Real>& J1, stl::device_vector<Real>& J2, Real ratio, int sign) {
   //Implicit update
   if (J1.size() != rho.size() || J1.size() != J2.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
-    return 1;
   }
-
-  par_skip_bounds([this, J1, ratio, sign](int x, int y, int z) mutable {
-    *val_ptr(rho, x, y, z) = (val(rho, x, y, z) + ratio * sign * val(J1, x, y, z));
-  });
-
-  par_skip_bounds([this, J2, ratio, sign](int x, int y, int z) mutable {
-    *val_ptr(rho, x, y, z) = val(rho, x, y, z) + (1 - ratio) * sign * val(J2, x, y, z);
-  });
+  // Rho <- A * J1 + Rho
+  stl::transform(J1.begin(), J1.end(), rho.begin(), rho.begin(), saxpy_functor(sign*ratio) );
+  stl::transform(J2.begin(), J2.end(), rho.begin(), rho.begin(), saxpy_functor((1.0f-ratio)*sign) );
 
   return 0;
 }
 
-int Component::load_alpha(vector<Real>& alpha) {
-  Component::alpha = alpha;
+int Component::load_alpha(stl::device_vector<Real> alpha) {
+  stl::copy(alpha.begin(), alpha.end(), Component::alpha.begin());
   return 0;
 }
 
-int Component::load_rho(vector<Real>& rho) {
-  Component::rho = rho;
+int Component::load_alpha(Real* alpha) {
+  stl::copy(alpha, alpha+M, this->alpha.begin());
+  return 0;
+}
+
+int Component::load_rho(stl::device_vector<Real> rho) {
+  stl::copy(rho.begin(), rho.end(), this->rho.begin());
+  return 0;
+}
+
+int Component::load_rho(Real* rho) {
+  stl::copy(rho, rho+M, this->rho.begin());
   return 0;
 }
 
 int Component::update_boundaries() {
-  boundary->update_boundaries(alpha);
-  boundary->update_boundaries(rho);
+  Lat->set_bounds(alpha_ptr);
+  Lat->set_bounds(rho_ptr);
 
   return 0;
 }
 
 Real Component::theta() {
   Real sum{0};
-  skip_bounds([this, &sum](int x, int y, int z) mutable {
-    sum += val(rho, x, y, z);
-  });
+  Lat->remove_bounds(rho_ptr);
+  #ifdef PAR_MESODYN
+  sum = stl::reduce(rho.begin(), rho.end(),0);
+  #else
+  sum = stl::accumulate(rho.begin(), rho.end(), 0);
+  #endif
   return sum;
 }
 
 /****************** Lattice_Access: AN INTERFACE FOR LATTICE ********************/
 
 Lattice_Access::Lattice_Access(Lattice* Lat)
-    : dimensions{Lat->gradients}, JX{Lat->JX}, JY{Lat->JY}, JZ{Lat->JZ}, M{Lat->M}, MX{2 + Lat->MX}, MY{setMY(Lat)}, MZ{setMZ(Lat)} {
+    : dimensions{Lat->gradients}, Lat{Lat}, JX{Lat->JX}, JY{Lat->JY}, JZ{Lat->JZ}, M{Lat->M}, MX{2 + Lat->MX}, MY{setMY(Lat)}, MZ{setMZ(Lat)} {
   // If this is not true, NOTHING will work. So this check is aboslutely necessary.
   // If, at some point, the above happens to be the case every class in this module will probably need rewriting.
   assert(
@@ -1223,7 +1250,6 @@ int Boundary1D::set_x_boundaries(boundary x0, boundary xm, Real bulk) {
   case PERIODIC:
     if (x0 != xm) {
       throw ERROR_PERIODIC_BOUNDARY;
-      return 1;
     }
     bX0 = bind(&Boundary1D::bXPeriodic, this, _1);
     break;
@@ -1236,7 +1262,6 @@ int Boundary1D::set_x_boundaries(boundary x0, boundary xm, Real bulk) {
   case PERIODIC:
     if (x0 != xm) {
       throw ERROR_PERIODIC_BOUNDARY;
-      return 1;
     }
     //TODO: fix this double periodic (including ones below)
     bXm = bind(&Boundary1D::bXPeriodic, this, _1);
@@ -1256,7 +1281,6 @@ int Boundary2D::set_y_boundaries(boundary y0, boundary ym, Real bulk) {
   case PERIODIC:
     if (y0 != ym) {
       throw ERROR_PERIODIC_BOUNDARY;
-      return 1;
     }
     bY0 = bind(&Boundary2D::bYPeriodic, this, _1);
     break;
@@ -1269,7 +1293,6 @@ int Boundary2D::set_y_boundaries(boundary y0, boundary ym, Real bulk) {
   case PERIODIC:
     if (y0 != ym) {
       throw ERROR_PERIODIC_BOUNDARY;
-      return 1;
     }
     bYm = bind(&Boundary2D::bYPeriodic, this, _1);
     break;
@@ -1288,7 +1311,6 @@ int Boundary3D::set_z_boundaries(boundary z0, boundary zm, Real bulk) {
   case PERIODIC:
     if (z0 != zm) {
       throw ERROR_PERIODIC_BOUNDARY;
-      return 1;
     }
     bZ0 = bind(&Boundary3D::bZPeriodic, this, _1);
     break;
@@ -1301,7 +1323,6 @@ int Boundary3D::set_z_boundaries(boundary z0, boundary zm, Real bulk) {
   case PERIODIC:
     if (z0 != zm) {
       throw ERROR_PERIODIC_BOUNDARY;
-      return 1;
     }
     bZm = bind(&Boundary3D::bZPeriodic, this, _1);
     break;
@@ -1381,17 +1402,24 @@ Gaussian_noise::Gaussian_noise(shared_ptr<Boundary1D> boundary, Real D, int size
 
 Gaussian_noise::Gaussian_noise(shared_ptr<Boundary1D> boundary, Real D, int size, Real mean, Real stddev, size_t seed) : noise(size), prng(seed), dist(mean, stddev), boundary{boundary} {}
 
-int Gaussian_noise::generate() {
-  for (Real& value : noise)
+int Gaussian_noise::generate(size_t M) {
+  stl::host_vector<Real> tmp_noise(M);
+  for (Real& value : tmp_noise)
     value = dist(prng);
 
-  boundary->update_boundaries(noise);
+  noise = tmp_noise;
+
+  #ifdef PAR_MESODYN
+  boundary->Lat->set_bounds( thrust::raw_pointer_cast(&noise[0]) );
+  #else
+  boundary->Lat->set_bounds(&noise[0]);
+  #endif
 
   return 0;
 }
 
-int Gaussian_noise::add_noise(vector<Real>& target) {
-  transform(noise.begin(), noise.end(), target.begin(), target.begin(), [](Real A, Real B) { return A + B; });
+int Gaussian_noise::add_noise(stl::device_vector<Real>& target) {
+  stl::transform(noise.begin(), noise.end(), target.begin(), target.begin(), stl::plus<Real>());
   return 0;
 }
 

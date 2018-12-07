@@ -640,7 +640,7 @@ void Sum(Real &result, Real *x, int M)   {
 	Real *H_XXX=(Real*) malloc(M*sizeof(Real));
 	TransferDataToHost(H_XXX, x, M);
 	result=H_Sum(H_XXX,M);
-	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
+	for (int i=0; i<M; i++) if (std::isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
  	free(H_XXX);
 }
 
@@ -648,7 +648,7 @@ void Sum(int &result, int *x, int M)   {
 	int *H_XXX=(int*) malloc(M*sizeof(int));
 	TransferDataToHost(H_XXX, x, M);
 	result=H_Sum(H_XXX,M);
-	for (int i=0; i<M; i++) if (isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
+	for (int i=0; i<M; i++) if (std::isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
  	free(H_XXX);
 }
 

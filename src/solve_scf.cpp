@@ -567,7 +567,7 @@ bool Solve_scf::attempt_DIIS_rescue() {
 	return true;
 }
 
-bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callback, function< Real*() > flux_callback) {
+bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, function< Real*() > flux_callback) {
 	if(debug) cout <<"Solve (mesodyn) in  Solve_scf " << endl;
 	//iv should have been set at AllocateMemory.
 	mesodyn_flux = flux_callback;
@@ -728,22 +728,11 @@ void Solve_scf::residuals(Real* x, Real* g){
 					if (chi!=0)
 						PutAlpha(temp_alpha,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 				}
-
-				#ifdef CUDA
-				vector<Real> t_temp_alpha(M);
-				TransferDataToHost(&t_temp_alpha[0], temp_alpha,M);
-				#else
-				vector<Real> t_temp_alpha(temp_alpha, temp_alpha+M);
-				#endif
-				mesodyn_load_alpha(t_temp_alpha, (size_t)i);
+				mesodyn_load_alpha(temp_alpha, i);
 			}
 
-			#ifdef CUDA
-			TransferDataToDevice(mesodyn_flux(), g, iv);
-			#else
 			RHO = mesodyn_flux();
-			H_Cp(g,RHO,iv);
-			#endif
+			Cp(g,RHO,iv);
 
 			size_t k = 0;
 			for (size_t i = 0 ; i < In[0]->MolList.size() ; ++i) {

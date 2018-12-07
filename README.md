@@ -10,7 +10,9 @@ Alexandar kazakzov - Cleng.cpp
 
 ### Dependencies:
 
-GPU Accelleration: CUDA >8
+GPU Accelleration:
+- SCF: CUDA > 8
+- Mesodyn: gcc-5, CUDA > 9.2
 
 ## TODO 9-4-2018
 - [x] Fix cuda for 3d : likely problem is with generating arrays in branched propagator  

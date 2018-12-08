@@ -516,8 +516,8 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
-  //norm_theta(component);
-  //norm_theta(solver_component);
+  norm_theta(component);
+  norm_theta(solver_component);
 
   return 0;
 }
@@ -578,10 +578,10 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
         #ifdef PAR_MESODYN
 
         Lat[0]->remove_bounds(
-            thrust::raw_pointer_cast(&component[c]->rho[0]
-            ));
+            thrust::raw_pointer_cast(&component[c]->rho[0])
+            );
 
-        sum_of_elements = thrust::reduce(component[c]->rho.begin(), component[c]->rho.end(), 0);
+        sum_of_elements = component[c]->theta();
 
         Norm( thrust::raw_pointer_cast(&component[c]->rho[0]), mon_theta / sum_of_elements, M);
 
@@ -605,6 +605,7 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
   // We now know the total density and can adjust the solvent accodingly to add up to 1.
   // Let's first find out how much there is to adjust.
   stl::device_vector<Real> residuals(M);
+  stl::fill(residuals.begin(), residuals.end(), 0);
 
   //Pool densities per position
   for (size_t j = 0; j < component_no; ++j)

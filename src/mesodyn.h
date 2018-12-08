@@ -275,7 +275,6 @@ protected:
   const int JZ;
   stl::host_vector<int> Mask_plus_z;
   stl::host_vector<int> Mask_minus_z;
-  stl::device_vector<int> GPU_mask;
 };
 
 class Mesodyn : private Lattice_Access {

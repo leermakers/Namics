@@ -732,7 +732,13 @@ void Solve_scf::residuals(Real* x, Real* g){
 			}
 
 			RHO = mesodyn_flux();
+
+			#if defined(PAR_MESODYN) || ! defined(CUDA)
 			Cp(g,RHO,iv);
+			#else
+			TransferDataToDevice(RHO, g, iv);
+			#endif
+			
 
 			size_t k = 0;
 			for (size_t i = 0 ; i < In[0]->MolList.size() ; ++i) {

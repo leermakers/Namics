@@ -10,7 +10,7 @@
 const int block_size = 256;
 
 
-__device__ void atomicAdd(Real* address, Real val, Real dummy)
+__device__ void atomicAdd(Real* address, Real val, short dummy)
 {
     unsigned long long int* address_as_ull =
                              (unsigned long long int*)address;
@@ -21,7 +21,14 @@ __device__ void atomicAdd(Real* address, Real val, Real dummy)
                         __double_as_longlong(val +
                                __longlong_as_double(assumed)));
     } while (assumed != old);
-    //return __longlong_as_double(old);
+}
+
+__global__ void flux(Real* flux, Real* L, Real* mu, int D, int jump, int M)
+{
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	int idx_plus = idx + jump;
+	if (idx < M-jump)
+			flux[idx] = -D * ((L[idx] + L[idx_plus]) * (mu[idx_plus] - mu[idx]));
 }
 
 __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
@@ -47,7 +54,7 @@ __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int 
 
 
 __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
-  Real dummy = 0;
+	short dummy = 0;
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
@@ -64,57 +71,75 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 			if (Bz[p]+k > MZm1)  kk=(Bz[p]+k-MZ); else kk=(Bz[p]+k);
 			//__syncthreads(); //will not work when two boxes are idential....
 			//phi[pos_r+ii+jj+kk]+=rho[pM+jx*i+jy*j+k]*Inv_GNp;
-			atomicAdd(&phi[pos_r+ii+jj+kk], rho[pM]/GN[p],dummy);
+			atomicAdd(&phi[pos_r+ii+jj+kk], rho[pM]/GN[p], dummy);
 			pM+=M;
 		}
 	}
 }
 
-__global__ void dot(Real *X, Real *Y, Real *Z, int M)   {
-   __shared__ Real tmp[MAX_BLOCK_SZ];
-   int idx = blockDim.x * blockIdx.x + threadIdx.x;
-   int l_idx = threadIdx.x;
 
-   if (idx < M) tmp[l_idx] = X[idx]*Y[idx];
-   __syncthreads();
 
-   for (int s = blockDim.x/2; s > 0; s /= 2) {
-      if (l_idx < s) tmp[l_idx] += tmp[l_idx + s];
-      __syncthreads();
-   }
-   if (threadIdx.x == 0) Z[threadIdx.x] = tmp[0];
+__global__ void dot(Real *a, Real *b, Real *dot_res, int M)
+{
+	short dummy = 0;
+    __shared__ Real cache[MAX_BLOCK_SZ]; //thread shared memory
+    int global_tid=threadIdx.x + blockIdx.x * blockDim.x;
+    Real temp = 0;
+
+    int cacheIndex = threadIdx.x;
+	cache[cacheIndex] = -DBL_MAX;
+    while (global_tid < M) {
+        temp += a[global_tid] * b[global_tid];
+        global_tid += blockDim.x * gridDim.x;
+    }
+    cache[cacheIndex] = temp;
+    __syncthreads();
+    for (int i=blockDim.x/2; i>0; i>>=1) {
+        if (threadIdx.x < i) {
+            cache[threadIdx.x] += cache[threadIdx.x + i];
+        }
+        __syncthreads();
+    }
+    __syncthreads();
+    if (cacheIndex==0) {
+		#ifdef PAR_MESODYN
+        Real result=atomicAdd_system(dot_res,cache[0]);
+		#else
+		atomicAdd(dot_res,cache[0], dummy);
+		#endif
+    }
 }
 
-__global__ void sum(Real *X, Real *Z, int M)   {
-   __shared__ Real tmp[block_size];
-   int idx = blockDim.x * blockIdx.x + threadIdx.x;
-   int l_idx = threadIdx.x;
+__global__ void sum(Real *g_idata, Real *g_odata, int M) {
+	short dummy = 0;
+    __shared__ Real sdata[MAX_BLOCK_SZ]; //thread shared memory
+	int tid = threadIdx.x;
+    int i=threadIdx.x + blockIdx.x * blockDim.x;
+    Real temp = 0;
 
-   if (idx < M) tmp[l_idx] = X[idx];
-   __syncthreads();
+	sdata[tid] = -DBL_MAX;
+    while (i < M) {
+        temp += g_idata[i];
+        i += blockDim.x * gridDim.x;
+    }
+    sdata[tid] = temp;
+    __syncthreads();
 
-   for (int s = blockDim.x/2; s > 0; s /= 2) {
-      if (l_idx < s) tmp[l_idx] += tmp[l_idx + s];
-      __syncthreads();
-   }
-   if (threadIdx.x == 0) Z[threadIdx.x] = tmp[0];
+    for (int s=blockDim.x/2; s>0; s>>=1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+    __syncthreads();
+    if (tid==0) {
+		#ifdef PAR_MESODYN
+        Real result=atomicAdd_system(g_odata,sdata[0]);
+		#else
+		atomicAdd(g_odata,sdata[0], dummy);
+		#endif
+    }
 }
-
-__global__ void sum(int *X, int *Z, int M)   {
-   __shared__ int tmp[block_size];
-   int idx = blockDim.x * blockIdx.x + threadIdx.x;
-   int l_idx = threadIdx.x;
-
-   if (idx < M) tmp[l_idx] = X[idx];
-   __syncthreads();
-
-   for (int s = blockDim.x/2; s > 0; s /= 2) {
-      if (l_idx < s) tmp[l_idx] += tmp[l_idx + s];
-      __syncthreads();
-   }
-   if (threadIdx.x == 0) Z[threadIdx.x] = tmp[0];
-}
-
 
 __global__ void composition(Real *phi, Real *Gf, Real *Gb, Real* G1, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -144,14 +169,11 @@ __global__ void unity(Real *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0;
 }
-__global__ void assign(Real *P, Real* T, int M)   {
+__global__ void flux_min(Real *P, Real* T, int jump, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) P[idx] = T[idx];
+	if (idx<M) P[idx] = -T[idx-jump];
 }
-__global__ void assign(Real *P, Real T, int M)   {
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) P[idx] = T;
-}
+
 __global__ void zero(int *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 0;
@@ -614,34 +636,19 @@ Real* AllManagedOnDev(int N) {
 }
 
 void Dot(Real &result, Real *x,Real *y, int M)   {
-	Real *H_XXX=(Real*) malloc(M*sizeof(Real));
-	Real *H_YYY=(Real*) malloc(M*sizeof(Real));
-	TransferDataToHost(H_XXX, x, M);
-	TransferDataToHost(H_YYY, y, M);
-  result=H_Dot(H_XXX,H_YYY,M);
-	free(H_XXX);
-	free(H_YYY);
+	Real* _result = (Real*)AllOnDev(1);
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	dot<<<n_blocks,block_size>>>(x,y,_result,M);
+	TransferDataToHost(&result, _result,1);
+	cudaFree(_result);
 }
 
-
-/*	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	Real *D_XX=AllOnDev(n_blocks);
-	Zero(D_XX,n_blocks);
-	Real *H_XX=(Real*) malloc(n_blocks*sizeof(Real));
-	dot<<<n_blocks,block_size>>>(x,y,D_XX,M);
-	cudaThreadSynchronize();
-	TransferDataToHost(H_XX, D_XX, n_blocks);
-	result=0; for (int i=0; i<n_blocks; i++) result+=H_XX[i];
-	free(H_XX);
-	cudaFree(D_XX);
-*/
-
 void Sum(Real &result, Real *x, int M)   {
-	Real *H_XXX=(Real*) malloc(M*sizeof(Real));
-	TransferDataToHost(H_XXX, x, M);
-	result=H_Sum(H_XXX,M);
-	for (int i=0; i<M; i++) if (std::isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
- 	free(H_XXX);
+	Real* _result = (Real*)AllOnDev(1);
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	sum<<<n_blocks,block_size>>>(x,_result,M);
+	TransferDataToHost(&result, _result,1);
+	cudaFree(_result);
 }
 
 void Sum(int &result, int *x, int M)   {
@@ -682,14 +689,14 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	unity<<<n_blocks,block_size>>>(P,M);
 }
 
-void Assign(Real* P, Real* T, int M)   {
+void Flux_min(Real* P, Real* T, int jump, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	assign<<<n_blocks,block_size>>>(P,T,M);
+	flux_min<<<n_blocks,block_size>>>(P,T,jump,M);
 }
 
-void Assign(Real* P, Real T, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	assign<<<n_blocks,block_size>>>(P,T,M);
+void Flux(Real* flux_ptr, Real* L, Real* mu, int D, int jump, int M) {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	flux<<<n_blocks,block_size>>>(flux_ptr,L,mu,D,jump,M);
 }
 
 void Zero(Real* P, int M)   {

@@ -9,6 +9,7 @@
 //#include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <memory>
+#include <float.h>
 
 //extern cublasStatus_t stat;
 //extern cublasHandle_t handle;
@@ -19,6 +20,7 @@ __global__ void collectphi(Real*, Real*, Real*, int*, int*, int*, int, int, int,
 __global__ void sum(Real*, Real*, int);
 __global__ void sum(int*, int*, int);
 __global__ void dot(Real*, Real*, Real*, int);
+__global__ void max(Real *, Real *, int );
 __global__ void composition(Real*, Real*, Real*, Real*, Real, int);
 __global__ void times(Real*, Real*, Real*, int);
 __global__ void times(Real*, Real*, int*, int);
@@ -184,7 +186,7 @@ inline Real H_Dot(T* A, T* B, int M) {
 
 template <typename T>
 inline void H_Invert(T* KSAM, T* MASK, int M) {
-  transform(MASK, MASK + M, KSAM, KSAM, [](Real A, Real B) {if (A==0) return 1.0; else return 0.0;});
+  std::transform(MASK, MASK + M, KSAM, KSAM, [](Real A, Real B) {if (A==0) return 1.0; else return 0.0;});
 }
 
 template<typename T>

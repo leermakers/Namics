@@ -923,7 +923,7 @@ int Flux1D::potential_difference(stl::device_vector<Real>& A, stl::device_vector
 
 int Flux1D::langevin_flux(stl::host_vector<int>& mask_plus, stl::host_vector<int>& mask_minus, int jump) {
   stl::fill(J_minus.begin(), J_minus.end(), 0);
-  stl::fill(J_plus.begin(), J_plus.end(), 0);
+  stl::fill(J_plus.begin(), J_plus  .end(), 0);
 
   stl::device_vector<Real> t_mu(M);
   stl::device_vector<Real> t_L(M);
@@ -932,14 +932,7 @@ int Flux1D::langevin_flux(stl::host_vector<int>& mask_plus, stl::host_vector<int
   stl::transform(L.begin(), L.end()-jump, L.begin()+jump, t_L.begin(), stl::plus<Real>());
   stl::transform(t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), const_multiply_functor(-D) );
 
-  #ifdef PAR_MESODYN
-  thrust::copy(thrust::make_transform_iterator(J_plus.begin(), negate<int>()),
-               thrust::make_transform_iterator(J_plus.end(), negate<int>()),
-               J_minus.begin()+jump);
-  #else
-  std::copy(J_plus.begin(), J_plus.end()-jump, J_minus.begin()+jump);
-  std::transform(J_minus.begin(), J_minus.end(), J_minus.begin(), stl::negate<Real>());
-  #endif
+  stl::transform(J_plus.begin(), J_plus.end()-jump, J_minus.begin()+jump, stl::negate<Real>());
 
 /* The above does the equivalent of the following code (and faster):
  *

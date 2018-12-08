@@ -850,31 +850,38 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
 
 Real SFNewton::computeresidual(Real* array, int size) {
   Real residual = 0;
-  Real* H_array;
-  #ifdef CUDA
-  H_array = (Real*)malloc(size*sizeof(Real));
-  TransferDataToHost(H_array, array, size);
-  #else
-  H_array = array;
-  #endif
-
   // Compute residual based on maximum error value
   if (max_g == true) {
+	Real* H_array;
+
+	#ifdef CUDA
+	H_array = (Real*)malloc(size*sizeof(Real));
+	TransferDataToHost(H_array,array,size);
+	#else
+	H_array = array;
+	#endif
+
     auto temp_residual = minmax_element(H_array, H_array+size);
     if(abs(*temp_residual.first) > abs(*temp_residual.second) ) {
       residual = abs(*temp_residual.first);
     } else {
       residual = abs(*temp_residual.second);
     }
-  } else {
-    // Compute residual based on sum o ferrors
-    residual = H_Dot(H_array,H_array,size);
-    residual=sqrt(residual);
-  }
 
-  #ifdef CUDA
-    free (H_array);
-  #endif
+	#ifdef CUDA
+	free(H_array);
+	#endif
+
+  } else {
+    // Compute residual based on sum of errors
+	#ifdef CUDA
+    Dot(residual,array,array,size);
+    residual = sqrt(residual);
+	#else
+	residual = H_Dot(array,array,size);
+	residual = sqrt(residual);
+	#endif
+  }
 
   return residual;
 }

@@ -328,7 +328,6 @@ private:
   vector<string> tokenize(string, char);
   string read_filename;
   int initial_conditions();
-  vector<Real>&  flux_callback(int);
   int init_rho_homogeneous(stl::host_vector<stl::host_vector<Real>>&,stl::host_vector<int>&);
   int norm_density(vector<Real>& rho, Real theta);
   void set_update_lists();

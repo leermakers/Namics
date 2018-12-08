@@ -6,12 +6,33 @@
 
 Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : Lattice_Access(Lat_[0]),
-      name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sta{Sta_}, Rea{Rea_}, Sys{Sys_}, New{New_},
-      D{0.01}, dt{0.1}, mean{0}, stddev{2 * D * sqrt(dt)}, seed{1}, seed_specified{false}, timesteps{100}, timebetweensaves{1},
+      name{name_},
+      In{In_},
+      Lat{Lat_},
+      Mol{Mol_},
+      Seg{Seg_},
+      Sta{Sta_},
+      Rea{Rea_},
+      Sys{Sys_},
+      New{New_},
+      D{0.01},
+      dt{0.1},
+      mean{0},
+      stddev{2 * D * sqrt(dt)},
+      seed{1},
+      seed_specified{false},
+      timesteps{100},
+      timebetweensaves{1},
       initialization_mode{INIT_HOMOGENEOUS},
-      component_no{Sys[0]->SysMolMonList.size()}, RC{0}, cn_ratio{0.5},
-      component(0), flux(0),
-      writes{0}, write_vtk{false}, order_parameter{0} {
+      component_no{Sys[0]->SysMolMonList.size()},
+      RC{0},
+      cn_ratio{0.5},
+      component(0),
+      flux(0),
+      writes{0},
+      write_vtk{false},
+      order_parameter{0}
+  {
   KEYS.push_back("timesteps");
   KEYS.push_back("timebetweensaves");
   KEYS.push_back("delta_t");
@@ -25,9 +46,8 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
 
   // TODO: implement this properly
   // If the user has asked for vtk output
-  if (std::find(In[0]->OutputList.begin(), In[0]->OutputList.end(), "vtk") != In[0]->OutputList.end()) {
+  if (std::find(In[0]->OutputList.begin(), In[0]->OutputList.end(), "vtk") != In[0]->OutputList.end())
     write_vtk = true;
-  }
 
   //Apparently this step takes a ton of time.
   Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
@@ -36,6 +56,8 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
 
   // to get the correct KSAM and volume.
   Sys[0]->PrepareForCalculations();
+
+  rho.resize(component_no*M);
 
   // The right hand side of the minus sign calculates the volume of the boundaries. I know, it's hideous, but it works for all dimensions.
   boundaryless_volume = Sys[0]->volume - ((2 * dimensions - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * dimensions) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, dimensions));
@@ -130,15 +152,14 @@ bool Mesodyn::mesodyn() {
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
     //Calculate and add noise flux
-
     int i = 0;
     for (auto& all_fluxes : flux) {
       all_fluxes->J = solver_flux[i]->J;
       ++i;
     }
 
-    noise_flux();
-
+  noise_flux();
+  
     //sanity_check();
 
     //cout << "Order parameter: " << calculate_order_parameter() << endl;
@@ -154,6 +175,7 @@ bool Mesodyn::mesodyn() {
     }
   } // time loop
 
+  std::cout << "Done." << std::endl;
   return true;
 }
 
@@ -273,11 +295,11 @@ Real* Mesodyn::solve_explicit() {
   for (auto& all_fluxes : solver_flux)
     all_fluxes->langevin_flux();
 
-  rho.clear();
+  size_t n = 0;
   for (auto all_components : solver_component) {
-    stl::copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
+    stl::copy(all_components->rho.begin(), all_components->rho.end(), rho.begin()+n*M);
+    ++n;
   }
-
 
   #ifdef PAR_MESODYN
   return stl::raw_pointer_cast(&rho[0]);
@@ -297,19 +319,20 @@ Real* Mesodyn::solve_crank_nicolson() {
   for (auto all_components : solver_component)
     all_components->update_boundaries();
 
-
   for (auto& all_fluxes : solver_flux)
     all_fluxes->langevin_flux();
 
   for (vector<int>& i : update_plus)
       solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio);
 
+
   for (vector<int>& i : update_minus)
       solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio, -1);
 
-  rho.clear();
+  size_t n = 0;
   for (auto all_components : solver_component) {
-    stl::copy(all_components->rho.begin(), all_components->rho.end(), back_inserter(rho));
+    stl::copy(all_components->rho.begin(), all_components->rho.end(), rho.begin()+n*M);
+    ++n;
   }
 
   #ifdef PAR_MESODYN
@@ -327,11 +350,17 @@ int Mesodyn::initial_conditions() {
       Seg[i]->freedom = "free";
   }
 
+
   stl::host_vector<stl::host_vector<Real>> rho(component_no, stl::host_vector<Real>(M));
 
   stl::device_vector<int> temp_mask(M);
 
+  #if defined(PAR_MESODYN) || ! defined(CUDA)
   stl::copy(Sys[0]->KSAM, Sys[0]->KSAM+M, temp_mask.begin());
+  #else
+  TransferDataToHost(&temp_mask[0], Sys[0]->KSAM, M);
+  #endif
+  
 
   stl::host_vector<int> mask = temp_mask;
 
@@ -493,7 +522,7 @@ void Mesodyn::explicit_start() {
   // Prepare callbacks
   auto explicit_solver_callback = bind(&Mesodyn::solve_explicit, this);
   auto loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
-
+  
   // start Crank-Nicolson using one explicit step
   New[0]->SolveMesodyn(loader_callback, explicit_solver_callback);
 
@@ -533,20 +562,29 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
 
     if (i != solvent) {
       Real theta = Mol[i]->theta;
+
       sum_theta += theta;
       for (size_t j = 0; j < mon_nr; ++j) {
 
-        Real mon_theta{0};
+        Real mon_theta{0}, sum_of_elements{0};
+
         mon_theta = theta * Mol[i]->fraction(Mol[i]->MolMonList[j]);
 
-        Real sum_of_elements{0};
-        skip_bounds([this, &sum_of_elements, component, c](int x, int y, int z) mutable {
-          sum_of_elements += val(component[c]->rho, x, y, z);
-        });
 
         #ifdef PAR_MESODYN
+
+        Lat[0]->remove_bounds(
+            thrust::raw_pointer_cast(&component[c]->rho[0]
+            ));
+
+        sum_of_elements = thrust::reduce(component[c]->rho.begin(), component[c]->rho.end(), 0);
+
         Norm( thrust::raw_pointer_cast(&component[c]->rho[0]), mon_theta / sum_of_elements, M);
+
         #else
+         skip_bounds([this, &sum_of_elements, component, c](int x, int y, int z) mutable {
+          sum_of_elements += val(component[c]->rho, x, y, z);
+        });
         Norm( &component[c]->rho[0], mon_theta / sum_of_elements, M);
         #endif
 
@@ -574,9 +612,14 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
 
   // If there's only one solvent mon, this problem is easy.
   if (solvent_mons.size() == 1) {
+    #ifdef PAR_MESODYN
+    stl::transform(component[solvent_mons[0]]->rho.begin(), component[solvent_mons[0]]->rho.end(), residuals.begin(), component[solvent_mons[0]]->rho.begin(), stl::minus<Real>() );
+    #else
     skip_bounds([this, &component, residuals, solvent_mons](int x, int y, int z) mutable {
       *val_ptr(component[solvent_mons[0]]->rho, x, y, z) -= val(residuals, x, y, z);
     });
+    #endif
+
   } else {
     cerr << "Norming solvents with mutliple monomers is not supported! Please write your own script" << endl;
     throw ERROR_FILE_FORMAT;
@@ -711,7 +754,7 @@ Flux2D::Flux2D(Lattice* Lat, Real D, stl::host_vector<int>& mask, shared_ptr<Com
 }
 
 Flux3D::Flux3D(Lattice* Lat, Real D, stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
-    : Flux2D(Lat, D, mask, A, B), GPU_mask(M), JZ{Lat->JZ} {
+    : Flux2D(Lat, D, mask, A, B), JZ{Lat->JZ} {
   Flux3D::mask(mask);
 }
 
@@ -879,38 +922,37 @@ int Flux1D::potential_difference(stl::device_vector<Real>& A, stl::device_vector
 }
 
 int Flux1D::langevin_flux(stl::host_vector<int>& mask_plus, stl::host_vector<int>& mask_minus, int jump) {
-
   stl::fill(J_minus.begin(), J_minus.end(), 0);
   stl::fill(J_plus.begin(), J_plus.end(), 0);
 
-  #ifdef PAR_MESODYN
-
   stl::device_vector<Real> t_mu(M);
+  stl::device_vector<Real> t_L(M);
 
   stl::transform(mu.begin()+jump, mu.end(), mu.begin(), t_mu.begin(), stl::minus<Real>());
-
-  stl::device_vector<Real> t_L(M);
   stl::transform(L.begin(), L.end()-jump, L.begin()+jump, t_L.begin(), stl::plus<Real>());
-
   stl::transform(t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), const_multiply_functor(-D) );
 
-
-  stl::copy(J_plus.begin(), J_plus.end()-jump, J_minus.begin()+jump);
-  stl::transform(J_minus.begin(), J_minus.end(), J_minus.begin(), stl::negate<Real>());
-
+  #ifdef PAR_MESODYN
+  thrust::copy(thrust::make_transform_iterator(J_plus.begin(), negate<int>()),
+               thrust::make_transform_iterator(J_plus.end(), negate<int>()),
+               J_minus.begin()+jump);
   #else
-
-  for (vector<int>::iterator itt = mask_plus.begin() ; itt < mask_plus.end(); ++itt) {
-    auto z = *itt;
-    J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
-  }
-
-  for (vector<int>::iterator itt = mask_minus.begin() ; itt < mask_minus.end(); ++itt) {
-    auto z = *itt;
-    J_minus[z] = -J_plus[z - jump];
-  }
-
+  std::copy(J_plus.begin(), J_plus.end()-jump, J_minus.begin()+jump);
+  std::transform(J_minus.begin(), J_minus.end(), J_minus.begin(), stl::negate<Real>());
   #endif
+
+/* The above does the equivalent of the following code (and faster):
+ *
+ *  for (vector<int>::iterator itt = mask_plus.begin() ; itt < mask_plus.end(); ++itt) {
+ *     auto z = *itt;
+ *     J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
+ *  }
+ *
+ *  for (vector<int>::iterator itt = mask_minus.begin() ; itt < mask_minus.end(); ++itt) {
+ *     auto z = *itt;
+ *     J_minus[z] = -J_plus[z - jump];
+ *  }
+ */
 
   stl::transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), stl::plus<Real>());
   stl::transform(J_minus.begin(), J_minus.end(), J.begin(), J.begin(), stl::plus<Real>());
@@ -985,7 +1027,11 @@ int Component::load_alpha(stl::device_vector<Real> alpha) {
 }
 
 int Component::load_alpha(Real* alpha) {
+  #if defined(CUDA) && ! defined(PAR_MESODYN)
+  TransferDataToHost(&Component::alpha[0], alpha, M);
+  #else
   stl::copy(alpha, alpha+M, this->alpha.begin());
+  #endif
   return 0;
 }
 
@@ -995,24 +1041,35 @@ int Component::load_rho(stl::device_vector<Real> rho) {
 }
 
 int Component::load_rho(Real* rho) {
+  #if defined(CUDA) && ! defined(PAR_MESODYN)
+  TransferDataToHost(&Component::rho[0], rho, M);
+  #else
   stl::copy(rho, rho+M, this->rho.begin());
+  #endif
   return 0;
 }
 
 int Component::update_boundaries() {
+  #ifdef PAR_MESODYN
   Lat->set_bounds(alpha_ptr);
   Lat->set_bounds(rho_ptr);
+  #else
+  boundary->update_boundaries(alpha);
+  boundary->update_boundaries(rho);
+  #endif
 
   return 0;
 }
 
 Real Component::theta() {
   Real sum{0};
-  Lat->remove_bounds(rho_ptr);
   #ifdef PAR_MESODYN
+  Lat->remove_bounds(rho_ptr);
   sum = stl::reduce(rho.begin(), rho.end(),0);
   #else
-  sum = stl::accumulate(rho.begin(), rho.end(), 0);
+  skip_bounds([this, &sum](int x, int y, int z) mutable {
+    sum += val(rho, x, y, z);
+  });
   #endif
   return sum;
 }
@@ -1412,7 +1469,7 @@ int Gaussian_noise::generate(size_t M) {
   #ifdef PAR_MESODYN
   boundary->Lat->set_bounds( thrust::raw_pointer_cast(&noise[0]) );
   #else
-  boundary->Lat->set_bounds(&noise[0]);
+  boundary->update_boundaries(noise);
   #endif
 
   return 0;

@@ -29,6 +29,18 @@ struct const_multiply_functor
         }
 };
 
+
+struct order_param_functor
+{
+
+    order_param_functor() {}
+
+        double operator()(const double& x, const double& y) const { 
+            return pow(x-y,2);
+        }
+};
+
+
 typedef double Real;
 
 template <typename T>

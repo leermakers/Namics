@@ -152,6 +152,16 @@ struct const_multiply_functor
         }
 };
 
+struct order_param_functor
+{
+
+    order_param_functor() {}
+
+    __host__ __device__
+        double operator()(const double& x, const double& y) const { 
+            return pow(x-y,2);
+        }
+};
 
 #else
 

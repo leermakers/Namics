@@ -158,11 +158,11 @@ bool Mesodyn::mesodyn() {
       ++i;
     }
 
-  noise_flux();
+    noise_flux();
   
     //sanity_check();
 
-    //cout << "Order parameter: " << calculate_order_parameter() << endl;
+    cout << "Order parameter: " << calculate_order_parameter() << endl;
 
     i = 0;
     for (auto all_components : component) {
@@ -205,17 +205,21 @@ void Mesodyn::set_update_lists() {
 }
 
 Real Mesodyn::calculate_order_parameter() {
-  skip_bounds([this](int x, int y, int z) mutable {
-    Real local_parameter {0};
-    for (size_t i = 0; i < component_no - 1; ++i)
+  stl::device_vector<Real> difference(M);
+  Real order_parameter{0};
+  for (size_t i = 0; i < component_no - 1; ++i)
       for (size_t j = i + 1; j < component_no; ++j) {
-        Real difference {0};
-        difference = val(solver_component[i]->rho, x, y, z) - val(solver_component[j]->rho, x, y, z);
-        local_parameter += (pow(difference,2));
+          stl::transform(solver_component[i]->rho.begin(),
+                         solver_component[i]->rho.end(),
+                         solver_component[j]->rho.begin(),
+                         difference.begin(),
+                         order_param_functor());
+          #ifdef PAR_MESODYN
+          order_parameter = thrust::reduce(difference.begin(), difference.end(), order_parameter);
+          #else
+          order_parameter = std::accumulate(difference.begin(), difference.end(), order_parameter);
+          #endif
       }
-    order_parameter += local_parameter;
-  });
-
   order_parameter /= boundaryless_volume;
 
   return order_parameter;
@@ -922,8 +926,27 @@ int Flux1D::potential_difference(stl::device_vector<Real>& A, stl::device_vector
 }
 
 int Flux1D::langevin_flux(stl::host_vector<int>& mask_plus, stl::host_vector<int>& mask_minus, int jump) {
+
+  //////
+  //
+  // All these transform and fill functions are needed to make mesodyn parallelizable using Thrust
+  //
+  // The code below does the equivalent of the following code (and faster):
+  //  
+  //   for (vector<int>::iterator itt = mask_plus.begin() ; itt < mask_plus.end(); ++itt) {
+  //     auto z = *itt;
+  //     J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
+  //  }
+  //
+  //  for (vector<int>::iterator itt = mask_minus.begin() ; itt < mask_minus.end(); ++itt) {
+  //     auto z = *itt;
+  //     J_minus[z] = -J_plus[z - jump];
+  //  }
+  //
+  //////
+
   stl::fill(J_minus.begin(), J_minus.end(), 0);
-  stl::fill(J_plus.begin(), J_plus  .end(), 0);
+  stl::fill(J_plus.begin(), J_plus.end(), 0);
 
   stl::device_vector<Real> t_mu(M);
   stl::device_vector<Real> t_L(M);
@@ -933,19 +956,6 @@ int Flux1D::langevin_flux(stl::host_vector<int>& mask_plus, stl::host_vector<int
   stl::transform(t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), const_multiply_functor(-D) );
 
   stl::transform(J_plus.begin(), J_plus.end()-jump, J_minus.begin()+jump, stl::negate<Real>());
-
-/* The above does the equivalent of the following code (and faster):
- *
- *  for (vector<int>::iterator itt = mask_plus.begin() ; itt < mask_plus.end(); ++itt) {
- *     auto z = *itt;
- *     J_plus[z] = -D * ((L[z] + L[z + jump]) * (mu[z + jump] - mu[z]));
- *  }
- *
- *  for (vector<int>::iterator itt = mask_minus.begin() ; itt < mask_minus.end(); ++itt) {
- *     auto z = *itt;
- *     J_minus[z] = -J_plus[z - jump];
- *  }
- */
 
   stl::transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), stl::plus<Real>());
   stl::transform(J_minus.begin(), J_minus.end(), J.begin(), J.begin(), stl::plus<Real>());

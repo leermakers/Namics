@@ -1,6 +1,6 @@
-lat : flat : n_layers_x : 200
-lat : flat : n_layers_y : 200
-lat : flat : n_layers_z : 12
+lat : flat : n_layers_x : 100
+lat : flat : n_layers_y : 100
+lat : flat : n_layers_z : 100
 lat : flat : lowerbound_x : periodic
 lat : flat : upperbound_x : periodic
 lat : flat : lowerbound_y : periodic
@@ -18,7 +18,7 @@ mon : A : chi - B : 0.7
 
 mol : A : composition : (A)4
 mol : A : freedom : restricted
-mol : A : theta : 4000
+mol : A : theta : 62500
 
 mol : B : composition : (B)4
 mol : B : freedom : solvent
@@ -36,11 +36,11 @@ kal : mol : B : phibulk
 // timesteps, timebetweensaves, delta_t, read_pro, read_vtk, equilibrate, diffusionconstant, seed
 // mean, stddev, cn_ratio ( 1 = only old ), edge_detection, edge_detection_threshold
 
-mesodyn : smth : timesteps : 4
+mesodyn : smth : timesteps : 20
 mesodyn : smth : timebetweensaves : 30
 mesodyn : smth : diffusionconstant : 1
 //mesodyn : smth : delta_t : 0.1
-mesodyn : smth : seed : 1
+mesodyn : smth : seed : 5
 
 kal : output : mesodyn : order_parameter
 
@@ -51,7 +51,7 @@ newton : isaac : i_info : 1000
 newton : isaac : super_e_info : false
 newton : isaac : iterationlimit : 10000
 //newton : isaac : target_function : log
-newton : isaac : m : 20
+newton : isaac : m : 4
 newton : isaac : deltamax : 0.1
 newton : isaac : tolerance : 1e-4
 newton : isaac : stop_criterion : max_of_element_of_|g|

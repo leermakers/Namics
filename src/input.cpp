@@ -715,10 +715,10 @@ void Input::parseOutputInfo() {
 Reader::Reader(string filename) : dimensions(0), filetype(NONE), rho(0), multicomponent_rho(0) {
     string extension = filename.substr(filename.find_last_of(".")+1);
     if (extension == "vtk") {
-      filetype = VTK;
+      filetype = Reader::VTK;
       init_rho_fromvtk(filename);
     } else if (extension == "pro") {
-      filetype = PRO;
+      filetype = Reader::PRO;
       headers = init_rho_frompro(filename);
     } else {
       throw ERROR_EXTENSION;

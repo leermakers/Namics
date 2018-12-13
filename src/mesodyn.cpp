@@ -4,8 +4,10 @@
 /* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018 */
 /* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
 
-Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
+Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : Lattice_Access(Lat_[0]),
+
+      //Namics classes
       name{name_},
       In{In_},
       Lat{Lat_},
@@ -15,39 +17,46 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
       Rea{Rea_},
       Sys{Sys_},
       New{New_},
-      D{0.01},
-      dt{0.1},
-      mean{0},
-      stddev{2 * D * sqrt(dt)},
-      seed{1},
-      seed_specified{false},
-      timesteps{100},
-      timebetweensaves{1},
-      initialization_mode{INIT_HOMOGENEOUS},
-      component_no{Sys[0]->SysMolMonList.size()},
-      RC{0},
-      cn_ratio{0.5},
+
+      //Const-correct way of initializing member variables from file, see template in header file.
+      KEYS{"read_pro",
+           "read_vtk",
+           "diffusionconstant",
+           "delta_t",
+           "mean",
+           "stddev",
+           "seed",
+           "timesteps",
+           "timebetweensaves",
+           "cn_ratio"},
+      input_success { In[0]->CheckParameters("mesodyn", name, start, KEYS, PARAMETERS, VALUES) },
+
+      D                 { initialize<Real>("diffusionconstant", 0.01) },
+      dt                { initialize<Real>("delta_t", 0.1) },
+      mean              { initialize<Real>("mean", 0.0) },
+      stddev            { initialize<Real>("stddev", (2 * D * sqrt(dt) ) ) },
+      seed              { initialize<Real>("seed", 1.0) },
+      seed_specified    { seed != 1 ? true : false },
+      timesteps         { initialize<int>("timesteps", 100) },
+      timebetweensaves  { initialize<int>("timebetweensaves", 1) },
+      cn_ratio          { initialize<Real>("cn_ratio", 0.5) },
+
+      //Variables for rho initialization
+      initialization_mode { INIT_HOMOGENEOUS },
+      component_no        { Sys[0]->SysMolMonList.size() },
+
+      //Size rho transporter
+      rho(component_no*M),
+
+      //Size helper classes.
       component(0),
       flux(0),
+
+      //Output-related variables
       writes{0},
       write_vtk{false},
       order_parameter{0}
   {
-  KEYS.push_back("timesteps");
-  KEYS.push_back("timebetweensaves");
-  KEYS.push_back("delta_t");
-  KEYS.push_back("read_pro");
-  KEYS.push_back("read_vtk");
-  KEYS.push_back("diffusionconstant");
-  KEYS.push_back("seed");
-  KEYS.push_back("mean");
-  KEYS.push_back("stddev");
-  KEYS.push_back("cn_ratio");
-
-  // TODO: implement this properly
-  // If the user has asked for vtk output
-  if (std::find(In[0]->OutputList.begin(), In[0]->OutputList.end(), "vtk") != In[0]->OutputList.end())
-    write_vtk = true;
 
   //Apparently this step takes a ton of time.
   Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
@@ -57,8 +66,6 @@ Mesodyn::Mesodyn(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg
   // to get the correct KSAM and volume.
   Sys[0]->PrepareForCalculations();
 
-  rho.resize(component_no*M);
-
   // The right hand side of the minus sign calculates the volume of the boundaries. I know, it's hideous, but it works for all dimensions.
   boundaryless_volume = Sys[0]->volume - ((2 * dimensions - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * dimensions) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, dimensions));
 }
@@ -67,63 +74,30 @@ Mesodyn::~Mesodyn() {
     // We only use smart pointers here, they'll take care of deleting themselves when needed.
 }
 
-bool Mesodyn::CheckInput(int start) {
-  bool success = true;
+bool Mesodyn::CheckInput(const int start) {
 
-  /* When adding new items here, please add them to the function prepareOutputFile()*/
-  success = In[0]->CheckParameters("mesodyn", name, start, KEYS, PARAMETERS, VALUES);
+  // TODO: implement this properly
+  // If the user has asked for vtk output
+  if (std::find(In[0]->OutputList.begin(), In[0]->OutputList.end(), "vtk") != In[0]->OutputList.end())
+    write_vtk = true;
 
-  if (success) {
-    vector<string> options;
-    if (GetValue("timesteps").size() > 0) {
-      success = In[0]->Get_int(GetValue("timesteps"), timesteps, 1, 100000000, "The number of timesteps should be between 1 and 10000");
-    }
+  if (input_success) {
 
-    if (GetValue("timebetweensaves").size() > 0) {
-      timebetweensaves = In[0]->Get_int(GetValue("timebetweensaves"), timebetweensaves);
-    }
+    string empty = "";
 
-    if (GetValue("delta_t").size() > 0) {
-      dt = In[0]->Get_Real(GetValue("delta_t"), dt);
-    }
-
-    if (GetValue("read_pro").size() > 0) {
-      read_filename = In[0]->Get_string(GetValue("read_pro"), read_filename);
+    if ( (read_filename = initialize("read_pro",empty)) != empty)
       initialization_mode = INIT_FROMPRO;
-    }
 
-    if (GetValue("read_vtk").size() > 0) {
-      read_filename = In[0]->Get_string(GetValue("read_vtk"), read_filename);
+    if ( (read_filename = initialize("read_vtk",empty)) != empty) {
       if (read_filename.find(".vtk") != string::npos) {
         cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename accordingly." << endl;
         exit(0);
       }
       initialization_mode = INIT_FROMVTK;
     }
-
-    if (GetValue("diffusionconstant").size() > 0) {
-      D = In[0]->Get_Real(GetValue("diffusionconstant"), D);
-    }
-
-    if (GetValue("seed").size() > 0) {
-      seed_specified = true;
-      seed = In[0]->Get_Real(GetValue("seed"), seed);
-    }
-
-    if (GetValue("mean").size() > 0) {
-      mean = In[0]->Get_Real(GetValue("mean"), mean);
-    }
-
-    if (GetValue("stddev").size() > 0) {
-      stddev = In[0]->Get_Real(GetValue("stddev"), stddev);
-    }
-
-    if (GetValue("cn_ratio").size() > 0) {
-      cn_ratio = In[0]->Get_Real(GetValue("cn_ratio"), cn_ratio);
-    }
   }
 
-  return success;
+  return input_success;
 }
 
 /******** Flow control ********/
@@ -286,7 +260,7 @@ int Mesodyn::sanity_check() {
   return 0;
 }
 
-void Mesodyn::load_alpha(Real* alpha, size_t i) {
+void Mesodyn::load_alpha(Real* alpha, const size_t i) {
     if (i < component_no) {
       solver_component[i]->load_alpha(alpha);
     }
@@ -519,6 +493,8 @@ int Mesodyn::initial_conditions() {
   norm_theta(component);
   norm_theta(solver_component);
 
+  //2D rho vector is cleaned up after returning.
+
   return 0;
 }
 
@@ -619,7 +595,7 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
 return 0;
 }
 
-int Mesodyn::init_rho_homogeneous(stl::host_vector<stl::host_vector<Real>>& rho ,stl::host_vector<int>& mask) {
+int Mesodyn::init_rho_homogeneous(stl::host_vector<stl::host_vector<Real>>& rho , const stl::host_vector<int>& mask) {
   size_t solvent = (size_t)Sys[0]->solvent; // Find which mol is the solvent
 
   Real sum_theta{0};
@@ -734,17 +710,17 @@ int Mesodyn::write_output() {
 
 /******* FLUX: TOOLS FOR CALCULATING FLUXES BETWEEN 1 PAIR OF COMPONENTS, HANDLING OF SOLIDS *********/
 
-Flux1D::Flux1D(Lattice* Lat, Real D, stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
+Flux1D::Flux1D(Lattice* Lat, const Real D, const stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
     : Lattice_Access(Lat), J_plus(M), J_minus(M), J(M), A{A}, B{B}, L(M), mu(M), D{D}, JX{Lat->JX} {
   Flux1D::mask(mask);
 }
 
-Flux2D::Flux2D(Lattice* Lat, Real D, stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
+Flux2D::Flux2D(Lattice* Lat, const Real D, const stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
     : Flux1D(Lat, D, mask, A, B), JY{Lat->JY} {
   Flux2D::mask(mask);
 }
 
-Flux3D::Flux3D(Lattice* Lat, Real D, stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
+Flux3D::Flux3D(Lattice* Lat, const Real D, const stl::host_vector<int>& mask, shared_ptr<Component> A, shared_ptr<Component> B)
     : Flux2D(Lat, D, mask, A, B), JZ{Lat->JZ} {
   Flux3D::mask(mask);
 }
@@ -770,7 +746,7 @@ Real Flux1D::mu_at(int x, int y, int z) {
   return val(mu, x, y, z);
 }
 
-int Flux1D::mask(stl::host_vector<int>& mask_in) {
+int Flux1D::mask(const stl::host_vector<int>& mask_in) {
   if ((int)mask_in.size() != M) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
@@ -800,7 +776,7 @@ int Flux1D::mask(stl::host_vector<int>& mask_in) {
   return 0;
 }
 
-int Flux2D::mask(stl::host_vector<int>& mask_in) {
+int Flux2D::mask(const stl::host_vector<int>& mask_in) {
   if ((int)mask_in.size() != M) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
@@ -828,7 +804,7 @@ int Flux2D::mask(stl::host_vector<int>& mask_in) {
   return 0;
 }
 
-int Flux3D::mask(stl::host_vector<int>& mask_in) {
+int Flux3D::mask(const stl::host_vector<int>& mask_in) {
   if ((int)mask_in.size() != M) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
@@ -912,7 +888,7 @@ int Flux1D::potential_difference(stl::device_vector<Real>& A, stl::device_vector
   return 0;
 }
 
-int Flux1D::langevin_flux(stl::host_vector<int>& mask_plus, stl::host_vector<int>& mask_minus, int jump) {
+int Flux1D::langevin_flux(const stl::host_vector<int>& mask_plus, const stl::host_vector<int>& mask_minus, const int jump) {
 
   //////
   //
@@ -978,14 +954,6 @@ Component::~Component() {
 }
 
 /******* Interface *******/
-
-Real Component::rho_at(int x, int y, int z) {
-  return val(rho, x, y, z);
-}
-
-Real Component::alpha_at(int x, int y, int z) {
-  return val(alpha, x, y, z);
-}
 
 int Component::update_density(stl::device_vector<Real>& J, int sign) {
   //Explicit update
@@ -1474,6 +1442,7 @@ int Gaussian_noise::add_noise(stl::device_vector<Real>& target) {
 
 /***** Mathematics *****/
 
+
 int Mesodyn::factorial(int n) {
   if (n > 1) {
     return n * factorial(n - 1);
@@ -1483,61 +1452,4 @@ int Mesodyn::factorial(int n) {
 
 int Mesodyn::combinations(int n, int k) {
   return factorial(n) / (factorial(n - k) * factorial(k));
-}
-
-/***** IO *****/
-
-int Mesodyn::GetValue(string prop, int& int_result, Real& Real_result, string& string_result) {
-  int i = 0;
-  int length = ints.size();
-  while (i < length) {
-    if (prop == ints[i]) {
-      int_result = ints_value[i];
-      return 1;
-    }
-    i++;
-  }
-  i = 0;
-  length = Reals.size();
-  while (i < length) {
-    if (prop == Reals[i]) {
-      Real_result = Reals_value[i];
-      return 2;
-    }
-    i++;
-  }
-  i = 0;
-  length = bools.size();
-  while (i < length) {
-    if (prop == bools[i]) {
-      if (bools_value[i])
-        string_result = "true";
-      else
-        string_result = "false";
-      return 3;
-    }
-    i++;
-  }
-  i = 0;
-  length = strings.size();
-  while (i < length) {
-    if (prop == strings[i]) {
-      string_result = strings_value[i];
-      return 3;
-    }
-    i++;
-  }
-  return 0;
-}
-
-string Mesodyn::GetValue(string parameter){
-	int i=0;
-	int length = PARAMETERS.size();
-	while (i<length) {
-		if (parameter==PARAMETERS[i]) {
-			return VALUES[i];
-		}
-		i++;
-	}
-	return "" ;
 }

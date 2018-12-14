@@ -2,8 +2,8 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "simple_node.h"
-#include "nodes/monolit.h"
+#include "../nodes/simple_node.h"
+#include "../nodes/monolit.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -11,7 +11,7 @@
 #include <algorithm>
 
 #include <fstream>
-#include <segment.h>
+//#include <../../segment.h>
 
 using namespace std;
 

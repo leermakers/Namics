@@ -27,7 +27,7 @@ string Monolit::to_string() const {
     string res;
     for (auto &&n : m_nodes) {
         res += n->to_string();
-        res += "; ";
+        res += " ";
     }
     return res;
 }

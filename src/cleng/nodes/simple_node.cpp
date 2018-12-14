@@ -25,7 +25,7 @@ void SimpleNode::pushSystemPoints(std::map<int, Point> &pointsById) const {
 }
 
 std::string SimpleNode::to_string() const {
-    return "id: " + std::to_string(id) + " { " + std::to_string(system_point.x) + ", " + std::to_string(system_point.y) + ", " + std::to_string(system_point.z) + " }";
+    return "id: " + std::to_string(id) + " { " + std::to_string(system_point.x) + ", " + std::to_string(system_point.y) + ", " + std::to_string(system_point.z) + " };";
 }
 
 void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {

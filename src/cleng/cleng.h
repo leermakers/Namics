@@ -49,6 +49,9 @@ public:
     int n_p;
     int t;
     int save_interval;
+    string checkpoint_save;
+    string checkpoint_load;
+    string cleng_pos;
     string save_filename;
     Point BC;
 

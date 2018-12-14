@@ -35,6 +35,9 @@ Cleng::Cleng(
     KEYS.emplace_back("save_interval");
     KEYS.emplace_back("save_filename");
     KEYS.emplace_back("seed");
+    KEYS.emplace_back("checkpoint_save");
+    KEYS.emplace_back("checkpoint_load");
+    KEYS.emplace_back("cleng_pos");
 
     // Debug.log
     //out.open("debug.out", ios_base::out);
@@ -55,7 +58,6 @@ bool Cleng::CheckInput(int start) {
 
     success = In[0]->CheckParameters("cleng", name, start, KEYS, PARAMETERS, VALUES);
     if (success) {
-        vector<string> options;
         if (!GetValue("MCS").empty()) {
             success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000,
                                      "The number of timesteps should be between 1 and 10000");
@@ -84,6 +86,33 @@ bool Cleng::CheckInput(int start) {
                 cout << "Currently the clamping is limited to one molecule per system. " << endl;
             }
         }
+
+        if (!GetValue("checkpoint_save").empty()) {
+            vector<string> options;
+            options.clear();
+            options.emplace_back("true");
+            options.emplace_back("false");
+            success = In[0]->Get_string(GetValue("checkpoint_save"), checkpoint_save, options, "");
+        }
+        if (debug) cout << "checkpoint_save " << checkpoint_save << endl;
+
+        if (!GetValue("checkpoint_load").empty()) {
+            vector<string> options;
+            options.clear();
+            options.emplace_back("true");
+            options.emplace_back("false");
+            success = In[0]->Get_string(GetValue("checkpoint_load"), checkpoint_load, options, "");
+        }
+        if (debug) cout << "checkpoint_load " << checkpoint_load << endl;
+
+        if (!GetValue("cleng_pos").empty()) {
+            vector<string> options;
+            options.clear();
+            options.emplace_back("true");
+            options.emplace_back("false");
+            success = In[0]->Get_string(GetValue("cleng_pos"), cleng_pos, options, "");
+        }
+        if (debug) cout << "cleng_pos " << cleng_pos << endl;
 
         if (success) {
             n_boxes = Seg[clamp_seg]->n_box;
@@ -154,6 +183,7 @@ bool Cleng::CP(transfer tofrom) {
                 simpleNodeList.push_back(first_node);
                 simpleNodeList.push_back(second_node);
             }
+
             nodes = createNodes(simpleNodeList);
             for (auto &&n : nodes) {
                 cout << n->to_string() << endl;
@@ -162,7 +192,7 @@ bool Cleng::CP(transfer tofrom) {
             break;
 
         case to_segment:
-            Zero(Seg[clamp_seg]->H_MASK, M);
+            Zero(clamped->H_MASK, M);
 
             for (auto &&n : nodes) {
                 n->pushSystemPoints(system_points);
@@ -183,32 +213,28 @@ bool Cleng::CP(transfer tofrom) {
             }
 
             for (int i = 0; i < n_boxes; i++) {
-                Seg[clamp_seg]->bx[i] = (Seg[clamp_seg]->px2[i] + Seg[clamp_seg]->px1[i] - sub_box_size) / 2;
-                Seg[clamp_seg]->by[i] = (Seg[clamp_seg]->py2[i] + Seg[clamp_seg]->py1[i] - sub_box_size) / 2;
-                Seg[clamp_seg]->bz[i] = (Seg[clamp_seg]->pz2[i] + Seg[clamp_seg]->pz1[i] - sub_box_size) / 2;
+                clamped->bx[i] = (clamped->px2[i] + clamped->px1[i] - sub_box_size) / 2;
+                clamped->by[i] = (clamped->py2[i] + clamped->py1[i] - sub_box_size) / 2;
+                clamped->bz[i] = (clamped->pz2[i] + clamped->pz1[i] - sub_box_size) / 2;
 
-                if (Seg[clamp_seg]->bx[i] < 1) {
-                    Seg[clamp_seg]->bx[i] += box.x;
-                    Seg[clamp_seg]->px1[i] += box.x;
-                    Seg[clamp_seg]->px2[i] += box.x;
+                if (clamped->bx[i] < 1) {
+                    clamped->bx[i] += box.x;
+                    clamped->px1[i] += box.x;
+                    clamped->px2[i] += box.x;
                 }
-                if (Seg[clamp_seg]->by[i] < 1) {
-                    Seg[clamp_seg]->by[i] += box.y;
-                    Seg[clamp_seg]->py1[i] += box.y;
-                    Seg[clamp_seg]->py2[i] += box.y;
+                if (clamped->by[i] < 1) {
+                    clamped->by[i] += box.y;
+                    clamped->py1[i] += box.y;
+                    clamped->py2[i] += box.y;
                 }
-                if (Seg[clamp_seg]->bz[i] < 1) {
-                    Seg[clamp_seg]->bz[i] += box.z;
-                    Seg[clamp_seg]->pz1[i] += box.z;
-                    Seg[clamp_seg]->pz2[i] += box.z;
+                if (clamped->bz[i] < 1) {
+                    clamped->bz[i] += box.z;
+                    clamped->pz1[i] += box.z;
+                    clamped->pz2[i] += box.z;
                 }
 
-                Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px1[i] - 1) % box.x + 1) * JX +
-                                       ((Seg[clamp_seg]->py1[i] - 1) % box.y + 1) * JY +
-                                       (Seg[clamp_seg]->pz1[i] - 1) % box.z + 1] = 1;
-                Seg[clamp_seg]->H_MASK[((Seg[clamp_seg]->px2[i] - 1) % box.x + 1) * JX +
-                                       ((Seg[clamp_seg]->py2[i] - 1) % box.y + 1) * JY +
-                                       (Seg[clamp_seg]->pz2[i] - 1) % box.z + 1] = 1;
+                clamped->H_MASK[((clamped->px1[i] - 1) % box.x + 1) * JX + ((clamped->py1[i] - 1) % box.y + 1) * JY + (clamped->pz1[i] - 1) % box.z + 1] = 1;
+                clamped->H_MASK[((clamped->px2[i] - 1) % box.x + 1) * JX + ((clamped->py2[i] - 1) % box.y + 1) * JY + (clamped->pz2[i] - 1) % box.z + 1] = 1;
 
             }
 
@@ -447,6 +473,15 @@ bool Cleng::MakeShift(bool back) {
 bool Cleng::MonteCarlo() {
     if (debug) cout << "Monte Carlo in Cleng" << endl;
     bool success = true;
+
+    Checkpoint checkpoint;
+    if (checkpoint_load == "true") {
+        Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
+        CP(to_cleng);
+        checkpoint.loadCheckpoint(nodes, box);
+        CP(to_segment);
+    }
+
 // Analysis MC
     Real accepted=0.0;
     Real rejected=0.0;
@@ -457,7 +492,13 @@ bool Cleng::MonteCarlo() {
     New[0]->Solve(true);
     CP(to_cleng);
     free_energy_current = Sys[0]->GetFreeEnergy() - GetN_times_mu();
+
+// init save
     WriteOutput(0,exp_diff);
+    if (cleng_pos == "true") {
+        WriteClampedNodeDistance(0);
+    }
+
 
     for (int MS_step = 1; MS_step < MCS; MS_step++) { // loop for trials
 
@@ -505,7 +546,9 @@ bool Cleng::MonteCarlo() {
 
         if ((MS_step % save_interval) == 0) {
             WriteOutput(MS_step, exp_diff);
-            WriteClampedNodeDistance(MS_step);
+            if (cleng_pos == "true") {
+                WriteClampedNodeDistance(MS_step);
+            }
         }
         cout << "Done. \n" << endl;
     }
@@ -514,9 +557,10 @@ bool Cleng::MonteCarlo() {
     cout << "Accepted %: " << 100* (accepted / (MCS-1)) << endl;
     cout << "Rejected %: " << 100* (rejected / (MCS-1)) << endl;
 
-    cout << "Saving checkpoint ..." << endl;
-    Checkpoint checkpoint;
-    checkpoint.saveCheckpoint();
+    if (checkpoint_save == "true") {
+        cout << "Saving checkpoint ..." << endl;
+        checkpoint.saveCheckpoint(simpleNodeList);
+    }
 
     return success;
 }
@@ -615,17 +659,10 @@ void Cleng::WriteClampedNodeDistance(int MS_step) {
     int i = 0;
     for (auto &&SN :  simpleNodeList) {
         if (!(i%2)) {
-//            cout << "!!!!SN: " << SN->to_string() << " cnode: "
-//                 << SN->get_cnode()->to_string() << endl;
-//            cout << "!!!!SN: " << SN->get_system_point().to_string() << " cnode: "
-//                 << SN->get_cnode()->get_system_point().to_string() << endl;
-//            cout << "Distance: " << SN->distance(SN->get_cnode()->get_system_point()) << endl;
             distPerMC.push_back(SN->distance(SN->get_cnode()->get_system_point()));
         }
         i ++;
     }
-//    cout << "Finally: " << endl;
-//    cout << "Size of distPerMC: " << distPerMC.size() << endl;
 
     string filename;
     vector<string> sub;
@@ -633,12 +670,10 @@ void Cleng::WriteClampedNodeDistance(int MS_step) {
     string infilename = In[0]->name;
     In[0]->split(infilename,'.',sub);
     filename=sub[0];
-//    filename = sub[0].append("_").append(".").append(name);
+    filename = In[0]->output_info.getOutputPath() + filename;
 
-//    filename = In[0]->output_info.getOutputPath()+ In[0]->name;
     ofstream outfile;
-    cout << "FILENAME: " << filename << endl;
-    outfile.open(filename+".cleng_pos", std::ios_base::app);
+    outfile.open(filename+".cpos", std::ios_base::app);
 
     outfile << MS_step << " ";
     for ( auto n : distPerMC ) {

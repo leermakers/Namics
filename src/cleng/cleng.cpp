@@ -371,9 +371,9 @@ bool Cleng::InRange() {
     Point up_boundary   = box - down_boundary;
     Point MPs (nodes[id_node_for_move]->point() + shift);
 
-    cout << "MPs" << MPs.to_string() << endl;
-    cout << "down bound" << down_boundary.to_string() << endl;
-    cout << "up boundary bound" << up_boundary.to_string() << endl;
+//    cout << "MPs" << MPs.to_string() << endl;
+//    cout << "down bound" << down_boundary.to_string() << endl;
+//    cout << "up boundary bound" << up_boundary.to_string() << endl;
     if ((down_boundary.less_all_elements_than(MPs)) and (MPs.less_all_elements_than(up_boundary))) in_range = true;
     return in_range;
 }
@@ -405,7 +405,7 @@ bool Cleng::Checks() {
     } else { // BC.x and/or BC.y and/or BC.z != mirror
         in_range = true;
     }
-    cout << "not_collapsing: " << not_collapsing << " in_range: " << in_range << " in_subbox_range: " << in_subbox_range << endl;
+//    cout << "not_collapsing: " << not_collapsing << " in_range: " << in_range << " in_subbox_range: " << in_subbox_range << endl;
     return not_collapsing and in_range and in_subbox_range;
 }
 

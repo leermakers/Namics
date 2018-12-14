@@ -1,6 +1,6 @@
 #include <iostream>
 #include "sfnewton.h"
-#include "tools.h"
+#include "tools_host.h"
 
 SFNewton::SFNewton () : residual{0} {
 
@@ -70,7 +70,7 @@ C Copyright (2018) Wageningen University, NL.
 	maxFrReverseDirection=0.4;
 	numIterationsForHessian=100;
 	minAccuracyForHessian=0.1;
-	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); H_Zero(reverseDirection,reverseDirectionRange);
+	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); Zero(reverseDirection,reverseDirectionRange);
 
 }
 
@@ -282,7 +282,8 @@ Real SFNewton::linecriterion(Real *g, Real *g0, Real *p, Real *p0, int nvar) { /
 if(debug) cout <<"linecriterion in Newton " << endl;
 	Real normg,gg0;
 	normg = norm2(g0,nvar);
-	Dot(gg0,g,g0,nvar);
+  Dot(gg0,g,g0,nvar);
+
 	gg0=gg0/normg/normg;
 	normg = pow(norm2(g,nvar)/normg,2);
 	if ( (gg0>1 || normg>1) && normg-gg0*fabs(gg0)<0.2 ) {
@@ -325,7 +326,7 @@ if(debug) cout <<"direction in Newton " << endl;
 void SFNewton::startderivatives(float *h, Real *g, Real *x, int nvar){ //done
 if(debug) cout <<"startderivatives in Newton" << endl;
 	float diagonal = 1+norm2(g,nvar);
-	H_Zero(h,nvar*nvar);
+	Zero(h,nvar*nvar);
 	for (int i=0; i<nvar; i++) {
 		h[i+nvar*i] = diagonal;
 	}
@@ -642,11 +643,11 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 	Real delta_max=delta_max_;
 	Real delta_min=delta_min_;
 	bool filter=filter_;
-Real* x0 = (Real*) malloc(nvar*sizeof(Real)); H_Zero(x0,nvar);
-Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
-Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);
-Real* p0 = (Real*) malloc(nvar*sizeof(Real));H_Zero(p0,nvar);
-Real* g0  = (Real*) malloc(nvar*sizeof(Real));H_Zero(g0,nvar);
+Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+Real* p = (Real*) malloc(nvar*sizeof(Real));Zero(p,nvar);
+Real* p0 = (Real*) malloc(nvar*sizeof(Real));Zero(p0,nvar);
+Real* g0  = (Real*) malloc(nvar*sizeof(Real));Zero(g0,nvar);
 mask = (int*) malloc(nvar*sizeof(int));
 	if (nvar<1) {cout << "newton has nothing to do; returning the problem" << endl; return false;}
 	int it=0;
@@ -681,7 +682,7 @@ mask = (int*) malloc(nvar*sizeof(int));
 		}
 	}
 
-float* h = (float*) malloc(nvar*nvar*sizeof(float)); H_Zero(h,nvar*nvar);
+float* h = (float*) malloc(nvar*nvar*sizeof(float)); Zero(h,nvar*nvar);
 
 	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
 	minimum=newfunction(g,x,nvar);
@@ -784,27 +785,41 @@ delete [] U; delete [] S; delete [] V;
 
 void SFNewton::DIIS(Real* x, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* Ci, int k, int k_diis, int m, int nvar) {
 if(debug) cout <<"DIIS in  SFNewton " << endl;
-	Real normC=0; int posi;
-	if (k_diis>m) { k_diis =m;
-		for (int i=1; i<m; i++) for (int j=1; j<m; j++)
-		Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
+	Real normC=0;
+  int posi;
+	if (k_diis>m) {
+    k_diis =m;
+		for (int i=1; i<m; i++)
+      for (int j=1; j<m; j++)
+		    Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
 	}
-	for (int i=0; i<k_diis; i++) {posi = k-k_diis+1+i; if (posi<0) posi +=m;
-		Real Dvalue; Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
-		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue; }
+	for (int i=0; i<k_diis; i++) {
+    posi = k-k_diis+1+i;
+    if (posi<0)
+      posi +=m;
+	  Real Dvalue;
+    Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
+		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue;
+  }
 		// write to (compressed) matrix Apij
-	for (int i=0; i<k_diis; i++) for (int j=0; j<k_diis; j++) {
-		Apij[j+k_diis*i] = Aij[j+m*i];
-	}
+	for (int i=0; i<k_diis; i++)
+    for (int j=0; j<k_diis; j++)
+		    Apij[j+k_diis*i] = Aij[j+m*i];
 	Ax(Apij,Ci,k_diis);
-	for (int i=0; i<k_diis; i++) normC +=Ci[i];
-	for (int i=0; i<k_diis; i++) {Ci[i] =Ci[i]/normC; }
+	for (int i=0; i<k_diis; i++)
+    normC +=Ci[i];
+	for (int i=0; i<k_diis; i++)
+    Ci[i] =Ci[i]/normC;
 	Zero(x,nvar);
-	posi = k-k_diis+1; if (posi<0) posi +=m;
+	posi = k-k_diis+1;
+  if (posi<0)
+    posi +=m;
 
 	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
 	for (int i=1; i<k_diis; i++) {
-		posi = k-k_diis+1+i; if (posi<0) posi +=m;
+		posi = k-k_diis+1+i;
+    if (posi<0)
+      posi +=m;
 		YplusisCtimesX(x,xR+posi*nvar,Ci[i],nvar);
 	}
 }
@@ -829,17 +844,18 @@ Real SFNewton::computeresidual(Real* array, int size) {
   return residual;
 }
 
+
 bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
 int nvar=nvar_;
 	bool success;
-Real* Aij = (Real*) malloc(m*m*sizeof(Real)); Zero(Aij,m*m);
-Real* Ci = (Real*) malloc(m*sizeof(Real)); Zero(Ci,m);
-Real* Apij = (Real*) malloc(m*m*sizeof(Real)); Zero(Apij,m*m);
-Real* xR = (Real*) malloc(m*nvar*sizeof(Real)); Zero(xR,m*nvar);
-Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
-Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
-Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+  Real* Aij = (Real*) malloc(m*m*sizeof(Real)); Zero(Aij,m*m);
+  Real* Ci = (Real*) malloc(m*sizeof(Real)); Zero(Ci,m);
+  Real* Apij = (Real*) malloc(m*m*sizeof(Real)); Zero(Apij,m*m);
+  Real* xR = (Real*) malloc(m*nvar*sizeof(Real)); Zero(xR,m*nvar);
+  Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
+  Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+  Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 	int it=0;
 	int k_diis=0;
 	int k=0;
@@ -871,7 +887,7 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 		}
 	}
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
-free(Aij);free(Ci);free(Apij);free(xR);free(x_x0);free(x0);free(g);
+  free(Aij);free(Ci);free(Apij);free(xR);free(x_x0);free(x0);free(g);
 	return success;
 }
 

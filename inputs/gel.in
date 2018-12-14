@@ -19,7 +19,7 @@ mol : water : composition : (W)1
 mol : water : freedom : solvent
 
 
-//newton : isaac : method : pseudohessian 
+//newton : isaac : method : pseudohessian
 
 newton : isaac : method : DIIS
 newton : isaac : m : 4
@@ -30,7 +30,7 @@ newton :isaac : iterationlimit: 300
 newton :isaac : tolerance : 1e-3
 
 
-//sys : sacha : GPU : true
+sys : sacha : GPU : true
 out_info : folder : path : out
 
 output : vtk : append : false

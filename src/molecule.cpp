@@ -129,11 +129,11 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		//N=chainlength; //in case of dendrimers this is not correct. Way fewer EDF needed in this case.
 	}
 
-	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); Zero(H_phi,M*MolMonList.size());
+	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); H_Zero(H_phi,M*MolMonList.size());
 //cout <<"molmonlist.size in mol" << MolMonList.size() << endl;
 	//H_u = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
 	//Zero(H_u, M*MolMonList.size());
-	H_phitot = (Real*) malloc(M*sizeof(Real)); Zero(H_phitot,M);
+	H_phitot = (Real*) malloc(M*sizeof(Real)); H_Zero(H_phitot,M);
 	if (freedom=="clamped") {
 		H_Bx=(int*) malloc(n_box*sizeof(int));
 		H_By=(int*) malloc(n_box*sizeof(int));
@@ -165,20 +165,19 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Gg_f=(Real*)AllOnDev(m*n_box*N); Zero(Gg_f,m*n_box*N);
 		Gg_b=(Real*)AllOnDev(m*n_box*2); Zero(Gg_b,m*n_box*2);
 		g1=(Real*)AllOnDev(m*n_box); Zero(g1,m*n_box);
-		rho=(Real*)AllOnDev(m*n_box*MolMonList.size()); Zero(rho,m*n_box,MolMonList.size());
-		phi=(Real*)AllOnDev(M*MolMonList.size()); Zero(phi,M*MolMonList.size());
+		rho=(Real*)AllOnDev(m*n_box*MolMonList.size()); Zero(rho,m*n_box*MolMonList.size());
+		phi=(Real*)AllManagedOnDev(M*MolMonList.size()); Zero(phi,M*MolMonList.size());
 		if (save_memory) {Gs=(Real*)AllOnDev(m*n_box*2); Zero(Gs,m*n_box*2);}
 	} else {
 		Gg_f=(Real*)AllOnDev(M*N);
 		Gg_b=(Real*)AllOnDev(M*2);
-		phi=(Real*)AllOnDev(M*MolMonList.size());
+		phi=(Real*)AllManagedOnDev(M*MolMonList.size());
 		rho=phi;
 		if (save_memory) Gs =(Real*)AllOnDev(M*2);
 	}
 	phitot=(Real*)AllOnDev(M);
-	UNITY = (Real*)AllonDev(M);
+	UNITY = (Real*)AllOnDev(M);
 #else
-
 	if (freedom=="clamped") {
 		gn=H_gn;
 		mask1=H_mask1; mask2=H_mask2;
@@ -234,8 +233,8 @@ int M=Lat[0]->M;
 			H_Px2[i]=Seg[mon_nr[0]]->px2[i];
 			H_Py2[i]=Seg[mon_nr[0]]->py2[i];
 			H_Pz2[i]=Seg[mon_nr[0]]->pz2[i];
-			H_mask1[i*m + jx*(Px1[i]-Bx[i])+jy*(Py1[i]-By[i])+(Pz1[i]-Bz[i])]=1;
-			H_mask2[i*m + jx*(Px2[i]-Bx[i])+jy*(Py2[i]-By[i])+(Pz2[i]-Bz[i])]=1;
+			H_mask1[i*m + jx*(H_Px1[i]-H_Bx[i])+jy*(H_Py1[i]-H_By[i])+(H_Pz1[i]-H_Bz[i])]=1;
+			H_mask2[i*m + jx*(H_Px2[i]-H_Bx[i])+jy*(H_Py2[i]-H_By[i])+(H_Pz2[i]-H_Bz[i])]=1;
 		}
 #ifdef CUDA
 		TransferDataToDevice(H_mask1,mask1,m*n_box);
@@ -245,11 +244,11 @@ int M=Lat[0]->M;
 		TransferDataToDevice(H_Bz,Bz,n_box);
 		TransferDataToDevice(H_Px1,Px1,n_box);
 		TransferDataToDevice(H_Py1,Py1,n_box);
-		TransferDataToDevice(H_Pz1,Pz1,n_box);
 		TransferDataToDevice(H_Px2,Px2,n_box);
+		TransferDataToDevice(H_Pz1,Pz1,n_box);
 		TransferDataToDevice(H_Py2,Py2,n_box);
 		TransferDataToDevice(H_Pz2,Pz2,n_box);
-		TransferDataToDevice(H_u, u, MolMonList.size()*M);
+	//	TransferDataToDevice(H_u,u, (int)MolMonList.size()*M);
 #endif
 	}
 	Cp(UNITY,KSAM,M);
@@ -1525,7 +1524,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		s="profile;"+str; push(Al[i]->name+"-phi",s);
 	}
 	s="vector;0"; push("gn",s);
-#ifdef CUDA
+#ifdef Cuda
+int M = Lat[0]->M;
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
 #endif
@@ -1676,7 +1676,8 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 		int k,k0,t0,v0,t;
 		int n=memory[block]; if (block>0) n-=memory[block-1];
 		int n0=0; if (block>0) n0=memory[block-1];
-		if (s==first_s[generation]) { s++;
+		if (s==first_s[generation]) {
+			s++;
 			Cp(Gs+M,G1,M); Cp(Gs,G1,M); Cp(Gg_f+n0*M,Gs+M,M); last_stored[block]=n0;
 		} else {
 			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
@@ -1713,7 +1714,8 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 				Cp(Gg_f+first_s[generation]*M,G1,M);
 			}
 			 s++;
-		} 	}
+		}
+	}
 	if (save_memory) {
 		return Gg_f+last_stored[block]*M;
 	} else return Gg_f+(s-1)*M;
@@ -1781,9 +1783,11 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
 	} else {
 		for (int k=0; k<N; k++) {
-			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M); else Cp(Gg_b+(s%2)*M,G1,M);
-
-			AddTimes(rho+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M);
+			if (s<chainlength-1)
+				Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
+			else
+				Cp(Gg_b+(s%2)*M,G1,M);
+			AddTimes(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
@@ -1910,8 +1914,7 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 	Real* GS= (Real*) malloc(3*M*sizeof(Real));
 
 	Real* Glast=NULL;
-	int k=b0;
-	while (k<=bN) {
+	for (int k = b0; k<=bN ; ++k) {
 		if (b0<k && k<bN) {
 			if (Gnr[k]==generation ){
 				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
@@ -1943,7 +1946,6 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 			//Glast=propagate_forward(G1+molmon_nr[k]*M,s,k,generation,M);
 		}
-		k++;
 	}
 	free(GS);
 	return Glast;
@@ -2086,7 +2088,6 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M); else Cp(Gg_b+(s%2)*M,G1,M);
-
 			AddTimes(rho+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M);
 			if (compute_phi_alias) {
 				int length = MolAlList.size();

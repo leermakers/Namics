@@ -5,6 +5,7 @@
 #include "solve_scf.h"
 #include "system.h"
 #include "output.h"
+#include "lattice.h"
 #include <random>     // noise generation
 #include <ctime>      // output labling
 #include <cassert>    // making sure all underlying assumptions (e.g. lattice geometry) are satisfied
@@ -12,6 +13,7 @@
 #include <algorithm>  // transform, copy, find functions
 #include <limits>     // output
 #include <unistd.h>   // output
+#include <memory>
 
 class Boundary1D;
 
@@ -23,20 +25,25 @@ enum error {
 };
 
 class Lattice_Access {
-
 public:
 
   Lattice_Access(Lattice*);
   ~Lattice_Access();
 
-  //TODO: Template these:
-  inline Real val(vector<Real>&, int, int, int);
-  inline int val(vector<int>&, int, int, int);
-  inline Real* val_ptr(vector<Real>&, int, int, int);
-  inline int* val_ptr(vector<int>&, int, int, int);
+  template <typename T>
+  inline T val(vector<T>& v, int x, int y, int z) {
+      return v[x * JX + y * JY + z * JZ];
+  }
+
+  template <typename T>
+  inline T* val_ptr(vector<T>& v, int x, int y, int z) {
+      return &v[x * JX + y * JY + z * JZ];
+  }
+
   inline int index(int x, int y, int z);
   inline vector<int> coordinate(int n);
   inline void skip_bounds( function<void(int,int,int)> );
+  inline void par_skip_bounds( function<void(int,int,int)> );
   inline void bounds( function<void(int,int,int)> );
   inline void x0_boundary( function<void(int, int, int)>);
   inline void xm_boundary( function<void(int, int, int)>);
@@ -65,8 +72,8 @@ class Gaussian_noise {
   //Makes sure that we keep generating new numbers, instead of the same over and over.
 
 public:
-  Gaussian_noise(Boundary1D*, Real, int, Real, Real); // Not seeded (32 bits of randomness)
-  Gaussian_noise(Boundary1D*, Real, int, Real, Real, size_t); // Seeded
+  Gaussian_noise(shared_ptr<Boundary1D>, Real, int, Real, Real); // Not seeded (32 bits of randomness)
+  Gaussian_noise(shared_ptr<Boundary1D>, Real, int, Real, Real, size_t); // Seeded
   int generate();
   int add_noise(vector<Real>&);
   vector<Real> noise;
@@ -75,7 +82,7 @@ private:
   seed_seq seed;
   mt19937 prng;
   normal_distribution<Real> dist;
-  Boundary1D* boundary;
+  shared_ptr<Boundary1D> boundary;
 };
 
 class Boundary1D : protected Lattice_Access {
@@ -140,13 +147,11 @@ private:
 
 class Component : protected Lattice_Access {
 public:
-  Component(Lattice*, Boundary1D*, vector<Real>&); //1D
+  Component(Lattice*, shared_ptr<Boundary1D>, vector<Real>&); //1D
   ~Component();
 
   vector<Real> rho;
   vector<Real> alpha;
-
-  Gaussian_noise* gaussian;
 
   Real rho_at(int, int, int);
   Real alpha_at(int, int, int);
@@ -158,12 +163,12 @@ public:
   Real theta();
 
 private:
-  Boundary1D* boundary;
+  shared_ptr<Boundary1D> boundary;
 };
 
 class Flux1D : protected Lattice_Access {
 public:
-  Flux1D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
+  Flux1D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   virtual ~Flux1D();
 
   virtual int langevin_flux();
@@ -181,16 +186,14 @@ public:
   vector<Real> J_minus;
   vector<Real> J;
 
-  Gaussian_noise* gaussian;
-
 
 protected:
   int onsager_coefficient(vector<Real>&, vector<Real>&);
   int potential_difference(vector<Real>&, vector<Real>&);
   int langevin_flux(vector<int>&, vector<int>&, int);
   int mask(vector<int>&);
-  Component* A;
-  Component* B;
+  shared_ptr<Component> A;
+  shared_ptr<Component> B;
 
   vector<Real> L;
   vector<Real> mu;
@@ -202,7 +205,7 @@ protected:
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
+  Flux2D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   virtual ~Flux2D();
 
   virtual int langevin_flux() override;
@@ -218,7 +221,7 @@ protected:
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Gaussian_noise*, Real, vector<int>&, Component*, Component*);
+  Flux3D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   ~Flux3D();
 
   virtual int langevin_flux() override;
@@ -231,26 +234,6 @@ protected:
   vector<int> Mask_plus_z;
   vector<int> Mask_minus_z;
 };
-
-class Interface : private Lattice_Access {
-public:
-  Interface(Lattice*, vector<Component*>);
-  ~Interface();
-  int detect_edges(int);
-  vector<Real> edges;
-
-private:
-  vector<Component*> component;
-
-  vector<Real> sobel_edge_detector(Real, vector<Real>&);
-  vector<Real> gaussian_blur(vector<Real>&);
-  //TODO: template this
-  Real convolution(vector<int>, vector<Real>);
-  Real convolution(vector<Real>, vector<Real>);
-  vector<Real> get_xy_plane(vector<Real>&, int, int, int, int = 3);
-  vector<Real> get_xz_plane(vector<Real>&, int, int, int, int = 3);
-};
-
 
 class Mesodyn : private Lattice_Access {
 
@@ -279,8 +262,6 @@ private:
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
-  bool edge_detection;
-  int edge_detection_threshold;
 
 
   /* Flow control */
@@ -307,8 +288,6 @@ private:
   int initial_conditions();
   vector<Real>&  flux_callback(int);
   int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
-  int init_rho_frompro(vector< vector<Real> >&, string);
-  int init_rho_fromvtk(vector<Real>&, string);
   int norm_density(vector<Real>& rho, Real theta);
   void set_update_lists();
   vector<vector<int>> update_plus;
@@ -316,12 +295,12 @@ private:
   Real boundaryless_volume;
 
   /* Helper class instances */
-  Boundary1D* boundary;
-  Interface* interface;
-  vector<Component*> component;
-  vector<Component*> solver_component;
-  vector<Flux1D*> flux;
-  vector<Flux1D*> solver_flux;
+  unique_ptr<Gaussian_noise> gaussian;
+  shared_ptr<Boundary1D> boundary;
+  vector< shared_ptr<Component> > component;
+  vector< shared_ptr<Component> > solver_component;
+  vector< unique_ptr<Flux1D> > flux;
+  vector< unique_ptr<Flux1D> > solver_flux;
 
   /* Mesodyn specific output */
   ostringstream filename;
@@ -341,7 +320,7 @@ public:
 
   bool mesodyn();
 
-  int norm_theta(vector<Component*>&);
+  int norm_theta(vector< shared_ptr<Component> >&);
 
   Real lost;
 

@@ -20,6 +20,11 @@
 #include <iomanip>
 using namespace std;
 typedef double Real;
+
+#ifndef SMTHxBREAK
+#define BREAKPOINT cout << "Breakpoint: " << DEBUG_BREAK << endl; cin.get(); DEBUG_BREAK++;
+#endif
+
 #ifdef CUDA
 //#include <cuda.h>
 //#include <cublas_v2.h>
@@ -37,6 +42,7 @@ extern Real T;
 extern Real k_B;
 extern Real k_BT;
 extern Real PIE;
+extern int DEBUG_BREAK;
 extern Real eps0;
 extern bool debug;
 extern bool suppress;
@@ -79,4 +85,3 @@ enum EngineType {SCF, CLENG, MESODYN, TENG};
 #   error "Unknown compiler"
 #endif
 */
-

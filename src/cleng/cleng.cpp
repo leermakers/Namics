@@ -29,6 +29,7 @@ Cleng::Cleng(
     Mol(std::move(Mol_)),
     Sys(std::move(Sys_)),
     New(std::move(New_)) {
+
     if (debug) cout << "Cleng initialized" << endl;
     KEYS.emplace_back("MCS");
     KEYS.emplace_back("delta_step");

@@ -77,10 +77,10 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
 
   string empty = "";
 
-    if ( (read_filename = initialize("read_pro",empty)) != empty)
+    if ( (read_filename = initialize("read_pro",empty)) != empty) {
       initialization_mode = INIT_FROMPRO;
-
-    if ( (read_filename = initialize("read_vtk",empty)) != empty) {
+      //this else statement below needs to be there becuase otherwise it will clear the read_filename string again.
+    } else if ( (read_filename = initialize("read_vtk",empty)) != empty) {
       if (read_filename.find(".vtk") != string::npos) {
         cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename accordingly." << endl;
         exit(0);

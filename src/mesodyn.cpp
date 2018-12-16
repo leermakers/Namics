@@ -18,7 +18,6 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       Sys{Sys_},
       New{New_},
 
-      //Const-correct way of initializing member variables from file, see template in header file.
       KEYS{"read_pro",
            "read_vtk",
            "diffusionconstant",
@@ -31,6 +30,7 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
            "cn_ratio"},
       input_success { In[0]->CheckParameters("mesodyn", name, start, KEYS, PARAMETERS, VALUES) },
 
+      //Const-correct way of initializing member variables from file, see template in header file.
       D                 { initialize<Real>("diffusionconstant", 0.01) },
       dt                { initialize<Real>("delta_t", 0.1) },
       mean              { initialize<Real>("mean", 0.0) },
@@ -66,24 +66,16 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
   // to get the correct KSAM and volume.
   Sys[0]->PrepareForCalculations();
 
-  // The right hand side of the minus sign calculates the volume of the boundaries. I know, it's hideous, but it works for all dimensions.
-  boundaryless_volume = Sys[0]->volume - ((2 * dimensions - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * dimensions) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, dimensions));
-}
+  boundaryless_volume = MX-2;
+  switch (dimensions) {
+    case 3:
+      boundaryless_volume *= MZ-2;
+      //fall through
+    case 2:
+      boundaryless_volume *= MY-2;
+  }
 
-Mesodyn::~Mesodyn() {
-    // We only use smart pointers here, they'll take care of deleting themselves when needed.
-}
-
-bool Mesodyn::CheckInput(const int start) {
-
-  // TODO: implement this properly
-  // If the user has asked for vtk output
-  if (std::find(In[0]->OutputList.begin(), In[0]->OutputList.end(), "vtk") != In[0]->OutputList.end())
-    write_vtk = true;
-
-  if (input_success) {
-
-    string empty = "";
+  string empty = "";
 
     if ( (read_filename = initialize("read_pro",empty)) != empty)
       initialization_mode = INIT_FROMPRO;
@@ -95,9 +87,10 @@ bool Mesodyn::CheckInput(const int start) {
       }
       initialization_mode = INIT_FROMVTK;
     }
-  }
+}
 
-  return input_success;
+Mesodyn::~Mesodyn() {
+    // We only use smart pointers here, they'll take care of deleting themselves when needed.
 }
 
 /******** Flow control ********/

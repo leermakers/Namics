@@ -12,6 +12,7 @@
 #include <functional> // boundary conditions
 #include <algorithm>  // transform, copy, find functions
 #include <limits>     // output
+#include <sstream>
 #include <unistd.h>   // output
 #include <memory>
 
@@ -47,7 +48,7 @@ public:
 
 #ifdef PAR_MESODYN
     template <typename T>
-  inline T val(stl::device_vector<T>& v, int x, int y, int z) {
+  inline T val(const stl::device_vector<T>& v, int x, int y, int z) {
       return v[x * JX + y * JY + z * JZ];
   }
 
@@ -56,7 +57,7 @@ public:
       return thrust::raw_pointer_cast(&v[x * JX + y * JY + z * JZ]);
   }
     template <typename T>
-  inline T val(stl::host_vector<T>& v, int x, int y, int z) {
+  inline T val(const stl::host_vector<T>& v, int x, int y, int z) {
       return v[x * JX + y * JY + z * JZ];
   }
 
@@ -67,7 +68,7 @@ public:
 #endif
 
       template <typename T>
-  inline T val(std::vector<T>& v, int x, int y, int z) {
+  inline T val(const std::vector<T>& v, int x, int y, int z) {
       return v[x * JX + y * JY + z * JZ];
   }
 
@@ -193,8 +194,6 @@ public:
   Real* rho_ptr;
   Real* alpha_ptr;
 
-  Real rho_at(int, int, int);
-  Real alpha_at(int, int, int);
   int update_density(stl::device_vector<Real>&, int = 1);     //Explicit scheme
   int update_density(stl::device_vector<Real>&, stl::device_vector<Real>&, Real ratio, int = 1); //Implicit scheme
   int load_alpha(stl::device_vector<Real>);
@@ -210,7 +209,7 @@ private:
 
 class Flux1D : protected Lattice_Access {
 public:
-  Flux1D(Lattice*, Real, stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux1D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   virtual ~Flux1D();
 
   virtual int langevin_flux();
@@ -232,8 +231,8 @@ public:
 protected:
   int onsager_coefficient(stl::device_vector<Real>&, stl::device_vector<Real>&);
   int potential_difference(stl::device_vector<Real>&, stl::device_vector<Real>&);
-  int langevin_flux(stl::host_vector<int>&, stl::host_vector<int>&, int);
-  int mask(stl::host_vector<int>&);
+  int langevin_flux(const stl::host_vector<int>&, const stl::host_vector<int>&, const int);
+  int mask(const stl::host_vector<int>&);
   shared_ptr<Component> A;
   shared_ptr<Component> B;
 
@@ -247,14 +246,14 @@ protected:
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Real, stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux2D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   virtual ~Flux2D();
 
   virtual int langevin_flux() override;
 
 
 protected:
-  int mask(stl::host_vector<int>&);
+  int mask(const stl::host_vector<int>&);
   const int JY;
   stl::host_vector<int> Mask_plus_y;
   stl::host_vector<int> Mask_minus_y;
@@ -263,13 +262,13 @@ protected:
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Real, stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux3D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
   ~Flux3D();
 
   virtual int langevin_flux() override;
 
 private:
-  int mask(stl::host_vector<int>&);
+  int mask(const stl::host_vector<int>&);
 
 protected:
   const int JZ;
@@ -293,29 +292,34 @@ private:
   vector <Output*> Out;
   const string brand;
 
+  std::vector<string> KEYS;
+  std::vector<string> PARAMETERS;
+  std::vector<string> VALUES;
+
+  bool input_success;
+
   /* Read from file */
-  Real D; // diffusionconstant
-  Real dt;
-  Real mean; // mean of gaussian noise (should be 0)
-  Real stddev; // stdev of gaussian noise (should be 1*D)
-  Real seed;  // seed of gaussian noise
-  bool seed_specified;
-  int timesteps; // length of the time evolution
-  int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
+  const Real D; // diffusionconstant
+  const Real dt;
+  const Real mean; // mean of gaussian noise (should be 0)
+  const Real stddev; // stdev of gaussian noise (should be 1*D)
+  const Real seed;  // seed of gaussian noise
+  const bool seed_specified;
+  const int timesteps; // length of the time evolution
+  const int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
+  Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
 
 
   /* Flow control */
-  int RC;
   Real* solve_explicit();
   void explicit_start();
   int noise_flux();
   Real* solve_crank_nicolson();
-  void load_alpha(Real*, size_t);
+  void load_alpha(Real*, const size_t);
   int sanity_check();
   Real calculate_order_parameter();
-  Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
 
   /* Initialization*/
   enum init {
@@ -328,7 +332,7 @@ private:
   vector<string> tokenize(string, char);
   string read_filename;
   int initial_conditions();
-  int init_rho_homogeneous(stl::host_vector<stl::host_vector<Real>>&,stl::host_vector<int>&);
+  int init_rho_homogeneous(stl::host_vector<stl::host_vector<Real>>&, const stl::host_vector<int>&);
   int norm_density(vector<Real>& rho, Real theta);
   void set_update_lists();
   vector<vector<int>> update_plus;
@@ -356,7 +360,7 @@ private:
 
 
 public:
-  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
+  Mesodyn(int, vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Mesodyn();
 
   bool mesodyn();
@@ -365,23 +369,23 @@ public:
 
   Real lost;
 
-
   /* Inputs / output class interface functions */
-  vector<string> ints;
-  vector<string> Reals;
-  vector<string> bools;
-  vector<string> strings;
-  vector<Real> Reals_value;
-  vector<int> ints_value;
-  vector<bool> bools_value;
-  vector<string> strings_value;
-  int GetValue(string, int&, Real&, string&);
   int write_output();
+  bool CheckInput(const int);
 
-  std::vector<string> KEYS;
-  std::vector<string> PARAMETERS;
-  std::vector<string> VALUES;
-  bool CheckInput(int);
-  string GetValue(string);
+
+  //Const-correct way of initializing member variables from file.
+  template<typename Datatype>
+  Datatype initialize(string option, Datatype default_value) {
+
+    for (size_t i = 0 ; i < Mesodyn::PARAMETERS.size(); ++i)
+		  if (option==Mesodyn::PARAMETERS[i]) {
+          Datatype value;
+          std::istringstream buffer{VALUES[i]};
+          buffer >> value;
+          return value;
+      }
+     return default_value;
+  }
 };
 #endif

@@ -483,8 +483,10 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
+  #ifndef PAR_MESODYN
   norm_theta(component);
   norm_theta(solver_component);
+  #endif
 
   //2D rho vector is cleaned up after returning.
 

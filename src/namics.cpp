@@ -38,6 +38,23 @@ int DEBUG_BREAK = 1;
 //Used for command line switches
 bool debug = false;
 
+  template<typename T>
+  auto load_argument_value(vector<string> args, string argument, T t) -> decltype(t) {
+    vector<string>::iterator position;
+    position = find(args.begin(), args.end(), argument);
+    if ( position != args.end() ) {
+      ++position;
+      if (position != args.end() && (*position)[0] != '-') {
+        istringstream ss(*position);
+        ss >> t;
+        return t;
+      }
+    }
+    //else
+    throw 1;
+}
+
+
 //Output when the user malforms input. Update when adding new command line switches.
 void improperInput() {
   cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;

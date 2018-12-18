@@ -173,7 +173,7 @@ void Mesodyn::set_update_lists() {
 
 Real Mesodyn::calculate_order_parameter() {
   stl::device_vector<Real> difference(M);
-  Real order_parameter{0};
+  order_parameter = 0;
   for (size_t i = 0; i < component_no - 1; ++i)
       for (size_t j = i + 1; j < component_no; ++j) {
           stl::transform(solver_component[i]->rho.begin(),

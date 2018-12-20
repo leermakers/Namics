@@ -483,10 +483,8 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
-  #ifndef PAR_MESODYN
   norm_theta(component);
   norm_theta(solver_component);
-  #endif
 
   //2D rho vector is cleaned up after returning.
 
@@ -524,7 +522,7 @@ void Mesodyn::explicit_start() {
 }
 
 int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
-   size_t solvent = (size_t)Sys[0]->solvent;
+  size_t solvent = (size_t)Sys[0]->solvent;
 
   Real sum_theta{0};
   int c{0};
@@ -534,23 +532,19 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
   for (size_t i = 0; i < Mol.size(); ++i) {
 
     size_t mon_nr = Mol[i]->MolMonList.size();
+    //crucial to do this here, since it removes bounds, which needs to be done for every component:
+    Real sum_of_elements = component[c]->theta();
 
     if (i != solvent) {
-      Real theta = Mol[i]->theta;
+      size_t theta = Mol[i]->theta;
       sum_theta += theta;
       for (size_t j = 0; j < mon_nr; ++j) {
 
-        Real mon_theta{0};
-        mon_theta = theta * Mol[i]->fraction(Mol[i]->MolMonList[j]);
+        size_t mon_theta = theta * Mol[i]->fraction(Mol[i]->MolMonList[j]);
 
-        Real sum_of_elements{0};
-        skip_bounds([this, &sum_of_elements, component, c](int x, int y, int z) mutable {
-          sum_of_elements += val(component[c]->rho, x, y, z);
-        });
+        size_t norming_factor = mon_theta / sum_of_elements;
 
-        skip_bounds([this, &component, c, mon_theta, sum_of_elements](int x, int y, int z) mutable {
-          *val_ptr(component[c]->rho, x, y, z) *= mon_theta / sum_of_elements;
-        });
+        Norm(component[c]->rho_ptr, norming_factor, M);
 
         ++c;
       }
@@ -564,28 +558,24 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
 
   // We now know the total density and can adjust the solvent accodingly to add up to 1.
   // Let's first find out how much there is to adjust.
-  vector<Real> residuals(M);
+  stl::device_vector<Real> residuals(M);
+  stl::fill(residuals.begin(), residuals.end(), -1);
+
 
   //Pool densities per position
-  for (int i = 0; i < M; ++i) {
-    for (size_t j = 0; j < component_no; ++j)
-      residuals[i] += component[j]->rho[i];
-  }
-
-  // Calculate excesss / defecit
-  for (Real& i : residuals) {
-    i -= 1;
-  }
+  for (size_t j = 0; j < component_no; ++j)
+      stl::transform(component[j]->rho.begin(), component[j]->rho.end(), residuals.begin(), residuals.begin(), stl::plus<Real>());
 
   // If there's only one solvent mon, this problem is easy.
-  if (solvent_mons.size() == 1) {
-    skip_bounds([this, &component, residuals, solvent_mons](int x, int y, int z) mutable {
-      *val_ptr(component[solvent_mons[0]]->rho, x, y, z) -= val(residuals, x, y, z);
-    });
-  } else {
+  if (solvent_mons.size() == 1)
+    stl::transform(component[solvent_mons[0]]->rho.begin(), component[solvent_mons[0]]->rho.end(), residuals.begin(), component[solvent_mons[0]]->rho.begin(), stl::minus<Real>());
+  else {
     cerr << "Norming solvents with mutliple monomers is not supported! Please write your own script" << endl;
     throw ERROR_FILE_FORMAT;
   }
+
+  for (shared_ptr<Component> all_components : component)
+    all_components->update_boundaries();
 
 return 0;
 }
@@ -1018,7 +1008,7 @@ Real Component::theta() {
   Real sum{0};
   #ifdef PAR_MESODYN
   Lat->remove_bounds(rho_ptr);
-  sum = stl::reduce(rho.begin(), rho.end(),0);
+  sum = thrust::reduce(this->rho.begin(), this->rho.end(), sum);
   #else
   skip_bounds([this, &sum](int x, int y, int z) mutable {
     sum += val(rho, x, y, z);

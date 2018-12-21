@@ -852,14 +852,21 @@ Real SFNewton::computeresidual(Real* array, int size) {
   Real residual = 0;
   // Compute residual based on maximum error value
   if (max_g == true) {
+	#ifdef PAR_MESODYN
+
+	//in tools:
+	residual = ComputeResidual(array, size);
+
+	#else //CUDA OR CPU
+	
 	Real* H_array;
 
 	#ifdef CUDA
 	H_array = (Real*)malloc(size*sizeof(Real));
 	TransferDataToHost(H_array,array,size);
-	#else
-	H_array = array;
-	#endif
+		#else //CPU
+		H_array = array;
+	#endif //CUDA
 
     auto temp_residual = minmax_element(H_array, H_array+size);
     if(abs(*temp_residual.first) > abs(*temp_residual.second) ) {
@@ -870,17 +877,19 @@ Real SFNewton::computeresidual(Real* array, int size) {
 
 	#ifdef CUDA
 	free(H_array);
-	#endif
+	#endif //CUDA
+
+	#endif //PAR_MESODYN
 
   } else {
     // Compute residual based on sum of errors
 	#ifdef CUDA
     Dot(residual,array,array,size);
     residual = sqrt(residual);
-	#else
-	residual = H_Dot(array,array,size);
-	residual = sqrt(residual);
-	#endif
+		#else //CPU
+		residual = H_Dot(array,array,size);
+		residual = sqrt(residual);
+	#endif //CUDA
   }
 
   return residual;

@@ -4,6 +4,13 @@
 #include <numeric>
 #include "lattice.h"
 
+#ifdef PAR_MESODYN
+	#include <thrust/extrema.h>
+	#include <thrust/device_vector.h>
+  #include <thrust/device_ptr.h>
+  #include <thrust/pair.h>
+#endif
+
 #ifdef CUDA
 #include <cuda.h>
 //#include <cublas_v2.h>
@@ -127,6 +134,8 @@ void OverwriteC(Real*, int*, Real, int);
 void OverwriteA(Real*, int*, Real*, int);
 void UpQ(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
 void UpPsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
+
+Real ComputeResidual(Real*, int);
 
 struct saxpy_functor
 {

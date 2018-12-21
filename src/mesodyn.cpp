@@ -113,7 +113,7 @@ bool Mesodyn::mesodyn() {
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
   /**** Main MesoDyn time loop ****/
-  for (int t = 0; t < timesteps; t++) {
+  for (int t = 1; t < timesteps+1; t++) {
     cout << "MESODYN: t = " << t << endl;
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);

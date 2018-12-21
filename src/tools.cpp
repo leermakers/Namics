@@ -3,7 +3,6 @@
 #include "stdio.h"
 #define MAX_BLOCK_SZ 512
 
-
 #ifdef CUDA
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
@@ -834,6 +833,21 @@ void AddG(Real *g, Real *phitot, Real *alpha, int M)   {
 void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	oneminusphitot<<<n_blocks,block_size>>>(g,phitot,M);
+}
+
+Real ComputeResidual(Real* array, int size) {
+	using namespace thrust;
+
+	Real residual{0};
+
+    auto temp_residual = thrust::minmax_element( device_pointer_cast(array), device_pointer_cast(array+size) );
+    if(abs(*temp_residual.first) > abs(*temp_residual.second) ) {
+      residual = abs(*temp_residual.first);
+    } else {
+      residual = abs(*temp_residual.second);
+    }
+
+	return residual;
 }
 
 namespace tools {

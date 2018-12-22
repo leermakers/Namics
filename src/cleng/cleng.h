@@ -2,6 +2,7 @@
 #define CLENGxH
 #include "../input.h"
 #include "nodes/simple_node.h"
+#include "nodes/monolit.h"
 #include "../namics.h"
 #include "../solve_scf.h"
 #include "../system.h"
@@ -37,8 +38,6 @@ public:
     Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
     ~Cleng();
 
-
-
     int clamp_seg;
     int clp_mol;
     int n_boxes;
@@ -46,12 +45,11 @@ public:
     int sub_box_size;
     int MCS;
     int delta_step;
-    int n_p;
     int t;
-    int save_interval;
-    string checkpoint_save;
-    string checkpoint_load;
-    string cleng_pos;
+    int delta_save;
+    bool checkpoint_save;
+    bool checkpoint_load;
+    bool cleng_pos;
     string save_filename;
     Point BC;
 
@@ -89,6 +87,7 @@ public:
     void WriteClampedNodeDistance(int);
     void PushOutput(int, Real);
     void make_BC();
+    void try2move();
     int GetValue(string, int&, Real&, string&);
     int GetRandomIntValueExcludeValue(int, int, int, bool);
     int GetRandomIntValueExcludeArray(int, int, vector<int>, bool);
@@ -100,7 +99,6 @@ public:
     std::vector<string> PARAMETERS;
     std::vector<string> VALUES;
     bool CheckInput(int);
-    void PutParameter(string);
     string GetValue(string);
 
 };

@@ -226,8 +226,6 @@ int Mesodyn::noise_flux() {
 
 int Mesodyn::sanity_check() {
 
-  //Check local mass conservation
-  Real sum {0};
 
   int negative_count{0};
   stl::device_vector<Real> sum_pos(M);
@@ -236,7 +234,7 @@ int Mesodyn::sanity_check() {
 
   for (auto all_components : solver_component) {
     negative_count = stl::count_if(all_components->rho.begin(), all_components->rho.end(), is_negative_functor());
-    transform(all_components->rho.begin(), all_components->rho.end(), sum_pos.begin(), plus<Real>());
+    transform(all_components->rho.begin(), all_components->rho.end(), sum_pos.begin(), stl::plus<Real>());
   }
 
   if (negative_count > 0) {

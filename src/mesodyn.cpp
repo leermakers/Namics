@@ -254,7 +254,7 @@ int Mesodyn::sanity_check() {
   if (mass != boundaryless_volume) {
      cerr << "Total mass != volume. Difference: " << (mass-boundaryless_volume) << endl;
 
-     for (size_t c {0}, c < solver_component.size(); ++c)
+     for (size_t c {0}; c < solver_component.size(); ++c)
        cerr << "Mass component " << c << " " << solver_component[c]->theta();
   }
 

@@ -234,7 +234,7 @@ int Mesodyn::sanity_check() {
 
   for (auto all_components : solver_component) {
     negative_count = stl::count_if(all_components->rho.begin(), all_components->rho.end(), is_negative_functor());
-    transform(all_components->rho.begin(), all_components->rho.end(), sum_pos.begin(), stl::plus<Real>());
+    stl::transform(all_components->rho.begin(), all_components->rho.end(), sum_pos.begin(), stl::plus<Real>());
   }
 
   if (negative_count > 0) {

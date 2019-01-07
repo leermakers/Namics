@@ -253,7 +253,7 @@ int Mesodyn::sanity_check() {
   Real mass{0};
 
   #ifdef PAR_MESODYN
-  mass = thrust::reduce(sum_pos.begin(), sum_post.end(), 0);
+  mass = thrust::reduce(sum_pos.begin(), sum_pos.end(), 0);
   if (mass != boundaryless_volume)
     cerr << "Total mass != volume. Difference: " << (mass-boundaryless_volume) << endl;
   #else

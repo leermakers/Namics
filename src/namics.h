@@ -65,8 +65,7 @@ template<typename T>
         return t;
       }
     }
-    //else
-    improper_input();
+    else throw 1;
     return t;
   }
 

@@ -174,12 +174,15 @@ struct order_param_functor
 
 struct is_negative_functor
 {
-  is_negative_functor() {}
+
+  const double tolerance{0};
+
+  is_negative_functor(double _tolerance=0) : tolerance(_tolerance) {}
 
   __host__ __device__
   bool operator()(const double &x) const
   {
-    return x < 0 || x > 1;
+    return x < 0-tolerance || x > 1+tolerance;
   }
 };
 
@@ -187,7 +190,7 @@ struct is_not_unity_functor
 {
   const double tolerance{0};
 
-  is_not_unity_functor(double _tolerance) : tolerance(_tolerance) {}
+  is_not_unity_functor(double _tolerance=0) : tolerance(_tolerance) {}
 
   __host__ __device__
   bool operator()(const double &x) const
@@ -196,7 +199,7 @@ struct is_not_unity_functor
 
     if (x > (1+tolerance) || x < (1-tolerance))
       result = 1;
-      
+
     return result;
   }
 };

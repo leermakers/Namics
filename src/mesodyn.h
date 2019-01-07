@@ -40,11 +40,11 @@ enum error {
   ERROR_FILE_FORMAT,
 };
 
-class Lattice_Access {
+class Lattice_Interface {
 public:
 
-  Lattice_Access(Lattice*);
-  ~Lattice_Access();
+  Lattice_Interface(Lattice*);
+  ~Lattice_Interface();
 
 #ifdef PAR_MESODYN
     template <typename T>
@@ -123,7 +123,7 @@ private:
   shared_ptr<Boundary1D> boundary;
 };
 
-class Boundary1D : public Lattice_Access {
+class Boundary1D : public Lattice_Interface {
 public:
 
   enum boundary {
@@ -183,7 +183,7 @@ private:
   void bZPeriodic(vector<Real>&);
 };
 
-class Component : protected Lattice_Access {
+class Component : protected Lattice_Interface {
 public:
   Component(Lattice*, shared_ptr<Boundary1D>, stl::host_vector<Real>&); //1D
   ~Component();
@@ -207,9 +207,9 @@ private:
   shared_ptr<Boundary1D> boundary;
 };
 
-class Flux1D : protected Lattice_Access {
+class Flux1D : protected Lattice_Interface {
 public:
-  Flux1D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux1D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>, shared_ptr<Gaussian_noise>);
   virtual ~Flux1D();
 
   virtual int langevin_flux();
@@ -236,6 +236,8 @@ protected:
   shared_ptr<Component> A;
   shared_ptr<Component> B;
 
+  shared_ptr<Gaussian_noise> gaussian;
+
   stl::device_vector<Real> L;
   stl::device_vector<Real> mu;
   const Real D;
@@ -246,7 +248,7 @@ protected:
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux2D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>, shared_ptr<Gaussian_noise>);
   virtual ~Flux2D();
 
   virtual int langevin_flux() override;
@@ -262,7 +264,7 @@ protected:
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux3D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>, shared_ptr<Gaussian_noise>);
   ~Flux3D();
 
   virtual int langevin_flux() override;
@@ -276,7 +278,7 @@ protected:
   stl::host_vector<int> Mask_minus_z;
 };
 
-class Mesodyn : private Lattice_Access {
+class Mesodyn : private Lattice_Interface {
 
 private:
   /* Constructor arguments*/
@@ -307,7 +309,7 @@ private:
   const bool seed_specified;
   const int timesteps; // length of the time evolution
   const int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
-  Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
+  const Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
 
@@ -340,7 +342,7 @@ private:
   Real boundaryless_volume;
 
   /* Helper class instances */
-  unique_ptr<Gaussian_noise> gaussian;
+  shared_ptr<Gaussian_noise> gaussian;
   shared_ptr<Boundary1D> boundary;
   vector< shared_ptr<Component> > component;
   vector< shared_ptr<Component> > solver_component;
@@ -370,6 +372,7 @@ public:
   Real lost;
 
   /* Inputs / output class interface functions */
+
   int write_output();
   bool CheckInput(const int);
 

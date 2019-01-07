@@ -38,23 +38,6 @@ int DEBUG_BREAK = 1;
 //Used for command line switches
 bool debug = false;
 
-  template<typename T>
-  auto load_argument_value(vector<string> args, string argument, T t) -> decltype(t) {
-    vector<string>::iterator position;
-    position = find(args.begin(), args.end(), argument);
-    if ( position != args.end() ) {
-      ++position;
-      if (position != args.end() && (*position)[0] != '-') {
-        istringstream ss(*position);
-        ss >> t;
-        return t;
-      }
-    }
-    //else
-    throw 1;
-}
-
-
 //Output when the user malforms input. Update when adding new command line switches.
 void improperInput() {
   cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;
@@ -88,7 +71,7 @@ int main(int argc, char* argv[]) {
 
 	int cudaDeviceIndex = 0;
 
-	  //If the switch -GPU is given, select GPU.
+	//If the switch -GPU is given, select GPU.
   	if ( find(args.begin(), args.end(), "-GPU") != args.end() ) {
 		  try {
 		  	cudaDeviceIndex = load_argument_value(args, "-GPU", cudaDeviceIndex);
@@ -385,6 +368,9 @@ int main(int argc, char* argv[]) {
       				New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
 				if (debug) cout << "Creating mesodyn" << endl;
         			Mes.push_back(new Mesodyn(start, In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->MesodynList[0]));
+        			if (!Mes[0]->CheckInput(start)) {
+          				return 0;
+        			}
               try {
         			  Mes[0]->mesodyn();
               } catch (error RC) {

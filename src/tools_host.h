@@ -40,6 +40,26 @@ struct order_param_functor
         }
 };
 
+struct is_negative_functor
+{
+	is_negative_functor() {}
+
+  		bool operator()(const double &x) const
+  		{
+    		return x < 0 || x > 1;
+  		}
+};
+
+struct is_not_unity_functor
+{
+  is_not_unity_functor() {}
+
+  bool operator()(const double &x) const
+  {
+    return x != 1;
+  }
+};
+
 
 typedef double Real;
 

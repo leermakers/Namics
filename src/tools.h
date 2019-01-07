@@ -185,12 +185,19 @@ struct is_negative_functor
 
 struct is_not_unity_functor
 {
-  is_not_unity_functor() {}
+  const double tolerance{0};
+
+  is_not_unity_functor(double _tolerance) : tolerance(_tolerance) {}
 
   __host__ __device__
   bool operator()(const double &x) const
   {
-    return x != 1;
+    bool result{0};
+
+    if (x > (1+tolerance) || x < (1-tolerance))
+      result = 1;
+      
+    return result;
   }
 };
 

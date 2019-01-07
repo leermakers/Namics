@@ -244,23 +244,31 @@ int Mesodyn::sanity_check() {
   int not_unity_count{0};
   not_unity_count = stl::count_if(sum_pos.begin(), sum_pos.end(), is_not_unity_functor());
 
-  if (negative_count > 0) {
+  if (negative_count > 0)
     cerr << "Found " << not_unity_count << " values in rho that are not-unity." << endl;
-  }
 
   Real mass{0};
 
   #ifdef PAR_MESODYN
   mass = thrust::reduce(sum_pos.begin(), sum_pos.end(), 0);
-  if (mass != boundaryless_volume)
-    cerr << "Total mass != volume. Difference: " << (mass-boundaryless_volume) << endl;
+  if (mass != boundaryless_volume) {
+     cerr << "Total mass != volume. Difference: " << (mass-boundaryless_volume) << endl;
+
+     for (size_t c {0}, c < solver_component.size(); ++c)
+       cerr << "Mass component " << c << " " << solver_component[c]->theta();
+  }
+
   #else
   skip_bounds([this, &mass, sum_pos](int x, int y, int z) mutable {
     mass += val(sum_pos, x, y, z);
   });
 
-  if (mass != boundaryless_volume)
+  if (mass != boundaryless_volume) {
     cerr << "Total mass != volume. Difference: " << (mass-boundaryless_volume) << endl;
+
+    for (size_t c {0}; c < solver_component.size(); ++c)
+       cerr << "Mass component " << c << " " << solver_component[c]->theta();
+  }
   #endif
 
   return 0;

@@ -836,11 +836,10 @@ void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 }
 
 Real ComputeResidual(Real* array, int size) {
-	using namespace thrust;
 
 	Real residual{0};
 
-    auto temp_residual = thrust::minmax_element( device_pointer_cast(array), device_pointer_cast(array+size) );
+    auto temp_residual = thrust::minmax_element( thrust::device_pointer_cast(array), thrust::device_pointer_cast(array+size) );
     if(abs(*temp_residual.first) > abs(*temp_residual.second) ) {
       residual = abs(*temp_residual.first);
     } else {

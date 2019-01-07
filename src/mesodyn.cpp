@@ -233,6 +233,7 @@ int Mesodyn::sanity_check() {
 
 
   for (auto all_components : solver_component) {
+    Lat[0]->remove_bounds(all_components->rho_ptr);
     negative_count = stl::count_if(all_components->rho.begin(), all_components->rho.end(), is_negative_functor());
     stl::transform(all_components->rho.begin(), all_components->rho.end(), sum_pos.begin(), sum_pos.begin(), stl::plus<Real>());
   }
@@ -250,12 +251,12 @@ int Mesodyn::sanity_check() {
   Real mass{0};
 
   #ifdef PAR_MESODYN
-  mass = thrust::reduce(sum_pos.begin(), sum_pos.end(), 0);
+  mass = thrust::reduce(sum_pos.begin(), sum_pos.end());
   if (mass != boundaryless_volume) {
      cerr << "Total mass != volume. Difference: " << (mass-boundaryless_volume) << endl;
 
      for (size_t c {0}; c < solver_component.size(); ++c)
-       cerr << "Mass component " << c << " " << solver_component[c]->theta();
+       cerr << "Mass component " << c << " " << solver_component[c]->theta() << endl;
   }
 
   #else
@@ -267,7 +268,7 @@ int Mesodyn::sanity_check() {
     cerr << "Total mass != volume. Difference: " << (mass-boundaryless_volume) << endl;
 
     for (size_t c {0}; c < solver_component.size(); ++c)
-       cerr << "Mass component " << c << " " << solver_component[c]->theta();
+       cerr << "Mass component " << c << " " << solver_component[c]->theta() << endl;
   }
   #endif
 
@@ -1028,7 +1029,7 @@ Real Component::theta() {
   Real sum{0};
   #ifdef PAR_MESODYN
   Lat->remove_bounds(rho_ptr);
-  sum = stl::reduce(rho.begin(), rho.end(),0);
+  sum = stl::reduce(this->rho.begin(), this->rho.end());
   #else
   skip_bounds([this, &sum](int x, int y, int z) mutable {
     sum += val(rho, x, y, z);

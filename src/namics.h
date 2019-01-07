@@ -53,6 +53,24 @@ enum MoleculeType {monomer, linear, branched, dendrimer, comb, ring};
 enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};
 enum EngineType {SCF, CLENG, MESODYN, TENG};
 
+template<typename T>
+  auto load_argument_value(vector<string> args, string argument, T t) -> decltype(t) {
+    vector<string>::iterator position;
+    position = find(args.begin(), args.end(), argument);
+    if ( position != args.end() ) {
+      ++position;
+      if (position != args.end() && (*position)[0] != '-') {
+        istringstream ss(*position);
+        ss >> t;
+        return t;
+      }
+    }
+    //else
+    improper_input();
+    return t;
+  }
+
+
 #endif
 /*
 #ifdef _WIN32

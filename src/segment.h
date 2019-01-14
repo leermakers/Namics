@@ -30,7 +30,8 @@ public:
 	int seg_nr;
 	bool unique;
 	int seg_nr_of_copy;
-	int state_nr_of_copy; 
+	int state_nr_of_copy;
+	bool prepared;
 
 	Real epsilon;
 	Real valence;
@@ -43,14 +44,14 @@ public:
 	vector<Real>state_valence;
 	vector<int>state_id;
 	vector<string>state_name;
-	vector<int>state_nr; 
-	vector<Real>state_alphabulk; 
+	vector<int>state_nr;
+	vector<Real>state_alphabulk;
 	vector<Real>state_phibulk;
 	vector<Real>state_theta;
 
 	string filename;
 	bool block;
-	int ns; 
+	int ns;
 
 	int n_pos;
 	int n_box;
@@ -130,7 +131,7 @@ public:
 	bool UpdateVarInfo(int);
 	void PutValue(Real);
 	Real GetValue();
-	int AddState(int,Real,Real,bool); 
+	int AddState(int,Real,Real,bool);
 	void SetPhiSide();
 	int PutAlpha(Real*,int);
 };

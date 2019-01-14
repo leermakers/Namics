@@ -4,11 +4,19 @@
 #include <numeric>
 #include "lattice.h"
 
+#ifdef PAR_MESODYN
+	#include <thrust/extrema.h>
+	#include <thrust/device_vector.h>
+  #include <thrust/device_ptr.h>
+  #include <thrust/pair.h>
+#endif
+
 #ifdef CUDA
 #include <cuda.h>
 //#include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <memory>
+#include <float.h>
 
 //extern cublasStatus_t stat;
 //extern cublasHandle_t handle;
@@ -19,6 +27,7 @@ __global__ void collectphi(Real*, Real*, Real*, int*, int*, int*, int, int, int,
 __global__ void sum(Real*, Real*, int);
 __global__ void sum(int*, int*, int);
 __global__ void dot(Real*, Real*, Real*, int);
+__global__ void max(Real *, Real *, int );
 __global__ void composition(Real*, Real*, Real*, Real*, Real, int);
 __global__ void times(Real*, Real*, Real*, int);
 __global__ void times(Real*, Real*, int*, int);
@@ -27,6 +36,8 @@ __global__ void norm(Real*, Real, int);
 __global__ void zero(Real*, int);
 __global__ void zero(int*, int);
 __global__ void unity(Real*, int);
+__global__ void flux_min(Real *, Real*, int, int);
+__global__ void flux(Real*, Real*, Real*, int, int, int);
 __global__ void cp(Real*, Real*, int);
 __global__ void cp(Real*, int*, int);
 __global__ void yisaplusctimesb(Real*, Real*, Real*, Real, int);
@@ -73,14 +84,16 @@ __global__ void b_z(int*, int, int, int, int, int, int, int);
 void Dot(Real&, Real*, Real*, int);
 void Sum(Real&, Real*, int);
 void Sum(int&, int*, int);
-bool GPU_present();
+bool GPU_present(int);
 int* AllIntOnDev(int);
 Real* AllOnDev(int);
 int* AllManagedIntOnDev(int);
-Real* AllManagedOnDev(int);
+Real* AllOnDev(int);
 void AddTimes(Real*, Real*, Real*, int);
 void Times(Real*, Real*, Real*, int);
 void Times(Real*, Real*, int*, int);
+void Flux_min(Real*, Real*, int, int);
+void Flux(Real*, Real*, Real*, int, int, int);
 void Composition(Real*, Real*, Real*, Real*, Real, int);
 void Norm(Real*, Real, int);
 void Zero(Real*, int);
@@ -122,6 +135,75 @@ void OverwriteA(Real*, int*, Real*, int);
 void UpQ(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
 void UpPsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
 
+Real ComputeResidual(Real*, int);
+
+struct saxpy_functor
+{
+    const double a;
+
+    saxpy_functor(double _a) : a(_a) {}
+
+    __host__ __device__
+        double operator()(const double& x, const double& y) const { 
+            return a * x + y;
+        }
+};
+
+struct const_multiply_functor
+{
+    const double a;
+
+    const_multiply_functor(double _a) : a(_a) {}
+
+    __host__ __device__
+        double operator()(const double& x, const double& y) const { 
+            return a * x * y;
+        }
+};
+
+struct order_param_functor
+{
+
+    order_param_functor() {}
+
+    __host__ __device__
+        double operator()(const double& x, const double& y) const { 
+            return pow(x-y,2);
+        }
+};
+
+struct is_negative_functor
+{
+
+  const double tolerance{0};
+
+  is_negative_functor(double _tolerance=0) : tolerance(_tolerance) {}
+
+  __host__ __device__
+  bool operator()(const double &x) const
+  {
+    return x < 0-tolerance || x > 1+tolerance;
+  }
+};
+
+struct is_not_unity_functor
+{
+  const double tolerance{0};
+
+  is_not_unity_functor(double _tolerance=0) : tolerance(_tolerance) {}
+
+  __host__ __device__
+  bool operator()(const double &x) const
+  {
+    bool result{0};
+
+    if (x > (1+tolerance) || x < (1-tolerance))
+      result = 1;
+
+    return result;
+  }
+};
+
 #else
 
 #include "tools_host.h"
@@ -155,12 +237,15 @@ inline Real H_Dot(T* A, T* B, int M) {
 
 template <typename T>
 inline void H_Invert(T* KSAM, T* MASK, int M) {
-  transform(MASK, MASK + M, KSAM, KSAM, [](Real A, Real B) {if (A==0) return 1.0; else return 0.0;});
+  std::transform(MASK, MASK + M, KSAM, KSAM, [](Real A, Real B) {if (A==0) return 1.0; else return 0.0;});
 }
 
 template<typename T>
 void H_PutAlpha(T *g, T *phitot, T *phi_side, T chi, T phibulk, int M)   {
 	for (int i=0; i<M; i++) if (phitot[i]>0) g[i] = g[i] - chi*(phi_side[i]/phitot[i]-phibulk);
 }
+
+Real pythag(Real, Real);
+int svdcmp(Real**, int, int, Real*, Real**);
 
 #endif

@@ -2,7 +2,7 @@
 #include "tools.h"
 
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_,vector<Molecule*> Mol_,string name_) {
-	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; Sta=Sta_; Rea=Rea_;
+	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; Sta=Sta_; Rea=Rea_; prepared = false;
 if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("calculation_type");
 	KEYS.push_back("generate_guess");
@@ -67,7 +67,7 @@ void System::AllocateMemory() {
     H_psi = (Real*)malloc(M * sizeof(Real));
   }
 #ifdef CUDA
-  phitot = (Real*)AllManagedOnDev(M);
+  phitot = (Real*)AllOnDev(M);
   alpha = (Real*)AllOnDev(M);
   GrandPotentialDensity = (Real*)AllOnDev(M);
   FreeEnergyDensity = (Real*)AllOnDev(M);
@@ -163,7 +163,10 @@ bool System::PrepareForCalculations() {
 	bool success = true;
 	int M = Lat[0]->M;
 
-	success = generate_mask();
+	if (prepared == false) {
+		success = generate_mask();
+		prepared = true;
+	}
 
   n_mol = In[0]->MolList.size();
   success = Lat[0]->PrepareForCalculations();

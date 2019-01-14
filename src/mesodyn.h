@@ -12,8 +12,24 @@
 #include <functional> // boundary conditions
 #include <algorithm>  // transform, copy, find functions
 #include <limits>     // output
+#include <sstream>
 #include <unistd.h>   // output
 #include <memory>
+
+#ifdef PAR_MESODYN
+#include <thrust/device_vector.h>
+#include <thrust/transform.h>
+#include <thrust/copy.h>
+#include <thrust/fill.h>
+#include <thrust/device_ptr.h>
+namespace stl = thrust;
+#else
+namespace stl = std;
+namespace std {
+  template<typename T> using host_vector = vector<T>;   
+  template<typename T> using device_vector = vector<T>;   
+}
+#endif
 
 class Boundary1D;
 
@@ -24,19 +40,40 @@ enum error {
   ERROR_FILE_FORMAT,
 };
 
-class Lattice_Access {
+class Lattice_Interface {
 public:
 
-  Lattice_Access(Lattice*);
-  ~Lattice_Access();
+  Lattice_Interface(Lattice*);
+  ~Lattice_Interface();
 
-  template <typename T>
-  inline T val(vector<T>& v, int x, int y, int z) {
+#ifdef PAR_MESODYN
+    template <typename T>
+  inline T val(const stl::device_vector<T>& v, int x, int y, int z) {
       return v[x * JX + y * JY + z * JZ];
   }
 
   template <typename T>
-  inline T* val_ptr(vector<T>& v, int x, int y, int z) {
+  inline T* val_ptr(stl::device_vector<T>& v, int x, int y, int z) {
+      return thrust::raw_pointer_cast(&v[x * JX + y * JY + z * JZ]);
+  }
+    template <typename T>
+  inline T val(const stl::host_vector<T>& v, int x, int y, int z) {
+      return v[x * JX + y * JY + z * JZ];
+  }
+
+  template <typename T>
+  inline T* val_ptr(stl::host_vector<T>& v, int x, int y, int z) {
+      return &v[x * JX + y * JY + z * JZ];
+  }
+#endif
+
+      template <typename T>
+  inline T val(const std::vector<T>& v, int x, int y, int z) {
+      return v[x * JX + y * JY + z * JZ];
+  }
+
+  template <typename T>
+  inline T* val_ptr(std::vector<T>& v, int x, int y, int z) {
       return &v[x * JX + y * JY + z * JZ];
   }
 
@@ -53,6 +90,7 @@ public:
   inline void zm_boundary( function<void(int, int, int)>);
 
   const int dimensions;
+  Lattice* Lat;
 
 private:
   const int JX;
@@ -74,9 +112,9 @@ class Gaussian_noise {
 public:
   Gaussian_noise(shared_ptr<Boundary1D>, Real, int, Real, Real); // Not seeded (32 bits of randomness)
   Gaussian_noise(shared_ptr<Boundary1D>, Real, int, Real, Real, size_t); // Seeded
-  int generate();
-  int add_noise(vector<Real>&);
-  vector<Real> noise;
+  int generate(size_t);
+  int add_noise(stl::device_vector<Real>&);
+  stl::device_vector<Real> noise;
 
 private:
   seed_seq seed;
@@ -85,7 +123,7 @@ private:
   shared_ptr<Boundary1D> boundary;
 };
 
-class Boundary1D : protected Lattice_Access {
+class Boundary1D : public Lattice_Interface {
 public:
 
   enum boundary {
@@ -145,20 +183,23 @@ private:
   void bZPeriodic(vector<Real>&);
 };
 
-class Component : protected Lattice_Access {
+class Component : protected Lattice_Interface {
 public:
-  Component(Lattice*, shared_ptr<Boundary1D>, vector<Real>&); //1D
+  Component(Lattice*, shared_ptr<Boundary1D>, stl::host_vector<Real>&); //1D
   ~Component();
 
-  vector<Real> rho;
-  vector<Real> alpha;
+  stl::device_vector<Real> rho;
+  stl::device_vector<Real> alpha;
 
-  Real rho_at(int, int, int);
-  Real alpha_at(int, int, int);
-  int update_density(vector<Real>&, int = 1);     //Explicit scheme
-  int update_density(vector<Real>&, vector<Real>&, Real ratio, int = 1); //Implicit scheme
-  int load_alpha(vector<Real>&);
-  int load_rho(vector<Real>&);
+  Real* rho_ptr;
+  Real* alpha_ptr;
+
+  int update_density(stl::device_vector<Real>&, int = 1);     //Explicit scheme
+  int update_density(stl::device_vector<Real>&, stl::device_vector<Real>&, Real ratio, int = 1); //Implicit scheme
+  int load_alpha(stl::device_vector<Real>);
+  int load_alpha(Real*);
+  int load_rho(stl::device_vector<Real>);
+  int load_rho(Real*);
   int update_boundaries();
   Real theta();
 
@@ -166,9 +207,9 @@ private:
   shared_ptr<Boundary1D> boundary;
 };
 
-class Flux1D : protected Lattice_Access {
+class Flux1D : protected Lattice_Interface {
 public:
-  Flux1D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux1D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>, shared_ptr<Gaussian_noise>);
   virtual ~Flux1D();
 
   virtual int langevin_flux();
@@ -182,60 +223,62 @@ public:
     ERROR_NOT_IMPLEMENTED,
   };
 
-  vector<Real> J_plus;
-  vector<Real> J_minus;
-  vector<Real> J;
+  stl::device_vector<Real> J_plus;
+  stl::device_vector<Real> J_minus;
+  stl::device_vector<Real> J;
 
 
 protected:
-  int onsager_coefficient(vector<Real>&, vector<Real>&);
-  int potential_difference(vector<Real>&, vector<Real>&);
-  int langevin_flux(vector<int>&, vector<int>&, int);
-  int mask(vector<int>&);
+  int onsager_coefficient(stl::device_vector<Real>&, stl::device_vector<Real>&);
+  int potential_difference(stl::device_vector<Real>&, stl::device_vector<Real>&);
+  int langevin_flux(const stl::host_vector<int>&, const stl::host_vector<int>&, const int);
+  int mask(const stl::host_vector<int>&);
   shared_ptr<Component> A;
   shared_ptr<Component> B;
 
-  vector<Real> L;
-  vector<Real> mu;
+  shared_ptr<Gaussian_noise> gaussian;
+
+  stl::device_vector<Real> L;
+  stl::device_vector<Real> mu;
   const Real D;
   const int JX;
-  vector<int> Mask_plus_x;
-  vector<int> Mask_minus_x;
+  stl::host_vector<int> Mask_plus_x;
+  stl::host_vector<int> Mask_minus_x;
 };
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux2D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>, shared_ptr<Gaussian_noise>);
   virtual ~Flux2D();
 
   virtual int langevin_flux() override;
 
 
 protected:
-  int mask(vector<int>&);
+  int mask(const stl::host_vector<int>&);
   const int JY;
-  vector<int> Mask_plus_y;
-  vector<int> Mask_minus_y;
+  stl::host_vector<int> Mask_plus_y;
+  stl::host_vector<int> Mask_minus_y;
 
 };
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Real, vector<int>&, shared_ptr<Component>, shared_ptr<Component>);
+  Flux3D(Lattice*, const Real, const stl::host_vector<int>&, shared_ptr<Component>, shared_ptr<Component>, shared_ptr<Gaussian_noise>);
   ~Flux3D();
 
   virtual int langevin_flux() override;
 
 private:
-  int mask(vector<int>&);
+  int mask(const stl::host_vector<int>&);
 
 protected:
   const int JZ;
-  vector<int> Mask_plus_z;
-  vector<int> Mask_minus_z;
+  stl::host_vector<int> Mask_plus_z;
+  stl::host_vector<int> Mask_minus_z;
 };
 
-class Mesodyn : private Lattice_Access {
+class Mesodyn : private Lattice_Interface {
 
 private:
   /* Constructor arguments*/
@@ -251,29 +294,34 @@ private:
   vector <Output*> Out;
   const string brand;
 
+  std::vector<string> KEYS;
+  std::vector<string> PARAMETERS;
+  std::vector<string> VALUES;
+
+  bool input_success;
+
   /* Read from file */
-  Real D; // diffusionconstant
-  Real dt;
-  Real mean; // mean of gaussian noise (should be 0)
-  Real stddev; // stdev of gaussian noise (should be 1*D)
-  Real seed;  // seed of gaussian noise
-  bool seed_specified;
-  int timesteps; // length of the time evolution
-  int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
+  const Real D; // diffusionconstant
+  const Real dt;
+  const Real mean; // mean of gaussian noise (should be 0)
+  const Real stddev; // stdev of gaussian noise (should be 1*D)
+  const Real seed;  // seed of gaussian noise
+  const bool seed_specified;
+  const int timesteps; // length of the time evolution
+  const int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
+  const Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
 
 
   /* Flow control */
-  int RC;
   Real* solve_explicit();
   void explicit_start();
   int noise_flux();
   Real* solve_crank_nicolson();
-  void load_alpha(vector<Real>&, size_t);
+  void load_alpha(Real*, const size_t);
   int sanity_check();
   Real calculate_order_parameter();
-  Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
 
   /* Initialization*/
   enum init {
@@ -282,12 +330,11 @@ private:
     INIT_FROMVTK,
   };
   Real system_volume;
-  vector<Real> rho;
+  stl::device_vector<Real> rho;
   vector<string> tokenize(string, char);
   string read_filename;
   int initial_conditions();
-  vector<Real>&  flux_callback(int);
-  int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
+  int init_rho_homogeneous(stl::host_vector<stl::host_vector<Real>>&, const stl::host_vector<int>&);
   int norm_density(vector<Real>& rho, Real theta);
   void set_update_lists();
   vector<vector<int>> update_plus;
@@ -295,7 +342,7 @@ private:
   Real boundaryless_volume;
 
   /* Helper class instances */
-  unique_ptr<Gaussian_noise> gaussian;
+  shared_ptr<Gaussian_noise> gaussian;
   shared_ptr<Boundary1D> boundary;
   vector< shared_ptr<Component> > component;
   vector< shared_ptr<Component> > solver_component;
@@ -315,7 +362,7 @@ private:
 
 
 public:
-  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
+  Mesodyn(int, vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Mesodyn();
 
   bool mesodyn();
@@ -324,23 +371,24 @@ public:
 
   Real lost;
 
-
   /* Inputs / output class interface functions */
-  vector<string> ints;
-  vector<string> Reals;
-  vector<string> bools;
-  vector<string> strings;
-  vector<Real> Reals_value;
-  vector<int> ints_value;
-  vector<bool> bools_value;
-  vector<string> strings_value;
-  int GetValue(string, int&, Real&, string&);
-  int write_output();
 
-  std::vector<string> KEYS;
-  std::vector<string> PARAMETERS;
-  std::vector<string> VALUES;
-  bool CheckInput(int);
-  string GetValue(string);
+  int write_output();
+  bool CheckInput(const int);
+
+
+  //Const-correct way of initializing member variables from file.
+  template<typename Datatype>
+  Datatype initialize(string option, Datatype default_value) {
+
+    for (size_t i = 0 ; i < Mesodyn::PARAMETERS.size(); ++i)
+		  if (option==Mesodyn::PARAMETERS[i]) {
+          Datatype value;
+          std::istringstream buffer{VALUES[i]};
+          buffer >> value;
+          return value;
+      }
+     return default_value;
+  }
 };
 #endif

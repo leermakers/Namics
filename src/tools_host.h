@@ -1,8 +1,66 @@
 #ifndef HOST_ONLY_TOOLSxH
 #define HOST_ONLY_TOOLSxH
+
+
+
 #include <numeric>
 #include <algorithm>
 #include <functional>
+
+struct saxpy_functor
+{
+    const double a;
+
+    saxpy_functor(double _a) : a(_a) {}
+
+      double operator()(const double& x, const double& y) const { 
+            return a * x + y;
+        }
+};
+
+struct const_multiply_functor
+{
+    const double a;
+
+    const_multiply_functor(double _a) : a(_a) {}
+
+      double operator()(const double& x, const double& y) const { 
+            return a * x * y;
+        }
+};
+
+
+struct order_param_functor
+{
+
+    order_param_functor() {}
+
+        double operator()(const double& x, const double& y) const { 
+            return pow(x-y,2);
+        }
+};
+
+struct is_negative_functor
+{
+	is_negative_functor() {}
+
+  		bool operator()(const double &x) const
+  		{
+    		return x < 0 || x > 1;
+  		}
+};
+
+struct is_not_unity_functor
+{
+  is_not_unity_functor() {}
+
+  bool operator()(const double &x) const
+  {
+    return x != 1;
+  }
+};
+
+
 typedef double Real;
 
 template <typename T>
@@ -16,7 +74,8 @@ inline void Add(T* P, T* A, int M) {
 }
 
 template <typename T>
-inline void Sum(T &result, T *x,int M)   {
+inline void Sum(T &result, T *x, int M)   {
+  //result = std::accumulate(x, x+M, 0);
   result = 0;
   for (int i=0; i<M; i++) result +=x[i];
 }
@@ -24,6 +83,7 @@ inline void Sum(T &result, T *x,int M)   {
 template <typename T>
 inline void Invert(T* KSAM, T* MASK, int M) {
   std::transform(MASK, MASK + M, KSAM, KSAM, [](Real A, Real B) { if (A==0) return 1.0; else return 0.0; });
+  //std::transform(MASK, MASK + M, KSAM, KSAM, (1.0 - std::placeholders::_1) *(1.0 - std::placeholders::_1);
 }
 
 template <typename T>
@@ -146,8 +206,18 @@ void Unity(T* P, int M)   {
 }
 
 template<typename T>
+void Assign(T* P, T C, int M)   {
+  std::fill(P, P+M, C);
+}
+
+template<typename T>
+void Assign(T* P, T* C, int M)   {
+  std::copy(P, P+M, C);
+}
+
+template<typename T>
 void YisAplusCtimesB(T *Y, T *A, T*B, T C, int M)   {
-	for (int i=0; i<M; i++) Y[i]=A[i]+C*B[i];
+	std::transform(A, A+M, B, Y, std::placeholders::_1 + std::placeholders::_2 * C);
 }
 
 template<typename T>
@@ -168,21 +238,26 @@ void YisAplusB(T *Y, T *A, T *B, int M)   {
 template<typename T>
 void YplusisCtimesX(T *Y, T *X, T C, int M)    {
 	for (int i=0; i<M; i++) Y[i] += C*X[i];
+	//std::transform(X, X+M, Y, Y, std::placeholders::_2 + C*std::placeholders::_1);
 }
 
 template<typename T>
 void UpdateAlpha(T *Y, T *X, T C, int M)    {
-	for (int i=0; i<M; i++) Y[i] += C*(X[i]-1.0);
+	std::transform(X, X+M, Y, Y, std::placeholders::_2 + (std::placeholders::_1*C - 1.0f*C)) ;
+	//for (int i=0; i<M; i++) Y[i] += C*(X[i]-1.0);
 }
 
 template<typename T>
 void Picard(T *Y, T *X, T C, int M)    {
-	for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
+	float one = 1.0f;
+	std::transform(X, X+M, Y, Y, C * std::placeholders::_2 + (1.0f - C) * std::placeholders::_1) ;
+	//for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
 }
 
 template<typename T>
 void Dubble(Real *P, T *A, T norm,int M)   {
-	for (int i=0; i<M; i++) P[i]*=norm/A[i];
+	std::transform(A, A+M, P, P, std::placeholders::_2 * (norm/std::placeholders::_1)) ;
+	//for (int i=0; i<M; i++) P[i]*=norm/A[i];
 }
 
 template<typename T>
@@ -207,7 +282,8 @@ void PutAlpha(T *g, T *phitot, T *phi_side, T chi, T phibulk, int M)   {
 
 template<typename T>
 void PutAlpha(T *g, T *phi_side, T chi, T phibulk, int M)   {
-	for (int i=0; i<M; i++) g[i] = g[i] - chi*(phi_side[i]-phibulk);
+	std::transform(phi_side, phi_side+M, g, g, std::placeholders::_2 - (chi*std::placeholders::_1-phibulk)) ;
+	//for (int i=0; i<M; i++) g[i] = g[i] - chi*(phi_side[i]-phibulk);
 }
 
 template<typename T>

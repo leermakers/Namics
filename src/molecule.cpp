@@ -166,12 +166,12 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Gg_b=(Real*)AllOnDev(m*n_box*2); Zero(Gg_b,m*n_box*2);
 		g1=(Real*)AllOnDev(m*n_box); Zero(g1,m*n_box);
 		rho=(Real*)AllOnDev(m*n_box*MolMonList.size()); Zero(rho,m*n_box*MolMonList.size());
-		phi=(Real*)AllManagedOnDev(M*MolMonList.size()); Zero(phi,M*MolMonList.size());
+		phi=(Real*)AllOnDev(M*MolMonList.size()); Zero(phi,M*MolMonList.size());
 		if (save_memory) {Gs=(Real*)AllOnDev(m*n_box*2); Zero(Gs,m*n_box*2);}
 	} else {
 		Gg_f=(Real*)AllOnDev(M*N);
 		Gg_b=(Real*)AllOnDev(M*2);
-		phi=(Real*)AllManagedOnDev(M*MolMonList.size());
+		phi=(Real*)AllOnDev(M*MolMonList.size());
 		rho=phi;
 		if (save_memory) Gs =(Real*)AllOnDev(M*2);
 	}

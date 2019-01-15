@@ -589,15 +589,19 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
       residuals[i] += component[j]->rho[i];
   }
 
+  stl::device_vector<Real> one(M);
+  stl::fill(one.begin(), one.end(),1);
+
   // Calculate excesss / defecit
-  for (Real& i : residuals) {
-    i -= 1;
-  }
+  transform(residuals.begin(), residuals.end(), one.begin(),residuals.begin(), stl::minus<Real>());
+  //for (Real& i : residuals) {
+  //  i -= 1;
+ // }
 
   // If there's only one solvent mon, this problem is easy.
   if (solvent_mons.size() == 1) {
     #ifdef PAR_MESODYN
-      yplusisctimesx(component[solvent_mons[0]]->rho_ptr, thrust::raw_pointer_cast(&residuals[0]), -1.0, M);
+      YplusisCtimesX(component[solvent_mons[0]]->rho_ptr, thrust::raw_pointer_cast(&residuals[0]), -1.0, M);
     #else
     skip_bounds([this, &component, residuals, solvent_mons](int x, int y, int z) mutable {
       *val_ptr(component[solvent_mons[0]]->rho, x, y, z) -= val(residuals, x, y, z);

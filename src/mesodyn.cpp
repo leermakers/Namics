@@ -90,15 +90,14 @@ bool Mesodyn::CheckInput(const int start) {
 
     string empty = "";
 
-    if ( (read_filename = initialize("read_pro",empty)) != empty)
+    if ( (read_filename = initialize<std::string>("read_pro",empty)) != empty)
       initialization_mode = INIT_FROMPRO;
-
-    if ( (read_filename = initialize("read_vtk",empty)) != empty) {
-      if (read_filename.find(".vtk") != string::npos) {
-        cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename accordingly." << endl;
-        exit(0);
-      }
-      initialization_mode = INIT_FROMVTK;
+    else if ( (read_filename = initialize<std::string>("read_vtk",empty)) != empty) {
+        if (read_filename.find(".vtk") != string::npos) {
+          cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename accordingly." << endl;
+          exit(0);
+        }
+        initialization_mode = INIT_FROMVTK;
     }
   } 
 

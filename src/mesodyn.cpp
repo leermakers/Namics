@@ -555,7 +555,7 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
         #ifdef PAR_MESODYN
           Lat[0]->remove_bounds(component[c]->rho_ptr);
           sum_of_elements = stl::reduce(component[c]->rho.begin(), component[c]->rho.end());
-          norm(component[c]->rho_ptr,(mon_theta/sum_of_elements),M);
+          Norm(component[c]->rho_ptr,(mon_theta/sum_of_elements),M);
         #else
         skip_bounds([this, &sum_of_elements, component, c](int x, int y, int z) mutable {
           sum_of_elements += val(component[c]->rho, x, y, z);

@@ -90,15 +90,14 @@ bool Mesodyn::CheckInput(const int start) {
 
     string empty = "";
 
-    if ( (read_filename = initialize("read_pro",empty)) != empty)
+    if ( (read_filename = initialize<std::string>("read_pro",empty)) != empty)
       initialization_mode = INIT_FROMPRO;
-
-    if ( (read_filename = initialize("read_vtk",empty)) != empty) {
-      if (read_filename.find(".vtk") != string::npos) {
-        cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename accordingly." << endl;
-        exit(0);
-      }
-      initialization_mode = INIT_FROMVTK;
+    else if ( (read_filename = initialize<std::string>("read_vtk",empty)) != empty) {
+        if (read_filename.find(".vtk") != string::npos) {
+          cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename accordingly." << endl;
+          exit(0);
+        }
+        initialization_mode = INIT_FROMVTK;
     }
   } 
 
@@ -494,8 +493,8 @@ int Mesodyn::initial_conditions() {
     break;
   }
 
-  //norm_theta(component);
-  //norm_theta(solver_component);
+  norm_theta(component);
+  norm_theta(solver_component);
 
   //2D rho vector is cleaned up after returning.
 
@@ -553,6 +552,11 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
         mon_theta = theta * Mol[i]->fraction(Mol[i]->MolMonList[j]);
 
         Real sum_of_elements{0};
+        #ifdef PAR_MESODYN
+          Lat[0]->remove_bounds(component[c]->rho_ptr);
+          sum_of_elements = stl::reduce(component[c]->rho.begin(), component[c]->rho.end());
+          Norm(component[c]->rho_ptr,(mon_theta/sum_of_elements),M);
+        #else
         skip_bounds([this, &sum_of_elements, component, c](int x, int y, int z) mutable {
           sum_of_elements += val(component[c]->rho, x, y, z);
         });
@@ -560,6 +564,9 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
         skip_bounds([this, &component, c, mon_theta, sum_of_elements](int x, int y, int z) mutable {
           *val_ptr(component[c]->rho, x, y, z) *= mon_theta / sum_of_elements;
         });
+
+        #endif
+        
 
         ++c;
       }
@@ -573,7 +580,8 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
 
   // We now know the total density and can adjust the solvent accodingly to add up to 1.
   // Let's first find out how much there is to adjust.
-  vector<Real> residuals(M);
+  stl::device_vector<Real> residuals(M);
+  stl::fill(residuals.begin(), residuals.end(),0);
 
   //Pool densities per position
   for (int i = 0; i < M; ++i) {
@@ -581,16 +589,24 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
       residuals[i] += component[j]->rho[i];
   }
 
+  stl::device_vector<Real> one(M);
+  stl::fill(one.begin(), one.end(),1);
+
   // Calculate excesss / defecit
-  for (Real& i : residuals) {
-    i -= 1;
-  }
+  stl::transform(residuals.begin(), residuals.end(), one.begin(),residuals.begin(), stl::minus<Real>());
+  //for (Real& i : residuals) {
+  //  i -= 1;
+ // }
 
   // If there's only one solvent mon, this problem is easy.
   if (solvent_mons.size() == 1) {
+    #ifdef PAR_MESODYN
+      YplusisCtimesX(component[solvent_mons[0]]->rho_ptr, thrust::raw_pointer_cast(&residuals[0]), -1.0, M);
+    #else
     skip_bounds([this, &component, residuals, solvent_mons](int x, int y, int z) mutable {
       *val_ptr(component[solvent_mons[0]]->rho, x, y, z) -= val(residuals, x, y, z);
     });
+    #endif
   } else {
     cerr << "Norming solvents with mutliple monomers is not supported! Please write your own script" << endl;
     throw ERROR_FILE_FORMAT;

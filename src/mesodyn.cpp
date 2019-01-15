@@ -555,7 +555,7 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
         #ifdef PAR_MESODYN
           Lat[0]->remove_bounds(component[c]->rho);
           sum_of_elements = stl::reduce(component[c]->rho.begin(), component[c]->rho.end());
-          norm(&component[c]->rho[0],(mon_theta/sum_of_elements),M);
+          norm(thrust::raw_pointer_cast(&component[c]->rho[0],(mon_theta/sum_of_elements)),M);
         #else
         skip_bounds([this, &sum_of_elements, component, c](int x, int y, int z) mutable {
           sum_of_elements += val(component[c]->rho, x, y, z);
@@ -597,7 +597,7 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
   // If there's only one solvent mon, this problem is easy.
   if (solvent_mons.size() == 1) {
     #ifdef PAR_MESODYN
-      yplusisctimesx(&component[solvent_mons[0]]->rho[0], &residuals[0], -1.0, M);
+      yplusisctimesx(thrust::raw_pointer_cast(&component[solvent_mons[0]]->rho[0]), &residuals[0], -1.0, M);
     #else
     skip_bounds([this, &component, residuals, solvent_mons](int x, int y, int z) mutable {
       *val_ptr(component[solvent_mons[0]]->rho, x, y, z) -= val(residuals, x, y, z);

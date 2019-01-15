@@ -364,6 +364,7 @@ int main(int argc, char* argv[]) {
 
 				break;
 			case MESODYN:
+				New[0]->mesodyn = true;
 				New[0]->AllocateMemory();
       				New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
 				if (debug) cout << "Creating mesodyn" << endl;

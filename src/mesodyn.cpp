@@ -593,7 +593,7 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
   stl::fill(one.begin(), one.end(),1);
 
   // Calculate excesss / defecit
-  transform(residuals.begin(), residuals.end(), one.begin(),residuals.begin(), stl::minus<Real>());
+  stl::transform(residuals.begin(), residuals.end(), one.begin(),residuals.begin(), stl::minus<Real>());
   //for (Real& i : residuals) {
   //  i -= 1;
  // }

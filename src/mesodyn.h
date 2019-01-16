@@ -371,7 +371,7 @@ public:
 
   /* Inputs / output class interface functions */
 
-  int write_output();
+  int write_output(int);
   bool CheckInput(const int);
 
 

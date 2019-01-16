@@ -59,9 +59,6 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       order_parameter{0}
   {
 
-  //Apparently this step takes a ton of time.
-  Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
-
   set_update_lists();
 
   // to get the correct KSAM and volume.
@@ -145,7 +142,7 @@ bool Mesodyn::mesodyn() {
       component[i]->load_rho(solver_component[i]->rho);
 
     if (t % timebetweensaves == 0) {
-      write_output();
+      write_output(t);
     }
   } // time loop
 
@@ -180,7 +177,7 @@ void Mesodyn::set_update_lists() {
 
 Real Mesodyn::calculate_order_parameter() {
   stl::device_vector<Real> difference(M);
-  Real order_parameter{0};
+  Mesodyn::order_parameter = 0;
   for (size_t i = 0; i < component_no - 1; ++i)
       for (size_t j = i + 1; j < component_no; ++j) {
           stl::transform(solver_component[i]->rho.begin(),
@@ -189,14 +186,14 @@ Real Mesodyn::calculate_order_parameter() {
                          difference.begin(),
                          order_param_functor());
           #ifdef PAR_MESODYN
-          order_parameter = thrust::reduce(difference.begin(), difference.end(), order_parameter);
+          Mesodyn::order_parameter = thrust::reduce(difference.begin(), difference.end(), Mesodyn::order_parameter);
           #else
-          order_parameter = std::accumulate(difference.begin(), difference.end(), order_parameter);
+          Mesodyn::order_parameter = std::accumulate(difference.begin(), difference.end(), Mesodyn::order_parameter);
           #endif
       }
-  order_parameter /= boundaryless_volume;
+  Mesodyn::order_parameter /= boundaryless_volume;
 
-  return order_parameter;
+  return Mesodyn::order_parameter;
 }
 
 int Mesodyn::noise_flux() {
@@ -702,8 +699,11 @@ void Mesodyn::set_filename() {
   filename << rawtime;
 }
 
-int Mesodyn::write_output() {
+int Mesodyn::write_output(int t) {
   //Implement below for more starts? (OutputList higher numbers?)
+
+    //This takes a ton of time, but you apparently cannot re-use the output class without ending up with increasing duplicates per timestep in .kal files..
+    Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
 
     if (!Out[0]->CheckInput(1)) {
       cout << "input_error in output " << endl;
@@ -716,6 +716,7 @@ int Mesodyn::write_output() {
     New[0]->PushOutput();
 
     Out[0]->push("order_parameter",order_parameter);
+    Out[0]->push("time",t);
     Out[0]->push("timesteps", timesteps);
     Out[0]->push("timebetweensaves", timebetweensaves);
     Out[0]->push("diffusionconstant", D);
@@ -736,6 +737,7 @@ int Mesodyn::write_output() {
     ++writes;
 
     Out[0]->WriteOutput(writes);
+    Out.clear();
 
   return 0;
 }

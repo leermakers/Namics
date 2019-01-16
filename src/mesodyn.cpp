@@ -131,13 +131,13 @@ bool Mesodyn::mesodyn() {
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
+    sanity_check();
+
     //Calculate and add noise flux
     for (size_t i = 0 ; i < flux.size() ; ++i)
       flux[i]->J = solver_flux[i]->J;
 
     //noise_flux();
-  
-    sanity_check();
 
     cout << "Order parameter: " << calculate_order_parameter() << endl;
 
@@ -239,6 +239,18 @@ int Mesodyn::sanity_check() {
 
   if (negative_count > 0) {
     cerr << "Found " << negative_count << " values in rho < 0 || > 1." << endl;
+/*  TODO: Enable this if the error above starts popping up again. It's a first draft of trying to reset iteration variables and starting the iteration again.
+    for (size_t i = 0 ; i < flux.size() ; ++i)
+      solver_flux[i]->J = flux[i]->J;
+
+    Zero(New[0]->xx, New[0]->iv);
+
+    gaussian->generate(M);
+
+    function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
+    function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
+
+    New[0]->SolveMesodyn(loader_callback, solver_callback);*/
   }
 
   int not_unity_count{0};

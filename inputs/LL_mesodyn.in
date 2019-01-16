@@ -1,6 +1,6 @@
-lat : flat : n_layers_x : 10
-lat : flat : n_layers_y : 40
-lat : flat : n_layers_z : 40
+lat : flat : n_layers_x : 20
+lat : flat : n_layers_y : 20
+lat : flat : n_layers_z : 20
 lat : flat : lowerbound_x : periodic
 lat : flat : upperbound_x : periodic
 lat : flat : lowerbound_y : periodic
@@ -18,10 +18,14 @@ mon : A : chi - B : 1.3
 
 mol : A : composition : (A)4
 mol : A : freedom : restricted
-mol : A : theta : 13500
+mol : A : theta : 4000
 
 mol : B : composition : (B)5
 mol : B : freedom : solvent
+
+mol : C : composition : (A)20(B)20
+mol : C : freedom : restricted
+mol : C : theta : 1000
 
 output : kal : append : false
 kal : sys : noname : grand_potential

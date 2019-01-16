@@ -236,7 +236,7 @@ int Mesodyn::sanity_check() {
 
   if (negative_count > 0) {
     cerr << "Found " << negative_count << " values in rho < 0 || > 1." << endl;
-/*  TODO: Enable this if the error above starts popping up again. It's a first draft of trying to reset iteration variables and starting the iteration again.
+//  TODO: Enable this if the error above starts popping up again. It's a first draft of trying to reset iteration variables and starting the iteration again.
     for (size_t i = 0 ; i < flux.size() ; ++i)
       solver_flux[i]->J = flux[i]->J;
 
@@ -247,7 +247,7 @@ int Mesodyn::sanity_check() {
     function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
     function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
-    New[0]->SolveMesodyn(loader_callback, solver_callback);*/
+    New[0]->SolveMesodyn(loader_callback, solver_callback);
   }
 
   int not_unity_count{0};

@@ -235,13 +235,11 @@ protected:
   int mask(const stl::host_vector<int>&);
   shared_ptr<Component> A;
   shared_ptr<Component> B;
-
-  shared_ptr<Gaussian_noise> gaussian;
-
   stl::device_vector<Real> L;
   stl::device_vector<Real> mu;
   const Real D;
   const int JX;
+  shared_ptr<Gaussian_noise> gaussian;
   stl::host_vector<int> Mask_plus_x;
   stl::host_vector<int> Mask_minus_x;
 };

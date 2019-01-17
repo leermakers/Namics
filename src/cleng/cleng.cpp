@@ -188,9 +188,9 @@ bool Cleng::CP(transfer tofrom) {
             }
 
             nodes = createNodes(simpleNodeList);
-            for (auto &&n : nodes) {
-                cout << n->to_string() << endl;
-            }
+//            for (auto &&n : nodes) {
+//                cout << n->to_string() << endl;
+//            }
 //            assert(nodes.size() == 3);
             break;
 
@@ -484,8 +484,6 @@ int Cleng::getLastMCS() {
     In[0]->split(infilename,'.',sub);
     filename=sub[0];
     filename = In[0]->output_info.getOutputPath() + filename;
-
-    cout << "fname: " << filename << endl;
     //read kal file
     ifstream infile(filename+".kal");
 
@@ -498,8 +496,6 @@ int Cleng::getLastMCS() {
                                          std::istream_iterator<std::string>());
 
         MS_step = stoi(results[0]);
-        cout << MS_step << '\n';
-
     }
     else cout << "Unable to open kal file.\n";
 
@@ -515,7 +511,7 @@ bool Cleng::MonteCarlo() {
     if (checkpoint_load == "true") {
         Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
         CP(to_cleng);
-        checkpoint.loadCheckpoint(nodes, box);
+        nodes = checkpoint.loadCheckpoint(nodes, box);
         CP(to_segment);
         MCS_checkpoint=getLastMCS()+1;
     }

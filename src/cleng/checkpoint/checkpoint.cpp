@@ -104,7 +104,7 @@ shared_ptr<SimpleNode> fromFileToNode(int x, int y, int z, int id, const Point &
     return make_shared<SimpleNode>(Point(x, y, z), id, box);
 }
 
-void Checkpoint::loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box) {
+vector<std::shared_ptr<Node>> Checkpoint::loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box) {
     if (isCheckpointExists(checkpoint_path+checkpoint_name+IN_CLASS_NAME)) {
         cout << "Loading checkpoint ..." << endl;
         getLastCheckpoint();
@@ -145,4 +145,5 @@ void Checkpoint::loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box) 
     else {
         cout << "Sorry! No file!" << endl;
     }
+    return nodes;
 }

@@ -18,7 +18,7 @@ public:
     Checkpoint();
 
     void saveCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList);
-    void loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box);
+    vector<std::shared_ptr<Node>> loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box);
 
     void addProperty(const string &elem, const string &param, const string &value);
     void addFolderInfo(const string &param, const string &value);

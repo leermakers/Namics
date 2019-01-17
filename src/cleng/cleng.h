@@ -29,9 +29,8 @@ private:
     const vector<System*> Sys;
     const vector<Solve_scf*> New;
     const string brand;
-
     Real seed;
-    void prepareOutputFile();
+
     void fillXYZ();
 
 public:
@@ -46,33 +45,32 @@ public:
     int n_out;
     int sub_box_size;
     int MCS;
+    int delta_step;
     int n_p;
     int t;
     int save_interval;
+    string checkpoint_save;
+    string checkpoint_load;
+    string cleng_pos;
     string save_filename;
+    Point BC;
+
     vector<Output*> Out;
 
 
-    int PX;
-    int PY;
-    int PZ;
-
     vector<int> P;
-    vector<int> Sx;
-    vector<int> Sy;
-    vector<int> Sz;
+    vector<shared_ptr<SimpleNode>> simpleNodeList;
     vector<std::shared_ptr<Node>> nodes;
     // temporary arrays for keep nodes coordinates for output
     int* xs = nullptr;
     int* ys = nullptr;
     int* zs = nullptr;
-//    vector<int> X;
-//    vector<int> Y;
-//    vector<int> Z;
 
     ofstream out;
     Point shift;
-    int id_part_for_move;
+    int id_node_for_move;
+    Real free_energy_current;
+    Real free_energy_trial;
 
 
     bool MonteCarlo();
@@ -83,12 +81,20 @@ public:
     void push(string, string);
     bool CP(transfer);
     bool MakeShift(bool back);
-    bool CheckRange_and_distances();
-    void WriteOutput(int);
-    void PushOutput(int);
+    bool Checks();
+    bool InSubBoxRange();
+    bool NotCollapsing();
+    bool InRange();
+    void WriteOutput(int, Real);
+    void WriteClampedNodeDistance(int);
+    void PushOutput(int, Real);
+    void make_BC();
     int GetValue(string, int&, Real&, string&);
-    int GetIntRandomValueExclude(int, int, int, bool);
+    int GetRandomIntValueExcludeValue(int, int, int, bool);
+    int GetRandomIntValueExcludeArray(int, int, vector<int>, bool);
+    int getLastMCS();
     Real GetRealRandomValue(int, int);
+    Real GetN_times_mu();
     Point PrepareStep();
 
     std::vector<string> KEYS;
@@ -97,5 +103,6 @@ public:
     bool CheckInput(int);
     void PutParameter(string);
     string GetValue(string);
+
 };
 #endif

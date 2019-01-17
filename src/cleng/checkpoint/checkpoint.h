@@ -1,31 +1,42 @@
-#ifndef NAMICS_CHECKPOINT_H
-#define NAMICS_CHECKPOINT_H
+#pragma once
+#include <string>
+#include <vector>
+#include <memory>
+#include "../nodes/simple_node.h"
+#include "../nodes/monolit.h"
 
-#include "../../output_info.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <algorithm>
+
+#include <fstream>
+
+using namespace std;
 
 class Checkpoint {
-
 public:
     Checkpoint();
 
-    void saveCheckpoint();
-    void loadCheckpoint();
+    void saveCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList);
+    vector<std::shared_ptr<Node>> loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box);
 
-    void addProperty(const std::string &elem, const std::string &param, const std::string &value);
-    void addFolderInfo(const std::string &param, const std::string &value);
+    void addProperty(const string &elem, const string &param, const string &value);
+    void addFolderInfo(const string &param, const string &value);
 
-    const std::string &getCheckpointPath() const;
-    bool isCheckpointExists() const;
+    bool isCheckpointExists(const std::string& name) const;
 
-    static const std::string IN_CLASS_NAME;
-    static const std::string DEFAULT_OUTPUT_PATH;
+    void getLastCheckpoint();
+    void getNewId4Checkpoint();
+
+    static const string IN_CLASS_NAME;
+    static const string DEFAULT_CHECKPOINT_PATH;
+    static const string DEFAULT_CHECKPOINT_NAME;
+
 
 private:
 
-    std::string checkpoint_path;
-    std::string processCheckpointPath(std::string path);
-
+    string checkpoint_name;
+    string checkpoint_path;
+    string processCheckpointPath(std::string path);
 };
 
-
-#endif //NAMICS_CHECKPOINT_H

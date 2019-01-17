@@ -2,13 +2,16 @@
 
 #include <string>
 
+using namespace std;
+
 class OutputInfo {
 public:
 	OutputInfo();
 
-	void addProperty(const std::string &elem, const std::string &param, const std::string &value);
-	void addFolderInfo(const std::string &param, const std::string &value);
-	const std::string &getOutputPath() const;
+	void addProperty(const string &elem, const string &param, const string &value);
+	void addFolderInfo(const string &param, const string &value);
+
+	const string &getOutputPath() const;
 	bool isOutputExists() const;
 
 	static const std::string IN_CLASS_NAME;

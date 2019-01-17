@@ -13,7 +13,8 @@ public:
  	virtual ~SFNewton();
 	bool max_g;
 	int nbits;
-	int lineiterations,linetolerance,numIterationsSinceHessian,resetiteration;
+	int lineiterations,numIterationsSinceHessian,resetiteration;
+	Real linetolerance;
 	int print_hessian_at_it;
 	int linesearchlimit;
 	Real smallAlpha;

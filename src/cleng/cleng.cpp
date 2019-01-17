@@ -8,6 +8,8 @@
 #include <fstream>
 #include "./checkpoint/checkpoint.h"
 
+#include <unistd.h>
+
 using namespace std;
 
 Cleng::Cleng(
@@ -367,7 +369,7 @@ bool Cleng::NotCollapsing() {
 bool Cleng::InRange() {
     bool in_range = false;
     Point box = {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
-    Point down_boundary = { 3, 3, 3};
+    Point down_boundary = {1, 1, 1};
     Point up_boundary   = box - down_boundary;
     Point MPs (nodes[id_node_for_move]->point() + shift);
 
@@ -471,16 +473,51 @@ bool Cleng::MakeShift(bool back) {
     return success;
 }
 
+
+int Cleng::getLastMCS() {
+
+    string filename;
+    vector<string> sub;
+    int MS_step = 0;
+
+    string infilename = In[0]->name;
+    In[0]->split(infilename,'.',sub);
+    filename=sub[0];
+    filename = In[0]->output_info.getOutputPath() + filename;
+
+    cout << "fname: " << filename << endl;
+    //read kal file
+    ifstream infile(filename+".kal");
+
+    if (infile) {
+        string line;
+        while (infile >> std::ws && std::getline(infile, line)); // skip empty lines
+
+        std::istringstream iss(line);
+        std::vector<std::string> results(std::istream_iterator<std::string>{iss},
+                                         std::istream_iterator<std::string>());
+
+        MS_step = stoi(results[0]);
+        cout << MS_step << '\n';
+
+    }
+    else cout << "Unable to open kal file.\n";
+
+    return MS_step;
+}
+
 bool Cleng::MonteCarlo() {
     if (debug) cout << "Monte Carlo in Cleng" << endl;
     bool success = true;
 
+    int MCS_checkpoint = 0;
     Checkpoint checkpoint;
     if (checkpoint_load == "true") {
         Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
         CP(to_cleng);
         checkpoint.loadCheckpoint(nodes, box);
         CP(to_segment);
+        MCS_checkpoint=getLastMCS()+1;
     }
 
 // Analysis MC
@@ -495,14 +532,14 @@ bool Cleng::MonteCarlo() {
     free_energy_current = Sys[0]->GetFreeEnergy() - GetN_times_mu();
 
 // init save
-    WriteOutput(0,exp_diff);
+    WriteOutput(0+MCS_checkpoint,exp_diff);
     if (cleng_pos == "true") {
-        WriteClampedNodeDistance(0);
+        WriteClampedNodeDistance(0+MCS_checkpoint);
     }
-
 
     for (int MS_step = 1; MS_step < MCS; MS_step++) { // loop for trials
 
+        CP(to_cleng);
         MakeShift(false);
         CP(to_segment);
 
@@ -512,7 +549,6 @@ bool Cleng::MonteCarlo() {
 
         New[0]->Solve(true);
         free_energy_trial = Sys[0]->GetFreeEnergy() - GetN_times_mu();
-
         assert(!std::isnan(free_energy_trial));
 
         cout << "free_energy_current: " << free_energy_current << endl;
@@ -524,10 +560,6 @@ bool Cleng::MonteCarlo() {
             accepted ++;
         } else {
             Real acceptance = GetRealRandomValue(0, 1);
-//            cout << "acceptance: " << acceptance << endl;
-//            cout << "diff: " << free_energy_trial - free_energy_current << endl;
-//            exp_diff = exp(-1.0 * (free_energy_trial - free_energy_current));
-//            cout << "exp(diff): " << exp_diff << endl;
 
             if (acceptance < exp(-1.0 * (free_energy_trial - free_energy_current))) {
                 cout << "Accepted" << endl;
@@ -538,7 +570,6 @@ bool Cleng::MonteCarlo() {
                 MakeShift(true);
                 cout << "Done. No saving. \n" << endl;
                 rejected ++;
-                continue;
             }
         }
         cout << "MonteCarlo steps: " << MS_step << endl;
@@ -546,9 +577,9 @@ bool Cleng::MonteCarlo() {
         cout << "Rejected %: " << 100 * (rejected / MS_step) << endl;
 
         if ((MS_step % save_interval) == 0) {
-            WriteOutput(MS_step, exp_diff);
+            WriteOutput(MS_step+MCS_checkpoint, exp_diff);
             if (cleng_pos == "true") {
-                WriteClampedNodeDistance(MS_step);
+                WriteClampedNodeDistance(MS_step+MCS_checkpoint);
             }
         }
         cout << "Done. \n" << endl;

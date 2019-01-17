@@ -92,6 +92,7 @@ public:
     int GetValue(string, int&, Real&, string&);
     int GetRandomIntValueExcludeValue(int, int, int, bool);
     int GetRandomIntValueExcludeArray(int, int, vector<int>, bool);
+    int getLastMCS();
     Real GetRealRandomValue(int, int);
     Real GetN_times_mu();
     Point PrepareStep();

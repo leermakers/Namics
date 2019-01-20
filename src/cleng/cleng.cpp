@@ -589,6 +589,7 @@ bool Cleng::MonteCarlo() {
             if (cleng_pos) {
                 WriteClampedNodeDistance(MS_step+MCS_checkpoint);
             }
+            checkpoint.updateCheckpoint(simpleNodeList);
         }
         cout << "Done. \n" << endl;
     }

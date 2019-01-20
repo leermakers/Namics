@@ -43,7 +43,7 @@ public:
 	Real* psi;
 	Real* EE;
 	int* psiMask;
-	bool fixedPsi0;
+	bool fixedPsi0;	
 	Real* q;
 	Real* H_GrandPotentialDensity;
 	Real* H_FreeEnergyDensity;
@@ -68,6 +68,8 @@ public:
 	string guess_outputfile;
 	int Var_target;
 	Real Var_target_value;
+
+	bool prepared;
 
 	int MonA,MonB;
 

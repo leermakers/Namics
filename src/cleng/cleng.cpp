@@ -110,19 +110,19 @@ bool Cleng::CheckInput(int start) {
         if (!GetValue("checkpoint_save").empty()) {
             checkpoint_save = In[0]->Get_bool(GetValue("checkpoint_save"), false);
         } else checkpoint_save = false;
-        if (!debug) cout << "checkpoint_save " << checkpoint_save << endl;
+        if (debug) cout << "checkpoint_save " << checkpoint_save << endl;
 
         // checkpoint load
         if (!GetValue("checkpoint_load").empty()) {
             checkpoint_load = In[0]->Get_bool(GetValue("checkpoint_load"), false);
         } else checkpoint_load = false;
-        if (!debug) cout << "checkpoint_load " << checkpoint_load << endl;
+        if (debug) cout << "checkpoint_load " << checkpoint_load << endl;
 
         // saving cleng position of nodes
         if (!GetValue("cleng_pos").empty()) {
             cleng_pos = In[0]->Get_bool(GetValue("cleng_pos"), false);
         } else cleng_pos = false;
-        if (!debug) cout << "cleng_pos " << cleng_pos << endl;
+        if (debug) cout << "cleng_pos " << cleng_pos << endl;
 
         // ???
         if (success) {
@@ -340,7 +340,7 @@ bool Cleng::InSubBoxRange() {
     int not_in_subbox_range = 0;
     Point sub_box = {sub_box_size, sub_box_size, sub_box_size};  // change it in future
     if(!nodes[id_node_for_move]->inSubBoxRange(sub_box, shift)) not_in_subbox_range ++;
-    cout << "not_in_subbox_range: " << not_in_subbox_range << endl;
+    // cout << "not_in_subbox_range: " << not_in_subbox_range << endl;
 
     if (not_in_subbox_range != 0) {
         cout << "There are nodes not in subbox_range!" << endl;
@@ -385,18 +385,11 @@ bool Cleng::InRange() {
 
 void Cleng::make_BC() {
 //    make boundary condition point => BC = {1,1,1} => minor; BC = {0,0,0} => periodic
-    cout << "BC0 " << Lat[0]->BC[0] << endl;
-    cout << "BC1 " << Lat[0]->BC[1] << endl;
-    cout << "BC2 " << Lat[0]->BC[2] << endl;
-    cout << "BC3 " << Lat[0]->BC[3] << endl;
-    cout << "BC4 " << Lat[0]->BC[4] << endl;
-    cout << "BC5 " << Lat[0]->BC[5] << endl;
     BC = {
             Lat[0]->BC[0] == "mirror",
             Lat[0]->BC[2] == "mirror",
             Lat[0]->BC[4] == "mirror",
     };
-    cout << "make_BC: " << BC.to_string() << endl;
 }
 
 bool Cleng::Checks() {
@@ -411,13 +404,12 @@ bool Cleng::Checks() {
     not_collapsing = NotCollapsing();
 
     // check distance between all nodes and constrains (walls)
-    cout << "BC: " << BC.to_string() << endl;
     if (BC.x and BC.y and BC.z) { // BC.x, BC.y, BC.z = mirror
         in_range = InRange();
     } else { // BC.x and/or BC.y and/or BC.z != mirror
         in_range = true;
     }
-    cout << "not_collapsing: " << not_collapsing << " in_range: " << in_range << " in_subbox_range: " << in_subbox_range << endl;
+    // cout << "not_collapsing: " << not_collapsing << " in_range: " << in_range << " in_subbox_range: " << in_subbox_range << endl;
     return not_collapsing and in_range and in_subbox_range;
 }
 
@@ -446,7 +438,6 @@ Point Cleng::PrepareStep() {
             }
         }
     }
-    shift = {0, 0, 2};
     return shift;
 }
 
@@ -584,7 +575,7 @@ bool Cleng::MonteCarlo() {
         cout << "Accepted %: " << 100 * (accepted / MS_step) << endl;
         cout << "Rejected %: " << 100 * (rejected / MS_step) << endl;
 
-        if ((MS_step % save_interval) == 0) {
+        if ((MS_step % delta_save) == 0) {
             WriteOutput(MS_step+MCS_checkpoint, exp_diff);
             if (cleng_pos) {
                 WriteClampedNodeDistance(MS_step+MCS_checkpoint);

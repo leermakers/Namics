@@ -17,6 +17,7 @@ class Checkpoint {
 public:
     Checkpoint();
 
+    void updateCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList);
     void saveCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList);
     vector<std::shared_ptr<Node>> loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box);
 

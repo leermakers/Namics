@@ -82,6 +82,27 @@ void Checkpoint::saveCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeLi
         }
 }
 
+void Checkpoint::updateCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList) {
+
+    string filename;
+    ofstream outfile;
+    outfile.open(checkpoint_path+checkpoint_name+IN_CLASS_NAME);
+
+// Writing
+    int index =0;
+    for ( auto && n : simpleNodeList ) {
+
+        if (!index){
+            outfile << n->to_string();
+            index ++;
+        }
+        else {
+            outfile << n->to_string()<< endl;
+            index = 0;
+        }
+    }
+}
+
 
 vector<shared_ptr<Node>> createNodesFromFile(const vector<shared_ptr<SimpleNode>> &simple_nodes) {
     vector<shared_ptr<Node>> result;

@@ -2,12 +2,11 @@
 #include "simple_node.h"
 
 SimpleNode::SimpleNode(const Point &p, int id, Point box_size) :
-    system_point(p),
-    box_size(box_size),
-    id(id)
-    {}
+        system_point(p),
+        box_size(box_size),
+        id(id) {}
 
-void SimpleNode::shift(const Point& shift) {
+void SimpleNode::shift(const Point &shift) {
     system_point = system_point + shift;
 }
 
@@ -25,7 +24,8 @@ void SimpleNode::pushSystemPoints(std::map<int, Point> &pointsById) const {
 }
 
 std::string SimpleNode::to_string() const {
-    return "id: " + std::to_string(id) + " { " + std::to_string(system_point.x) + ", " + std::to_string(system_point.y) + ", " + std::to_string(system_point.z) + " };";
+    return "id: " + std::to_string(id) + " { " + std::to_string(system_point.x) + ", " +
+           std::to_string(system_point.y) + ", " + std::to_string(system_point.z) + " };";
 }
 
 void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {
@@ -38,13 +38,13 @@ shared_ptr<SimpleNode> SimpleNode::get_cnode() {
 
 bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
     Real dist = distance_with_shift(cnode->get_system_point(), shift);
-    Point distance = {(int)dist+2, (int)dist+2, (int)dist+2};
+    Point distance = {(int) dist + 2, (int) dist + 2, (int) dist + 2};
 
-    if ( distance > subBoxRange ) {
+    if (distance > subBoxRange) {
         cout << "Too far away from each other nodes: " << this->id << " and " << cnode->id << endl;
         return false;
     }
-    if ( distance == subBoxRange) {
+    if (distance == subBoxRange) {
         cout << "Too far away from each other nodes: " << this->id << " and " << cnode->id << endl;
         return false;
     }

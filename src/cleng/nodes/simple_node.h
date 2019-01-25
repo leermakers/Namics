@@ -1,4 +1,5 @@
 #pragma once
+
 #include "node.h"
 #include "point.h"
 #include <memory>

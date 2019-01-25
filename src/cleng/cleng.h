@@ -1,5 +1,6 @@
 #ifndef CLENGxH
 #define CLENGxH
+
 #include "../input.h"
 #include "nodes/simple_node.h"
 #include "nodes/monolit.h"
@@ -21,22 +22,29 @@ using std::setprecision;
 class Cleng {
 private:
     const string name;
-    const vector<Input*> In;
-    const vector<Lattice*> Lat;
-    const vector<Segment*> Seg;
-    const vector<State*> Sta;
-    const vector<Reaction*> Rea;    
-    const vector<Molecule*> Mol;
-    const vector<System*> Sys;
-    const vector<Solve_scf*> New;
+    const vector<Input *> In;
+    const vector<Lattice *> Lat;
+    const vector<Segment *> Seg;
+    const vector<State *> Sta;
+    const vector<Reaction *> Rea;
+    const vector<Molecule *> Mol;
+    const vector<System *> Sys;
+    const vector<Solve_scf *> New;
     const string brand;
     Real seed;
 
     void fillXYZ();
 
 public:
-    Cleng(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
+    Cleng(vector<Input *>, vector<Lattice *>, vector<Segment *>, vector<State *>, vector<Reaction *>,
+          vector<Molecule *>, vector<System *>, vector<Solve_scf *>, string);
+
     ~Cleng();
+
+    int cmajor_version = 1;
+    int cminor_version = 1;
+    int cpatch = 1;
+    int cversion = 10;
 
     int clamp_seg;
     int clp_mol;
@@ -53,16 +61,16 @@ public:
     string save_filename;
     Point BC;
 
-    vector<Output*> Out;
+    vector<Output *> Out;
 
 
     vector<int> P;
     vector<shared_ptr<SimpleNode>> simpleNodeList;
     vector<std::shared_ptr<Node>> nodes;
     // temporary arrays for keep nodes coordinates for output
-    int* xs = nullptr;
-    int* ys = nullptr;
-    int* zs = nullptr;
+    int *xs = nullptr;
+    int *ys = nullptr;
+    int *zs = nullptr;
 
     ofstream out;
     Point shift;
@@ -70,37 +78,67 @@ public:
     Real free_energy_current;
     Real free_energy_trial;
 
+    Real accepted;
+    Real rejected;
+    int attempts;
 
     bool MonteCarlo();
 
-    void push(string, Real);
-    void push(string, int);
-    void push(string, bool);
-    void push(string, string);
     bool CP(transfer);
+
     bool MakeShift(bool back);
+
     bool Checks();
+
     bool InSubBoxRange();
+
     bool NotCollapsing();
+
+    bool NotOnBoundary();
+
     bool InRange();
-    void WriteOutput(int, Real);
+
+    void WriteOutput(int);
+
     void WriteClampedNodeDistance(int);
-    void PushOutput(int, Real);
+
+    void PushOutput(int);
+
     void make_BC();
+
     void try2move();
-    int GetValue(string, int&, Real&, string&);
+
     int GetRandomIntValueExcludeValue(int, int, int, bool);
+
     int GetRandomIntValueExcludeArray(int, int, vector<int>, bool);
+
     int getLastMCS();
+
     Real GetRealRandomValue(int, int);
+
     Real GetN_times_mu();
+
     Point PrepareStep();
 
     std::vector<string> KEYS;
     std::vector<string> PARAMETERS;
     std::vector<string> VALUES;
+
     bool CheckInput(int);
+
     string GetValue(string);
 
+    // come from histoty
+//    void push(string, Real);
+//
+//    void push(string, int);
+//
+//    void push(string, bool);
+//
+//    void push(string, string);
+//
+//    int GetValue(string, int &, Real &, string &);
+
 };
+
 #endif

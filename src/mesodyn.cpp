@@ -236,18 +236,6 @@ int Mesodyn::sanity_check() {
 
   if (negative_count > 0) {
     cerr << "Found " << negative_count << " values in rho < 0 || > 1." << endl;
-//  TODO: Enable this if the error above starts popping up again. It's a first draft of trying to reset iteration variables and starting the iteration again.
-    for (size_t i = 0 ; i < flux.size() ; ++i)
-      solver_flux[i]->J = flux[i]->J;
-
-    Zero(New[0]->xx, New[0]->iv);
-
-    gaussian->generate(M);
-
-    function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
-    function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
-
-    New[0]->SolveMesodyn(loader_callback, solver_callback);
   }
 
   int not_unity_count{0};
@@ -324,7 +312,12 @@ Real* Mesodyn::solve_crank_nicolson() {
       solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio, -1);
 
   for ( size_t n = 0; n < solver_component.size() ; ++n )
+    
+
+  for ( size_t n = 0; n < solver_component.size() ; ++n ) {
+    norm_theta(solver_component);
     stl::copy(solver_component[n]->rho.begin(), solver_component[n]->rho.end(), rho.begin()+n*M);
+  }
 
   #ifdef PAR_MESODYN
   return stl::raw_pointer_cast(&rho[0]);
@@ -603,9 +596,7 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
 
   // Calculate excesss / defecit
   stl::transform(residuals.begin(), residuals.end(), one.begin(),residuals.begin(), stl::minus<Real>());
-  //for (Real& i : residuals) {
-  //  i -= 1;
- // }
+
 
   // If there's only one solvent mon, this problem is easy.
   if (solvent_mons.size() == 1) {

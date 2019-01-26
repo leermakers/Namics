@@ -229,9 +229,8 @@ int Mesodyn::sanity_check() {
 
 
   for (auto all_components : solver_component) {
-    Lat[0]->remove_bounds(all_components->rho_ptr);
+    Lat[0]->set_bounds(all_components->rho_ptr);
     negative_count = stl::count_if(all_components->rho.begin(), all_components->rho.end(), is_negative_functor());
-    stl::transform(all_components->rho.begin(), all_components->rho.end(), sum_pos.begin(), sum_pos.begin(), stl::plus<Real>());
   }
 
   if (negative_count > 0) {
@@ -241,10 +240,15 @@ int Mesodyn::sanity_check() {
   int not_unity_count{0};
   not_unity_count = stl::count_if(sum_pos.begin(), sum_pos.end(), is_not_unity_functor());
 
-  if (negative_count > 0)
+  if (not_unity_count > 0)
     cerr << "Found " << not_unity_count << " values in rho that are not-unity." << endl;
 
   Real mass{0};
+
+  for (auto all_components : solver_component) {
+    Lat[0]->remove_bounds(all_components->rho_ptr);
+    stl::transform(all_components->rho.begin(), all_components->rho.end(), sum_pos.begin(), sum_pos.begin(), stl::plus<Real>());
+  }
 
   #ifdef PAR_MESODYN
   mass = thrust::reduce(sum_pos.begin(), sum_pos.end());
@@ -315,7 +319,7 @@ Real* Mesodyn::solve_crank_nicolson() {
     
 
   for ( size_t n = 0; n < solver_component.size() ; ++n ) {
-    norm_theta(solver_component);
+//    norm_theta(solver_component);
     stl::copy(solver_component[n]->rho.begin(), solver_component[n]->rho.end(), rho.begin()+n*M);
   }
 
@@ -586,10 +590,15 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component) {
   stl::fill(residuals.begin(), residuals.end(),0);
 
   //Pool densities per position
+  #ifdef PAR_MESODYN
+  for (size_t j = 0 ; j < component_no; ++j)
+    thrust::transform(component[j]->rho.begin(), component[j]->rho.end(), residuals.begin(), residuals.begin(), thrust::plus<Real>());
+  #else
   for (int i = 0; i < M; ++i) {
     for (size_t j = 0; j < component_no; ++j)
       residuals[i] += component[j]->rho[i];
   }
+  #endif
 
   stl::device_vector<Real> one(M);
   stl::fill(one.begin(), one.end(),1);

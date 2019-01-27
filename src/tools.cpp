@@ -688,16 +688,6 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	unity<<<n_blocks,block_size>>>(P,M);
 }
 
-void Flux_min(Real* P, Real* T, int jump, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	flux_min<<<n_blocks,block_size>>>(P,T,jump,M);
-}
-
-void Flux(Real* flux_ptr, Real* L, Real* mu, int D, int jump, int M) {
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	flux<<<n_blocks,block_size>>>(flux_ptr,L,mu,D,jump,M);
-}
-
 void Zero(Real* P, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	zero<<<n_blocks,block_size>>>(P,M);
@@ -835,6 +825,7 @@ void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 	oneminusphitot<<<n_blocks,block_size>>>(g,phitot,M);
 }
 
+#ifdef PAR_MESODYN
 Real ComputeResidual(Real* array, int size) {
 
 	Real residual{0};
@@ -848,6 +839,8 @@ Real ComputeResidual(Real* array, int size) {
 
 	return residual;
 }
+
+#endif
 
 namespace tools {
 

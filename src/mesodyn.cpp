@@ -39,8 +39,8 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       dt                { initialize<Real>("delta_t", 0.1) },
       mean              { initialize<Real>("mean", 0.0) },
       stddev            { initialize<Real>("stddev", (2 * D * sqrt(dt) ) )},
-      seed              { initialize<Real>("seed", 1.0) },
-      seed_specified    { seed != 1 ? true : false },   
+      seed              { initialize<Real>("seed", -12345.6789) },
+      seed_specified    { seed != -12345.6789 ? true : false },   
       timesteps         { initialize<int>("timesteps", 100) },
       timebetweensaves  { initialize<int>("timebetweensaves", 1) },
       cn_ratio          { initialize<Real>("cn_ratio", 0.5) },
@@ -237,7 +237,13 @@ int Mesodyn::sanity_check() {
     cerr << "Found " << negative_count << " values in rho < 0 || > 1." << endl;
   }
 
+  for (auto all_components : solver_component) {
+    Lat[0]->remove_bounds(all_components->rho_ptr);
+    stl::transform(all_components->rho.begin(), all_components->rho.end(), sum_pos.begin(), sum_pos.begin(), stl::plus<Real>());
+  }
+
   int not_unity_count{0};
+
   not_unity_count = stl::count_if(sum_pos.begin(), sum_pos.end(), is_not_unity_functor());
 
   if (not_unity_count > 0)
@@ -245,10 +251,7 @@ int Mesodyn::sanity_check() {
 
   Real mass{0};
 
-  for (auto all_components : solver_component) {
-    Lat[0]->remove_bounds(all_components->rho_ptr);
-    stl::transform(all_components->rho.begin(), all_components->rho.end(), sum_pos.begin(), sum_pos.begin(), stl::plus<Real>());
-  }
+  
 
   #ifdef PAR_MESODYN
   mass = thrust::reduce(sum_pos.begin(), sum_pos.end());

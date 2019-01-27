@@ -42,24 +42,33 @@ struct order_param_functor
 
 struct is_negative_functor
 {
-	is_negative_functor() {}
 
-  		bool operator()(const double &x) const
-  		{
-    		return x < 0 || x > 1;
-  		}
+  const double tolerance{0};
+
+  is_negative_functor(double _tolerance=0) : tolerance(_tolerance) {}
+
+  bool operator()(const double &x) const
+  {
+    return x < 0-tolerance || x > 1+tolerance;
+  }
 };
 
 struct is_not_unity_functor
 {
-  is_not_unity_functor() {}
+  const double tolerance{0};
+
+  is_not_unity_functor(double _tolerance = 1e-4 ) : tolerance(_tolerance) {}
 
   bool operator()(const double &x) const
   {
-    return x != 1;
+    bool result{0};
+
+    if (x > (1+tolerance) || x < (1-tolerance))
+      result = 1;
+
+    return result;
   }
 };
-
 
 typedef double Real;
 

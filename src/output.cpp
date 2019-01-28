@@ -622,6 +622,7 @@ void Output::vtk_structured_grid(string filename, Real *X, int component_count) 
 	output.open(filename);
 
 	ostringstream vtk;
+	vtk.precision(14);
 
 	int MX = Lat[0]->MX;
 	int MY = Lat[0]->MY;

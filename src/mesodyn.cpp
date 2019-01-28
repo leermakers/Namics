@@ -302,8 +302,8 @@ Real* Mesodyn::solve_explicit() {
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
-  //for (size_t c = 0 ; c < solver_component.size() ; ++c)
-    //solver_component[c]->load_rho(component[c]->rho);
+  for (size_t c = 0 ; c < solver_component.size() ; ++c)
+    solver_component[c]->load_rho(component[c]->rho);
 
   for (auto all_components : solver_component)
     all_components->update_boundaries();

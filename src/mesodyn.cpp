@@ -91,7 +91,7 @@ bool Mesodyn::CheckInput(const int start) {
       initialization_mode = INIT_FROMPRO;
     else if ( (read_filename = initialize<std::string>("read_vtk",empty)) != empty) {
         if (read_filename.find(".vtk") != string::npos) {
-          cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename accordingly." << endl;
+          cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename in the input file as ending in ." << endl;
           exit(0);
         }
         initialization_mode = INIT_FROMVTK;
@@ -302,8 +302,8 @@ Real* Mesodyn::solve_explicit() {
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
-  for (size_t c = 0 ; c < solver_component.size() ; ++c)
-    solver_component[c]->load_rho(component[c]->rho);
+  //for (size_t c = 0 ; c < solver_component.size() ; ++c)
+    //solver_component[c]->load_rho(component[c]->rho);
 
   for (auto all_components : solver_component)
     all_components->update_boundaries();
@@ -317,9 +317,6 @@ Real* Mesodyn::solve_crank_nicolson() {
 
   for (vector<int>& i : update_minus)
       solver_component[i[0]]->update_density(flux[i[1]]->J, solver_flux[i[1]]->J, cn_ratio, -1);
-
-  for ( size_t n = 0; n < solver_component.size() ; ++n )
-    
 
   for ( size_t n = 0; n < solver_component.size() ; ++n ) {
 //    norm_theta(solver_component);

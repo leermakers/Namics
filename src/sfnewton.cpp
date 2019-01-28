@@ -920,31 +920,50 @@ int nvar=nvar_;
 	Cp(x0,x,nvar);
   // mol computephi takes long: moltype = monomer
 
-	residuals(x,g);
+	try {
 
-	YplusisCtimesX(x,g,-delta_max,nvar);
-	YisAminB(x_x0,x,x0,nvar);
-	Cp(xR,x,nvar);
-  residual = computeresidual(g, nvar);
-
-	if (e_info) printf("DIIS has been notified\n");
-	if (e_info) printf("Your guess = %1e \n",residual);
-	while (residual > tolerance && it < iterationlimit) {
-		it++;
-		Cp(x0,x,nvar);
-    //fast: moltype = linear
 		residuals(x,g);
-		k=it % m; k_diis++; //plek voor laatste opslag
+
 		YplusisCtimesX(x,g,-delta_max,nvar);
-		Cp(xR+k*nvar,x,nvar);
-		YisAminB(x_x0+k*nvar,x,x0,nvar);
-		DIIS(x,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,nvar);
-    residual = computeresidual(g, nvar);
-		if(e_info && it%i_info == 0){
-			printf("it = %i g = %1e \n",it,residual);
-		}
+		YisAminB(x_x0,x,x0,nvar);
+		Cp(xR,x,nvar);
+  		residual = computeresidual(g, nvar);
+
+		if (e_info) printf("DIIS has been notified\n");
+		if (e_info) printf("Your guess = %1e \n",residual);
+		while (residual > tolerance && it < iterationlimit) {
+			it++;
+			Cp(x0,x,nvar);
+			residuals(x,g);
+			k=it % m; k_diis++; //plek voor laatste opslag
+			YplusisCtimesX(x,g,-delta_max,nvar);
+			Cp(xR+k*nvar,x,nvar);
+			YisAminB(x_x0+k*nvar,x,x0,nvar);
+			DIIS(x,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,nvar);
+    		residual = computeresidual(g, nvar);
+			if(e_info && it%i_info == 0){
+				printf("it = %i g = %1e \n",it,residual);
+			}
+		}	
+		
+		success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
+
+	} catch (int error) {
+		if (error == -1)
+			cerr << "Detected GN not larger than 0." << endl;
+		if (error == -2)
+			cerr << "Detected nan in U in Ax." << endl;
+		if (error == -3)
+			cerr << "Detected nan in svdcmp." << endl;
+		if (error == -4)
+			cerr << "Detected negative phibulk." << endl;
+		free(Aij);free(Ci);free(Apij);
+		#ifdef CUDA
+  		cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g);
+  		#else
+  		free(xR);free(x_x0);free(x0);free(g);
+  		#endif
 	}
-	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
   free(Aij);free(Ci);free(Apij);
   #ifdef CUDA
   cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g);
@@ -1134,3 +1153,5 @@ void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real
 	}*/
 	for (int i=0; i<nvar; i++) H_q[i] = (dg[i]-g[i])/delta;
 }
+
+

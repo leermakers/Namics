@@ -114,7 +114,7 @@ bool Mesodyn::mesodyn() {
   cout << "Mesodyn is all set, starting calculations.." << endl;
 
   // Do one explicit step before starting the crank nicolson scheme
-  explicit_start();
+  //explicit_start();
 
   // Prepare callback functions for SolveMesodyn in Newton
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);

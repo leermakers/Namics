@@ -1,5 +1,6 @@
 #include "teng.h"
 #include "output.h"
+#include <string>
 
 Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_,vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_,  string name_)
     : name{name_},
@@ -27,40 +28,50 @@ Teng::~Teng() {
 bool Teng::MonteCarlo() {
   if (debug) cout << "Monte Carlo in Teng" << endl;
 	bool success;
+	bool solved=false;
+	int time =0;
+	Real* copyitvar;
+	copyitvar = (Real*) malloc(New[0]->iv*sizeof(Real));
  	success=CP(to_teng);
-	New[0]->Solve(true);
-	Real F_bm = Sys[0]->FreeEnergy;
+	New[0]->i_info=100;
+	solved=New[0]->Solve(true);
+	for (int i=0; i<New[0]->iv; i++){copyitvar[i] = New[0]->xx[i];}
+	Real F_bm = Sys[0]->FreeEnergy; //Real G_bm = Sys[0]->GrandPotential;
 	Real F_am;
-	WriteOutput(0);
-		for (int time=1; time<=MCS; time++){
-			//Copy x,y,z to x_bm, y_bm, z_bm
-			cout << "Storing a copy of molecular positions"<< endl;
+	WriteOutput(time);
+	Real accepted=0.0;
+	Real rejected=0.0;
+	Real Percentageaccepted =0.0;
+	Real Percentagerejected =0.0;
+	Real acceptance;
+	
+
+		for (time=1; time<=MCS; time++){
 			success=CP(to_bm);
-			//Make a montecarlo move
-			cout << "Changing the mode of the particles"<< endl;
 			ChangeMode();
-			//copy moved positions to segment
-			cout << "Copying new mode molecular positions into segment class"<< endl;
-			success=CP(to_segment);
-			//Solve SCF
-			New[0]->Solve(true);
+			solved = New[0]->Solve(true);
 			F_am = Sys[0]->FreeEnergy;
-			//Decide to accept or reject
-			//Accept
-			cout << F_bm << "	:" << F_am << "	:" << GetRandom(1.0) << endl; 
-			if (F_am-F_bm <= 0 || GetRandom(1.0) < exp(F_am-F_bm)){
-				//Change F_bm to sys->Freeenergy
-				cout << "Monte Carlo move is accepted" << endl;
-				F_bm=Sys[0]->FreeEnergy;
-			//Reject
-			} else{
-				//Copy pos_bm to segment (basically reset configuration)
-				cout << "Monte Carlo move is rejected" << endl;
-				success = CP(reset);
-				//Sys->Freeenergy should be set to F_bm
-				Sys[0]->FreeEnergy = F_bm;
-			}
-			if (time%save_interval ==0)WriteOutput(time);
+			
+			acceptance=GetRandom(1.0);
+
+				if ((F_am-F_bm <= 0 || acceptance<exp(-1.0*(F_am-F_bm))) && solved){
+					F_bm=Sys[0]->FreeEnergy; // G_bm=Sys[0]->GrandPotential;
+					for (int i=0; i<New[0]->iv; i++){copyitvar[i] = New[0]->xx[i];}
+					accepted+=1.0;
+					cout << "Accepted. Number of MC moves accepted so far: " << accepted << endl;
+				} else{
+					success = CP(reset); success = CP(to_segment);
+					for(int j=0; j<New[0]->iv; j++) {New[0]->xx[j]=copyitvar[j];}
+					solved=New[0]->Solve(true);F_bm=Sys[0]->FreeEnergy;//	G_bm=Sys[0]->GrandPotential;
+					rejected+=1.0;
+					cout << "Rejected. Number of MC moves rejected so far: " << rejected << endl;
+				}
+
+			Percentageaccepted=accepted/time;
+			Percentagerejected=rejected/time;
+			
+			if (time%save_interval ==0) WriteOutput(time);
+			cout << "MonteCarlo step: "<< time << "		Percentage moves accepted: " << Percentageaccepted*100  << " 	Percentage of rejected moves: "<< Percentagerejected*100 << endl;
 		}
 	return success;
 }
@@ -69,7 +80,7 @@ int Teng::GetRandom(int maxvalue) {
 	random_device rd;
 	mt19937 gen(rd());
 	uniform_int_distribution<> distance(1,maxvalue);
-        int randomnumber = distance(gen);
+	int randomnumber = distance(gen);
 	return randomnumber;
 }
 
@@ -77,28 +88,32 @@ Real Teng::GetRandom(Real maxvalue){
 	random_device rd;
 	mt19937 gen(rd());
 	uniform_real_distribution<> distance(0,maxvalue);
-        Real randomnumber = distance(gen);
+	Real randomnumber = distance(gen);
 	return randomnumber;
 }
 
 bool Teng::ChangeMode(){
 	bool success=false;
+	bool copy=false;
 	while(!success){
 	Real Amplitude;
 	Real Wavenumber;
 	Real pi=4.0*atan(1.0);
+	Amplitude=GetRandom(1.0);
+	Wavenumber=round(GetRandom(Lat[0]->MZ/2.0))*2; //creates even wavenumbers in uniform space
+
+	//TODO : Select random number of particles and translate them randomly
+
+if(debug) cout << "amplitude: " << Amplitude <<" \t wavenumber: " << Wavenumber << endl;
 	for(int i=0;i<n_particles;i++){
-		Amplitude=GetRandom(3.0);
-		Wavenumber=GetRandom(2.0);
 		X[i]=X[i]+round(0.5-round(GetRandom(1.0)));
 		Y[i]=Y[i]+round(0.5-round(GetRandom(1.0)));
-		Z[i]=5 + round(Amplitude*(sin(Wavenumber*pi*X[i]/10.0)*sin(Wavenumber*pi*Y[i]/10.0))); 		//Move should be dependent on the system size rather than arbitrary 10.
-		cout << "Position of particle " << i << ": (" <<X[i] << ","<< Y[i] <<"," << Z[i] <<")" << endl; //Not necessary. Should be in debug.
+		Z[i]=Z[i]+round(Amplitude*(sin(Wavenumber*pi*X[i]/Lat[0]->MX)*sin(Wavenumber*pi*Y[i]/Lat[0]->MY)));
 		}
-	success=CP(to_segment);
 	success=IsLegal();
+	if(success) copy=CP(to_segment);
 	}
-	return success;
+	return copy;
 }
 
 // Checks for illegal montecarlo moves. i.e., particle collisions alone. Boundary checky is still not implemented. 
@@ -106,11 +121,36 @@ bool Teng::ChangeMode(){
 bool Teng::IsLegal(){
 	bool success=true;
 	int i,j;
+	int xbox = Lat[0]->MX;
+	int ybox = Lat[0]->MY;
+	int zbox = Lat[0]->MZ;
+	// Put molecules back in periodic box or reflect them back based on boundaries.
+	for (i=0; i<n_particles; i++){
+		if(X[i]<1 && Lat[0]->BC[0]=="periodic") X[i]+=xbox;
+		if(Y[i]<1 && Lat[0]->BC[2]=="periodic") Y[i]+=ybox;
+		if(Z[i]<1 && Lat[0]->BC[4]=="periodic") Z[i]+=zbox;
+		if(X[i]>xbox && Lat[0]->BC[0]=="periodic") X[i]-=xbox;
+		if(Y[i]>ybox && Lat[0]->BC[2]=="periodic") Y[i]-=ybox;
+		if(Z[i]>zbox && Lat[0]->BC[4]=="periodic") Z[i]-=zbox;
+		if(X[i]<1 && Lat[0]->BC[0]=="mirror") X[i]=1;
+		if(Y[i]<1 && Lat[0]->BC[2]=="mirror") Y[i]=1;
+		if(Z[i]<1 && Lat[0]->BC[4]=="mirror") Z[i]=1;
+		if(X[i]>xbox && Lat[0]->BC[0]=="mirror") X[i]=xbox;
+		if(Y[i]>ybox && Lat[0]->BC[2]=="mirror") Y[i]=ybox;
+		if(Z[i]>zbox && Lat[0]->BC[4]=="mirror") Z[i]=zbox;
+	}
+	
+	// Checking for particle out of bounds
+	for(i=0; i<n_particles; i++){
+		if(X[i]>Lat[0]->MX || X[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in x-direction." << endl;}
+		if(Y[i]>Lat[0]->MY || Y[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in y-direction." << endl;}
+		if(Z[i]>Lat[0]->MZ || Z[i]<1){success=false; cout << "This particle with particle id: "<< i << "wanted to leave the box in z-direction." << endl;}
+	}
+	// Checking for particle collisions again
 	for(i=0; i<n_particles; i++){
 		for (j=0; j<i; j++){
 		if(i!=j){
-			if(Seg[tag_seg]->H_P[i]==Seg[tag_seg]->H_P[j]) success=false;
-			cout << "PARTICLES COLLIDED" << endl;
+			if(X[i]==X[j] && Y[i]==Y[j] && Z[i]==Z[j]) {success=CP(reset); success=false; cout << "Particle collided." << endl;}
 			}
 		}
 	}
@@ -132,10 +172,12 @@ bool Teng::CP(transfer tofrom) {
 				PY=(Seg[tag_seg]->H_P[i]-PX*JX)/JY;
 				PZ=(Seg[tag_seg]->H_P[i]-PX*JX-PY*JY);
 				X.push_back(PX); Y.push_back(PY); Z.push_back(PZ);
+				X_bm.push_back(PX); Y_bm.push_back(PY); Z_bm.push_back(PZ);
 			}
 		break;
 		case to_segment:
 			Zero(Seg[tag_seg]->H_MASK,M);  //TODO: (Ram) Not sure If I have to remove the mask, all calculations use H_P after this.
+			Zero(Seg[tag_seg]->H_P,n_particles);
 			for (i=0; i<n_particles; i++) {
 				Seg[tag_seg]->H_P[i]=X[i]*JX+Y[i]*JY+Z[i];
 				Seg[tag_seg]->H_MASK[X[i]*JX+Y[i]*JY+Z[i]]=1;
@@ -143,31 +185,44 @@ bool Teng::CP(transfer tofrom) {
 		break;
 		case to_bm:
 			for (i=0; i<n_particles; i++){
-				PX=X[i];PY=Y[i];PZ=Z[i];
-				X_bm.push_back(PX); Y_bm.push_back(PY); Z_bm.push_back(PZ);
+				X_bm[i]=X[i]; Y_bm[i]=Y[i]; Z_bm[i]=Z[i];
 			}
 		break;
 		case reset:
 			for (i=0; i<n_particles; i++){
-				PX=X_bm[i];PY=Y_bm[i];PZ=Z_bm[i];
-				X.push_back(PX); Y.push_back(PY); Z.push_back(PZ);
+				X[i]=X_bm[i]; Y[i]=Y_bm[i]; Z[i]=Z_bm[i];
 			}
 		break;
 		default:
 			success=false;
-			cout <<"error in tranfer" << endl;
+			cout <<"error in transfer" << endl;
 		break;
 	}
 	return success;
 }
 
 // Push outputs from this and other classes to Output class
-void Teng::WriteOutput(int subloop){
-      	PushOutput();
-       New[0]->PushOutput();
+void Teng::WriteOutput(int subloop_){
+	int subloop=subloop_;
+	PushOutput();
+	WritePdb(subloop);
+   	New[0]->PushOutput();
       	for (int i = 0; i < n_out; i++) {
         	Out[i]->WriteOutput(subloop);
 	}
+}
+
+
+void Teng::WritePdb(int time){
+	FILE *fp;
+	string filename;
+	filename=name;
+	filename.append(".pdb");
+	fp=fopen(filename.c_str(),"a");
+	fprintf(fp,"%s %9d\n","MODEL",time);
+	for (int i=0; i<n_particles; i++) fprintf(fp,"%s%7d%s%12d%7d%7d%7d\n","ATOM",(time*n_particles)+(i+1),"  H",(i+1)+(time*n_particles),X[i],Y[i],Z[i]);
+	fprintf(fp,"%s\n","ENDML");
+	fclose(fp);
 }
 
 // Additional information to pass outputs from Teng class.
@@ -242,21 +297,14 @@ bool Teng::CheckInput(int start) {
   	success = In[0]->CheckParameters("teng", name, start, KEYS, PARAMETERS, VALUES);
   	if (success) {
     		vector<string> options;
-    		if (GetValue("MCS").size() > 0) {
-      			success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000, "The number of timesteps should be between 1 and 10000");
-    		}
-    		if (debug)
-      			cout << "MCS is " << MCS << endl;
-
-    		if (GetValue("save_interval").size() > 0) {
-      			success = In[0]->Get_int(GetValue("save_interval"), save_interval,1,MCS,"The save interval nr should be between 1 and 100");
-    		}
+    		if (GetValue("MCS").size() > 0) success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000, "The number of timesteps should be between 1 and 10000");
+    		if (debug) cout << "MCS is " << MCS << endl;
+    		if (GetValue("save_interval").size() > 0) success = In[0]->Get_int(GetValue("save_interval"), save_interval,1,MCS,"The save interval nr should be between 1 and 100");
     		if (debug) cout << "Save_interval " << save_interval << endl;
     		if (Sys[0]->SysTagList.size() <1) {cout <<"Teng needs to have tagged molecules in the system" << endl; success=false;}
 		else {tag_seg=Sys[0]->SysTagList[0]; if (Sys[0]->SysTagList.size()>1) {success=false; cout <<"Currently the Tagging is limited to one molecule per system. " << endl; }}
-    		if (success) {
-			n_particles = Seg[tag_seg]->n_pos;
-    		}
+    		if (success) n_particles = Seg[tag_seg]->n_pos;
+
     		tag_mol=-1;
     		int length = In[0]->MolList.size();
     		for (int i=0; i<length; i++) if (Mol[i]->freedom =="tagged") tag_mol=i;
@@ -271,7 +319,7 @@ bool Teng::CheckInput(int start) {
         		success=false;
       			}
      		}
-     		//TODO: There should be a for loop over the required number of timesteps.
+
      		MonteCarlo();
    	}
   return success;

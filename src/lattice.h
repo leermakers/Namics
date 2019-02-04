@@ -73,6 +73,7 @@ public:
 	int GetValue(string,int&,Real&,string&);
 	Real GetValue(Real*,string);
 	Real WeightedSum(Real*);
+	Real Moment(Real*,int);
 	void TimesL(Real*);
 	void DivL(Real*);
 	void vtk(string, Real*,string);

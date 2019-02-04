@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
 
 //Create state class instance and check inputs
 		int n_stat=In[0]->StateList.size();
-		for (int i=0; i<n_stat; i++) 
+		for (int i=0; i<n_stat; i++)
 			Sta.push_back(new State(In,Seg,In[0]->StateList[i]));
 
 
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
 		for (int i=0; i<n_stat; i++) {
       			for (int k = 0; k < n_seg; k++) {
         			Sta[i]->PutChiKEY(Seg[k]->name);
-     			}			
+     			}
 			for (int k = 0; k < n_stat; k++) {
         			Sta[i]->PutChiKEY(Sta[k]->name);
      			}
@@ -372,7 +372,7 @@ int main(int argc, char* argv[]) {
 				New[0]->AllocateMemory();
       				New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
 				if (debug) cout << "Creating mesodyn" << endl;
-        			Mes.push_back(new Mesodyn(In, Lat, Seg, Mol, Sys, New, In[0]->MesodynList[0]));
+        			Mes.push_back(new Mesodyn(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->MesodynList[0]));
         			if (!Mes[0]->CheckInput(start)) {
           				return 0;
         			}
@@ -387,7 +387,7 @@ int main(int argc, char* argv[]) {
 				break;
 			case CLENG:
 				New[0]->AllocateMemory();
-      				New[0]->Guess(X, METHOD, MONLIST,STATELIST, CHARGED, MX, MY, MZ,fjc_old); 
+      				New[0]->Guess(X, METHOD, MONLIST,STATELIST, CHARGED, MX, MY, MZ,fjc_old);
 				if (!debug) cout << "Creating Cleng module" << endl;
 				Cle.push_back(new Cleng(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->ClengList[0]));
 				if (!Cle[0]->CheckInput(start)) {return 0;}

@@ -4,6 +4,7 @@
 Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
 if (debug) cout <<"constructor in Output "<< endl;
 	In=In_; Lat = Lat_; Seg=Seg_; Sta=Sta_; Rea=Rea_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
+	//KEYS.push_back("write_output");
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");
@@ -95,7 +96,7 @@ if (debug) cout << "CheckInput in output " << endl;
 	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		if (GetValue("append").size()>0) {
-			if (name=="ana") append=true;
+			if (name=="ana") append=true;			
 			append=In[0]->Get_bool(GetValue("append"),append);
 		} else {
 			if (name=="ana") append=true;
@@ -119,7 +120,16 @@ if (debug) cout << "CheckInput in output " << endl;
 				success=false;
 			}
 		}
-
+		write_option="no_error";
+		if (GetValue("write_output").size()>0) {
+			vector<string> option_list;
+			option_list.push_back("always");
+			option_list.push_back("no_error");
+			option_list.push_back("never");
+			if (!In[0]->Get_string(GetValue("write_output"),write_option,option_list,"In output: 'write_output' not recognised. Use 'always', 'never', or 'no_error'. The last value is default.")){
+				cout <<"continue with write_output : no_error" << endl; 
+			} 
+		}		
 	} else cout <<"Error in CheckParameters in output" << endl;
 	return success;
 }
@@ -343,15 +353,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		string slash = "/";
 
 		// Check if we have any slashes in the filename (are we in inputs, or higher up?)
-		while ((start = infilename.find(slash, start)) != string::npos) {
+		while ((start = sub[0].find(slash, start)) != string::npos) {
     	++occurrences;
     	start += slash.length();
 		}
 
 		// If we're not in the inputs folder, discard the path and take only the filename
 		if  (occurrences != 0) {
-			size_t found = infilename.find_last_of("/\\");
-			sub[0] = infilename.substr(found+1);
+			size_t found = sub[0].find_last_of("/\\");
+			sub[0] = sub[0].substr(found+1);
 		}
 	}
 
@@ -428,7 +438,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				key = OUT_key[i];
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 				fprintf(fp,"%s \t",s.c_str());
-			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl;}
+			} else {cout << " Error for 'pro' output. It is only possible to output quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl;}
 		}
 		fprintf(fp,"\n");
 		Lat[0] -> PutProfiles(fp,pointer);
@@ -439,7 +449,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	if (name=="kal") {
 		ifstream my_file(filename.c_str());
 		FILE *fp;
-		if (!(my_file||append)) {
+		if (!(my_file && append)) {
 			fp=fopen(filename.c_str(),"w");
 			int length = OUT_key.size();
 			for (int i=0; i<length; i++) {
@@ -615,6 +625,44 @@ if (debug) cout << "vtk in output " << endl;
 	fclose(fp);
 }
 
+void Output::vtk_structured_grid(string filename, Real *X) {
+	if (debug) cout << "vtk_structed_grid in output " << endl;
+
+	ofstream output;
+	output.open(filename);
+
+	ostringstream vtk;
+
+	int MX = Lat[0]->MX;
+	int MY = Lat[0]->MY;
+	int MZ = Lat[0]->MZ;
+
+	vtk << "# vtk DataFile Version 4.2 \n";
+	vtk << "Mesodyn output \n";
+	vtk << "ASCII\n";
+	vtk << "DATASET STRUCTURED_GRID \n";
+	vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
+	vtk << "POINTS " << MX * MY * MZ << " int\n";
+
+	for (int x = 1; x < MX + 1; ++x)
+		for (int y = 1; y < MY + 1; ++y)
+			for (int z = 1 ; z < MZ + 1 ; ++z )
+				vtk << x << " " << y << " " << z << "\n";
+
+	vtk << "POINT_DATA " << MX * MY * MZ << "\n";
+	vtk << "SCALARS Sobel float\nLOOKUP_TABLE default \n";
+
+	for (int x = 1; x < MX + 1; ++x)
+		for (int y = 1; y < MY + 1; ++y)
+			for (int z = 1 ; z < MZ + 1 ; ++z )
+				vtk << X[x*Lat[0]->JX+y*Lat[0]->JY+z*Lat[0]->JZ] << "\n";
+
+	output << vtk.str();
+	output.flush();
+
+	output.close();
+}
+
 
 void Output::density(){
 if (debug) cout << "density in output " << endl;
@@ -704,6 +752,7 @@ if (debug) cout << "printlist in output " << endl;
 
 int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result, string& string_result) {
   int i = 0;
+  int_result=0;
   int length = ints.size();
   while (i < length) {
     if (prop == ints[i]) {
@@ -713,6 +762,7 @@ int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result
     i++;
   }
   i = 0;
+  Real_result=0.0;
   length = Reals.size();
   while (i < length) {
     if (prop == Reals[i]) {
@@ -722,6 +772,7 @@ int Output::GetValue(string prop, string mod, int& int_result, Real& Real_result
     i++;
   }
   i = 0;
+  string_result="false";
   length = bools.size();
   while (i < length) {
     if (prop == bools[i]) {

@@ -1425,6 +1425,11 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
         ++a[i][i];
     }
 
+    for (int i=0; i<n; i++)
+      for (int j=0; j<n; j++)
+        if (a[j][i] != a[j][i])
+            throw -3;
+
     /* diagonalize the bidiagonal form */
     for (k = n - 1; k >= 0; k--)
     {                             /* loop over singular values */

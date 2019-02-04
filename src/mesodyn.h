@@ -151,7 +151,7 @@ public:
   Real rho_at(int, int, int);
   Real alpha_at(int, int, int);
   int update_density(vector<Real>&, int = 1);     //Explicit scheme
-  int update_density(vector<Real>&, vector<Real>&, vector<Real>&, Real ratio, int = 1); //Implicit scheme
+  int update_density(vector<Real>&, vector<Real>&, Real ratio, int = 1); //Implicit scheme
   int load_alpha(vector<Real>&);
   int load_rho(vector<Real>&);
   int update_boundaries();
@@ -167,7 +167,6 @@ public:
   virtual ~Flux1D();
 
   virtual int langevin_flux();
-  //TODO: check everything for 'virtual' errors
 
   Real J_at(int, int, int);
   Real L_at(int, int, int);
@@ -233,6 +232,25 @@ protected:
   vector<int> Mask_minus_z;
 };
 
+class Interface : private Lattice_Access {
+public:
+  Interface(Lattice*, vector<Component*>);
+  ~Interface();
+  int detect_edges(int);
+  vector<Real> edges;
+
+private:
+  vector<Component*> component;
+
+  vector<Real> sobel_edge_detector(Real, vector<Real>&);
+  vector<Real> gaussian_blur(vector<Real>&);
+  //TODO: template this
+  Real convolution(vector<int>, vector<Real>);
+  Real convolution(vector<Real>, vector<Real>);
+  vector<Real> get_xy_plane(vector<Real>&, int, int, int, int = 3);
+  vector<Real> get_xz_plane(vector<Real>&, int, int, int, int = 3);
+};
+
 
 class Mesodyn : private Lattice_Access {
 
@@ -243,6 +261,8 @@ private:
   const vector<Lattice*> Lat;
   const vector<Molecule*> Mol;
   const vector<Segment*> Seg;
+  const vector<State*> Sta;
+	const vector<Reaction*> Rea;
   const vector<System*> Sys;
   const vector<Solve_scf*> New;
   vector <Output*> Out;
@@ -250,23 +270,28 @@ private:
 
   /* Read from file */
   Real D; // diffusionconstant
+  Real dt;
   Real mean; // mean of gaussian noise (should be 0)
   Real stddev; // stdev of gaussian noise (should be 1*D)
   Real seed;  // seed of gaussian noise
   bool seed_specified;
   int timesteps; // length of the time evolution
   int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
-  Real dt;
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
+  bool edge_detection;
+  int edge_detection_threshold;
+
 
   /* Flow control */
   int RC;
   Real* solve_explicit();
   void explicit_start();
+  int noise_flux();
   Real* solve_crank_nicolson();
   void load_alpha(vector<Real>&, size_t);
   int sanity_check();
+  Real calculate_order_parameter();
   Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
 
   /* Initialization*/
@@ -274,34 +299,36 @@ private:
     INIT_HOMOGENEOUS,
     INIT_FROMPRO,
     INIT_FROMVTK,
-    INIT_EQUILIBRATE,
   };
+  Real system_volume;
   vector<Real> rho;
   vector<string> tokenize(string, char);
   string read_filename;
   int initial_conditions();
   vector<Real>&  flux_callback(int);
   int init_rho_homogeneous(vector< vector<Real> >&, vector<int>&);
-  int init_rho_equilibrate(vector< vector<Real> >&);
   int init_rho_frompro(vector< vector<Real> >&, string);
   int init_rho_fromvtk(vector<Real>&, string);
   int norm_density(vector<Real>& rho, Real theta);
+  void set_update_lists();
+  vector<vector<int>> update_plus;
+  vector<vector<int>> update_minus;
+  Real boundaryless_volume;
 
   /* Helper class instances */
   Boundary1D* boundary;
+  Interface* interface;
   vector<Component*> component;
   vector<Component*> solver_component;
   vector<Flux1D*> flux;
   vector<Flux1D*> solver_flux;
 
   /* Mesodyn specific output */
-  ofstream mesodyn_output;
   ostringstream filename;
   int writes;
   bool write_vtk;
   void set_filename();
-  void write_settings();
-  void write_density(vector<Component*>&);
+  Real order_parameter;
 
   /* Mathematics */
   int factorial (int);
@@ -309,7 +336,7 @@ private:
 
 
 public:
-  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
+  Mesodyn(vector<Input*>, vector<Lattice*>, vector<Segment*>, vector<State*>, vector<Reaction*>, vector<Molecule*>, vector<System*>, vector<Solve_scf*>, string);
   ~Mesodyn();
 
   bool mesodyn();
@@ -328,11 +355,6 @@ public:
   vector<int> ints_value;
   vector<bool> bools_value;
   vector<string> strings_value;
-  void push(string, Real);
-  void push(string, int);
-  void push(string, bool);
-  void push(string, string);
-  void PushOutput();
   int GetValue(string, int&, Real&, string&);
   int write_output();
 
@@ -340,7 +362,6 @@ public:
   std::vector<string> PARAMETERS;
   std::vector<string> VALUES;
   bool CheckInput(int);
-  void PutParameter(string);
   string GetValue(string);
 };
 #endif

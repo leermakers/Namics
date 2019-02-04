@@ -195,7 +195,7 @@ bool System::PrepareForCalculations() {
 	bool found=false;
 	int beta; 
 	for (int i=0; i<n_mol; i++) {
-		if (Mol[i]->beta>0) { 
+		if (Mol[i]->beta>0 && i!=solvent) { 
 			found=true; 
 			beta=Mol[i]->beta; 
 			Mol[i]->interface_pinned=true;

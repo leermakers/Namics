@@ -1659,7 +1659,7 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
 	if (interface_pinned) {
 		int molmonlistlength=MolMonList.size();
-		for (int i=0; i<molmonlistlength; i++) Seg[MolMonList[i]]->G1[1+beta] *=Gbeta; 
+		for (int i=0; i<molmonlistlength; i++) Seg[MolMonList[i]]->G1[beta] *=Gbeta; 
 	}	
 
 	switch (MolType) {
@@ -1688,8 +1688,8 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 		int M=Lat[0]->M;
 		int molmonlistlength=MolMonList.size();
 		for (int i=0; i<molmonlistlength; i++) {
-			phi[i*M+1+beta] /=Gbeta;  
-			Seg[MolMonList[i]]->G1[1+beta] /=Gbeta; 
+			phi[i*M+beta] /=Gbeta;  
+			Seg[MolMonList[i]]->G1[beta] /=Gbeta; 
 		}
 	}
 
@@ -1706,6 +1706,7 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	//Lat[0]->remove_bounds(phi);
 	GN=Lat[0]->WeightedSum(phi);
 	if (compute_phi_alias) {
+
 		int length = MolAlList.size();
 		for (int i=0; i<length; i++) {
 			if (Al[i]->frag[0]==1) {

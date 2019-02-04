@@ -60,6 +60,8 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	}
 	if (Sys[0]->charged) iv += M;
 	if (SCF_method=="Picard") iv += M;
+	
+	if (Sys[0]->beta_set) iv++; 
 #ifdef CUDA
 	xx  = (Real*)AllOnDev(iv);
 	x0  = (Real*)AllOnDev(iv);
@@ -848,11 +850,12 @@ void Solve_scf::residuals(Real* x, Real* g){
 			int itmonlistlength=Sys[0]->ItMonList.size();
 			int state_length = In[0]->StateList.size();
 			int itstatelistlength=Sys[0]->ItStateList.size();
+			
+			if (Sys[0]->beta_set) {
+				Sys[0]->BETA=xx[iv-1]; 
+			}
 
  			ComputePhis();
-			if (Sys[0]->beta_set){
-				Sys[0]->BETA +=Mol[Sys[0]->MolBeta]->phitot[Mol[Sys[0]->MolBeta]->beta]-Mol[Sys[0]->solvent]->phitot[Mol[Sys[0]->solvent]->beta]; 
-			}
 
 			Cp(g,xx,iv); Zero(alpha,M);
 			for (i=0; i<itmonlistlength; i++) {
@@ -905,6 +908,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Lat[0]->set_bounds(Sys[0]->psi);
 				Lat[0]->UpdatePsi(g+(itmonlistlength+itstatelistlength)*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
 				Lat[0]->remove_bounds(g+(itmonlistlength+itstatelistlength)*M);
+			}
+			if (Sys[0]->beta_set){
+			   g[iv-1]=(Mol[Sys[0]->MolBeta]->phitot[Mol[Sys[0]->MolBeta]->beta]-Mol[Sys[0]->solvent]->phitot[Mol[Sys[0]->solvent]->beta]); 
 			}
 		break;
 	}

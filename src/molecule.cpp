@@ -431,10 +431,11 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 		if (freedom!="free") {success=false; cout <<"'equate_phi_to_solvent_at' should be combined with freedom 'free' "<< endl; }
 		int grads=Lat[0]->gradients; 
 		if (grads !=1) {success=false; cout <<"'equate_phi_to_solvent_at' can only work in 1-gradient systems (yet). "<< endl;} 
-		int M=(Lat[0]->M-2)/2; 
+		int M=(Lat[0]->M-2*Lat[0]->fjc)/(2*Lat[0]->fjc); 
 		beta=In[0]->Get_int(GetValue("equate_phi_to_solvent_at"),M);
 		if (beta<1 || beta>2*M) {success=false; cout <<"'equate_phi_to_solvent_at' should contain integer in range 1 .. " << 2*M  << endl; }
-	}
+		beta*=Lat[0]->fjc;
+	}	
 	return success;
 }
 

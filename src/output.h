@@ -37,6 +37,7 @@ public:
 	string output_folder;
 	string bin_folder;
 	bool use_output_folder;
+	string write_option;
 
   	vector<string> ints;
  	vector<string> Reals;

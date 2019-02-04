@@ -15,6 +15,7 @@ if (debug) cout << "Constructor for system " << endl;
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]);
 	charged=false;
+	BETA=0;
 }
 System::~System() {
   if (debug)
@@ -191,6 +192,24 @@ bool System::PrepareForCalculations() {
       }
     }
   }
+	bool found=false;
+	int beta; 
+	for (int i=0; i<n_mol; i++) {
+		if (Mol[i]->beta>0) { 
+			found=true; 
+			beta=Mol[i]->beta; 
+			Mol[i]->interface_pinned=true;
+			Mol[i]->Gbeta = exp(BETA); 
+			MolBeta=i;
+		}
+	}
+	if (found) {
+		beta_set=true; 
+		Mol[solvent]->beta=beta; 
+		Mol[solvent]->interface_pinned=true;
+		Mol[solvent]->Gbeta=exp(-BETA);
+	}
+
   return success;
 }
 
@@ -203,6 +222,7 @@ string System::GetMonName(int mon_number_I) {
 bool System::CheckInput(int start) {
 if (debug) cout << "CheckInput for system " << endl;
 	bool success=true;
+	beta_set=false; 
 	bool solvent_found=false; tag_segment=-1; solvent=-1;  //value -1 means no solvent defined. tag_segment=-1;
 	Real phibulktot=0;
 	success= In[0]->CheckParameters("sys",name,start,KEYS,PARAMETERS,VALUES);

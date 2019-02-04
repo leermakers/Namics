@@ -11,6 +11,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("n");
 	KEYS.push_back("save_memory");
 	KEYS.push_back("restricted_range");
+	KEYS.push_back("equate_phi_to_solvent_at");
 }
 
 Molecule::~Molecule() {
@@ -292,6 +293,8 @@ int M=Lat[0]->M;
 
 bool Molecule::CheckInput(int start_) {
 if (debug) cout <<"Molecule:: CheckInput" << endl;
+beta=0; 
+interface_pinned=false; 
 start=start_;
 phibulk=0;
 n=0; 
@@ -422,6 +425,15 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				if (GetValue("theta").size() >0 || GetValue("n").size() > 0 || GetValue("phibulk").size() >0 || GetValue("freedom").size() > 0) cout <<"Warning. In mol " + name + " tagged segment(s) were detected. In this case no value for 'freedom' is needed, and also 'theta', 'n' and 'phibulk' values are ignored. " << endl;
 			}
 		}
+	}
+	if (GetValue("equate_phi_to_solvent_at").size() > 0) {
+		if (start<2) {success=false; cout <<"'equate_phi_to_solvent_at' can not be set as initial problem. "<< endl; }
+		if (freedom!="free") {success=false; cout <<"'equate_phi_to_solvent_at' should be combined with freedom 'free' "<< endl; }
+		int grads=Lat[0]->gradients; 
+		if (grads !=1) {success=false; cout <<"'equate_phi_to_solvent_at' can only work in 1-gradient systems (yet). "<< endl;} 
+		int M=(Lat[0]->M-2)/2; 
+		beta=In[0]->Get_int(GetValue("equate_phi_to_solvent_at"),M);
+		if (beta<1 || beta>2*M) {success=false; cout <<"'equate_phi_to_solvent_at' should contain integer in range 1 .. " << 2*M  << endl; }
 	}
 	return success;
 }
@@ -1645,6 +1657,11 @@ bool Molecule::ComputePhi(){
 if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	bool success=true;
 	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
+	if (interface_pinned) {
+		int molmonlistlength=MolMonList.size();
+		for (int i=0; i<molmonlistlength; i++) Seg[MolMonList[i]]->G1[1+beta] *=Gbeta; 
+	}	
+
 	switch (MolType) {
 		case monomer:
 			success=ComputePhiMon();
@@ -1667,6 +1684,16 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 			cout << "Programming error " << endl;
 			break;
 	}
+	if (interface_pinned) {
+		int M=Lat[0]->M;
+		int molmonlistlength=MolMonList.size();
+		for (int i=0; i<molmonlistlength; i++) {
+			phi[i*M+1+beta] /=Gbeta;  
+			Seg[MolMonList[i]]->G1[1+beta] /=Gbeta; 
+		}
+	}
+
+
 	return success;
 }
 

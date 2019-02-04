@@ -34,16 +34,14 @@ Real k_B = 1.38065e-23;
 Real k_BT = k_B * T;
 Real eps0 = 8.85418e-12;
 Real PIE = 3.14159265;
-
+int DEBUG_BREAK = 1;
 //Used for command line switches
 bool debug = false;
-bool suppress = false;
 
 //Output when the user malforms input. Update when adding new command line switches.
 void improperInput() {
   cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;
   cerr << "-d Enables debugging mode." << endl;
-  cerr << "-s Suppresses newton's extra output." << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -71,9 +69,18 @@ int main(int argc, char* argv[]) {
     		debug = true;
  	 }
 
-  	if ( find(args.begin(), args.end(), "-s") != args.end() ) {
-    		suppress = true;
-  	}
+	int cudaDeviceIndex = 0;
+
+	//If the switch -GPU is given, select GPU.
+  	if ( find(args.begin(), args.end(), "-GPU") != args.end() ) {
+		  try {
+		  	cudaDeviceIndex = load_argument_value(args, "-GPU", cudaDeviceIndex);
+		  }
+		  catch (int) {
+			improperInput();
+			exit(0);
+		  }
+ 	 }
 
   	bool cuda;
   	int start = 0;
@@ -90,7 +97,7 @@ int main(int argc, char* argv[]) {
 	vector<string> STATELIST;
 
 #ifdef CUDA
-  GPU_present();
+  GPU_present(cudaDeviceIndex);
   cuda = true;
 #else
   cuda = false;
@@ -167,8 +174,6 @@ int main(int argc, char* argv[]) {
 			if (!Sta[i]->CheckInput(start)) return 0;
 		}
 
-
-
 //Create reaction class instance and check inputs
 		int n_rea=In[0]->ReactionList.size();
 		for (int i=0; i<n_rea; i++) {
@@ -238,6 +243,7 @@ int main(int argc, char* argv[]) {
       			}
 		}
 
+
 // Error code for faulty variate class creation
 		if (n_etm > 1) {
       			cout << "too many equate_to_mu's in var statements. The limit is 1 " << endl;
@@ -278,16 +284,14 @@ int main(int argc, char* argv[]) {
       			return 0;
     		}
 
-
 //Guesses geometry
     		if (Sys[0]->initial_guess == "file") {
       			MONLIST.clear();
-			STATELIST.clear();
+			      STATELIST.clear();
       			if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST,STATELIST, CHARGED, MX, MY, MZ, fjc_old, 0)) {
 // last argument 0 is to first checkout sizes of system.
         			return 0;
       			}
-
 			int nummon = MONLIST.size();
 			int numstate=STATELIST.size();
       			int m;
@@ -369,10 +373,11 @@ int main(int argc, char* argv[]) {
 
 				break;
 			case MESODYN:
+				New[0]->mesodyn = true;
 				New[0]->AllocateMemory();
       				New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
 				if (debug) cout << "Creating mesodyn" << endl;
-        			Mes.push_back(new Mesodyn(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->MesodynList[0]));
+        			Mes.push_back(new Mesodyn(start, In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->MesodynList[0]));
         			if (!Mes[0]->CheckInput(start)) {
           				return 0;
         			}
@@ -403,6 +408,10 @@ int main(int argc, char* argv[]) {
 				cout <<"TheEngine is unknown. Programming error " << endl; return 0;
 				break;
 		}
+
+        for (auto all_segments : Seg)
+          all_segments->prepared = false;
+
     		if (scan_nr > -1)
       			Var[scan_nr]->ResetScanValue();
     		if (Sys[0]->initial_guess == "previous_result") {
@@ -415,7 +424,11 @@ int main(int argc, char* argv[]) {
       			if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
                 		free(X);
             		X = (Real *)malloc(IV_new * sizeof(Real));
+                #ifdef CUDA
+                TransferDataToHost(X, New[0]->xx, IV_new);
+                #else
             		for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
+                #endif
       			fjc_old=Lat[0]->fjc;
       			int mon_length = Sys[0]->ItMonList.size();
 			int state_length=Sys[0]->ItStateList.size();

@@ -75,8 +75,5 @@ public:
 	Real GetError();
 	Real GetValue();
 	void PutValue(Real);
-
-
-;
 };
 #endif

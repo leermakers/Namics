@@ -6,6 +6,7 @@
 #include "reaction.h"
 #include "molecule.h"
 #include "lattice.h"
+
 class System {
 public:
 	System(vector<Input*>,vector<Lattice*>,vector<Segment*>,vector<State*>,vector<Reaction*>,vector<Molecule*>,string);
@@ -44,7 +45,7 @@ public:
 	Real* psi;
 	Real* EE;
 	int* psiMask;
-	bool fixedPsi0;
+	bool fixedPsi0;	
 	Real* q;
 	Real* H_GrandPotentialDensity;
 	Real* H_FreeEnergyDensity;
@@ -58,7 +59,7 @@ public:
 	int solvent;
 	int neutralizer;
 	int tag_segment;
-	Real volume;
+	int volume;
 	bool input_error;
 	bool cuda;
 	bool charged;
@@ -69,6 +70,8 @@ public:
 	string guess_outputfile;
 	int Var_target;
 	Real Var_target_value;
+
+	bool prepared;
 
 	int MonA,MonB;
 
@@ -103,6 +106,7 @@ public:
 	bool IsUnique(int,int);
 	void AllocateMemory();
 	bool PrepareForCalculations();
+	bool generate_mask();
 	bool ComputePhis();
 	void DoElectrostatics(Real*,Real*);
 	bool CheckResults(bool);

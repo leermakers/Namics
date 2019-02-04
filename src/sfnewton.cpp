@@ -52,15 +52,15 @@ C Copyright (2018) Wageningen University, NL.
        linesearchlimit = iterations=lineiterations=numIterationsSinceHessian = trouble=resetiteration=0;
        trouble = resetiteration = 0;
 	numReverseDirection =0;
-	linetolerance = trustregion =0.0;
+	trustregion =0.0;
 	pseudohessian = samehessian = false;
 	d_info = e_info = g_info = h_info = s_info = x_info = false;
 	newtondirection = ignore_newton_direction  = false ;
 	i_info=1;
-       max_accuracy_for_hessian_scaling = 0.1;
-       linesearchlimit = 20;
-       linetolerance = 9e-1;
-       epsilon = 0.1/pow(2.0,nbits/2);
+	max_accuracy_for_hessian_scaling = 0.1;
+	linesearchlimit = 20;
+	linetolerance = 9e-1;
+	epsilon = 0.1/pow(2.0,nbits/2);
 	minAccuracySoFar = 1e30;
 	reverseDirectionRange = 50;
 	resetHessianCriterion = 1e5;
@@ -282,7 +282,8 @@ Real SFNewton::linecriterion(Real *g, Real *g0, Real *p, Real *p0, int nvar) { /
 if(debug) cout <<"linecriterion in Newton " << endl;
 	Real normg,gg0;
 	normg = norm2(g0,nvar);
-	Dot(gg0,g,g0,nvar);
+  Dot(gg0,g,g0,nvar);
+
 	gg0=gg0/normg/normg;
 	normg = pow(norm2(g,nvar)/normg,2);
 	if ( (gg0>1 || normg>1) && normg-gg0*fabs(gg0)<0.2 ) {
@@ -530,7 +531,7 @@ if(debug) cout <<"zero in Newton " << endl;
 	Real alpha=newalpha;
 	bool valid, timedep;
 	lineiterations++;
-	if ( (lineiterations==5)) {
+	if (lineiterations==5) {
 		memcpy(x, x0, sizeof(*x)*nvar);
 		COMPUTEG(x,g,nvar,filter);
 		valid = true;
@@ -616,7 +617,7 @@ bool SFNewton::Message(bool e_info_, bool s_info_, int it_, int iterationlimit_,
 		success=false;
 	}
 
-  if ((e_info || s_info) && suppress == false) {
+  if ((e_info || s_info)) {
 
 
 		if (e_info) {
@@ -642,12 +643,24 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 	Real delta_max=delta_max_;
 	Real delta_min=delta_min_;
 	bool filter=filter_;
-Real* x0 = (Real*) malloc(nvar*sizeof(Real)); H_Zero(x0,nvar);
-Real* g = (Real*) malloc(nvar*sizeof(Real)); H_Zero(g,nvar);
-Real* p = (Real*) malloc(nvar*sizeof(Real));H_Zero(p,nvar);
-Real* p0 = (Real*) malloc(nvar*sizeof(Real));H_Zero(p0,nvar);
-Real* g0  = (Real*) malloc(nvar*sizeof(Real));H_Zero(g0,nvar);
-mask = (int*) malloc(nvar*sizeof(int));
+  #ifdef CUDA
+  Real* x0 = (Real*) AllOnDev(nvar); Zero(x0,nvar);
+  Real* g = (Real*) AllOnDev(nvar); Zero(g,nvar);
+  Real* p = (Real*) AllOnDev(nvar);Zero(p,nvar);
+  Real* p0 = (Real*) AllOnDev(nvar);Zero(p0,nvar);
+  Real* g0  = (Real*) AllOnDev(nvar);Zero(g0,nvar);
+  mask = (int*) AllIntOnDev(nvar);
+  float* h = (float*) AllOnDev(nvar*nvar); H_Zero(h,nvar*nvar);
+  #else
+  Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+  Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+  Real* p = (Real*) malloc(nvar*sizeof(Real)); Zero(p,nvar);
+  Real* p0 = (Real*) malloc(nvar*sizeof(Real)); Zero(p0,nvar);
+  Real* g0  = (Real*) malloc(nvar*sizeof(Real)); Zero(g0,nvar);
+  mask = (int*) malloc(nvar*sizeof(int));
+  float* h = (float*) malloc(nvar*nvar*sizeof(float)); Zero(h,nvar*nvar);
+  #endif
+
 	if (nvar<1) {cout << "newton has nothing to do; returning the problem" << endl; return false;}
 	int it=0;
 	iterations=it;
@@ -681,8 +694,6 @@ mask = (int*) malloc(nvar*sizeof(int));
 		}
 	}
 
-float* h = (float*) malloc(nvar*nvar*sizeof(float)); H_Zero(h,nvar*nvar);
-
 	newhessian(h,g,g0,x,p,nvar,accuracy,ALPHA,filter);
 	minimum=newfunction(g,x,nvar);
 	inneriteration(x,g,h,accuracy,delta_max,ALPHA,nvar);
@@ -710,8 +721,13 @@ float* h = (float*) malloc(nvar*nvar*sizeof(float)); H_Zero(h,nvar*nvar);
 	if (e_info) printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
 	success=Message(e_info,s_info,it,iterationlimit,accuracy,tolerance,"");
 	ResetX(x,nvar,filter);
-free(x0);free(g);free(p);free(p0);free(g0);free(h);
-free(mask); mask = NULL;
+  #ifdef CUDA
+  cudaFree(x0);cudaFree(g);cudaFree(p);cudaFree(p0);cudaFree(g0);cudaFree(h);cudaFree(mask);
+  #else
+  free(x0);free(g);free(p);free(p0);free(g0);free(h);free(mask);
+  #endif
+
+  mask = NULL;
 	return success;
 }
 
@@ -719,9 +735,14 @@ free(mask); mask = NULL;
 bool SFNewton::iterate_Picard(Real* x,int nvar, int iterationlimit, Real tolerance, Real delta_max) {
 if(debug) cout <<"Iterate_Picard in  SFNewton " << endl;
 
-
+#ifdef CUDA
+float* h  = (float*) malloc(sizeof(float));
+Real* g = (Real*) AllOnDev(nvar);
+#else
 float* h  = (float*) malloc(sizeof(float));
 Real* g = (Real*) malloc(nvar*sizeof(Real));
+#endif
+
 	bool success=true;
 	int it;
 	Real residual;
@@ -742,7 +763,11 @@ Real* g = (Real*) malloc(nvar*sizeof(Real));
 		it++;
 	}
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
+  #ifdef CUDA
+  cudaFree(h); cudaFree(g);
+  #else
 free(h); free(g);
+#endif
 	return success;
 }
 
@@ -784,73 +809,122 @@ delete [] U; delete [] S; delete [] V;
 
 void SFNewton::DIIS(Real* x, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* Ci, int k, int k_diis, int m, int nvar) {
 if(debug) cout <<"DIIS in  SFNewton " << endl;
-	Real normC=0; int posi;
-	if (k_diis>m) { k_diis =m;
-		for (int i=1; i<m; i++) for (int j=1; j<m; j++)
-		Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
+	Real normC=0;
+  int posi;
+	if (k_diis>m) {
+    k_diis =m;
+		for (int i=1; i<m; i++)
+      for (int j=1; j<m; j++)
+		    Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
 	}
-	for (int i=0; i<k_diis; i++) {posi = k-k_diis+1+i; if (posi<0) posi +=m;
-		Real Dvalue; Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
-		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue; }
+	for (int i=0; i<k_diis; i++) {
+    posi = k-k_diis+1+i;
+    if (posi<0)
+      posi +=m;
+	  Real Dvalue;
+    Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
+		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue;
+  }
 		// write to (compressed) matrix Apij
-	for (int i=0; i<k_diis; i++) for (int j=0; j<k_diis; j++) {
-		Apij[j+k_diis*i] = Aij[j+m*i];
-	}
+	for (int i=0; i<k_diis; i++)
+    for (int j=0; j<k_diis; j++)
+		    Apij[j+k_diis*i] = Aij[j+m*i];
 	Ax(Apij,Ci,k_diis);
-	for (int i=0; i<k_diis; i++) normC +=Ci[i];
-	for (int i=0; i<k_diis; i++) {Ci[i] =Ci[i]/normC; }
+	for (int i=0; i<k_diis; i++)
+    normC +=Ci[i];
+	for (int i=0; i<k_diis; i++)
+    Ci[i] =Ci[i]/normC;
 	Zero(x,nvar);
-	posi = k-k_diis+1; if (posi<0) posi +=m;
+	posi = k-k_diis+1;
+  if (posi<0)
+    posi +=m;
 
 	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
 	for (int i=1; i<k_diis; i++) {
-		posi = k-k_diis+1+i; if (posi<0) posi +=m;
+		posi = k-k_diis+1+i;
+    if (posi<0)
+      posi +=m;
 		YplusisCtimesX(x,xR+posi*nvar,Ci[i],nvar);
 	}
 }
 
 Real SFNewton::computeresidual(Real* array, int size) {
   Real residual = 0;
-
   // Compute residual based on maximum error value
   if (max_g == true) {
-    auto temp_residual = minmax_element(array, array+size);
+	#ifdef PAR_MESODYN
+
+	//in tools:
+	residual = ComputeResidual(array, size);
+
+	#else //CUDA OR CPU
+	
+	Real* H_array;
+
+	#ifdef CUDA
+	H_array = (Real*)malloc(size*sizeof(Real));
+	TransferDataToHost(H_array,array,size);
+		#else //CPU
+		H_array = array;
+	#endif //CUDA
+
+    auto temp_residual = minmax_element(H_array, H_array+size);
     if(abs(*temp_residual.first) > abs(*temp_residual.second) ) {
       residual = abs(*temp_residual.first);
     } else {
       residual = abs(*temp_residual.second);
     }
+
+	#ifdef CUDA
+	free(H_array);
+	#endif //CUDA
+
+	#endif //PAR_MESODYN
+
   } else {
-    // Compute residual based on sum o ferrors
+    // Compute residual based on sum of errors
+	#ifdef CUDA
     Dot(residual,array,array,size);
-    residual=sqrt(residual);
+    residual = sqrt(residual);
+		#else //CPU
+		residual = H_Dot(array,array,size);
+		residual = sqrt(residual);
+	#endif //CUDA
   }
 
   return residual;
 }
 
+
 bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
 int nvar=nvar_;
 	bool success;
-Real* Aij = (Real*) malloc(m*m*sizeof(Real)); Zero(Aij,m*m);
-Real* Ci = (Real*) malloc(m*sizeof(Real)); Zero(Ci,m);
-Real* Apij = (Real*) malloc(m*m*sizeof(Real)); Zero(Apij,m*m);
-Real* xR = (Real*) malloc(m*nvar*sizeof(Real)); Zero(xR,m*nvar);
-Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
-Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
-Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+  Real* Ci = (Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
+  Real* Aij = (Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
+  Real* Apij = (Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
+  #ifdef CUDA
+  Real* xR = (Real*) AllOnDev(m*nvar); Zero(xR,m*nvar);
+  Real* x_x0 = (Real*) AllOnDev(m*nvar); Zero(x_x0,m*nvar);
+  Real* x0 = (Real*) AllOnDev(nvar); Zero(x0,nvar);
+  Real* g = (Real*) AllOnDev(nvar); Zero(g,nvar);
+  #else
+  Real* xR = (Real*) malloc(m*nvar*sizeof(Real)); Zero(xR,m*nvar);
+  Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
+  Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+  Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+  #endif
 	int it=0;
 	int k_diis=0;
 	int k=0;
 	Cp(x0,x,nvar);
   // mol computephi takes long: moltype = monomer
+
 	residuals(x,g);
 
 	YplusisCtimesX(x,g,-delta_max,nvar);
 	YisAminB(x_x0,x,x0,nvar);
 	Cp(xR,x,nvar);
-
   residual = computeresidual(g, nvar);
 
 	if (e_info) printf("DIIS has been notified\n");
@@ -871,7 +945,12 @@ Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
 		}
 	}
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
-free(Aij);free(Ci);free(Apij);free(xR);free(x_x0);free(x0);free(g);
+  free(Aij);free(Ci);free(Apij);
+  #ifdef CUDA
+  cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g);
+  #else
+  free(xR);free(x_x0);free(x0);free(g);
+  #endif
 	return success;
 }
 
@@ -879,8 +958,13 @@ bool SFNewton::iterate_RF(Real*x, int nvar_,int iterationlimit,Real tolerance, R
 if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	int nvar=nvar_;
 	bool success;
+  #ifdef CUDA
+  Real* x0 = (Real*) AllOnDev(nvar*sizeof(Real)); Zero(x0,nvar);
+	Real* g = (Real*) AllOnDev(nvar*sizeof(Real)); Zero(g,nvar);
+  #else
 	Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
 	Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+  #endif
 	Real a, b, c, fa, fb, fc, res;
 	int k,it;
 
@@ -912,7 +996,11 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 
 
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
+  #ifdef CUDA
+  cudaFree(x0);cudaFree(g);
+  #else
 	free(x0);free(g);
+  #endif
 	return success;
 }
 
@@ -929,16 +1017,24 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 	Real rd=0;
 	bool proceed;
   int iterations=0;
+  #ifdef CUDA
+  Real* g = (Real*) AllOnDev(nvar); Zero(g,nvar);
+  Real* dg = (Real*) AllOnDev(nvar); Zero(dg,nvar);
+  Real* r = (Real*) AllOnDev(nvar); Zero(r,nvar);
+  Real* r_old = (Real*) AllOnDev(nvar); Zero(r_old,nvar);
+  Real* d = (Real*) AllOnDev(nvar); Zero(d,nvar);
+  Real* x0 = (Real*) AllOnDev(nvar); Zero(x0,nvar);
+  Real* H_d = (Real*) AllOnDev(nvar); Zero(H_d,nvar);
+  #else
   Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
   Real* dg = (Real*) malloc(nvar*sizeof(Real)); Zero(dg,nvar);
   Real* r = (Real*) malloc(nvar*sizeof(Real)); Zero(r,nvar);
-
   Real* r_old = (Real*) malloc(nvar*sizeof(Real)); Zero(r_old,nvar);
-
   Real* d = (Real*) malloc(nvar*sizeof(Real)); Zero(d,nvar);
   Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
   Real* H_d = (Real*) malloc(nvar*sizeof(Real)); Zero(H_d,nvar);
 	//tolerance=1e-7;
+  #endif
 
 	if ( e_info ) {
 		cout<<"Nonlinear conjugate gradients with Newton-Raphson and Fletcher-Reeves has been notified."<<endl;
@@ -1006,7 +1102,11 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 			cout << "i = " << iterations << " |g| = "<< accuracy << "  alpha("<<j<<") = " << alpha << "  beta = " << beta << endl;
 		}
 	}
-  free(H_d); free(g);free(dg);free(r);free(d);free(x0);
+  #ifdef CUDA
+  cudaFree(H_d); cudaFree(g);cudaFree(dg);cudaFree(r);cudaFree(r_old);cudaFree(d);cudaFree(x0);
+  #else
+  free(H_d); free(g);free(dg);free(r);free(r_old);free(d);free(x0);
+  #endif
 }
 
 void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real nvar) {

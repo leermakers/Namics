@@ -1,7 +1,8 @@
 #include "system.h"
+#include "tools.h"
 
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_,vector<Molecule*> Mol_,string name_) {
-	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; Sta=Sta_; Rea=Rea_;
+	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; Sta=Sta_; Rea=Rea_; prepared = false;
 if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("calculation_type");
 	KEYS.push_back("generate_guess");
@@ -37,7 +38,7 @@ System::~System() {
     cudaFree(eps);
     cudaFree(q);
     cudaFree(EE);
-    cudeFree(psiMask);
+    cudaFree(psiMask);
   }
 #else
   free(phitot);
@@ -60,6 +61,7 @@ void System::AllocateMemory() {
   //H_GN_B = new Real[n_box];
 
   H_GrandPotentialDensity = (Real*)malloc(M * sizeof(Real)); Zero( H_GrandPotentialDensity,M);
+
   H_FreeEnergyDensity = (Real*)malloc(M * sizeof(Real));
   H_alpha = (Real*)malloc(M * sizeof(Real));
   if (charged) {
@@ -72,13 +74,14 @@ void System::AllocateMemory() {
   GrandPotentialDensity = (Real*)AllOnDev(M);
   FreeEnergyDensity = (Real*)AllOnDev(M);
   TEMP = (Real*)AllOnDev(M);
-  KSAM = (int*)AllOnDev(M);
+  KSAM = (int*)AllIntOnDev(M);
+	Zero(KSAM, M);
   if (charged) {
     psi = (Real*)AllOnDev(M);
     q = (Real*)AllOnDev(M);
     eps = (Real*)AllOnDev(M);
     EE = (Real*)AllOnDev(M);
-    psiMask = (int*)AllOnDev(M);
+    psiMask = (int*)AllIntOnDev(M);
   }
 #else
   phitot = (Real*)malloc(M * sizeof(Real));
@@ -109,9 +112,8 @@ void System::AllocateMemory() {
     Mol[i]->AllocateMemory();
 }
 
-bool System::PrepareForCalculations() {
-  if (debug) cout << "PrepareForCalculations in System " << endl;
-  int M = Lat[0]->M;
+bool System::generate_mask() {
+	int M = Lat[0]->M;
   bool success = true;
 
   FrozenList.clear();
@@ -129,30 +131,44 @@ bool System::PrepareForCalculations() {
 
   length = FrozenList.size();
   for (int i = 0; i < length; ++i) {
-    int* MASK = Seg[FrozenList[i]]->MASK;
-    Add(KSAM, MASK, M);
+    Add(KSAM, Seg[FrozenList[i]]->MASK, M);
   }
 
   length = SysTagList.size();
   for (int i = 0; i < length; ++i) {
-    int* MASK = Seg[SysTagList[i]]->MASK;
-    Add(KSAM, MASK, M);
+    Add(KSAM, Seg[SysTagList[i]]->MASK, M);
   }
 
   length = SysClampList.size();
   for (int i = 0; i < length; ++i) {
-    int* MASK = Seg[SysClampList[i]]->MASK;
-    Add(KSAM, MASK, M);
+    Add(KSAM, Seg[SysClampList[i]]->MASK, M);
   }
 
   Invert(KSAM, KSAM, M);
-	volume = 0;
-	for (int i = 0; i < M ; i++) {
-		if (Lat[0]->gradients <3) {
+
+	if (Lat[0]->gradients <3) {
+		for (int i = 0; i < M ; i++) {
 			volume += KSAM[i]*Lat[0]->L[i];
-		} else volume += KSAM[i];
+		}
+	} else {
+		Sum(volume, KSAM, M);
 	}
+
 	Lat[0]->Accesible_volume=volume;
+
+	return success;
+}
+
+bool System::PrepareForCalculations() {
+  if (debug) cout << "PrepareForCalculations in System " << endl;
+
+	bool success = true;
+	int M = Lat[0]->M;
+
+	if (prepared == false) {
+		success = generate_mask();
+		prepared = true;
+	}
 
   n_mol = In[0]->MolList.size();
   success = Lat[0]->PrepareForCalculations();
@@ -165,7 +181,7 @@ bool System::PrepareForCalculations() {
     success = Mol[i]->PrepareForCalculations(KSAM);
   }
   if (charged) {
-    length = FrozenList.size();
+    int length = FrozenList.size();
     Zero(psiMask, M);
     fixedPsi0 = false;
     for (int i = 0; i < length; ++i) {
@@ -193,11 +209,20 @@ if (debug) cout << "CheckInput for system " << endl;
 	if (success) {
 		success=CheckChi_values(In[0]->MonList.size());
 		GPU=In[0]->Get_bool(GetValue("GPU"),false);
-		if (GPU) {if (!cuda) cout << "You should compile the program using the CUDA=1 flag: GPU calculations are impossible; proceed with CPU computations..." << endl; GPU=false; }
+		if (GPU)
+			if (!cuda) {
+				cout << "You should compile the program using the CUDA=1 flag: GPU calculations are impossible; proceed with CPU computations..." << endl;
+				GPU=false;
+			}
 		if (Lat[0]->gradients<3) {
 			if (GPU) cout <<"GPU support is (for the time being) only available for three-gradient calculations " << endl;
 		}
-		if (cuda) {if (!GPU) cout <<" program expect that you are going to use the GPU, but the input is not in line with this (either gradients < 3, or GPU != 'true' : compile without CUDA=1 flag." << endl; success=false;}
+		if (cuda) {
+			if (!GPU) {
+				cout <<"Please enable GPU in the input file (SYS : BRAND : GPU : true)." << endl;
+				success=false;
+			}
+		}
 
 		int length = In[0]->MonList.size();
 		for (int i=0; i<length; i++) if (Seg[i]->state_name.size()==0) StatelessMonList.push_back(i);
@@ -652,6 +677,7 @@ if (debug) cout << "PushOutput for system " << endl;
 		s="profile;5"; push("eps",s);
 	}
 #ifdef CUDA
+	int M = Lat[0]->M;
   TransferDataToHost(H_alpha, alpha, M);
   TransferDataToHost(H_GrandPotentialDensity, GrandPotentialDensity, M);
   TransferDataToHost(H_FreeEnergyDensity, FreeEnergyDensity, M);
@@ -867,7 +893,6 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	int M= Lat[0]->M;
 	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi
 	bool success=true;
-	Real norm=0;
 	Zero(phitot,M);
 	int length=FrozenList.size();
 	for (int i=0; i<length; i++) {
@@ -878,8 +903,9 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	for (int i=0; i<n_mol; i++) {
 		success=Mol[i]->ComputePhi();
 	}
+
 	for (int i=0; i<n_mol; i++) {
-		norm=0;
+		Real norm=0;
 		if (Mol[i]->freedom=="free") {
 			norm=Mol[i]->phibulk/Mol[i]->chainlength;
 			Mol[i]->n=norm*Mol[i]->GN;
@@ -976,7 +1002,7 @@ Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " 
 			cout << "WARNING: neutralizer has negative phibulk. Consider changing neutralizer...: outcome problematic...." << endl;
 		}
 		B+=Mol[neutralizer]->phibulk;
-		norm = Mol[neutralizer]->phibulk/Mol[neutralizer]->chainlength;
+		Real norm = Mol[neutralizer]->phibulk/Mol[neutralizer]->chainlength;
 		Mol[neutralizer]->n = norm*Mol[neutralizer]->GN;
 //cout <<"n neutralizer: " << Mol[neutralizer]->n << endl;
 //cout <<"phibulk neutr: " << Mol[neutralizer]->phibulk << endl;
@@ -990,7 +1016,7 @@ Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " 
 		cout <<"WARNING: solvent has negative phibulk. outcome problematic " << endl;
 		throw -4;
 	}
-	norm=Mol[solvent]->phibulk/Mol[solvent]->chainlength;
+	Real norm=Mol[solvent]->phibulk/Mol[solvent]->chainlength;
 	Mol[solvent]->n=norm*Mol[solvent]->GN;
 	Mol[solvent]->theta=Mol[solvent]->n*Mol[solvent]->chainlength;
 	Mol[solvent]->norm=norm;

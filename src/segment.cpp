@@ -1,7 +1,7 @@
 #include "segment.h"
 #include <fstream>
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
-	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr;
+	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; prepared = 0;
 if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("freedom");
 	KEYS.push_back("valence");
@@ -67,7 +67,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	}
 #ifdef CUDA
 
-	if (n_pos>0) Px=(int*)AllIntOnDev(n_pos);
+	//if (n_pos>0) Px=(int*)AllIntOnDev(n_pos);
 	G1=(Real*)AllOnDev(M); Zero(G1,M);
 	u=(Real*)AllOnDev(M*ns); Zero(u,M*ns);
 	phi_state=(Real*)AllOnDev(M*ns); Zero(phi_state,M*ns);
@@ -75,7 +75,6 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
 	phi_side=(Real*)AllOnDev(ns*M); Zero(phi_side,ns*M);
 	alpha=(Real*)AllOnDev(ns*M); Zero(alpha,ns*M);
-
 #else
 	if (n_pos>0) P=H_P;
 	MASK=H_MASK;
@@ -89,16 +88,21 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	Zero(phi_side,ns*M);
 #endif
 }
+
 bool Segment::PrepareForCalculations(int* KSAM) {
 if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 	int M=Lat[0]->M;
 #ifdef CUDA
-	TransferIntDataToDevice(H_MASK, MASK, M);
-	TransferDataToDevice(H_u, u, M);
-	//TransferIntDataToDevice(H_Px, Px, n_pos);
-	//TransferIntDataToDevice(H_Py, Py, n_pos);
-	//TransferIntDataToDevice(H_Pz, Pz, n_pos);
+	if (prepared == 0) {
+	TransferDataToDevice(H_MASK, MASK, 0);
+	TransferDataToDevice(H_u, u, 0);
+	prepared = 1;
+}
+//}
+	//TransferDataToDevice(H_Px, Px, n_pos);
+	//TransferDataToDevice(H_Py, Py, n_pos);
+	//TransferDataToDevice(H_Pz, Pz, n_pos);
 #endif
 
 	bool success=true;
@@ -302,7 +306,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos); 
+					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
 					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
 				}
 			}
@@ -859,7 +863,6 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 
 
 #ifdef CUDA
-	int M = Lat[0]->M;
 	TransferDataToHost(H_phi, phi, M);
 	//TransferDataToHost(H_u, u, M);
 #endif
@@ -1012,6 +1015,5 @@ int Segment::PutAlpha(Real* x,int xi){
 	for (int i=0; i<n_s; i++) {
 		if (state_alphabulk[i]==0) state_alphabulk[i]=1.0-sum_alpha;
 	}
-
 	return xxi;
 }

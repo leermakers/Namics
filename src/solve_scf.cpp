@@ -44,8 +44,10 @@ if (debug) cout <<"Destructor in Solve " << endl;
 	cudaFree(g);
 	cudaFree(xR);
 	cudaFree(x_x0);
-#endif
+#else
 	free(xx);
+#endif
+
 }
 
 void Solve_scf::AllocateMemory() {
@@ -54,22 +56,20 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	if (mesodyn) {
 		iv = Sys[0]->SysMolMonList.size()*M;
 	} else {
-
 		iv = (Sys[0]->ItMonList.size() + Sys[0]->ItStateList.size())* M;
 	}
-	if (Sys[0]->charged) iv +=M;
-	if (SCF_method=="Picard") iv+=M;
-//cout <<"iv " << iv/M << endl;
-
+	if (Sys[0]->charged) iv += M;
+	if (SCF_method=="Picard") iv += M;
 #ifdef CUDA
 	xx  = (Real*)AllOnDev(iv);
 	x0  = (Real*)AllOnDev(iv);
 	g   = (Real*)AllOnDev(iv);
 	xR  = (Real*)AllOnDev(m*iv);
 	x_x0= (Real*)AllOnDev(m*iv);
+#else
+	xx=(Real*) malloc(iv*sizeof(Real));
 #endif
-
-	xx=(Real*) malloc(iv*sizeof(Real)); Zero(xx,iv);
+	Zero(xx,iv);
 	Sys[0]->AllocateMemory();
 }
 
@@ -568,20 +568,15 @@ bool Solve_scf::attempt_DIIS_rescue() {
 	return true;
 }
 
-bool Solve_scf::SolveMesodyn(function< void(vector<Real>&, size_t) > alpha_callback, function< Real*() > flux_callback) {
+bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, function< Real*() > flux_callback) {
 	if(debug) cout <<"Solve (mesodyn) in  Solve_scf " << endl;
 	//iv should have been set at AllocateMemory.
 	mesodyn_flux = flux_callback;
 	mesodyn_load_alpha = alpha_callback;
-
-//	Zero(xx,iv);
-
   mesodyn =true;
 	gradient=MESODYN;
 
 	bool success=true;
-
-	//int old_m = m;
 	Real old_deltamax = deltamax;
 
 	switch (solver) {
@@ -702,22 +697,16 @@ void Solve_scf::residuals(Real* x, Real* g){
 	Real chi;
 	//Real valence;
 	int sysmon_length = Sys[0]->SysMonList.size();
-	int itmonlistlength=Sys[0]->ItMonList.size();
-	int itstatelistlength=Sys[0]->ItStateList.size();
-	int state_length = In[0]->StateList.size();
 	int mon_length = In[0]->MonList.size(); //also frozen segments
-	int i,j,k,xi;
-	int jump=0;
-	int lengthMolList=In[0]->MolList.size();
-	int lengthReactionList=In[0]->ReactionList.size();
-	int LENGTH;
+	int i,k,xi;
+
 	switch(gradient) {
 		case WEAK:
 			if (debug) cout <<"Residuals for weak iteration " << endl;
 
 			xi=0;
-			Zero(g,lengthReactionList);
-			//for (i=0; i<lengthReactionList; i++) {
+			Zero(g,In[0]->ReactionList.size());
+			//for (i=0; i<In[0]->ReactionList.size(); i++) {
 			//	x[i]=0.5*(1.0+tanh(x[i]));
 			//}
 
@@ -725,7 +714,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 				xi=Seg[Sys[0]->SysMonList[i]]->PutAlpha(x,xi);
 			}
 
-			for (i=0; i<lengthReactionList; i++) {
+			for (size_t i = 0; i<In[0]->ReactionList.size(); i++) {
 				g[i]=SIGN[i]*Rea[i]->Residual_value();
 			}
 
@@ -734,42 +723,45 @@ void Solve_scf::residuals(Real* x, Real* g){
 		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
 			ComputePhis();
-
-			sysmon_length = Sys[0]->SysMolMonList.size();
-
-			vector<Real> temp_alpha(M);
-			for (int i=0; i<sysmon_length; i++) {
-				for (int j = 0; j < M ; ++j) {
-					temp_alpha[j] = xx[j+i*M];
-				}
+			#ifdef CUDA
+			Real* temp_alpha = (Real*)AllOnDev(M);
+			#else
+			Real* temp_alpha = (Real*)malloc(M*sizeof(Real));
+			#endif
+			for (size_t i = 0; i < Sys[0]->SysMolMonList.size() ; i++) {
+					Cp(temp_alpha, &xx[i*M] , M);
 				for (int k=0; k<mon_length; k++) {
-					chi= Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
-					if (chi!=0) {
-						PutAlpha(&temp_alpha[0],Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
-					}
+					chi = Sys[0]->CHI[Sys[0]->SysMolMonList[i]*mon_length+k];
+					if (chi!=0)
+						PutAlpha(temp_alpha,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 				}
-			mesodyn_load_alpha(temp_alpha, (size_t)i);
+				mesodyn_load_alpha(temp_alpha, i);
 			}
 
 			RHO = mesodyn_flux();
 
-			Cp(g,RHO,iv); //it is expected that RHO is filled linked to proper target_rho.
+			#if defined(PAR_MESODYN) || ! defined(CUDA)
+			Cp(g,RHO,iv);
+			#else
+			TransferDataToDevice(RHO, g, iv);
+			#endif
+			
 
-			i=k=0;
-			while (i<lengthMolList) {
-				j=0;
-				LENGTH=Mol[i]->MolMonList.size();
-				while (j<LENGTH) {
-					target_function(g, k, M, i, j);
+			size_t k = 0;
+			for (size_t i = 0 ; i < In[0]->MolList.size() ; ++i) {
+				for (size_t a = 0 ; a < Mol[i]->MolMonList.size(); ++a) {
+					target_function(g, k, M, i, a);
 					Lat[0]->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 					k++;
-					j++;
 				}
-				i++;
 			}
-			//for (j=0; j<M; j++)
-			//cout << RHO[j] << " " << RHO[M+j] << " " << Mol[0]->phi[j] << " " << Mol[1]->phi[j] << endl;
+
+			#ifdef CUDA
+			cudaFree(temp_alpha);
+			#else
+			free(temp_alpha);
+			#endif
 		}
 		break;
 		case custum:
@@ -820,8 +812,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 			}
 		break;
 		case Picard:
+		{
 			if (debug) cout <<"Residuals in Picard mode in Solve_scf " << endl;
-			jump=sysmon_length;
+			int jump=sysmon_length;
 			if (Sys[0]->charged) jump++;
 			Cp(alpha,xx+jump*M,M);
 			ComputePhis();
@@ -849,8 +842,12 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
 			}
 		break;
+		}
 		default:
 			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
+			int itmonlistlength=Sys[0]->ItMonList.size();
+			int state_length = In[0]->StateList.size();
+			int itstatelistlength=Sys[0]->ItStateList.size();
 
  			ComputePhis();
 

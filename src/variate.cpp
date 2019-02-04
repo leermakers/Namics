@@ -341,7 +341,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 
 bool Variate::PutVarScan(int cal_nr) {
 	bool success=true;
-	int n_seg; 
+	int n_seg;
 	switch(scanning) {
 		case 0:
 			success=false;
@@ -362,7 +362,7 @@ bool Variate::PutVarScan(int cal_nr) {
 				Sys[0]->CHI[scan_nr*n_seg+Seg[scan_nr]->chi_var_seg] = Seg[scan_nr]->chi[Seg[scan_nr]->chi_var_seg];
 				Sys[0]->CHI[scan_nr+n_seg*Seg[scan_nr]->chi_var_seg] =Seg[scan_nr]->chi[Seg[scan_nr]->chi_var_seg];
 				Seg[Seg[scan_nr]->chi_var_seg]->chi[scan_nr]=Seg[scan_nr]->chi[Seg[scan_nr]->chi_var_seg];
-			} 
+			}
 			if (Seg[scan_nr]->chi_var_state>-1) {
 				n_seg=In[0]->MonList.size();
 				Sta[Seg[scan_nr]->chi_var_state]->chi[scan_nr]=Seg[scan_nr]->chi[n_seg+Seg[scan_nr]->chi_var_state];
@@ -373,7 +373,7 @@ bool Variate::PutVarScan(int cal_nr) {
 			if (Sta[scan_nr]->chi_var_seg>-1) {
 				n_seg=In[0]->MonList.size();
 				Seg[Sta[scan_nr]->chi_var_seg]->chi[n_seg+scan_nr]=Sta[scan_nr]->chi[Sta[scan_nr]->chi_var_seg];
-			} 
+			}
 			if (Sta[scan_nr]->chi_var_state>-1) {
 				n_seg=In[0]->MonList.size();
 				Sta[Sta[scan_nr]->chi_var_state]->chi[n_seg+scan_nr]=Sta[scan_nr]->chi[n_seg+Sta[scan_nr]->chi_var_state];
@@ -476,7 +476,7 @@ Real Variate::GetError(void) {
 
 bool Variate::ResetScanValue(void) {
 	if (debug) cout <<"ResetScanValue in Variate" << endl;
-	int n_seg; 
+	int n_seg;
 	bool success=true;
 	switch(scanning) {
 		case 0:
@@ -502,14 +502,14 @@ bool Variate::ResetScanValue(void) {
 			if (Seg[scan_nr]->chi_var_state>-1) {
 				n_seg=In[0]->MonList.size();
 				Sta[Seg[scan_nr]->chi_var_state]->chi[scan_nr]=Seg[scan_nr]->Var_start_value;
-			}			
+			}
 			break;
 		case 4:
 			Sta[scan_nr]->ResetInitValue();
 			if (Sta[scan_nr]->chi_var_seg>-1) {
 				n_seg=In[0]->MonList.size();
 				Seg[Sta[scan_nr]->chi_var_seg]->chi[n_seg+scan_nr]=Sta[scan_nr]->Var_start_value;
-			} 
+			}
 			if (Sta[scan_nr]->chi_var_state>-1) {
 				n_seg=In[0]->MonList.size();
 				Sta[Sta[scan_nr]->chi_var_state]->chi[n_seg+scan_nr]=Sta[scan_nr]->Var_start_value;
@@ -569,7 +569,7 @@ if (debug) cout <<"PushOutput in Variate " + name << endl;
 	ints.clear();
 	ints_value.clear();
 #ifdef CUDA
-	TransferDataToHost(H_phi,phi,M);
+//	TransferDataToHost(H_phi,phi,M);
 #endif
 }
 

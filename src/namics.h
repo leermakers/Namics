@@ -11,7 +11,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#define SSTR( x ) static_cast< std::ostringstream & >(( std::ostringstream() << std::dec << x )).str()
+//#define SSTR( x ) static_cast< std::ostringstream & >(( std::ostringstream() << std::dec << x )).str()
 #include <vector>
 #include <iterator>
 #include <algorithm>
@@ -21,8 +21,11 @@
 using namespace std;
 //these are our options.
 typedef double Real;
-//typedef long double Real;
-//typedef foat Real;
+
+#ifndef SMTHxBREAK
+#define BREAKPOINT cout << "Breakpoint: " << DEBUG_BREAK << endl; cin.get(); DEBUG_BREAK++;
+#endif
+
 #ifdef CUDA
 //#include <cuda.h>
 //#include <cublas_v2.h>
@@ -40,15 +43,33 @@ extern Real T;
 extern Real k_B;
 extern Real k_BT;
 extern Real PIE;
+extern int DEBUG_BREAK;
 extern Real eps0;
 extern bool debug;
-extern bool suppress;
+
 //extern Real factor;
 #endif
 
 enum MoleculeType {monomer, linear, branched, dendrimer, comb, ring};
 enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};
 enum EngineType {SCF, CLENG, MESODYN, TENG};
+
+template<typename T>
+  auto load_argument_value(vector<string> args, string argument, T t) -> decltype(t) {
+    vector<string>::iterator position;
+    position = find(args.begin(), args.end(), argument);
+    if ( position != args.end() ) {
+      ++position;
+      if (position != args.end() && (*position)[0] != '-') {
+        istringstream ss(*position);
+        ss >> t;
+        return t;
+      }
+    }
+    else throw 1;
+    return t;
+  }
+
 
 #endif
 /*
@@ -82,4 +103,3 @@ enum EngineType {SCF, CLENG, MESODYN, TENG};
 #   error "Unknown compiler"
 #endif
 */
-

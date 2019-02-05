@@ -2,22 +2,28 @@
 #define CLENGxH
 
 #include "../input.h"
-#include "nodes/simple_node.h"
-#include "nodes/monolit.h"
 #include "../namics.h"
 #include "../solve_scf.h"
 #include "../system.h"
 #include "../output.h"
-#include <random>
 #include <math.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <memory>
 #include <ostream>
+#include <map>
+#include <cassert>
+#include <fstream>
+#include <utility>
+// features
+#include "nodes/simple_node.h"
+#include "nodes/monolit.h"
+#include "nodes/point.h"
+#include "checkpoint/checkpoint.h"
+#include "random/random.h"
 
 using std::setprecision;
-
 
 class Cleng {
 private:
@@ -31,7 +37,12 @@ private:
     const vector<System *> Sys;
     const vector<Solve_scf *> New;
     const string brand;
-    Real seed;
+
+    int cmajor_version = 1;
+    int cminor_version = 1;
+    int cpatch = 4;
+    int cversion = 60;
+    int pseed;
 
     void fillXYZ();
 
@@ -41,10 +52,9 @@ public:
 
     ~Cleng();
 
-    int cmajor_version = 1;
-    int cminor_version = 1;
-    int cpatch = 1;
-    int cversion = 10;
+    std::vector<string> KEYS;
+    std::vector<string> PARAMETERS;
+    std::vector<string> VALUES;
 
     int clamp_seg;
     int clp_mol;
@@ -58,35 +68,37 @@ public:
     bool checkpoint_save;
     bool checkpoint_load;
     bool cleng_pos;
+    int MCS_checkpoint;
     string save_filename;
     Point BC;
+    Random rand;
 
     vector<Output *> Out;
-
 
     vector<int> P;
     vector<shared_ptr<SimpleNode>> simpleNodeList;
     vector<std::shared_ptr<Node>> nodes;
+
     // temporary arrays for keep nodes coordinates for output
     int *xs = nullptr;
     int *ys = nullptr;
     int *zs = nullptr;
 
     ofstream out;
-    Point shift;
+    Point clamped_move;
     int id_node_for_move;
     Real free_energy_current;
     Real free_energy_trial;
 
     Real accepted;
     Real rejected;
-    int attempts;
+    int MC_attempt;
 
     bool MonteCarlo();
 
     bool CP(transfer);
 
-    bool MakeShift(bool back);
+    bool MakeMove(bool back);
 
     bool Checks();
 
@@ -94,50 +106,25 @@ public:
 
     bool NotCollapsing();
 
-    bool NotOnBoundary();
-
     bool InRange();
+
+    void PushOutput(int);
 
     void WriteOutput(int);
 
     void WriteClampedNodeDistance(int);
 
-    void PushOutput(int);
-
     void make_BC();
-
-    void try2move();
-
-    int GetRandomIntValueExcludeValue(int, int, int, bool);
-
-    int GetRandomIntValueExcludeArray(int, int, vector<int>, bool);
 
     int getLastMCS();
 
-    Real GetRealRandomValue(int, int);
-
     Real GetN_times_mu();
 
-    Point PrepareStep();
-
-    std::vector<string> KEYS;
-    std::vector<string> PARAMETERS;
-    std::vector<string> VALUES;
+    Point prepareMove();
 
     bool CheckInput(int);
 
     string GetValue(string);
-
-    // come from histoty
-//    void push(string, Real);
-//
-//    void push(string, int);
-//
-//    void push(string, bool);
-//
-//    void push(string, string);
-//
-//    int GetValue(string, int &, Real &, string &);
 
 };
 

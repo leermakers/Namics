@@ -308,22 +308,24 @@ bool Cleng::InSubBoxRange() {
     if (!nodes[id_node_for_move]->inSubBoxRange(sub_box, clamped_move)) not_in_subbox_range++;
 
     if (not_in_subbox_range != 0) {
-        cout << "There are nodes not in sub-box_range!" << endl;
+        cout << "There are nodes not in sub-box range!" << endl;
         return false;
     }
     return true;
 }
 
 bool Cleng::NotOnBoundary() {
+//  I am not sure that such check we need.
     bool not_on_boundary = false;
     Point MP(nodes[id_node_for_move]->point());
     Point MPs(nodes[id_node_for_move]->point() + clamped_move);
 
-    cout << "MP: " << MP.to_string() << endl;
-    cout << "MPs: " << MPs.to_string() << endl;
+//    cout << "MP: " << MP.to_string() << endl;
+//    cout << "MPs: " << MPs.to_string() << endl;
 
     int i = 0;
-    Point box = {Lat[0]->MX-1, Lat[0]->MY-1, Lat[0]->MZ-1};
+//    Point box = {Lat[0]->MX-1, Lat[0]->MY-1, Lat[0]->MZ-1};
+    Point box = {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
     for (const auto &n : nodes) {
 //         for rest particles
         if (MP != n->point()) {
@@ -415,7 +417,8 @@ bool Cleng::Checks() {
     not_on_boundary = NotOnBoundary();
 
 
-    result = not_collapsing and in_range and in_subbox_range and not_on_boundary;
+//    result = not_collapsing and in_range and in_subbox_range and not_on_boundary;
+    result = not_collapsing and in_range and in_subbox_range;
     return result;
 }
 
@@ -538,9 +541,7 @@ int Cleng::getLastMCS() {
 }
 
 using Fp_info = numeric_limits<double>;
-inline auto is_ieee754_nan( double const x )
--> bool
-{
+inline auto is_ieee754_nan( double const x ) -> bool {
     static constexpr bool   is_claimed_ieee754  = Fp_info::is_iec559;
     static constexpr int    n_bits_per_byte     = CHAR_BIT;
     using Byte = unsigned char;
@@ -605,8 +606,8 @@ bool Cleng::MonteCarlo() {
         success_ = MakeMove(false);
         CP(to_segment);
 
-
-        cout << "\n System for calculation: " << endl;
+        cout << endl;
+        cout << "System for calculation: " << endl;
         for (auto &&n : nodes) {
             cout << n->to_string() << endl;
         }
@@ -623,7 +624,7 @@ bool Cleng::MonteCarlo() {
 
 //            assert(!std::isnan(free_energy_trial));
             if (is_ieee754_nan( free_energy_trial )) {
-                cout << " Sorry, Free energy is NaN. Termination..." << endl;
+                cout << " Sorry, Free Energy is NaN. Termination..." << endl;
                 break;
             }
 
@@ -657,6 +658,7 @@ bool Cleng::MonteCarlo() {
 
     cout << endl;
     cout << "Finally:" << endl;
+    cout << "Monte Carlo attempt: " << MC_attempt << endl;
     cout << "Accepted: # " << accepted << " | " << 100 * (accepted / (MC_attempt-1)) << "%" << endl;
     cout << "Rejected: # " << rejected << " | " << 100 * (rejected / (MC_attempt-1)) << "%" << endl;
 

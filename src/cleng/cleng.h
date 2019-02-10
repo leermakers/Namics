@@ -41,7 +41,7 @@ private:
     int cmajor_version = 1;
     int cminor_version = 1;
     int cpatch = 4;
-    int cversion = 60;
+    int cversion = 64;
     int pseed;
 
     void fillXYZ();
@@ -67,6 +67,8 @@ public:
     int delta_save;
     bool checkpoint_save;
     bool checkpoint_load;
+    bool simultaneous;
+    int  axis;
     bool cleng_pos;
     int MCS_checkpoint;
     string save_filename;
@@ -105,6 +107,8 @@ public:
     bool InSubBoxRange();
 
     bool NotCollapsing();
+
+    bool NotOnBoundary();
 
     bool InRange();
 

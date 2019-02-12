@@ -20,7 +20,11 @@ Point SimpleNode::get_system_point() const {
 }
 
 void SimpleNode::pushSystemPoints(std::map<int, Point> &pointsById) const {
-    pointsById[id] = point();
+    if (system_point.more_all_elements_than(box_size)) {
+        pointsById[id] = point();
+    } else {
+        pointsById[id] = system_point;
+    }
 }
 
 std::string SimpleNode::to_string() const {

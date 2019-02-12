@@ -35,6 +35,7 @@ Cleng::Cleng(
     KEYS.emplace_back("cleng_pos");
     KEYS.emplace_back("simultaneous");
     KEYS.emplace_back("movement_alone");
+    KEYS.emplace_back("F_dependency");
 
     // Debug.log
     //out.open("debug.out", ios_base::out);
@@ -144,13 +145,18 @@ bool Cleng::CheckInput(int start) {
         if (!GetValue("movement_alone").empty()) {
             success = In[0]->Get_int(GetValue("movement_alone"), axis, 1, 3, "The number of delta_step should be between 1 and 3");
             if (!success) {
-                cout << "The movement_alone will be disable" << endl;
+                cout << "Sorry, you provide incorrect axis number. The movement_alone will be disable" << endl;
                 axis = -1;
                 success = true;
             }
-        }
+        } else axis = -1;
         if (debug) cout << "movement_alone axis " << axis << endl;
 
+        // F_dependent
+        if (!GetValue("F_dependency").empty()) {
+            F_dependency = In[0]->Get_bool(GetValue("F_dependency"), false);
+        } else F_dependency = false;
+        if (!debug) cout << "F_dependent move " << F_dependency << endl;
 
         // ???
         if (success) {
@@ -234,10 +240,19 @@ bool Cleng::CP(transfer tofrom) {
 
         case to_segment:
             Zero(clamped->H_MASK, M);
-
-            for (auto &&n : nodes) {
-                n->pushSystemPoints(system_points);
+            for (int index=0; index < simpleNodeList.size(); index=index+2) {
+                auto first_node = simpleNodeList[index];
+                auto second_node = simpleNodeList[index+1];
+                if (!first_node->get_system_point().all_elements_in_range(box) and
+                !second_node->get_system_point().all_elements_in_range(box)) {
+                    // reduce system positions to primitive box
+                    // TODO: rethink -- do I need to keep track of positions...
+                    first_node->reduceToPrimitive();
+                    second_node->reduceToPrimitive();
+                }
             }
+
+            for (auto &&n : nodes) n->pushSystemPoints(system_points);
 
             for (auto &&entry : system_points) {
                 int i = entry.first / 2;
@@ -314,36 +329,6 @@ bool Cleng::InSubBoxRange() {
     return true;
 }
 
-bool Cleng::NotOnBoundary() {
-//  I am not sure that such check we need.
-    bool not_on_boundary = false;
-    Point MP(nodes[id_node_for_move]->point());
-    Point MPs(nodes[id_node_for_move]->point() + clamped_move);
-
-//    cout << "MP: " << MP.to_string() << endl;
-//    cout << "MPs: " << MPs.to_string() << endl;
-
-    int i = 0;
-//    Point box = {Lat[0]->MX-1, Lat[0]->MY-1, Lat[0]->MZ-1};
-    Point box = {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
-    for (const auto &n : nodes) {
-//         for rest particles
-        if (MP != n->point()) {
-            Point onBoundary = MPs % box;
-            if (onBoundary.x == 0 or onBoundary.y == 0 or onBoundary.z == 0) {
-                cout << "##########################################" << endl;
-                cout << "Point is on the boundary!" << endl;
-                cout << "##########################################" << endl;
-                i++;
-            }
-        }
-    }
-    if (i == 0) {
-        not_on_boundary = true;
-    }
-    return not_on_boundary;
-}
-
 bool Cleng::NotCollapsing() {
     bool not_collapsing = false;
     Point MP(nodes[id_node_for_move]->point());
@@ -398,7 +383,6 @@ bool Cleng::Checks() {
     bool not_collapsing;
     bool in_range;
     bool in_subbox_range;
-    bool not_on_boundary;
 
     // check subbox_ranges
     in_subbox_range = InSubBoxRange();
@@ -413,11 +397,6 @@ bool Cleng::Checks() {
         in_range = true;
     }
 
-    // on boundary
-    not_on_boundary = NotOnBoundary();
-
-
-//    result = not_collapsing and in_range and in_subbox_range and not_on_boundary;
     result = not_collapsing and in_range and in_subbox_range;
     return result;
 }
@@ -491,17 +470,26 @@ bool Cleng::MakeMove(bool back) {
     } else {
         clamped_move = prepareMove();
         if (!simultaneous) {
-            id_node_for_move = rand.getInt(0, (int) nodes.size() - 1);
-            cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
-            while (!Checks()) {
-                cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
-                clamped_move = {0, 0, 0};
-                rejected++;
-                success = false;
+            if (!F_dependency) {
+                id_node_for_move = rand.getInt(0, (int) nodes.size() - 1);
+                cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
+                while (!Checks()) {
+                    cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
+                    clamped_move = {0, 0, 0};
+                    rejected++;
+                    success = false;
+                }
+                nodes[id_node_for_move]->shift(clamped_move);
+                cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
+                     << endl;
+            } else {
+                cout << "F dependency is activated." << endl;
+                id_node_for_move = 0;
+                cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
+                nodes[id_node_for_move]->shift(clamped_move);
+                cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
+                     << endl;
             }
-            nodes[id_node_for_move]->shift(clamped_move);
-            cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
-                 << endl;
         } else {
             for (auto &node : nodes) {
                 node->shift(clamped_move);
@@ -569,31 +557,9 @@ inline auto is_ieee754_nan( double const x ) -> bool {
 }
 
 
-bool Cleng::checkInputNode() {
-    bool success = true;
-    Point box = {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
-    Segment *clamped = Seg[clamp_seg];
-
-    for (int i = 0; i < n_boxes; i++) {
-        Point one_point     = {clamped->px1[i], clamped->py1[i], clamped->pz1[i]};
-        Point another_point = {clamped->px2[i], clamped->py2[i], clamped->pz2[i]};
-
-        if (one_point.all_elements_in_range(box) and another_point.all_elements_in_range(box)){
-            cout << "Check is passed." << endl;
-        } else {
-            cout << "Warning!!! Some coordinate is out of box! Please check it again. Currently cleng does not check it" << endl;
-        }
-    }
-    return success;
-}
-
-
 bool Cleng::MonteCarlo() {
     if (debug) cout << "Monte Carlo in Cleng" << endl;
     bool success = true;
-
-    // Deprecated
-    success = checkInputNode();
 
     MCS_checkpoint = 0;
     Checkpoint checkpoint;
@@ -620,11 +586,11 @@ bool Cleng::MonteCarlo() {
     WriteOutput(MC_attempt + MCS_checkpoint);
 
     cout << "Initialization done.\n" << endl;
+    CP(to_cleng);
     cout << "Here we go..." << endl;
     for (MC_attempt = 1; MC_attempt <= MCS; MC_attempt++) { // loop for trials
         bool success_;
 
-        CP(to_cleng);
         success_ = MakeMove(false);
         CP(to_segment);
 
@@ -643,8 +609,6 @@ bool Cleng::MonteCarlo() {
             cout << "Free Energy (c): " << free_energy_current;
             cout << " (t): " << free_energy_trial << endl;
 //            cout << "trial - current = " << std::to_string(free_energy_trial - free_energy_current) << endl;
-
-//            assert(!std::isnan(free_energy_trial));
             if (is_ieee754_nan( free_energy_trial )) {
                 cout << " Sorry, Free Energy is NaN. Termination..." << endl;
                 break;
@@ -663,7 +627,9 @@ bool Cleng::MonteCarlo() {
                     accepted++;
                 } else {
                     cout << "Rejected" << endl;
+//                    CP(to_cleng);
                     MakeMove(true);
+                    CP(to_segment);
                     rejected++;
                 }
             }
@@ -675,7 +641,7 @@ bool Cleng::MonteCarlo() {
         if ((MC_attempt % delta_save) == 0) {
             WriteOutput(MC_attempt + MCS_checkpoint);
         }
-        checkpoint.updateCheckpoint(simpleNodeList);
+        if (checkpoint_save) checkpoint.updateCheckpoint(simpleNodeList);
     }
 
     cout << endl;

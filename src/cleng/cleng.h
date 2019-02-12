@@ -70,6 +70,7 @@ public:
     bool simultaneous;
     int  axis;
     bool cleng_pos;
+    bool F_dependency;
     int MCS_checkpoint;
     string save_filename;
     Point BC;
@@ -98,11 +99,7 @@ public:
 
     bool MonteCarlo();
 
-    bool checkInputNode();
-
     bool CP(transfer);
-
-    bool cpCheckTransfer(transfer);
 
     bool MakeMove(bool back);
 
@@ -111,8 +108,6 @@ public:
     bool InSubBoxRange();
 
     bool NotCollapsing();
-
-    bool NotOnBoundary();
 
     bool InRange();
 

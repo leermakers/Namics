@@ -20,11 +20,7 @@ Point SimpleNode::get_system_point() const {
 }
 
 void SimpleNode::pushSystemPoints(std::map<int, Point> &pointsById) const {
-    if (system_point.more_all_elements_than(box_size)) {
-        pointsById[id] = point();
-    } else {
-        pointsById[id] = system_point;
-    }
+    pointsById[id] = system_point;
 }
 
 std::string SimpleNode::to_string() const {
@@ -38,6 +34,10 @@ void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {
 
 shared_ptr<SimpleNode> SimpleNode::get_cnode() {
     return this->cnode;
+}
+
+void SimpleNode::reduceToPrimitive(){
+    system_point = system_point % box_size;
 }
 
 bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {

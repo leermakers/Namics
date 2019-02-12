@@ -45,12 +45,20 @@ public:
         return x != p.x || y != p.y || z != p.z;
     }
 
-    bool less_all_elements_than(const Point &p) const {
+    bool all_elements_less_than(const Point &p) const {
         return x < p.x and y < p.y and z < p.z;
     }
 
     bool more_all_elements_than(const Point &p) const {
         return x > p.x and y > p.y and z > p.z;
+    }
+
+    bool all_elements_in_range(const Point &box) const {
+        bool x_res = false; bool y_res = false; bool z_res = false;
+        if ((x < box.x) and (x >= 0)) x_res=true;
+        if ((y < box.y) and (y >= 0)) y_res=true;
+        if ((z < box.z) and (z >= 0)) z_res=true;
+        return x_res and y_res and z_res;
     }
 
     bool operator<(const Point &other) const {

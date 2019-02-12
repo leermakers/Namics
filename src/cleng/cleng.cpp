@@ -380,7 +380,7 @@ bool Cleng::InRange() {
 //    cout << "down bound" << down_boundary.to_string() << endl;
 //    cout << "up boundary bound" << up_boundary.to_string() << endl;
 
-    if ((down_boundary.less_all_elements_than(MPs)) and (MPs.less_all_elements_than(up_boundary))) in_range = true;
+    if ((down_boundary.all_elements_less_than(MPs)) and (MPs.all_elements_less_than(up_boundary))) in_range = true;
     return in_range;
 }
 
@@ -569,9 +569,31 @@ inline auto is_ieee754_nan( double const x ) -> bool {
 }
 
 
+bool Cleng::checkInputNode() {
+    bool success = true;
+    Point box = {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
+    Segment *clamped = Seg[clamp_seg];
+
+    for (int i = 0; i < n_boxes; i++) {
+        Point one_point     = {clamped->px1[i], clamped->py1[i], clamped->pz1[i]};
+        Point another_point = {clamped->px2[i], clamped->py2[i], clamped->pz2[i]};
+
+        if (one_point.all_elements_in_range(box) and another_point.all_elements_in_range(box)){
+            cout << "Check is passed." << endl;
+        } else {
+            cout << "Warning!!! Some coordinate is out of box! Please check it again. Currently cleng does not check it" << endl;
+        }
+    }
+    return success;
+}
+
+
 bool Cleng::MonteCarlo() {
     if (debug) cout << "Monte Carlo in Cleng" << endl;
     bool success = true;
+
+    // Deprecated
+    success = checkInputNode();
 
     MCS_checkpoint = 0;
     Checkpoint checkpoint;

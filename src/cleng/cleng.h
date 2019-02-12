@@ -98,7 +98,11 @@ public:
 
     bool MonteCarlo();
 
+    bool checkInputNode();
+
     bool CP(transfer);
+
+    bool cpCheckTransfer(transfer);
 
     bool MakeMove(bool back);
 

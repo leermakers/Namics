@@ -1,0 +1,63 @@
+// test_neutral_gel 2018-10-18 11:29:00.126717
+lat : flat : gradients : 3
+lat : flat : n_layers_x : 20
+lat : flat : n_layers_y : 20
+lat : flat : n_layers_z : 20
+lat : flat : geometry : planar
+lat : flat : lattice_type : simple_cubic
+lat : flat : lowerbound_x : periodic
+lat : flat : upperbound_x : periodic
+lat : flat : lowerbound_y : periodic
+lat : flat : upperbound_y : periodic
+lat : flat : lowerbound_z : periodic
+lat : flat : upperbound_z : periodic
+
+mon : W : freedom : free
+mon : A : freedom : free
+mon : X : freedom : clamp
+mon : X : clamp_info : (10,10,10)(10 ,10, 14);
+mon : X : sub_box_size : 12
+
+mol : pol : freedom : clamped
+mol : pol : composition : (X)1(A)49(X)1
+mol : water : freedom : solvent
+mol : water : composition : (W)1
+
+newton : isaac : method : DIIS
+newton : isaac : m : 4
+newton : isaac : deltamax : 0.1
+newton : isaac : e_info : true
+newton : isaac : iterationlimit : 7000
+newton : isaac : tolerance : 1e-3
+
+out_info : folder : path : data
+
+output : vtk : append : false
+vtk : mol : pol : phi
+
+output : kal : append : true
+kal : output : variable : MC_attempt
+kal : output : variable : free_energy
+kal : sys : variable : free_energy
+
+output : pro : append : false
+pro : mon : X : phi
+
+output : pos : append : true
+pos : output : noname : X
+pos : output : noname : Y
+pos : output : noname : Z
+
+output : vec : append : true
+vec : mol : pol : gn
+vec : output : noname : gn
+
+
+cleng : parameters : MCS : 100
+cleng : parameters : delta_save : 1
+cleng : parameters : delta_step : 1
+cleng : parameters : seed : 1
+cleng : parameters : simultaneous : true
+cleng : parameters : movement_alone : 1
+
+start

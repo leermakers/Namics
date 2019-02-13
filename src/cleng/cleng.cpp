@@ -240,19 +240,19 @@ bool Cleng::CP(transfer tofrom) {
 
         case to_segment:
             Zero(clamped->H_MASK, M);
-            for (int index=0; index < (int) simpleNodeList.size(); index=index+2) {
-                auto first_node = simpleNodeList[index];
-                auto second_node = simpleNodeList[index+1];
-                if (!first_node->get_system_point().all_elements_in_range(box) and
-                !second_node->get_system_point().all_elements_in_range(box)) {
-                    // reduce system positions to primitive box
-                    // TODO: rethink -- do I need to keep track of positions...
-                    first_node->reduceToPrimitive();
-                    second_node->reduceToPrimitive();
-                }
-            }
 
             for (auto &&n : nodes) n->pushSystemPoints(system_points);
+
+            for (int index=0; index < (int) system_points.size(); index=index+2) {
+                auto first_node = system_points[index];
+                auto second_node = system_points[index+1];
+
+                if (!first_node.all_elements_in_range(box) and
+                !second_node.all_elements_in_range(box)) {
+                    system_points[index]   = first_node % box;
+                    system_points[index+1] = second_node % box;
+                }
+            }
 
             for (auto &&entry : system_points) {
                 int i = entry.first / 2;
@@ -481,7 +481,7 @@ bool Cleng::MakeMove(bool back) {
             } else {
                 id_node_for_move = 1;
                 cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
-                while (!Checks()) {
+                if (!Checks()) {
                     cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
                     clamped_move = {0, 0, 0};
                     rejected++;

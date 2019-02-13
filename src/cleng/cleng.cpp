@@ -240,7 +240,7 @@ bool Cleng::CP(transfer tofrom) {
 
         case to_segment:
             Zero(clamped->H_MASK, M);
-            for (int index=0; index < simpleNodeList.size(); index=index+2) {
+            for (int index=0; index < (int) simpleNodeList.size(); index=index+2) {
                 auto first_node = simpleNodeList[index];
                 auto second_node = simpleNodeList[index+1];
                 if (!first_node->get_system_point().all_elements_in_range(box) and

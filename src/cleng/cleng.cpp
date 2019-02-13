@@ -318,8 +318,10 @@ Real Cleng::GetN_times_mu() {
 }
 
 bool Cleng::InSubBoxRange() {
+//    cout << "InSubBoxRange ... " << endl;
     int not_in_subbox_range = 0;
-    Point sub_box = {sub_box_size, sub_box_size, sub_box_size};  // change it in future
+    Point sub_box = {sub_box_size-2, sub_box_size-2, sub_box_size-2};  // change it in future
+//    cout << "sub_box: " << sub_box.to_string() << endl;
     if (!nodes[id_node_for_move]->inSubBoxRange(sub_box, clamped_move)) not_in_subbox_range++;
 
     if (not_in_subbox_range != 0) {
@@ -343,7 +345,7 @@ bool Cleng::NotCollapsing() {
         if (MP != n->point()) {
             Real distance = MPs.distance(n->point());
             if (distance < min_dist) {
-                cout << "Nodes are too close to each other. Reject." << endl;
+                cout << "Nodes are too close to each other." << endl;
                 i++;
             }
         }
@@ -391,11 +393,10 @@ bool Cleng::Checks() {
     not_collapsing = NotCollapsing();
 
     // check distance between all nodes and constrains (walls)
-    if (BC.x and BC.y and BC.z) { // BC.x, BC.y, BC.z = mirror
-        in_range = InRange();
-    } else { // BC.x and/or BC.y and/or BC.z != mirror
-        in_range = true;
-    }
+    // BC.x, BC.y, BC.z = mirror
+    if (BC.x and BC.y and BC.z) in_range = InRange();
+    // BC.x and/or BC.y and/or BC.z != mirror
+    else in_range = true;
 
     result = not_collapsing and in_range and in_subbox_range;
     return result;
@@ -459,14 +460,9 @@ bool Cleng::MakeMove(bool back) {
     if (back) {
         cout << "MakeMove back" << endl;
         Point _clamped_move = clamped_move.negate();
+        if (!simultaneous) nodes[id_node_for_move]->shift(_clamped_move);
+        else for (auto &node : nodes) node->shift(_clamped_move);
 
-        if (!simultaneous) {
-            nodes[id_node_for_move]->shift(_clamped_move);
-        } else {
-            for (auto &node : nodes) {
-                node->shift(_clamped_move);
-            }
-        }
     } else {
         clamped_move = prepareMove();
         if (!simultaneous) {
@@ -483,9 +479,14 @@ bool Cleng::MakeMove(bool back) {
                 cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
                      << endl;
             } else {
-                cout << "F dependency is activated." << endl;
-                id_node_for_move = 0;
+                id_node_for_move = 1;
                 cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
+                while (!Checks()) {
+                    cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
+                    clamped_move = {0, 0, 0};
+                    rejected++;
+                    success = false;
+                }
                 nodes[id_node_for_move]->shift(clamped_move);
                 cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
                      << endl;

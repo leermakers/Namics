@@ -33,11 +33,7 @@ string Monolit::to_string() const {
 }
 
 bool Monolit::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
-    for (auto &&n : m_nodes) {
-        if (!n->inSubBoxRange(subBoxRange, shift)) {
-            return false;
-        }
-    }
+    for (auto &&n : m_nodes) if (!n->inSubBoxRange(subBoxRange, shift)) return false;
     return true;
 }
 

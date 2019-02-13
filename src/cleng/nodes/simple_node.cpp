@@ -41,17 +41,20 @@ void SimpleNode::reduceToPrimitive(){
 }
 
 bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
+//    cout << "Simple Node [inSubBoxRange]... " << endl;
     Real dist = distance_with_shift(cnode->get_system_point(), shift);
-    Point distance = {(int) dist + 2, (int) dist + 2, (int) dist + 2};
+    Point distance = {(int) dist, (int) dist, (int) dist};
+//    cout << "Dist: " << dist << endl;
+//    cout << "distance: " << distance.to_string() << endl;
 
     if (distance > subBoxRange) {
         cout << "Too far away from each other nodes: " << this->id << " and " << cnode->id << endl;
-        cout << system_point.to_string() << " and " << cnode->system_point.to_string() << endl;
+        cout << "(int) Distance: " << std::to_string((int) dist) << " between of "<< system_point.to_string() << " and " << cnode->system_point.to_string() << endl;
         return false;
     }
     if (distance == subBoxRange) {
         cout << "Too far away from each other nodes: " << this->id << " and " << cnode->id << endl;
-        cout << system_point.to_string() << " and " << cnode->system_point.to_string() << endl;
+        cout << "(int) Distance: " << std::to_string((int) dist) << " between of "<< system_point.to_string() << " and " << cnode->system_point.to_string() << endl;
         return false;
     }
     return true;

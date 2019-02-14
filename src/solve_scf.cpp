@@ -548,7 +548,7 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 	gradient=MESODYN;
 
 	bool success=true;
-	Real old_deltamax = deltamax;
+	//Real old_deltamax = deltamax;
 
 	switch (solver) {
 		case diis:

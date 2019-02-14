@@ -15,6 +15,7 @@ if (debug) cout << "Constructor for system " << endl;
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]);
 	charged=false;
+	boundaryless_volume=0;
 }
 System::~System() {
   if (debug)
@@ -151,6 +152,11 @@ bool System::generate_mask() {
 	} else {
 		Sum(volume, KSAM, M);
 	}
+
+	// Used to initialize densities in mesodyn.
+	// I know it's hideous, but it works for all dimensions.
+	// If you really care about legibility you could do this with a switch or object.
+	this->boundaryless_volume = this->volume - ((2 * Lat[0]->gradients - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * Lat[0]->gradients) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, Lat[0]->gradients));
 
 	Lat[0]->Accesible_volume=volume;
 

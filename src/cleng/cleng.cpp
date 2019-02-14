@@ -156,7 +156,7 @@ bool Cleng::CheckInput(int start) {
         if (!GetValue("F_dependency").empty()) {
             F_dependency = In[0]->Get_bool(GetValue("F_dependency"), false);
         } else F_dependency = false;
-        if (!debug) cout << "F_dependent move " << F_dependency << endl;
+        if (debug) cout << "F_dependent move " << F_dependency << endl;
 
         // ???
         if (success) {

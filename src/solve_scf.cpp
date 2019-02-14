@@ -60,6 +60,8 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	}
 	if (Sys[0]->charged) iv += M;
 	if (SCF_method=="Picard") iv += M;
+	
+	if (Sys[0]->beta_set) iv++; 
 #ifdef CUDA
 	xx  = (Real*)AllOnDev(iv);
 	x0  = (Real*)AllOnDev(iv);
@@ -95,6 +97,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 	solver=PSEUDOHESSIAN;
 	SCF_method="pseudohessian";
 	gradient=classical;
+	residual=1;
 	m=10;
 	success=In[0]->CheckParameters("newton",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
@@ -653,22 +656,23 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 }
 
 
-bool Solve_scf::SuperIterate(int search, int target,int ets,int etm) {
+bool Solve_scf::SuperIterate(int search, int target,int ets,int etm, int bm) {
 if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 	Real* x = (Real*) malloc(sizeof(Real)); H_Zero(x,1);
-	bool success;
+	bool success=true;
 	value_search=search;				//cp superiteration cnontrols to solve. These can be used in residuals.
 	value_target=target;
 	value_ets=ets;
 	value_etm=etm;
-	if (ets==-1 && etm==-1)  {                  //pick up initial guess;
+	value_bm =bm;
+	if (ets==-1 && etm==-1 && bm ==-1)  {                  //pick up initial guess;
 		x[0] =Var[search]->GetValue();
 	} else {
-		if (ets>-1)
-			x[0] = Var[ets]->GetValue();
-		else
-			x[0]=Var[etm]->GetValue();
+		if (ets>-1) x[0] = Var[ets]->GetValue();
+		if (etm>-1) x[0] = Var[etm]->GetValue();
+		if (bm>-1) { x[0] = Var[bm]->GetValue(); super_tolerance *=10;}
 	}
+	cout <<"Your guess for X: " << x[0] << endl; 
 	gradient=custum; 				//the proper gradient is used
 	control=super;				//this is for inneriteration
 	e_info=super_e_info;
@@ -677,9 +681,14 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 	tolerance=super_tolerance;
 	cout << "super tolerance and super deltamax: " << super_tolerance << "\t" << super_deltamax << endl;
 	solver=diis;
-	    success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax);
+	    if (ets==-1 && etm==-1 && bm ==-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi search: ");
+	    if (ets>-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi Eq-to_solvent search: ");
+	    if (etm>-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi Eq-to_mu search: ");
+	    if (bm>-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi balance-membrane search: ");
 	//    success=iterate_DIIS(x,1,m,iterationlimit,super_tolerance,super_deltamax);
 	//success=iterate(x,1,super_iterationlimit,super_tolerance,super_deltamax,deltamin,false);	//iterate is called with just one iteration variable
+	if (bm>-1) super_tolerance /=10;
+	cout <<"My guess for X: " << x[0] << endl;
 	return success;
 }
 
@@ -759,16 +768,15 @@ void Solve_scf::residuals(Real* x, Real* g){
 		break;
 		case custum:
 			if (debug) cout <<"Residuals in custum mode in Solve_scf " << endl;
-			if (value_ets==-1 && value_etm==-1) 			//guess from newton is stored in place.
+			if (value_ets==-1 && value_etm==-1 && value_bm==-1) 			//guess from newton is stored in place.
 				Var[value_search]->PutValue(x[0]);
 			else {
-				if (value_ets>-1)
-					Var[value_ets]->PutValue(x[0]);
-				else
-					Var[value_etm]->PutValue(x[0]);
+				if (value_ets>-1) Var[value_ets]->PutValue(x[0]);
+				if (value_etm>-1) Var[value_etm]->PutValue(x[0]);
+				if (value_bm>-1) Var[value_bm]->PutValue(x[0]);
 			}
 
-			if (value_ets==-1||value_search<0 || value_etm>-1) {
+			if (value_ets==-1|| value_search<0 || value_etm>-1 || value_bm>-1) {
 				control=proceed;					//prepare for solving scf eqns. (both for inneriteration and residuals)
 				gradient=classical;
 				if (SCF_method=="hessian") {hessian=true; pseudohessian=false; solver=HESSIAN;}
@@ -788,20 +796,21 @@ void Solve_scf::residuals(Real* x, Real* g){
 				i_info=super_i_info;
 				s_info=super_s_info;
 			} else {
+				old_value_bm=value_bm;
 				old_value_ets=value_ets;				//prepare of next level of super-iteration.
 				old_value_etm=value_etm;
-				SuperIterate(value_search,value_target,-1,-1);	//go to superiteration with new ets and etm values
+				SuperIterate(value_search,value_target,-1,-1,-1);	//go to superiteration with new ets and etm values
 				value_ets = old_value_ets;				//reset conditions so that old iteration can continue
 				value_etm=old_value_etm;
+				value_bm=old_value_bm;
 			}
 
-			if (value_ets==-1 && value_etm==-1) {			//get value for gradient.
+			if (value_ets==-1 && value_etm==-1 && value_bm==-1) {			//get value for gradient.
 				g[0]=Var[value_target]->GetError();
 			} else {
-				if (value_ets>-1)
-					g[0]=Var[value_ets]->GetError();
-				else
-					g[0]=Var[value_etm]->GetError();
+				if (value_ets>-1) g[0]=Var[value_ets]->GetError();
+				if (value_etm>-1) g[0]=Var[value_etm]->GetError();
+				if (value_bm>-1) g[0]=Var[value_bm]->GetError();
 			}
 		break;
 		case Picard:
@@ -841,6 +850,10 @@ void Solve_scf::residuals(Real* x, Real* g){
 			int itmonlistlength=Sys[0]->ItMonList.size();
 			int state_length = In[0]->StateList.size();
 			int itstatelistlength=Sys[0]->ItStateList.size();
+			
+			if (Sys[0]->beta_set) {
+				Sys[0]->BETA=xx[iv-1]; 
+			}
 
  			ComputePhis();
 
@@ -896,6 +909,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Lat[0]->UpdatePsi(g+(itmonlistlength+itstatelistlength)*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
 				Lat[0]->remove_bounds(g+(itmonlistlength+itstatelistlength)*M);
 			}
+			if (Sys[0]->beta_set){
+			   g[iv-1]=(Mol[Sys[0]->MolBeta]->phitot[Mol[Sys[0]->MolBeta]->beta]-Mol[Sys[0]->solvent]->phitot[Mol[Sys[0]->solvent]->beta]); 
+			}
 		break;
 	}
 }
@@ -923,7 +939,7 @@ void Solve_scf::gradient_minus(Real* g, int k, int M, int i, int j) {
 
 void Solve_scf::inneriteration(Real* x, Real* g, float* h, Real accuracy, Real& deltamax, Real ALPHA, int nvar) {
 if(debug) cout <<"inneriteration in Solve_scf " << endl;
-
+	residual=accuracy; //hoping this is not creating problems with the use of residual...
 	switch(control) {
 		case super:
 			for (int i=0; i<nvar; i++) { //this is to control the sing in the WEAK iteration.

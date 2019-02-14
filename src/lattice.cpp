@@ -808,6 +808,17 @@ void Lattice::DivL(Real* X){
 	}
 }
 
+Real Lattice:: Moment(Real* X,int n) {
+	Real Result=0;
+	Real cor; 
+	if (gradients !=1 || geometry!="planar" ) {cout << "Moments analysis can only be done on one-gradient, planar system " << endl;  return Result; }
+	remove_bounds(X);
+	for (int i = fjc; i<M; i++) {
+		cor = 1.0*(i-fjc+1)/fjc; Result += pow(cor,n)*X[i]; 
+	}	
+	return Result/fjc;
+}
+
 Real Lattice::WeightedSum(Real* X){
 	Real sum{0};
 	remove_bounds(X);

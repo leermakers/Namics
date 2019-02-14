@@ -954,7 +954,7 @@ int nvar=nvar_;
 	return success;
 }
 
-bool SFNewton::iterate_RF(Real*x, int nvar_,int iterationlimit,Real tolerance, Real delta_max) {
+bool SFNewton::iterate_RF(Real*x, int nvar_,int iterationlimit,Real tolerance, Real delta_max, string s) {
 if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	int nvar=nvar_;
 	bool success;
@@ -991,7 +991,7 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 		}
 		k++; it=k;
 		if(fa==fb){success=false; cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;}
-	cout << "In Regula-Falsi iteration step: " << k << "\t Residual: " <<	res << endl;
+	cout << s << k << "\t Residual: " <<	res << endl;
 	}
 
 

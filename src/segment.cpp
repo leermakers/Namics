@@ -38,8 +38,7 @@ if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 	free(H_phi_state);
 
 #ifdef CUDA
-	if(n_pos>0)
-	cudaFree(P);
+	if(n_pos>0) cudaFree(P);
 	cudaFree(u);
 	cudaFree(phi);
 	cudaFree(phi_state);
@@ -130,7 +129,8 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	}
 
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
-	if (freedom=="tagged") Cp(G1,MASK,M);
+	if (freedom=="tagged") {Cp(G1,MASK,M);
+	}
 	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);
 
 	return success;
@@ -172,8 +172,8 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	string s;
 	vector<string>options;
 	guess_u=0;
-
 	n_pos=0;
+
 	fixedPsi0=false;
 	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {
@@ -196,7 +196,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				}
 			}
 		} else {
-			r=(int*) malloc(6*sizeof(int));
+			r=(int*) malloc(6*sizeof(int)); Zero(r,6);
 		}
 
 		if (freedom =="clamp" ) {
@@ -282,7 +282,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 							}
 							bx.push_back((px2[i]+px1[i]-mx)/2);
 							by.push_back((py2[i]+py1[i]-mx)/2);
-							bz.push_back((pz2[i]+pz1[i]-mx)/2);
+							bz.push_back((pz2[i]+pz1[i]-mx)/2);//box is equal in size in x y and z. 
 						}
 					}
 				} else {

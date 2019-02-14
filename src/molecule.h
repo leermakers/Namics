@@ -19,6 +19,9 @@ public:
 	vector<int> MolMonList;
 	vector<int> MolAlList;
 	int start;
+	int beta; 
+	bool interface_pinned; 
+	Real Gbeta; 
 	int n_mol;
 	int mol_nr;
 	int n_box;

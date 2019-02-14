@@ -1,4 +1,5 @@
 #pragma once
+
 #include <tuple>
 #include <string>
 #include "../../namics.h"
@@ -10,9 +11,13 @@ public:
     int y;
     int z;
 
-    Point(const Point &point) { x = point.x; y = point.y; z = point.z; }
+    Point(const Point &point) {
+        x = point.x;
+        y = point.y;
+        z = point.z;
+    }
 
-    Point(int x, int y, int z): x(x), y(y), z(z) {}
+    Point(int x, int y, int z) : x(x), y(y), z(z) {}
 
     Point() : x(0), y(0), z(0) {}
 
@@ -20,39 +25,47 @@ public:
         return {-x, -y, -z};
     }
 
-    Point operator +(const Point &p) const {
+    Point operator+(const Point &p) const {
         return {x + p.x, y + p.y, z + p.z};
     }
 
-    Point operator -(const Point &p) const {
+    Point operator-(const Point &p) const {
         return {x - p.x, y - p.y, z - p.z};
     }
 
-    Point operator %(const Point& box) const {
+    Point operator%(const Point &box) const {
         return {x % box.x, y % box.y, z % box.z};
     }
 
-    bool operator ==(const Point& p) const {
+    bool operator==(const Point &p) const {
         return x == p.x && y == p.y && z == p.z;
     }
 
-    bool operator !=(const Point& p) const {
+    bool operator!=(const Point &p) const {
         return x != p.x || y != p.y || z != p.z;
     }
 
-    bool less_all_elements_than(const Point& p) const {
+    bool all_elements_less_than(const Point &p) const {
         return x < p.x and y < p.y and z < p.z;
     }
 
-    bool more_all_elements_than(const Point& p) const {
+    bool more_all_elements_than(const Point &p) const {
         return x > p.x and y > p.y and z > p.z;
     }
 
-    bool operator <(const Point& other) const {
+    bool all_elements_in_range(const Point &box) const {
+        bool x_res = false; bool y_res = false; bool z_res = false;
+        if ((x < box.x) and (x >= 0)) x_res=true;
+        if ((y < box.y) and (y >= 0)) y_res=true;
+        if ((z < box.z) and (z >= 0)) z_res=true;
+        return x_res and y_res and z_res;
+    }
+
+    bool operator<(const Point &other) const {
         return std::make_tuple(x, y, z) < std::make_tuple(other.x, other.y, other.z);
     }
 
-    bool operator >(const Point& other) const {
+    bool operator>(const Point &other) const {
         return std::make_tuple(x, y, z) > std::make_tuple(other.x, other.y, other.z);
     }
 

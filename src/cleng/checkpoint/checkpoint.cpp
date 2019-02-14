@@ -12,7 +12,7 @@ Checkpoint::Checkpoint() {
 }
 
 void Checkpoint::addFolderInfo(const string &param, const string &value) {
-    if (param=="path") {
+    if (param == "path") {
         checkpoint_path = processCheckpointPath(value);
     }
 }
@@ -20,7 +20,7 @@ void Checkpoint::addFolderInfo(const string &param, const string &value) {
 
 void Checkpoint::addProperty(const string &elem, const string &param, const string &value) {
     if (elem == "folder") {
-        addFolderInfo(param,value);
+        addFolderInfo(param, value);
     }
 }
 
@@ -31,28 +31,28 @@ string Checkpoint::processCheckpointPath(string path) {
     return path;
 }
 
-bool Checkpoint::isCheckpointExists(const std::string& name) const {
+bool Checkpoint::isCheckpointExists(const std::string &name) const {
     struct stat info{};
     return (stat(name.c_str(), &info) == 0);
 }
 
 void Checkpoint::getNewId4Checkpoint() {
-    if (isCheckpointExists(checkpoint_path+checkpoint_name+IN_CLASS_NAME)) {
+    if (isCheckpointExists(checkpoint_path + checkpoint_name + IN_CLASS_NAME)) {
         int index = 0;
-        while (isCheckpointExists(checkpoint_path+checkpoint_name+IN_CLASS_NAME)) {
+        while (isCheckpointExists(checkpoint_path + checkpoint_name + IN_CLASS_NAME)) {
             checkpoint_name = std::to_string(index);
-            index ++;
+            index++;
         }
     }
 }
 
 
 void Checkpoint::getLastCheckpoint() {
-    if (isCheckpointExists(checkpoint_path+checkpoint_name+IN_CLASS_NAME)) {
+    if (isCheckpointExists(checkpoint_path + checkpoint_name + IN_CLASS_NAME)) {
         int index = 0;
-        while (isCheckpointExists(checkpoint_path+checkpoint_name+IN_CLASS_NAME)) {
+        while (isCheckpointExists(checkpoint_path + checkpoint_name + IN_CLASS_NAME)) {
             checkpoint_name = std::to_string(index);
-            index ++;
+            index++;
         }
         index = index - 2;
         checkpoint_name = std::to_string(index);
@@ -65,21 +65,40 @@ void Checkpoint::saveCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeLi
     string filename;
     getNewId4Checkpoint();
     ofstream outfile;
-    outfile.open(checkpoint_path+checkpoint_name+IN_CLASS_NAME, std::ios_base::app);
+    outfile.open(checkpoint_path + checkpoint_name + IN_CLASS_NAME, std::ios_base::app);
 
 // Writing
-    int index =0;
-    for ( auto && n : simpleNodeList ) {
+    int index = 0;
+    for (auto &&n : simpleNodeList) {
 
-        if (!index){
+        if (!index) {
             outfile << n->to_string();
-            index ++;
-        }
-        else {
-            outfile << n->to_string()<< endl;
+            index++;
+        } else {
+            outfile << n->to_string() << endl;
             index = 0;
         }
+    }
+}
+
+void Checkpoint::updateCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList) {
+
+    string filename;
+    ofstream outfile;
+    outfile.open(checkpoint_path + checkpoint_name + IN_CLASS_NAME);
+
+// Writing
+    int index = 0;
+    for (auto &&n : simpleNodeList) {
+
+        if (!index) {
+            outfile << n->to_string();
+            index++;
+        } else {
+            outfile << n->to_string() << endl;
+            index = 0;
         }
+    }
 }
 
 
@@ -105,27 +124,26 @@ shared_ptr<SimpleNode> fromFileToNode(int x, int y, int z, int id, const Point &
 }
 
 vector<std::shared_ptr<Node>> Checkpoint::loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box) {
-    if (isCheckpointExists(checkpoint_path+checkpoint_name+IN_CLASS_NAME)) {
+    if (isCheckpointExists(checkpoint_path + checkpoint_name + IN_CLASS_NAME)) {
         cout << "Loading checkpoint ..." << endl;
         getLastCheckpoint();
-        cout << "checkpoint: " << checkpoint_name+IN_CLASS_NAME << endl;
-        ifstream infile(checkpoint_path+checkpoint_name+IN_CLASS_NAME);
+        cout << "checkpoint: " << checkpoint_name + IN_CLASS_NAME << endl;
+        ifstream infile(checkpoint_path + checkpoint_name + IN_CLASS_NAME);
 
         vector<shared_ptr<SimpleNode>> simpleNodeList;
         vector<Point> points;
         string line;
         cout << "Reading file..." << endl;
-        while (getline(infile, line))
-        {
+        while (getline(infile, line)) {
             istringstream iss(line);
             int id1, x1, y1, z1, id2, x2, y2, z2;
             string a;
-            if (!(iss >> a >> id1 >> a >> x1  >> a >> y1 >> a >> z1 >> a >> id2 >> a >> x2 >> a >> y2 >> a >> z2)) {
-                cout << "Cant read!" << endl;
+            if (!(iss >> a >> id1 >> a >> x1 >> a >> y1 >> a >> z1 >> a >> id2 >> a >> x2 >> a >> y2 >> a >> z2)) {
+                cout << "Sorry! The type is not such supported." << endl;
                 break;
             }
 
-            auto first_node  = fromFileToNode(x1, y1, z1, id1, box);
+            auto first_node = fromFileToNode(x1, y1, z1, id1, box);
             auto second_node = fromFileToNode(x2, y2, z2, id2, box);
             first_node->set_cnode(second_node);
             second_node->set_cnode(first_node);
@@ -141,9 +159,8 @@ vector<std::shared_ptr<Node>> Checkpoint::loadCheckpoint(vector<std::shared_ptr<
             cout << n->to_string() << endl;
         }
         cout << "Success!" << endl;
-    }
-    else {
-        cout << "Sorry! No file!" << endl;
+    } else {
+        cout << "Sorry! Unable to open file!" << endl;
     }
     return nodes;
 }

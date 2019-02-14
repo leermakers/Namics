@@ -166,7 +166,14 @@ bool System::PrepareForCalculations() {
 	bool success = true;
 	int M = Lat[0]->M;
 
-	if (prepared == false) {
+	// necessary part; essentially for clang
+	Zero(KSAM, M);
+	for (int i : FrozenList) Add(KSAM, Seg[i]->MASK, M);
+	for (int i : SysTagList) Add(KSAM, Seg[i]->MASK, M);
+    for (int i : SysClampList) Add(KSAM, Seg[i]->MASK, M);
+	Invert(KSAM, KSAM, M);
+
+	if (!prepared) {
 		success = generate_mask();
 		prepared = true;
 	}

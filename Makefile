@@ -21,17 +21,17 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -Ofast -g -std=c++14 -fopenmp -march=native -ftree-parallelize-loops=12
+CFLAGS      := -Wall -Ofast -g -std=c++14 -march=native
 LIB         := -lm -lpthread -lgomp
-INC         := -I/usr/local/include -I/usr/include
+INC         := -I/usr/local/cuda-10.0/include -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
-	LIB        += -lcuda -lcudart
+	LIB        += -L/usr/local/cuda-10.0/lib64 -lcuda -lcudart
 	CFLAGS     += -DCUDA
 	NVCCFLAGS  := -std=c++14 -DCUDA
 	ifdef PAR_MESODYN
 		CFLAGS += -DPAR_MESODYN
-		NVCCFLAGS += -ccbin gcc-5 --expt-relaxed-constexpr -DPAR_MESODYN
+		NVCCFLAGS += -ccbin gcc-7 -arch=sm_61 --expt-relaxed-constexpr -DPAR_MESODYN
 	endif
 endif
 
@@ -42,7 +42,7 @@ endif
 
 SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 ifdef PAR_MESODYN
-OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o $(BUILDDIR)/mesodyn.o)
+OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/boundary_conditions.o)
 else
 ifdef CUDA
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o)
@@ -88,6 +88,9 @@ ifdef PAR_MESODYN
 $(BUILDDIR)/tools.o:
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/tools.o $(SRCDIR)/tools.cu
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/mesodyn.o $(SRCDIR)/mesodyn.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/neighborlist.o $(SRCDIR)/mesodyn/neighborlist.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/boundary_conditions.o $(SRCDIR)/mesodyn/boundary_conditions.cu
+
 else
 ifdef CUDA
 $(BUILDDIR)/tools.o:

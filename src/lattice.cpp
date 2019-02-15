@@ -1719,7 +1719,7 @@ if (debug) cout <<"ReadRangeFile in lattice " << endl;
 bool Lattice::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {
 if (debug) cout <<"CreateMask for lattice " + name << endl;
 	bool success=true;
-	H_Zero(H_MASK,M);
+	std::fill(H_MASK,H_MASK+M,0);
 	if (block) {
 		switch(gradients) {
 			case 1:

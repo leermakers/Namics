@@ -28,10 +28,10 @@ INC         := -I/usr/local/cuda-10.0/include -I/usr/local/include -I/usr/includ
 ifdef CUDA
 	LIB        += -L/usr/local/cuda-10.0/lib64 -lcuda -lcudart
 	CFLAGS     += -DCUDA
-	NVCCFLAGS  := -std=c++14 -DCUDA
+	NVCCFLAGS  := -ccbin gcc-7 -arch=sm_61 -std=c++14 -DCUDA
 	ifdef PAR_MESODYN
 		CFLAGS += -DPAR_MESODYN
-		NVCCFLAGS += -ccbin gcc-7 -arch=sm_61 --expt-relaxed-constexpr -DPAR_MESODYN
+		NVCCFLAGS += --expt-relaxed-constexpr -DPAR_MESODYN
 	endif
 endif
 

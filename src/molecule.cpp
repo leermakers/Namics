@@ -1492,6 +1492,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
+	if (theta==0) theta=phibulk/chainlength*GN;
 	push("theta",theta);
 	Real thetaexc=theta-phibulk*Lat[0]->Accesible_volume;
 	push("theta_exc",thetaexc);

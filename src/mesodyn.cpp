@@ -309,7 +309,7 @@ int Mesodyn::initial_conditions() {
   #if defined(PAR_MESODYN) || ! defined(CUDA)
   stl::copy(Sys[0]->KSAM, Sys[0]->KSAM+system_size, t_mask.begin());
   #else
-  TransferDataToHost(mask.data(), Sys[0]->KSAM, system_size);
+  TransferDataToHost(t_mask.data(), Sys[0]->KSAM, system_size);
   #endif
 
   Lattice_object<size_t> mask( t_mask ); 

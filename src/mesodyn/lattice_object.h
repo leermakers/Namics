@@ -98,7 +98,7 @@ void load_array(T* data, size_t size)
     {
       assert( size == m_data.size() );
       #if defined(CUDA) && ! defined(PAR_MESODYN)
-        TransferDataToHost( (T*)m_data, data, size() );
+        TransferDataToHost( m_data.data(), data, this->size() );
       #else
         stl::copy(data, data + size, m_data.begin());
       #endif
@@ -223,6 +223,14 @@ size_t size() {
 
 void clear() {
     m_data.clear();
+}
+
+T* data() {
+#ifdef PAR_MESODYN
+  return (T*)m_data;
+#else
+  return m_data.data();
+#endif
 }
 
 std::vector<shared_ptr<Neighborlist>> get_neighborlists() const {

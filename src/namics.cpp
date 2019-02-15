@@ -40,8 +40,9 @@ bool debug = false;
 
 //Output when the user malforms input. Update when adding new command line switches.
 void improperInput() {
-  cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;
+  cerr << "Improper usage: namics [-options] [filename]." << endl << "Options available:" << endl;
   cerr << "-d Enables debugging mode." << endl;
+	cerr << "-GPU [index] Sets the GPU to be used in multi-GPU systems." << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -52,7 +53,7 @@ int main(int argc, char* argv[]) {
     		return 1;
   	}
 //Output error if user starts with a commandline switch. (Also catches combination with forgotten filename)
-  	if ( (args[1])[0] == '-' ) {
+  	if ( (args.back())[0] == '-' ) {
     		improperInput();
     		return 1;
   	}
@@ -60,7 +61,7 @@ int main(int argc, char* argv[]) {
 // If the specified filename has no extension: add the extension specified below.
 	string extension = "in";
 	ostringstream filename;
-	filename << argv[1];
+	filename << args.back();
 	bool hasNoExtension = (filename.str().substr(filename.str().find_last_of(".")+1) != extension);
  	if (hasNoExtension) filename << "." << extension;
 

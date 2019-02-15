@@ -52,15 +52,15 @@ C Copyright (2018) Wageningen University, NL.
        linesearchlimit = iterations=lineiterations=numIterationsSinceHessian = trouble=resetiteration=0;
        trouble = resetiteration = 0;
 	numReverseDirection =0;
-	linetolerance = trustregion =0.0;
+	trustregion =0.0;
 	pseudohessian = samehessian = false;
 	d_info = e_info = g_info = h_info = s_info = x_info = false;
 	newtondirection = ignore_newton_direction  = false ;
 	i_info=1;
-       max_accuracy_for_hessian_scaling = 0.1;
-       linesearchlimit = 20;
-       linetolerance = 9e-1;
-       epsilon = 0.1/pow(2.0,nbits/2);
+	max_accuracy_for_hessian_scaling = 0.1;
+	linesearchlimit = 20;
+	linetolerance = 9e-1;
+	epsilon = 0.1/pow(2.0,nbits/2);
 	minAccuracySoFar = 1e30;
 	reverseDirectionRange = 50;
 	resetHessianCriterion = 1e5;
@@ -531,7 +531,7 @@ if(debug) cout <<"zero in Newton " << endl;
 	Real alpha=newalpha;
 	bool valid, timedep;
 	lineiterations++;
-	if ( (lineiterations==5)) {
+	if (lineiterations==5) {
 		memcpy(x, x0, sizeof(*x)*nvar);
 		COMPUTEG(x,g,nvar,filter);
 		valid = true;
@@ -976,7 +976,7 @@ int nvar=nvar_;
 	return success;
 }
 
-bool SFNewton::iterate_RF(Real*x, int nvar_,int iterationlimit,Real tolerance, Real delta_max) {
+bool SFNewton::iterate_RF(Real*x, int nvar_,int iterationlimit,Real tolerance, Real delta_max, string s) {
 if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	int nvar=nvar_;
 	bool success;
@@ -1013,7 +1013,7 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 		}
 		k++; it=k;
 		if(fa==fb){success=false; cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;}
-	cout << "In Regula-Falsi iteration step: " << k << "\t Residual: " <<	res << endl;
+	cout << s << k << "\t Residual: " <<	res << endl;
 	}
 
 

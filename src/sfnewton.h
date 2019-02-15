@@ -13,7 +13,8 @@ public:
  	virtual ~SFNewton();
 	bool max_g;
 	int nbits;
-	int lineiterations,linetolerance,numIterationsSinceHessian,resetiteration;
+	int lineiterations,numIterationsSinceHessian,resetiteration;
+	Real linetolerance;
 	int print_hessian_at_it;
 	int linesearchlimit;
 	Real smallAlpha;
@@ -99,7 +100,7 @@ public:
 	bool iterate(Real*,int,int,Real,Real,Real,bool);
 	bool iterate_Picard(Real*,int,int,Real,Real);
 	bool iterate_DIIS(Real*,int,int, int, Real, Real);
-	bool iterate_RF(Real*,int,int,Real,Real);
+	bool iterate_RF(Real*,int,int,Real,Real,string);
 	void Ax(Real*, Real*, int);
 	void DIIS(Real* , Real*, Real*, Real* , Real* ,Real*, int, int , int, int);
 	void conjugate_gradient(Real *, int, int ,Real ) ;

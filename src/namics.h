@@ -11,7 +11,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#define SSTR( x ) static_cast< std::ostringstream & >(( std::ostringstream() << std::dec << x )).str()
+//#define SSTR( x ) static_cast< std::ostringstream & >(( std::ostringstream() << std::dec << x )).str()
 #include <vector>
 #include <iterator>
 #include <algorithm>
@@ -19,6 +19,7 @@
 
 #include <iomanip>
 using namespace std;
+//these are our options.
 typedef double Real;
 
 #ifndef SMTHxBREAK

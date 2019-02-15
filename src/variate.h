@@ -31,8 +31,10 @@ public:
 	int searching;
 	int targeting;
 	int eq_to_solvating;
+	int balance_membraning; //oeps sorry for this keyword....
 	int eq_to_mu;
 	int ets_nr;
+	int bm_nr;
 	int steps;
 	Real step;
 	Real end_value;

@@ -2,11 +2,11 @@
 
 Hybrid SCF-MD simulation tool. Package under development.
 
-Developers:  
-F.A.M.Leermakers - Self-consistent field caculation modules.  
-R.Varadharajan - teng.cpp  
-Daniel Emmery - mesodyn.cpp  
-Alexandar kazakzov - Cleng.cpp  
+Developers:   
+F.A.M.Leermakers - Self-consistent field caculation modules.   
+R.Varadharajan - teng.cpp   
+Daniel Emmery - mesodyn.cpp   
+Alexander Kazakov - cleng.cpp   
 
 ### Dependencies:
 

@@ -1,9 +1,11 @@
 
 #include "output.h"
 #include "time.h"
+
 Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Solve_scf*> New_,string name_,int outnr,int N_out) {
 if (debug) cout <<"constructor in Output "<< endl;
 	In=In_; Lat = Lat_; Seg=Seg_; Sta=Sta_; Rea=Rea_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
+	//KEYS.push_back("write_output");
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");
@@ -95,7 +97,7 @@ if (debug) cout << "CheckInput in output " << endl;
 	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		if (GetValue("append").size()>0) {
-			if (name=="ana") append=true;
+			if (name=="ana") append=true;			
 			append=In[0]->Get_bool(GetValue("append"),append);
 		} else {
 			if (name=="ana") append=true;
@@ -119,7 +121,16 @@ if (debug) cout << "CheckInput in output " << endl;
 				success=false;
 			}
 		}
-
+		write_option="no_error";
+		if (GetValue("write_output").size()>0) {
+			vector<string> option_list;
+			option_list.push_back("always");
+			option_list.push_back("no_error");
+			option_list.push_back("never");
+			if (!In[0]->Get_string(GetValue("write_output"),write_option,option_list,"In output: 'write_output' not recognised. Use 'always', 'never', or 'no_error'. The last value is default.")){
+				cout <<"continue with write_output : no_error" << endl; 
+			} 
+		}		
 	} else cout <<"Error in CheckParameters in output" << endl;
 	return success;
 }
@@ -270,8 +281,9 @@ if (debug) cout << "GetPointer in output " << endl;
 		case 5:
 			listlength=PointerVectorReal.size();
 			j=0;
-			while (j<listlength) {
+			while (j<listlength) { 
 				if (prop==strings[j]){ Size=SizeVectorReal[j];  return PointerVectorReal[j];}
+				j++;
 			}
 			break;
 		default:
@@ -427,8 +439,8 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				pointer.push_back(X);
 				key = OUT_key[i];
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
-				fprintf(fp,"%s\t",s.c_str());
-			} else {cout << " Error for 'pro' output. It is only possible to ouput quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl;}
+				fprintf(fp,"%s \t",s.c_str());
+			} else {cout << " Error for 'pro' output. It is only possible to output quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl;}
 		}
 		fprintf(fp,"\n");
 		Lat[0] -> PutProfiles(fp,pointer);
@@ -439,7 +451,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	if (name=="kal") {
 		ifstream my_file(filename.c_str());
 		FILE *fp;
-		if (!(my_file||append)) {
+		if (!(my_file && append)) {
 			fp=fopen(filename.c_str(),"w");
 			int length = OUT_key.size();
 			for (int i=0; i<length; i++) {

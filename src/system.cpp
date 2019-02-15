@@ -15,6 +15,7 @@ if (debug) cout << "Constructor for system " << endl;
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]);
 	charged=false;
+	BETA=0;
 }
 System::~System() {
   if (debug)
@@ -59,7 +60,9 @@ void System::AllocateMemory() {
   int M = Lat[0]->M;
   //H_GN_A = new Real[n_box];
   //H_GN_B = new Real[n_box];
-  H_GrandPotentialDensity = (Real*)malloc(M * sizeof(Real));
+
+  H_GrandPotentialDensity = (Real*)malloc(M * sizeof(Real)); Zero( H_GrandPotentialDensity,M);
+
   H_FreeEnergyDensity = (Real*)malloc(M * sizeof(Real));
   H_alpha = (Real*)malloc(M * sizeof(Real));
   if (charged) {
@@ -163,7 +166,14 @@ bool System::PrepareForCalculations() {
 	bool success = true;
 	int M = Lat[0]->M;
 
-	if (prepared == false) {
+	// necessary part; essentially for clang
+	Zero(KSAM, M);
+	for (int i : FrozenList) Add(KSAM, Seg[i]->MASK, M);
+	for (int i : SysTagList) Add(KSAM, Seg[i]->MASK, M);
+    for (int i : SysClampList) Add(KSAM, Seg[i]->MASK, M);
+	Invert(KSAM, KSAM, M);
+
+	if (!prepared) {
 		success = generate_mask();
 		prepared = true;
 	}
@@ -189,6 +199,24 @@ bool System::PrepareForCalculations() {
       }
     }
   }
+	bool found=false;
+	int beta; 
+	for (int i=0; i<n_mol; i++) {
+		if (Mol[i]->beta>0 && i!=solvent) { 
+			found=true; 
+			beta=Mol[i]->beta; 
+			Mol[i]->interface_pinned=true;
+			Mol[i]->Gbeta = exp(BETA); 
+			MolBeta=i;
+		}
+	}
+	if (found) {
+		beta_set=true; 
+		Mol[solvent]->beta=beta; 
+		Mol[solvent]->interface_pinned=true;
+		Mol[solvent]->Gbeta=exp(-BETA);
+	}
+
   return success;
 }
 
@@ -201,6 +229,7 @@ string System::GetMonName(int mon_number_I) {
 bool System::CheckInput(int start) {
 if (debug) cout << "CheckInput for system " << endl;
 	bool success=true;
+	beta_set=false; 
 	bool solvent_found=false; tag_segment=-1; solvent=-1;  //value -1 means no solvent defined. tag_segment=-1;
 	Real phibulktot=0;
 	success= In[0]->CheckParameters("sys",name,start,KEYS,PARAMETERS,VALUES);
@@ -628,6 +657,10 @@ if (debug) cout << "PushOutput for system " << endl;
 	push("temperature",T);
 	push("free_energy",FreeEnergy);
 	push("grand_potential",GrandPotential);
+	if (Lat[0]->gradients==1 && Lat[0]->geometry =="planar") {
+		push("KJ0",-Lat[0]->Moment(GrandPotentialDensity,1));
+		push("Kbar",Lat[0]->Moment(GrandPotentialDensity,2));
+	}
 	Real X=0;
 	if (Xn_1.size()>0 || XmolList.size()>0) {
 		X=FreeEnergy;
@@ -936,13 +969,17 @@ if(debug) cout <<"ComputePhis in system" << endl;
 		int length=Mol[i]->MolMonList.size();
 
 		while (k<length) {
-			Real *phi=Mol[i]->phi+k*M;
-			//Real *G1=Mol[i]->G1+k*M;
-			Real *G1=Seg[Mol[i]->MolMonList[k]]->G1;
-			Div(phi,G1,M); if (norm>0) Norm(phi,norm,M);
+			if (!(Seg[Mol[i]->MolMonList[k]]->freedom=="clamp"||Mol[i]->freedom=="frozen")) {
+				Real *phi=Mol[i]->phi+k*M;
+				//Real *G1=Mol[i]->G1+k*M;
+				Real *G1=Seg[Mol[i]->MolMonList[k]]->G1;
+				Div(phi,G1,M); 
+				if (norm>0) Norm(phi,norm,M);
+			
 if (debug) {
 Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << i << " for mon " << Mol[i]->MolMonList[k] << ": " << sum << endl;
 }
+			}
 			k++;
 		}
 
@@ -1069,7 +1106,8 @@ Real sum; Sum(sum,phi,M); cout <<"Sumphi in mol " << neutralizer << "for mon " <
 
 bool System::CheckResults(bool e_info_) {
 if (debug) cout << "CheckResults for system " << endl;
-	bool e_info=e_info_;
+	
+	bool e_info=e_info_; 
 	bool success=true;
 
 	FreeEnergy=GetFreeEnergy();
@@ -1231,6 +1269,12 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 	return FreeEnergy+Lat[0]->WeightedSum(F);
 }
 
+Real System::GetSpontaneousCurvature() {
+	Real* GP =GrandPotentialDensity;	
+	//cout <<"Get spontaneous Curvature not yet inplemented in system " << endl; 
+	return Lat[0]->Moment(GP,1); 
+};
+
 
 Real System::GetGrandPotential(void) { //Eqn 293
 if (debug) cout << "GetGrandPotential for system " << endl;
@@ -1242,13 +1286,14 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 
 	for (int i=0; i<n_mol; i++){
 		Real *phi=Mol[i]->phitot;
-		Real phibulk = Mol[i]->phibulk;
+		Real phibulk= Mol[i]->phibulk;
 		int N=Mol[i]->chainlength;
-		if (Mol[i]->IsTagged()) N--; //One segment of the tagged molecule is tagged and then removed from GP through KSAM
-		if (Mol[i]->IsClamped()) N=N-2;
+		if (Mol[i]->IsTagged()) {N--; phibulk=0;} //One segment of the tagged molecule is tagged and then removed from GP through KSAM
+		if (Mol[i]->IsClamped()) {N=N-2; phibulk =0;}
 		Cp(TEMP,phi,M); YisAplusC(TEMP,TEMP,-phibulk,M); Norm(TEMP,1.0/N,M); //GP has wrong sign. will be corrected at end of this routine;
 		Add(GP,TEMP,M);
 	}
+
 	Add(GP,alpha,M);
 	Real phibulkA;
 	Real phibulkB;
@@ -1257,7 +1302,7 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 	Real *phi_side;
 	int n_seg=In[0]->MonList.size();
 	int n_states=In[0]->StateList.size();
-
+ 
 	for (int j=0; j<n_seg; j++) if (!(Seg[j]->freedom=="tagged" || Seg[j]->freedom=="clamp" || Seg[j]->freedom=="frozen" )){
 		if (Seg[j]->ns<2){
 			phi=Seg[j]->phi;
@@ -1283,7 +1328,8 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 			}
 		}
 	}
-	for (int j=0; j<n_states; j++) {
+
+	for (int j=0; j<n_states; j++) { 
 		phi=Seg[Sta[j]->mon_nr]->phi_state+Sta[j]->state_nr*M;
 		phibulkA=Seg[Sta[j]->mon_nr]->state_phibulk[Sta[j]->state_nr];
 		for (int k=0; k<n_seg; k++) if (!(Seg[k]->freedom=="frozen" || Seg[k]->freedom=="clamp" || Seg[k]->freedom=="tagged")) {
@@ -1332,6 +1378,7 @@ if (charged) {
 	return  Lat[0]->WeightedSum(GP);
 
 }
+
 
 bool System::CreateMu() {
 if (debug) cout << "CreateMu for system " << endl;

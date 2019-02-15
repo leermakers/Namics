@@ -11,6 +11,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("n");
 	KEYS.push_back("save_memory");
 	KEYS.push_back("restricted_range");
+	KEYS.push_back("equate_phi_to_solvent_at");
 }
 
 Molecule::~Molecule() {
@@ -21,7 +22,6 @@ void Molecule :: DeAllocateMemory(){
 if (debug) cout <<"Destructor for Mol " + name << endl;
 	if (H_phi!=NULL) free(H_phi);
 	free(H_phitot);
-	//free(H_u);
 	if (freedom=="clamped") {
 		free(H_Bx);
 		free(H_By);
@@ -56,8 +56,6 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 		cudaFree(rho);
 		cudaFree(phi);
 	} else {
-		//cudaFree(u);
-		//cudaFree(G1);
 		cudaFree(Gg_f);
 		cudaFree(Gg_b);
 		cudaFree(phi);
@@ -69,7 +67,6 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 		free(rho);
 		free(g1);
 	}
-	//free(G1);
 	free(UNITY);
 	free(Gg_f);
 	free(Gg_b);
@@ -198,12 +195,10 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Zero(Gg_b,2*M);
 		phi=H_phi;
 		rho=phi;
-		if (save_memory) Gs=(Real*) malloc(2*M*sizeof(Real));
+		if (save_memory) {Gs=(Real*) malloc(2*M*sizeof(Real)); Zero(Gs,2*M);}
 	}
-	//u = H_u;
-	//G1 = (Real*)malloc(M*MolMonList.size()*sizeof(Real));
 	phitot = H_phitot;
-	UNITY = (Real*) malloc(M*sizeof(Real));
+	UNITY = (Real*) malloc(M*sizeof(Real)); Zero(UNITY,M);
 #endif
 
 	if (save_memory) Zero(Gs,2*M);
@@ -256,6 +251,7 @@ int M=Lat[0]->M;
 	for (int i=0; i<length_al; i++) Al[i]->PrepareForCalculations();
 	bool success=true;
 	Zero(phitot,M);
+	
 	//int length = MolMonList.size();
 	//int i=0;
 	//while (i<length) {
@@ -290,12 +286,20 @@ int M=Lat[0]->M;
 		n = n_box;
 		theta=n_box*chainlength;
 	}
+		
+	
 	return success;
 }
 
 bool Molecule::CheckInput(int start_) {
 if (debug) cout <<"Molecule:: CheckInput" << endl;
+beta=0; 
+interface_pinned=false; 
 start=start_;
+phibulk=0;
+n=0; 
+theta=0;
+norm=0;
 var_al_nr=-1;
 if (debug) cout <<"CheckInput for Mol " + name << endl;
 	bool success=true;
@@ -359,9 +363,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 					if (IsClamped()) {success=false; cout <<"Mol '" + name + "' is 'clamped' and therefore this molecule can not be the neutralizer" << endl;}
 				}
 				if (freedom == "free") {
-					if (GetValue("theta").size()>0 || GetValue("n").size() > 0) {
-						cout << "In mol " + name + ", the setting of 'freedom = free', can not not be combined with 'theta' or 'n': use 'phibulk' instead." << endl; success=false;
-					} else {
+					//if (GetValue("theta").size()>0 || GetValue("n").size() > 0) {
+					//	cout << "In mol " + name + ", the setting of 'freedom = free', can not not be combined with 'theta' or 'n': use 'phibulk' instead." << endl; success=false;
+					//} else {
 						if (GetValue("phibulk").size() ==0) {
 							cout <<"In mol " + name + ", the setting 'freedom = free' should be combined with a value for 'phibulk'. "<<endl; success=false;
 						} else {
@@ -371,12 +375,12 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 								cout << "In mol " + name + ", the value of 'phibulk' is out of range 0 .. 1." << endl; success=false;
 							}
 						}
-					}
+					//}
 				}
 				if (freedom == "restricted" || freedom=="range_restricted") {
-					if (GetValue("phibulk").size()>0) {
-						cout << "In mol " + name + ", the setting of 'freedom = restricted' or 'freedom = range_restricted', can not not be combined with 'phibulk'  use 'theta' or 'n'  instead." << endl; success=false;
-					} else {
+					//if (GetValue("phibulk").size()>0) {
+					//	cout << "In mol " + name + ", the setting of 'freedom = restricted' or 'freedom = range_restricted', can not not be combined with 'phibulk'  use 'theta' or 'n'  instead." << endl; success=false;
+					//} else {
 						if (GetValue("theta").size() ==0 && GetValue("n").size()==0) {
 							cout <<"In mol " + name + ", the setting 'freedom = restricted' or 'freedom = range_restricted',should be combined with a value for 'theta' or 'n'; do not use both settings! "<<endl; success=false;
 						} else {
@@ -392,7 +396,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 								}
 							}
 						}
-					}
+					//}
 				}
 				if (freedom =="range_restricted" ) {
 					if (GetValue("restricted_range").size() ==0) {
@@ -422,6 +426,16 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			}
 		}
 	}
+	if (GetValue("equate_phi_to_solvent_at").size() > 0) {
+		if (start<2) {success=false; cout <<"'equate_phi_to_solvent_at' can not be set as initial problem. "<< endl; }
+		if (freedom!="free") {success=false; cout <<"'equate_phi_to_solvent_at' should be combined with freedom 'free' "<< endl; }
+		int grads=Lat[0]->gradients; 
+		if (grads !=1) {success=false; cout <<"'equate_phi_to_solvent_at' can only work in 1-gradient systems (yet). "<< endl;} 
+		int M=(Lat[0]->M-2*Lat[0]->fjc)/(2*Lat[0]->fjc); 
+		beta=In[0]->Get_int(GetValue("equate_phi_to_solvent_at"),M);
+		if (beta<1 || beta>2*M) {success=false; cout <<"'equate_phi_to_solvent_at' should contain integer in range 1 .. " << 2*M  << endl; }
+		beta = beta*Lat[0]->fjc + Lat[0]->fjc-1;
+	}	
 	return success;
 }
 
@@ -478,6 +492,18 @@ if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 				cout <<"In var: searching for theta to equate to solvent can only be done for a molecule with 'freedom' restricted" << endl;
 			}
 		}
+		if (Var_target_=="balance_membrane") {
+			Var_search_value=4; Var_start_search_value=theta;
+			if (freedom=="solvent") {
+				cout <<"in var: searching for theta to balance membrane can not be done for a molecule with 'freedom' solvent " << endl;
+				success=false;
+			}
+			if (freedom!="restricted") {
+				success=false;
+				cout <<"In var: searching for theta to balance membrane can only be done for a molecule with 'freedom' restricted" << endl;
+			}
+		}		
+
 		if (Var_search_value == -1) {
 			cout <<"In var: searching value for molecule was not recognized. Choose from {theta, n, phibulk, equate_to_solvent}. " << endl;
 			return false;
@@ -608,6 +634,8 @@ if (debug) cout <<"Molecule:: ResetInitValue" << endl;
 			break;
 		case 3: theta=Var_start_search_value;
 			cout <<"mol : " + name + " : theta " << theta << endl;
+		case 4: theta=Var_start_search_value;
+			cout <<"mol : " + name + " : theta " << theta << endl;
 		default:
 			break;
 	}
@@ -694,8 +722,9 @@ if (debug) cout <<"Molecule:: GetError" << endl;
 			break;
 	}
 
-	if (Var_search_value==3) {
+	if (Var_search_value==3||Var_search_value==4) {
 		Error=theta;
+		cout<<"Get Error in mol " + name + "unexpectedly called. Shouldn't sys[0]->GetError be called? Returning the value for theta " << endl; 
 	}
 	return Error;
 }
@@ -716,6 +745,9 @@ if (debug) cout <<"Molecule:: GetValue" << endl;
 		case 3:
 			X=theta;
 			break;
+		case 4:
+			X=theta;
+			break;
 		default:
 			cout <<"program error in Molecule::GetValue" << endl;
 	}
@@ -734,6 +766,9 @@ if (debug) cout <<"Molecule:: PutValue" << endl;
 			phibulk=X;
 			break;
 		case 3:
+			theta=X;
+			break;
+		case 4:
 			theta=X;
 			break;
 		default:
@@ -1492,7 +1527,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
-	if (theta==0) theta=phibulk/chainlength*GN;
+	if (theta==0) theta = Lat[0]->WeightedSum(phitot);
 	push("theta",theta);
 	Real thetaexc=theta-phibulk*Lat[0]->Accesible_volume;
 	push("theta_exc",thetaexc);
@@ -1623,6 +1658,11 @@ bool Molecule::ComputePhi(){
 if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	bool success=true;
 	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
+	if (interface_pinned) {
+		int molmonlistlength=MolMonList.size();
+		for (int i=0; i<molmonlistlength; i++) Seg[MolMonList[i]]->G1[beta] *=Gbeta; 
+	}	
+
 	switch (MolType) {
 		case monomer:
 			success=ComputePhiMon();
@@ -1645,6 +1685,16 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 			cout << "Programming error " << endl;
 			break;
 	}
+	if (interface_pinned) {
+		int M=Lat[0]->M;
+		int molmonlistlength=MolMonList.size();
+		for (int i=0; i<molmonlistlength; i++) {
+			phi[i*M+beta] /=Gbeta;  
+			Seg[MolMonList[i]]->G1[beta] /=Gbeta; 
+		}
+	}
+
+
 	return success;
 }
 
@@ -1657,6 +1707,7 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	//Lat[0]->remove_bounds(phi);
 	GN=Lat[0]->WeightedSum(phi);
 	if (compute_phi_alias) {
+
 		int length = MolAlList.size();
 		for (int i=0; i<length; i++) {
 			if (Al[i]->frag[0]==1) {

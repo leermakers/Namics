@@ -19,6 +19,7 @@
 
 #include <iomanip>
 using namespace std;
+//these are our options.
 typedef double Real;
 
 #ifndef SMTHxBREAK

@@ -8,20 +8,6 @@
 //cublasStatus_t stat=cublasCreate(&handle);
 const int block_size = 256;
 
-
-__device__ void atomicAdd(Real* address, Real val, short dummy)
-{
-    unsigned long long int* address_as_ull =
-                             (unsigned long long int*)address;
-    unsigned long long int old = *address_as_ull, assumed;
-    do {
-        assumed = old;
-	old = atomicCAS(address_as_ull, assumed,
-                        __double_as_longlong(val +
-                               __longlong_as_double(assumed)));
-    } while (assumed != old);
-}
-
 __global__ void flux(Real* flux, Real* L, Real* mu, int D, int jump, int M)
 {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -70,7 +56,7 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 			if (Bz[p]+k > MZm1)  kk=(Bz[p]+k-MZ); else kk=(Bz[p]+k);
 			//__syncthreads(); //will not work when two boxes are idential....
 			//phi[pos_r+ii+jj+kk]+=rho[pM+jx*i+jy*j+k]*Inv_GNp;
-			atomicAdd(&phi[pos_r+ii+jj+kk], rho[pM]/GN[p], dummy);
+			atomicAdd(&phi[pos_r+ii+jj+kk], rho[pM]/GN[p]);
 			pM+=M;
 		}
 	}
@@ -101,11 +87,7 @@ __global__ void dot(Real *a, Real *b, Real *dot_res, int M)
     }
     __syncthreads();
     if (cacheIndex==0) {
-		#ifdef PAR_MESODYN
-        Real result=atomicAdd_system(dot_res,cache[0]);
-		#else
-		atomicAdd(dot_res,cache[0], dummy);
-		#endif
+        Real result=atomicAdd(dot_res,cache[0]);
     }
 }
 
@@ -132,11 +114,7 @@ __global__ void sum(Real *g_idata, Real *g_odata, int M) {
     }
     __syncthreads();
     if (tid==0) {
-		#ifdef PAR_MESODYN
-        Real result=atomicAdd_system(g_odata,sdata[0]);
-		#else
-		atomicAdd(g_odata,sdata[0], dummy);
-		#endif
+        Real result=atomicAdd(g_odata,sdata[0]);
     }
 }
 

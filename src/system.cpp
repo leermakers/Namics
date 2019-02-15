@@ -1150,9 +1150,16 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 	for (int i=0; i<n_mol; i++){
 		if (Mol[i]->freedom =="clamped") {
 			int n_box=Mol[i]->n_box;
+			#ifdef CUDA
+			Real* hgn;
+			TransferDataToHost(hgn, Mol[i]->gn, n_box);
 			for (int p=0; p<n_box; p++) {
-				FreeEnergy-=log(Mol[i]->gn[p]);
+				FreeEnergy-=log(hgn[p]);
 			}
+			#else
+			for (int p=0; p<n_box; p++) 
+				FreeEnergy-=log(Mol[i]->gn[p]);
+			#endif
 		} else {
 			Real n=Mol[i]->n;
 			Real GN=Mol[i]->GN;
@@ -1357,9 +1364,16 @@ if (debug) cout << "CreateMu for system " << endl;
 			n=Mol[i]->n_box;
 			int n_box = Mol[i]->n_box;
 			GN=0;
+			#ifdef CUDA
+			Real* hgn;
+			TransferDataToHost(hgn, Mol[i]->gn, n_box);
 			for (int p=0; p<n_box; p++) {
-				GN+=log(Mol[i]->gn[p]);
+				GN+=log(hgn[p]);
 			}
+			#else
+			for (int p=0; p<n_box; p++) 
+				GN+=log(Mol[i]->gn[p]);
+			#endif
 			Mu= -GN/n +1;
 		} else {
 			n=Mol[i]->n;

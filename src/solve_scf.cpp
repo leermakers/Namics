@@ -61,15 +61,14 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	if (Sys[0]->charged) iv += M;
 	if (SCF_method=="Picard") iv += M;
 #ifdef CUDA
-	xx  = (Real*)AllOnDev(iv);
-	x0  = (Real*)AllOnDev(iv);
-	g   = (Real*)AllOnDev(iv);
-	xR  = (Real*)AllOnDev(m*iv);
-	x_x0= (Real*)AllOnDev(m*iv);
+	xx  = (Real*)AllOnDev(iv); Zero(xx,iv);
+	x0  = (Real*)AllOnDev(iv); Zero(x0,iv);
+	g   = (Real*)AllOnDev(iv); Zero(g,iv);
+	xR  = (Real*)AllOnDev(m*iv); Zero(xR,m*iv);
+	x_x0= (Real*)AllOnDev(m*iv); Zero(x_x0,m*iv);
 #else
-	xx=(Real*) malloc(iv*sizeof(Real));
+	xx=(Real*) malloc(iv*sizeof(Real)); Zero(xx,iv);
 #endif
-	Zero(xx,iv);
 	Sys[0]->AllocateMemory();
 }
 

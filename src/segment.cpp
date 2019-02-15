@@ -306,7 +306,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
 				}
 			}
@@ -315,7 +315,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
@@ -335,7 +335,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),name,s);
 				}
 			}
@@ -344,7 +344,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
@@ -364,7 +364,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),name,s);
 				}
 			}
@@ -373,13 +373,13 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 			 	if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 			 		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
 		}
 		if (freedom!="free") {
-			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int)); Zero(H_MASK,Lat[0]->M);
+			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int)); std::fill(H_MASK, H_MASK+Lat[0]->M,0);
 			if (freedom=="clamp") {
 				int JX=Lat[0]->JX;
 				int JY=Lat[0]->JY;

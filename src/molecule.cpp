@@ -218,8 +218,8 @@ int m=0;
 if (freedom=="clamped") m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
 int M=Lat[0]->M;
 	if (freedom=="clamped") {
-		Zero(H_mask1,n_box*m);
-		Zero(H_mask2,n_box*m);
+		std::fill(H_mask1,H_mask1+n_box*m,0);
+		std::fill(H_mask2,H_mask2+n_box*m,0);
 		int jx=Lat[0]->jx[Seg[mon_nr[0]]->clamp_nr];
 		int jy=Lat[0]->jy[Seg[mon_nr[0]]->clamp_nr];
 		int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
@@ -283,7 +283,7 @@ int M=Lat[0]->M;
 		int pathlength_even;
 		for (int i=0; i<n_box; i++) {
 			pathlength_even=0;
-			pathlength_even=(Px2[i]-Px1[i]+Py2[i]-Py1[i]+Pz2[i]-Pz1[i])%2;
+			pathlength_even=(H_Px2[i]-H_Px1[i]+H_Py2[i]-H_Py1[i]+H_Pz2[i]-H_Pz1[i])%2;
 			if (chainlength_even == pathlength_even)
 			cout <<" Warning, for chain part " << i << " the paths between clamps is not commensurate with the length of the chain fragment. Consider moving one of the calmp point by one (more) site!" << endl;
 		}

@@ -22,7 +22,7 @@ OBJEXT      := o
 
 #Flags, Libraries and Includes
 CFLAGS      := -Wall -Ofast -g -std=c++14 -march=native
-LIB         := -lm -lpthread -lgomp
+LIB         := -lm -lpthread
 INC         := -I/usr/local/cuda-10.0/include -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
@@ -41,13 +41,11 @@ endif
 #---------------------------------------------------------------------------------
 
 SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-ifdef PAR_MESODYN
-OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/boundary_conditions.o)
-else
-ifdef CUDA
-OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o)
-else
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)))
+ifdef CUDA
+OBJECTS     += $(BUILDDIR)/tools.o
+ifdef PAR_MESODYN
+OBJECTS     += $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/boundary_conditions.o
 endif
 endif
 

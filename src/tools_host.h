@@ -258,7 +258,7 @@ void UpdateAlpha(T *Y, T *X, T C, int M)    {
 
 template<typename T>
 void Picard(T *Y, T *X, T C, int M)    {
-	float one = 1.0f;
+	Real one = 1.0f;
 	std::transform(X, X+M, Y, Y, C * std::placeholders::_2 + (1.0f - C) * std::placeholders::_1) ;
 	//for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
 }

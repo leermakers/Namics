@@ -79,13 +79,13 @@ SFNewton::~SFNewton() {
 }
 
 void SFNewton::residuals(Real*,Real*){}
-void SFNewton::inneriteration(Real*,Real*,float*,Real,Real&,Real,int){} //x g accuracy nvar
+void SFNewton::inneriteration(Real*,Real*,Real*,Real,Real&,Real,int){} //x g accuracy nvar
 bool SFNewton::getnewtondirection() {return newtondirection;}
 int SFNewton::getiterations() {return iterations;}
 bool SFNewton::ispseudohessian() {return pseudohessian;}
 
 
-void SFNewton::multiply(Real *v,Real alpha, float *h, Real *w, int nvar) { //done
+void SFNewton::multiply(Real *v,Real alpha, Real *h, Real *w, int nvar) { //done
 if(debug) cout <<"multiply in Newton" << endl;
 	int i=0,i1=0,j=0;
 	Real sum=0;
@@ -114,7 +114,7 @@ if(debug) cout <<"norm2 in Newton" << endl;
 	return sqrt(sum);
 }
 
-int SFNewton::signdeterminant(float*h,int nvar) { //dome
+int SFNewton::signdeterminant(Real*h,int nvar) { //dome
 if(debug) cout <<"signdeterminant in Newton" << endl;
 	int sign=1;
 	for (int i=0; i<nvar; i++) {
@@ -125,7 +125,7 @@ if(debug) cout <<"signdeterminant in Newton" << endl;
 	return sign;
 }
 
-void SFNewton::updateneg(float *l,Real *w, int nvar, Real alpha) { //done
+void SFNewton::updateneg(Real *l,Real *w, int nvar, Real alpha) { //done
 if(debug) cout <<"updateneg in Newton" << endl;
 	int i=0,i1=0,j=0;
 	Real dmin=0,sum=0,b=0,d=0,p=0,lji=0,t=0;
@@ -157,11 +157,11 @@ if(debug) cout <<"updateneg in Newton" << endl;
 	}
 }
 
-void SFNewton::decompos(float *h, int nvar, int &ntr) { //done
+void SFNewton::decompos(Real *h, int nvar, int &ntr) { //done
 if(debug) cout <<"decompos in Newton" << endl;
 	int i,j,k;//itr,ntr;
 	Real sum,lsum,usum,phi,phitr,c,l;
-	float *ha,*hai,*haj;
+	Real *ha,*hai,*haj;
 	ha = &h[-1];
 	phitr = FLT_MAX;
 	ntr = 0;
@@ -199,12 +199,12 @@ if(debug) cout <<"decompos in Newton" << endl;
 	}
 }
 
-void SFNewton::updatpos(float *l, Real *w, Real *v, int nvar, Real alpha) { //done
+void SFNewton::updatpos(Real *l, Real *w, Real *v, int nvar, Real alpha) { //done
 if(debug) cout <<"updatepos in Newton" << endl;
 	int i,j;
 	Real b,c,d;
 	Real vai,waj,vaj;
-	float *lai,*laj;
+	Real *lai,*laj;
 	Real * wa = &w[-1];
 	Real * va = &v[-1];
 	i = 0;
@@ -233,12 +233,12 @@ if(debug) cout <<"updatepos in Newton" << endl;
 	}
 }
 
-void SFNewton::gausa(float *l, Real *dup, Real *g, int nvar) {//done
+void SFNewton::gausa(Real *l, Real *dup, Real *g, int nvar) {//done
 if(debug) cout <<"gausa in Newton" << endl;
 	int i,j;
 	Real*dupa,sum;
 	Real *ga;
-	float *lai;
+	Real *lai;
 
 	dupa = &dup[-1];
 	ga = &g[-1];
@@ -255,11 +255,11 @@ if(debug) cout <<"gausa in Newton" << endl;
 	}
 }
 
-void SFNewton::gausb(float *du, Real *p, int nvar) { //done
+void SFNewton::gausb(Real *du, Real *p, int nvar) { //done
 if(debug) cout <<"gausb in Newton " << endl;
 	int i,j;
 	Real *pa,sum;
-	float *duai;
+	Real *duai;
 	pa = &p[-1];
 	i = nvar+1;
 	while (i-- > 1) {
@@ -303,7 +303,7 @@ if(debug) cout <<"newfunction in Newton " << endl;
 	return pow(norm2(g,nvar),2);
 }
 
-void SFNewton::direction(float *h, Real *p, Real *g, Real *g0, Real *x, int nvar, Real alpha, Real accuracy,bool filter){//done
+void SFNewton::direction(Real *h, Real *p, Real *g, Real *g0, Real *x, int nvar, Real alpha, Real accuracy,bool filter){//done
 if(debug) cout <<"direction in Newton " << endl;
 
 	newtondirection = true;
@@ -323,23 +323,23 @@ if(debug) cout <<"direction in Newton " << endl;
 	}
 }
 
-void SFNewton::startderivatives(float *h, Real *g, Real *x, int nvar){ //done
+void SFNewton::startderivatives(Real *h, Real *g, Real *x, int nvar){ //done
 if(debug) cout <<"startderivatives in Newton" << endl;
-	float diagonal = 1+norm2(g,nvar);
+	Real diagonal = 1+norm2(g,nvar);
 	H_Zero(h,nvar*nvar);
 	for (int i=0; i<nvar; i++) {
 		h[i+nvar*i] = diagonal;
 	}
 }
 
-void SFNewton::resethessian(float *h,Real *g,Real *x,int nvar){ //done
+void SFNewton::resethessian(Real *h,Real *g,Real *x,int nvar){ //done
 if(debug) cout <<"resethessian in Newton" << endl;
 	trouble = 0;
 	startderivatives(h,g,x,nvar);
 	resetiteration=iterations;
 }
 
-void SFNewton::newhessian(float *h, Real *g, Real *g0, Real *x, Real *p, int nvar, Real accuracy,Real ALPHA,bool filter) {//done
+void SFNewton::newhessian(Real *h, Real *g, Real *g0, Real *x, Real *p, int nvar, Real accuracy,Real ALPHA,bool filter) {//done
 if(debug) cout <<"newhessian in Newton" << endl;
 
 	Real dmin=0,sum=0,theta=0,php=0,dg=0,gg=0,g2=0,py=0,y2=0;
@@ -411,7 +411,7 @@ if(debug) cout <<"newhessian in Newton" << endl;
 	}
 }
 
-void SFNewton::numhessian(float* h,Real* g, Real* x, int nvar,bool filter) {//done
+void SFNewton::numhessian(Real* h,Real* g, Real* x, int nvar,bool filter) {//done
 if(debug) cout <<"numhessian in Newton" << endl;
 	Real dmax2=0,dmax3=0,di=0;
 	Real *g1;
@@ -437,7 +437,7 @@ if(debug) cout <<"numhessian in Newton" << endl;
 	COMPUTEG(x,g,nvar,filter);
 }
 
-void SFNewton::decomposition(float *h,int nvar, int &trouble){//done
+void SFNewton::decomposition(Real *h,int nvar, int &trouble){//done
 if(debug) cout <<"decomposition in Newton" << endl;
 	int ntr=0;
 	decompos(h,nvar,ntr);
@@ -483,7 +483,7 @@ if(debug) cout <<"decomposition in Newton" << endl;
 
 }
 
-void SFNewton::findhessian(float *h, Real *g, Real *x,int nvar,bool filter) {//done
+void SFNewton::findhessian(Real *h, Real *g, Real *x,int nvar,bool filter) {//done
 if(debug) cout <<"findhessian in Newton" << endl;
 	if ( !samehessian ) {
 		if ( iterations==0 ) resethessian(h,g,x,nvar);
@@ -495,7 +495,7 @@ if(debug) cout <<"findhessian in Newton" << endl;
 }
 
 
-Real SFNewton::newdirection(float *h, Real *p, Real *p0, Real *g, Real *g0, Real *x, int nvar, Real ALPHA, bool filter) {//done
+Real SFNewton::newdirection(Real *h, Real *p, Real *p0, Real *g, Real *g0, Real *x, int nvar, Real ALPHA, bool filter) {//done
 if(debug) cout <<"newdirection in Newton" << endl;
 
 	memcpy(p0, p, sizeof(*p0)*nvar);
@@ -650,7 +650,7 @@ if(debug) cout <<"iterate in SFNewton" << endl;
   Real* p0 = (Real*) AllOnDev(nvar);Zero(p0,nvar);
   Real* g0  = (Real*) AllOnDev(nvar);Zero(g0,nvar);
   mask = (int*) AllIntOnDev(nvar);
-  float* h = (float*) AllOnDev(nvar*nvar); H_Zero(h,nvar*nvar);
+  Real* h = (Real*) AllOnDev(nvar*nvar); Zero(h,nvar*nvar);
   #else
   Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
   Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
@@ -658,7 +658,7 @@ if(debug) cout <<"iterate in SFNewton" << endl;
   Real* p0 = (Real*) malloc(nvar*sizeof(Real)); Zero(p0,nvar);
   Real* g0  = (Real*) malloc(nvar*sizeof(Real)); Zero(g0,nvar);
   mask = (int*) malloc(nvar*sizeof(int));
-  float* h = (float*) malloc(nvar*nvar*sizeof(float)); Zero(h,nvar*nvar);
+  Real* h = (Real*) malloc(nvar*nvar*sizeof(Real)); Zero(h,nvar*nvar);
   #endif
 
 	if (nvar<1) {cout << "newton has nothing to do; returning the problem" << endl; return false;}
@@ -736,10 +736,10 @@ bool SFNewton::iterate_Picard(Real* x,int nvar, int iterationlimit, Real toleran
 if(debug) cout <<"Iterate_Picard in  SFNewton " << endl;
 
 #ifdef CUDA
-float* h  = (float*) malloc(sizeof(float));
+Real* h  = (Real*) malloc(sizeof(Real));
 Real* g = (Real*) AllOnDev(nvar);
 #else
-float* h  = (float*) malloc(sizeof(float));
+Real* h  = (Real*) malloc(sizeof(Real));
 Real* g = (Real*) malloc(nvar*sizeof(Real));
 #endif
 

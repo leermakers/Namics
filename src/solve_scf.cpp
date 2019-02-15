@@ -877,7 +877,7 @@ void Solve_scf::gradient_minus(Real* g, int k, int M, int i, int j) {
 		YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M);
 }
 
-void Solve_scf::inneriteration(Real* x, Real* g, float* h, Real accuracy, Real& deltamax, Real ALPHA, int nvar) {
+void Solve_scf::inneriteration(Real* x, Real* g, Real* h, Real accuracy, Real& deltamax, Real ALPHA, int nvar) {
 if(debug) cout <<"inneriteration in Solve_scf " << endl;
 	residual=accuracy; //hoping this is not creating problems with the use of residual...
 	switch(control) {

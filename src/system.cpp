@@ -62,7 +62,7 @@ void System::AllocateMemory() {
   //H_GN_A = new Real[n_box];
   //H_GN_B = new Real[n_box];
 
-  H_GrandPotentialDensity = (Real*)malloc(M * sizeof(Real)); Zero( H_GrandPotentialDensity,M);
+  H_GrandPotentialDensity = (Real*)malloc(M * sizeof(Real)); std::fill(H_GrandPotentialDensity,H_GrandPotentialDensity+M,0);
 
   H_FreeEnergyDensity = (Real*)malloc(M * sizeof(Real));
   H_alpha = (Real*)malloc(M * sizeof(Real));

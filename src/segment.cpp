@@ -196,7 +196,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				}
 			}
 		} else {
-			r=(int*) malloc(6*sizeof(int)); Zero(r,6);
+			r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
 		}
 
 		if (freedom =="clamp" ) {

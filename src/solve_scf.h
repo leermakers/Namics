@@ -125,7 +125,7 @@ public:
 	void gradient_minus(Real*, int, int, int, int);
 	function<void(Real*, int, int, int, int)> target_function;
 
-	void inneriteration(Real*,Real*,float*,Real,Real&,Real,int);
+	void inneriteration(Real*,Real*,Real*,Real,Real&,Real,int);
 
 };
 #endif

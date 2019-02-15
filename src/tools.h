@@ -88,6 +88,7 @@ bool GPU_present(int);
 int* AllIntOnDev(int);
 Real* AllOnDev(int);
 int* AllManagedIntOnDev(int);
+Real* AllManagedOnDev(int);
 Real* AllOnDev(int);
 void AddTimes(Real*, Real*, Real*, int);
 void Times(Real*, Real*, Real*, int);

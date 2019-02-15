@@ -615,8 +615,10 @@ int* AllIntOnDev(int N) {
 
 Real* AllOnDev(int N) {
   Real* X;
-	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(Real)*N))
-	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
+	cudaMalloc((void **) &X, sizeof(Real)*N);
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess)
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
 	return X;
 }
 
@@ -629,9 +631,10 @@ int* AllManagedIntOnDev(int N) {
 
 Real* AllManagedOnDev(int N) {
   Real* X;
-	if (cudaSuccess != cudaMallocManaged((void **) &X, sizeof(Real)*N))
-	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
-	return X;
+	cudaMallocManaged((void **) &X, sizeof(Real)*N);
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess)
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
 }
 
 void Dot(Real &result, Real *x,Real *y, int M)   {

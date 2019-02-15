@@ -8,6 +8,24 @@
 //cublasStatus_t stat=cublasCreate(&handle);
 const int block_size = 256;
 
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#else
+__device__ void atomicAdd(Real* address, Real val)
+{
+    unsigned long long int* address_as_ull =
+                             (unsigned long long int*)address;
+    unsigned long long int old = *address_as_ull, assumed;
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_ull, assumed,
+                        __double_as_longlong(val +
+                               __longlong_as_double(assumed)));
+    } while (assumed != old);
+}
+#endif
+
+
+
 __global__ void flux(Real* flux, Real* L, Real* mu, int D, int jump, int M)
 {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -87,7 +105,7 @@ __global__ void dot(Real *a, Real *b, Real *dot_res, int M)
     }
     __syncthreads();
     if (cacheIndex==0) {
-        Real result=atomicAdd(dot_res,cache[0]);
+        atomicAdd(dot_res,cache[0]);
     }
 }
 
@@ -114,7 +132,7 @@ __global__ void sum(Real *g_idata, Real *g_odata, int M) {
     }
     __syncthreads();
     if (tid==0) {
-        Real result=atomicAdd(g_odata,sdata[0]);
+        atomicAdd(g_odata,sdata[0]);
     }
 }
 

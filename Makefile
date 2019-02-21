@@ -31,7 +31,7 @@ ifdef CUDA
 	NVCCFLAGS  := -ccbin gcc-7 -arch=sm_61 -std=c++14 -DCUDA
 	ifdef PAR_MESODYN
 		CFLAGS += -DPAR_MESODYN
-		NVCCFLAGS += --expt-relaxed-constexpr -DPAR_MESODYN
+		NVCCFLAGS += --expt-relaxed-constexpr --expt-extended-lambda -DPAR_MESODYN
 	endif
 endif
 
@@ -45,7 +45,7 @@ OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)))
 ifdef CUDA
 OBJECTS     += $(BUILDDIR)/tools.o
 ifdef PAR_MESODYN
-OBJECTS     += $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/boundary_conditions.o
+OBJECTS     += $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/boundary_conditions.o $(BUILDDIR)/flux.o $(BUILDDIR)/component.o $(BUILDDIR)/gaussian_noise.o 
 endif
 endif
 
@@ -88,6 +88,9 @@ $(BUILDDIR)/tools.o:
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/mesodyn.o $(SRCDIR)/mesodyn.cu
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/neighborlist.o $(SRCDIR)/mesodyn/neighborlist.cu
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/boundary_conditions.o $(SRCDIR)/mesodyn/boundary_conditions.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/flux.o $(SRCDIR)/mesodyn/flux.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/component.o $(SRCDIR)/mesodyn/component.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/gaussian_noise.o $(SRCDIR)/mesodyn/gaussian_noise.cu
 
 else
 ifdef CUDA

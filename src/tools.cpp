@@ -1,6 +1,7 @@
 #include "tools.h"
 #include "namics.h"
 #include "stdio.h"
+#include <thrust/inner_product.h>
 #define MAX_BLOCK_SZ 512
 
 #ifdef CUDA
@@ -57,7 +58,6 @@ __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int 
 
 
 __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
-	short dummy = 0;
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
@@ -84,7 +84,6 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 
 __global__ void dot(Real *a, Real *b, Real *dot_res, int M)
 {
-	short dummy = 0;
     __shared__ Real cache[MAX_BLOCK_SZ]; //thread shared memory
     int global_tid=threadIdx.x + blockIdx.x * blockDim.x;
     Real temp = 0;
@@ -110,7 +109,6 @@ __global__ void dot(Real *a, Real *b, Real *dot_res, int M)
 }
 
 __global__ void sum(Real *g_idata, Real *g_odata, int M) {
-	short dummy = 0;
     __shared__ Real sdata[MAX_BLOCK_SZ]; //thread shared memory
 	int tid = threadIdx.x;
     int i=threadIdx.x + blockIdx.x * blockDim.x;
@@ -631,6 +629,7 @@ Real* AllManagedOnDev(int N) {
 	cudaError_t error = cudaPeekAtLastError();
 	if (error != cudaSuccess)
 		printf("CUDA error: %s\n", cudaGetErrorString(error));
+	return X;
 }
 
 void Dot(Real &result, Real *x,Real *y, int M)   {
@@ -690,15 +689,21 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 void Zero(Real* P, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	zero<<<n_blocks,block_size>>>(P,M);
+
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess) {
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		throw 1;
+	}
 }
 
 void Zero(int* P, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	zero<<<n_blocks,block_size>>>(P,M);
 }
 
 void Cp(Real *P,Real *A, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	cp<<<n_blocks,block_size>>>(P,A,M);
 }
 

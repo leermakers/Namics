@@ -101,7 +101,7 @@ class Homogeneous_system_initializer {
             assert(system->Lat.size() > 0);
         }
 
-        std::vector<Lattice_object<Real>> build_objects()
+        void build_objects()
         {
             std::vector< Molecule_density* > initializer(m_molecules.size());
             Real total_solute_mass{0};
@@ -127,8 +127,12 @@ class Homogeneous_system_initializer {
             for (Molecule_density* all_initializers : initializer)
                 for (auto all_densities : all_initializers->homogeneous(m_system_volume) )
                     m_densities.push_back(all_densities);
+        }
 
-            return m_densities;
+        void push_data_to_objects(std::vector<Lattice_object<Real>>& target) {
+            assert(target.size() == m_densities.size() && "Please resize your Lattice_object vector before passing!");
+            for (size_t i = 0 ; i < m_densities.size() ; ++i)
+                target[i] = m_densities[i];
         }
 };
 

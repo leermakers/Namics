@@ -5,6 +5,8 @@
 #include <thrust/iterator/permutation_iterator.h>
 #include "stl_typedef.h"
 
+/* Provides a CPU implementation of thrust's permutation iterator */
+
 template <class T>
 struct Value_index_pair
 {

@@ -23,9 +23,9 @@ std::map<Dimension,int> Neighborlist::process_configuration(Neighborlist_config&
       return offset;
 }
 
-/*void::Neighborlist::build() {
+//Clears all registered configurations!
+void::Neighborlist::build() {
   stl::host_vector<size_t> temp_mask = m_mask.m_data;
-
 
       for (Neighborlist_config config : m_configurations) {
 
@@ -47,41 +47,17 @@ std::map<Dimension,int> Neighborlist::process_configuration(Neighborlist_config&
       m_neighbors.insert(m_neighbors.end(), temp_neighbors.begin(), temp_neighbors.end());
 
       m_configurations.clear();
-
   
-}*/
+}
 
-//Clears all registered configurations!
-void Neighborlist::build() {
-
-      for (Neighborlist_config config : m_configurations) {
-
-        // No fluxes will ever be calculated going from the boundary size_to the system
-        std::map<Dimension,int> offset = process_configuration(config);
-
-        config.subsystem_loop([this, config, offset](size_t x, size_t y, size_t z) mutable {  
-          if ( m_mask(x, y, z) == 1) {
-            m_subject.push_back( m_mask.index(x,y,z) );
-
-            if ( m_mask(x + offset[Dimension::X], y + offset[Dimension::Y], z + offset[Dimension::Z]) == 1)
-              m_neighbors.push_back( m_mask.index(x + offset[Dimension::X], y + offset[Dimension::Y], z + offset[Dimension::Z]) );
-          }
-        });
-        
-      }
-
-      m_configurations.clear();
-
-    }
-
-    const stl::device_vector<size_t>& Neighborlist::get_subject() {
-      //m_subject = temp_subject;
+const stl::device_vector<size_t>& Neighborlist::get_subject() {
+//m_subject = temp_subject;
       
-        return m_subject;
-    }
+  return m_subject;
+}
 
-    const stl::device_vector<size_t>& Neighborlist::get_neighbors() {
+const stl::device_vector<size_t>& Neighborlist::get_neighbors() {
 
-      //m_neighbors = temp_neighbors;
-        return m_neighbors;
-    }
+  //m_neighbors = temp_neighbors;
+  return m_neighbors;
+}

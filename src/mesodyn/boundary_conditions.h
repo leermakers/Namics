@@ -1,6 +1,7 @@
 #ifndef BOUNDARY_CONDITIONS_H
 #define BOUNDARY_CONDITIONS_H
 
+#include "factory.h"
 #include "lattice_accessor.h"
 #include "value_index_pair.h"
 #include "neighborlist.h"
@@ -12,21 +13,28 @@
 
 #include "stl_typedef.h"
 
+class Boundary1D;
+class Boundary2D;
+class Boundary3D;
+
 enum class Boundary_type {
     MIRROR,
     PERIODIC,
 };
 
-using Boundary_map = std::map<Dimension, Boundary_type>;
+typedef std::map<Dimension, Boundary_type> Boundary_map;
+
+typedef Factory<Boundary1D, Dimensionality, Lattice_object<size_t>&, Boundary_map> Boundary_factory;
+
 
 class Boundary1D {
   public:
-    Boundary1D(Lattice_object<size_t>& mask, Boundary_map boundary_type );
+    Boundary1D( Lattice_object<size_t>& mask, Boundary_map boundary_type );
     virtual ~Boundary1D() { }
     void update_boundaries(stl::device_vector<Real>&);
     void zero_boundaries(stl::device_vector<Real>&);
 
-  protected:    
+  protected:
 
     Lattice_object<size_t>& m_mask;
     Neighborlist m_neighborlist;
@@ -42,6 +50,7 @@ class Boundary2D : public Boundary1D {
     Boundary2D(Lattice_object<size_t>& mask, Boundary_map boundary_type_);
     virtual ~Boundary2D() { }
 
+
   private:
     Boundary_type Y_BOUNDARY_TYPE;
     std::map<Boundary_type, size_t> OFFSET;
@@ -53,6 +62,7 @@ class Boundary3D : public Boundary2D {
   public:
     Boundary3D(Lattice_object<size_t>& mask, Boundary_map boundary_type_);
     ~Boundary3D() { }
+
 
   private:
     Boundary_type Z_BOUNDARY_TYPE;

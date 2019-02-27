@@ -164,7 +164,7 @@ class IReader {
             std::vector<std::string> tokens;
             string token;
 
-            //Read lines as tokens (tab delimited)
+            //Read lines as tokens
             while (getline(stream, token, delimiter))
                 tokens.push_back(token);
 

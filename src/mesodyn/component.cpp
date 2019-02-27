@@ -2,7 +2,7 @@
 
 Component::Component(Lattice* Lat, shared_ptr<Boundary1D> boundary, Lattice_object<Real> rho)
 //TODO: fix alpha size.
-    : rho(rho), alpha(Lat), Lat{Lat}, boundary(boundary) {
+    : IComponent(Lat, rho), boundary(boundary) {
   update_boundaries();
 }
 

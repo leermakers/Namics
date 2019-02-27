@@ -4,38 +4,13 @@
 #include "mesodyn/neighborlist.h"
 #include <iterator>
 
-//TODO: noise: visitor pattern
-
 /* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018-2019 */
 /* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
 
 Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : 
       Lattice_accessor(Lat_[0]),
-
-      //Namics classes
-      name{name_},
-      In{In_},
-      Lat{Lat_},
-      Mol{Mol_},
-      Seg{Seg_},
-      Sta{Sta_},
-      Rea{Rea_},
-      Sys{Sys_},
-      New{New_},
-
-      KEYS{"read_pro",
-           "read_vtk",
-           "diffusionconstant",
-           "delta_t",
-           "mean",
-           "stddev",
-           "seed",
-           "timesteps",
-           "timebetweensaves",
-           "cn_ratio"},
-
-      input_success { In[0]->CheckParameters("mesodyn", name, start, KEYS, PARAMETERS, VALUES) },
+      name{name_}, In{In_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sta{Sta_}, Rea{Rea_}, Sys{Sys_}, New{New_},
 
       //Const-correct way of initializing member variables from file, see template in header file.
       //Initialization syntax: initialize<Datatype>("option", default_value);
@@ -83,12 +58,7 @@ Mesodyn::~Mesodyn() {
     // We only use smart pointers here, they'll take care of deleting themselves when needed.
 }
 
-bool Mesodyn::CheckInput(const int start) {
-
-  input_success = In[0]->CheckParameters("mesodyn", name, start, KEYS, PARAMETERS, VALUES);
-
-  if (input_success) {
-
+bool Mesodyn::CheckInput() {
     string empty = "";
 
     if ( (read_filename = initialize<std::string>("read_pro",empty)) != empty)
@@ -100,9 +70,8 @@ bool Mesodyn::CheckInput(const int start) {
         }
         initialization_mode = INIT_FROMVTK;
     }
-  } 
 
-  return input_success;
+  return true;
 }
 
 /******** Flow control ********/
@@ -116,14 +85,14 @@ bool Mesodyn::mesodyn() {
   vector<Sanity_check*> checks;
 
   // Attach sanity checks
- // for (size_t i = 0 ; i < component_no; ++i) {
- //   checks.push_back(new Check_between_zero_and_one<Real>(&solver_component[i]->rho, i));
- //   checks.push_back(new Check_theta<Real>(&solver_component[i]->rho, solver_component[i]->theta(), i));
-  //}
+  for (size_t i = 0 ; i < component_no; ++i) {
+    checks.push_back(new Check_between_zero_and_one<Real>(&solver_component[i]->rho, i));
+    checks.push_back(new Check_theta<Real>(&solver_component[i]->rho, std::accumulate(solver_component[i]->rho.begin(), solver_component[i]->rho.end(), 0), i));
+  }
 
- // Check_index_unity<Real> check_rho(&solver_component[0]->rho);
- // for (size_t i = 1 ; i < component_no ; ++i)
- //   check_rho.register_checkable(&solver_component[i]->rho);
+  Check_index_unity<Real> check_rho(&solver_component[0]->rho);
+  for (size_t i = 1 ; i < component_no ; ++i)
+    check_rho.register_checkable(&solver_component[i]->rho);
 
   //Prepare IO
   set_filename();
@@ -140,19 +109,19 @@ bool Mesodyn::mesodyn() {
 
     gaussian->generate(system_size);
 
-    sanity_check();
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
-
   
     //Calculate and add noise flux
     for (size_t i = 0 ; i < flux.size() ; ++i)
       flux[i]->J = solver_flux[i]->J;
 
-    cout << "Order parameter: " << calculate_order_parameter() << endl;
-
     for (size_t i = 0 ; i < component.size() ; ++i)
       component[i]->rho = solver_component[i]->rho;
+
+    cout << "Order parameter: " << calculate_order_parameter() << endl;
+
+    sanity_check();
 
     if (t % timebetweensaves == 0) {
       write_output(t);
@@ -218,9 +187,8 @@ void Mesodyn::sanity_check() {
 }
 
 void Mesodyn::load_alpha(Real* alpha, const size_t i) {
-    if (i < component_no) {
-      solver_component[i]->alpha.load_array(alpha,system_size);
-    }
+    if (i < component_no)
+     dynamic_pointer_cast<Component>( solver_component[i] )->alpha.load_array(alpha,system_size);
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
@@ -230,7 +198,7 @@ Real* Mesodyn::solve_crank_nicolson() {
   }
 
   for (auto& all_fluxes : solver_flux)
-    all_fluxes->langevin_flux();
+    all_fluxes->flux();
 
   for (auto& kv : combinations) {
     solver_component[kv.second.first]->update_density(flux[kv.first]->J,solver_flux[kv.first]->J, cn_ratio);
@@ -354,7 +322,7 @@ int Mesodyn::initial_conditions() {
   return 0;
 }
 
-int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component_) {
+int Mesodyn::norm_theta(vector< shared_ptr<IComponent> >& component_) {
 
   assert(Mol[ Sys[0]->solvent ]->MolMonList.size() == 1 and "Norming solvents with mutliple monomers is not supported! Please write your own script");
   stl::device_vector<Real> residuals(system_size,0);
@@ -376,26 +344,8 @@ int Mesodyn::norm_theta(vector< shared_ptr<Component> >& component_) {
 /******* Output generation *******/
 
 void Mesodyn::set_filename() {
-  /* Open filestream and set filename to "mesodyn-datetime.csv" */
-  string output_folder = "output/";
-  string bin_folder = "bin";
-
-  // Find path to Namics executable
-  char result[PATH_MAX];
-  ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
-  string executable_path = string(result, (count > 0) ? count : 0);
-
-  // Find the last string before the executable
-  size_t found = executable_path.find_last_of("/\\");
-
-  // Set the output folder to be one level up from the binary folder, plus the specified output folder
-  output_folder = executable_path.substr(0, found - bin_folder.size()) + output_folder;
-
-  filename << output_folder << "mesodyn-";
-
-  time_t rawtime;
-  time(&rawtime);
-  filename << rawtime;
+  filename << In[0]->output_info.getOutputPath() << "mesodyn-";
+  filename << time(time_t());
 }
 
 int Mesodyn::write_output(int t) {
@@ -440,3 +390,18 @@ int Mesodyn::write_output(int t) {
 
   return 0;
 }
+
+vector<string> Mesodyn::PARAMETERS;
+vector<string> Mesodyn::VALUES;
+vector<string> Mesodyn::KEYS
+{   "read_pro",
+    "read_vtk",
+    "diffusionconstant",
+    "delta_t",
+    "mean",
+    "stddev",
+    "seed",
+    "timesteps",
+    "timebetweensaves",
+    "cn_ratio"
+};

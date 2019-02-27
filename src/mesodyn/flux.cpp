@@ -1,11 +1,11 @@
 #include "flux.h"
 
-Register_class<Flux1D, Flux1D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<Component>, shared_ptr<Component>, shared_ptr<Gaussian_noise>> flux_one_dimensions(one_D);
-Register_class<Flux1D, Flux2D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<Component>, shared_ptr<Component>, shared_ptr<Gaussian_noise>> flux_two_dimensions(two_D);
-Register_class<Flux1D, Flux3D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<Component>, shared_ptr<Component>, shared_ptr<Gaussian_noise>> flux_three_dimensions(three_D);
+Register_class<IFlux, Flux1D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_one_dimensions(one_D);
+Register_class<IFlux, Flux2D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_two_dimensions(two_D);
+Register_class<IFlux, Flux3D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_three_dimensions(three_D);
 
-Flux1D::Flux1D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<Component> A, shared_ptr<Component> B, shared_ptr<Gaussian_noise> gaussian)
-    : J_plus(Lat), J(Lat), A{A}, B{B}, L(Lat), mu(Lat), t_L(Lat), t_mu(Lat), D{D}, gaussian(gaussian)
+Flux1D::Flux1D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
+    : IFlux(Lat, A, B), J_plus(Lat), L(Lat), mu(Lat), t_L(Lat), t_mu(Lat), D{D}, gaussian(gaussian)
   {
   
   Neighborlist_config configuration {
@@ -20,7 +20,7 @@ Flux1D::Flux1D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_
   attach_neighborlists(x_neighborlist, Dimension::X);
 }
 
-Flux2D::Flux2D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<Component> A, shared_ptr<Component> B, shared_ptr<Gaussian_noise> gaussian)
+Flux2D::Flux2D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
     : Flux1D(Lat, D, mask, A, B, gaussian)
   {
 
@@ -36,7 +36,7 @@ Flux2D::Flux2D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_
   attach_neighborlists(y_neighborlist, Dimension::Y);
 }
 
-Flux3D::Flux3D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<Component> A, shared_ptr<Component> B, shared_ptr<Gaussian_noise> gaussian)
+Flux3D::Flux3D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
     : Flux2D(Lat, D, mask, A, B, gaussian)
   {
   
@@ -71,7 +71,7 @@ void Flux1D::attach_neighborlists(shared_ptr<Neighborlist> neighborlist, Dimensi
   t_mu.attach_neighborlist(neighborlist, dimension);
 }
 
-int Flux1D::langevin_flux() {
+void Flux1D::flux() {
 
   //Zero (with bounds checking) vector J before use
   stl::fill(J.begin(), J.end(), 0);
@@ -82,27 +82,21 @@ int Flux1D::langevin_flux() {
   }
 
   onsager_coefficient(A->rho, B->rho);
-  potential_difference(A->alpha, B->alpha);
+  potential_difference(dynamic_pointer_cast<Component>(A)->alpha,dynamic_pointer_cast<Component>(B)->alpha);
 
   langevin_flux(Dimension::X);
-
-  return 0;
 }
 
-int Flux2D::langevin_flux() {
-  Flux1D::langevin_flux();
+void Flux2D::flux() {
+  Flux1D::flux();
 
   Flux1D::langevin_flux(Dimension::Y);
-
-  return 0;
 }
 
-int Flux3D::langevin_flux() {
-  Flux2D::langevin_flux();
+void Flux3D::flux() {
+  Flux2D::flux();
 
   Flux1D::langevin_flux(Dimension::Z);
-
-  return 0;
 }
 
 int Flux1D::onsager_coefficient(Lattice_object<Real>& A, Lattice_object<Real>& B) {

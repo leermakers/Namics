@@ -4,7 +4,6 @@
 #include "lattice.h"
 #include "molecule.h"
 #include "namics.h"
-#include "mesodyn.h"
 #include "cleng/cleng.h"
 #include "teng.h"
 //#include "newton.h"
@@ -17,6 +16,7 @@
 #include "variate.h"
 #include "sfnewton.h"
 #include "solve_scf.h"
+#include "mesodyn.h"
 
 string version = "2.1.1.1.1.1.1";
 // meaning:
@@ -376,10 +376,14 @@ int main(int argc, char* argv[]) {
 			case MESODYN:
 				New[0]->mesodyn = true;
 				New[0]->AllocateMemory();
-      				New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
+      	New[0]->Guess(X, METHOD, MONLIST,STATELIST,CHARGED, MX, MY, MZ,fjc_old);
+				if (!In[0]->CheckParameters("mesodyn", In[0]->MesodynList[0], start, Mesodyn::KEYS, Mesodyn::PARAMETERS, Mesodyn::VALUES)) {
+					cout << "Error loading mesodyn parameters" << endl;
+					exit(0);
+				}
 				if (debug) cout << "Creating mesodyn" << endl;
         			Mes.push_back(new Mesodyn(start, In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->MesodynList[0]));
-        			if (!Mes[0]->CheckInput(start)) {
+        			if (!Mes[0]->CheckInput()) {
           				return 0;
         			}
               try {

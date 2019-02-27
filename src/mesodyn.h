@@ -1,7 +1,6 @@
 #ifndef MESODYNxH
 #define MESODYNxH
 #include "input.h"
-#include "namics.h"
 #include "solve_scf.h"
 #include "system.h"
 #include "output.h"
@@ -53,10 +52,6 @@ private:
   vector <Output*> Out;
   const string brand;
 
-  std::vector<string> KEYS;
-  std::vector<string> PARAMETERS;
-  std::vector<string> VALUES;
-
   bool input_success;
 
   /* Read from file */
@@ -94,15 +89,15 @@ private:
   void set_update_lists(size_t);
   std::map<size_t, std::pair<size_t, size_t> > combinations;
   Real boundaryless_volume;
-  std::map<shared_ptr<Component>, Real> theta;
+  std::map<shared_ptr<IComponent>, Real> theta;
 
   /* Helper class instances */
   shared_ptr<Gaussian_noise> gaussian;
   shared_ptr<Boundary1D> boundary;
-  vector< shared_ptr<Component> > component;
-  vector< shared_ptr<Component> > solver_component;
-  vector< shared_ptr<Flux1D> > flux;
-  vector< shared_ptr<Flux1D> > solver_flux;
+  vector< shared_ptr<IComponent> > component;
+  vector< shared_ptr<IComponent> > solver_component;
+  vector< shared_ptr<IFlux> > flux;
+  vector< shared_ptr<IFlux> > solver_flux;
 
   /* Mesodyn specific output */
   ostringstream filename;
@@ -118,13 +113,17 @@ public:
 
   bool mesodyn();
 
-  int norm_theta(vector< shared_ptr<Component> >&);
+  static std::vector<string> KEYS;
+  static std::vector<string> PARAMETERS;
+  static std::vector<string> VALUES;
+
+  int norm_theta(vector< shared_ptr<IComponent> >&);
   Real calculate_order_parameter();
 
   /* Inputs / output class interface functions */
 
   int write_output(int);
-  bool CheckInput(const int);
+  bool CheckInput();
   
 
   //Const-correct way of initializing member variables from file.
@@ -140,5 +139,7 @@ public:
       }
      return default_value;
   }
+
 };
+
 #endif

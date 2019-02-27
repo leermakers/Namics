@@ -60,11 +60,11 @@ class Checkable
           m_views[i]->check();
     }
 
-    T const* get_checkable_data() {
+    const T * get_checkable_data() {
         return m_checkable_data;
     }
 
-    T const* get_checkable_data() const {
+    const T * get_checkable_data() const {
         return m_checkable_data;
     }
 
@@ -80,7 +80,7 @@ class Checkable
     //Disable default constructor
     Checkable();
 
-    const T* m_checkable_data;
+    T* m_checkable_data;
     size_t m_size;
     std::vector<Sanity_check*> m_views;
 };
@@ -111,8 +111,6 @@ class Check_theta : public Sanity_check
         const T* data = m_checkable->get_checkable_data();
         #endif
         const size_t size = m_checkable->get_checkable_size();
-
-        cout << sum << endl;
         
         #ifdef PAR_MESODYN
         sum = thrust::reduce(data, data+size);
@@ -120,7 +118,7 @@ class Check_theta : public Sanity_check
         sum = std::accumulate(data, data+size, sum);
         #endif
         
-        if (sum != m_theta-0.1 || sum != m_theta+0.1) {
+        if (round(sum) < m_theta) {
             std::cerr << "Error! Theta for component " << m_component_index << " = "
                       << sum << " whereas " << m_theta << " was expected!" << std::endl;
         }
@@ -191,7 +189,7 @@ class Check_index_unity : public Sanity_check
           #ifdef PAR_MESODYN
           const thrust::device_ptr<const Real> data = thrust::device_pointer_cast(checkable_data->get_checkable_data());
           #else
-          T const* data = checkable_data->get_checkable_data();
+          const T* data = checkable_data->get_checkable_data();
           #endif
           stl::transform(data, data+size, sum.begin(), sum.begin(), stl::plus<T>());
         }

@@ -152,10 +152,11 @@ typename stl::device_vector<T>& operator=(stl::device_vector<OtherT>& rhs)
 {
   assert(rhs.size() == m_data.size());
   m_data = rhs;
+  this->set_checkable_data( m_data.data(), system_size );
   return m_data;
 }
 
- template <class OtherT>
+template <class OtherT>
 Lattice_object<T>& operator=(Lattice_object<OtherT>& copy)
 {
   assert(copy.size() == m_data.size());
@@ -163,6 +164,7 @@ Lattice_object<T>& operator=(Lattice_object<OtherT>& copy)
   m_neighborlist = copy.m_neighborlist;
   available_sites = copy.available_sites;
   available_neighbors = copy.available_neighbors;
+  this->set_checkable_data( m_data.data(), system_size );
   return *this;
 }
 

@@ -1560,7 +1560,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		s="profile;"+str; push(Al[i]->name+"-phi",s);
 	}
 	s="vector;0"; push("gn",s);
-#ifdef Cuda
+#ifdef CUDA
 int M = Lat[0]->M;
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
@@ -1703,20 +1703,14 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	int M=Lat[0]->M;
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
-	//Cp(phi,G1,M);
-	//Lat[0]->remove_bounds(phi);
 	GN=Lat[0]->WeightedSum(phi);
-	if (compute_phi_alias) {
-
-		int length = MolAlList.size();
-		for (int i=0; i<length; i++) {
-			if (Al[i]->frag[0]==1) {
-				Cp(Al[i]->phi,phi,M); Norm(Al[i]->phi,norm,M);
+	if (compute_phi_alias)
+		for (auto& alias : Al) //For every alias in the Al vector (same as Al[i])
+			if (alias->frag[0]==1) {
+				Cp(alias->phi,phi,M);
+				Norm(alias->phi,norm,M);
 			}
-		}
-	}
 	Times(phi,phi,Seg[mon_nr[0]]->G1,M);
-	//Times(phi,phi,G1,M);
 	return success;
 }
 

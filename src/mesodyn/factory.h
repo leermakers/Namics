@@ -6,14 +6,14 @@
 #include <map>
 
 template< class Base, typename Key_type, class... Args >
-class Factory
+class Factory_template
 {
 public:
 
    typedef std::shared_ptr<Base> (*Factory_function_type)(Args...);
 
-   Factory(const Factory&) = delete;
-   Factory &operator=(const Factory&) = delete;
+   Factory_template(const Factory_template&) = delete;
+   Factory_template &operator=(const Factory_template&) = delete;
 
    static void Register(const Key_type &key, Factory_function_type fn)
    {
@@ -29,17 +29,17 @@ public:
          return (iter->second)(args...);
    }
 
-   static Factory &Instance() { static Factory gf; return gf; }
+   static Factory_template &Instance() { static Factory_template gf; return gf; }
 
 private:
-   Factory() = default;
+   Factory_template() = default;
 
    typedef std::map<Key_type, Factory_function_type> Function_map;
    static Function_map function_list;
 };
 
 template< class Base, typename Key_type, class... Args >
-typename Factory<Base, Key_type, Args...>::Function_map Factory<Base, Key_type, Args...>::function_list;
+typename Factory_template<Base, Key_type, Args...>::Function_map Factory_template<Base, Key_type, Args...>::function_list;
 
 template <class Base, class Derived, typename Key_type, class... Args>
 class Register_class
@@ -47,7 +47,7 @@ class Register_class
 public:
    Register_class(const Key_type &key)
    {
-      Factory<Base, Key_type, Args...>::Register(key, factory_function);
+      Factory_template<Base, Key_type, Args...>::Register(key, factory_function);
    }
 
    static std::shared_ptr<Base> factory_function(Args... args)

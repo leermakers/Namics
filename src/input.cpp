@@ -300,6 +300,7 @@ bool Input:: InSet(std::vector<std::string> &Standard, int &pos, string keyword)
 	}
 	return success;
 }
+
 bool Input:: InSet(vector<int> &Standard, int keyword){
 	bool success=false;
 	int S_length = Standard.size();
@@ -321,6 +322,7 @@ bool Input:: InSet(vector<int> &Standard, int &pos, int keyword){
 	return success;
 }
 
+//In[0]->CheckParameters("mesodyn", name, start, KEYS, PARAMETERS, VALUES)
 bool Input:: CheckParameters(string keyword, string name,int start, std::vector<std::string> &Standard, std::vector<std::string> &Input,std::vector<std::string> &Input_values) {
 	bool success=true;
 	bool prop_found;
@@ -389,21 +391,18 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::vector<std::string> &Out_name, std::vector<std::string> &Out_prop) {
 if (debug) cout <<"LoadItems in Input " << endl;
 	bool success=true;
-	int length = elems.size();
 	bool wild_monlist=false;
 	bool wild_mollist=false;
 	bool wild_aliaslist=false;
-	int key_length = KEYS.size();
 	int name_length;
 	bool key_found,name_found;
-	int i=0;
- 	int j,k;
-	while (i<length){
+ 	int k;
+	for (size_t i = 0; i < elems.size() ; i++) {
 		vector<std::string> set;
 		split(elems[i],':',set);
 		if (set[1] == template_) {
-			j=0; key_found=false;
-			while (j<key_length) {
+			key_found=false;
+			for (size_t j = 0 ; j < KEYS.size() ; j++) {
 				if (KEYS[j] == set[2]) {
 					key_found=true;
 					switch (j-1) {
@@ -529,7 +528,6 @@ if (debug) cout <<"LoadItems in Input " << endl;
 						}
 
 				}
-				j++;
 			}
 			if (!key_found) {cout<< "In line " << set[0] << " the keyword '" << set[2] << "' not recognized. Choose keywords from: " << endl;
 				int length = KEYS.size();
@@ -560,7 +558,6 @@ if (debug) cout <<"LoadItems in Input " << endl;
 				for (int i=0; i<length; i++) {cout << set[1] << " : " << Out_key[i] << " : " << Out_name[i] << " : " << Out_prop[i] << endl; }
 			}
 		} //end temp
-		i++;
 	} //end i;
 	return success;
 }
@@ -588,9 +585,11 @@ bool Input:: CheckInput(void) {
 		if (set[1]=="start") last_start=true;
 		i++;
 	}
+
 	if (!last_start) {
 		elems.push_back("0:start"); length++;
 	}
+	
 	i=0;
 	while (success && i<length) {
 		vector<std::string> set;

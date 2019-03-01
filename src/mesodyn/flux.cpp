@@ -76,13 +76,13 @@ void Flux1D::flux() {
   //Zero (with bounds checking) vector J before use
   stl::fill(J.begin(), J.end(), 0);
 
-  if (A->rho.size() != J.size()) {
+  if (component_a->rho.size() != J.size()) {
     //already checked: A.alpha.size = B.alpha.size and A.rho.size = B.rho.size
     throw ERROR_SIZE_INCOMPATIBLE;
   }
 
-  onsager_coefficient(A->rho, B->rho);
-  potential_difference(dynamic_pointer_cast<Component>(A)->alpha,dynamic_pointer_cast<Component>(B)->alpha);
+  onsager_coefficient(component_a->rho, component_b->rho);
+  potential_difference(dynamic_pointer_cast<Component>(component_a)->alpha,dynamic_pointer_cast<Component>(component_b)->alpha);
 
   langevin_flux(Dimension::X);
 }

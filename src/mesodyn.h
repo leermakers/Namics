@@ -18,7 +18,7 @@
 #include "mesodyn/boundary_conditions.h"
 #include "mesodyn/component.h"
 #include "mesodyn/flux.h"
-#include "mesodyn/norm.h"
+#include "mesodyn/collection_procedures.h"
 
 
 #ifdef PAR_MESODYN

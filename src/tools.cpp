@@ -1,7 +1,9 @@
 #include "tools.h"
 #include "namics.h"
 #include "stdio.h"
-#include <thrust/inner_product.h>
+#ifdef PAR_MESODYN
+	#include <thrust/inner_product.h>
+#endif
 #define MAX_BLOCK_SZ 512
 
 #ifdef CUDA

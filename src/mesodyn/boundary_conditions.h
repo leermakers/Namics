@@ -9,7 +9,9 @@
 #include <vector>
 #include <functional>
 #include <map>
+#ifdef PAR_MESODYN
 #include <thrust/copy.h>
+#endif
 
 #include "stl_typedef.h"
 

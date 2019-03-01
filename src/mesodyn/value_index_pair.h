@@ -2,7 +2,9 @@
 #define MASK_H
 
 #include <iterator>
-#include <thrust/iterator/permutation_iterator.h>
+#ifdef PAR_MESODYN
+  #include <thrust/iterator/permutation_iterator.h>
+#endif
 #include "stl_typedef.h"
 
 /* Provides a CPU implementation of thrust's permutation iterator */

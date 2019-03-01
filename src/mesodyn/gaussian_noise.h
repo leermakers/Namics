@@ -5,8 +5,10 @@
 #include <random>
 #include "lattice_object.h"
 #include "boundary_conditions.h"
-#include <thrust/random/linear_congruential_engine.h>
-#include <thrust/random/normal_distribution.h>
+#ifdef PAR_MESODYN
+  #include <thrust/random/linear_congruential_engine.h>
+  #include <thrust/random/normal_distribution.h>
+#endif
 
 class Gaussian_noise {
   //Makes sure that we keep generating new numbers, instead of the same over and over.

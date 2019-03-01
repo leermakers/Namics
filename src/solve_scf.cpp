@@ -849,14 +849,11 @@ void Solve_scf::residuals(Real* x, Real* g){
 			int itmonlistlength=Sys[0]->ItMonList.size();
 			int state_length = In[0]->StateList.size();
 			int itstatelistlength=Sys[0]->ItStateList.size();
+			
 
 						
 
  			ComputePhis();
-			//if (Sys[0]->beta_set){
-			//	//Sys[0]->BETA_ +=Mol[Sys[0]->MolBeta]->phitot[Mol[Sys[0]->MolBeta]->beta]-Mol[Sys[0]->solvent]->phitot[Mol[Sys[0]->solvent]->beta]; 
-			//}
-
 			Cp(g,xx,iv); Zero(alpha,M);
 			for (i=0; i<itmonlistlength; i++) {
 				for (k=0; k<mon_length; k++) {

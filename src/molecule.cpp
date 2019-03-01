@@ -423,7 +423,6 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			}
 		}
 	}
-
 	return success;
 }
 
@@ -1707,6 +1706,7 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	//Lat[0]->remove_bounds(phi);
 	GN=Lat[0]->WeightedSum(phi);
 	if (compute_phi_alias) {
+
 		int length = MolAlList.size();
 		for (int i=0; i<length; i++) {
 			if (Al[i]->frag[0]==1) {

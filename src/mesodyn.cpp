@@ -28,17 +28,9 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       initialization_mode { INIT_HOMOGENEOUS },
       component_no        { Sys[0]->SysMolMonList.size() },
 
-      //Size helper classes.
-      component(0),
-      flux(0),
-
       //Output-related variables
-      writes{0},
-      //write_vtk{false}, //defunct
-      order_parameter{0}
+      writes{0}
   {
-
-  set_update_lists(component_no);
 
   // to get the correct KSAM and volume.
   Sys[0]->PrepareForCalculations();
@@ -86,40 +78,37 @@ bool Mesodyn::mesodyn() {
 
   // Attach sanity checks
   for (size_t i = 0 ; i < component_no; ++i) {
-    checks.push_back(new Check_between_zero_and_one<Real>(&solver_component[i]->rho, i));
-    checks.push_back(new Check_theta<Real>(&solver_component[i]->rho, std::accumulate(solver_component[i]->rho.begin(), solver_component[i]->rho.end(), 0), i));
+    checks.push_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
+    checks.push_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
   }
 
-  Check_index_unity<Real> check_rho(&solver_component[0]->rho);
+  Check_index_unity<Real> check_rho(&components[0]->rho);
   for (size_t i = 1 ; i < component_no ; ++i)
-    check_rho.register_checkable(&solver_component[i]->rho);
+    check_rho.register_checkable(&components[i]->rho);
 
   //Prepare IO
   set_filename();
+  cout.precision(8);
 
-  cout << "Mesodyn is all set, starting calculations.." << endl;
+  cout << "Mesodyn is all set, starting calculations.." << endl << endl << endl;
 
   // Prepare callback functions for SolveMesodyn in Newton
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
   /**** Main MesoDyn time loop ****/
-  for (int t = 0; t < timesteps; t++) {
-    cout << "MESODYN: t = " << t << endl;
+  for (int t = 1; t < timesteps+1; t++) {
+    cout << "\x1b[A" << "\x1b[A" << "MESODYN: t = " << t << " / " << timesteps << endl;
 
     gaussian->generate(system_size);
 
+    for (auto& all_fluxes : fluxes) all_fluxes->J.save_state();
+    for (auto& component : components) component->rho.save_state();
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
-  
-    //Calculate and add noise flux
-    for (size_t i = 0 ; i < flux.size() ; ++i)
-      flux[i]->J = solver_flux[i]->J;
+    order_parameter->execute();
 
-    for (size_t i = 0 ; i < component.size() ; ++i)
-      component[i]->rho = solver_component[i]->rho;
-
-    cout << "Order parameter: " << calculate_order_parameter() << endl;
+    cout << "Order parameter: " << order_parameter->get() << endl;
 
     sanity_check();
 
@@ -132,81 +121,56 @@ bool Mesodyn::mesodyn() {
   return true;
 }
 
-void Mesodyn::set_update_lists(size_t N)
+std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
 {
-
-    // Returns a flux index number coupled to every combination of components, e.g.
-    // flux 0, component 0 and 1. flux 1, component 0 and 2, flux 2, component 1 and 2.
-    // Components are in a pair, which is coupled to a flux index in a map.
-    // Access as follows: combinations[flux].first (first component) combinations[flux].second (second component)
-    // Or range based loop: for (auto& combination : combinations) combination.first <<<flux>>> combination.second <<<component as above>>>
+    // Returns every combination in a set of size N, e.g.
+    // 0,1 - 0,2 - 0,3 - 1,2 - 1,3 - 2,3
 
     std::string bitmask(2, 1); // K leading 1's
     bitmask.resize(N, 0); // N-K trailing 0's
-    size_t flux{0};
+
+    std::map<size_t, size_t> combinations;
 
     do {
 
-      std::vector<size_t> this_combination;
+      std::vector<size_t> index;
 
       for (size_t i = 0; i < N; ++i) // [0..N-1] integers
-        if (bitmask[i]) this_combination.push_back(i);
+        if (bitmask[i]) index.push_back(i);
 
-      combinations[flux] = make_pair(this_combination[0], this_combination[1]);
-      ++flux;
+      combinations[ index[0] ] = index[1];
 
     } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
 
-}
-
-Real Mesodyn::calculate_order_parameter() {
-  stl::device_vector<Real> difference(system_size);
-  Mesodyn::order_parameter = 0;
-  for (auto& map : combinations) {
-    auto& index_of = map.second;
-
-    stl::transform(solver_component[index_of.first]->rho.begin(), solver_component[index_of.first]->rho.end(), solver_component[index_of.second]->rho.begin(),
-      difference.begin(),
-      [this] DEVICE_LAMBDA (const double& x, const double& y) mutable {return pow(x-y,2);}
-      );
-
-    #ifdef PAR_MESODYN
-    Mesodyn::order_parameter = thrust::reduce(difference.begin(), difference.end(), Mesodyn::order_parameter);
-    #else
-    Mesodyn::order_parameter = std::accumulate(difference.begin(), difference.end(), Mesodyn::order_parameter);
-    #endif
-  }
-  Mesodyn::order_parameter /= boundaryless_volume;
-
-  return Mesodyn::order_parameter;
+    return combinations;
 }
 
 void Mesodyn::sanity_check() {
-  for (auto all_components : solver_component)
+  for (auto all_components : components)
     all_components->rho.perform_checks(); 
 }
 
 void Mesodyn::load_alpha(Real* alpha, const size_t i) {
     if (i < component_no)
-     dynamic_pointer_cast<Component>( solver_component[i] )->alpha.load_array(alpha,system_size);
+     dynamic_pointer_cast<Component>( components[i] )->alpha.load_array(alpha,system_size);
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
-  for (size_t c = 0 ; c < solver_component.size() ; ++c) {
-    solver_component[c]->rho = component[c]->rho;
-    solver_component[c]->update_boundaries();
+  for (auto& all_components : components) {
+    all_components->rho.reinstate_previous_state();
+    all_components->update_boundaries();
   }
 
-  for (auto& all_fluxes : solver_flux)
+  for (auto& all_fluxes : fluxes)
     all_fluxes->flux();
 
-  for (auto& kv : combinations) {
-    solver_component[kv.second.first]->update_density(flux[kv.first]->J,solver_flux[kv.first]->J, cn_ratio);
-    solver_component[kv.second.second]->update_density(flux[kv.first]->J,solver_flux[kv.first]->J, cn_ratio, -1);
+  for (auto& flux : fluxes) {
+    flux->component_a->update_density(flux->J, cn_ratio, +1);
+    flux->component_b->update_density(flux->J, cn_ratio, -1);
   }
 
-  for ( size_t n = 0; n < solver_component.size() ; ++n )
-    stl::copy(solver_component[n]->rho.begin(), solver_component[n]->rho.end(), rho.begin()+n*system_size);
+  for ( size_t n = 0; n < components.size() ; ++n )
+    stl::copy(components[n]->rho.begin(), components[n]->rho.end(), rho.begin()+n*system_size);
 
   #ifdef PAR_MESODYN
   return stl::raw_pointer_cast(rho.data());
@@ -217,8 +181,6 @@ Real* Mesodyn::solve_crank_nicolson() {
 
 int Mesodyn::initial_conditions() {
   
-  stl::host_vector<stl::host_vector<Real>> rho(component_no, stl::host_vector<Real>(system_size));
-
   Lattice_object<int> t_mask(Lat[0]);
 
   #if defined(PAR_MESODYN) || ! defined(CUDA)
@@ -270,23 +232,19 @@ int Mesodyn::initial_conditions() {
       }    
   }
 
-  std::map< std::string, Boundary_type> boundary_settings;
-  boundary_settings["mirror"] = Boundary_type::MIRROR;
-  boundary_settings["periodic"] = Boundary_type::PERIODIC;
-
-  Boundary_map boundary_conditions;
+  Boundary::Map boundary_conditions;
 
   // BC0: bX0, BC1: bXm, etc.
-  boundary_conditions[Dimension::Z] = boundary_settings[Lat[0]->BC[4]];
-  boundary_conditions[Dimension::Y] = boundary_settings[Lat[0]->BC[2]];
-  boundary_conditions[Dimension::X] = boundary_settings[Lat[0]->BC[0]];
+  boundary_conditions[Dimension::X] = Boundary::Adapter[Lat[0]->BC[0]];
+  boundary_conditions[Dimension::Y] = Boundary::Adapter[Lat[0]->BC[2]];
+  boundary_conditions[Dimension::Z] = Boundary::Adapter[Lat[0]->BC[4]];
 
-  Mesodyn::boundary = Boundary_factory::Create(dimensionality, mask, boundary_conditions);
+  Mesodyn::boundary = Boundary::Factory::Create(dimensionality, mask, boundary_conditions);
 
-  for (auto& density : densities) {
-    component.push_back(make_shared<Component>(Lat[0], boundary, density));
-    solver_component.push_back(make_shared<Component>(Lat[0], boundary, density));
-  }
+  std::map<size_t, size_t> combinations = generate_pairs(component_no);
+
+  for (auto& density : densities) 
+    components.push_back(make_shared<Component>(Lat[0], boundary, density));
 
   if (seed_specified == true)
       Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev, seed);
@@ -294,49 +252,14 @@ int Mesodyn::initial_conditions() {
       Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev);  
 
   for (auto& index_of : combinations) {
-      flux.push_back(
-        Flux_factory::Create(dimensionality, Lat[0], D * dt, mask, component[index_of.second.first], component[index_of.second.second], gaussian));
-      solver_flux.push_back(
-        Flux_factory::Create(dimensionality, Lat[0], D * dt, mask, solver_component[index_of.second.first], solver_component[index_of.second.second], gaussian));
+      fluxes.push_back(
+        Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
     }
 
-  int j = 0;
-  for (auto& molecule : Mol) {
-    Molecule_density this_density = Molecule_density(molecule);
+  norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
+  order_parameter = make_unique<Order_parameter>(components, combinations, boundaryless_volume);
 
-    vector<Real> densities = this_density.monomer_total_mass();
-    for (auto density : densities) {
-
-      theta[solver_component[j]] = theta[component[j]] = density;
-
-      if (density == 0)
-        m_solvent = j;
-
-      ++j;
-    }
-  }
-
-  norm_theta(component);
-  norm_theta(solver_component);
-
-  return 0;
-}
-
-int Mesodyn::norm_theta(vector< shared_ptr<IComponent> >& component_) {
-
-  assert(Mol[ Sys[0]->solvent ]->MolMonList.size() == 1 and "Norming solvents with mutliple monomers is not supported! Please write your own script");
-  stl::device_vector<Real> residuals(system_size,0);
-
-  for (auto component : component_) {
-      Norm( (Real*)component->rho, ( theta[component]/component->theta() ), system_size);
-      stl::transform(component->rho.begin(), component->rho.end(), residuals.begin(), residuals.begin(), stl::plus<Real>());
-  }
-
-  stl::transform(residuals.begin(), residuals.end(), component_[m_solvent]->rho.begin(), component_[m_solvent]->rho.begin(),
-      [this] DEVICE_LAMBDA (const double& x, const double& y) {
-        return ( y-(x-1));
-      }
-    );
+  norm_densities->execute();
 
   return 0; 
 }
@@ -364,7 +287,7 @@ int Mesodyn::write_output(int t) {
 
     New[0]->PushOutput();
 
-    Out[0]->push("order_parameter",order_parameter);
+    Out[0]->push("order_parameter", order_parameter->get());
     Out[0]->push("time",t);
     Out[0]->push("timesteps", timesteps);
     Out[0]->push("timebetweensaves", timebetweensaves);
@@ -375,11 +298,11 @@ int Mesodyn::write_output(int t) {
     Out[0]->push("delta_t", dt);
     Out[0]->push("cn_ratio", cn_ratio);
 
-    for (size_t i = 0 ; i < solver_component.size() ; ++i) {
+    for (size_t i = 0 ; i < components.size() ; ++i) {
       ostringstream vtk_filename;
       vtk_filename << filename.str() << "-rho" << i << "-" << writes << ".vtk";
 
-      stl::host_vector<Real> t_rho = solver_component[i]->rho.m_data;
+      stl::host_vector<Real> t_rho = components[i]->rho.m_data;
       Out[0]->vtk_structured_grid(vtk_filename.str(), t_rho.data(), i);
     }
     

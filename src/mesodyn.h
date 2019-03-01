@@ -18,18 +18,16 @@
 #include "mesodyn/boundary_conditions.h"
 #include "mesodyn/component.h"
 #include "mesodyn/flux.h"
+#include "mesodyn/norm.h"
 
 
 #ifdef PAR_MESODYN
-#define DEVICE_LAMBDA __host__ __device__
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 #include <thrust/copy.h>
 #include <thrust/fill.h>
 #include <thrust/device_ptr.h>
 #include <thrust/count.h>
-#else
-#define DEVICE_LAMBDA
 #endif
 
 #include "mesodyn/stl_typedef.h"
@@ -66,9 +64,6 @@ private:
   const Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
-  size_t m_solvent;
-
-  std::map<std::string, const Real&> settings;
 
 
   /* Flow control */
@@ -86,25 +81,23 @@ private:
   stl::device_vector<Real> rho;
   string read_filename;
   int initial_conditions();
-  void set_update_lists(size_t);
-  std::map<size_t, std::pair<size_t, size_t> > combinations;
+  std::map<size_t, size_t> generate_pairs(size_t);
   Real boundaryless_volume;
-  std::map<shared_ptr<IComponent>, Real> theta;
+  
 
   /* Helper class instances */
   shared_ptr<Gaussian_noise> gaussian;
   shared_ptr<Boundary1D> boundary;
-  vector< shared_ptr<IComponent> > component;
-  vector< shared_ptr<IComponent> > solver_component;
-  vector< shared_ptr<IFlux> > flux;
-  vector< shared_ptr<IFlux> > solver_flux;
+  vector< shared_ptr<IComponent> > components;
+  vector< shared_ptr<IFlux> > fluxes;
 
   /* Mesodyn specific output */
   ostringstream filename;
   int writes;
-  bool write_vtk;
   void set_filename();
-  Real order_parameter;
+
+  unique_ptr<Norm_densities> norm_densities;
+  unique_ptr<Order_parameter> order_parameter;
 
 
 public:

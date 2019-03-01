@@ -98,6 +98,7 @@ public:
 	void Side(Real *, Real *, int);
 	bool ReadRange(int*, int*, int&, bool&, string, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
+	bool FillMask(int*, vector<int>, vector<int>, vector<int>, string);
 	bool CreateMASK(int*, int*, int*, int, bool);
 	bool GenerateGuess(Real*, string, string, Real, Real);
 	bool GuessVar(Real*, Real, string, Real, Real);

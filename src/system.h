@@ -32,11 +32,12 @@ public:
 	vector<int> XmolList;
 	vector<int> XstateList_1;
 	vector<int> XstateList_2;
+	vector<int> DeltaMolList;
+	vector<int> px;
+	vector<int> py;
+	vector<int> pz;
 	vector<int> Xn_1;
-	Real FreeEnergy;
-	Real BETA; 
-	bool beta_set; 
-	int MolBeta; 
+	Real FreeEnergy; 
 	Real GrandPotential;
 	Real KJ0;
 	Real Kbar;
@@ -48,7 +49,8 @@ public:
 	Real* psi;
 	Real* EE;
 	int* psiMask;
-	bool fixedPsi0;	
+	bool fixedPsi0;
+	bool constraintfields;	
 	Real* q;
 	Real* H_GrandPotentialDensity;
 	Real* H_FreeEnergyDensity;
@@ -57,6 +59,10 @@ public:
 	Real* FreeEnergyDensity;
 	Real* alpha;
 	Real* TEMP;
+	Real* H_BETA;
+	Real* BETA;
+	int* H_beta;
+	int* beta; 
 	bool GPU;
 	int n_mol;
 	int solvent;
@@ -71,6 +77,8 @@ public:
 	string guess_inputfile;
 	string final_guess;
 	string guess_outputfile;
+	string ConstraintType;
+	string delta_inputfile; 
 	int Var_target;
 	Real Var_target_value;
 

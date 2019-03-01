@@ -11,7 +11,6 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("n");
 	KEYS.push_back("save_memory");
 	KEYS.push_back("restricted_range");
-	KEYS.push_back("equate_phi_to_solvent_at");
 }
 
 Molecule::~Molecule() {
@@ -293,8 +292,6 @@ int M=Lat[0]->M;
 
 bool Molecule::CheckInput(int start_) {
 if (debug) cout <<"Molecule:: CheckInput" << endl;
-beta=0; 
-interface_pinned=false; 
 start=start_;
 phibulk=0;
 n=0; 
@@ -426,15 +423,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			}
 		}
 	}
-	if (GetValue("equate_phi_to_solvent_at").size() > 0) {
-		if (start<2) {success=false; cout <<"'equate_phi_to_solvent_at' can not be set as initial problem. "<< endl; }
-		if (freedom!="free") {success=false; cout <<"'equate_phi_to_solvent_at' should be combined with freedom 'free' "<< endl; }
-		int grads=Lat[0]->gradients; 
-		if (grads !=1) {success=false; cout <<"'equate_phi_to_solvent_at' can only work in 1-gradient systems (yet). "<< endl;} 
-		int M=(Lat[0]->M-2)/2; 
-		beta=In[0]->Get_int(GetValue("equate_phi_to_solvent_at"),M);
-		if (beta<1 || beta>2*M) {success=false; cout <<"'equate_phi_to_solvent_at' should contain integer in range 1 .. " << 2*M  << endl; }
-	}
+
 	return success;
 }
 
@@ -1653,13 +1642,19 @@ if (debug) cout <<"fraction for Mol " + name << endl;
 	return 1.0*Nseg/chainlength;
 }
 
-bool Molecule::ComputePhi(){
+bool Molecule::ComputePhi(Real* BETA,int id){
 if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	bool success=true;
+	int M=Lat[0]->M;
 	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
-	if (interface_pinned) {
-		int molmonlistlength=MolMonList.size();
-		for (int i=0; i<molmonlistlength; i++) Seg[MolMonList[i]]->G1[1+beta] *=Gbeta; 
+	if (id !=0) {
+		int molmonlistlength=MolMonList.size(); 
+		for (int i=0; i<molmonlistlength; i++) 
+		if (id==1) {
+			Times(Seg[MolMonList[i]]->G1,Seg[MolMonList[i]]->G1,BETA,M); 
+		} else {
+			Div(Seg[MolMonList[i]]->G1,BETA,M);
+		}
 	}	
 
 	switch (MolType) {
@@ -1684,16 +1679,22 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 			cout << "Programming error " << endl;
 			break;
 	}
-	if (interface_pinned) {
-		int M=Lat[0]->M;
-		int molmonlistlength=MolMonList.size();
+
+	if (id !=0) {
+		int molmonlistlength=MolMonList.size(); 
+
 		for (int i=0; i<molmonlistlength; i++) {
-			phi[i*M+1+beta] /=Gbeta;  
-			Seg[MolMonList[i]]->G1[1+beta] /=Gbeta; 
+			if (id==1) {
+				Div(phi+i*M,BETA,M);
+				Div(Seg[MolMonList[i]]->G1,BETA,M);
+			}  else {
+				Times(phi+i*M,phi+i*M,BETA,M);
+				Times(Seg[MolMonList[i]]->G1,Seg[MolMonList[i]]->G1,BETA,M);
+			}
+			
 		}
+
 	}
-
-
 	return success;
 }
 

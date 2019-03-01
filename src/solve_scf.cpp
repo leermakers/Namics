@@ -60,6 +60,7 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	}
 	if (Sys[0]->charged) iv += M;
 	if (SCF_method=="Picard") iv += M;
+	if (Sys[0]->constraintfields) iv +=M;
 #ifdef CUDA
 	xx  = (Real*)AllOnDev(iv);
 	x0  = (Real*)AllOnDev(iv);
@@ -849,10 +850,12 @@ void Solve_scf::residuals(Real* x, Real* g){
 			int state_length = In[0]->StateList.size();
 			int itstatelistlength=Sys[0]->ItStateList.size();
 
+						
+
  			ComputePhis();
-			if (Sys[0]->beta_set){
-				Sys[0]->BETA +=Mol[Sys[0]->MolBeta]->phitot[Mol[Sys[0]->MolBeta]->beta]-Mol[Sys[0]->solvent]->phitot[Mol[Sys[0]->solvent]->beta]; 
-			}
+			//if (Sys[0]->beta_set){
+			//	//Sys[0]->BETA_ +=Mol[Sys[0]->MolBeta]->phitot[Mol[Sys[0]->MolBeta]->beta]-Mol[Sys[0]->solvent]->phitot[Mol[Sys[0]->solvent]->beta]; 
+			//}
 
 			Cp(g,xx,iv); Zero(alpha,M);
 			for (i=0; i<itmonlistlength; i++) {
@@ -899,13 +902,21 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
 				Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,Sys[0]->KSAM,M);
 			}
+			int itpos=(itmonlistlength+itstatelistlength)*M;
 			if (Sys[0]->charged) {
-				Cp(g+(itmonlistlength+itstatelistlength)*M,xx+(itmonlistlength+itstatelistlength)*M,M);
-				Sys[0]->DoElectrostatics(g+(itmonlistlength+itstatelistlength)*M,xx+(itmonlistlength+itstatelistlength)*M);
+				Cp(g+itpos,xx+itpos,M);
+				Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
 				Lat[0]->set_bounds(Sys[0]->psi);
-				Lat[0]->UpdatePsi(g+(itmonlistlength+itstatelistlength)*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
-				Lat[0]->remove_bounds(g+(itmonlistlength+itstatelistlength)*M);
+				Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
+				Lat[0]->remove_bounds(g+itpos);
+				itpos+=M;
 			}
+			if (Sys[0]->constraintfields) {
+				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
+				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
+				Times(g+itpos,g+itpos,Sys[0]->beta,M);
+			}
+
 		break;
 	}
 }
@@ -1094,6 +1105,10 @@ if(debug) cout <<"PutU in  Solve " << endl;
 		}
 		k++;
 	}
+	int itpos=(itmonlistlength+itstatelistlength)*M;
+	if (Sys[0]->charged) itpos +=M; 
+	if (Sys[0]->constraintfields) Cp(Sys[0]->BETA,xx+itpos,M);
+
 	return success;
 }
 

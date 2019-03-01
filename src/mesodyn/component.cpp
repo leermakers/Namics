@@ -23,14 +23,14 @@ int Component::update_density(Lattice_object<Real>& J, int sign) {
   return 0;
 }
 
-int Component::update_density(Lattice_object<Real>& J1, Lattice_object<Real>& J2, Real ratio, int sign) {
+int Component::update_density(Lattice_object<Real>& J1, Real ratio, int sign) {
   //Implicit update
-  if (J1.size() != rho.size() || J1.size() != J2.size()) {
+  if (J1.size() != rho.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
   // Rho <- A * J1 + Rho
-  stl::transform(J1.begin(), J1.end(), rho.begin(), rho.begin(), saxpy_functor(sign*ratio) );
-  stl::transform(J2.begin(), J2.end(), rho.begin(), rho.begin(), saxpy_functor((1.0f-ratio)*sign) );
+  stl::transform(J1.previous_state().begin(), J1.previous_state().end(), rho.begin(), rho.begin(), saxpy_functor(sign*ratio) );
+  stl::transform(J1.begin(), J1.end(), rho.begin(), rho.begin(), saxpy_functor((1.0f-ratio)*sign) );
 
   return 0;
 }

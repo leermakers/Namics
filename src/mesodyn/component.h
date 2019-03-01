@@ -16,7 +16,7 @@ class IComponent {
   public:
 
     IComponent(Lattice* lat_, Lattice_object<Real> rho_init)
-    : Lat{lat_}, rho{rho_init}, alpha{lat_}
+    : Lat{lat_}, rho(rho_init), alpha(lat_)
     { }
 
     Lattice* Lat;
@@ -24,8 +24,8 @@ class IComponent {
     Lattice_object<Real> alpha;
 
     //Where lattice objects are fluxes, either implicit or explicit (flux at k and k+1)
-    virtual int update_density(Lattice_object<Real>&, int = 1) = 0;
-    virtual int update_density(Lattice_object<Real>&, Lattice_object<Real>&, Real ratio, int = 1) = 0; //Implicit scheme
+    virtual int update_density(Lattice_object<Real>&, int) = 0;
+    virtual int update_density(Lattice_object<Real>&, Real ratio, int) = 0; //Implicit scheme
 
     virtual int update_boundaries() = 0;
 
@@ -38,8 +38,8 @@ public:
   Component(Lattice*, shared_ptr<Boundary1D>, Lattice_object<Real>); //1D
   ~Component();
   
-  int update_density(Lattice_object<Real>&, int = 1) override;     //Explicit scheme
-  int update_density(Lattice_object<Real>&, Lattice_object<Real>&, Real ratio, int = 1) override; //Implicit scheme
+  int update_density(Lattice_object<Real>&, int) override;     //Explicit scheme
+  int update_density(Lattice_object<Real>&, Real ratio, int) override; //Implicit scheme
   int update_boundaries() override;
   Real theta() override;
 

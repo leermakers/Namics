@@ -11,6 +11,7 @@
 #include "../lattice.h"
 #include "value_index_pair.h"
 #include "lattice_accessor.h"
+#include "memento.h"
 
 #ifdef PAR_MESODYN
 #include <thrust/device_ptr.h>
@@ -27,6 +28,7 @@ private:
 //disable default constructor, because we always need use the fixed size of Lat:
 Lattice_object() = delete;
 std::vector<shared_ptr<Neighborlist>> m_neighborlist;
+shared_ptr< Memento<T> > saved_state;
 
 public:
 
@@ -237,6 +239,19 @@ T* data() {
 
 std::vector<shared_ptr<Neighborlist>> get_neighborlists() const {
   return m_neighborlist;
+}
+
+void save_state() {
+    saved_state = make_shared<Memento<T>>(m_data);
+}
+
+const stl::device_vector<T>& previous_state() {
+  return saved_state->state;
+}
+
+void reinstate_previous_state() {
+  m_data = saved_state->state;
+  this->set_checkable_data( m_data.data(), system_size );
 }
 
 };

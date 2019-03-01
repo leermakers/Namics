@@ -3,42 +3,47 @@
 #include <algorithm>
 #include <iostream>
 
-Register_class<Boundary1D, Boundary1D, Dimensionality, Lattice_object<size_t>&, Boundary_map> boundary_one_dimensions(one_D);
-Register_class<Boundary1D, Boundary2D, Dimensionality, Lattice_object<size_t>&, Boundary_map> boundary_two_dimensions(two_D);
-Register_class<Boundary1D, Boundary3D, Dimensionality, Lattice_object<size_t>&, Boundary_map> boundary_three_dimensions(three_D);
+Register_class<Boundary1D, Boundary1D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> boundary_one_dimensions(one_D);
+Register_class<Boundary1D, Boundary2D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> boundary_two_dimensions(two_D);
+Register_class<Boundary1D, Boundary3D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> boundary_three_dimensions(three_D);
 
-Boundary1D::Boundary1D(Lattice_object<size_t>& mask, Boundary_map boundary_type_for_dim)
+Boundary::Adapter_type Adapter {
+    {"mirror", Boundary::Type::MIRROR},
+    {"periodic", Boundary::Type::PERIODIC}
+};
+
+Boundary1D::Boundary1D(Lattice_object<size_t>& mask, Boundary::Map boundary_type_for_dim)
 : m_mask{mask}, m_neighborlist(mask),
   X_BOUNDARY_TYPE{
       boundary_type_for_dim[Dimension::X]
   }
 {
-    OFFSET[Boundary_type::MIRROR] = 1;
-    OFFSET[Boundary_type::PERIODIC] = mask.MX;
+    OFFSET[Boundary::Type::MIRROR] = 1;
+    OFFSET[Boundary::Type::PERIODIC] = mask.MX;
 
     set_x_neighbors();
 }
 
-Boundary2D::Boundary2D(Lattice_object<size_t>& mask, Boundary_map boundary_type_for_dim)
+Boundary2D::Boundary2D(Lattice_object<size_t>& mask, Boundary::Map boundary_type_for_dim)
 : Boundary1D(mask, boundary_type_for_dim),
   Y_BOUNDARY_TYPE {
       boundary_type_for_dim[Dimension::Y]
   }
 {
-    OFFSET[Boundary_type::MIRROR] = 1;
-    OFFSET[Boundary_type::PERIODIC] = mask.MY;
+    OFFSET[Boundary::Type::MIRROR] = 1;
+    OFFSET[Boundary::Type::PERIODIC] = mask.MY;
 
     set_y_neighbors();
 }
 
-Boundary3D::Boundary3D(Lattice_object<size_t>& mask, Boundary_map boundary_type_for_dim)
+Boundary3D::Boundary3D(Lattice_object<size_t>& mask, Boundary::Map boundary_type_for_dim)
 : Boundary2D(mask, boundary_type_for_dim),
   Z_BOUNDARY_TYPE{
       boundary_type_for_dim[Dimension::Z]
   }
 {
-    OFFSET[Boundary_type::MIRROR] = 1;
-    OFFSET[Boundary_type::PERIODIC] = mask.MZ;
+    OFFSET[Boundary::Type::MIRROR] = 1;
+    OFFSET[Boundary::Type::PERIODIC] = mask.MZ;
     set_z_neighbors();
 }
 

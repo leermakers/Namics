@@ -24,13 +24,11 @@ class IFlux {
     virtual void flux() = 0;
     Lattice_object<Real> J;
 
-  protected:
+namespace Flux {
 
-    shared_ptr<IComponent> A;
-    shared_ptr<IComponent> B;
-};
+typedef Factory_template<IFlux, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> Factory;
 
-typedef Factory<IFlux, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> Flux_factory;
+}
 
 class Flux1D : public IFlux {
 public:

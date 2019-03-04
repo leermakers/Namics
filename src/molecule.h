@@ -18,10 +18,7 @@ public:
 	vector<Alias*> Al;
 	vector<int> MolMonList;
 	vector<int> MolAlList;
-	int start;
-	int beta; 
-	bool interface_pinned; 
-	Real Gbeta; 
+	int start; 
 	int n_mol;
 	int mol_nr;
 	int n_box;
@@ -160,7 +157,7 @@ public:
 	void DeAllocateMemory(void);
 	void AllocateMemory(void);
 	bool PrepareForCalculations(int*);
-	bool ComputePhi();
+	bool ComputePhi(Real*,int);
 	//void propagate_forward(Real*, Real*, int&, int,int, int);
 	Real* propagate_forward(Real*,int&,int,int,int); //for branched
 	Real* propagate_forward(Real*,int&,int,int,int,int);//for dendrimer

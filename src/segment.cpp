@@ -95,8 +95,8 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	int M=Lat[0]->M;
 #ifdef CUDA
 	if (prepared == 0) {
-	TransferDataToDevice(H_MASK, MASK, 0);
-	TransferDataToDevice(H_u, u, 0);
+	TransferDataToDevice(H_MASK, MASK, M);
+	TransferDataToDevice(H_u, u, M);
 	prepared = 1;
 }
 //}

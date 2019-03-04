@@ -390,6 +390,9 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					if (bx[i]<1) {bx[i] +=MX; px1[i] +=MX; px2[i] +=MX;}
 					if (by[i]<1) {by[i] +=MY; py1[i] +=MY; py2[i] +=MY;}
 					if (bz[i]<1) {bz[i] +=MZ; pz1[i] +=MZ; pz2[i] +=MZ;}
+					if (bx[i]<1 || bx[i]>MX) {success=false; cout <<"For cleng particle nr " << i << "the coordinate 'x' of the subbox origin is out of bounds. " << endl; }
+					if (by[i]<1 || by[i]>MY) {success=false; cout <<"For cleng particle nr " << i << "the coordinate 'y' of the subbox origin is out of bounds. " << endl; }
+					if (bz[i]<1 || bz[i]>MZ) {success=false; cout <<"For cleng particle nr " << i << "the coordinate 'z' of the subbox origin is out of bounds. " << endl; }
 					H_MASK[((px1[i]-1)%MX+1)*JX + ((py1[i]-1)%MY+1)*JY + (pz1[i]-1)%MZ+1]=1;
 					H_MASK[((px2[i]-1)%MX+1)*JX + ((py2[i]-1)%MY+1)*JY + (pz2[i]-1)%MZ+1]=1;
 				}

@@ -755,7 +755,7 @@ void Add(Real *P, Real *A, int M)    {
 
 void Propagate(Real *gs, Real *g_1, Real* G1, int JX, int JY, int JZ, int M)    {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	propagate<<<n_blocks,block_size>>>(gs, g_1, G1, JX, JY, JZ, M);
+	propagate<<<n_blocks,block_size>>>(gs, g_1, JX, JY, JZ, M);
 }
 
 void Add(int *P, int *A, int M)    {

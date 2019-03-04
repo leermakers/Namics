@@ -84,8 +84,9 @@ void Flux1D::flux() {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
 
-  onsager_coefficient(component_a->rho, component_b->rho);
-  potential_difference(dynamic_pointer_cast<Component>(component_a)->alpha,dynamic_pointer_cast<Component>(component_b)->alpha);
+  std::thread onsager(&Flux1D::onsager_coefficient, this, std::ref(Flux1D::component_a->rho), std::ref(Flux1D::component_b->rho));
+  std::thread potential(&Flux1D::potential_difference, this, std::ref(Flux1D::component_a->alpha), std::ref(Flux1D::component_b->alpha));
+  onsager.join(); potential.join();
 
   langevin_flux(Dimension::X);
 }

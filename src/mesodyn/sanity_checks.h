@@ -5,6 +5,7 @@
 #include "../namics.h"
 #include <iostream>
 #include <assert.h>
+#include <thread>
 #include "../tools.h"
 
 #ifdef PAR_MESODYN
@@ -56,8 +57,12 @@ class Checkable
 
     virtual void perform_checks()
     {
+        vector<thread> threadObj;
         for (size_t i = 0; i < m_views.size(); ++i)
-          m_views[i]->check();
+          threadObj.push_back( thread(&Sanity_check::check, m_views[i]));
+
+        for(auto& t : threadObj)
+          t.join();
     }
 
     const T * get_checkable_data() {
@@ -77,8 +82,7 @@ class Checkable
     }
 
   private:
-    //Disable default constructor
-    Checkable();
+    Checkable() = delete;
 
     T* m_checkable_data;
     size_t m_size;
@@ -102,7 +106,7 @@ class Check_theta : public Sanity_check
 
     ~Check_theta() { }
 
-     /* virtual */void check()
+    void check() override
     {
         Real sum{0};
         #ifdef PAR_MESODYN
@@ -140,7 +144,7 @@ class Check_between_zero_and_one : public Sanity_check
 
     ~Check_between_zero_and_one() { }
 
-     /* virtual */void check()
+    void check() override
     {
         size_t errors{0};
         #ifdef PAR_MESODYN
@@ -179,7 +183,7 @@ class Check_index_unity : public Sanity_check
       m_coupled_checkables.push_back(checkable_);
     }
 
-     /* virtual */void check()
+    void check() override
     {
         size_t errors{0};
         const size_t size = m_checkable->get_checkable_size();

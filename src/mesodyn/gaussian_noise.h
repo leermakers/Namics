@@ -23,8 +23,8 @@ public:
 
 private:
   seed_seq seed;
-  stl::minstd_rand prng;
-  stl::normal_distribution<Real> dist;
+  std::minstd_rand prng;
+  std::normal_distribution<Real> dist;
   shared_ptr<Boundary1D> boundary;
 };
 

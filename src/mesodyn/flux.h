@@ -1,6 +1,7 @@
 #ifndef FLUX_H
 #define FLUX_H
 
+#include <thread>
 #include "../lattice.h"
 #include "lattice_object.h"
 #include "neighborlist.h"

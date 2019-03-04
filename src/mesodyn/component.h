@@ -4,6 +4,7 @@
 #include "lattice_object.h"
 #include "boundary_conditions.h"
 #include <memory>
+#include <thread>
 
 enum error {
   ERROR_PERIODIC_BOUNDARY,
@@ -23,9 +24,9 @@ class IComponent {
 
     //Where lattice objects are fluxes, either implicit or explicit (flux at k and k+1)
     virtual int update_density(Lattice_object<Real>&, int) = 0;
-    virtual int update_density(Lattice_object<Real>&, Real ratio, int) = 0; //Implicit scheme
+    virtual int update_density(Lattice_object<Real>&, Real ratio, int=0) = 0; //Implicit scheme
 
-    virtual int update_boundaries() = 0;
+    virtual void update_boundaries() = 0;
 
     //Compute sum of densities, without system boundaries.
     virtual Real theta() = 0;
@@ -37,8 +38,11 @@ public:
   ~Component();
   
   int update_density(Lattice_object<Real>&, int) override;     //Explicit scheme
-  int update_density(Lattice_object<Real>&, Real ratio, int) override; //Implicit scheme
-  int update_boundaries() override;
+  int update_density(Lattice_object<Real>&, Real ratio, int=0) override; //Implicit scheme
+  void update_boundaries() override;
+  std::thread par_update_boundaries() {
+    return std::thread(&Component::update_boundaries, this);
+  }
   Real theta() override;
 
 private:

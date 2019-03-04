@@ -27,16 +27,6 @@ __device__ void atomicAdd(Real* address, Real val)
 }
 #endif
 
-
-
-__global__ void flux(Real* flux, Real* L, Real* mu, int D, int jump, int M)
-{
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	int idx_plus = idx + jump;
-	if (idx < M-jump)
-			flux[idx] = -D * ((L[idx] + L[idx_plus]) * (mu[idx_plus] - mu[idx]));
-}
-
 __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
@@ -214,6 +204,15 @@ __global__ void add(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
 }
+
+__global__ void propagate(Real *gs, Real *g_1, int JX, int JY, int JZ, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx < (M-JX)) {
+		gs[idx] = (g_1[idx-JX] + g_1[idx+JX]) + (g_1[idx-JY] + g_1[idx+JY]) + (g_1[idx-JZ] + g_1[idx+JZ]);
+		gs[idx] *= (1.0/6.0);
+	}
+}
+
 __global__ void add(int *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
@@ -753,6 +752,12 @@ void Add(Real *P, Real *A, int M)    {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	add<<<n_blocks,block_size>>>(P,A,M);
 }
+
+void Propagate(Real *gs, Real *g_1, Real* G1, int JX, int JY, int JZ, int M)    {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	propagate<<<n_blocks,block_size>>>(gs, g_1, G1, JX, JY, JZ, M);
+}
+
 void Add(int *P, int *A, int M)    {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	add<<<n_blocks,block_size>>>(P,A,M);

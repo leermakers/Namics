@@ -1118,11 +1118,14 @@ if (debug) cout <<" Side in lattice " << endl;
 			}
 			break;
 		case 3:
-			//set_bounds(X);
+			#ifdef CUDA
+				Propagate(X_side, X, JX, JY, JZ, M);
+			#else
 			Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
 			Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
 			Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
 			Norm(X_side,1.0/6.0,M);
+			#endif
 			break;
 		default:
 			break;
@@ -1132,7 +1135,7 @@ if (debug) cout <<" Side in lattice " << endl;
 void Lattice::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in lattice " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
-	int JX_=JX, JY_=JY;
+	int JX_=JX, JY_=JY, JZ_=JZ;
 	int k=sub_box_on;
 	int kk;
 	int j;
@@ -1181,11 +1184,17 @@ if (debug) cout <<" propagate in lattice " << endl;
 			break;
 		case 3:
 			if (k>0) {JX_=jx[k]; JY_=jy[k];}
-			Zero(gs,M); set_bounds(gs_1);
+			set_bounds(gs_1);
+			#ifdef CUDA
+			Propagate(gs, gs_1, JX_, JY_, JZ_, M);
+			#else
+			Zero(gs,M); 
 			Add(gs+JX_,gs_1,M-JX_); Add(gs,gs_1+JX_,M-JX_);
 			Add(gs+JY_,gs_1,M-JY_); Add(gs,gs_1+JY_,M-JY_);
-			Add(gs+1,gs_1,M-1);  Add(gs,gs_1+1, M-1);
-			Norm(gs,1.0/6.0,M); Times(gs,gs,G1,M);
+			Add(gs+JZ_,gs_1,M-JZ_);  Add(gs,gs_1+JZ_, M-JZ_);
+			Norm(gs,1.0/6.0,M);
+			#endif
+			Times(gs,gs,G1,M);
 			break;
 		default:
 			break;

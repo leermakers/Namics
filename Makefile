@@ -21,14 +21,14 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -Ofast -g -std=c++14 -march=native
+CFLAGS      := -Wall -Ofast -std=c++14 -march=native
 LIB         := -lm -lpthread
 INC         := -I/usr/local/cuda-10.0/include -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
 	LIB        += -L/usr/local/cuda-10.0/lib64 -lcuda -lcudart
 	CFLAGS     += -DCUDA
-	NVCCFLAGS  := -ccbin gcc-7 -arch=sm_61 -std=c++14 -DCUDA
+	NVCCFLAGS  := -g -ccbin gcc-7 -arch=sm_61 -std=c++14 -DCUDA
 	ifdef PAR_MESODYN
 		CFLAGS += -DPAR_MESODYN
 		NVCCFLAGS += --expt-relaxed-constexpr --expt-extended-lambda -DPAR_MESODYN
@@ -45,7 +45,7 @@ OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)))
 ifdef CUDA
 OBJECTS     += $(BUILDDIR)/tools.o
 ifdef PAR_MESODYN
-OBJECTS     += $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/boundary_conditions.o $(BUILDDIR)/flux.o $(BUILDDIR)/component.o $(BUILDDIR)/gaussian_noise.o 
+OBJECTS     += $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/boundary_conditions.o $(BUILDDIR)/flux.o $(BUILDDIR)/component.o $(BUILDDIR)/gaussian_noise.o $(BUILDDIR)/collection_procedures.o $(BUILDDIR)/density_initializer.o
 endif
 endif
 
@@ -91,6 +91,8 @@ $(BUILDDIR)/tools.o:
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/flux.o $(SRCDIR)/mesodyn/flux.cu
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/component.o $(SRCDIR)/mesodyn/component.cu
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/gaussian_noise.o $(SRCDIR)/mesodyn/gaussian_noise.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/collection_procedures.o $(SRCDIR)/mesodyn/collection_procedures.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/density_initializer.o $(SRCDIR)/mesodyn/density_initializer.cu
 
 else
 ifdef CUDA

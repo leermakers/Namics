@@ -1,6 +1,5 @@
 lat : flat : n_layers : 100
-lat : flat : lattice_type : hexagonal
-lat : flat : FJC_choices : 19
+lat : flat : lattice_type : simple_cubic
 lat : flat : gradients : 1
 
 mon : A : freedom : pinned
@@ -25,19 +24,18 @@ newton : isaac : m : 10
 newton : isaac : i_info : 25
 newton : isaac : iterationlimit : 1000
 //newton : isaac : deltamax : 0.1
-output : pro : append : false
+output : pro : append : true
 pro : mon : * : phi
 pro : mol : * : phi
 start
 mon : A : freedom : free
-output : kal : append : false
+output : kal : append : true
 kal : mol : * : theta
+kal : mol : * : phibulk
 kal : sys : noname : grand_potential
-kal : lat : flat : FJC_choices
-
 start
-//mol : A : theta : 43
-//var : mol-A : search : equate_to_solvent
-//var : mol-C : search : theta
-//var : sys-noname : grand_potential : 0
-//start
+sys : X : constraint : delta
+sys : X : delta_range : (50)
+sys : X : delta_molecules : A;B
+mol : A : freedom : free
+mol : A : phibulk : 0.170715

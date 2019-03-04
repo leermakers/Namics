@@ -14,12 +14,12 @@
 #include <sstream>
 #include <unistd.h>   // output
 #include <memory>
+#include <thread>
 #include "mesodyn/lattice_object.h"
 #include "mesodyn/boundary_conditions.h"
 #include "mesodyn/component.h"
 #include "mesodyn/flux.h"
 #include "mesodyn/collection_procedures.h"
-
 
 #ifdef PAR_MESODYN
 #include <thrust/device_vector.h>

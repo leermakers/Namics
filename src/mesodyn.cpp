@@ -74,23 +74,23 @@ bool Mesodyn::mesodyn() {
   cout << "Initializing.." << endl;
   initial_conditions();
 
-  vector<Sanity_check*> checks;
+ // vector<Sanity_check*> checks;
 
   // Attach sanity checks
-  for (size_t i = 0 ; i < component_no; ++i) {
-    checks.push_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
-    checks.push_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
-  }
+ // for (size_t i = 0 ; i < component_no; ++i) {
+  //  checks.push_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
+  //  checks.push_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
+  //}
 
-  Check_index_unity<Real> check_rho(&components[0]->rho);
-  for (size_t i = 1 ; i < component_no ; ++i)
-    check_rho.register_checkable(&components[i]->rho);
+  //Check_index_unity<Real> check_rho(&components[0]->rho);
+  //for (size_t i = 1 ; i < component_no ; ++i)
+  //  check_rho.register_checkable(&components[i]->rho);
 
   //Prepare IO
   set_filename();
   cout.precision(8);
 
-  cout << "Mesodyn is all set, starting calculations.." << endl << endl << endl;
+  cout << "Mesodyn is all set, starting calculations.." << endl;// << endl << endl;
 
   // Prepare callback functions for SolveMesodyn in Newton
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
@@ -98,12 +98,13 @@ bool Mesodyn::mesodyn() {
 
   /**** Main MesoDyn time loop ****/
   for (int t = 1; t < timesteps+1; t++) {
-    cout << "\x1b[A" << "\x1b[A" << "MESODYN: t = " << t << " / " << timesteps << endl;
+    //cout << "\x1b[A" << "\x1b[A" << "MESODYN: t = " << t << " / " << timesteps << endl;
+    cout << "MESODYN: t = " << t << " / " << timesteps << endl;
 
     gaussian->generate(system_size);
 
     for (auto& all_fluxes : fluxes) all_fluxes->J.save_state();
-    for (auto& component : components) component->rho.save_state();
+    for (auto& all_components : components) all_components->rho.save_state();
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
     order_parameter->execute();
@@ -146,8 +147,8 @@ std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
 }
 
 void Mesodyn::sanity_check() {
-  for (auto all_components : components)
-    all_components->rho.perform_checks(); 
+  for (auto& all_components : components)
+    all_components->rho.perform_checks();
 }
 
 void Mesodyn::load_alpha(Real* alpha, const size_t i) {
@@ -156,6 +157,7 @@ void Mesodyn::load_alpha(Real* alpha, const size_t i) {
 }
 
 Real* Mesodyn::solve_crank_nicolson() {
+
   for (auto& all_components : components) {
     all_components->rho.reinstate_previous_state();
     all_components->update_boundaries();
@@ -164,9 +166,9 @@ Real* Mesodyn::solve_crank_nicolson() {
   for (auto& all_fluxes : fluxes)
     all_fluxes->flux();
 
-  for (auto& flux : fluxes) {
-    flux->component_a->update_density(flux->J, cn_ratio, +1);
-    flux->component_b->update_density(flux->J, cn_ratio, -1);
+  for (auto& all_fluxes : fluxes) {
+    all_fluxes->component_a->update_density(all_fluxes->J, cn_ratio, +1);
+    all_fluxes->component_b->update_density(all_fluxes->J, cn_ratio, -1);
   }
 
   for ( size_t n = 0; n < components.size() ; ++n )
@@ -243,7 +245,7 @@ int Mesodyn::initial_conditions() {
 
   std::map<size_t, size_t> combinations = generate_pairs(component_no);
 
-  for (auto& density : densities) 
+  for (auto& density : densities)
     components.push_back(make_shared<Component>(Lat[0], boundary, density));
 
   if (seed_specified == true)
@@ -251,10 +253,9 @@ int Mesodyn::initial_conditions() {
   else
       Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev);  
 
-  for (auto& index_of : combinations) {
+  for (auto& index_of : combinations)
       fluxes.push_back(
         Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
-    }
 
   norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
   order_parameter = make_unique<Order_parameter>(components, combinations, boundaryless_volume);

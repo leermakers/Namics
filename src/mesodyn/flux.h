@@ -15,8 +15,7 @@ class Flux3D;
 class IFlux {
   public:
 
-    IFlux(Lattice* lat_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_)
-    : J(lat_), component_a{A_}, component_b{B_} {}
+    IFlux(Lattice* lat_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_);
     ~IFlux() {}
 
     // Calculate flux at site depending on property differenceof IComponent A and B and store in J.

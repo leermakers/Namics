@@ -4,6 +4,9 @@ Register_class<IFlux, Flux1D, Dimensionality, Lattice*, const Real, Lattice_obje
 Register_class<IFlux, Flux2D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_two_dimensions(two_D);
 Register_class<IFlux, Flux3D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_three_dimensions(three_D);
 
+IFlux::IFlux(Lattice* lat_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_)
+    : J(lat_), component_a{A_}, component_b{B_} {}
+
 Flux1D::Flux1D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
     : IFlux(Lat, A, B), J_plus(Lat), L(Lat), mu(Lat), t_L(Lat), t_mu(Lat), D{D}, gaussian(gaussian)
   {

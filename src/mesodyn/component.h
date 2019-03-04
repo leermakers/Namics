@@ -15,9 +15,7 @@ enum error {
 class IComponent {
   public:
 
-    IComponent(Lattice* lat_, Lattice_object<Real> rho_init)
-    : Lat{lat_}, rho(rho_init), alpha(lat_)
-    { }
+    IComponent(Lattice*, Lattice_object<Real>&);
 
     Lattice* Lat;
     Lattice_object<Real> rho;

@@ -49,13 +49,19 @@ struct Value_index_pair
         iterator& operator-=(const int& change)             { position -= change;return (*this);}
         iterator  operator++(int) /* postfix */             { auto temp(*this);++position;return temp;}
         iterator  operator--(int) /* postfix */             { auto temp(*this);--position;return temp;}
-        iterator  operator+(const int& change)              { auto prev_pos = position;position+=change;auto temp(*this);position = prev_pos;return temp;}
+        const iterator  operator+(const long int& change)   { auto prev_pos = position;position+=change;auto temp(*this);position = prev_pos;return temp;}
         iterator  operator+(const iterator& Iterator)       { auto prev_pos = position;position+=Iterator.get_const_pos();auto temp(*this);position = prev_pos;return temp;}
-        iterator  operator-(const int& change)              { auto prev_pos = position;position-=change;auto temp(*this);position = prev_pos;return temp;}
-        long int  operator-(const iterator& Iterator)       { auto dif_pos = position-Iterator.get_const_pos();return dif_pos;}
+        iterator  operator-(const long int& change)         { auto prev_pos = position;position-=change;auto temp(*this);position = prev_pos;return temp;}
+        //iterator  operator-(iterator& Iterator)             { auto prev_pos = position;position-=Iterator.get_const_pos();auto temp(*this);position = prev_pos;return temp;}
+        iterator  operator-(const iterator& Iterator)       { auto dif_pos = position-Iterator.get_const_pos();return dif_pos;}
+        long int  operator-(iterator& Iterator)             { auto dif_pos = position-Iterator.get_const_pos();return dif_pos;}
+
         bool      operator==(const iterator& Iterator)const { return ( get_const_pos() == Iterator.get_const_pos() );}
         bool      operator!=(const iterator& Iterator)const { return ( get_const_pos() != Iterator.get_const_pos() );}
         bool      operator>(const iterator& Iterator)const  { return ( get_const_pos() > Iterator.get_const_pos()  );}
+        bool      operator>=(const iterator& Iterator)const  { return ( get_const_pos() >= Iterator.get_const_pos()  );}
+        bool      operator>=(const size_t& position)const  { return ( get_const_pos() >= position  );}
+        bool      operator<=(const iterator& Iterator)const  { return ( get_const_pos() <= Iterator.get_const_pos()  );}
         bool      operator<(const iterator& Iterator)const  { return ( get_const_pos() < Iterator.get_const_pos()  );}
         //TODO: other compare operators
 

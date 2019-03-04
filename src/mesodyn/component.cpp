@@ -1,5 +1,9 @@
 #include "component.h"
 
+IComponent::IComponent(Lattice* lat_, Lattice_object<Real>& rho_init)
+    : Lat{lat_}, rho(rho_init), alpha(lat_)
+    { }
+
 Component::Component(Lattice* Lat, shared_ptr<Boundary1D> boundary, Lattice_object<Real> rho)
 //TODO: fix alpha size.
     : IComponent(Lat, rho), boundary(boundary) {
@@ -35,10 +39,9 @@ int Component::update_density(Lattice_object<Real>& J1, Real ratio, int sign) {
   return 0;
 }
 
-int Component::update_boundaries() {
+void Component::update_boundaries() {
   boundary->update_boundaries( alpha.m_data );
   boundary->update_boundaries( rho.m_data );
-  return 0;
 }
 
 Real Component::theta() {

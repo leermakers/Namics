@@ -1,8 +1,4 @@
 #include "mesodyn.h"
-#include "mesodyn/density_initializer.h"
-#include "mesodyn/file_reader.h"
-#include "mesodyn/neighborlist.h"
-#include <iterator>
 
 /* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018-2019 */
 /* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
@@ -26,17 +22,16 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
 
       //Variables for rho initialization
       initialization_mode { INIT_HOMOGENEOUS },
-      component_no        { Sys[0]->SysMolMonList.size() },
+      component_no        { Sys.front()->SysMolMonList.size() },
 
       //Output-related variables
       writes{0}
   {
 
   // to get the correct KSAM and volume.
-  Sys[0]->PrepareForCalculations();
-  boundaryless_volume = Sys[0]->boundaryless_volume;
+  Sys.front()->PrepareForCalculations();
 
-  rho.resize(component_no*system_size);
+  callback_densities.resize(component_no*system_size);
   
     //If molecules are pinned they cannot move, so we have to free them before moving them by using fluxes
   for (size_t i = 0; i < Seg.size(); ++i) {
@@ -54,14 +49,13 @@ bool Mesodyn::CheckInput() {
     string empty = "";
 
     if ( (read_filename = initialize<std::string>("read_pro",empty)) != empty)
-      initialization_mode = INIT_FROMPRO;
+      input_data_filetype = filetype::PRO;
     else if ( (read_filename = initialize<std::string>("read_vtk",empty)) != empty) {
-        if (read_filename.find(".vtk") != string::npos) {
-          cerr << "Mesodyn will add the component number and extension by itself (in that order), please format the remainder of the filename in the input file as ending in ." << endl;
-          exit(0);
-        }
-        initialization_mode = INIT_FROMVTK;
+      input_data_filetype = filetype::VTK_STRUCTURED_GRID;
     }
+
+    if (input_data_filetype != filetype::NONE)
+      initialization_mode = INIT_FROMFILE;
 
   return true;
 }
@@ -74,17 +68,17 @@ bool Mesodyn::mesodyn() {
   cout << "Initializing.." << endl;
   initial_conditions();
 
- // vector<Sanity_check*> checks;
+  vector<Sanity_check*> checks;
 
   // Attach sanity checks
- // for (size_t i = 0 ; i < component_no; ++i) {
-  //  checks.push_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
-  //  checks.push_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
-  //}
+  for (size_t i = 0 ; i < component_no; ++i) {
+    checks.push_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
+    checks.push_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
+  }
 
-  //Check_index_unity<Real> check_rho(&components[0]->rho);
-  //for (size_t i = 1 ; i < component_no ; ++i)
-  //  check_rho.register_checkable(&components[i]->rho);
+  Check_index_unity<Real> check_rho(&components[0]->rho);
+  for (size_t i = 1 ; i < component_no ; ++i)
+    check_rho.register_checkable(&components[i]->rho);
 
   //Prepare IO
   set_filename();
@@ -146,16 +140,6 @@ std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
     return combinations;
 }
 
-void Mesodyn::sanity_check() {
-  for (auto& all_components : components)
-    all_components->rho.perform_checks();
-}
-
-void Mesodyn::load_alpha(Real* alpha, const size_t i) {
-    if (i < component_no)
-     dynamic_pointer_cast<Component>( components[i] )->alpha.load_array(alpha,system_size);
-}
-
 Real* Mesodyn::solve_crank_nicolson() {
 
   for (auto& all_components : components) {
@@ -166,23 +150,86 @@ Real* Mesodyn::solve_crank_nicolson() {
   for (auto& all_fluxes : fluxes)
     all_fluxes->flux();
 
-  for (auto& all_fluxes : fluxes) {
-    all_fluxes->component_a->update_density(all_fluxes->J, cn_ratio, +1);
-    all_fluxes->component_b->update_density(all_fluxes->J, cn_ratio, -1);
-  }
+  update_densities();
 
+  prepare_densities_for_callback();
+
+  return device_vector_ptr_to_raw(callback_densities);
+}
+
+
+void Mesodyn::update_densities() {
+
+    for (auto& all_fluxes : fluxes) {
+      all_fluxes->component_a->update_density(all_fluxes->J, cn_ratio, +1);
+      all_fluxes->component_b->update_density(all_fluxes->J, cn_ratio, -1);
+    }
+
+}
+
+void Mesodyn::prepare_densities_for_callback() {
   for ( size_t n = 0; n < components.size() ; ++n )
-    stl::copy(components[n]->rho.begin(), components[n]->rho.end(), rho.begin()+n*system_size);
+    stl::copy(components[n]->rho.begin(), components[n]->rho.end(), callback_densities.begin()+n*system_size);
+}
+
+Real* Mesodyn::device_vector_ptr_to_raw(stl::device_vector<Real>& input_) {
 
   #ifdef PAR_MESODYN
-  return stl::raw_pointer_cast(rho.data());
+    return stl::raw_pointer_cast(input_.data());
   #else
-  return rho.data();
+    return input_.data();
   #endif
+
+}
+
+void Mesodyn::sanity_check() {
+  for (auto& all_components : components)
+    all_components->rho.perform_checks();
+}
+
+void Mesodyn::load_alpha(Real* alpha, const size_t i) {
+    if (i < component_no)
+     dynamic_pointer_cast<Component>( components[i] )->alpha.load_array(alpha,system_size);
 }
 
 int Mesodyn::initial_conditions() {
   
+  Lattice_object<size_t> mask = load_mask_from_sys();
+
+
+  vector<Lattice_object<Real>> densities(component_no, Lattice_object<Real>(Lat[0]) );
+
+  if (initialization_mode == INIT_FROMFILE)
+    initialize_from_file(densities);
+  else //if initialization_mode == INIT_HOMOGENEOUS
+    initialize_homogeneous(densities);
+
+
+  shared_ptr<Boundary1D> boundary = build_boundaries(mask);
+
+  for (auto& density : densities)
+    Mesodyn::components.push_back(make_shared<Component>(Lat[0], boundary, density));
+
+  std::map<size_t, size_t> combinations = generate_pairs(components.size());
+
+  if (seed_specified == true)
+    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev, seed);
+  else
+    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev);  
+
+  for (auto& index_of : combinations)
+    Mesodyn::fluxes.push_back(
+      Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
+
+  Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
+  Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);
+
+  norm_densities->execute();
+
+  return 0; 
+}
+
+Lattice_object<size_t> Mesodyn::load_mask_from_sys() {
   Lattice_object<int> t_mask(Lat[0]);
 
   #if defined(PAR_MESODYN) || ! defined(CUDA)
@@ -191,49 +238,12 @@ int Mesodyn::initial_conditions() {
   TransferDataToHost(t_mask.data(), Sys[0]->KSAM, system_size);
   #endif
 
-  Lattice_object<size_t> mask( t_mask ); 
+  Lattice_object<size_t> mask( t_mask );
 
-  vector<Lattice_object<Real>> densities(component_no, Lattice_object<Real>(Lat[0]) );
-  
+  return mask; 
+}
 
-  switch (initialization_mode) {
-    case INIT_HOMOGENEOUS:
-      {
-        Homogeneous_system_initializer initializer(Sys[0]);
-        initializer.build_objects();
-        initializer.push_data_to_objects(densities);
-        break;
-      }
-    case INIT_FROMPRO:
-      {
-        Readable_file file(read_filename, filetype::PRO);
-        Reader pro_reader;
-        pro_reader.read_objects_in(file);
-        pro_reader.assert_lattice_compatible(Lat[0]);
-        pro_reader.push_data_to_objects(densities);
-        break;
-      }
-    case INIT_FROMVTK:
-      {
-        //Vtk files are written per component, so we need multiple files
-        vector<Readable_file> vtk_files;
-        for (size_t i = 0 ; i < component_no ; ++i) {
-          //Because the input file doesn't specify each one, but we know how many there are.
-          string filename = read_filename + to_string(i+1) + ".vtk";
-
-          vtk_files.push_back( Readable_file( filename, filetype::VTK_STRUCTURED_GRID) );
-        }
-        Reader vtk_reader;
-        
-        for (const Readable_file& each_file : vtk_files) {
-          vtk_reader.read_objects_in(each_file);
-          vtk_reader.assert_lattice_compatible(Lat[0]);
-          vtk_reader.push_data_to_objects(densities);
-        }
-        break;
-      }    
-  }
-
+shared_ptr<Boundary1D> Mesodyn::build_boundaries(Lattice_object<size_t>& mask) {
   Boundary::Map boundary_conditions;
 
   // BC0: bX0, BC1: bXm, etc.
@@ -241,28 +251,25 @@ int Mesodyn::initial_conditions() {
   boundary_conditions[Dimension::Y] = Boundary::Adapter[Lat[0]->BC[2]];
   boundary_conditions[Dimension::Z] = Boundary::Adapter[Lat[0]->BC[4]];
 
-  Mesodyn::boundary = Boundary::Factory::Create(dimensionality, mask, boundary_conditions);
+  return Boundary::Factory::Create(dimensionality, mask, boundary_conditions);
+}
 
-  std::map<size_t, size_t> combinations = generate_pairs(component_no);
+void Mesodyn::initialize_homogeneous(vector<Lattice_object<Real>>& densities) {
 
-  for (auto& density : densities)
-    components.push_back(make_shared<Component>(Lat[0], boundary, density));
+  Homogeneous_system_initializer initializer(Sys[0]);
+  initializer.build_objects();
+  initializer.push_data_to_objects(densities);
 
-  if (seed_specified == true)
-      Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev, seed);
-  else
-      Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev);  
+}
 
-  for (auto& index_of : combinations)
-      fluxes.push_back(
-        Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
+void Mesodyn::initialize_from_file(vector<Lattice_object<Real>>& densities) {
 
-  norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
-  order_parameter = make_unique<Order_parameter>(components, combinations, boundaryless_volume);
+  Readable_file file(read_filename, Mesodyn::input_data_filetype);
+  Reader file_reader;
+  file_reader.read_objects_in(file);
+  file_reader.assert_lattice_compatible(Lat[0]);
+  file_reader.push_data_to_objects(densities);
 
-  norm_densities->execute();
-
-  return 0; 
 }
 
 /******* Output generation *******/
@@ -273,8 +280,6 @@ void Mesodyn::set_filename() {
 }
 
 int Mesodyn::write_output(int t) {
-  //Implement below for more starts? (OutputList higher numbers?)
-
     //This takes a ton of time, but you apparently cannot re-use the output class without ending up with increasing duplicates per timestep in .kal files..
     Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
 
@@ -283,11 +288,13 @@ int Mesodyn::write_output(int t) {
       return 0;
     }
 
+    ostringstream vtk_filename;
+    vtk_filename << filename.str() << "-" << writes << ".vtk";
+
     Out[0]->output_nr = writes;
     Out[0]->n_output = timesteps / timebetweensaves;
-
     New[0]->PushOutput();
-
+    Out[0]->push("vtk_output", vtk_filename.str());
     Out[0]->push("order_parameter", order_parameter->get());
     Out[0]->push("time",t);
     Out[0]->push("timesteps", timesteps);
@@ -298,14 +305,10 @@ int Mesodyn::write_output(int t) {
     Out[0]->push("stddev", stddev);
     Out[0]->push("delta_t", dt);
     Out[0]->push("cn_ratio", cn_ratio);
+    Out[0]->prepare_vtk_structured_grid(vtk_filename.str());
 
-    for (size_t i = 0 ; i < components.size() ; ++i) {
-      ostringstream vtk_filename;
-      vtk_filename << filename.str() << "-rho" << i << "-" << writes << ".vtk";
-
-      stl::host_vector<Real> t_rho = components[i]->rho.m_data;
-      Out[0]->vtk_structured_grid(vtk_filename.str(), t_rho.data(), i);
-    }
+    for (size_t i = 0 ; i < components.size() ; ++i)
+      Out[0]->write_vtk_data(vtk_filename.str(), components[i]->rho.to_host().data(), i);
     
     ++writes;
 

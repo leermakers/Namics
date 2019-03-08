@@ -15,6 +15,11 @@
 #include <unistd.h>   // output
 #include <memory>
 #include <thread>
+#include <iterator>
+
+#include "mesodyn/density_initializer.h"
+#include "mesodyn/neighborlist.h"
+#include "mesodyn/file_reader.h"
 #include "mesodyn/lattice_object.h"
 #include "mesodyn/boundary_conditions.h"
 #include "mesodyn/component.h"
@@ -70,25 +75,32 @@ private:
   Real* solve_crank_nicolson();
   void load_alpha(Real*, const size_t);
   void sanity_check();
+  void update_densities();
+  void prepare_densities_for_callback();
+  Real* device_vector_ptr_to_raw(stl::device_vector<Real>&);
+  shared_ptr<Boundary1D> build_boundaries(Lattice_object<size_t>&);
+  void initialize_from_file(vector<Lattice_object<Real>>& densities);
+  void initialize_homogeneous(vector<Lattice_object<Real>>& densities);
+  Lattice_object<size_t> load_mask_from_sys();
+
 
   /* Initialization*/
   enum init {
     INIT_HOMOGENEOUS,
-    INIT_FROMPRO,
-    INIT_FROMVTK,
+    INIT_FROMFILE
   };
 
-  stl::device_vector<Real> rho;
+  filetype input_data_filetype = filetype::NONE;
+
+  stl::device_vector<Real> callback_densities;
   string read_filename;
   int initial_conditions();
   std::map<size_t, size_t> generate_pairs(size_t);
-  Real boundaryless_volume;
   
 
   /* Helper class instances */
-  shared_ptr<Gaussian_noise> gaussian;
-  shared_ptr<Boundary1D> boundary;
   vector< shared_ptr<IComponent> > components;
+  shared_ptr<Gaussian_noise> gaussian;
   vector< shared_ptr<IFlux> > fluxes;
 
   /* Mesodyn specific output */
@@ -109,9 +121,6 @@ public:
   static std::vector<string> KEYS;
   static std::vector<string> PARAMETERS;
   static std::vector<string> VALUES;
-
-  int norm_theta(vector< shared_ptr<IComponent> >&);
-  Real calculate_order_parameter();
 
   /* Inputs / output class interface functions */
 

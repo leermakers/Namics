@@ -1118,14 +1118,10 @@ if (debug) cout <<" Side in lattice " << endl;
 			}
 			break;
 		case 3:
-			#ifdef CUDA
-				Propagate(X_side, X, JX, JY, JZ, M);
-			#else
 			Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
 			Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
 			Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
 			Norm(X_side,1.0/6.0,M);
-			#endif
 			break;
 		default:
 			break;
@@ -1185,7 +1181,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 		case 3:
 			if (k>0) {JX_=jx[k]; JY_=jy[k];}
 			set_bounds(gs_1);
-			#ifdef CUDA
+			#ifdef PAR_MESODYN
 			Propagate(gs, gs_1, JX_, JY_, JZ_, M);
 			#else
 			Zero(gs,M); 

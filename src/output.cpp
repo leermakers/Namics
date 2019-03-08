@@ -627,11 +627,11 @@ if (debug) cout << "vtk in output " << endl;
 	fclose(fp);
 }
 
-void Output::vtk_structured_grid(string filename, Real *X, int component_count) {
+void Output::prepare_vtk_structured_grid(string filename) {
 	if (debug) cout << "vtk_structed_grid in output " << endl;
 
 	ofstream output;
-	output.open(filename);
+	output.open(filename, ios_base::out);
 
 	ostringstream vtk;
 	vtk.precision(14);
@@ -653,7 +653,27 @@ void Output::vtk_structured_grid(string filename, Real *X, int component_count) 
 				vtk << x << " " << y << " " << z << "\n";
 
 	vtk << "POINT_DATA " << MX * MY * MZ << "\n";
-	vtk << "SCALARS component_" << component_count << " float\nLOOKUP_TABLE default \n";
+
+	output << vtk.str();
+	output.flush();
+
+	output.close();
+}
+
+void Output::write_vtk_data(string filename, Real *X, int component_number, ios_base::openmode mode) {
+	if (debug) cout << "vtk_structed_grid in output " << endl;
+
+	ofstream output;
+	output.open(filename, mode);
+
+	ostringstream vtk;
+	vtk.precision(14);
+
+	int MX = Lat[0]->MX;
+	int MY = Lat[0]->MY;
+	int MZ = Lat[0]->MZ;
+
+	vtk << "SCALARS component_" << component_number << " float\nLOOKUP_TABLE default \n";
 
 	for (int x = 1; x < MX + 1; ++x)
 		for (int y = 1; y < MY + 1; ++y)

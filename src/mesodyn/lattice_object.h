@@ -249,6 +249,11 @@ void reinstate_previous_state() {
   set_checkable_data_wrapper();
 }
 
+stl::host_vector<T> to_host() {
+  stl::host_vector<T> host_m_data = m_data;
+  return host_m_data;
+}
+
 };
 
 #endif

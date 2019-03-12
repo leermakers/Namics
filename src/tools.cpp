@@ -9,7 +9,7 @@
 #ifdef CUDA
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
-const int block_size = 256;
+const int block_size = 512;
 
 #if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
 #else
@@ -207,6 +207,7 @@ __global__ void add(Real *P, Real *A, int M)   {
 
 __global__ void propagate(Real *gs, Real *g_1, int JX, int JY, int JZ, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+
 	if (idx < (M-JX)) {
 		gs[idx] = (g_1[idx-JX] + g_1[idx+JX]) + (g_1[idx-JY] + g_1[idx+JY]) + (g_1[idx-JZ] + g_1[idx+JZ]);
 		gs[idx] *= (1.0/6.0);

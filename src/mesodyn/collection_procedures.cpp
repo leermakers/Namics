@@ -3,10 +3,10 @@
 constexpr uint8_t TOTAL_DENSITY = 1;
 
 Norm_densities::Norm_densities(vector<Molecule *> mol_, vector<shared_ptr<IComponent>> components_, size_t solvent_mol)
-    : m_components{components_}, m_system_size{components_[0]->rho.size()}, m_solvent{solvent_mol}
+    : m_components{components_}, m_mol{mol_}, m_system_size{components_[0]->rho.size()}, m_solvent{solvent_mol}
 {
   assert(mol_[solvent_mol]->MolMonList.size() == 1 and "Norming solvents with mutliple monomers is not supported! Please write your own script");
-  fetch_theta(mol_, components_);
+  fetch_theta();
 }
 
 void Norm_densities::execute()
@@ -28,10 +28,10 @@ void Norm_densities::execute()
                  [this] DEVICE_LAMBDA(const double &x, const double &y) { return (y - (x - TOTAL_DENSITY)); });
 }
 
-void Norm_densities::fetch_theta(vector<Molecule *> mol, vector<shared_ptr<IComponent>> component)
+void Norm_densities::fetch_theta()
 {
   int j = 0;
-  for (auto &molecule : mol)
+  for (auto &molecule : m_mol)
   {
     Molecule_density this_density = Molecule_density(molecule);
 
@@ -39,7 +39,7 @@ void Norm_densities::fetch_theta(vector<Molecule *> mol, vector<shared_ptr<IComp
     for (auto density : densities)
     {
 
-      theta[component[j]] = density;
+      theta[m_components[j]] = density;
 
       if (density == 0)
         m_solvent = j;

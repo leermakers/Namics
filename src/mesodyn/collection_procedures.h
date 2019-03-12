@@ -38,12 +38,13 @@ class Norm_densities : public Lattice_object_collection_procedure {
     Norm_densities(vector<Molecule*> mol_, vector< shared_ptr<IComponent> > components_, size_t solvent_mol);
 
     void execute() override;
-    void fetch_theta(vector<Molecule*> mol, vector< shared_ptr<IComponent> > component);
+    void fetch_theta();
 
   private:
 
     std::map<shared_ptr< IComponent >, Real> theta;
     std::vector< shared_ptr<IComponent> > m_components;
+    std::vector<Molecule*> m_mol;
     size_t m_system_size;
     size_t m_solvent;
 };

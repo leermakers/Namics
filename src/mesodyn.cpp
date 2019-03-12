@@ -68,17 +68,17 @@ bool Mesodyn::mesodyn() {
   cout << "Initializing.." << endl;
   initial_conditions();
 
-  vector<Sanity_check*> checks;
+  //vector<Sanity_check*> checks;
 
   // Attach sanity checks
-  for (size_t i = 0 ; i < component_no; ++i) {
-    checks.push_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
-    checks.push_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
-  }
+  //for (size_t i = 0 ; i < component_no; ++i) {
+  //  checks.push_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
+  //  checks.push_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
+  //}
 
-  Check_index_unity<Real> check_rho(&components[0]->rho);
-  for (size_t i = 1 ; i < component_no ; ++i)
-    check_rho.register_checkable(&components[i]->rho);
+  //Check_index_unity<Real> check_rho(&components[0]->rho);
+  //for (size_t i = 1 ; i < component_no ; ++i)
+  //  check_rho.register_checkable(&components[i]->rho);
 
   //Prepare IO
   set_filename();
@@ -110,6 +110,8 @@ bool Mesodyn::mesodyn() {
     if (t % timebetweensaves == 0) {
       write_output(t);
     }
+
+
   } // time loop
 
   std::cout << "Done." << std::endl;

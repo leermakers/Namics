@@ -1181,15 +1181,15 @@ if (debug) cout <<" propagate in lattice " << endl;
 		case 3:
 			if (k>0) {JX_=jx[k]; JY_=jy[k];}
 			set_bounds(gs_1);
-			#ifdef PAR_MESODYN
-			Propagate(gs, gs_1, JX_, JY_, JZ_, M);
-			#else
+			//#ifdef PAR_MESODYN
+			//Propagate(gs, gs_1, JX_, JY_, JZ_, M);
+			//#else
 			Zero(gs,M); 
 			Add(gs+JX_,gs_1,M-JX_); Add(gs,gs_1+JX_,M-JX_);
 			Add(gs+JY_,gs_1,M-JY_); Add(gs,gs_1+JY_,M-JY_);
 			Add(gs+JZ_,gs_1,M-JZ_);  Add(gs,gs_1+JZ_, M-JZ_);
 			Norm(gs,1.0/6.0,M);
-			#endif
+			//#endif
 			Times(gs,gs,G1,M);
 			break;
 		default:

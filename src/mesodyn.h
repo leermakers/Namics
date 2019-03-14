@@ -37,8 +37,6 @@
 
 #include "mesodyn/stl_typedef.h"
 
-class Boundary1D;
-
 class Mesodyn : public Lattice_accessor {
 
 private:

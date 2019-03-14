@@ -1,14 +1,16 @@
 #ifndef BOUNDARY_CONDITIONS_H
 #define BOUNDARY_CONDITIONS_H
 
-#include "factory.h"
 #include "lattice_accessor.h"
+#include "factory.h"
 #include "value_index_pair.h"
 #include "neighborlist.h"
 #include "lattice_object.h"
 #include <vector>
 #include <functional>
 #include <map>
+#include <algorithm>
+#include <iostream>
 #ifdef PAR_MESODYN
   #include <thrust/copy.h>
 #endif
@@ -16,8 +18,6 @@
 #include "stl_typedef.h"
 
 class Boundary1D;
-class Boundary2D;
-class Boundary3D;
 
 namespace Boundary {
 
@@ -31,8 +31,8 @@ namespace Boundary {
   static Boundary::Adapter_type Adapter;
 
   typedef std::map<Dimension, Boundary::Type> Map;
-  typedef Factory_template<Boundary1D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> Factory;
 
+  typedef Factory_template<Boundary1D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> Factory;
 }
 
 class Boundary1D {

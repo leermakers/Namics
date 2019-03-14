@@ -47,7 +47,7 @@ class Register_class
 public:
    Register_class(const Key_type &key)
    {
-      Factory_template<Base, Key_type, Args...>::Register(key, factory_function);
+      Factory_template<Base, Key_type, Args...>::Instance().Register(key, factory_function);
    }
 
    static std::shared_ptr<Base> factory_function(Args... args)
@@ -55,5 +55,4 @@ public:
       return std::make_shared<Derived>(args...);
    }
 };
-
 #endif

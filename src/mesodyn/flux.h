@@ -2,6 +2,7 @@
 #define FLUX_H
 
 #include <thread>
+#include "factory.h"
 #include "../lattice.h"
 #include "lattice_object.h"
 #include "neighborlist.h"
@@ -9,9 +10,11 @@
 #include "gaussian_noise.h"
 #include "lattice_accessor.h"
 
-class Flux1D;
-class Flux2D;
-class Flux3D;
+class IFlux;
+
+namespace Flux {
+  typedef Factory_template<IFlux, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> Factory;
+}
 
 class IFlux {
   public:
@@ -27,12 +30,6 @@ class IFlux {
     shared_ptr<IComponent> component_a;
     shared_ptr<IComponent> component_b;
 };
-
-namespace Flux {
-
-typedef Factory_template<IFlux, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> Factory;
-
-}
 
 class Flux1D : public IFlux {
 public:

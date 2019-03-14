@@ -374,6 +374,7 @@ std::vector<std::vector<Real>> Vtk_structured_grid_reader::get_file_as_vectors()
 Reader::Reader()
     : m_read_objects(0)
 {
+    m_file.precision(20);
 }
 
 //Callable for multiple files. returns number of objects read.

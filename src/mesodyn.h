@@ -65,6 +65,7 @@ private:
   const Real seed;  // seed of gaussian noise
   const bool seed_specified;
   const int timesteps; // length of the time evolution
+  const int save_delay; // wait for a number of timesteps before saving
   const int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   const Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
   int initialization_mode;

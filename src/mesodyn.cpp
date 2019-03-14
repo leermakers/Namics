@@ -3,6 +3,22 @@
 /* Mesoscale dynamics module written by Daniel Emmery as part of a master's thesis, 2018-2019 */
 /* Most of the physics in this module is based on the work of Fraaije et al. in the 1990s  */
 
+vector<string> Mesodyn::PARAMETERS;
+vector<string> Mesodyn::VALUES;
+vector<string> Mesodyn::KEYS
+{   "read_pro",
+    "read_vtk",
+    "diffusionconstant",
+    "delta_t",
+    "mean",
+    "stddev",
+    "seed",
+    "timesteps",
+    "timebetweensaves",
+    "save_delay",
+    "cn_ratio"
+};
+
 Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : 
       Lattice_accessor(Lat_[0]),
@@ -10,15 +26,16 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
 
       //Const-correct way of initializing member variables from file, see template in header file.
       //Initialization syntax: initialize<Datatype>("option", default_value);
-      D                 { initialize<Real>("diffusionconstant", 0.01) },
-      dt                { initialize<Real>("delta_t", 0.1) },
-      mean              { initialize<Real>("mean", 0.0) },
-      stddev            { initialize<Real>("stddev", (2 * D * sqrt(dt) ) )},
-      seed              { initialize<Real>("seed", -12345.6789) },
-      seed_specified    { seed != -12345.6789 ? true : false },   
-      timesteps         { initialize<int>("timesteps", 100) },
-      timebetweensaves  { initialize<int>("timebetweensaves", 1) },
-      cn_ratio          { initialize<Real>("cn_ratio", 0.5) },
+      D                     { initialize<Real>("diffusionconstant", 0.01) },
+      dt                    { initialize<Real>("delta_t", 0.1) },
+      mean                  { initialize<Real>("mean", 0.0) },
+      stddev                { initialize<Real>("stddev", (2 * D * sqrt(dt) ) )},
+      seed                  { initialize<Real>("seed", -12345.6789) },
+      seed_specified        { seed != -12345.6789 ? true : false },   
+      timesteps             { initialize<int>("timesteps", 100) },
+      save_delay            { initialize<int>("save_delay", 0) },
+      timebetweensaves      { initialize<int>("timebetweensaves", 1) },
+      cn_ratio              { initialize<Real>("cn_ratio", 0.5) },
 
       //Variables for rho initialization
       initialization_mode { INIT_HOMOGENEOUS },
@@ -107,7 +124,7 @@ bool Mesodyn::mesodyn() {
 
     sanity_check();
 
-    if (t % timebetweensaves == 0) {
+    if (t > save_delay && t % timebetweensaves == 0) {
       write_output(t);
     }
 
@@ -319,18 +336,3 @@ int Mesodyn::write_output(int t) {
 
   return 0;
 }
-
-vector<string> Mesodyn::PARAMETERS;
-vector<string> Mesodyn::VALUES;
-vector<string> Mesodyn::KEYS
-{   "read_pro",
-    "read_vtk",
-    "diffusionconstant",
-    "delta_t",
-    "mean",
-    "stddev",
-    "seed",
-    "timesteps",
-    "timebetweensaves",
-    "cn_ratio"
-};

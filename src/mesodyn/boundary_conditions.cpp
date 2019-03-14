@@ -3,10 +3,6 @@
 #include <algorithm>
 #include <iostream>
 
-Register_class<Boundary1D, Boundary1D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> boundary_one_dimensions(one_D);
-Register_class<Boundary1D, Boundary2D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> boundary_two_dimensions(two_D);
-Register_class<Boundary1D, Boundary3D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> boundary_three_dimensions(three_D);
-
 Boundary::Adapter_type Adapter {
     {"mirror", Boundary::Type::MIRROR},
     {"periodic", Boundary::Type::PERIODIC}

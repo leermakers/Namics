@@ -412,20 +412,26 @@ void Solve_scf::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 				cout <<"Copy from one gradient to three gradients: (x,y,i) = (i) is used for all x,y " << endl;
 				for (i=0; i<mx+2; i++)
 				for (j=0; j<my+2; j++)
-				for (k=0; k<mz+2; k++) if (k<MX+2) x[i*jx+j*jy+k]=X[k];
+					// TODO: This Cp is a really dirty fix and we should really write a kernel for this.
+					// Reason I did this, is because afaik it's only used once when generating the guess in main.
+				for (k=0; k<mz+2; k++) if (k<MX+2) Cp( x + (i*jx+j*jy+k) , X+k, 1);
 			} else {
 				if (MZ==0) {
 					cout <<"Copy form two gradients to three: (x,i,j) = (i,j) for all x " << endl;
 					JX=(MY+2);
 					for (i=0; i<mx+2; i++)
 					for (j=0; j<my+2; j++)
-					for (k=0; k<mz+2; k++) if (j<MX+2 && k<MY+2) x[i*jx+j*jy+k]=X[j*JX+k];
+					// TODO: This Cp is a really dirty fix and we should really write a kernel for this.
+					// Reason I did this, is because afaik it's only used once when generating the guess in main.
+					for (k=0; k<mz+2; k++) if (j<MX+2 && k<MY+2) Cp( x + (i*jx+j*jy+k), X + (j*JX+k), 1);
 				} else {
 					JX=(MY+2)*(MZ+2);
 					JY=(MZ+2);
 					for (i=0; i<mx+2; i++)
 					for (j=0; j<my+2; j++)
-					for (k=0; k<mz+2; k++) if (i<MX+2 && j<MY+2 && k<MZ+2) x[i*jx+j*jy+k]=X[i*JX+j*JY+k];
+					// TODO: This Cp is a really dirty fix and we should really write a kernel for this.
+					// Reason I did this, is because afaik it's only used once when generating the guess in main.
+					for (k=0; k<mz+2; k++) if (i<MX+2 && j<MY+2 && k<MZ+2) Cp( x + (i*jx+j*jy+k), (X+i*JX+j*JY+k), 1);
 				}
 			}
 			break;

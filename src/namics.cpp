@@ -310,9 +310,14 @@ int main(int argc, char* argv[]) {
       			if (CHARGED)
         			IV += m;
       			if (start > 1){
-        			free(X);
-              			X = (Real*)malloc(IV * sizeof(Real));
-            		}
+							#ifdef CUDA
+								cudaFree(X);
+								X = (Real*)AllOnDev(IV);
+							#else
+        				free(X);
+              	X = (Real*)malloc(IV * sizeof(Real));
+							#endif
+            	}
       			MONLIST.clear();
 			STATELIST.clear();
       			Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, STATELIST,CHARGED, MX, MY, MZ, fjc_old, 1);
@@ -427,13 +432,17 @@ int main(int argc, char* argv[]) {
       			CHARGED = Sys[0]->charged;
             		int IV_new=New[0]->iv; //check this
       			if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
-                		free(X);
+							#ifdef CUDA
+								cudaFree(X);
+							#else
+								free(X);
+							#endif
+							#ifdef CUDA
+								X = (Real*)AllOnDev(IV_new);
+							#else             
             		X = (Real *)malloc(IV_new * sizeof(Real));
-                #ifdef CUDA
-                TransferDataToHost(X, New[0]->xx, IV_new);
-                #else
-            		for (int i = 0; i < IV_new; i++) X[i] = New[0]->xx[i];
-                #endif
+							#endif
+            	Cp(X, New[0]->xx, IV_new);
       			fjc_old=Lat[0]->fjc;
       			int mon_length = Sys[0]->ItMonList.size();
 			int state_length=Sys[0]->ItStateList.size();
@@ -462,26 +471,36 @@ int main(int argc, char* argv[]) {
 
 /******** Clear all class instances ********/
 
-    		for (int i = 0; i < n_out; i++) delete Out[i];
+    		for (int i = 0; i < n_out; i++)
+					delete Out[i];
 		    Out.clear();
-   	 	  for (int i = 0; i < n_var; i++) delete Var[i];
+   	 	  for (int i = 0; i < n_var; i++)
+					delete Var[i];
     		Var.clear();
    	 	  delete New[0];
     		New.clear();
    	 	  delete Sys[0];
     		Sys.clear();
-   	 	  for (int i = 0; i < n_mol; i++) delete Mol[i];
+   	 	  for (int i = 0; i < n_mol; i++)
+					delete Mol[i];
     		Mol.clear();
-    		for (int i = 0; i < n_seg; i++) delete Seg[i];
+    		for (int i = 0; i < n_seg; i++)
+					delete Seg[i];
    	 	  Seg.clear();
-		for (int i=0; i<n_stat; i++) delete Sta[i];
-		  Sta.clear();
-		for (int i=0; i<n_rea; i++) delete Rea[i];
-	          Rea.clear();
+				for (int i=0; i<n_stat; i++)
+					delete Sta[i];
+		  	Sta.clear();
+				for (int i=0; i<n_rea; i++)
+					delete Rea[i];
+	      Rea.clear();
     		delete Lat[0];
     		Lat.clear();
 	} //loop over starts.
-  free(X);
+	#ifdef CUDA
+	cudaFree(X);
+	#else
+	free(X);
+	#endif
   delete In[0];
   In.clear();
 return 0;

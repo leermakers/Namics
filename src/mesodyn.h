@@ -18,6 +18,7 @@
 #include <iterator>
 
 #include "mesodyn/density_initializer.h"
+#include "mesodyn/file_writer.h"
 #include "mesodyn/neighborlist.h"
 #include "mesodyn/file_reader.h"
 #include "mesodyn/lattice_object.h"
@@ -66,11 +67,13 @@ private:
   const int save_delay; // wait for a number of timesteps before saving
   const int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   const Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
+  const Writable_filetype output_profile_filetype;
   int initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
 
 
   /* Flow control */
+  int t;
   Real* solve_crank_nicolson();
   void load_alpha(Real*, const size_t);
   void sanity_check();
@@ -89,7 +92,7 @@ private:
     INIT_FROMFILE
   };
 
-  filetype input_data_filetype = filetype::NONE;
+  Readable_filetype input_data_filetype = Readable_filetype::NONE;
 
   stl::device_vector<Real> callback_densities;
   string read_filename;
@@ -104,8 +107,13 @@ private:
 
   /* Mesodyn specific output */
   ostringstream filename;
-  int writes;
   void set_filename();
+  map<std::string, shared_ptr<IOutput_ptr> > output_params;
+  vector<shared_ptr<IParameter_writer>> parameter_writers;
+  vector<shared_ptr<IProfile_writer>> profile_writers;
+  map<std::string, shared_ptr<IOutput_ptr> > output_profiles;
+  vector<string> selected_options;
+  void register_output();
 
   unique_ptr<Norm_densities> norm_densities;
   unique_ptr<Order_parameter> order_parameter;
@@ -123,7 +131,7 @@ public:
 
   /* Inputs / output class interface functions */
 
-  int write_output(int);
+  int write_output();
   bool CheckInput();
   
 
@@ -139,6 +147,38 @@ public:
           return value;
       }
      return default_value;
+  }
+
+  template<typename Datatype>
+  Datatype initialize_enum(string option, Datatype default_value, std::map<std::string, Datatype> map) {
+
+    for (size_t i = 0 ; i < Mesodyn::PARAMETERS.size(); ++i) 
+    {
+		  if (option==Mesodyn::PARAMETERS[i]) {
+          if ( map.find(VALUES[i]) == map.end() ) {
+            cerr << "Value '" << VALUES[i] << "' is not a valid option for '" << PARAMETERS[i]
+            << "'. Please select from: " << endl;
+            for (auto& entry : map)
+              cerr << entry.first << endl;
+            exit(0);
+          } else
+            return map[VALUES[i]];
+      }
+    }
+
+    return default_value;
+  }
+
+  template <typename Datatype>
+  void register_output_param(string description, Datatype* variable) {
+    shared_ptr<IOutput_ptr> param = make_shared<Output_ptr<Datatype>>(variable);
+    Mesodyn::output_params[description] = param;
+  }
+
+  template <typename Datatype>
+  void register_output_profile(string description, Datatype* variable) {
+    shared_ptr<IOutput_ptr> profile = make_shared<Output_ptr<Datatype>>(variable);
+    Mesodyn::output_profiles[description] = profile;
   }
 
 };

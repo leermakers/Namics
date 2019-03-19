@@ -16,7 +16,8 @@ vector<string> Mesodyn::KEYS
     "timesteps",
     "timebetweensaves",
     "save_delay",
-    "cn_ratio"
+    "cn_ratio",
+    "profile_type"
 };
 
 Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
@@ -36,26 +37,35 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       save_delay            { initialize<int>("save_delay", 0) },
       timebetweensaves      { initialize<int>("timebetweensaves", 1) },
       cn_ratio              { initialize<Real>("cn_ratio", 0.5) },
+      output_profile_filetype          { initialize_enum<Writable_filetype>("profile_type", Writable_filetype::VTK_STRUCTURED_GRID, Profile_writer::input_options)},
 
       //Variables for rho initialization
       initialization_mode { INIT_HOMOGENEOUS },
       component_no        { Sys.front()->SysMolMonList.size() },
-
-      //Output-related variables
-      writes{0}
-  {
-
+      t                   { 0 }
+{
   // to get the correct KSAM and volume.
   Sys.front()->PrepareForCalculations();
 
   callback_densities.resize(component_no*system_size);
   
     //If molecules are pinned they cannot move, so we have to free them before moving them by using fluxes
-  for (size_t i = 0; i < Seg.size(); ++i) {
+  for (size_t i = 0; i < Seg.size(); ++i)
+  {
     if (Seg[i]->freedom == "pinned")
       Seg[i]->freedom = "free";
   }
-  
+
+  cout << "Initializing.." << endl;
+
+  initial_conditions();
+  register_output();
+  set_filename();
+
+  Writable_file out_file(filename.str(), output_profile_filetype );
+  profile_writers.push_back(Profile_writer::Factory::Create(output_profile_filetype, Lat[0], out_file));
+  profile_writers[0]->bind_data(output_profiles);
+
 }
 
 Mesodyn::~Mesodyn() {
@@ -66,12 +76,12 @@ bool Mesodyn::CheckInput() {
     string empty = "";
 
     if ( (read_filename = initialize<std::string>("read_pro",empty)) != empty)
-      input_data_filetype = filetype::PRO;
+      input_data_filetype = Readable_filetype::PRO;
     else if ( (read_filename = initialize<std::string>("read_vtk",empty)) != empty) {
-      input_data_filetype = filetype::VTK_STRUCTURED_GRID;
+      input_data_filetype = Readable_filetype::VTK_STRUCTURED_GRID;
     }
 
-    if (input_data_filetype != filetype::NONE)
+    if (input_data_filetype != Readable_filetype::NONE)
       initialization_mode = INIT_FROMFILE;
 
   return true;
@@ -80,17 +90,12 @@ bool Mesodyn::CheckInput() {
 /******** Flow control ********/
 
 bool Mesodyn::mesodyn() {
-
-  //   Initialize densities
-  cout << "Initializing.." << endl;
-  initial_conditions();
-
   //vector<Sanity_check*> checks;
 
   // Attach sanity checks
   //for (size_t i = 0 ; i < component_no; ++i) {
-  //  checks.push_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
-  //  checks.push_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
+  //  checks.emplace_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
+  //  checks.emplace_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
   //}
 
   //Check_index_unity<Real> check_rho(&components[0]->rho);
@@ -98,7 +103,7 @@ bool Mesodyn::mesodyn() {
   //  check_rho.register_checkable(&components[i]->rho);
 
   //Prepare IO
-  set_filename();
+  
   cout.precision(8);
 
   cout << "Mesodyn is all set, starting calculations.." << endl;// << endl << endl;
@@ -108,7 +113,7 @@ bool Mesodyn::mesodyn() {
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
   /**** Main MesoDyn time loop ****/
-  for (int t = 1; t < timesteps+1; t++) {
+  for (t = 1; t < timesteps+1; t++) {
     //cout << "\x1b[A" << "\x1b[A" << "MESODYN: t = " << t << " / " << timesteps << endl;
     cout << "MESODYN: t = " << t << " / " << timesteps << endl;
 
@@ -125,7 +130,7 @@ bool Mesodyn::mesodyn() {
     sanity_check();
 
     if (t > save_delay && t % timebetweensaves == 0) {
-      write_output(t);
+      write_output();
     }
 
 
@@ -150,7 +155,7 @@ std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
       std::vector<size_t> index;
 
       for (size_t i = 0; i < N; ++i) // [0..N-1] integers
-        if (bitmask[i]) index.push_back(i);
+        if (bitmask[i]) index.emplace_back(i);
 
       combinations[ index[0] ] = index[1];
 
@@ -227,7 +232,7 @@ int Mesodyn::initial_conditions() {
   shared_ptr<Boundary1D> boundary = build_boundaries(mask);
 
   for (auto& density : densities)
-    Mesodyn::components.push_back(make_shared<Component>(Lat[0], boundary, density));
+    Mesodyn::components.emplace_back(make_shared<Component>(Lat[0], boundary, density));
 
   std::map<size_t, size_t> combinations = generate_pairs(components.size());
 
@@ -237,7 +242,7 @@ int Mesodyn::initial_conditions() {
     Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev);  
 
   for (auto& index_of : combinations)
-    Mesodyn::fluxes.push_back(
+    Mesodyn::fluxes.emplace_back(
       Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
 
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
@@ -298,41 +303,74 @@ void Mesodyn::set_filename() {
   filename << time(time_t());
 }
 
-int Mesodyn::write_output(int t) {
-    //This takes a ton of time, but you apparently cannot re-use the output class without ending up with increasing duplicates per timestep in .kal files..
-    Out.push_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], writes, timesteps / timebetweensaves));
+void Mesodyn::register_output() {
+    for (size_t i = 0 ; i < components.size() ; ++i)
+    {
+      string description = "component:" + to_string(i);
+      register_output_profile(description + ":density", components[i]->rho.data());
+    }
+}
 
-    if (!Out[0]->CheckInput(1)) {
-      cout << "input_error in output " << endl;
-      return 0;
+int Mesodyn::write_output() {
+     Out.emplace_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], (int)t, timesteps / timebetweensaves));
+     Out[0]->CheckInput(1);
+     Out[0]->output_nr = t;
+     Out[0]->n_output = timesteps / timebetweensaves;
+     New[0]->PushOutput(); 
+
+     Out[0]->push("filename", filename.str());
+     Out[0]->push("order_parameter", order_parameter->get());
+     Out[0]->push("time",t);
+     Out[0]->push("timesteps", timesteps);
+     Out[0]->push("timebetweensaves", timebetweensaves);
+     Out[0]->push("diffusionconstant", D);
+     Out[0]->push("seed", seed);
+     Out[0]->push("mean", mean);
+     Out[0]->push("stddev", stddev);
+     Out[0]->push("delta_t", dt);
+     Out[0]->push("cn_ratio", cn_ratio);
+
+     Out[0]->WriteOutput(t);
+     Out.clear();
+
+    for (auto& parameter_writer : parameter_writers)
+      parameter_writer->write();
+
+    for (auto& profile_writer : profile_writers)
+    {
+      profile_writer->prepare_for_data();
+      profile_writer->write();
     }
 
-    ostringstream vtk_filename;
-    vtk_filename << filename.str() << "-" << writes << ".vtk";
-
-    Out[0]->output_nr = writes;
-    Out[0]->n_output = timesteps / timebetweensaves;
-    New[0]->PushOutput();
-    Out[0]->push("vtk_output", vtk_filename.str());
-    Out[0]->push("order_parameter", order_parameter->get());
-    Out[0]->push("time",t);
-    Out[0]->push("timesteps", timesteps);
-    Out[0]->push("timebetweensaves", timebetweensaves);
-    Out[0]->push("diffusionconstant", D);
-    Out[0]->push("seed", seed);
-    Out[0]->push("mean", mean);
-    Out[0]->push("stddev", stddev);
-    Out[0]->push("delta_t", dt);
-    Out[0]->push("cn_ratio", cn_ratio);
-    Out[0]->prepare_vtk_structured_grid(vtk_filename.str());
-
-    for (size_t i = 0 ; i < components.size() ; ++i)
-      Out[0]->write_vtk_data(vtk_filename.str(), components[i]->rho.to_host().data(), i);
-    
-    ++writes;
-
-    Out[0]->WriteOutput(writes);
-    Out.clear();
-
-  return 0;
+    return 0;
 }
+
+/*      Writable_file kal_file(filename.str(), Writable_filetype::KAL);
+    parameter_writers.push_back( make_shared<Kal_writer>(kal_file) );
+    for (auto& parameter_writer : parameter_writers) {
+      parameter_writer->bind_data(output_params);
+      parameter_writer->prepare_for_data(selected_options);
+    }
+
+    *******************
+
+    Out.emplace_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], (int)t, timesteps / timebetweensaves));
+    if (!Out[0]->CheckInput(1)) {
+        cout << "input_error in output " << endl;
+        exit(0);
+    }
+
+    for (size_t i = 0 ; i < Out[0]->OUT_key.size() ; ++i)
+      if( Out[0]->OUT_key[i] == "mesodyn")
+        selected_options.push_back(Out[0]->OUT_prop[i]);
+
+    register_output_param("time", &t);
+    register_output_param("timesteps", &timesteps);
+    register_output_param("timebetweensaves", &timebetweensaves);
+    register_output_param("diffusionconstant", &D);
+    register_output_param("seed", &seed);
+    register_output_param("mean", &mean);
+    register_output_param("stddev", &stddev);
+    register_output_param("delta_t", &dt);
+    register_output_param("cn_ratio", &cn_ratio);
+    register_output_param("order_parameter", &order_parameter->get());*/

@@ -23,7 +23,7 @@ class Order_parameter : public Lattice_object_collection_procedure {
     ~Order_parameter() { }
 
     void execute() override;
-    Real get();
+    Real& get();
 
   private:
     Real m_boundaryless_volume;

@@ -74,7 +74,7 @@ void Order_parameter::execute()
   m_order_parameter /= m_boundaryless_volume;
 }
 
-Real Order_parameter::get()
+Real& Order_parameter::get()
 {
   return m_order_parameter;
 }

@@ -9,13 +9,21 @@ constexpr uint8_t Y_DIMENSION = 1;
 constexpr uint8_t Z_DIMENSION = 2;
 constexpr uint8_t OFFSET_VTK_DIMENSIONS_TAG = 1;
 
-filetype Readable_file::get_filetype()
+std::map<Readable_filetype, std::string> Readable_file::extension_map  {
+            {Readable_filetype::NONE, ""},
+            {Readable_filetype::VTK_STRUCTURED_GRID, "vtk"},
+            {Readable_filetype::PRO, "pro"}
+};
+
+
+
+Readable_filetype Readable_file::get_filetype()
 {
     return m_filetype;
 }
 
 //Accepts filename,
-Readable_file::Readable_file(const std::string filename_, filetype filetype_)
+Readable_file::Readable_file(const std::string filename_, Readable_filetype filetype_)
     : m_filename{filename_}, m_filetype{filetype_}
 {
     try
@@ -39,7 +47,7 @@ void Readable_file::check_filetype()
 {
     read_extension();
 
-    if (extension_map[m_filetype] != m_extension)
+    if (Readable_file::extension_map[m_filetype] != m_extension)
     {
         cerr << "Extension " + m_extension + " doesn't correspond to this filetype!" << endl;
         throw error::ERROR_EXTENSION;
@@ -105,7 +113,7 @@ std::vector<std::string> IReader::tokenize(std::string line, char delimiter)
 
     //Read lines as tokens
     while (getline(stream, token, delimiter))
-        tokens.push_back(token);
+        tokens.emplace_back(token);
 
     return tokens;
 }
@@ -162,7 +170,7 @@ std::vector<std::string> Pro_reader::parse_data(const size_t number_of_component
     while (getline(m_file, line)) {
         tokens = tokenize(line, '\t');
         for (size_t i = 0; i < number_of_components; ++i)
-            m_data[i].push_back(
+            m_data[i].emplace_back(
                 //Convert string to float
                 strtod( tokens[first_component_column + i].c_str() , NULL )
             );
@@ -296,7 +304,7 @@ Vtk_structured_grid_reader::STATUS Vtk_structured_grid_reader::parse_next_data_b
         if (std::regex_match(line, std::regex(R"(^[\d]+.[\d]+$)")))
             return STATUS::NEW_BLOCK_FOUND;
         else
-            data.push_back(atof(line.c_str()));
+            data.emplace_back(atof(line.c_str()));
     }
 
     return STATUS::END;
@@ -364,7 +372,7 @@ std::vector<std::vector<Real>> Vtk_structured_grid_reader::get_file_as_vectors()
     {
         //ASSUMPTION: VTK files a written without bounds, so add them
         data = with_bounds(data);
-        output.push_back(data);
+        output.emplace_back(data);
         data.clear();
     }
 
@@ -383,14 +391,14 @@ size_t Reader::read_objects_in(Readable_file file)
 
     switch (file.get_filetype())
     {
-    case filetype::VTK_STRUCTURED_GRID:
+    case Readable_filetype::VTK_STRUCTURED_GRID:
         input_reader = make_unique<Vtk_structured_grid_reader>(file);
         break;
-    case filetype::PRO:
+    case Readable_filetype::PRO:
         input_reader = make_unique<Pro_reader>(file);
         break;
     default:
-        cerr << "Something went horribly wrong while constructing Readable_file. It seems that filetype is not set properly. Exiting." << endl;
+        cerr << "Something went horribly wrong while constructing Readable_file. It seems that Readable_filetype is not set properly. Exiting." << endl;
         exit(0);
     }
 

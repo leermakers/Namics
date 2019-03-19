@@ -23,13 +23,13 @@ typedef double Real;
  *  These follow a bridge pattern with prototype IReader, concrete classes filetype_reader and bridge Reader.
  *   
  *  WRITING A NEW PARSER? IT'S EASY!
- *      - Add your filetype to the filetype enumerator and extension_map below (Readable_file::, private)
+ *      - Add your Readable_filetype to the Readable_filetype enumerator and extension_map below (Readable_file::, private)
  *      - Write your parser and (publicly) inherit and implement IReader
  *      - Add your class to Reader::read_objects_in()
  *      - Good to go!
  */ 
 
-enum class filetype {
+enum class Readable_filetype {
             NONE,
             VTK_STRUCTURED_GRID,
             PRO
@@ -45,18 +45,14 @@ class Readable_file {
             ERROR_FILE_NOT_FOUND,
         };
 
-        filetype get_filetype();
-        Readable_file(const std::string filename_, filetype filetype_);
+        Readable_filetype get_filetype();
+        Readable_file(const std::string filename_, Readable_filetype filetype_);
 
     private:
 
-        std::map<filetype, std::string> extension_map {
-            {filetype::NONE, ""},
-            {filetype::VTK_STRUCTURED_GRID, "vtk"},
-            {filetype::PRO, "pro"}
-        };
+        static std::map<Readable_filetype, std::string> extension_map;
 
-        filetype m_filetype;
+        Readable_filetype m_filetype;
         std::string m_extension;
 
         void check_filetype();

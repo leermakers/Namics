@@ -1,8 +1,8 @@
 #ifndef BOUNDARY_CONDITIONS_H
 #define BOUNDARY_CONDITIONS_H
 
-#include "lattice_accessor.h"
 #include "factory.h"
+#include "lattice_accessor.h"
 #include "value_index_pair.h"
 #include "neighborlist.h"
 #include "lattice_object.h"

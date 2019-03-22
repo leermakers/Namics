@@ -4,7 +4,6 @@
 #include "factory.h"
 #include "../lattice.h"
 #include "lattice_accessor.h"
-#include "settings_map_helper.h"
 #include <string>
 #include <cstdio>
 #include <vector>

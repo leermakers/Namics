@@ -13,7 +13,7 @@ class Molecule_density {
         // List of all monomers in this molecule
         std::vector<Real> m_monomer_fraction_of_molecule;
         // In namics: theta, sum of all densities.
-        const size_t m_molecule_total_mass;
+        const Real m_molecule_total_mass;
         // Densities per monomer that the molecule is comprised of
         std::vector<Lattice_object<Real>> m_homogeneous_monomer_densities;
         // Total densities per monomer type.
@@ -30,7 +30,7 @@ class Molecule_density {
         void set_total_monomer_densities();
         //Returns a vector of homogeneously distributed densities per monomer for this molecule
         std::vector<Lattice_object<Real>> homogeneous(size_t system_volume);
-        size_t total_mass();
+        Real total_mass();
         vector<Real>& monomer_total_mass();
 };
 

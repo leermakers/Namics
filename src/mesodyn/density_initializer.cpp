@@ -9,7 +9,7 @@ Molecule_density::Molecule_density(Molecule *molecule)
 // Used for solvents
 Molecule_density::Molecule_density(Molecule *molecule, Real molecule_total_mass)
     : m_monomer_fraction_of_molecule(0),
-      m_molecule_total_mass{(size_t)molecule_total_mass},
+      m_molecule_total_mass{molecule_total_mass},
       m_total_monomer_densities(0),
       m_lat(molecule->Lat[0])
 {
@@ -53,7 +53,7 @@ std::vector<Lattice_object<Real>> Molecule_density::homogeneous(size_t system_vo
     return m_homogeneous_monomer_densities;
 }
 
-size_t Molecule_density::total_mass()
+Real Molecule_density::total_mass()
 {
     return m_molecule_total_mass;
 }

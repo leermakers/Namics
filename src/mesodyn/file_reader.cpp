@@ -344,11 +344,10 @@ Vtk_structured_grid_reader::Vtk_structured_grid_reader(Readable_file file)
 
 std::vector<std::vector<Real>> Vtk_structured_grid_reader::get_file_as_vectors()
 {
-
     std::string header_line;
 
     // Find headers with dimension information
-    while (header_line.find("DIMENSIONS") == string::npos)
+    while (header_line.find("DIMENSIONS") ==std::string::npos)
     {
         getline(m_file, header_line);
     }
@@ -368,12 +367,26 @@ std::vector<std::vector<Real>> Vtk_structured_grid_reader::get_file_as_vectors()
     std::vector<std::vector<Real>> output(0);
 
     std::vector<Real> data;
-    while (parse_next_data_block(data) == STATUS::NEW_BLOCK_FOUND)
+
+    Vtk_structured_grid_reader::STATUS status = STATUS::NEW_BLOCK_FOUND;
+
+    while (status == STATUS::NEW_BLOCK_FOUND)
     {
+        status = parse_next_data_block(data);
         //ASSUMPTION: VTK files a written without bounds, so add them
         data = with_bounds(data);
         output.emplace_back(data);
         data.clear();
+    }
+
+    if (status == STATUS::END)
+    {
+        data = with_bounds(data);
+        output.emplace_back(data);
+    } else
+    {
+        std::cerr << "No blocks found in file" << std::endl;
+        throw ERROR_FILE_FORMAT;
     }
 
     return output;

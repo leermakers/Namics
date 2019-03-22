@@ -127,7 +127,8 @@ class Vtk_structured_grid_reader : public IReader {
     private:
         enum STATUS {
             END,
-            NEW_BLOCK_FOUND
+            NEW_BLOCK_FOUND,
+            ERROR
         };
 
         void set_lattice_geometry(std::vector<std::string>& tokens);

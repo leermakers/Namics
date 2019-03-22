@@ -39,6 +39,7 @@ class Norm_densities : public Lattice_object_collection_procedure {
 
     void execute() override;
     void fetch_theta();
+    void adjust_theta(size_t, Real);
 
   private:
 

@@ -49,6 +49,16 @@ void Norm_densities::fetch_theta()
   }
 }
 
+void Norm_densities::adjust_theta(size_t molecule_index, Real theta_adjustment)
+{
+  m_mol[molecule_index]->theta=m_mol[molecule_index]->theta+theta_adjustment;
+  
+  for (auto& all_molecules : m_mol)
+    all_molecules->n = all_molecules->theta/all_molecules->chainlength;
+
+  fetch_theta();
+}
+
 Order_parameter::Order_parameter(vector<shared_ptr<IComponent>> components_, std::map<size_t, size_t> combinations_, Real boundaryless_volume_)
     : m_boundaryless_volume{boundaryless_volume_}, m_components{components_}, m_combinations{combinations_}
 {

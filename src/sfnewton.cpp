@@ -895,7 +895,6 @@ Real SFNewton::computeresidual(Real* array, int size) {
   return residual;
 }
 
-
 bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
 int nvar=nvar_;
@@ -965,7 +964,7 @@ int nvar=nvar_;
   		free(xR);free(x_x0);free(x0);free(g);
   		#endif
 
-		exit(error);
+		throw error;
 	}
   free(Aij);free(Ci);free(Apij);
   #ifdef CUDA

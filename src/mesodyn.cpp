@@ -17,7 +17,11 @@ vector<string> Mesodyn::KEYS
     "timebetweensaves",
     "save_delay",
     "cn_ratio",
-    "profile_type"
+    "sanity_check",
+    "profile_type",
+    "grand_cannonical",
+    "grand_cannonical_time_average",
+    "grand_cannonical_molecule"
 };
 
 Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
@@ -27,22 +31,26 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
 
       //Const-correct way of initializing member variables from file, see template in header file.
       //Initialization syntax: initialize<Datatype>("option", default_value);
-      D                     { initialize<Real>("diffusionconstant", 0.01) },
-      dt                    { initialize<Real>("delta_t", 0.1) },
-      mean                  { initialize<Real>("mean", 0.0) },
-      stddev                { initialize<Real>("stddev", (2 * D * sqrt(dt) ) )},
-      seed                  { initialize<Real>("seed", -12345.6789) },
-      seed_specified        { seed != -12345.6789 ? true : false },   
-      timesteps             { initialize<int>("timesteps", 100) },
-      save_delay            { initialize<int>("save_delay", 0) },
-      timebetweensaves      { initialize<int>("timebetweensaves", 1) },
-      cn_ratio              { initialize<Real>("cn_ratio", 0.5) },
+      D                                { initialize<Real>("diffusionconstant", 0.01) },
+      dt                               { initialize<Real>("delta_t", 0.1) },
+      mean                             { initialize<Real>("mean", 0.0) },
+      stddev                           { initialize<Real>("stddev", (2 * D * sqrt(dt) ) )},
+      seed                             { initialize<Real>("seed", -12345.6789) },
+      seed_specified                   { seed != -12345.6789 ? true : false },   
+      timesteps                        { initialize<size_t>("timesteps", 100) },
+      save_delay                       { initialize<size_t>("save_delay", 0) },
+      timebetweensaves                 { initialize<size_t>("timebetweensaves", 1) },
+      cn_ratio                         { initialize<Real>("cn_ratio", 0.5) },
+      enable_sanity_check              { initialize<bool>("sanity_check", 0)},
       output_profile_filetype          { initialize_enum<Writable_filetype>("profile_type", Writable_filetype::VTK_STRUCTURED_GRID, Profile_writer::input_options)},
+      grand_cannonical                 { initialize<bool>("grand_cannonical", 0)},
+      grand_cannonical_time_average    { initialize<size_t>("grand_cannonical_time_average", timesteps > 100 ? 20 : 5 ) },
+      grand_cannonical_molecule        { initialize<size_t>("grand_cannonical_molecule", Sys[0]->solvent == 0 ? 1 : 0)},
 
       //Variables for rho initialization
-      initialization_mode { INIT_HOMOGENEOUS },
-      component_no        { Sys.front()->SysMolMonList.size() },
-      t                   { 0 }
+      initialization_mode              { INIT_HOMOGENEOUS },
+      component_no                     { Sys.front()->SysMolMonList.size() },
+      t                                { 0 }
 {
   // to get the correct KSAM and volume.
   Sys.front()->PrepareForCalculations();
@@ -84,23 +92,33 @@ bool Mesodyn::CheckInput() {
     if (input_data_filetype != Readable_filetype::NONE)
       initialization_mode = INIT_FROMFILE;
 
+    if ( find(PARAMETERS.begin(), PARAMETERS.end(), "grand_cannonical_time_average") != PARAMETERS.end() 
+      or find(PARAMETERS.begin(), PARAMETERS.end(), "grand_cannonical_molecule") != PARAMETERS.end()  )
+        if( grand_cannonical == false )
+        {
+          cout << "Please enable grand_cannonical in input or remove grand_cannonical options!" << endl;
+          throw 1;
+        }
+
+
   return true;
 }
 
 /******** Flow control ********/
 
 bool Mesodyn::mesodyn() {
-  //vector<Sanity_check*> checks;
+  
+    vector<Sanity_check*> checks;
 
-  // Attach sanity checks
-  //for (size_t i = 0 ; i < component_no; ++i) {
-  //  checks.emplace_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
-  //  checks.emplace_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
-  //}
+    // Attach sanity checks
+    for (size_t i = 0 ; i < component_no; ++i) {
+      checks.emplace_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
+      checks.emplace_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
+    }
 
-  //Check_index_unity<Real> check_rho(&components[0]->rho);
-  //for (size_t i = 1 ; i < component_no ; ++i)
-  //  check_rho.register_checkable(&components[i]->rho);
+    Check_index_unity<Real> check_rho(&components[0]->rho);
+    for (size_t i = 1 ; i < component_no ; ++i)
+      check_rho.register_checkable(&components[i]->rho);
 
   //Prepare IO
   
@@ -112,8 +130,10 @@ bool Mesodyn::mesodyn() {
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
+  Real grand_potential_average{0};
+
   /**** Main MesoDyn time loop ****/
-  for (t = 1; t < timesteps+1; t++) {
+  for (t = 0; t < timesteps+1; t++) {
     //cout << "\x1b[A" << "\x1b[A" << "MESODYN: t = " << t << " / " << timesteps << endl;
     cout << "MESODYN: t = " << t << " / " << timesteps << endl;
 
@@ -127,12 +147,47 @@ bool Mesodyn::mesodyn() {
 
     cout << "Order parameter: " << order_parameter->get() << endl;
 
-    sanity_check();
+    if (enable_sanity_check)
+      sanity_check();
 
     if (t > save_delay && t % timebetweensaves == 0) {
       write_output();
     }
 
+    grand_potential_average += Sys[0]->GetGrandPotential();
+
+    if (grand_cannonical)
+    {
+
+      if (t % grand_cannonical_time_average == 0)
+      {
+
+        Real adjustment = -1;
+      
+        if( grand_potential_average < 0) {
+          adjustment = 0;//static_cast<Real>(system_size)*0.005; //(Mol[grand_cannonical_molecule]->theta*(grand_cannonical_average*10));
+        }
+        else 
+        {
+          adjustment = -static_cast<Real>(system_size)*0.005; //(Mol[grand_cannonical_molecule]->theta*(grand_cannonical_average*10));
+        }
+
+        grand_potential_average /= grand_cannonical_time_average;
+
+        for(int i = 0 ; i < (int)Mol.size() ; ++i)
+          if (i != Sys[0]->solvent)
+              norm_densities->adjust_theta(i, adjustment);
+        
+        norm_densities->execute();
+
+      }
+
+      cout << grand_potential_average << endl;
+        for ( auto& asdf : Mol)
+          cout << asdf->theta << " ";
+        
+        cout << endl;
+    }
 
   } // time loop
 
@@ -307,7 +362,7 @@ void Mesodyn::register_output() {
     for (size_t i = 0 ; i < components.size() ; ++i)
     {
       string description = "component:" + to_string(i);
-      register_output_profile(description + ":density", components[i]->rho.data());
+      register_output_profile(description + ":density", (Real*)components[i]->rho);
     }
 }
 
@@ -320,9 +375,9 @@ int Mesodyn::write_output() {
 
      Out[0]->push("filename", filename.str());
      Out[0]->push("order_parameter", order_parameter->get());
-     Out[0]->push("time",t);
-     Out[0]->push("timesteps", timesteps);
-     Out[0]->push("timebetweensaves", timebetweensaves);
+     Out[0]->push("time",(int)t);
+     Out[0]->push("timesteps", (int)timesteps);
+     Out[0]->push("timebetweensaves", (int)timebetweensaves);
      Out[0]->push("diffusionconstant", D);
      Out[0]->push("seed", seed);
      Out[0]->push("mean", mean);

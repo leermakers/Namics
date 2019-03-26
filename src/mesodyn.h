@@ -63,17 +63,28 @@ private:
   const Real stddev; // stdev of gaussian noise (should be 1*D)
   const Real seed;  // seed of gaussian noise
   const bool seed_specified;
-  const int timesteps; // length of the time evolution
-  const int save_delay; // wait for a number of timesteps before saving
-  const int timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
+  const size_t timesteps; // length of the time evolution
+  const size_t save_delay; // wait for a number of timesteps before saving
+  const size_t timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   const Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
+  const bool enable_sanity_check;
   const Writable_filetype output_profile_filetype;
-  int initialization_mode;
+  const bool grand_cannonical;
+  const size_t grand_cannonical_time_average;
+  const size_t grand_cannonical_molecule;
+
+    enum init {
+    INIT_HOMOGENEOUS,
+    INIT_FROMFILE
+  };
+
+
+  init initialization_mode;
   const size_t component_no; // number of components in the system, read from SysMonMolList
 
 
   /* Flow control */
-  int t;
+  size_t t;
   Real* solve_crank_nicolson();
   void load_alpha(Real*, const size_t);
   void sanity_check();
@@ -87,10 +98,7 @@ private:
 
 
   /* Initialization*/
-  enum init {
-    INIT_HOMOGENEOUS,
-    INIT_FROMFILE
-  };
+
 
   Readable_filetype input_data_filetype = Readable_filetype::NONE;
 

@@ -65,7 +65,41 @@ class Lattice_accessor {
     size_t x{0};
     size_t y{0};
 
+        for ( size_t z = SYSTEM_EDGE_OFFSET ; z < MZ+SYSTEM_EDGE_OFFSET ; ++z ) {
+            y = SYSTEM_EDGE_OFFSET;
+            do {
+                x = SYSTEM_EDGE_OFFSET;
+                do {
+                    function(x, y, z);
+                    ++x;
+                } while (x < MX+SYSTEM_EDGE_OFFSET );
+                ++y;
+            } while (y < MY+SYSTEM_EDGE_OFFSET );
+        }
+    }
+
+    inline void full_system_plus_direction_neighborlist(function<void(size_t, size_t, size_t)> function) noexcept {
+    size_t x{0};
+    size_t y{0};
+
         for ( size_t z = 0 ; z < MZ+SYSTEM_EDGE_OFFSET ; ++z ) {
+            y = SYSTEM_EDGE_OFFSET;
+            do {
+                x = SYSTEM_EDGE_OFFSET;
+                do {
+                    function(x, y, z);
+                    ++x;
+                } while (x < MX+SYSTEM_EDGE_OFFSET );
+                ++y;
+            } while (y < MY+SYSTEM_EDGE_OFFSET );
+        }
+    }
+
+    inline void full_system_minus_direction_neighborlist(function<void(size_t, size_t, size_t)> function) noexcept {
+    size_t x{0};
+    size_t y{0};
+
+        for ( size_t z = 1 ; z < MZ+SYSTEM_EDGE_OFFSET+1 ; ++z ) {
             y = SYSTEM_EDGE_OFFSET;
             do {
                 x = SYSTEM_EDGE_OFFSET;

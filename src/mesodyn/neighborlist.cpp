@@ -5,7 +5,7 @@ Neighborlist::Neighborlist(Lattice_object<size_t>& mask_) : m_mask{mask_} { }
 
 void Neighborlist::register_config(Neighborlist_config& configuration_) {
       if (!configuration_.subsystem_loop)
-         configuration_.subsystem_loop = std::bind(&Lattice_object<size_t>::skip_bounds, m_mask, std::placeholders::_1);
+         configuration_.subsystem_loop = std::bind(&Lattice_object<size_t>::full_system_plus_direction_neighborlist, m_mask, std::placeholders::_1);
 
        m_configurations.emplace_back(configuration_);
     }
@@ -33,10 +33,10 @@ void::Neighborlist::build() {
 
         config.subsystem_loop([this, config, offset, temp_mask](size_t x, size_t y, size_t z) mutable {  
           if ( temp_mask[m_mask.index(x, y, z)] == 1) {
-            temp_subject.emplace_back( m_mask.index(x,y,z) );
+            temp_subject.push_back( m_mask.index(x,y,z) );
 
             if ( temp_mask[m_mask.index(x + offset[Dimension::X], y + offset[Dimension::Y], z + offset[Dimension::Z])] == 1)
-              temp_neighbors.emplace_back( m_mask.index(x + offset[Dimension::X], y + offset[Dimension::Y], z + offset[Dimension::Z]) );
+              temp_neighbors.push_back( m_mask.index(x + offset[Dimension::X], y + offset[Dimension::Y], z + offset[Dimension::Z]) );
           }
         });
         

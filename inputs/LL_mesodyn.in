@@ -1,12 +1,12 @@
 lat : flat : n_layers_x : 50
 lat : flat : n_layers_y : 50
 lat : flat : n_layers_z : 50
-lat : flat : lowerbound_x : mirror
-lat : flat : upperbound_x : mirror
-lat : flat : lowerbound_y : mirror
-lat : flat : upperbound_y : mirror
-lat : flat : lowerbound_z : mirror
-lat : flat : upperbound_z : mirror
+lat : flat : lowerbound_x : periodic
+lat : flat : upperbound_x : periodic
+lat : flat : lowerbound_y : periodic
+lat : flat : upperbound_y : periodic
+lat : flat : lowerbound_z : periodic
+lat : flat : upperbound_z : periodic
 lat : flat : lattice_type : simple_cubic
 lat : flat : gradients : 3
 
@@ -14,48 +14,52 @@ sys : UNKNOWN : GPU : true
 
 mon : O : freedom : free
 
-mon : W : chi - O : 1.3
+mon : W : chi - O : 1.0
 
 mol : Liquid_A : composition : (W)4
 mol : Liquid_A : freedom : restricted
-mol : Liquid_A : theta : 62500
+mol : Liquid_A : theta : 62300
 
-mol : Liquid_B : composition : (O)5
+mol : Liquid_B : composition : (O)6
 mol : Liquid_B : freedom : solvent
 
-//mol : C : composition : (W)20(O)20
+//mol : C : composition : (W)5(O)5
 //mol : C : freedom : restricted
-//mol : C : theta : 1000
+//mol : C : theta : 2
 
-output : kal : append : false
+output : kal : append : true
 kal : sys : noname : grand_potential
 kal : sys : noname : free_energy
 kal : mol : Liquid_A : mu
 kal : mol : Liquid_A : phibulk
 kal : mol : Liquid_B : mu
 kal : mol : Liquid_B : phibulk
+kal : output : mesodyn : order_parameter
 
 
 // Mesodyn options:
 // timesteps, timebetweensaves, delta_t, read_pro, read_vtk, equilibrate, diffusionconstant, seed
 // mean, stddev, cn_ratio ( 1 = only old ), edge_detection, edge_detection_threshold
 
-mesodyn : smth : timesteps : 50
+mesodyn : smth : timesteps : 50000
 mesodyn : smth : timebetweensaves : 100
 mesodyn : smth : diffusionconstant : 0.1
 //mesodyn : smth : delta_t : 0.1
 mesodyn : smth : seed : 1
-
-kal : output : mesodyn : order_parameter
+mesodyn : smth : cn_ratio : 0
+mesodyn : smth : profile_type : vtk_structured_grid
+mesodyn : smth : grand_cannonical : 1
+mesodyn : smth : grand_cannonical_time_average : 20
+mesodyn : smth : grand_cannonical_molecule : 0
+mesodyn : smth : sanity_check : 0
 
 newton : isaac : method : DIIS
 newton : isaac : e_info : false
-newton : isaac : s_info : false
+newton : isaac : s_info : true
 newton : isaac : i_info : 1000
-newton : isaac : super_e_info : false
 newton : isaac : iterationlimit : 10000
 //newton : isaac : target_function : log
 newton : isaac : m : 20
-newton : isaac : deltamax : 0.1
-newton : isaac : tolerance : 1e-4
+newton : isaac : deltamax : 0.4
+newton : isaac : tolerance : 1e-6
 newton : isaac : stop_criterion : max_of_element_of_|g|

@@ -3,6 +3,7 @@
 
 #include "factory.h"
 #include "../lattice.h"
+#include "../tools.h"
 #include "lattice_accessor.h"
 #include <string>
 #include <cstdio>
@@ -46,8 +47,17 @@ class Output_ptr : public IOutput_ptr
 
         string data(size_t offset = 0) override
         {
+
+            T* data = new T;
+
+        #ifdef PAR_MESODYN
+            TransferDataToHost(data, const_cast<T*>(parameter+offset), 1);
+        #else
+            data = parameter+offset;
+        #endif
+
             ostringstream out;
-            out << *(parameter+offset);
+            out << *data;
             return out.str();
         }
 
@@ -58,8 +68,8 @@ class Writable_file {
     public:
         Writable_file(const std::string, Writable_filetype, int = 0);
         ~Writable_file();
-        const Writable_filetype get_filetype();
-        const string get_filename();
+        Writable_filetype get_filetype();
+        string get_filename();
         void increment_identifier();
         
     protected:

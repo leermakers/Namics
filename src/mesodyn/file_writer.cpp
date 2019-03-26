@@ -40,12 +40,12 @@ void Writable_file::increment_identifier()
     m_filename = regex_replace(m_filename,ex, replacement);
 }
 
-const Writable_filetype Writable_file::get_filetype()
+Writable_filetype Writable_file::get_filetype()
 {
     return m_filetype;
 }
 
-const string Writable_file::get_filename() 
+string Writable_file::get_filename()
 {
     return m_filename;
 }

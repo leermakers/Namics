@@ -45,7 +45,7 @@ OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)))
 ifdef CUDA
 OBJECTS     += $(BUILDDIR)/tools.o
 ifdef PAR_MESODYN
-OBJECTS     += $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/boundary_conditions.o $(BUILDDIR)/flux.o $(BUILDDIR)/component.o $(BUILDDIR)/gaussian_noise.o $(BUILDDIR)/collection_procedures.o $(BUILDDIR)/density_initializer.o
+OBJECTS     += $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/file_reader.o $(BUILDDIR)/file_writer.o $(BUILDDIR)/boundary_conditions.o $(BUILDDIR)/flux.o $(BUILDDIR)/component.o $(BUILDDIR)/gaussian_noise.o $(BUILDDIR)/collection_procedures.o $(BUILDDIR)/density_initializer.o
 endif
 endif
 
@@ -93,6 +93,8 @@ $(BUILDDIR)/tools.o:
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/gaussian_noise.o $(SRCDIR)/mesodyn/gaussian_noise.cu
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/collection_procedures.o $(SRCDIR)/mesodyn/collection_procedures.cu
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/density_initializer.o $(SRCDIR)/mesodyn/density_initializer.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/file_reader.o $(SRCDIR)/mesodyn/file_reader.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/file_writer.o $(SRCDIR)/mesodyn/file_writer.cu
 
 else
 ifdef CUDA

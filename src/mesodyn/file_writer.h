@@ -33,7 +33,7 @@ struct Header {
 
 class IOutput_ptr {
     public:
-        virtual string data(size_t = 0) = 0;
+        virtual string data(const size_t = 0) = 0;
 };
 
 template<typename T>
@@ -45,13 +45,13 @@ class Output_ptr : public IOutput_ptr
         {
         }
 
-        string data(size_t offset = 0) override
+        string data(const size_t offset = 0) override
         {
 
-            T* data = new T;
+            const T* data = new T;
 
         #ifdef PAR_MESODYN
-            TransferDataToHost(data, const_cast<T*>(parameter+offset), 1);
+            TransferDataToHost(const_cast<T*>(data), const_cast<T*>(parameter+offset), 1);
         #else
             data = parameter+offset;
         #endif

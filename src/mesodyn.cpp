@@ -132,7 +132,10 @@ bool Mesodyn::mesodyn() {
 
   Real grand_potential_average{0};
 
+  Norm_densities_relative relative_norm( Mol, components, Sys[0]->solvent );
+
   /**** Main MesoDyn time loop ****/
+  int z = 1;
   for (t = 0; t < timesteps+1; t++) {
     //cout << "\x1b[A" << "\x1b[A" << "MESODYN: t = " << t << " / " << timesteps << endl;
     cout << "MESODYN: t = " << t << " / " << timesteps << endl;
@@ -156,39 +159,42 @@ bool Mesodyn::mesodyn() {
 
     grand_potential_average += Sys[0]->GetGrandPotential();
 
-    if (grand_cannonical)
+    if (grand_cannonical and t > save_delay && t % grand_cannonical_time_average == 0)
     {
-
-      if (t % grand_cannonical_time_average == 0)
-      {
-
+        grand_potential_average /= z;
+        z=1;
         Real adjustment = -1;
       
         if( grand_potential_average < 0) {
-          adjustment = 0;//static_cast<Real>(system_size)*0.005; //(Mol[grand_cannonical_molecule]->theta*(grand_cannonical_average*10));
+          relative_norm.adjust_theta(Sys[0]->solvent, -0.001);
+          relative_norm.execute();
+
+          for(int i = 0 ; i < (int)Seg.size() ; ++i)
+            if (i != Sys[0]->solvent)
+              norm_densities->adjust_theta(i, components[i]->theta()-Mol[i]->theta);
         }
-        else 
+        else if( grand_potential_average > 0)
         {
-          adjustment = -static_cast<Real>(system_size)*0.005; //(Mol[grand_cannonical_molecule]->theta*(grand_cannonical_average*10));
+          adjustment = -1.0*static_cast<Real>(system_size)*0.001; //(Mol[grand_cannonical_molecule]->theta*(grand_cannonical_average*10));
+
+          for(int i = 0 ; i < (int)Seg.size() ; ++i)
+            if (i != Sys[0]->solvent)
+                norm_densities->adjust_theta(i, adjustment);
+
+          norm_densities->execute();
         }
-
-        grand_potential_average /= grand_cannonical_time_average;
-
-        for(int i = 0 ; i < (int)Mol.size() ; ++i)
-          if (i != Sys[0]->solvent)
-              norm_densities->adjust_theta(i, adjustment);
-        
-        norm_densities->execute();
 
       }
 
-      cout << grand_potential_average << endl;
-        for ( auto& asdf : Mol)
+      cout << grand_potential_average/z << endl;
+      ++z;
+        for ( auto& asdf : Mol) {
           cout << asdf->theta << " ";
-        
-        cout << endl;
-    }
+        }
 
+        grand_potential_average=0;
+
+        cout << endl;
   } // time loop
 
   std::cout << "Done." << std::endl;

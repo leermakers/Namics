@@ -2,6 +2,46 @@
 
 constexpr uint8_t TOTAL_DENSITY = 1;
 
+Norm_densities_relative::Norm_densities_relative(vector<Molecule *> mol_, vector<shared_ptr<IComponent>> components_, size_t solvent_mo)
+: Norm_densities(mol_, components_, solvent_mo), m_subject_molecule{0}, m_adjustment{0}
+{
+  
+}
+
+void Norm_densities_relative::adjust_theta(size_t molecule_index_, Real theta_adjustment_)
+{
+  assert(theta_adjustment_ < 0 && "Theta adjustment > 0 can lead to densities > 1 or < 0 and would cause namics to crash.");
+
+  m_subject_molecule = molecule_index_;
+  m_adjustment = theta_adjustment_;
+
+  m_mol[m_subject_molecule]->theta=m_mol[m_subject_molecule]->theta*(1+m_adjustment);
+
+  m_mol[molecule_index_]->n = m_mol[molecule_index_]->theta/m_mol[molecule_index_]->chainlength;
+
+  fetch_theta();
+}
+
+void Norm_densities_relative::execute()
+{
+  stl::device_vector<Real> local_adjustment(m_system_size, 0);
+  stl::transform( m_components[m_subject_molecule]->rho.begin(), m_components[m_subject_molecule]->rho.end(), local_adjustment.begin(), local_adjustment.begin(), 
+  [this] DEVICE_LAMBDA(const Real& x, const Real& y) { return (x / ( 1-x )) * this->m_adjustment; });
+
+  for (size_t i = 0 ; i < m_components.size() ; ++i)
+  {
+    if ( i != m_subject_molecule )
+      stl::transform( m_components[i]->rho.begin(), m_components[i]->rho.end(), local_adjustment.begin(), m_components[i]->rho.begin(),
+        [this] DEVICE_LAMBDA(const Real& x, const Real& y) { return x * (1 - y); }
+      );
+  }
+
+  stl::for_each( m_components[m_subject_molecule]->rho.begin(), m_components[m_subject_molecule]->rho.end(),
+    [this] DEVICE_LAMBDA(Real& x) mutable { x *= (1 + this->m_adjustment); }
+  );
+}
+
+
 Norm_densities::Norm_densities(vector<Molecule *> mol_, vector<shared_ptr<IComponent>> components_, size_t solvent_mol)
     : m_components{components_}, m_mol{mol_}, m_system_size{components_[0]->rho.size()}, m_solvent{solvent_mol}
 {

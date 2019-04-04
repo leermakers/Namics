@@ -169,15 +169,24 @@ bool Mesodyn::mesodyn() {
           relative_norm.adjust_theta(Sys[0]->solvent, -0.001);
           relative_norm.execute();
 
-          for(int i = 0 ; i < (int)Seg.size() ; ++i)
-            if (i != Sys[0]->solvent)
-              norm_densities->adjust_theta(i, components[i]->theta()-Mol[i]->theta);
+          for (size_t j = 0 ; j < Mol.size() ; ++j)
+            {
+              if (j != Sys[0]->solvent)
+              {
+                Real sum {0};
+	              for (size_t i = 0 ; i < Mol[j]->MolMonList.size() ; ++i) {
+                  sum += components[Mol[j]->MolMonList[i]]->theta();
+                }
+                  
+                Mol[j]->theta = sum;
+              }
+            }
         }
         else if( grand_potential_average > 0)
         {
           adjustment = -1.0*static_cast<Real>(system_size)*0.001; //(Mol[grand_cannonical_molecule]->theta*(grand_cannonical_average*10));
 
-          for(int i = 0 ; i < (int)Seg.size() ; ++i)
+          for(int i = 0 ; i < (int)Mol.size() ; ++i)
             if (i != Sys[0]->solvent)
                 norm_densities->adjust_theta(i, adjustment);
 

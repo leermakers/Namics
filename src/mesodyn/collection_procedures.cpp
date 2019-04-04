@@ -89,9 +89,9 @@ void Norm_densities::fetch_theta()
   }
 }
 
-void Norm_densities::adjust_theta(size_t molecule_index, Real theta_adjustment)
+void Norm_densities::adjust_theta(size_t segment_index, Real theta_adjustment)
 {
-  m_mol[molecule_index]->theta=m_mol[molecule_index]->theta+theta_adjustment;
+  m_mol[segment_index]->theta=m_mol[segment_index]->theta+theta_adjustment;
   
   for (auto& all_molecules : m_mol)
     all_molecules->n = all_molecules->theta/all_molecules->chainlength;

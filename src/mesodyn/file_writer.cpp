@@ -197,12 +197,25 @@ void Vtk_structured_points_writer::write()
 
         vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default \n";
 
+        #ifdef PAR_MESODYN
+            stl::host_vector<Real> m_data;
+
+            TransferDataToHost(m_data.data(), profile.second->data, m_geometry->system_size);
+
+            subsystem_loop(
+                [this, &vtk, profile] (size_t x, size_t y, size_t z) {
+	    		    vtk << m_data(x*m_geometry->JX+y*m_geometry->JY+z*m_geometry->JZ) << "\n";
+                }
+            );
+        #else
         subsystem_loop(
             [this, &vtk, profile] (size_t x, size_t y, size_t z) {
 	    		vtk << profile.second->data(x*m_geometry->JX+y*m_geometry->JY+z*m_geometry->JZ) << "\n";
             }
         );
-    
+        #endif
+
+        
         m_filestream << vtk.str();
 	    m_filestream.flush();
     }

@@ -40,39 +40,63 @@ bool debug = false;
 
 //Output when the user malforms input. Update when adding new command line switches.
 void improperInput() {
-  cerr << "Improper usage: namics [filename] [-options]." << endl << "Options available:" << endl;
+  cerr << "Usage: namics [-options] [filename]." << endl;
+
+  cerr << "Options available:" << endl;
+  cerr << "-t Run Tests" << endl;
   cerr << "-d Enables debugging mode." << endl;
 }
 
 int main(int argc, char* argv[]) {
 	vector<string> args(argv, argv+argc);
 //Output error if no filename has been specified.
- 	if (argc == 1) {
-    		improperInput();
-    		return 1;
-  	}
-//Output error if user starts with a commandline switch. (Also catches combination with forgotten filename)
-  	if ( (args[1])[0] == '-' ) {
-    		improperInput();
-    		return 1;
-  	}
+
+//	cout << "### : " << argc << endl;
+	int errors_ = 0;  // counting errors for executing namics
+	bool GPU = false;
+	string filename_;
+	bool has_filename = false;
+
+	if (args.size() == 1) {
+	    improperInput();
+        return 1;
+	}
+
+    for (auto &&n : args) {
+        if (n == "./namics") continue;
+        if (n == "-t") {
+            cout << "RUN TEST!" << endl;
+            return 0;
+        }
+
+        if (n[0] == '-') {
+            if (n.size() != 1) {
+                //If the switch -d is given, enable debug. Add new switches by copying and replacing -d and debug = true.
+                if (n=="-d")   debug = true;
+                if (n=="-GPU") GPU = true;
+            } else errors_ ++;
+        } else {
+            has_filename=true;
+            filename_ = n;
+        }
+    }
+
+    if (errors_ != 0 or !has_filename) {
+        improperInput();
+        return 1;
+    }
 
 // If the specified filename has no extension: add the extension specified below.
 	string extension = "in";
 	ostringstream filename;
-	filename << argv[1];
+	filename << filename_;
 	bool hasNoExtension = (filename.str().substr(filename.str().find_last_of(".")+1) != extension);
  	if (hasNoExtension) filename << "." << extension;
-
-//If the switch -d is given, enable debug. Add new switches by copying and replacing -d and debug = true.
-  	if ( find(args.begin(), args.end(), "-d") != args.end() ) {
-    		debug = true;
- 	 }
 
 	int cudaDeviceIndex = 0;
 
 	//If the switch -GPU is given, select GPU.
-  	if ( find(args.begin(), args.end(), "-GPU") != args.end() ) {
+  	if (GPU) {
 		  try {
 		  	cudaDeviceIndex = load_argument_value(args, "-GPU", cudaDeviceIndex);
 		  }

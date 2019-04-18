@@ -53,7 +53,7 @@ vec : mol : pol : gn
 vec : output : noname : gn
 
 cleng : parameters : MCS : 3
-cleng : parameters : save_interval : 1
+cleng : parameters : delta_save : 1
 cleng : parameters : delta_step : 1
 cleng : parameters : checkpoint_save : false
 cleng : parameters : checkpoint_load : false

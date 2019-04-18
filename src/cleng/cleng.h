@@ -22,6 +22,8 @@
 #include "nodes/point.h"
 #include "checkpoint/checkpoint.h"
 #include "random/random.h"
+// tests
+#include "../test_unit/catch.hpp"
 
 using std::setprecision;
 

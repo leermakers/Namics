@@ -1,4 +1,4 @@
-// test_neutral_gel 2018-10-18 11:29:00.126717
+// test_linear_chain 2019-04-18
 lat : flat : gradients : 3
 lat : flat : n_layers_x : 20
 lat : flat : n_layers_y : 20
@@ -15,7 +15,7 @@ lat : flat : upperbound_z : periodic
 mon : W : freedom : free
 mon : A : freedom : free
 mon : X : freedom : clamp
-mon : X : clamp_info : (10,10,2)(10, 10, 4);
+mon : X : clamp_info : (10,10,2)(10, 10, 3);
 mon : X : sub_box_size : 18
 
 mol : pol : freedom : clamped

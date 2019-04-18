@@ -647,7 +647,7 @@ bool Cleng::MonteCarlo() {
 
     cout << endl;
     cout << "Finally:" << endl;
-    cout << "Monte Carlo attempt: " << MC_attempt << endl;
+    cout << "Monte Carlo attempt: " << MC_attempt-1 << endl;
     cout << "Accepted: # " << accepted << " | " << 100 * (accepted / (MC_attempt-1)) << "%" << endl;
     cout << "Rejected: # " << rejected << " | " << 100 * (rejected / (MC_attempt-1)) << "%" << endl;
 
@@ -665,9 +665,7 @@ void Cleng::WriteOutput(int attempt) {
     if (debug) cout << "WriteOutput in Cleng" << endl;
     PushOutput(attempt);
     New[0]->PushOutput();
-    for (int i = 0; i < n_out; i++) {
-        Out[i]->WriteOutput(attempt);
-    }
+    for (int i = 0; i < n_out; i++) Out[i]->WriteOutput(attempt);
     if (cleng_pos) WriteClampedNodeDistance(attempt);
 }
 

@@ -53,11 +53,12 @@ public:
         return x > p.x and y > p.y and z > p.z;
     }
 
-    bool all_elements_in_range(const Point &box) const {
+    bool point_in_range(const Point &box) const {
         bool x_res = false; bool y_res = false; bool z_res = false;
-        if ((x < box.x) and (x >= 0)) x_res=true;
-        if ((y < box.y) and (y >= 0)) y_res=true;
-        if ((z < box.z) and (z >= 0)) z_res=true;
+//  TODO : extend to negative position (x,y,z)
+        if ((abs(x) < box.x) and (abs(x) >= 0)) x_res=true;
+        if ((abs(y) < box.y) and (abs(y) >= 0)) y_res=true;
+        if ((abs(z) < box.z) and (abs(z) >= 0)) z_res=true;
         return x_res and y_res and z_res;
     }
 

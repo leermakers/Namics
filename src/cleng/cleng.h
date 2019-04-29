@@ -23,7 +23,6 @@
 #include "checkpoint/checkpoint.h"
 #include "random/random.h"
 // tests
-#include "../test_unit/catch.hpp"
 
 using std::setprecision;
 
@@ -49,14 +48,23 @@ private:
     void fillXYZ();
 
 public:
-    Cleng(vector<Input *>, vector<Lattice *>, vector<Segment *>, vector<State *>, vector<Reaction *>,
-          vector<Molecule *>, vector<System *>, vector<Solve_scf *>, string);
+    Cleng(
+            vector<Input *>,
+            vector<Lattice *>,
+            vector<Segment *>,
+            vector<State *>,
+            vector<Reaction *>,
+            vector<Molecule *>,
+            vector<System *>,
+            vector<Solve_scf *>,
+            string
+    );
 
     ~Cleng();
 
-    std::vector<string> KEYS;
-    std::vector<string> PARAMETERS;
-    std::vector<string> VALUES;
+    vector<string> KEYS;
+    vector<string> PARAMETERS;
+    vector<string> VALUES;
 
     int clamp_seg;
     int clp_mol;
@@ -79,7 +87,6 @@ public:
     Random rand;
 
     vector<Output *> Out;
-
     vector<int> P;
     vector<shared_ptr<SimpleNode>> simpleNodeList;
     vector<std::shared_ptr<Node>> nodes;
@@ -99,7 +106,9 @@ public:
     Real rejected;
     int MC_attempt;
 
-    bool MonteCarlo();
+    vector<Real> test_vector;
+
+    bool MonteCarlo(bool save_vector);
 
     bool CP(transfer);
 
@@ -127,7 +136,7 @@ public:
 
     Point prepareMove();
 
-    bool CheckInput(int);
+    bool CheckInput(int start, bool save_vector);
 
     string GetValue(string);
 

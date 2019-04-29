@@ -61,7 +61,7 @@ string Cleng::GetValue(string parameter) {
     return "";
 }
 
-bool Cleng::CheckInput(int start) {
+bool Cleng::CheckInput(int start, bool save_vector) {
     if (debug) cout << "CheckInput in Cleng" << endl;
     bool success;
 
@@ -180,7 +180,7 @@ bool Cleng::CheckInput(int start) {
             }
         }
         cout << cmajor_version << "." << cminor_version << "." << cpatch << " v." << cversion << endl;
-        MonteCarlo();
+        MonteCarlo(save_vector);
     }
     return success;
 }
@@ -247,8 +247,13 @@ bool Cleng::CP(transfer tofrom) {
                 auto first_node = system_points[index];
                 auto second_node = system_points[index+1];
 
-                if (!first_node.all_elements_in_range(box) and
-                !second_node.all_elements_in_range(box)) {
+                if (!first_node.point_in_range(box) and !second_node.point_in_range(box)) {
+                    cout << "1* box" << endl;
+                    system_points[index]   = first_node % box;
+                    system_points[index+1] = second_node % box;
+                }
+                if (!first_node.point_in_range(box+box) and !second_node.point_in_range(box+box)) {
+                    cout << "2* box" << endl;
                     system_points[index]   = first_node % box;
                     system_points[index+1] = second_node % box;
                 }
@@ -413,9 +418,9 @@ Point Cleng::prepareMove() {
     if (debug) cout << "prepareMove in Cleng" << endl;
 
     if (axis != -1) {
-        if (axis == 1) clamped_move = {2, 0, 0};
-        if (axis == 2) clamped_move = {0, 2, 0};
-        if (axis == 3) clamped_move = {0, 0, 2};
+        if (axis == 1) clamped_move = {-2, 0, 0};
+        if (axis == 2) clamped_move = {0, -2, 0};
+        if (axis == 3) clamped_move = {0, 0, -2};
     } else {
 
         clamped_move = {
@@ -492,9 +497,7 @@ bool Cleng::MakeMove(bool back) {
                      << endl;
             }
         } else {
-            for (auto &node : nodes) {
-                node->shift(clamped_move);
-            }
+            for (auto &node : nodes) node->shift(clamped_move);
             cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << endl;
         }
     }
@@ -558,7 +561,7 @@ inline auto is_ieee754_nan( double const x ) -> bool {
 }
 
 
-bool Cleng::MonteCarlo() {
+bool Cleng::MonteCarlo(bool save_vector) {
     if (debug) cout << "Monte Carlo in Cleng" << endl;
     bool success = true;
 
@@ -638,6 +641,8 @@ bool Cleng::MonteCarlo() {
         cout << "Monte Carlo attempt: " << MC_attempt << endl;
         cout << "Accepted: # " << accepted << " | " << 100 * (accepted / MC_attempt) << "%" << endl;
         cout << "Rejected: # " << rejected << " | " << 100 * (rejected / MC_attempt) << "%" << endl;
+
+        if (save_vector) test_vector.push_back(free_energy_current);
 
         if ((MC_attempt % delta_save) == 0) {
             WriteOutput(MC_attempt + MCS_checkpoint);

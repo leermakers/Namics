@@ -71,20 +71,14 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         // MCS
         if (!GetValue("MCS").empty()) {
             success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000, "The number of Monte Carlo steps should be between 1 and 10000");
-            if (!success) {
-                cout << "MCS will be equal to 5" << endl;
-                MCS = 1;
-            }
+            if (!success) { cout << "MCS will be equal to 5" << endl; MCS = 1; }
         } else MCS = 5;
         if (debug) cout << "MCS is " << MCS << endl;
 
         // seed
         if (!GetValue("seed").empty()) {
             success = In[0]->Get_int(GetValue("seed"), pseed, 1, 1000, "The seed should be between 1 and 1000");
-            if (!success) {
-                cout << "The seed will be equal 1" << endl;
-                pseed = 1;
-            }
+            if (!success) { cout << "The seed will be equal 1" << endl; pseed = 1; }
         } else pseed = 0;
         rand = pseed==0 ? Random() : Random(pseed);
         if (debug) cout << "seed is " << pseed << endl;
@@ -92,10 +86,7 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         // delta_step
         if (!GetValue("delta_step").empty()) {
             success = In[0]->Get_int(GetValue("delta_step"), delta_step, 1, 5, "The number of delta_step should be between 1 and 5");
-            if (!success) {
-                cout << "The delta_step will be equal 1" << endl;
-                delta_step = 1;
-            }
+            if (!success) { cout << "The delta_step will be equal 1" << endl; delta_step = 1;}
         } else delta_step = 1;
         if (debug) cout << "delta_step is " << delta_step << endl;
 
@@ -136,9 +127,8 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         if (debug) cout << "cleng_pos " << cleng_pos << endl;
 
         // simultaneous
-        if (!GetValue("simultaneous").empty()) {
-            simultaneous = In[0]->Get_bool(GetValue("simultaneous"), false);
-        } else simultaneous = false;
+        if (!GetValue("simultaneous").empty()) simultaneous = In[0]->Get_bool(GetValue("simultaneous"), false);
+        else simultaneous = false;
         if (debug) cout << "simultaneous move " << simultaneous << endl;
 
         // movement_alone
@@ -153,16 +143,12 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         if (debug) cout << "movement_alone axis " << axis << endl;
 
         // F_dependent
-        if (!GetValue("F_dependency").empty()) {
-            F_dependency = In[0]->Get_bool(GetValue("F_dependency"), false);
-        } else F_dependency = false;
+        if (!GetValue("F_dependency").empty()) F_dependency = In[0]->Get_bool(GetValue("F_dependency"), false);
+        else F_dependency = false;
         if (debug) cout << "F_dependent move " << F_dependency << endl;
 
         // ???
-        if (success) {
-            n_boxes = Seg[clamp_seg]->n_box;
-            sub_box_size = Seg[clamp_seg]->mx;
-        }
+        if (success) { n_boxes = Seg[clamp_seg]->n_box; sub_box_size = Seg[clamp_seg]->mx; }
         clp_mol = -1;
         int length = (int) In[0]->MolList.size();
         for (int i = 0; i < length; i++) if (Mol[i]->freedom == "clamped") clp_mol = i;
@@ -180,7 +166,7 @@ bool Cleng::CheckInput(int start, bool save_vector) {
             }
         }
         cout << cmajor_version << "." << cminor_version << "." << cpatch << " v." << cversion << endl;
-        MonteCarlo(save_vector);
+        success = MonteCarlo(save_vector);
     }
     return success;
 }
@@ -571,16 +557,17 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
         cout << endl;
         cout << "System for calculation: " << endl;
-        for (auto &&n : nodes) out << n->to_string() << endl;
+        for (auto &&n : nodes) cout << n->to_string() << endl;
         cout << endl;
 
         if (success_) {
 
             New[0]->Solve(true);
             free_energy_trial = Sys[0]->GetFreeEnergy() - GetN_times_mu();
+            if (save_vector) test_vector.push_back(free_energy_trial);
 
-            cout << "Free Energy (c): " << free_energy_current;
-            cout << " (t): " << free_energy_trial << endl;
+            cout << "Free Energy (c): " << free_energy_current    << endl;
+            cout << "            (t): " << free_energy_trial << endl;
 //            cout << "trial - current = " << std::to_string(free_energy_trial - free_energy_current) << endl;
             if (is_ieee754_nan( free_energy_trial )) {
                 cout << " Sorry, Free Energy is NaN. Termination..." << endl;
@@ -610,8 +597,6 @@ bool Cleng::MonteCarlo(bool save_vector) {
         cout << "Monte Carlo attempt: " << MC_attempt << endl;
         cout << "Accepted: # " << accepted << " | " << 100 * (accepted / MC_attempt) << "%" << endl;
         cout << "Rejected: # " << rejected << " | " << 100 * (rejected / MC_attempt) << "%" << endl;
-
-        if (save_vector) test_vector.push_back(free_energy_current);
 
         if ((MC_attempt % delta_save) == 0) {
             WriteOutput(MC_attempt + MCS_checkpoint);

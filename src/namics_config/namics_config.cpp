@@ -234,8 +234,8 @@ bool NamicsConfig::initCleng(
         success = false;
         return success;
     }
-    delete Cle[0];
-    Cle.clear();
+//    delete Cle[0];
+//    Cle.clear();
     return success;
 }
 
@@ -282,8 +282,6 @@ bool NamicsConfig::initTeng(
         success = false;
         return success;
     }
-    delete Ten[0];
-    Ten.clear();
 
     return  success;
 }
@@ -419,7 +417,7 @@ bool NamicsConfig::testCaseCleng(string &filename, bool save_vector) {
 
 // end of compulsory part of testing;
 
-        // Can be removed by any others engine. /*
+        // Can be exchanged by any others engine. /*
         success = initCleng(start, X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old, save_vector);
         if (!success) {cout << "Problem is in initCleng" << endl; return success;}
         // */

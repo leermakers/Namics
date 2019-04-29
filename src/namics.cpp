@@ -57,11 +57,6 @@ void help() {
 
 int main(int argc, char *argv[]) {
 
-//    printf( "argc = %d\n", argc );
-//    for( int i = 0; i < argc; ++i ) {
-//        printf( "argv[ %d ] = %s\n", i, argv[ i ] );
-//    }
-
     int errors_ = 0;  // counting errors for executing namics
     bool GPU = false;
     bool has_filename = false;
@@ -76,23 +71,16 @@ int main(int argc, char *argv[]) {
         if (*argv[i] != '-') { filename_ = argv[i]; has_filename = true; }
 
         if (strcmp( argv[i], "--tests") == 0 or (strcmp( argv[i], "-t") == 0 )) {
-
             std::vector<char*> argv_; // valid parameters for testing
             for( int jj = 0; jj < argc; ++jj ) {
-                if (
-                        strcmp(argv[jj], "-GPU") != 0 and
-                        strcmp(argv[jj], "-d") != 0 and
-                        strcmp(argv[jj], "-t") != 0 and
-                        strcmp(argv[jj], "--tests") != 0
-                        ) {argv_.push_back(argv[jj]);}
-            }
+                if (strcmp(argv[jj], "-GPU") != 0 and
+                    strcmp(argv[jj], "-d") != 0 and
+                    strcmp(argv[jj], "-t") != 0 and
+                    strcmp(argv[jj], "--tests") != 0)
+                { argv_.push_back(argv[jj]); }}
 
             int argc_ = (int) argv_.size();
             if (argc_ == 1) { argv_.push_back((char*)"-t"); argc_ ++; } // because -t flag is used Catch2
-
-//            cout << "argc_: " << argc_ << endl;
-//            for (auto &&item : argv_) {cout << "### " << item << endl;}
-
             Catch::Session session;
             int returnCode = session.applyCommandLine(argc_, argv_.data());
             // Indicates a command line error

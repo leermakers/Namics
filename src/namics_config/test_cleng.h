@@ -66,10 +66,6 @@ TEST_CASE("Free energy along 1 axis", "[chain_along1_axis], [cleng], [working], 
     vector<Real> e = {0.0};
     for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
     vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
-
-
-
-
     for (std::size_t i = 0; i < v.size(); ++i) REQUIRE((float) e[i] == (float) v[i]);
 
 }

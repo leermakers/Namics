@@ -1,6 +1,6 @@
-#include "test_unit/catch.hpp"
-#include "namics.h"
-#include <iomanip>      // std::setprecision
+#include "catch.hpp"
+#include "../namics.h"
+
 /**
  * Test 1
  */
@@ -49,7 +49,7 @@ TEST_CASE("Free energy vector after 20 steps", "[chain20steps_vector], [cleng], 
  * Test 3
  */
 
-TEST_CASE("Free energy along 1 axis", "[chain_along1_axis], [cleng], [working], [long]") {
+TEST_CASE("Free energy of chain along 1 axis", "[chain_along1_axis], [cleng], [working], [long], [chain_along_axises]") {
 
 // create a configuration of Namics
     NamicsConfig config;
@@ -66,4 +66,119 @@ TEST_CASE("Free energy along 1 axis", "[chain_along1_axis], [cleng], [working], 
     for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
     vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
     for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
+}
+
+/**
+ * Test 4
+ */
+
+TEST_CASE("Free energy of chain along 2 axis", "[chain_along2_axis], [cleng], [working], [long], [chain_along_axises]") {
+
+// create a configuration of Namics
+NamicsConfig config;
+string filename = "chain_go_along_axis2.in";
+
+const bool save_vector = true;  // if I would like to save something in my engine (optional)
+bool success = config.testCaseCleng(filename, save_vector);
+if (!success) exit(0);
+
+// useful logic
+Real threshold = 1e-5;          // set some precision
+vector<Real> e;
+int lenght = 200;
+for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
+vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
+for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
+}
+
+/**
+ * Test 5
+ */
+
+TEST_CASE("Free energy of chain along 3 axis", "[chain_along3_axis], [cleng], [working], [long], [chain_along_axises]") {
+
+// create a configuration of Namics
+NamicsConfig config;
+string filename = "chain_go_along_axis3.in";
+
+const bool save_vector = true;  // if I would like to save something in my engine (optional)
+bool success = config.testCaseCleng(filename, save_vector);
+if (!success) exit(0);
+
+// useful logic
+Real threshold = 1e-5;          // set some precision
+vector<Real> e;
+int lenght = 200;
+for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
+vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
+for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
+}
+
+/**
+ * Test 6
+ */
+
+TEST_CASE("Free energy of 3 segments along 1 axis", "[3segments_along1_axis], [cleng], [working], [long], [3segments_along_axises]") {
+
+// create a configuration of Namics
+NamicsConfig config;
+string filename = "3segments_go_along_axis1.in";
+
+const bool save_vector = true;  // if I would like to save something in my engine (optional)
+bool success = config.testCaseCleng(filename, save_vector);
+if (!success) exit(0);
+
+// useful logic
+Real threshold = 1e-5;          // set some precision
+vector<Real> e;
+int lenght = 200;
+for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
+vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
+for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
+}
+
+/**
+ * Test 6
+ */
+
+TEST_CASE("Free energy of 3 segments along 2 axis", "[3segments_along2_axis], [cleng], [working], [long], [3segments_along_axises]") {
+
+// create a configuration of Namics
+NamicsConfig config;
+string filename = "3segments_go_along_axis2.in";
+
+const bool save_vector = true;  // if I would like to save something in my engine (optional)
+bool success = config.testCaseCleng(filename, save_vector);
+if (!success) exit(0);
+
+// useful logic
+Real threshold = 1e-5;          // set some precision
+vector<Real> e;
+int lenght = 200;
+for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
+vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
+for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
+}
+
+/**
+ * Test 7
+ */
+
+TEST_CASE("Free energy of 3 segments along 3 axis", "[3segments_along3_axis], [cleng], [working], [long], [3segments_along_axises]") {
+
+// create a configuration of Namics
+NamicsConfig config;
+string filename = "3segments_go_along_axis3.in";
+
+const bool save_vector = true;  // if I would like to save something in my engine (optional)
+bool success = config.testCaseCleng(filename, save_vector);
+if (!success) exit(0);
+
+// useful logic
+Real threshold = 1e-5;          // set some precision
+vector<Real> e;
+int lenght = 200;
+for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
+vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
+for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }

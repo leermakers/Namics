@@ -4,7 +4,7 @@
 #define CATCH_CONFIG_RUNNER
 #include "test_unit/catch.hpp"
 // Cleng test
-#include "namics_config/test_cleng.h"
+#include "test_unit/test_cleng.h"
 // You can put your header with tests.
 // #include "namics_config/test_***.h"
 

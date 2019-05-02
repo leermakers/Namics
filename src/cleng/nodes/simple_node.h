@@ -30,8 +30,6 @@ public:
 
     Point get_system_point() const;
 
-    void reduceToPrimitive();
-
 private:
     Point system_point;
     Point box_size;

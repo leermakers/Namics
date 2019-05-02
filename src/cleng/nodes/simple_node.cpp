@@ -12,33 +12,25 @@ void SimpleNode::shift(const Point &shift) {
 
 
 Point SimpleNode::point() const {
-    return system_point % box_size;
+    Point p = system_point % box_size;
+    if (p.x < 0) p.x += box_size.x;
+    if (p.y < 0) p.y += box_size.y;
+    if (p.z < 0) p.z += box_size.z;
+    return p;
 }
 
-Point SimpleNode::get_system_point() const {
-    return system_point;
-}
+Point SimpleNode::get_system_point() const {return system_point;}
 
-void SimpleNode::pushSystemPoints(std::map<int, Point> &pointsById) const {
-    pointsById[id] = system_point;
-}
+void SimpleNode::pushSystemPoints(std::map<int, Point> &pointsById) const { pointsById[id] = system_point;}
 
 std::string SimpleNode::to_string() const {
     return "id: " + std::to_string(id) + " { " + std::to_string(system_point.x) + ", " +
            std::to_string(system_point.y) + ", " + std::to_string(system_point.z) + " };";
 }
 
-void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {
-    cnode = std::move(coupled_node);
-}
+void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {cnode = std::move(coupled_node);}
 
-shared_ptr<SimpleNode> SimpleNode::get_cnode() {
-    return this->cnode;
-}
-
-void SimpleNode::reduceToPrimitive(){
-    system_point = system_point % box_size;
-}
+shared_ptr<SimpleNode> SimpleNode::get_cnode() {return this->cnode;}
 
 bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
 //    cout << "Simple Node [inSubBoxRange]... " << endl;

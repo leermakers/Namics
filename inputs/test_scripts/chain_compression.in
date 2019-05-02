@@ -1,8 +1,8 @@
-// 3segments 2019-05-2 
+// test_linear_chain 2019-04-18
 lat : flat : gradients : 3
-lat : flat : n_layers_x : 40
-lat : flat : n_layers_y : 40
-lat : flat : n_layers_z : 40
+lat : flat : n_layers_x : 50
+lat : flat : n_layers_y : 50
+lat : flat : n_layers_z : 50
 lat : flat : geometry : planar
 lat : flat : lattice_type : simple_cubic
 lat : flat : lowerbound_x : periodic
@@ -15,8 +15,8 @@ lat : flat : upperbound_z : periodic
 mon : W : freedom : free
 mon : A : freedom : free
 mon : X : freedom : clamp
-mon : X : clamp_info : (10,10,10)(10,10,24);(10,10,24)(25,25,24);
-mon : X : sub_box_size : 30
+mon : X : clamp_info : (44,30,32)(30,30,34);
+mon : X : sub_box_size : 18
 
 mol : pol : freedom : clamped
 mol : pol : composition : (X)1(A)49(X)1
@@ -28,9 +28,9 @@ newton : isaac : m : 4
 newton : isaac : deltamax : 0.1
 newton : isaac : e_info : true
 newton : isaac : iterationlimit : 7000
-newton : isaac : tolerance : 1e-7
+newton : isaac : tolerance : 1e-3
 
-out_info : folder : path : data
+out_info : folder : path : data_chain_compression
 
 output : vtk : append : false
 vtk : mol : pol : phi
@@ -40,11 +40,12 @@ kal : output : variable : MC_attempt
 kal : output : variable : free_energy
 kal : sys : variable : free_energy
 
-cleng : parameters : MCS : 10
+cleng : parameters : MCS : 7
 cleng : parameters : delta_save : 1
-cleng : parameters : delta_step : 2 // 1
+cleng : parameters : delta_step : 1
 cleng : parameters : seed : 1
-cleng : parameters : checkpoint_save : true
-cleng : parameters : checkpoint_load : true
+cleng : parameters : movement_along : 1
+cleng : parameters : sign_move : -
+cleng : parameters : user_node_id_move : 1
 
 start

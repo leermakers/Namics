@@ -1,8 +1,8 @@
 // test_linear_chain 2019-04-18
 lat : flat : gradients : 3
-lat : flat : n_layers_x : 20
-lat : flat : n_layers_y : 20
-lat : flat : n_layers_z : 20
+lat : flat : n_layers_x : 50
+lat : flat : n_layers_y : 50
+lat : flat : n_layers_z : 50
 lat : flat : geometry : planar
 lat : flat : lattice_type : simple_cubic
 lat : flat : lowerbound_x : periodic
@@ -15,7 +15,7 @@ lat : flat : upperbound_z : periodic
 mon : W : freedom : free
 mon : A : freedom : free
 mon : X : freedom : clamp
-mon : X : clamp_info : (10,10,2)(10,10,4);
+mon : X : clamp_info : (30,30,32)(30,30,34);
 mon : X : sub_box_size : 18
 
 mol : pol : freedom : clamped
@@ -30,7 +30,7 @@ newton : isaac : e_info : true
 newton : isaac : iterationlimit : 7000
 newton : isaac : tolerance : 1e-3
 
-out_info : folder : path : data_chain_extention
+out_info : folder : path : data_chain_extension
 
 output : vtk : append : false
 vtk : mol : pol : phi
@@ -40,7 +40,7 @@ kal : output : variable : MC_attempt
 kal : output : variable : free_energy
 kal : sys : variable : free_energy
 
-cleng : parameters : MCS : 50
+cleng : parameters : MCS : 7
 cleng : parameters : delta_save : 1
 cleng : parameters : delta_step : 1
 cleng : parameters : seed : 1
@@ -49,3 +49,4 @@ cleng : parameters : sign_move : +
 cleng : parameters : user_node_id_move : 0
 
 start
+

@@ -182,3 +182,70 @@ for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }
+
+
+/**
+ * Test 8
+ */
+
+TEST_CASE("Free energy of chain extension ", "[chain_extension], [cleng], [working], [long]") {
+
+// create a configuration of Namics
+NamicsConfig config;
+string filename = "chain_extension.in";
+
+const bool save_vector = true;  // if I would like to save something in my engine (optional)
+bool success = config.testCaseCleng(filename, save_vector);
+if (!success) exit(0);
+// useful logic
+Real threshold = 1e-5; // set some precision
+vector<Real> e = {     //
+        -3.14279,
+        -3.06371,
+        -2.98835,
+        -2.91115,
+        -2.85009,
+        -2.79798,
+        -2.76777
+};
+vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
+for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
+}
+
+/**
+ * Test 9
+ */
+
+TEST_CASE("Free energy of chain compression ", "[chain_compression], [cleng], [working], [long]") {
+
+// create a configuration of Namics
+NamicsConfig config;
+string filename = "chain_compression.in";
+
+const bool save_vector = true;  // if I would like to save something in my engine (optional)
+bool success = config.testCaseCleng(filename, save_vector);
+if (!success) exit(0);
+
+// What Namics gives:
+// -2.79685
+// -2.8497
+// -2.91376
+// -2.98672
+// -3.06276
+// -3.14493
+// -3.21317
+
+// useful logic
+Real threshold = 1e-5; // set some precision
+vector<Real> e = {     // the same vector as before but comparison should be made reversely.
+        -3.14279,
+        -3.06371,
+        -2.98835,
+        -2.91115,
+        -2.85009,
+        -2.79798,
+        -2.76777
+};
+vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
+for (size_t i = v.size(); i > 0; --i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
+}

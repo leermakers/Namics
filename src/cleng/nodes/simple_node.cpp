@@ -33,7 +33,6 @@ void SimpleNode::set_cnode(shared_ptr<SimpleNode> coupled_node) {cnode = std::mo
 shared_ptr<SimpleNode> SimpleNode::get_cnode() {return this->cnode;}
 
 bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
-//    cout << "Simple Node [inSubBoxRange]... " << endl;
     Real dist = distance_with_shift(cnode->get_system_point(), shift);
     Point distance = {(int) dist, (int) dist, (int) dist};
 //    cout << "Dist: " << dist << endl;

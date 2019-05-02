@@ -63,36 +63,40 @@ Real Cleng::GetN_times_mu() {
 }
 
 bool Cleng::InSubBoxRange() {
-//    cout << "InSubBoxRange ... " << endl;
-    int not_in_subbox_range = 0;
+    bool success = true;
+    vector<int> id_nodes;
     Point sub_box = {sub_box_size-2, sub_box_size-2, sub_box_size-2};  // change it in future
-//    cout << "sub_box: " << sub_box.to_string() << endl;
-    if (!nodes[id_node_for_move]->inSubBoxRange(sub_box, clamped_move)) not_in_subbox_range++;
 
-    if (not_in_subbox_range != 0) {
-        cout << "There are nodes not in sub-box range!" << endl;
-        return false;
+    if (!nodes[id_node_for_move]->inSubBoxRange(sub_box, clamped_move)) {
+        id_nodes.push_back(id_node_for_move); success = false;
     }
-    return true;
+    if (!id_nodes.empty()) {
+        cout << "These nodes[id] are not in sub-box range:" << endl;
+        for (auto &&nid: id_nodes) cout << nid << endl;
+    }
+    return success;
 }
 
 bool Cleng::NotCollapsing() {
-    bool not_collapsing = false;
-    Point MP(nodes[id_node_for_move]->point());
-    Point MPs(nodes[id_node_for_move]->point() + clamped_move);
+    bool not_collapsing = true;
 
-//    cout << "MP: "  << MP.to_string() << endl;
-//    cout << "MPs: " << MPs.to_string() << endl;
+    Point P_not_shifted (nodes[id_node_for_move]->point());
+    Point P_shifed(nodes[id_node_for_move]->point() + clamped_move);
 
-    double min_dist = 2; // minimal distance between nodes
-    int i = 0;
-    for (const auto &n : nodes) {
-        if (MP != n->point()) {
-            Real distance = MPs.distance(n->point());
-            if (distance < min_dist) {cout << "Nodes are too close to each other." << endl; i++;}
+    double min_dist = 0; // minimal distance between nodes
+    for (auto &&n : nodes) {
+        Point P_test = n->point();
+
+        if (P_not_shifted != P_test) {
+            Real distance = P_shifed.distance(n->point());
+            if (distance <= min_dist) {
+                cout << "Nodes are too close to each other." << endl;
+                cout << "Shifted nodes: " << P_shifed.to_string() << endl;
+                cout << "Nodes id:      " << P_test.to_string() << endl;
+                not_collapsing =false;
+            }
         }
     }
-    if (i == 0) {not_collapsing = true;}
     return not_collapsing;
 }
 
@@ -102,10 +106,6 @@ bool Cleng::InRange() {
     Point down_boundary = {1, 1, 1};
     Point up_boundary = box - down_boundary;
     Point MPs(nodes[id_node_for_move]->point() + clamped_move);
-
-//    cout << "MPs" << MPs.to_string() << endl;
-//    cout << "down bound" << down_boundary.to_string() << endl;
-//    cout << "up boundary bound" << up_boundary.to_string() << endl;
 
     if ((down_boundary.all_elements_less_than(MPs)) and (MPs.all_elements_less_than(up_boundary))) in_range = true;
     return in_range;

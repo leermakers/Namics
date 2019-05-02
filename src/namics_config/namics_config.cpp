@@ -25,7 +25,7 @@ bool NamicsConfig::createInClass(string filename) {
     bool success;
     In.push_back(new Input(std::move(filename)) );
     if (In[0]->Input_error) {
-        cout << "Input_error raises error!" << endl;
+        if (debug) cout << "Input_error raises error!" << endl;
         success = false;
     } else success = true;
     return success;
@@ -35,7 +35,7 @@ bool NamicsConfig::createLatClass(int &start) {
     bool success;
     Lat.push_back(new Lattice(In, In[0]->LatList[0]));
     if (!Lat[0]->CheckInput(start)) {
-        cout << "CheckInput in Lat raises error!" << endl;
+        if (debug) cout << "CheckInput in Lat raises error!" << endl;
         success = false;
     } else success = true;
     return success;
@@ -61,7 +61,7 @@ bool NamicsConfig::createStaClass(int &start) {
         for (int k = 0; k < n_seg; k++)  Seg[i]->PutChiKEY(Seg[k]->name);
         for (int k = 0; k < n_stat; k++) Seg[i]->PutChiKEY(Sta[k]->name);
         if (!Seg[i]->CheckInput(start)){
-            cout << "CheckInput in Seg raises error!" << endl;
+            if (debug) cout << "CheckInput in Seg raises error!" << endl;
             success = false;
             return success;
         }
@@ -70,7 +70,7 @@ bool NamicsConfig::createStaClass(int &start) {
         for (int k = 0; k < n_seg; k++)  Sta[i]->PutChiKEY(Seg[k]->name);
         for (int k = 0; k < n_stat; k++) Sta[i]->PutChiKEY(Sta[k]->name);
         if (!Sta[i]->CheckInput(start)){
-            cout << "CheckInput in Sta raise error!" << endl;
+            if (debug) cout << "CheckInput in Sta raise error!" << endl;
             success = false;
             return success;
         }
@@ -84,7 +84,7 @@ bool NamicsConfig::createReaClass(int &start) {
     for (int i = 0; i < n_rea; i++) {
         Rea.push_back(new Reaction(In, Seg, Sta, In[0]->ReactionList[i]));
         if (!Rea[i]->CheckInput(start)) {
-            cout << "CheckInput in Rea raises error!" << endl;
+            if (debug) cout << "CheckInput in Rea raises error!" << endl;
             success = false;
             return success;
         }
@@ -98,7 +98,7 @@ bool NamicsConfig::createMolClass(int &start) {
     for (int i = 0; i < n_mol; i++) {
         Mol.push_back(new Molecule(In, Lat, Seg, In[0]->MolList[i]));
         if (!Mol[i]->CheckInput(start)) {
-            cout << "CheckInput in Mol raises error!" << endl;
+            if (debug) cout << "CheckInput in Mol raises error!" << endl;
             success = false;
             return success;
         }
@@ -117,7 +117,7 @@ bool NamicsConfig::createVarClass(
     for (int k = 0; k < n_var; k++) {
         Var.push_back(new Variate(In, Lat, Seg, Sta, Rea, Mol, Sys, In[0]->VarList[k]));
         if (!Var[k]->CheckInput(start)) {
-            cout << "CheckInput in Mol raises error!" << endl;
+            if (debug) cout << "CheckInput in Mol raises error!" << endl;
             success = false;
             return success;
         }
@@ -137,7 +137,7 @@ bool NamicsConfig::createNewClass(int &start) {
     bool success = true;
     New.push_back(new Solve_scf(In, Lat, Seg, Sta, Rea, Mol, Sys, Var, In[0]->NewtonList[0]));
     if (!New[0]->CheckInput(start))  {
-        cout << "CheckInput in New raises error!" << endl;
+        if (debug) cout << "CheckInput in New raises error!" << endl;
         success = false;
         return success;
     }
@@ -230,7 +230,7 @@ bool NamicsConfig::initCleng(
     if (!debug) cout << "Creating Cleng module" << endl;
     Cle.push_back(new Cleng(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->ClengList[0]));
     if (!Cle[0]->CheckInput(start, save_vector)) {
-        cout << "CheckInput in Cle raises error! " << endl;
+        if (debug) cout << "CheckInput in Cle raises error! " << endl;
         success = false;
         return success;
     }
@@ -251,7 +251,7 @@ bool NamicsConfig::initMesodyn(
     if (debug) cout << "Creating mesodyn" << endl;
     Mes.push_back(new Mesodyn(start, In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->MesodynList[0]));
     if (!Mes[0]->CheckInput(start)) {
-        cout << "CheckInput in Mes raises error! " << endl;
+        if (debug) cout << "CheckInput in Mes raises error! " << endl;
         success = false;
         return success;
     }
@@ -278,7 +278,7 @@ bool NamicsConfig::initTeng(
     cout << "Solving Teng problem" << endl;
     Ten.push_back(new Teng(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->TengList[0]));
     if (!Ten[0]->CheckInput(start)) {
-        cout << "CheckInput in Ten raises error! " << endl;
+        if (debug) cout << "CheckInput in Ten raises error! " << endl;
         success = false;
         return success;
     }
@@ -390,17 +390,17 @@ bool NamicsConfig::testCaseCleng(string &filename, bool save_vector) {
         In[0]->MakeLists(start);
 
         success = createLatClass(start);
-        if (!success) {cout << "Problem is in Lat" << endl; return success;}
+        if (!success) {if (debug) cout << "Problem is in Lat" << endl; return success;}
         success = createSegClass();
-        if (!success) {cout << "Problem is in Seg" << endl; return success;}
+        if (!success) {if (debug) cout << "Problem is in Seg" << endl; return success;}
         success = createStaClass(start);
-        if (!success) {cout << "Problem is in Sta" << endl; return success;}
+        if (!success) {if (debug) cout << "Problem is in Sta" << endl; return success;}
         success = createReaClass(start);
-        if (!success) {cout << "Problem is in Rea" << endl; return success;}
+        if (!success) {if (debug) cout << "Problem is in Rea" << endl; return success;}
         success = createMolClass(start);
-        if (!success) {cout << "Problem is in Mol" << endl; return success;}
+        if (!success) {if (debug) cout << "Problem is in Mol" << endl; return success;}
         success = createSysClass(start, cuda);
-        if (!success) {cout << "Problem is in Sys" << endl; return success;}
+        if (!success) {if (debug) cout << "Problem is in Sys" << endl; return success;}
 
         int search_nr = -1, scan_nr = -1, target_nr = -1, ets_nr = -1, bm_nr = -1, etm_nr = -1;
         int n_search = 0; int n_scan = 0; int n_ets = 0;
@@ -410,16 +410,16 @@ bool NamicsConfig::testCaseCleng(string &filename, bool save_vector) {
                 search_nr, scan_nr, target_nr, ets_nr,bm_nr, etm_nr,
                 n_search, n_bm, n_scan, n_etm, n_ets, n_target
         );
-        if (!success) {cout << "Problem is in Var" << endl; return success;}
+        if (!success) {if (debug) cout << "Problem is in Var" << endl; return success;}
 
         success = createNewClass(start);
-        if (!success) {cout << "Problem is in New" << endl; return success;}
+        if (!success) {if (debug) cout << "Problem is in New" << endl; return success;}
 
 // end of compulsory part of testing;
 
         // Can be exchanged by any others engine. /*
         success = initCleng(start, X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old, save_vector);
-        if (!success) {cout << "Problem is in initCleng" << endl; return success;}
+        if (!success) {if (debug) cout << "Problem is in initCleng" << endl; return success;}
         // */
     }
 

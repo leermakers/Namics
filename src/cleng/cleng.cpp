@@ -72,7 +72,7 @@ bool Cleng::CheckInput(int start, bool save_vector) {
 
         // MCS
         if (!GetValue("MCS").empty()) {
-            success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000, "The number of Monte Carlo steps should be between 1 and 10000");
+            success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000000, "The number of Monte Carlo steps should be between 1 and 10000000");
             if (!success) { cout << "MCS will be equal to 5" << endl; MCS = 1; }
         } else MCS = 5;
         if (debug) cout << "MCS is " << MCS << endl;
@@ -357,14 +357,17 @@ bool Cleng::MonteCarlo(bool save_vector) {
     if (debug) cout << "Monte Carlo in Cleng" << endl;
     bool success = true;
 
-    MCS_checkpoint = 0;
     Checkpoint checkpoint;
     if (checkpoint_load) {
-        Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
-        CP(to_cleng);
-        nodes = checkpoint.loadCheckpoint(nodes, box);
-        CP(to_segment);
-        if (getLastMCS() != 0) MCS_checkpoint = getLastMCS() + 1;
+        bool loadable= checkpoint.isLoadable();
+        if (loadable) {
+            Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
+            simpleNodeList = checkpoint.loadCheckpoint(simpleNodeList, box);
+            nodes = createNodes(simpleNodeList);
+            CP(to_segment);
+            if (getLastMCS() != 0) MCS_checkpoint = getLastMCS() + 1;
+            loaded = true;
+        }
     }
 
 // Analysis MC
@@ -382,7 +385,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
     WriteOutput(MC_attempt + MCS_checkpoint);
 
     cout << "Initialization done.\n" << endl;
-    CP(to_cleng);
+    if (!loaded) CP(to_cleng);
     cout << "Here we go..." << endl;
     for (MC_attempt = 1; MC_attempt <= MCS; MC_attempt++) { // loop for trials
         bool success_;

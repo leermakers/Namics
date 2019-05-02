@@ -17,17 +17,15 @@ class Checkpoint {
 public:
     Checkpoint();
 
-    void updateCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList);
-    void saveCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList);
-    vector<std::shared_ptr<Node>> loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box);
-
-    void addProperty(const string &elem, const string &param, const string &value);
-    void addFolderInfo(const string &param, const string &value);
+    void updateCheckpoint(const vector<std::shared_ptr<SimpleNode>>& simpleNodeList);
+    void saveCheckpoint(const vector<std::shared_ptr<SimpleNode>>& simpleNodeList);
+    vector<shared_ptr<SimpleNode>> loadCheckpoint(vector<shared_ptr<SimpleNode>> simpleNodeList, const Point& box);
 
     bool isCheckpointExists(const std::string& name) const;
 
-    void getLastCheckpoint();
-    void getNewId4Checkpoint();
+    void updateCheckpointName(bool plusOne = false);
+
+    bool isLoadable();
 
     static const string IN_CLASS_NAME;
     static const string DEFAULT_CHECKPOINT_PATH;

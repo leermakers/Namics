@@ -82,8 +82,8 @@ public:
     string sign_move;
     bool cleng_pos;
     vector<int> ids_node4move;
-    int user_node_id;
-    int MCS_checkpoint;
+    int MCS_checkpoint = 0;
+    bool loaded = false;
     string save_filename;
     Point BC;
     Random rand;

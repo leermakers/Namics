@@ -1,5 +1,5 @@
-#include "../test_unit/catch.hpp"
-#include "../namics.h"
+#include "test_unit/catch.hpp"
+#include "namics.h"
 #include <iomanip>      // std::setprecision
 /**
  * Test 1

@@ -15,7 +15,7 @@ lat : flat : upperbound_z : periodic
 mon : W : freedom : free
 mon : A : freedom : free
 mon : X : freedom : clamp
-mon : X : clamp_info : (10,10,2)(10, 10, 3);
+mon : X : clamp_info : (10,10,2)(10,10,4);
 mon : X : sub_box_size : 18
 
 mol : pol : freedom : clamped
@@ -30,7 +30,7 @@ newton : isaac : e_info : true
 newton : isaac : iterationlimit : 7000
 newton : isaac : tolerance : 1e-3
 
-out_info : folder : path : data
+out_info : folder : path : data_chain_extention
 
 output : vtk : append : false
 vtk : mol : pol : phi
@@ -40,25 +40,12 @@ kal : output : variable : MC_attempt
 kal : output : variable : free_energy
 kal : sys : variable : free_energy
 
-//output : pro : append : false
-//pro : mon : X : phi
-
-//output : pos : append : true
-//pos : output : noname : X
-//pos : output : noname : Y
-//pos : output : noname : Z
-
-//output : vec : append : true
-//vec : mol : pol : gn
-//vec : output : noname : gn
-
-
 cleng : parameters : MCS : 50
 cleng : parameters : delta_save : 1
 cleng : parameters : delta_step : 1
 cleng : parameters : seed : 1
-cleng : parameters : movement_alone : 3
-cleng : parameters : cleng_pos : true
-cleng : parameters : F_dependency : true
+cleng : parameters : movement_along : 1
+cleng : parameters : sign_move : +
+cleng : parameters : user_node_id_move : 0
 
 start

@@ -39,13 +39,14 @@ bool SimpleNode::inSubBoxRange(const Point &subBoxRange, const Point &shift) con
 //    cout << "Dist: " << dist << endl;
 //    cout << "distance: " << distance.to_string() << endl;
 
+// TODO: implement operator=>
     if (distance > subBoxRange) {
-        cout << "Too far away from each other nodes: " << this->id << " and " << cnode->id << endl;
+        cout << "Nodes are too far away from each other: " << this->id << " and " << cnode->id << endl;
         cout << "(int) Distance: " << std::to_string((int) dist) << " between of "<< system_point.to_string() << " and " << cnode->system_point.to_string() << endl;
         return false;
     }
     if (distance == subBoxRange) {
-        cout << "Too far away from each other nodes: " << this->id << " and " << cnode->id << endl;
+        cout << "Nodes are too far away from each other: " << this->id << " and " << cnode->id << endl;
         cout << "(int) Distance: " << std::to_string((int) dist) << " between of "<< system_point.to_string() << " and " << cnode->system_point.to_string() << endl;
         return false;
     }

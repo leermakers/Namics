@@ -121,13 +121,14 @@ void Cleng::make_BC() {
 }
 
 Point Cleng::prepareMove() {
-
     if (debug) cout << "prepareMove in Cleng" << endl;
 
-    if (axis != -1) {
-        if (axis == 1) clamped_move = {-2, 0, 0};
-        if (axis == 2) clamped_move = {0, -2, 0};
-        if (axis == 3) clamped_move = {0, 0, -2};
+    if (axis) {
+        int c1=1; if (sign_move == "-") c1=-1;
+        // currently it is implemented for step
+        if (axis == 1) clamped_move = {c1*2, 0, 0};
+        if (axis == 2) clamped_move = {0, c1*2, 0};
+        if (axis == 3) clamped_move = {0, 0, c1*2};
     } else {
 
         clamped_move = {

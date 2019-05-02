@@ -35,8 +35,9 @@ Cleng::Cleng(
     KEYS.emplace_back("checkpoint_load");
     KEYS.emplace_back("cleng_pos");
     KEYS.emplace_back("simultaneous");
-    KEYS.emplace_back("movement_alone");
-    KEYS.emplace_back("F_dependency");
+    KEYS.emplace_back("movement_along");
+    KEYS.emplace_back("sign_move");
+    KEYS.emplace_back("user_node_id_move");
 
     // Debug.log
     //out.open("debug.out", ios_base::out);
@@ -132,21 +133,49 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         else simultaneous = false;
         if (debug) cout << "simultaneous move " << simultaneous << endl;
 
-        // movement_alone
-        if (!GetValue("movement_alone").empty()) {
-            success = In[0]->Get_int(GetValue("movement_alone"), axis, 1, 3, "The number of delta_step should be between 1 and 3");
+        // movement_along
+        if (!GetValue("movement_along").empty()) {
+            cout << "Warning!!! In movement_along mode delta step will be ignored! Monte Carlo step will be {sign_move*2} depending on axis " << endl;
+            success = In[0]->Get_int(GetValue("movement_along"), axis, 1, 3, "The number of delta_step should be between 1 and 3");
             if (!success) {
-                cout << "Sorry, you provide incorrect axis number. The movement_alone will be disable" << endl;
-                axis = -1;
+                cout << "Sorry, you provide incorrect axis number. The movement_along will be disable" << endl;
+                axis = 0;
                 success = true;
             }
-        } else axis = -1;
-        if (debug) cout << "movement_alone axis " << axis << endl;
+        } else axis = 0;
+        if (debug) cout << "movement_along axis " << axis << endl;
 
-        // F_dependent
-        if (!GetValue("F_dependency").empty()) F_dependency = In[0]->Get_bool(GetValue("F_dependency"), false);
-        else F_dependency = false;
-        if (debug) cout << "F_dependent move " << F_dependency << endl;
+        // sign_move
+        vector<string> options {"+", "-"};
+        if (axis) {
+            if (!GetValue("sign_move").empty()) {
+                success = In[0]->Get_string(GetValue("sign_move"), sign_move, options, "The sigh could be ether + or -");
+            } else { sign_move = "+";}
+        } else {
+            if (!GetValue("sign_move").empty()) {
+                cout << "Sorry, but you cannot use sign_move without movement_along axis flag" << endl;
+                success = false;
+                return success;
+            }
+        }
+        if (debug) cout << "sign_move " << sign_move << endl;
+
+        // user_node_move_id
+        string struser_node_move_id;
+        if (!GetValue("user_node_id_move").empty()) {
+            success = In[0]->Get_string(GetValue("user_node_id_move"), struser_node_move_id, "");
+            string node_id;
+            stringstream stream(struser_node_move_id);
+            while( getline(stream, node_id, ',') ) {
+                try {
+                    int id = stoi(node_id);
+                    ids_node4move.push_back(id);
+                }
+                catch (invalid_argument& e) {success = false; cout << "Check yours node id" << endl; return success;}
+            }
+
+        } else ids_node4move = {-1};
+        if (debug) for (auto &&id:ids_node4move) cout << "user_node_id_move " << id << endl;
 
         // ???
         if (success) { n_boxes = Seg[clamp_seg]->n_box; sub_box_size = Seg[clamp_seg]->mx; }
@@ -292,31 +321,30 @@ bool Cleng::MakeMove(bool back) {
     } else {
         clamped_move = prepareMove();
         if (!simultaneous) {
-            if (!F_dependency) {
-                id_node_for_move = rand.getInt(0, (int) nodes.size() - 1);
-                cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
-                while (!Checks()) {
-                    cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
-                    clamped_move = {0, 0, 0};
-                    rejected++;
-                    success = false;
-                }
-                nodes[id_node_for_move]->shift(clamped_move);
-                cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
-                     << endl;
-            } else {
-                id_node_for_move = 1;
-                cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
-                if (!Checks()) {
-                    cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
-                    clamped_move = {0, 0, 0};
-                    rejected++;
-                    success = false;
-                }
-                nodes[id_node_for_move]->shift(clamped_move);
-                cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
-                     << endl;
+
+            if (ids_node4move[0] != -1) {id_node_for_move = ids_node4move[rand.getInt(0, (int) ids_node4move.size() - 1)];}
+            else {id_node_for_move = rand.getInt(0, (int) nodes.size() - 1);}
+
+            if (id_node_for_move > (int) nodes.size()-1) {
+                cout << "###" << endl;
+                cout << "Node id is too high. Trying to move node id: " << id_node_for_move << "." << endl;
+                cout << "Available nodes: " << endl;
+                for (auto &&n: nodes) { cout << n->to_string() << endl;}
+                cout << "Termination..." << endl;
+                exit(0);
             }
+
+            cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
+            while (!Checks()) {
+                cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
+                clamped_move = {0, 0, 0};
+                rejected++;
+                success = false;
+            }
+            nodes[id_node_for_move]->shift(clamped_move);
+            cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
+                 << endl;
+
         } else {
             for (auto &node : nodes) node->shift(clamped_move);
             cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << endl;

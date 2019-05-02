@@ -42,7 +42,7 @@ private:
     int cmajor_version = 1;
     int cminor_version = 1;
     int cpatch = 4;
-    int cversion = 91;
+    int cversion = 99;
     int pseed;
 
     void fillXYZ();
@@ -79,8 +79,10 @@ public:
     bool checkpoint_load;
     bool simultaneous;
     int  axis;
+    string sign_move;
     bool cleng_pos;
-    bool F_dependency;
+    vector<int> ids_node4move;
+    int user_node_id;
     int MCS_checkpoint;
     string save_filename;
     Point BC;

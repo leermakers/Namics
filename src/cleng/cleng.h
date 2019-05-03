@@ -40,9 +40,9 @@ private:
     const string brand;
 
     int cmajor_version = 1;
-    int cminor_version = 1;
-    int cpatch = 4;
-    int cversion = 99;
+    int cminor_version = 2;
+    int cpatch = 0;
+    int cversion = 1;
     int pseed;
 
     void fillXYZ();

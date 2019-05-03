@@ -380,6 +380,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
 // init system outlook
     New[0]->Solve(true);
     free_energy_current = Sys[0]->GetFreeEnergy() - GetN_times_mu();
+    if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy() - GetN_times_mu());
 
 // init save
     WriteOutput(MC_attempt + MCS_checkpoint);
@@ -401,7 +402,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
         if (success_) {
             New[0]->Solve(true);
             free_energy_trial = Sys[0]->GetFreeEnergy() - GetN_times_mu();
-            if (save_vector) test_vector.push_back(free_energy_trial);
+            if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy() - GetN_times_mu());
 
             cout << "Free Energy (c): " << free_energy_current    << endl;
             cout << "            (t): " << free_energy_trial << endl;

@@ -5,7 +5,7 @@
  * Test 1
  */
 
-TEST_CASE("Free energy after 10 steps", "[chain10steps], [cleng], [working]") {
+TEST_CASE("Free energy after 10 steps", "[chain10steps], [cleng], [working], [short]") {
 
 // create a configuration of Namics
     NamicsConfig config;
@@ -26,7 +26,7 @@ TEST_CASE("Free energy after 10 steps", "[chain10steps], [cleng], [working]") {
  * Test 2
  */
 
-TEST_CASE("Free energy vector after 20 steps", "[chain20steps_vector], [cleng], [working]") {
+TEST_CASE("Free energy vector after 20 steps", "[chain20steps_vector], [cleng], [working], [short]") {
 
 // create a configuration of Namics
     NamicsConfig config;
@@ -39,7 +39,7 @@ TEST_CASE("Free energy vector after 20 steps", "[chain20steps_vector], [cleng], 
 // useful logic
     Real threshold = 1e-5; // set some precision
     vector<Real> e;
-    int lenght = 20;
+    int lenght = 21;
     for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
     vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
     for (std::size_t i = 0; i < v.size(); ++i) REQUIRE( abs(e[i] - v[i]) < threshold );
@@ -62,7 +62,7 @@ TEST_CASE("Free energy of chain along 1 axis", "[chain_along1_axis], [cleng], [w
 // useful logic
     Real threshold = 1e-5;          // set some precision
     vector<Real> e;
-    int lenght = 200;
+    int lenght = 201;
     for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
     vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
     for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
@@ -85,7 +85,7 @@ if (!success) exit(0);
 // useful logic
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
-int lenght = 200;
+int lenght = 201;
 for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
@@ -108,7 +108,7 @@ if (!success) exit(0);
 // useful logic
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
-int lenght = 200;
+int lenght = 201;
 for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
@@ -131,7 +131,7 @@ if (!success) exit(0);
 // useful logic
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
-int lenght = 200;
+int lenght = 201;
 for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
@@ -154,7 +154,7 @@ if (!success) exit(0);
 // useful logic
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
-int lenght = 200;
+int lenght = 201;
 for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
@@ -177,7 +177,7 @@ if (!success) exit(0);
 // useful logic
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
-int lenght = 200;
+int lenght = 201;
 for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
@@ -188,7 +188,7 @@ for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
  * Test 8
  */
 
-TEST_CASE("Free energy of chain extension ", "[chain_extension], [cleng], [working], [long]") {
+TEST_CASE("Free energy of chain extension ", "[chain_extension], [cleng], [working], [short]") {
 
 // create a configuration of Namics
 NamicsConfig config;
@@ -199,24 +199,16 @@ bool success = config.testCaseCleng(filename, save_vector);
 if (!success) exit(0);
 // useful logic
 Real threshold = 1e-5; // set some precision
-vector<Real> e = {     //
-        -3.14279,
-        -3.06371,
-        -2.98835,
-        -2.91115,
-        -2.85009,
-        -2.79798,
-        -2.76777
-};
+vector<Real> e = {-3.21008, -3.14146, -3.06123, -2.98379, -2.90999, -2.84525, -2.79405, -2.76247};
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
-for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
+for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold );}
 }
 
 /**
  * Test 9
  */
 
-TEST_CASE("Free energy of chain compression ", "[chain_compression], [cleng], [working], [long]") {
+TEST_CASE("Free energy of chain compression ", "[chain_compression], [cleng], [working], [short]") {
 
 // create a configuration of Namics
 NamicsConfig config;
@@ -225,27 +217,9 @@ string filename = "chain_compression.in";
 const bool save_vector = true;  // if I would like to save something in my engine (optional)
 bool success = config.testCaseCleng(filename, save_vector);
 if (!success) exit(0);
-
-// What Namics gives:
-// -2.79685
-// -2.8497
-// -2.91376
-// -2.98672
-// -3.06276
-// -3.14493
-// -3.21317
-
 // useful logic
 Real threshold = 1e-5; // set some precision
-vector<Real> e = {     // the same vector as before but comparison should be made reversely.
-        -3.14279,
-        -3.06371,
-        -2.98835,
-        -2.91115,
-        -2.85009,
-        -2.79798,
-        -2.76777
-};
-vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
-for (size_t i = v.size(); i > 0; --i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
+vector<Real> e = {-2.76247, -2.79405, -2.84525, -2.90999, -2.98379, -3.06123, -3.14146, -3.21008};
+vector<Real> v = config.Cle[0]->test_vector;
+for (size_t i = v.size()-1; i > 0; --i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }

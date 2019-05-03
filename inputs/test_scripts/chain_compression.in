@@ -26,9 +26,9 @@ mol : water : composition : (W)1
 newton : isaac : method : DIIS
 newton : isaac : m : 4
 newton : isaac : deltamax : 0.1
-newton : isaac : e_info : true
+newton : isaac : e_info : false
 newton : isaac : iterationlimit : 7000
-newton : isaac : tolerance : 1e-3
+newton : isaac : tolerance : 1e-7
 
 out_info : folder : path : data_chain_compression
 
@@ -41,8 +41,6 @@ kal : output : variable : free_energy
 kal : sys : variable : free_energy
 
 cleng : parameters : MCS : 7
-cleng : parameters : delta_save : 1
-cleng : parameters : delta_step : 1
 cleng : parameters : seed : 1
 cleng : parameters : movement_along : 1
 cleng : parameters : sign_move : -

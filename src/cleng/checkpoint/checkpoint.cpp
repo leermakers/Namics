@@ -27,7 +27,7 @@ bool Checkpoint::isCheckpointExists(const std::string &name) const {
 void Checkpoint::updateCheckpointName(const bool plusOne) {
     int index = 0;
     while (isCheckpointExists(checkpoint_path + to_string(index) + IN_CLASS_NAME)) {index++;}
-    if (!plusOne) index--;
+    if (!plusOne and index > 0) index--;
     checkpoint_name = to_string(index);
 }
 
@@ -40,7 +40,10 @@ void Checkpoint::updateCheckpoint(const vector<std::shared_ptr<SimpleNode>>& sim
     string filename;
     ofstream outfile;
     outfile.open(checkpoint_path + checkpoint_name + IN_CLASS_NAME);
-    for (auto &&n : Enumerate(simpleNodeList)) {auto p = n.second->to_string(); outfile << p;}
+    for (auto &&n : Enumerate(simpleNodeList)) {
+        if (n.first % 2 == 1) continue;
+        auto p  = n.second->to_string(); auto pc = n.second->get_cnode()->to_string();
+        outfile << p << pc << endl;}
 }
 
 shared_ptr<SimpleNode> fromFileToNode(int x, int y, int z, int id, const Point &box) {

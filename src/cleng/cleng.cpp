@@ -329,7 +329,7 @@ bool Cleng::MakeMove(bool back) {
                 cout << "###" << endl;
                 cout << "Node id is too high. Trying to move node id: " << id_node_for_move << "." << endl;
                 cout << "Available nodes: " << endl;
-                for (auto &&n: nodes) { cout << n->to_string() << endl;}
+                for (auto &&n: Enumerate(nodes)) { cout << "id: " << n.first << " " << n.second->to_string() << endl;}
                 cout << "Termination..." << endl;
                 exit(0);
             }
@@ -364,11 +364,14 @@ bool Cleng::MonteCarlo(bool save_vector) {
             Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
             simpleNodeList = checkpoint.loadCheckpoint(simpleNodeList, box);
             nodes = createNodes(simpleNodeList);
+            cout << "From checkpoint next nodes are available: " << endl;
+            for (auto &&n : nodes) cout << n->to_string() << endl;
             CP(to_segment);
             if (getLastMCS() != 0) MCS_checkpoint = getLastMCS() + 1;
             loaded = true;
         }
     }
+    if (checkpoint_save) {checkpoint.saveCheckpoint(simpleNodeList);}
 
 // Analysis MC
     accepted = 0.0;
@@ -442,7 +445,6 @@ bool Cleng::MonteCarlo(bool save_vector) {
     cout << "Accepted: # " << accepted << " | " << 100 * (accepted / (MC_attempt-1)) << "%" << endl;
     cout << "Rejected: # " << rejected << " | " << 100 * (rejected / (MC_attempt-1)) << "%" << endl;
 
-    if (checkpoint_save) { cout << "Saving checkpoint..." << endl; checkpoint.saveCheckpoint(simpleNodeList);}
     cout << "Have a fun. " << endl;
     return success;
 }

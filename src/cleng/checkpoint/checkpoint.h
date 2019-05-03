@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <memory>
@@ -17,11 +18,13 @@ class Checkpoint {
 public:
     Checkpoint();
 
-    void updateCheckpoint(const vector<std::shared_ptr<SimpleNode>>& simpleNodeList);
-    void saveCheckpoint(const vector<std::shared_ptr<SimpleNode>>& simpleNodeList);
-    vector<shared_ptr<SimpleNode>> loadCheckpoint(vector<shared_ptr<SimpleNode>> simpleNodeList, const Point& box);
+    void updateCheckpoint(const vector<std::shared_ptr<SimpleNode>> &simpleNodeList);
 
-    bool isCheckpointExists(const std::string& name) const;
+    void saveCheckpoint(const vector<std::shared_ptr<SimpleNode>> &simpleNodeList);
+
+    vector<shared_ptr<SimpleNode>> loadCheckpoint(vector<shared_ptr<SimpleNode>> simpleNodeList, const Point &box);
+
+    bool isCheckpointExists(const std::string &name) const;
 
     void updateCheckpointName(bool plusOne = false);
 
@@ -36,6 +39,5 @@ private:
 
     string checkpoint_name;
     string checkpoint_path;
-    string processCheckpointPath(std::string path);
 };
 

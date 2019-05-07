@@ -45,5 +45,6 @@ cleng : parameters : seed : 1
 cleng : parameters : movement_along : 1
 cleng : parameters : sign_move : +
 cleng : parameters : user_node_id_move : 0
+cleng : parameters : metropolis : false
 
 start

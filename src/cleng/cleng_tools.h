@@ -32,16 +32,17 @@ shared_ptr<SimpleNode> fromSystemToNode(int x, int y, int z, int id, const Point
     return make_shared<SimpleNode>(Point(x, y, z), id, box);
 }
 
-vector<shared_ptr<Node>> createNodes(const vector<shared_ptr<SimpleNode>> &simple_nodes) {
-    vector<shared_ptr<Node>> result;
+map<int, vector<shared_ptr<Node>>> createNodes(const vector<shared_ptr<SimpleNode>> &simple_nodes) {
+    map<int, vector<shared_ptr<Node>>> result_map;
+    int index=0;
     map<SimpleNode, vector<shared_ptr<SimpleNode>>> m;
     for (auto &&n  : simple_nodes) { m[*n].push_back(n); }
     for (auto &&entry : m) {
-        if (entry.second.size() == 1) result.push_back(entry.second[0]);
-        else result.push_back(make_shared<Monolit>(entry.second));
+        if (entry.second.size() == 1) result_map[index] = {entry.second[0]};
+        else result_map[index] = {make_shared<Monolit>(entry.second)};
+        index ++;
     }
-
-    return result;
+    return result_map;
 }
 
 vector<int> makeExcludedArray(int step) {
@@ -67,11 +68,11 @@ bool Cleng::InSubBoxRange() {
     vector<int> id_nodes;
     Point sub_box = {sub_box_size-2, sub_box_size-2, sub_box_size-2};  // change it in future
 
-    if (!nodes[id_node_for_move]->inSubBoxRange(sub_box, clamped_move)) {
+    if (!nodes_map[id_node_for_move].data()->get()->inSubBoxRange(sub_box, clamped_move)) {
         id_nodes.push_back(id_node_for_move); success = false;
     }
     if (!id_nodes.empty()) {
-        cout << "These nodes[id] are not in sub-box range:" << endl;
+        cout << "These nodes_map[id] are not in sub-box range:" << endl;
         for (auto &&nid: id_nodes) cout << nid << endl;
     }
     return success;
@@ -80,18 +81,18 @@ bool Cleng::InSubBoxRange() {
 bool Cleng::NotCollapsing() {
     bool not_collapsing = true;
 
-    Point P_not_shifted (nodes[id_node_for_move]->point());
-    Point P_shifed(nodes[id_node_for_move]->point() + clamped_move);
+    Point P_not_shifted (nodes_map[id_node_for_move].data()->get()->point());
+    Point P_shifed(nodes_map[id_node_for_move].data()->get()->point() + clamped_move);
 
-    double min_dist = 0; // minimal distance between nodes
-    for (auto &&n : nodes) {
-        Point P_test = n->point();
+    double min_dist = 0; // minimal distance between nodes_map
+    for (auto &&n : nodes_map) {
+        Point P_test = n.second.data()->get()->point();
 
         if (P_not_shifted != P_test) {
-            Real distance = P_shifed.distance(n->point());
+            Real distance = P_shifed.distance(n.second.data()->get()->point());
             if (distance <= min_dist) {
                 cout << "Nodes are too close to each other." << endl;
-                cout << "Shifted nodes: " << P_shifed.to_string() << endl;
+                cout << "Shifted nodes_map: " << P_shifed.to_string() << endl;
                 cout << "Nodes id:      " << P_test.to_string() << endl;
                 not_collapsing =false;
             }
@@ -105,7 +106,7 @@ bool Cleng::InRange() {
     Point box = {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
     Point down_boundary = {1, 1, 1};
     Point up_boundary = box - down_boundary;
-    Point MPs(nodes[id_node_for_move]->point() + clamped_move);
+    Point MPs(nodes_map[id_node_for_move].data()->get()->point() + clamped_move);
 
     if ((down_boundary.all_elements_less_than(MPs)) and (MPs.all_elements_less_than(up_boundary))) in_range = true;
     return in_range;
@@ -124,11 +125,15 @@ Point Cleng::prepareMove() {
     if (debug) cout << "prepareMove in Cleng" << endl;
 
     if (axis) {
-        int c1=1; if (sign_move == "-") c1=-1;
+        int c1=1;  // sing of movement +1 or -1
+        int c2=2;  // MC step by default 2; could be 1 in two_ends_extension mode
+
+        if (two_ends_extension) c2 = 1;
+        if (sign_move == "-") c1=-1;
         // currently it is implemented for step
-        if (axis == 1) clamped_move = {c1*2, 0, 0};
-        if (axis == 2) clamped_move = {0, c1*2, 0};
-        if (axis == 3) clamped_move = {0, 0, c1*2};
+        if (axis == 1) clamped_move = {c1*c2, 0, 0};
+        if (axis == 2) clamped_move = {0, c1*c2, 0};
+        if (axis == 3) clamped_move = {0, 0, c1*c2};
     } else {
 
         clamped_move = {
@@ -231,17 +236,17 @@ void Cleng::PushOutput(int attempt) {
             fillXYZ();
 //			point=X.data();
             Out[i]->PointerVectorInt.push_back(xs);
-            Out[i]->SizeVectorInt.push_back((int) nodes.size());
+            Out[i]->SizeVectorInt.push_back((int) nodes_map.size());
             s = "array;1";
             Out[i]->push("Y", s);
 //			point = Y.data();
             Out[i]->PointerVectorInt.push_back(ys);
-            Out[i]->SizeVectorInt.push_back((int) nodes.size());
+            Out[i]->SizeVectorInt.push_back((int) nodes_map.size());
             s = "array;2";
             Out[i]->push("Z", s);
 //			point=Z.data();
             Out[i]->PointerVectorInt.push_back(zs);
-            Out[i]->SizeVectorInt.push_back((int) nodes.size());
+            Out[i]->SizeVectorInt.push_back((int) nodes_map.size());
         }
     }
 }
@@ -251,14 +256,14 @@ void Cleng::fillXYZ() {
     delete[] ys;
     delete[] zs;
 
-    int n = nodes.size();
+    int n = nodes_map.size();
     xs = new int[n];
     ys = new int[n];
     zs = new int[n];
     for (int i = 0; i < n; i++) {
-        xs[i] = nodes[i]->point().x;
-        ys[i] = nodes[i]->point().y;
-        zs[i] = nodes[i]->point().z;
+        xs[i] = nodes_map[i].data()->get()->point().x;
+        ys[i] = nodes_map[i].data()->get()->point().y;
+        zs[i] = nodes_map[i].data()->get()->point().z;
     }
 }
 

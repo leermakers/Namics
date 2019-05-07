@@ -17,9 +17,9 @@ TEST_CASE("Free energy after 10 steps", "[chain10steps], [cleng], [working], [sh
 
 // some useful logic
     Real threshold = 1e-5; // set some precision
-    Real f = -3.3460628362;   // expected number
-    Real Free_energy = config.Cle[0]->free_energy_current;  // asking free_energy value from the engine
-    REQUIRE( Free_energy - f  < threshold );
+    Real f = -38.3316149995;   // expected number
+    Real Free_energy = config.Cle[0]->free_energy_trial;  // asking free_energy value from the engine
+    REQUIRE( abs(Free_energy - f)  < threshold );
 }
 
 /**
@@ -40,7 +40,7 @@ TEST_CASE("Free energy vector after 20 steps", "[chain20steps_vector], [cleng], 
     Real threshold = 1e-5; // set some precision
     vector<Real> e;
     int lenght = 21;
-    for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
+    for (int i = 0; i < lenght; i++) { e.push_back(-38.3316149995); } // expected vector
     vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
     for (std::size_t i = 0; i < v.size(); ++i) REQUIRE( abs(e[i] - v[i]) < threshold );
 }
@@ -63,7 +63,7 @@ TEST_CASE("Free energy of chain along 1 axis", "[chain_along1_axis], [cleng], [w
     Real threshold = 1e-5;          // set some precision
     vector<Real> e;
     int lenght = 201;
-    for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
+    for (int i = 0; i < lenght; i++) { e.push_back(-38.3316149995); } // expected vector
     vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
     for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }
@@ -86,7 +86,7 @@ if (!success) exit(0);
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
 int lenght = 201;
-for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
+for (int i = 0; i < lenght; i++) { e.push_back(-38.3316149995); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }
@@ -109,7 +109,7 @@ if (!success) exit(0);
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
 int lenght = 201;
-for (int i = 0; i < lenght; i++) { e.push_back(-3.3460628362); } // expected vector
+for (int i = 0; i < lenght; i++) { e.push_back(-38.3316149995); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }
@@ -132,7 +132,7 @@ if (!success) exit(0);
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
 int lenght = 201;
-for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
+for (int i = 0; i < lenght; i++) { e.push_back(-40.8498); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }
@@ -155,7 +155,7 @@ if (!success) exit(0);
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
 int lenght = 201;
-for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
+for (int i = 0; i < lenght; i++) { e.push_back(-40.8498); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }
@@ -178,7 +178,7 @@ if (!success) exit(0);
 Real threshold = 1e-5;          // set some precision
 vector<Real> e;
 int lenght = 201;
-for (int i = 0; i < lenght; i++) { e.push_back(-5.49114); } // expected vector
+for (int i = 0; i < lenght; i++) { e.push_back(-40.8498); } // expected vector
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }
@@ -198,8 +198,8 @@ const bool save_vector = true;  // if I would like to save something in my engin
 bool success = config.testCaseCleng(filename, save_vector);
 if (!success) exit(0);
 // useful logic
-Real threshold = 1e-5; // set some precision
-vector<Real> e = {-3.21008, -3.14146, -3.06123, -2.98379, -2.90999, -2.84525, -2.79405, -2.76247};
+Real threshold = 1e-4; // set some precision
+vector<Real> e = {-38.6145, -38.7202, -38.6307, -38.2885, -37.6829, -36.8088, -35.6629, -34.2294};
 vector<Real> v = config.Cle[0]->test_vector; // if save_vector was provided I can ask variable (optional)
 for (size_t i = 0; i < v.size(); ++i) { REQUIRE( abs(e[i] - v[i]) < threshold );}
 }
@@ -218,8 +218,8 @@ const bool save_vector = true;  // if I would like to save something in my engin
 bool success = config.testCaseCleng(filename, save_vector);
 if (!success) exit(0);
 // useful logic
-Real threshold = 1e-5; // set some precision
-vector<Real> e = {-2.76247, -2.79405, -2.84525, -2.90999, -2.98379, -3.06123, -3.14146, -3.21008};
+Real threshold = 1e-4; // set some precision
+vector<Real> e = {-34.2294, -35.6629, -36.8088, -37.6829, -38.2886, -38.6307, -38.7202, -38.6145};
 vector<Real> v = config.Cle[0]->test_vector;
 for (size_t i = v.size()-1; i > 0; --i) { REQUIRE( abs(e[i] - v[i]) < threshold);}
 }

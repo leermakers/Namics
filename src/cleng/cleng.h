@@ -78,9 +78,11 @@ public:
     bool checkpoint_save;
     bool checkpoint_load;
     bool simultaneous;
+    bool metropolis;
     int  axis;
     string sign_move;
     bool cleng_pos;
+    bool two_ends_extension;
     vector<int> ids_node4move;
     int MCS_checkpoint = 0;
     bool loaded = false;
@@ -91,9 +93,10 @@ public:
     vector<Output *> Out;
     vector<int> P;
     vector<shared_ptr<SimpleNode>> simpleNodeList;
-    vector<std::shared_ptr<Node>> nodes;
+    map<int, vector<std::shared_ptr<Node>>> nodes_map;
 
-    // temporary arrays for keep nodes coordinates for output
+
+    // temporary arrays for keep nodes_map coordinates for output
     int *xs = nullptr;
     int *ys = nullptr;
     int *zs = nullptr;

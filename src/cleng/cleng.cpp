@@ -38,6 +38,8 @@ Cleng::Cleng(
     KEYS.emplace_back("movement_along");
     KEYS.emplace_back("sign_move");
     KEYS.emplace_back("user_node_id_move");
+    KEYS.emplace_back("two_ends_extension");
+    KEYS.emplace_back("metropolis");
 
     // Debug.log
     //out.open("debug.out", ios_base::out);
@@ -111,21 +113,18 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         }
 
         // checkpoint save
-        if (!GetValue("checkpoint_save").empty()) {
-            checkpoint_save = In[0]->Get_bool(GetValue("checkpoint_save"), false);
-        } else checkpoint_save = false;
+        if (!GetValue("checkpoint_save").empty()) {checkpoint_save = In[0]->Get_bool(GetValue("checkpoint_save"), false);}
+        else checkpoint_save = false;
         if (debug) cout << "checkpoint_save " << checkpoint_save << endl;
 
         // checkpoint load
-        if (!GetValue("checkpoint_load").empty()) {
-            checkpoint_load = In[0]->Get_bool(GetValue("checkpoint_load"), false);
-        } else checkpoint_load = false;
+        if (!GetValue("checkpoint_load").empty()) {checkpoint_load = In[0]->Get_bool(GetValue("checkpoint_load"), false);}
+        else checkpoint_load = false;
         if (debug) cout << "checkpoint_load " << checkpoint_load << endl;
 
-        // saving cleng position of nodes
-        if (!GetValue("cleng_pos").empty()) {
-            cleng_pos = In[0]->Get_bool(GetValue("cleng_pos"), false);
-        } else cleng_pos = false;
+        // saving cleng position of nodes_map
+        if (!GetValue("cleng_pos").empty()) {cleng_pos = In[0]->Get_bool(GetValue("cleng_pos"), false);}
+        else cleng_pos = false;
         if (debug) cout << "cleng_pos " << cleng_pos << endl;
 
         // simultaneous
@@ -171,11 +170,21 @@ bool Cleng::CheckInput(int start, bool save_vector) {
                     int id = stoi(node_id);
                     ids_node4move.push_back(id);
                 }
-                catch (invalid_argument& e) {success = false; cout << "Check yours node id" << endl; return success;}
+                catch (invalid_argument& e) {success = false; cout << "Check yours node id structure" << endl; return success;}
             }
-
-        } else ids_node4move = {-1};
+        }
+        else ids_node4move = {-1};
         if (debug) for (auto &&id:ids_node4move) cout << "user_node_id_move " << id << endl;
+
+        // 2 end extension mode
+        if (!GetValue("two_ends_extension").empty()) {two_ends_extension = In[0]->Get_bool(GetValue("two_ends_extension"), false);}
+        else two_ends_extension = false;
+        if (!debug) cout << "two_ends_extension " << two_ends_extension << endl;
+
+        // checkpoint save
+        if (!GetValue("metropolis").empty()) {metropolis = In[0]->Get_bool(GetValue("metropolis"), false);}
+        else metropolis = true;
+        if (debug) cout << "metropolis " << metropolis << endl;
 
         // ???
         if (success) { n_boxes = Seg[clamp_seg]->n_box; sub_box_size = Seg[clamp_seg]->mx; }
@@ -223,8 +232,8 @@ bool Cleng::CP(transfer tofrom) {
                 second_node->set_cnode(first_node);
                 //
                 simpleNodeList.push_back(first_node);
-                simpleNodeList.push_back(second_node);
-            }; nodes = createNodes(simpleNodeList);
+                simpleNodeList.push_back(second_node);}
+            nodes_map = createNodes(simpleNodeList);
             break;
 
         case to_segment:
@@ -294,10 +303,10 @@ bool Cleng::Checks() {
     // check subbox_ranges
     in_subbox_range = InSubBoxRange();
 
-    // check distances between all nodes => preventing collapsing
+    // check distances between all nodes_map => preventing collapsing
     not_collapsing = NotCollapsing();
 
-    // check distance between all nodes and constrains (walls)
+    // check distance between all nodes_map and constrains (walls)
     // BC.x, BC.y, BC.z = mirror
     if (BC.x and BC.y and BC.z) in_range = InRange();
     // BC.x and/or BC.y and/or BC.z != mirror
@@ -315,21 +324,21 @@ bool Cleng::MakeMove(bool back) {
     if (back) {
         cout << "MakeMove back" << endl;
         Point _clamped_move = clamped_move.negate();
-        if (!simultaneous) nodes[id_node_for_move]->shift(_clamped_move);
-        else for (auto &node : nodes) node->shift(_clamped_move);
+        if (!simultaneous) nodes_map[id_node_for_move].data()->get()->shift(_clamped_move);
+        else for (auto &node : nodes_map) node.second.data()->get()->shift(_clamped_move);
 
     } else {
         clamped_move = prepareMove();
         if (!simultaneous) {
 
             if (ids_node4move[0] != -1) {id_node_for_move = ids_node4move[rand.getInt(0, (int) ids_node4move.size() - 1)];}
-            else {id_node_for_move = rand.getInt(0, (int) nodes.size() - 1);}
+            else {id_node_for_move = rand.getInt(0, (int) nodes_map.size() - 1);}
 
-            if (id_node_for_move > (int) nodes.size()-1) {
+            if (id_node_for_move > (int) nodes_map.size()-1) {
                 cout << "###" << endl;
                 cout << "Node id is too high. Trying to move node id: " << id_node_for_move << "." << endl;
-                cout << "Available nodes: " << endl;
-                for (auto &&n: Enumerate(nodes)) { cout << "id: " << n.first << " " << n.second->to_string() << endl;}
+                cout << "Available nodes_map: " << endl;
+                for (auto &&n: nodes_map) cout << "id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
                 cout << "Termination..." << endl;
                 exit(0);
             }
@@ -341,13 +350,24 @@ bool Cleng::MakeMove(bool back) {
                 rejected++;
                 success = false;
             }
-            nodes[id_node_for_move]->shift(clamped_move);
-            cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
-                 << endl;
+            nodes_map[id_node_for_move].data()->get()->shift(clamped_move);
+            cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string() << endl;
 
         } else {
-            for (auto &node : nodes) node->shift(clamped_move);
-            cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << endl;
+
+            if (two_ends_extension) {
+                for (auto &&node : nodes_map) {
+                    int index = node.first;
+
+                    if (index % 2 == 0) node.second.data()->get()->shift(clamped_move.negate());
+                    else node.second.data()->get()->shift(clamped_move);
+                }
+                cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << " and " << clamped_move.negate().to_string() << endl;
+
+            } else {
+                for (auto &&node : nodes_map) node.second.data()->get()->shift(clamped_move);
+                cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << endl;
+            }
         }
     }
     return success;
@@ -363,9 +383,9 @@ bool Cleng::MonteCarlo(bool save_vector) {
         if (loadable) {
             Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
             simpleNodeList = checkpoint.loadCheckpoint(simpleNodeList, box);
-            nodes = createNodes(simpleNodeList);
-            cout << "From checkpoint next nodes are available: " << endl;
-            for (auto &&n : nodes) cout << n->to_string() << endl;
+            nodes_map = createNodes(simpleNodeList);
+            cout << "From checkpoint next nodes_map are available: " << endl;
+            for (auto &&n : nodes_map) cout << "id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
             CP(to_segment);
             if (getLastMCS() != 0) MCS_checkpoint = getLastMCS() + 1;
             loaded = true;
@@ -382,8 +402,8 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
 // init system outlook
     New[0]->Solve(true);
-    free_energy_current = Sys[0]->GetFreeEnergy() - GetN_times_mu();
-    if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy() - GetN_times_mu());
+    free_energy_current = Sys[0]->GetFreeEnergy();
+    if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy());
 
 // init save
     WriteOutput(MC_attempt + MCS_checkpoint);
@@ -399,35 +419,40 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
         cout << endl;
         cout << "[Cleng] System for calculation: " << endl;
-        for (auto &&n : nodes) cout << n->to_string() << endl;
+        for (auto &&n : nodes_map) cout << "id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
         cout << endl;
 
         if (success_) {
-            New[0]->Solve(true);
-            free_energy_trial = Sys[0]->GetFreeEnergy() - GetN_times_mu();
-            if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy() - GetN_times_mu());
+            bool success__ = New[0]->Solve(true);
+            if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
+                cout << "Sorry, Free Energy is NaN. " << endl;
+                cout << "Here is result from solver: " << success__ << endl;
+                break;
+            } else {free_energy_trial = Sys[0]->GetFreeEnergy();}
+            if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy());
 
             cout << "Free Energy (c): " << free_energy_current    << endl;
             cout << "            (t): " << free_energy_trial << endl;
-//            cout << "trial - current = " << std::to_string(free_energy_trial - free_energy_current) << endl;
-            if (is_ieee754_nan( free_energy_trial )) {cout << " Sorry, Free Energy is NaN. Termination..." << endl; break;}
 
-            if (free_energy_trial - free_energy_current <= 0.0) {
-                cout << "Accepted" << endl;
-                free_energy_current = free_energy_trial;
-                accepted++;
-            } else {
-                Real acceptance = rand.getReal(0, 1);
-
-                if (acceptance < exp(-1.0 * (free_energy_trial - free_energy_current))) {
-                    cout << "Accepted with probability" << endl;
+            if (!metropolis) {cout << "Metropolis is disabled. " << endl; free_energy_current = free_energy_trial;}
+            else {
+                if (free_energy_trial - free_energy_current <= 0.0) {
+                    cout << "Accepted" << endl;
                     free_energy_current = free_energy_trial;
                     accepted++;
                 } else {
-                    cout << "Rejected" << endl;
-                    MakeMove(true);
-                    CP(to_segment);
-                    rejected++;
+                    Real acceptance = rand.getReal(0, 1);
+
+                    if (acceptance < exp(-1.0 * (free_energy_trial - free_energy_current))) {
+                        cout << "Accepted with probability" << endl;
+                        free_energy_current = free_energy_trial;
+                        accepted++;
+                    } else {
+                        cout << "Rejected" << endl;
+                        MakeMove(true);
+                        CP(to_segment);
+                        rejected++;
+                    }
                 }
             }
         }

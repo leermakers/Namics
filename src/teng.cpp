@@ -19,6 +19,8 @@ Teng::Teng(vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vec
   	KEYS.push_back("save_interval");
   	KEYS.push_back("save_filename");
   	KEYS.push_back("seed");
+	KEYS.push_back("move");
+	KEYS.push_back("engine");
 }
 
 Teng::~Teng() {
@@ -295,20 +297,49 @@ bool Teng::CheckInput(int start) {
   	bool success = true;
 
   	success = In[0]->CheckParameters("teng", name, start, KEYS, PARAMETERS, VALUES);
-  	if (success) {
+  	
+	if (success) {
     		vector<string> options;
-    		if (GetValue("MCS").size() > 0) success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000, "The number of timesteps should be between 1 and 10000");
-    		if (debug) cout << "MCS is " << MCS << endl;
-    		if (GetValue("save_interval").size() > 0) success = In[0]->Get_int(GetValue("save_interval"), save_interval,1,MCS,"The save interval nr should be between 1 and 100");
-    		if (debug) cout << "Save_interval " << save_interval << endl;
-    		if (Sys[0]->SysTagList.size() <1) {cout <<"Teng needs to have tagged molecules in the system" << endl; success=false;}
-		else {tag_seg=Sys[0]->SysTagList[0]; if (Sys[0]->SysTagList.size()>1) {success=false; cout <<"Currently the Tagging is limited to one molecule per system. " << endl; }}
-    		if (success) n_particles = Seg[tag_seg]->n_pos;
+		if (GetValue("engine").size()>0){
+			vector <string> engines;
+			engines.push_back("MC");
+			engines.push_back("MD");
+			EngineType="";
+			if (!In[0]->Get_string(GetValue("engine"),EngineType,engines,"At present TransientEngine (Teng) module can only perform 'MC' or 'MD.'")) { success=false;};
 
-    		tag_mol=-1;
-    		int length = In[0]->MolList.size();
-    		for (int i=0; i<length; i++) if (Mol[i]->freedom =="tagged") tag_mol=i;
-  	}
+		} else {
+			success=false; cout << "While specifying Teng please specify 'engine'. Here is the format for doing so ---> Teng: name : engine : move_type "<<endl;
+		}
+		if (success && EngineType=="MC") {	
+    			if (GetValue("MCS").size() > 0) success = In[0]->Get_int(GetValue("MCS"), MCS, 1, 10000, "The number of timesteps should be between 1 and 10000");
+	    		if (debug) cout << "MCS is " << MCS << endl;
+    			if (GetValue("save_interval").size() > 0) success = In[0]->Get_int(GetValue("save_interval"), save_interval,1,MCS,"The save interval nr should be between 1 and 100");
+    			if (debug) cout << "Save_interval " << save_interval << endl;
+	    		if (Sys[0]->SysTagList.size() <1) {cout <<"Teng needs to have tagged molecules in the system" << endl; success=false;}
+			else {tag_seg=Sys[0]->SysTagList[0]; if (Sys[0]->SysTagList.size()>1) {success=false; cout <<"Currently the Tagging is limited to one molecule per system. " << endl; }}
+    			if (success) n_particles = Seg[tag_seg]->n_pos;
+	    		tag_mol=-1;
+    			int length = In[0]->MolList.size();
+    			for (int i=0; i<length; i++) if (Mol[i]->freedom =="tagged") tag_mol=i;
+  		} else {
+			success=false;
+			cerr << "Only MonteCarlo engine has been implemented." << endl;
+		}
+	}
+  	
+	if (success) {
+    		vector<string> options;
+		if (GetValue("move").size()>0){
+			vector <string> moves;
+			moves.push_back("tag");
+			moves.push_back("delta");
+			MoveType="";
+			if (!In[0]->Get_string(GetValue("move"),MoveType,moves,"At present TransientEngine (Teng) module can only perform moves on 'tag' or 'delta.'")) { success=false;};
+		} else {
+			success=false; cout << "While specifying Teng please specify 'move'. Here is the format for doing so ---> Teng: name : move : move_type "<<endl;
+		}
+	}
+	
   	if (success) {
    		n_out = In[0]->OutputList.size();
     		if (n_out == 0) cout << "Warning: no output defined!" << endl;

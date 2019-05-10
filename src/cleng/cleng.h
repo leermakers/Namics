@@ -80,6 +80,7 @@ public:
     bool simultaneous;
     bool metropolis;
     int  axis;
+    Real prefactor_kT;
     string sign_move;
     bool cleng_pos;
     bool two_ends_extension;
@@ -126,6 +127,8 @@ public:
     bool NotCollapsing();
 
     bool InRange();
+
+    bool IsCommensuratable();
 
     void PushOutput(int);
 

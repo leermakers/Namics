@@ -1,4 +1,5 @@
 #include "cleng.h"
+#include "iterator/EnumerateIterator.h"
 
 using Fp_info = numeric_limits<double>;
 inline auto is_ieee754_nan( double const x ) -> bool {
@@ -78,22 +79,46 @@ bool Cleng::InSubBoxRange() {
     return success;
 }
 
+
+bool Cleng::IsCommensuratable() {
+    bool success = true;
+    // trial movement for simpleNodeList
+    nodes_map[id_node_for_move].data()->get()->shift(clamped_move);
+    int chain_length = Mol[0]->chainlength-2;
+
+    for (auto &&SN : Enumerate(simpleNodeList)) {
+        auto p1 = SN.second->point();
+        auto p2 = SN.second->get_cnode()->point();
+        auto p3 = p2 - p1;
+        int path_length = abs(p3.x) + abs(p3.y) + abs(p3.z);
+
+        if (path_length >= (chain_length) ) {
+            cout << "Warning, for chain part the paths between clamps is "
+                    "not commensurate with the length of the chain fragment!" << endl;
+            success =false;
+        }
+    }
+    // put back
+    nodes_map[id_node_for_move].data()->get()->shift(clamped_move.negate());
+    return success;
+}
+
 bool Cleng::NotCollapsing() {
     bool not_collapsing = true;
 
     Point P_not_shifted (nodes_map[id_node_for_move].data()->get()->point());
-    Point P_shifed(nodes_map[id_node_for_move].data()->get()->point() + clamped_move);
+    Point P_shifted(nodes_map[id_node_for_move].data()->get()->point() + clamped_move);
 
     double min_dist = 0; // minimal distance between nodes_map
     for (auto &&n : nodes_map) {
         Point P_test = n.second.data()->get()->point();
 
         if (P_not_shifted != P_test) {
-            Real distance = P_shifed.distance(n.second.data()->get()->point());
+            Real distance = P_shifted.distance(n.second.data()->get()->point());
             if (distance <= min_dist) {
-                cout << "Nodes are too close to each other." << endl;
-                cout << "Shifted nodes_map: " << P_shifed.to_string() << endl;
-                cout << "Nodes id:      " << P_test.to_string() << endl;
+                cout << "Nodes are too close to each other."           << endl;
+                cout << "Shifted nodes_map: " << P_shifted.to_string() << endl;
+                cout << "Nodes id:          " << P_test.to_string()    << endl;
                 not_collapsing =false;
             }
         }

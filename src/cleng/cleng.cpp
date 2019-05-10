@@ -1,7 +1,7 @@
 #include "cleng.h"
 #include "cleng_tools.h"
 //#include <unistd.h>
-#include "iterator/EnumerateIterator.h"
+//#include "iterator/EnumerateIterator.h"
 
 using namespace std;
 
@@ -40,6 +40,7 @@ Cleng::Cleng(
     KEYS.emplace_back("user_node_id_move");
     KEYS.emplace_back("two_ends_extension");
     KEYS.emplace_back("metropolis");
+    KEYS.emplace_back("prefactor_kT");
 
     // Debug.log
     //out.open("debug.out", ios_base::out);
@@ -179,12 +180,21 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         // 2 end extension mode
         if (!GetValue("two_ends_extension").empty()) {two_ends_extension = In[0]->Get_bool(GetValue("two_ends_extension"), false);}
         else two_ends_extension = false;
-        if (!debug) cout << "two_ends_extension " << two_ends_extension << endl;
+        if (debug) cout << "two_ends_extension " << two_ends_extension << endl;
 
         // checkpoint save
         if (!GetValue("metropolis").empty()) {metropolis = In[0]->Get_bool(GetValue("metropolis"), false);}
         else metropolis = true;
         if (debug) cout << "metropolis " << metropolis << endl;
+
+        // prefactor kT constant
+        if (!GetValue("prefactor_kT").empty()) {
+            success = In[0]->Get_Real(GetValue("prefactor_kT"), prefactor_kT, 0, 10,
+                    "Prefactor_kT is a constant in Metropolis algorithm (-1/C1) * (delta Fs/kT), where C1 - prefactor.\n"
+                    "Currently available range is from 0 to 10.");
+            if (!success) {return success;}
+        } else prefactor_kT = 1;
+        if (debug) cout << "prefactor_kT is " << prefactor_kT << endl;
 
         // ???
         if (success) { n_boxes = Seg[clamp_seg]->n_box; sub_box_size = Seg[clamp_seg]->mx; }
@@ -295,16 +305,13 @@ bool Cleng::CP(transfer tofrom) {
 }
 
 bool Cleng::Checks() {
-    bool result;
-    bool not_collapsing;
     bool in_range;
-    bool in_subbox_range;
 
     // check subbox_ranges
-    in_subbox_range = InSubBoxRange();
+    bool in_subbox_range = InSubBoxRange();
 
     // check distances between all nodes_map => preventing collapsing
-    not_collapsing = NotCollapsing();
+    bool not_collapsing = NotCollapsing();
 
     // check distance between all nodes_map and constrains (walls)
     // BC.x, BC.y, BC.z = mirror
@@ -312,7 +319,10 @@ bool Cleng::Checks() {
     // BC.x and/or BC.y and/or BC.z != mirror
     else in_range = true;
 
-    result = not_collapsing and in_range and in_subbox_range;
+    // check distances between all nodes_map => checking achivements
+    bool commensurate = IsCommensuratable();
+
+    bool result = not_collapsing and in_range and in_subbox_range and commensurate;
     return result;
 }
 
@@ -419,7 +429,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
         cout << endl;
         cout << "[Cleng] System for calculation: " << endl;
-        for (auto &&n : nodes_map) cout << "id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+        for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
         cout << endl;
 
         if (success_) {
@@ -427,12 +437,23 @@ bool Cleng::MonteCarlo(bool save_vector) {
             if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
                 cout << "Sorry, Free Energy is NaN. " << endl;
                 cout << "Here is result from solver: " << success__ << endl;
-                break;
+                New[0]->attempt_DIIS_rescue();
+                cout << "Restarting iteration." << endl;
+                bool success__ = New[0]->Solve(true);
+
+
+                if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
+                    cout << "Sorry, Free Energy is still NaN. " << endl;
+                    cout << "Here is result from solver: " << success__ << endl;
+                    break;
+                }
             } else {free_energy_trial = Sys[0]->GetFreeEnergy();}
             if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy());
 
-            cout << "Free Energy (c): " << free_energy_current    << endl;
-            cout << "            (t): " << free_energy_trial << endl;
+            cout << "Free Energy (c): " << free_energy_current << endl;
+            cout << "            (t): " << free_energy_trial   << endl;
+            cout << "   prefactor kT: " << prefactor_kT        << endl;
+            cout << endl;
 
             if (!metropolis) {cout << "Metropolis is disabled. " << endl; free_energy_current = free_energy_trial;}
             else {
@@ -443,7 +464,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
                 } else {
                     Real acceptance = rand.getReal(0, 1);
 
-                    if (acceptance < exp(-1.0 * (free_energy_trial - free_energy_current))) {
+                    if (acceptance < exp((-1.0/prefactor_kT) * (free_energy_trial - free_energy_current))) {
                         cout << "Accepted with probability" << endl;
                         free_energy_current = free_energy_trial;
                         accepted++;

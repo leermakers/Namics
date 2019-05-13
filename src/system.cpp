@@ -1,10 +1,14 @@
 #include "system.h"
-#include "tools.h"
+#include "tools.h" 
 
 System::System(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_,vector<Molecule*> Mol_,string name_) {
 	Seg=Seg_; Mol=Mol_; Lat=Lat_; In=In_; name=name_; Sta=Sta_; Rea=Rea_; prepared = false;
 if (debug) cout << "Constructor for system " << endl;
 	KEYS.push_back("calculation_type");
+	KEYS.push_back("constraint");
+	KEYS.push_back("delta_range");
+	KEYS.push_back("delta_inputfile");
+	KEYS.push_back("delta_molecules");
 	KEYS.push_back("generate_guess");
 	KEYS.push_back("initial_guess");
 	KEYS.push_back("guess_inputfile");
@@ -15,7 +19,7 @@ if (debug) cout << "Constructor for system " << endl;
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]);
 	charged=false;
-	BETA=0;
+	constraintfields=false; 
 }
 System::~System() {
   if (debug)
@@ -26,6 +30,10 @@ System::~System() {
   if (charged) {
     free(H_q);
     free(H_psi);
+  }
+  if (constraintfields) {
+	free(H_beta);
+	free(H_BETA);
   }
 #ifdef CUDA
   cudaFree(phitot);
@@ -41,6 +49,10 @@ System::~System() {
     cudaFree(EE);
     cudaFree(psiMask);
   }
+  if (constraintfields) {
+	cudaFree(beta);
+	cudaFree(BETA);
+  }
 #else
   free(phitot);
   free(TEMP);
@@ -51,6 +63,7 @@ System::~System() {
     free(psiMask);
     free(eps);
   }
+
 #endif
 }
 
@@ -69,6 +82,11 @@ void System::AllocateMemory() {
     H_q = (Real*)malloc(M * sizeof(Real));
     H_psi = (Real*)malloc(M * sizeof(Real));
   }
+  if (constraintfields) {
+	H_beta = (int*)malloc(M*sizeof(int)); Zero(H_beta,M);
+	H_BETA = (Real*)malloc(M*sizeof(Real));
+	Lat[0]->FillMask(H_beta,px,py,pz,delta_inputfile);
+  }
 #ifdef CUDA
   phitot = (Real*)AllOnDev(M);
   alpha = (Real*)AllOnDev(M);
@@ -84,6 +102,10 @@ void System::AllocateMemory() {
     EE = (Real*)AllOnDev(M);
     psiMask = (int*)AllIntOnDev(M);
   }
+  if (constraintfields) {
+	BETA = (Real*)AllOnDev(M);
+	beta = (int*)AllIntOnDev(M);
+  }
 #else
   phitot = (Real*)malloc(M * sizeof(Real));
   alpha = H_alpha;
@@ -93,6 +115,10 @@ void System::AllocateMemory() {
     eps = (Real*)malloc(M * sizeof(Real));
     EE = (Real*)malloc(M * sizeof(Real));
     psiMask = (int*)malloc(M * sizeof(int));
+  }
+  if (constraintfields) {
+	beta=H_beta;
+	BETA=H_BETA;
   }
   KSAM = (int*)malloc(M * sizeof(int));
   FreeEnergyDensity = H_FreeEnergyDensity;
@@ -104,6 +130,7 @@ void System::AllocateMemory() {
     Zero(psi, M);
     Zero(EE, M);
   }
+
   n_mol = In[0]->MolList.size();
   Lat[0]->AllocateMemory();
   int n_mon = In[0]->MonList.size();
@@ -171,6 +198,10 @@ bool System::PrepareForCalculations() {
 		prepared = true;
 	}
 
+	if (constraintfields) {
+		Boltzmann(BETA,BETA,M);
+	}
+
   n_mol = In[0]->MolList.size();
   success = Lat[0]->PrepareForCalculations();
   int n_mon = In[0]->MonList.size();
@@ -181,6 +212,13 @@ bool System::PrepareForCalculations() {
   for (int i = 0; i < n_mol; i++) {
     success = Mol[i]->PrepareForCalculations(KSAM);
   }
+#ifdef CUDA
+if (constraintfields){
+	//TransferDataToDevice(H_BETA, BETA, M);
+	TransferDataToDevice(H_beta, beta, M);
+}
+#endif
+
   if (charged) {
     int length = FrozenList.size();
     Zero(psiMask, M);
@@ -192,24 +230,6 @@ bool System::PrepareForCalculations() {
       }
     }
   }
-	bool found=false;
-	int beta; 
-	for (int i=0; i<n_mol; i++) {
-		if (Mol[i]->beta>0 && i!=solvent) { 
-			found=true; 
-			beta=Mol[i]->beta; 
-			Mol[i]->interface_pinned=true;
-			Mol[i]->Gbeta = exp(BETA); 
-			MolBeta=i;
-		}
-	}
-	if (found) {
-		beta_set=true; 
-		Mol[solvent]->beta=beta; 
-		Mol[solvent]->interface_pinned=true;
-		Mol[solvent]->Gbeta=exp(-BETA);
-	}
-
   return success;
 }
 
@@ -222,7 +242,6 @@ string System::GetMonName(int mon_number_I) {
 bool System::CheckInput(int start) {
 if (debug) cout << "CheckInput for system " << endl;
 	bool success=true;
-	beta_set=false; 
 	bool solvent_found=false; tag_segment=-1; solvent=-1;  //value -1 means no solvent defined. tag_segment=-1;
 	Real phibulktot=0;
 	success= In[0]->CheckParameters("sys",name,start,KEYS,PARAMETERS,VALUES);
@@ -318,6 +337,84 @@ if (debug) cout << "CheckInput for system " << endl;
 				}
 
 			}
+		}
+
+		if (GetValue("constraint").size()>0) {
+			constraintfields=true; 
+			px.clear();
+			py.clear();
+			pz.clear();
+			vector <string> constraints;
+			constraints.push_back("delta");
+			ConstraintType="";
+			if (!In[0]->Get_string(GetValue("constraint"),ConstraintType,constraints,"Info about 'constraint' rejected")) { success=false;};
+			if (ConstraintType=="delta"); {
+				if (GetValue("delta_range").size()>0) {
+					string s=GetValue("delta_range"); 
+					vector<string>sub;
+					vector<string>set;
+					vector<string>coor;
+					In[0]->split(s,';',sub);
+					int n_points=sub.size();
+					for (int i=0; i<n_points; i++) {
+						set.clear();
+						In[0]->split(sub[i],'(',set);
+						int length=set.size();
+						if (length!=2) {
+							if (length==1 && set[0]=="file") {
+								if (GetValue("delta_inputfile").size()>0) {
+									delta_inputfile=GetValue("delta_inputfile"); 
+								} else {
+									success = false; cout <<"When 'delta_range' is set to 'file', you should provide a 'delta_inputfile'" << endl;
+								} 
+							} else { 
+								success=false; cout <<"In 'delta_range', for position " << i << "the expected '(x,y,z)' format was not found " << endl;  
+							}
+						} else {
+							coor.clear();
+							In[0]->split(set[1],',',coor); 
+							int grad = Lat[0]->gradients; 
+							int corsize=coor.size();
+							if (corsize != grad) { 
+								success = false; 
+								if (grad==1) cout <<"In 'delta_range', for position " << i <<" the expected '(x)' format was not found " << endl; 
+								if (grad==2) cout <<"In 'delta_range', for position " << i <<" the expected '(x,y)' format was not found " << endl; 
+								if (grad==3) cout <<"In 'delta_range', for position " << i <<" the expected '(x,y,z)' format was not found " << endl; 
+							} else {
+								px.push_back(In[0]->Get_int(coor[0],-1));
+								if (grad>1) py.push_back(In[0]->Get_int(coor[1],-1));
+								if (grad>2) pz.push_back(In[0]->Get_int(coor[2],-1));
+							}
+						}
+					}
+				} else {
+					success=false; cout <<"When 'constraint' is set to 'delta', you should specify a 'delta_range' " << endl; 
+				}
+
+
+				if (GetValue("delta_molecules").size()>0) {
+					string deltamols = GetValue("delta_molecules");
+					vector<string>sub;
+					In[0]->split(deltamols,';',sub);
+					int length_sub = sub.size();
+					if (length_sub !=2) {
+						success=false; cout <<" delta_molecules item should contain two 'molecule names' separated by a ';'" << endl; 
+					} else {
+						DeltaMolList.clear();
+						int length=In[0]->MolList.size();
+						for (int i=0; i<length; i++) {
+							if (sub[0]==Mol[i]->name) DeltaMolList.push_back(i);
+							if (sub[1]==Mol[i]->name) DeltaMolList.push_back(i); 
+						}
+						if (DeltaMolList[0]==DeltaMolList[1]) {success = false; cout <<" In delta_molecules you should specify two different names " << endl; }
+						if (DeltaMolList.size()<2) {success = false; cout <<" In 'delta_molecules', one or more molecule names are not recognized" << endl; }
+					}
+				} else {
+					success=false; cout <<"When 'constraint' is set to 'delta', you should specify a set of 'delta_molecules' " << endl; 
+				}
+			}
+
+			if (Mol[DeltaMolList[0]]->freedom=="restricted" || Mol[DeltaMolList[1]]->freedom=="restricted" ) {success =false;  cout <<"Molecule in list of delta_molecules has not freedom 'free'"<<endl; }
 		}
 
 		vector<string> options;
@@ -921,7 +1018,17 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	}
 
 	for (int i=0; i<n_mol; i++) {
-		success=Mol[i]->ComputePhi();
+		if (constraintfields) {
+			if (i==DeltaMolList[0]) {
+				success=Mol[i]->ComputePhi(BETA,1);
+			} else { 
+				if (i==DeltaMolList[1]) {
+					success=Mol[i]->ComputePhi(BETA,-1); 
+				} else {
+					success=Mol[i]->ComputePhi(BETA,0);
+				}
+			}
+		} else success=Mol[i]->ComputePhi(BETA,0);
 	}
 
 	for (int i=0; i<n_mol; i++) {

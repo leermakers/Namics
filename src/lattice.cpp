@@ -1717,6 +1717,78 @@ if (debug) cout <<"ReadRangeFile in lattice " << endl;
 	return success;
 }
 
+bool Lattice::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, string filename) {
+	bool success=true;
+	bool readfile=false;
+	int length=0; 
+	int length_px = px.size(); 
+
+	vector<string> lines;
+	int p; 
+	if (px.size()==0) {
+		readfile=true; 
+		string content;
+		success=In[0]->ReadFile(filename,content);
+		if (success) {
+			In[0]->split(content,'#',lines);	
+			length = lines.size();
+		}
+	}
+	switch (gradients) {
+		case 1:
+			if (readfile) {
+				if (MX!=length) {success=false; cout <<"inputfile for filling delta_range has not expected length in x-direction" << endl; 
+				} else {
+					for (int x=1; x<MX+1; x++) Mask[x]=In[0]->Get_int(lines[x],-1);  
+				}
+			} else  {
+				for (int i=0; i<length_px; i++) {
+					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; } 
+					else Mask[px[i]]=1;
+				}
+			} 
+			break;
+		case 2: 
+			if (readfile) {
+				if (MX*MY!=length) {success=false; cout <<"inputfile for filling delta_range has not expected length in x,y-directions" << endl; 
+				} else {
+					for (int x=1; x<MX+1; x++)
+					for (int y=1; y<MY+1; y++) Mask[x*JX + y]=In[0]->Get_int(lines[x*JX+y],-1); 
+				}
+			} else  {
+				for (int i=0; i<length_px; i++) {
+					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; } 
+					p=py[i]; if (p<1 || p>MY) {success=false; cout<<" y-value in delta_range out of bounds; " << endl; }
+					if (success) Mask[px[i]*JX + py[i]]=1;
+				}
+			}
+
+			break;
+		case 3: 
+			if (readfile) {
+				if (MX*MY*MZ!=length) {
+					success=false; cout <<"inputfile for filling delta_range has not expected length in x,y,z-directions" << endl; 
+				} else {
+					for (int x=1; x<MX+1; x++)
+					for (int y=1; y<MY+1; y++) 	
+					for (int z=1; z<MZ+1; z++) Mask[x*JX + y*JY + z]=In[0]->Get_int(lines[x*JX + y*JY + z],-1); 
+				}
+			} else  {
+				for (int i=0; i<length_px; i++) {
+					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; } 
+					p=py[i]; if (p<1 || p>MY) {success=false; cout<<" y-value in delta_range out of bounds; " << endl; }
+					p=pz[i]; if (p<1 || p>MZ) {success=false; cout<<" z-value in delta_range out of bounds; " << endl; }
+					if (success) Mask[px[i]*JX + py[i]*JY + pz[i]]=1;
+				}
+			}
+			break;
+		default: 
+			break;
+	}
+	for (int i=0; i<M; i++) if (!(Mask[i]==0 || Mask[i]==1)) {success =false; cout <<"Delta_range does not contain '0' or '1' values. Check delta_inputfile values"<<endl; }
+	return success; 
+}
+
 bool Lattice::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {
 if (debug) cout <<"CreateMask for lattice " + name << endl;
 	bool success=true;

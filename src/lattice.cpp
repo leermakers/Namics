@@ -1071,6 +1071,7 @@ if (debug) cout <<" Side in lattice " << endl;
 				}
 				AddTimes(X_side,X,LAMBDA+((FJC-1)/2)*M,M);
 			}
+			Cp(X_side,X,M); //put this one back
 			break;
 		case 2:
 			//set_bounds(X);

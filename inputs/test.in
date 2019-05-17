@@ -1,0 +1,31 @@
+lat : vlak : n_layers : 100
+lat : vlak : geometry : planar
+lat : vlak : lattice_type : simple_cubic
+
+lat : vlak : bondlength : 0.0000000003000000
+
+mon : W : freedom : free
+mon : A : freedom : free
+mon : B : freedom : free
+mon : C : freedom : free
+mon : D : freedom : free
+mon : X : freedom : pinned
+mon : X : pinned_range : 10;10
+
+//mol : pol : save_memory : true
+mol : pol : composition : (X)1(A)1[(B)2](C)3
+mol : pol : freedom : restricted
+mol : pol : theta : 1
+
+
+mol : Water : composition : (W)1
+mol : Water : freedom : solvent
+
+
+newton : isaac : method : pseudohessian
+
+newton : isaac : iterationlimit : 100
+
+output : pro : append : false
+pro : mon: * : phi
+

@@ -44,6 +44,8 @@ public:
   int t; 
   int save_interval;
   string save_filename;
+  string MoveType;
+  string EngineType;
     vector<Output*> Out;
 
 int PX;

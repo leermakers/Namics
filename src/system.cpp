@@ -355,7 +355,7 @@ if (debug) cout << "CheckInput for system " << endl;
 			constraints.push_back("delta");
 			ConstraintType="";
 			if (!In[0]->Get_string(GetValue("constraint"),ConstraintType,constraints,"Info about 'constraint' rejected")) { success=false;};
-			if (ConstraintType=="delta"); {
+			if (ConstraintType=="delta") {
 				if (GetValue("delta_range").size()>0) {
 					string s=GetValue("delta_range"); 
 					vector<string>sub;

@@ -909,8 +909,8 @@ void Solve_scf::residuals(Real* x, Real* g){
 				itpos+=M;
 			}
 			if (Sys[0]->constraintfields) {
-				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
-				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
+				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
+				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
 				Times(g+itpos,g+itpos,Sys[0]->beta,M);
 			}
 

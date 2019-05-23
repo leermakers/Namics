@@ -114,9 +114,9 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		}
 		value_i_info=i_info;
 
-		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),e_info);
-		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),s_info);
-		super_i_info=In[0]->Get_bool(GetValue("super_i_info"),i_info);
+		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),false);
+		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),false);
+		super_i_info=In[0]->Get_bool(GetValue("super_i_info"),false);
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
 
 		if (GetValue("target_function").size() > 0) {
@@ -671,14 +671,13 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 		if (etm>-1) x[0] = Var[etm]->GetValue();
 		if (bm>-1) { x[0] = Var[bm]->GetValue(); super_tolerance *=10;}
 	}
-	cout <<"Your guess for X: " << x[0] << endl; 
+	if(debug) cout <<"Your guess for X: " << x[0] << endl; 
 	gradient=custum; 				//the proper gradient is used
 	control=super;				//this is for inneriteration
 	e_info=super_e_info;
 	s_info=super_s_info;
 	i_info=super_i_info;
 	tolerance=super_tolerance;
-	cout << "super tolerance and super deltamax: " << super_tolerance << "\t" << super_deltamax << endl;
 	solver=diis;
 	    if (ets==-1 && etm==-1 && bm ==-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi search: ");
 	    if (ets>-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi Eq-to_solvent search: ");
@@ -687,7 +686,7 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 	//    success=iterate_DIIS(x,1,m,iterationlimit,super_tolerance,super_deltamax);
 	//success=iterate(x,1,super_iterationlimit,super_tolerance,super_deltamax,deltamin,false);	//iterate is called with just one iteration variable
 	if (bm>-1) super_tolerance /=10;
-	cout <<"My guess for X: " << x[0] << endl;
+	if(debug) cout <<"My guess for X: " << x[0] << endl;
 	return success;
 }
 
@@ -782,18 +781,13 @@ void Solve_scf::residuals(Real* x, Real* g){
 				if (SCF_method=="pseudohessian") {hessian=false; pseudohessian=true; solver=PSEUDOHESSIAN;}
 				if (SCF_method=="DIIS") {solver=diis;}
 				if (SCF_method=="Picard") {solver=PICARD;}
-				//e_info=value_e_info;
-				s_info=value_s_info;
-				e_info=false;
-				i_info=value_i_info;
-				//tolerance = value_tolerance;
+				s_info=super_s_info;
+				e_info=super_e_info;
+				i_info=super_i_info;
+				tolerance = super_tolerance;
 				Solve(false);						//find scf solution
 				control=super;
 				gradient=custum;
-				tolerance=super_tolerance;
-				e_info=super_e_info;
-				i_info=super_i_info;
-				s_info=super_s_info;
 			} else {
 				old_value_bm=value_bm;
 				old_value_ets=value_ets;				//prepare of next level of super-iteration.

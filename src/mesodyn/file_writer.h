@@ -4,6 +4,7 @@
 #include "factory.h"
 #include "../lattice.h"
 #include "../tools.h"
+#include "stl_typedef.h"
 #include "lattice_accessor.h"
 #include <string>
 #include <cstdio>

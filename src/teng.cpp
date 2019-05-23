@@ -1,5 +1,5 @@
-// TODO: Code review required. 
-// Preprocessor Dependencies
+// TODO: Code review required. (Look at Checkinput for language reference) 
+// Preprocessor Dependencies.
 #include "teng.h"
 #include "output.h"
 #include <string>
@@ -20,10 +20,10 @@ Teng::Teng(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, 
 		cout << "Teng initialized" << endl;
 	KEYS.push_back("MCS");
 	KEYS.push_back("save_interval");
-	KEYS.push_back("save_filename");
-	KEYS.push_back("seed");
 	KEYS.push_back("move");
 	KEYS.push_back("engine");
+	//KEYS.push_back("save_filename"); // TODO: Implement options to userdefine filename. 
+	//KEYS.push_back("seed");				// seed is not used now and redundant. Can be removed if needed.
 }
 // Destructor
 Teng::~Teng()
@@ -389,6 +389,9 @@ string Teng::GetValue(string parameter)
 
 // Procedure that acquires the given inputs and checks
 // Primary call to all engines (montecarlo or langevin dynamics) are also located here.
+// teng : engine_name : MC or MD : true/false
+// teng : engine_name : MCS : INTEGER
+// teng : engine_name : save_interval : INTEGER
 bool Teng::CheckInput(int start)
 {
 	if (debug)
@@ -399,6 +402,7 @@ bool Teng::CheckInput(int start)
 	if (success)
 	{
 		vector<string> options;
+		// TODO: This check is relevant only if we have more than two engines. Should this now be removed?
 		if (GetValue("engine").size() > 0)
 		{
 			vector<string> engines;
@@ -422,24 +426,25 @@ bool Teng::CheckInput(int start)
 			if (debug)
 				cout << "MCS is " << MCS << endl;
 			if (GetValue("save_interval").size() > 0)
-				success = In[0]->Get_int(GetValue("save_interval"), save_interval, 1, MCS, "The save interval nr should be between 1 and 100");
+				success = In[0]->Get_int(GetValue("save_interval"), save_interval, 1, MCS, "The save interval nr should be between 1 and MCS (specified)");
 			if (debug)
 				cout << "Save_interval " << save_interval << endl;
 			//TODO: Should check what kind of constraint is moved. Switch should be made between Tagged or Deltas. 
-			if (Sys[0]->SysTagList.size() < 1)
-			{
-				cout << "Teng needs to have tagged molecules in the system" << endl;
-				success = false;
-			}
-			else
-			{
-				tag_seg = Sys[0]->SysTagList[0];
-				if (Sys[0]->SysTagList.size() > 1)
-				{
-					success = false;
-					cout << "Currently the Tagging is limited to one molecule per system. " << endl;
-				}
-			}
+							// TODO: Address this part first.
+							if (Sys[0]->SysTagList.size() < 1)
+							{
+								cout << "Teng needs to have tagged molecules in the system" << endl;
+								success = false;
+							}
+							else
+							{
+								tag_seg = Sys[0]->SysTagList[0];
+								if (Sys[0]->SysTagList.size() > 1)
+								{
+									success = false;
+									cout << "Currently the Tagging is limited to one molecule per system. " << endl;
+								}
+							}
 			if (success)
 				n_particles = Seg[tag_seg]->n_pos;
 			tag_mol = -1;

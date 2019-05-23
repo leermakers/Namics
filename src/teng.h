@@ -6,7 +6,7 @@
 #include "system.h"
 #include "output.h"
 
-#include <random> //For noise in langevinFlux()
+#include <random> //For noise 
 //#include <ctime> //To append timestamp to filename.
 #include <map>  //For generating the output of settings
 #include <ctime>
@@ -48,19 +48,19 @@ public:
   string EngineType;
     vector<Output*> Out;
 
-int PX;
-int PY;
-int PZ;
-vector<int> P;
-vector<int> Sx;
-vector<int> Sy;
-vector<int> Sz; 
-vector<int> X;
-vector<int> Y;
-vector<int> Z;
-vector<int> X_bm;
-vector<int> Y_bm;
-vector<int> Z_bm;
+  int PX;
+  int PY;
+  int PZ;
+  vector<int> P;
+  vector<int> Sx;
+  vector<int> Sy;
+  vector<int> Sz; 
+  vector<int> X;
+  vector<int> Y;
+  vector<int> Z;
+  vector<int> X_bm;
+  vector<int> Y_bm;
+  vector<int> Z_bm;
 
   bool MonteCarlo();
   bool ChangeMode();

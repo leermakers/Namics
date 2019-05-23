@@ -1,7 +1,9 @@
+// TODO: Code review required. 
+// Preprocessor Dependencies
 #include "teng.h"
 #include "output.h"
 #include <string>
-
+// Constructor
 Teng::Teng(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, vector<State *> Sta_, vector<Reaction *> Rea_, vector<Molecule *> Mol_, vector<System *> Sys_, vector<Solve_scf *> New_, string name_)
 		: name{name_},
 			In{In_},
@@ -23,12 +25,13 @@ Teng::Teng(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, 
 	KEYS.push_back("move");
 	KEYS.push_back("engine");
 }
-
+// Destructor
 Teng::~Teng()
 {
 }
 
 // MonteCarlo Engine to drive the tagged molecules.
+// TODO: Needs generalization. 
 bool Teng::MonteCarlo()
 {
 	if (debug)
@@ -96,7 +99,7 @@ bool Teng::MonteCarlo()
 	}
 	return success;
 }
-
+// TODO: Function overloaded to obtain random numbers. Could go to end. 
 int Teng::GetRandom(int maxvalue)
 {
 	random_device rd;
@@ -114,7 +117,8 @@ Real Teng::GetRandom(Real maxvalue)
 	Real randomnumber = distance(gen);
 	return randomnumber;
 }
-
+// TODO: Changes the constraints as modes. 
+// more moves required. 
 bool Teng::ChangeMode()
 {
 	bool success = false;
@@ -221,6 +225,8 @@ bool Teng::IsLegal()
 }
 
 // Transfer the particle locations from segment to teng, and vice versa.,
+// TODO: delta locations should be now transfered insted. 
+// Can it just use Mask file (is Mask file updated everytime?)
 bool Teng::CP(transfer tofrom)
 {
 	int JX = Lat[0]->JX;
@@ -278,6 +284,7 @@ bool Teng::CP(transfer tofrom)
 	return success;
 }
 
+// TODO: Output modules should be rearranged. 
 // Push outputs from this and other classes to Output class
 void Teng::WriteOutput(int subloop_)
 {
@@ -291,6 +298,9 @@ void Teng::WriteOutput(int subloop_)
 	}
 }
 
+// TODO: Engine assumes any constraint as particles. This
+// part writes the evolution of such points 'delta' or 'tags'
+// as the engine runs. 
 void Teng::WritePdb(int time)
 {
 	FILE *fp;
@@ -361,6 +371,7 @@ void Teng::PutParameter(string new_param)
 	KEYS.push_back(new_param);
 }
 
+// Gets value. See if this object could be made a const object. Most parameters obtained are probably not changed in runtime. 
 string Teng::GetValue(string parameter)
 {
 	int i = 0;

@@ -17,7 +17,7 @@ void Norm_densities_relative::adjust_theta(size_t molecule_index_, Real theta_ad
 
   m_mol[m_subject_molecule]->theta=m_mol[m_subject_molecule]->theta*(1+m_adjustment);
 
-  m_mol[molecule_index_]->n = m_mol[molecule_index_]->theta/m_mol[molecule_index_]->chainlength;
+  m_mol[m_subject_molecule]->n = m_mol[m_subject_molecule]->theta/m_mol[m_subject_molecule]->chainlength;
 
   fetch_theta();
 }

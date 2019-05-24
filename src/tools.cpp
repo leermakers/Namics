@@ -53,7 +53,6 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
-	int pos_r=MM+(JX+JY+1);
 	int pM=jx+jy+1+jx*i+jy*j+k;
 	int ii,jj,kk;
 	int MXm1 = MX-1;
@@ -66,7 +65,7 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 			if (Bz[p]+k > MZm1)  kk=(Bz[p]+k-MZ); else kk=(Bz[p]+k);
 			//__syncthreads(); //will not work when two boxes are idential....
 			//phi[pos_r+ii+jj+kk]+=rho[pM+jx*i+jy*j+k]*Inv_GNp;
-			atomicAdd(&phi[pos_r+ii+jj+kk], rho[pM]/GN[p]);
+			atomicAdd(&phi[ii+jj+kk], rho[pM]/GN[p]);
 			pM+=M;
 		}
 	}

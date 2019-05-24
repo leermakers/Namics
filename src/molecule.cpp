@@ -1896,8 +1896,8 @@ bool Molecule::ComputeClampLin(){
 		//propagate_backward(Gg_f,Gg_b,g1,s,n_mon[i],i,m*n_box);
 		propagate_backward(g1,s,i,0,m*n_box);
 	} //for first segment (clamp) no densities computed.
-	int length=MolMonList.size();
-	for (int i=1; i<length; i++) {
+	for (size_t i = 1; i < MolMonList.size(); i++ )
+	{
 		Lat[0]->CollectPhi(phi+M*i,gn,rho+m*n_box*i,Bx,By,Bz,n_box);
 	}
 

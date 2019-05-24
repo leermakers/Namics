@@ -65,7 +65,8 @@ public:
 	string GetValue(string);
 	bool Load();
 	void vtk(string, Real *);
-	void vtk_structured_grid(string, Real*, int = 1);
+	void prepare_vtk_structured_grid(string);
+	void write_vtk_data(string, Real*, int, ios_base::openmode = ios_base::app);
 	void density();
 	void printlist();
 	void WriteOutput(int);

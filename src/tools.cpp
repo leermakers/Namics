@@ -1,34 +1,31 @@
 #include "tools.h"
 #include "namics.h"
 #include "stdio.h"
+#ifdef PAR_MESODYN
+	#include <thrust/inner_product.h>
+#endif
 #define MAX_BLOCK_SZ 512
 
 #ifdef CUDA
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
-const int block_size = 256;
+const int block_size = 512;
 
-
-__device__ void atomicAdd(Real* address, Real val, short dummy)
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#else
+__device__ void atomicAdd(Real* address, Real val)
 {
     unsigned long long int* address_as_ull =
                              (unsigned long long int*)address;
     unsigned long long int old = *address_as_ull, assumed;
     do {
         assumed = old;
-	old = atomicCAS(address_as_ull, assumed,
+        old = atomicCAS(address_as_ull, assumed,
                         __double_as_longlong(val +
                                __longlong_as_double(assumed)));
     } while (assumed != old);
 }
-
-__global__ void flux(Real* flux, Real* L, Real* mu, int D, int jump, int M)
-{
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	int idx_plus = idx + jump;
-	if (idx < M-jump)
-			flux[idx] = -D * ((L[idx] + L[idx_plus]) * (mu[idx_plus] - mu[idx]));
-}
+#endif
 
 __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
@@ -53,11 +50,9 @@ __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int 
 
 
 __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
-	short dummy = 0;
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
-	int pos_r=MM+(JX+JY+1);
 	int pM=jx+jy+1+jx*i+jy*j+k;
 	int ii,jj,kk;
 	int MXm1 = MX-1;
@@ -70,7 +65,7 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 			if (Bz[p]+k > MZm1)  kk=(Bz[p]+k-MZ); else kk=(Bz[p]+k);
 			//__syncthreads(); //will not work when two boxes are idential....
 			//phi[pos_r+ii+jj+kk]+=rho[pM+jx*i+jy*j+k]*Inv_GNp;
-			atomicAdd(&phi[pos_r+ii+jj+kk], rho[pM]/GN[p], dummy);
+			atomicAdd(&phi[ii+jj+kk], rho[pM]/GN[p]);
 			pM+=M;
 		}
 	}
@@ -80,7 +75,6 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 
 __global__ void dot(Real *a, Real *b, Real *dot_res, int M)
 {
-	short dummy = 0;
     __shared__ Real cache[MAX_BLOCK_SZ]; //thread shared memory
     int global_tid=threadIdx.x + blockIdx.x * blockDim.x;
     Real temp = 0;
@@ -101,16 +95,11 @@ __global__ void dot(Real *a, Real *b, Real *dot_res, int M)
     }
     __syncthreads();
     if (cacheIndex==0) {
-		#ifdef PAR_MESODYN
-        Real result=atomicAdd_system(dot_res,cache[0]);
-		#else
-		atomicAdd(dot_res,cache[0], dummy);
-		#endif
+        atomicAdd(dot_res,cache[0]);
     }
 }
 
 __global__ void sum(Real *g_idata, Real *g_odata, int M) {
-	short dummy = 0;
     __shared__ Real sdata[MAX_BLOCK_SZ]; //thread shared memory
 	int tid = threadIdx.x;
     int i=threadIdx.x + blockIdx.x * blockDim.x;
@@ -132,11 +121,7 @@ __global__ void sum(Real *g_idata, Real *g_odata, int M) {
     }
     __syncthreads();
     if (tid==0) {
-		#ifdef PAR_MESODYN
-        Real result=atomicAdd_system(g_odata,sdata[0]);
-		#else
-		atomicAdd(g_odata,sdata[0], dummy);
-		#endif
+        atomicAdd(g_odata,sdata[0]);
     }
 }
 
@@ -218,6 +203,16 @@ __global__ void add(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
 }
+
+__global__ void propagate(Real *gs, Real *g_1, int JX, int JY, int JZ, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+
+	if (idx < (M-JX)) {
+		gs[idx] = (g_1[idx-JX] + g_1[idx+JX]) + (g_1[idx-JY] + g_1[idx+JY]) + (g_1[idx-JZ] + g_1[idx+JZ]);
+		gs[idx] *= (1.0/6.0);
+	}
+}
+
 __global__ void add(int *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
@@ -615,8 +610,10 @@ int* AllIntOnDev(int N) {
 
 Real* AllOnDev(int N) {
   Real* X;
-	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(Real)*N))
-	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
+	cudaMalloc((void **) &X, sizeof(Real)*N);
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess)
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
 	return X;
 }
 
@@ -629,8 +626,10 @@ int* AllManagedIntOnDev(int N) {
 
 Real* AllManagedOnDev(int N) {
   Real* X;
-	if (cudaSuccess != cudaMallocManaged((void **) &X, sizeof(Real)*N))
-	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
+	cudaMallocManaged((void **) &X, sizeof(Real)*N);
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess)
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
 	return X;
 }
 
@@ -688,28 +687,24 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	unity<<<n_blocks,block_size>>>(P,M);
 }
 
-void Flux_min(Real* P, Real* T, int jump, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	flux_min<<<n_blocks,block_size>>>(P,T,jump,M);
-}
-
-void Flux(Real* flux_ptr, Real* L, Real* mu, int D, int jump, int M) {
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	flux<<<n_blocks,block_size>>>(flux_ptr,L,mu,D,jump,M);
-}
-
 void Zero(Real* P, int M)   {
 int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	zero<<<n_blocks,block_size>>>(P,M);
+
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess) {
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		throw 1;
+	}
 }
 
 void Zero(int* P, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	zero<<<n_blocks,block_size>>>(P,M);
 }
 
 void Cp(Real *P,Real *A, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	cp<<<n_blocks,block_size>>>(P,A,M);
 }
 
@@ -757,6 +752,12 @@ void Add(Real *P, Real *A, int M)    {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	add<<<n_blocks,block_size>>>(P,A,M);
 }
+
+void Propagate(Real *gs, Real *g_1, int JX, int JY, int JZ, int M)    {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	propagate<<<n_blocks,block_size>>>(gs, g_1, JX, JY, JZ, M);
+}
+
 void Add(int *P, int *A, int M)    {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	add<<<n_blocks,block_size>>>(P,A,M);
@@ -835,6 +836,7 @@ void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 	oneminusphitot<<<n_blocks,block_size>>>(g,phitot,M);
 }
 
+#ifdef PAR_MESODYN
 Real ComputeResidual(Real* array, int size) {
 
 	Real residual{0};
@@ -848,6 +850,8 @@ Real ComputeResidual(Real* array, int size) {
 
 	return residual;
 }
+
+#endif
 
 namespace tools {
 

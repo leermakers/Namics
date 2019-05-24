@@ -61,7 +61,7 @@ public:
 	Real minimum;
 
 	virtual void residuals(Real*,Real*); //x,g
-	virtual void inneriteration(Real*,Real*,float*, Real, Real&, Real, int); //x g accuracy nvar
+	virtual void inneriteration(Real*,Real*,Real*, Real, Real&, Real, int); //x g accuracy nvar
 	bool getnewtondirection();
 	int getiterations();
 	bool ispseudohessian();
@@ -71,29 +71,29 @@ public:
 	void ResetX(Real*,int,bool);
 	bool Message(bool,bool,int, int,Real, Real,string);
 
-	Real newdirection(float*, Real*,Real*, Real*,Real*, Real*, int, Real,bool); //there is only one of this.
-	//void inneriteration(Real*,Real*,float*,Real,int);
-	void direction(float*, Real*, Real*, Real*, Real*, int, Real,Real,bool);
-	void newhessian(float*,Real*,Real*,Real*,Real*,int,Real,Real,bool);
-	void resethessian(float*, Real*, Real*, int);
-	void startderivatives(float*,Real*,Real*,int);
+	Real newdirection(Real*, Real*,Real*, Real*,Real*, Real*, int, Real,bool); //there is only one of this.
+	//void inneriteration(Real*,Real*,Real*,Real,int);
+	void direction(Real*, Real*, Real*, Real*, Real*, int, Real,Real,bool);
+	void newhessian(Real*,Real*,Real*,Real*,Real*,int,Real,Real,bool);
+	void resethessian(Real*, Real*, Real*, int);
+	void startderivatives(Real*,Real*,Real*,int);
 	//void newtrustregion(Real*,Real*,Real*,Real*,int); //there is only one.
 	void newtrustregion(Real*,Real,Real&,Real&,Real,Real,int); //there is only one.
 	Real linesearch(Real*,Real*,Real*,Real*,Real*,int, Real,bool);  //there is only one.
 	Real zero(Real*,Real*,Real*,Real*,Real*,int,Real,bool);
 	Real stepchange(Real*,Real*,Real*,Real*,Real*,Real*,int,Real&,bool);
 	Real linecriterion(Real*, Real*, Real*, Real*,int);
-	void numhessian(float*, Real*, Real*, int,bool);
-	void findhessian(float* ,Real*,Real*,int,bool);
-	void decomposition(float*,int,int&);
+	void numhessian(Real*, Real*, Real*, int,bool);
+	void findhessian(Real* ,Real*,Real*,int,bool);
+	void decomposition(Real*,int,int&);
 	Real norm2(Real*,int);
-	void decompos(float*, int, int&);
-	int signdeterminant(float*, int);
-	void multiply(Real*, Real, float*, Real*, int);
-	void updateneg(float* ,Real* , int, Real);
-	void updatpos(float*, Real*, Real*, int, Real);
-	void gausa(float*, Real*, Real*, int);
-	void gausb(float*, Real*, int);
+	void decompos(Real*, int, int&);
+	int signdeterminant(Real*, int);
+	void multiply(Real*, Real, Real*, Real*, int);
+	void updateneg(Real* ,Real* , int, Real);
+	void updatpos(Real*, Real*, Real*, int, Real);
+	void gausa(Real*, Real*, Real*, int);
+	void gausb(Real*, Real*, int);
 	Real newfunction(Real*, Real*, int);
 	Real residue(Real*, Real*, Real*, int, Real);
 //************************************

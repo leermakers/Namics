@@ -26,10 +26,11 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("GPU");
 	KEYS.push_back("X");
 	int length = In[0]->MonList.size();
-	for (int i = 0; i < length; i++)
-		KEYS.push_back("guess-" + In[0]->MonList[i]);
-	charged = false;
-	constraintfields = false;
+	for (int i=0; i<length; i++)
+	  KEYS.push_back("guess-" + In[0]->MonList[i]);
+	charged=false;
+	constraintfields=false; 
+  boundaryless_volume=0;
 }
 System::~System()
 {
@@ -92,7 +93,7 @@ void System::AllocateMemory()
 	//H_GN_B = new Real[n_box];
 
 	H_GrandPotentialDensity = (Real *)malloc(M * sizeof(Real));
-	Zero(H_GrandPotentialDensity, M);
+	std::fill(H_GrandPotentialDensity,H_GrandPotentialDensity+M,0);
 
 	H_FreeEnergyDensity = (Real *)malloc(M * sizeof(Real));
 	H_alpha = (Real *)malloc(M * sizeof(Real));
@@ -104,7 +105,7 @@ void System::AllocateMemory()
 	if (constraintfields)
 	{
 		H_beta = (int *)malloc(M * sizeof(int));
-		Zero(H_beta, M);
+		std::fill(H_beta,H_beta+M,0);
 		H_BETA = (Real *)malloc(M * sizeof(Real));
 		Lat[0]->FillMask(H_beta, px, py, pz, delta_inputfile);
 	}
@@ -218,7 +219,12 @@ bool System::generate_mask()
 		Sum(volume, KSAM, M);
 	}
 
-	Lat[0]->Accesible_volume = volume;
+	// Used to initialize densities in mesodyn.
+	// I know it's hideous, but it works for all dimensions.
+	// If you really care about legibility you could do this with a switch or object.
+	this->boundaryless_volume = this->volume - ((2 * Lat[0]->gradients - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * Lat[0]->gradients) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, Lat[0]->gradients));
+
+	Lat[0]->Accesible_volume=volume;
 
 	return success;
 }
@@ -1794,10 +1800,17 @@ Real System::GetFreeEnergy(void)
 		if (Mol[i]->freedom == "clamped")
 		{
 			int n_box = Mol[i]->n_box;
+			#ifdef CUDA
+			Real* hgn = NULL;
+			TransferDataToHost(hgn, Mol[i]->gn, n_box);
 			for (int p = 0; p < n_box; p++)
 			{
-				FreeEnergy -= log(Mol[i]->gn[p]);
+				FreeEnergy -= log(hgn[p]);
 			}
+			#else
+			for (int p=0; p<n_box; p++) 
+				FreeEnergy -= log(Mol[i]->gn[p]);
+			#endif
 		}
 		else
 		{
@@ -2121,12 +2134,18 @@ bool System::CreateMu()
 		{
 			n = Mol[i]->n_box;
 			int n_box = Mol[i]->n_box;
-			GN = 0;
-			for (int p = 0; p < n_box; p++)
-			{
-				GN += log(Mol[i]->gn[p]);
+			GN=0;
+			#ifdef CUDA
+			Real* hgn = NULL;
+			TransferDataToHost(hgn, Mol[i]->gn, n_box);
+			for (int p=0; p<n_box; p++) {
+				GN += log(hgn[p]);
 			}
-			Mu = -GN / n + 1;
+			#else
+			for (int p=0; p<n_box; p++) 
+				GN += log(Mol[i]->gn[p]);
+			#endif
+			Mu = -GN / n +1;
 		}
 		else
 		{

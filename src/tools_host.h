@@ -42,24 +42,33 @@ struct order_param_functor
 
 struct is_negative_functor
 {
-	is_negative_functor() {}
 
-  		bool operator()(const double &x) const
-  		{
-    		return x < 0 || x > 1;
-  		}
+  const double tolerance{0};
+
+  is_negative_functor(double _tolerance=0) : tolerance(_tolerance) {}
+
+  bool operator()(const double &x) const
+  {
+    return x < 0-tolerance || x > 1+tolerance;
+  }
 };
 
 struct is_not_unity_functor
 {
-  is_not_unity_functor() {}
+  const double tolerance{0};
+
+  is_not_unity_functor(double _tolerance = 1e-4 ) : tolerance(_tolerance) {}
 
   bool operator()(const double &x) const
   {
-    return x != 1;
+    bool result{0};
+
+    if (x > (1+tolerance) || x < (1-tolerance))
+      result = 1;
+
+    return result;
   }
 };
-
 
 typedef double Real;
 
@@ -249,7 +258,7 @@ void UpdateAlpha(T *Y, T *X, T C, int M)    {
 
 template<typename T>
 void Picard(T *Y, T *X, T C, int M)    {
-	float one = 1.0f;
+	Real one = 1.0f;
 	std::transform(X, X+M, Y, Y, C * std::placeholders::_2 + (1.0f - C) * std::placeholders::_1) ;
 	//for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
 }

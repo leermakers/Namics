@@ -212,8 +212,8 @@ int m=0;
 if (freedom=="clamped") m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
 int M=Lat[0]->M;
 	if (freedom=="clamped") {
-		Zero(H_mask1,n_box*m);
-		Zero(H_mask2,n_box*m);
+		std::fill(H_mask1,H_mask1+n_box*m,0);
+		std::fill(H_mask2,H_mask2+n_box*m,0);
 		int jx=Lat[0]->jx[Seg[mon_nr[0]]->clamp_nr];
 		int jy=Lat[0]->jy[Seg[mon_nr[0]]->clamp_nr];
 		int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
@@ -278,7 +278,7 @@ int M=Lat[0]->M;
 		int pathlength_even;
 		for (int i=0; i<n_box; i++) {
 			pathlength_even=0;
-			pathlength_even=(Px2[i]-Px1[i]+Py2[i]-Py1[i]+Pz2[i]-Pz1[i])%2;
+			pathlength_even=(H_Px2[i]-H_Px1[i]+H_Py2[i]-H_Py1[i]+H_Pz2[i]-H_Pz1[i])%2;
 			if (chainlength_even == pathlength_even)
 			cout <<" Warning, for chain part " << i << " the paths between clamps is not commensurate with the length of the chain fragment. Consider moving one of the calmp point by one (more) site!" << endl;
 		}
@@ -1514,9 +1514,10 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
-	if (theta==0) theta = Lat[0]->WeightedSum(phitot);
-	push("theta",theta);
-	Real thetaexc=theta-phibulk*Lat[0]->Accesible_volume;
+	Real theta_out = 0;
+	if (theta==0) theta_out = Lat[0]->WeightedSum(phitot);
+	push("theta",theta_out);
+	Real thetaexc=theta_out-phibulk*Lat[0]->Accesible_volume;
 	push("theta_exc",thetaexc);
 	push("n",n);
 	push("chainlength",chainlength);
@@ -1547,7 +1548,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		s="profile;"+str; push(Al[i]->name+"-phi",s);
 	}
 	s="vector;0"; push("gn",s);
-#ifdef Cuda
+#ifdef CUDA
 int M = Lat[0]->M;
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
@@ -1702,20 +1703,14 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	int M=Lat[0]->M;
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
-	//Cp(phi,G1,M);
-	//Lat[0]->remove_bounds(phi);
 	GN=Lat[0]->WeightedSum(phi);
-	if (compute_phi_alias) {
-
-		int length = MolAlList.size();
-		for (int i=0; i<length; i++) {
-			if (Al[i]->frag[0]==1) {
-				Cp(Al[i]->phi,phi,M); Norm(Al[i]->phi,norm,M);
+	if (compute_phi_alias)
+		for (auto& alias : Al) //For every alias in the Al vector (same as Al[i])
+			if (alias->frag[0]==1) {
+				Cp(alias->phi,phi,M);
+				Norm(alias->phi,norm,M);
 			}
-		}
-	}
 	Times(phi,phi,Seg[mon_nr[0]]->G1,M);
-	//Times(phi,phi,G1,M);
 	return success;
 }
 
@@ -1760,7 +1755,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s>first_s[generation]) {
-				Lat[0] ->propagate(Gg_f,G1,s-1,s,M);
+				Lat[0]->propagate(Gg_f,G1,s-1,s,M);
 			} else {
 				Cp(Gg_f+first_s[generation]*M,G1,M);
 			}
@@ -1837,7 +1832,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			s--;
 		}
 		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
-	} else {
+	} else /*if !save_memory*/ {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) {
 				Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
@@ -1901,8 +1896,8 @@ bool Molecule::ComputeClampLin(){
 		//propagate_backward(Gg_f,Gg_b,g1,s,n_mon[i],i,m*n_box);
 		propagate_backward(g1,s,i,0,m*n_box);
 	} //for first segment (clamp) no densities computed.
-	int length=MolMonList.size();
-	for (int i=1; i<length; i++) {
+	for (size_t i = 1; i < MolMonList.size(); i++ )
+	{
 		Lat[0]->CollectPhi(phi+M*i,gn,rho+m*n_box*i,Bx,By,Bz,n_box);
 	}
 
@@ -2012,10 +2007,11 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 				}
 				s++;
 			}
-		} else {
+		} else {	
 			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 		}
 	}
+
 	free(GS);
 	return Glast;
 }
@@ -2027,9 +2023,7 @@ bool Molecule::ComputePhiBra() {
 	int generation=0;
 	int s=0;
 	Real* G=ForwardBra(generation,s);
-	//Lat[0]->remove_bounds(G);
 	GN=Lat[0]->WeightedSum(G);
-//cout << "GN " << GN << endl;
 	s--;
 	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);} //toggle; initialize on both spots the same G1, so that we always get proper start.
 	BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
@@ -2088,6 +2082,8 @@ if (debug) cout <<"propagate_forward for Molecule " + name << endl;
 			 s++;
 		}
 	}
+
+
 	if (save_memory) {
 		return Gg_f+last_stored[block]*M;
 	} else return Gg_f+(s-1)*M;

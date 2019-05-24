@@ -21,17 +21,17 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -Ofast -g -std=c++14 -fopenmp -march=native -ftree-parallelize-loops=12
-LIB         := -lm -lpthread -lgomp
-INC         := -I/usr/local/include -I/usr/include
+CFLAGS      := -g -Wall -Ofast -std=c++14 -march=native
+LIB         := -lm -lpthread
+INC         := -I/usr/local/cuda-10.0/include -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
-	LIB        += -lcuda -lcudart
+	LIB        += -L/usr/local/cuda-10.0/lib64 -lcuda -lcudart
 	CFLAGS     += -DCUDA
-	NVCCFLAGS  := -std=c++14 -DCUDA
+	NVCCFLAGS  := -g -ccbin gcc-7 -arch=sm_61 -std=c++14 -DCUDA
 	ifdef PAR_MESODYN
 		CFLAGS += -DPAR_MESODYN
-		NVCCFLAGS += -ccbin gcc-5 --expt-relaxed-constexpr -DPAR_MESODYN
+		NVCCFLAGS += --expt-relaxed-constexpr --expt-extended-lambda -DPAR_MESODYN
 	endif
 endif
 
@@ -41,13 +41,11 @@ endif
 #---------------------------------------------------------------------------------
 
 SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-ifdef PAR_MESODYN
-OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o $(BUILDDIR)/mesodyn.o)
-else
-ifdef CUDA
-OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)) $(BUILDDIR)/tools.o)
-else
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)))
+ifdef CUDA
+OBJECTS     += $(BUILDDIR)/tools.o
+ifdef PAR_MESODYN
+OBJECTS     += $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/file_reader.o $(BUILDDIR)/file_writer.o $(BUILDDIR)/boundary_conditions.o $(BUILDDIR)/flux.o $(BUILDDIR)/component.o $(BUILDDIR)/gaussian_noise.o $(BUILDDIR)/collection_procedures.o $(BUILDDIR)/density_initializer.o
 endif
 endif
 
@@ -88,6 +86,16 @@ ifdef PAR_MESODYN
 $(BUILDDIR)/tools.o:
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/tools.o $(SRCDIR)/tools.cu
 	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/mesodyn.o $(SRCDIR)/mesodyn.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/neighborlist.o $(SRCDIR)/mesodyn/neighborlist.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/boundary_conditions.o $(SRCDIR)/mesodyn/boundary_conditions.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/flux.o $(SRCDIR)/mesodyn/flux.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/component.o $(SRCDIR)/mesodyn/component.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/gaussian_noise.o $(SRCDIR)/mesodyn/gaussian_noise.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/collection_procedures.o $(SRCDIR)/mesodyn/collection_procedures.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/density_initializer.o $(SRCDIR)/mesodyn/density_initializer.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/file_reader.o $(SRCDIR)/mesodyn/file_reader.cu
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/file_writer.o $(SRCDIR)/mesodyn/file_writer.cu
+
 else
 ifdef CUDA
 $(BUILDDIR)/tools.o:

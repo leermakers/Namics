@@ -11,9 +11,7 @@ if (debug) cout <<"constructor in Output "<< endl;
 	KEYS.push_back("use_output_folder");
 	input_error=false;
 	bin_folder = "bin"; // folder in Namics where the binary is located
-	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
-	//if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
-	//if (!Load()) {input_error=true;  cout <<"Error found in load output items in output module " << endl; }
+	use_output_folder = true;
 
 }
 Output::~Output() {
@@ -110,7 +108,6 @@ if (debug) cout << "CheckInput in output " << endl;
 
 		write_bounds = In[0]->Get_bool(GetValue("write_bounds"),false);
 
-		/*** TRUE IS LINUX ONLY ***/
 		if (GetValue("use_output_folder").size()>0) {
 			use_output_folder = In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
 		} // default is set in the constructor
@@ -347,7 +344,6 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	In[0]->split(infilename,'.',sub);
 	string key;
 
-	/**** LINUX ONLY ****/
 	if (use_output_folder == true) {
 
 		int occurrences = 0;
@@ -626,45 +622,6 @@ if (debug) cout << "vtk in output " << endl;
 
 	fclose(fp);
 }
-
-void Output::vtk_structured_grid(string filename, Real *X, int component_count) {
-	if (debug) cout << "vtk_structed_grid in output " << endl;
-
-	ofstream output;
-	output.open(filename);
-
-	ostringstream vtk;
-
-	int MX = Lat[0]->MX;
-	int MY = Lat[0]->MY;
-	int MZ = Lat[0]->MZ;
-
-	vtk << "# vtk DataFile Version 4.2 \n";
-	vtk << "Mesodyn output \n";
-	vtk << "ASCII\n";
-	vtk << "DATASET STRUCTURED_GRID \n";
-	vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
-	vtk << "POINTS " << MX * MY * MZ << " int\n";
-
-	for (int x = 1; x < MX + 1; ++x)
-		for (int y = 1; y < MY + 1; ++y)
-			for (int z = 1 ; z < MZ + 1 ; ++z )
-				vtk << x << " " << y << " " << z << "\n";
-
-	vtk << "POINT_DATA " << MX * MY * MZ << "\n";
-	vtk << "SCALARS component_" << component_count << " float\nLOOKUP_TABLE default \n";
-
-	for (int x = 1; x < MX + 1; ++x)
-		for (int y = 1; y < MY + 1; ++y)
-			for (int z = 1 ; z < MZ + 1 ; ++z )
-				vtk << X[x*Lat[0]->JX+y*Lat[0]->JY+z*Lat[0]->JZ] << "\n";
-
-	output << vtk.str();
-	output.flush();
-
-	output.close();
-}
-
 
 void Output::density(){
 if (debug) cout << "density in output " << endl;

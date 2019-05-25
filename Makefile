@@ -24,6 +24,14 @@ OBJEXT      := o
 CFLAGS      := -Wall -Ofast -g -std=c++14 -fopenmp -march=native -ftree-parallelize-loops=12
 LIB         := -lm -lpthread -lgomp
 INC         := -I/usr/local/include -I/usr/include
+
+ifdef CLENG_EXPERIMENTAL
+#CFLAGS      := -Wall -Ofast -g -std=c++14 -fopenmp -march=native -ftree-parallelize-loops=12
+CFLAGS      := -Wall -Ofast -std=c++14 -march=native
+LIB         += -L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_cpp -lhdf5
+INC         += -I/usr/include/hdf5/serial
+endif
+
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
 	LIB        += -lcuda -lcudart

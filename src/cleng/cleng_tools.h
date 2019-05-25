@@ -1,6 +1,8 @@
 #include "cleng.h"
 #include "iterator/EnumerateIterator.h"
 
+volatile sig_atomic_t cleng_flag_termination = 0;
+
 using Fp_info = numeric_limits<double>;
 inline auto is_ieee754_nan( double const x ) -> bool {
     static constexpr bool   is_claimed_ieee754  = Fp_info::is_iec559;
@@ -52,22 +54,10 @@ vector<int> makeExcludedArray(int step) {
     return result;
 }
 
-Real Cleng::GetN_times_mu() {
-    int n_mol = (int) In[0]->MolList.size();
-    Real n_times_mu = 0;
-    for (int i = 0; i < n_mol; i++) {
-        Real Mu = Mol[i]->Mu;
-        Real n = Mol[i]->n;
-        if (Mol[i]->IsClamped()) n = Mol[i]->n_box;
-        n_times_mu += n * Mu;
-    }
-    return n_times_mu;
-}
-
 bool Cleng::InSubBoxRange() {
     bool success = true;
     vector<int> id_nodes;
-    Point sub_box = {sub_box_size-2, sub_box_size-2, sub_box_size-2};  // change it in future
+    Point sub_box = {sub_box_size.x - 2, sub_box_size.y - 2, sub_box_size.z - 2};  // change it in future
 
     if (!nodes_map[id_node_for_move].data()->get()->inSubBoxRange(sub_box, clamped_move)) {
         id_nodes.push_back(id_node_for_move); success = false;
@@ -79,7 +69,6 @@ bool Cleng::InSubBoxRange() {
     return success;
 }
 
-
 bool Cleng::IsCommensuratable() {
     bool success = true;
     // trial movement for simpleNodeList
@@ -87,8 +76,8 @@ bool Cleng::IsCommensuratable() {
     int chain_length = Mol[0]->chainlength-2;
 
     for (auto &&SN : Enumerate(simpleNodeList)) {
-        auto p1 = SN.second->point();
-        auto p2 = SN.second->get_cnode()->point();
+        auto p1 = SN.second->get_system_point();
+        auto p2 = SN.second->get_cnode()->get_system_point();
         auto p3 = p2 - p1;
         int path_length = abs(p3.x) + abs(p3.y) + abs(p3.z);
 
@@ -126,9 +115,14 @@ bool Cleng::NotCollapsing() {
     return not_collapsing;
 }
 
+void signalHandler(int signum) {
+    cout << "Termination..." << endl;
+    cleng_flag_termination++;
+    if (cleng_flag_termination > 1) exit(signum);
+}
+
 bool Cleng::InRange() {
     bool in_range = false;
-    Point box = {Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
     Point down_boundary = {1, 1, 1};
     Point up_boundary = box - down_boundary;
     Point MPs(nodes_map[id_node_for_move].data()->get()->point() + clamped_move);
@@ -144,6 +138,20 @@ void Cleng::make_BC() {
             Lat[0]->BC[2] == "mirror",
             Lat[0]->BC[4] == "mirror",
     };
+}
+
+vector<Real> Cleng::prepare_vtk() {
+    int Size = 0;
+    vector<Real> vtk;
+    Real *X = Out[0]->GetPointer(Out[0]->OUT_key[0], Out[0]->OUT_name[0], Out[0]->OUT_prop[0], Size);
+    for (int i = 1; i < box.x + 1; i++) {
+        for (int j = 1; j < box.y + 1; j++) {
+            for (int k = 1; k < box.z + 1; k++) {
+                vtk.push_back(X[i * J.x + j * J.y + k]);
+            }
+        }
+    }
+    return vtk;
 }
 
 Point Cleng::prepareMove() {
@@ -187,14 +195,7 @@ Point Cleng::prepareMove() {
 
 int Cleng::getLastMCS() {
 
-    string filename;
-    vector<string> sub;
-    int MS_step = 0;
-
-    string infilename = In[0]->name;
-    In[0]->split(infilename, '.', sub);
-    filename = sub[0];
-    filename = In[0]->output_info.getOutputPath() + filename;
+    int MC_attemp = 0;
 
     //read kal file
     ifstream infile(filename + ".kal");
@@ -205,22 +206,22 @@ int Cleng::getLastMCS() {
 
         istringstream iss(line);
         vector<string> results(istream_iterator<string>{iss}, istream_iterator<string>());
-        MS_step = stoi(results[0]);
+        MC_attemp = stoi(results[0]);
     } else cout << "Unable to open kal file.\n";
 
-    return MS_step;
+    return MC_attemp;
 }
 
-void Cleng::WriteOutput(int attempt) {
+void Cleng::WriteOutput() {
     if (debug) cout << "WriteOutput in Cleng" << endl;
-    PushOutput(attempt);
+    PushOutput();
     New[0]->PushOutput();
-    for (int i = 0; i < n_out; i++) Out[i]->WriteOutput(attempt);
-    if (cleng_pos) WriteClampedNodeDistance(attempt);
+    for (int i = 0; i < n_out; i++) Out[i]->WriteOutput(MC_attempt + MCS_checkpoint);
+    if (cleng_pos) WriteClampedNodeDistance();
 }
 
-void Cleng::PushOutput(int attempt) {
-//	int* point;
+void Cleng::PushOutput() {
+
     for (int i = 0; i < n_out; i++) {
         Out[i]->PointerVectorInt.clear();
         Out[i]->PointerVectorReal.clear();
@@ -236,10 +237,9 @@ void Cleng::PushOutput(int attempt) {
         Out[i]->ints_value.clear();
 
         if (Out[i]->name == "ana" || Out[i]->name == "kal") {
-            Out[i]->push("MC_attempt", attempt);
+            Out[i]->push("MC_attempt", MC_attempt + MCS_checkpoint);
             Out[i]->push("MCS", MCS);
             Out[i]->push("free_energy", free_energy_current);
-
         }
 
         if (Out[i]->name == "ana" ||
@@ -292,7 +292,7 @@ void Cleng::fillXYZ() {
     }
 }
 
-void Cleng::WriteClampedNodeDistance(int MS_step) {
+void Cleng::WriteClampedNodeDistance() {
     vector<Real> distPerMC;
     int i = 0;
     for (auto &&SN :  simpleNodeList) {
@@ -300,18 +300,9 @@ void Cleng::WriteClampedNodeDistance(int MS_step) {
         i++;
     }
 
-    string filename;
-    vector<string> sub;
-
-    string infilename = In[0]->name;
-    In[0]->split(infilename, '.', sub);
-    filename = sub[0];
-    filename = In[0]->output_info.getOutputPath() + filename;
-
     ofstream outfile;
     outfile.open(filename + ".cpos", std::ios_base::app);
-
-    outfile << MS_step << " ";
+    outfile << MC_attempt + MCS_checkpoint << " ";
     for (auto n : distPerMC)outfile << n << " ";
     outfile << endl;
 }

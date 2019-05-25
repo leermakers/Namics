@@ -6,7 +6,7 @@
 #include "../solve_scf.h"
 #include "../system.h"
 #include "../output.h"
-#include <math.h>
+#include <cmath.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
@@ -22,9 +22,12 @@
 #include "nodes/point.h"
 #include "checkpoint/checkpoint.h"
 #include "random/random.h"
-// tests
 
-using std::setprecision;
+#ifdef CLENG_EXPERIMENTAL  // experimental
+#include "cwriter/cwriter.h"
+#endif
+
+#include <csignal>
 
 class Cleng {
 private:
@@ -66,11 +69,17 @@ public:
     vector<string> PARAMETERS;
     vector<string> VALUES;
 
+    string filename;
+    Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
+    Point J{Lat[0]->JX, Lat[0]->JY, 1};
+    vector<int> dims_vtk{box.x * box.y * box.z, 1};
+    vector<int> dims_2 = {1, 2};
+
     int clamp_seg;
     int clp_mol;
     int n_boxes;
     int n_out;
-    int sub_box_size;
+    Point sub_box_size;
     int MCS;
     int delta_step;
     int t;
@@ -130,19 +139,19 @@ public:
 
     bool IsCommensuratable();
 
-    void PushOutput(int);
+    void PushOutput();
 
-    void WriteOutput(int);
+    void WriteOutput();
 
-    void WriteClampedNodeDistance(int);
+    void WriteClampedNodeDistance();
 
     void make_BC();
 
     int getLastMCS();
 
-    Real GetN_times_mu();
-
     Point prepareMove();
+
+    vector<Real> prepare_vtk();
 
     bool CheckInput(int start, bool save_vector);
 

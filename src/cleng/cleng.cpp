@@ -1,7 +1,5 @@
 #include "cleng.h"
 #include "cleng_tools.h"
-//#include <unistd.h>
-//#include "iterator/EnumerateIterator.h"
 
 using namespace std;
 
@@ -167,10 +165,7 @@ bool Cleng::CheckInput(int start, bool save_vector) {
             string node_id;
             stringstream stream(struser_node_move_id);
             while( getline(stream, node_id, ',') ) {
-                try {
-                    int id = stoi(node_id);
-                    ids_node4move.push_back(id);
-                }
+                try { ids_node4move.push_back(stoi(node_id)); }
                 catch (invalid_argument& e) {success = false; cout << "Check yours node id structure" << endl; return success;}
             }
         }
@@ -196,8 +191,11 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         } else prefactor_kT = 1;
         if (debug) cout << "prefactor_kT is " << prefactor_kT << endl;
 
-        // ???
-        if (success) { n_boxes = Seg[clamp_seg]->n_box; sub_box_size = Seg[clamp_seg]->mx; }
+        // TODO: EXTEND CLENG
+        if (success) {
+            n_boxes = Seg[clamp_seg]->n_box;
+            sub_box_size = {Seg[clamp_seg]->mx, Seg[clamp_seg]->my, Seg[clamp_seg]->mz};
+        }
         clp_mol = -1;
         int length = (int) In[0]->MolList.size();
         for (int i = 0; i < length; i++) if (Mol[i]->freedom == "clamped") clp_mol = i;
@@ -212,8 +210,14 @@ bool Cleng::CheckInput(int start, bool save_vector) {
             if (!Out[i]->CheckInput(start)) {
                 cout << "input_error in output " << endl;
                 success = false;
+                return success;
             }
         }
+
+        vector<string> sub;
+        In[0]->split(In[0]->name, '.', sub);
+        filename = In[0]->output_info.getOutputPath() + sub[0];
+
         cout << cmajor_version << "." << cminor_version << "." << cpatch << " v." << cversion << endl;
         success = MonteCarlo(save_vector);
     }
@@ -224,11 +228,6 @@ bool Cleng::CP(transfer tofrom) {
     if (debug) cout << "CP in Cleng" << endl;
 
     bool success = true;
-    Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
-
-    int JX = Lat[0]->JX;
-    int JY = Lat[0]->JY;
-    int M  = Lat[0]->M;
 
     Segment *clamped = Seg[clamp_seg];
     map<int, Point> system_points;
@@ -247,7 +246,7 @@ bool Cleng::CP(transfer tofrom) {
             break;
 
         case to_segment:
-            Zero(clamped->H_MASK, M);
+            Zero(clamped->H_MASK, Lat[0]->M);
 
             for (auto &&SN : Enumerate(simpleNodeList)) {
                 size_t index = SN.first;    //
@@ -275,21 +274,21 @@ bool Cleng::CP(transfer tofrom) {
                 clamped->py2[n_box] = p2.y;
                 clamped->pz2[n_box] = p2.z;
 // box
-                clamped->bx[n_box] = (p2.x + p1.x - sub_box_size) / 2;
-                clamped->by[n_box] = (p2.y + p1.y - sub_box_size) / 2;
-                clamped->bz[n_box] = (p2.z + p1.z - sub_box_size) / 2;
+                clamped->bx[n_box] = (p2.x + p1.x - sub_box_size.x) / 2;
+                clamped->by[n_box] = (p2.y + p1.y - sub_box_size.y) / 2;
+                clamped->bz[n_box] = (p2.z + p1.z - sub_box_size.z) / 2;
 
                 if (clamped->bx[n_box] < 1) { clamped->bx[n_box] += box.x; clamped->px1[n_box] += box.x; clamped->px2[n_box] += box.x;}
                 if (clamped->by[n_box] < 1) { clamped->by[n_box] += box.y; clamped->py1[n_box] += box.y; clamped->py2[n_box] += box.y;}
                 if (clamped->bz[n_box] < 1) { clamped->bz[n_box] += box.z; clamped->pz1[n_box] += box.z; clamped->pz2[n_box] += box.z;}
 // clearing
-                auto hp1x = ((clamped->px1[n_box] - 1) % box.x + 1) * JX;
-                auto hp1y = ((clamped->py1[n_box] - 1) % box.y + 1) * JY;
+                auto hp1x = ((clamped->px1[n_box] - 1) % box.x + 1) * J.x;
+                auto hp1y = ((clamped->py1[n_box] - 1) % box.y + 1) * J.y;
                 auto hp1z =  (clamped->pz1[n_box] - 1) % box.z + 1;
 
-                auto hp2x = ((clamped->px2[n_box] - 1) % box.x + 1) * JX;
-                auto hp2y = ((clamped->py2[n_box] - 1) % box.y + 1) * JY;
-                auto hp2z = ( clamped->pz2[n_box] - 1) % box.z + 1;
+                auto hp2x = ((clamped->px2[n_box] - 1) % box.x + 1) * J.x;
+                auto hp2y = ((clamped->py2[n_box] - 1) % box.y + 1) * J.y;
+                auto hp2z = (clamped->pz2[n_box] - 1) % box.z + 1;
 
                 clamped->H_MASK[hp1x + hp1y + hp1z] = 1;
                 clamped->H_MASK[hp2x + hp2y + hp2z] = 1;
@@ -319,7 +318,7 @@ bool Cleng::Checks() {
     // BC.x and/or BC.y and/or BC.z != mirror
     else in_range = true;
 
-    // check distances between all nodes_map => checking achivements
+    // check distances between all nodes_map => checking possibility to achieve clamped nodes
     bool commensurate = IsCommensuratable();
 
     bool result = not_collapsing and in_range and in_subbox_range and commensurate;
@@ -387,11 +386,13 @@ bool Cleng::MonteCarlo(bool save_vector) {
     if (debug) cout << "Monte Carlo in Cleng" << endl;
     bool success = true;
 
+    signal(SIGINT, signalHandler);
+#ifdef CLENG_EXPERIMENTAL
+    CWriter cleng_writer(filename);
+#endif
     Checkpoint checkpoint;
     if (checkpoint_load) {
-        bool loadable= checkpoint.isLoadable();
-        if (loadable) {
-            Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
+        if (checkpoint.isLoadable()) {
             simpleNodeList = checkpoint.loadCheckpoint(simpleNodeList, box);
             nodes_map = createNodes(simpleNodeList);
             cout << "From checkpoint next nodes_map are available: " << endl;
@@ -411,12 +412,25 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
 
 // init system outlook
-    New[0]->Solve(true);
+    bool success_iteration = New[0]->Solve(true);
     free_energy_current = Sys[0]->GetFreeEnergy();
+    if (is_ieee754_nan(free_energy_current)) {
+        cout << "Sorry, Free Energy is NaN. Termination..." << endl;
+        cout << "Solver output " << success_iteration << endl;
+        exit(1);
+    }
     if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy());
 
 // init save
-    WriteOutput(MC_attempt + MCS_checkpoint);
+    WriteOutput();
+
+#ifdef CLENG_EXPERIMENTAL
+    vector<Real>vtk = prepare_vtk();
+    cleng_writer.write("/VTK_data", "vtk"+to_string(MC_attempt+MCS_checkpoint), dims_vtk, vtk);
+
+    vector<Real> MC_free_energy = {static_cast<Real>(MC_attempt+MCS_checkpoint), free_energy_current};
+    cleng_writer.append("/Free_energy", "free_energy", dims_2, MC_free_energy);
+#endif
 
     cout << "Initialization done.\n" << endl;
     if (!loaded) CP(to_cleng);
@@ -433,18 +447,17 @@ bool Cleng::MonteCarlo(bool save_vector) {
         cout << endl;
 
         if (success_) {
-            bool success__ = New[0]->Solve(true);
+            success_iteration = New[0]->Solve(true);
             if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
                 cout << "Sorry, Free Energy is NaN. " << endl;
-                cout << "Here is result from solver: " << success__ << endl;
+                cout << "Here is result from solver: " << success_iteration << endl;
                 New[0]->attempt_DIIS_rescue();
                 cout << "Restarting iteration." << endl;
-                bool success__ = New[0]->Solve(true);
-
+                success_iteration = New[0]->Solve(true);
 
                 if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
                     cout << "Sorry, Free Energy is still NaN. " << endl;
-                    cout << "Here is result from solver: " << success__ << endl;
+                    cout << "Here is result from solver: " << success_iteration << endl;
                     break;
                 }
             } else {free_energy_trial = Sys[0]->GetFreeEnergy();}
@@ -481,13 +494,21 @@ bool Cleng::MonteCarlo(bool save_vector) {
         cout << "Accepted: # " << accepted << " | " << 100 * (accepted / MC_attempt) << "%" << endl;
         cout << "Rejected: # " << rejected << " | " << 100 * (rejected / MC_attempt) << "%" << endl;
 
-        if ((MC_attempt % delta_save) == 0) WriteOutput(MC_attempt + MCS_checkpoint);
+#ifdef CLENG_EXPERIMENTAL
+        vtk = prepare_vtk();
+        cleng_writer.write("/VTK_data", "vtk" + to_string(MC_attempt+MCS_checkpoint), dims_vtk, vtk);
+
+        MC_free_energy = {static_cast<double>(MC_attempt+MCS_checkpoint), free_energy_current};
+        cleng_writer.append("/Free_energy", "free_energy", dims_2, MC_free_energy);
+#endif
+        if (((MC_attempt + MCS_checkpoint) % delta_save) == 0) WriteOutput();
         if (checkpoint_save) checkpoint.updateCheckpoint(simpleNodeList);
+        if (cleng_flag_termination) break;
     }
 
     cout << endl;
     cout << "Finally:" << endl;
-    cout << "Monte Carlo attempt: " << MC_attempt-1 << endl;
+    cout << "Monte Carlo attempts: " << MC_attempt << endl;
     cout << "Accepted: # " << accepted << " | " << 100 * (accepted / (MC_attempt-1)) << "%" << endl;
     cout << "Rejected: # " << rejected << " | " << 100 * (rejected / (MC_attempt-1)) << "%" << endl;
 

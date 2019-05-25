@@ -32,6 +32,8 @@ void Checkpoint::updateCheckpointName(const bool plusOne) {
 }
 
 void Checkpoint::saveCheckpoint(const vector<std::shared_ptr<SimpleNode>>& simpleNodeList) {
+    ifstream checkpointDir(checkpoint_path);
+    if (checkpointDir.fail()) { mkdir(checkpoint_path.c_str(), 0777); }
     updateCheckpointName(true);
     updateCheckpoint(simpleNodeList);
 }

@@ -130,12 +130,12 @@ bool Mesodyn::mesodyn() {
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
-  Real grand_potential_average{0};
+  //Real grand_potential_average{0};
 
-  Norm_densities_relative relative_norm( Mol, components, Sys[0]->solvent );
+  //Norm_densities_relative relative_norm( Mol, components, Sys[0]->solvent );
 
   /**** Main MesoDyn time loop ****/
-  int z = 1;
+  //int z = 1;
   for (t = 0; t < timesteps+1; t++) {
     //cout << "\x1b[A" << "\x1b[A" << "MESODYN: t = " << t << " / " << timesteps << endl;
     cout << "MESODYN: t = " << t << " / " << timesteps << endl;
@@ -157,7 +157,7 @@ bool Mesodyn::mesodyn() {
       write_output();
     }
 
-    grand_potential_average += Sys[0]->GetGrandPotential();
+ /*   grand_potential_average += Sys[0]->GetGrandPotential();
 
     if (grand_cannonical and t > save_delay && t % grand_cannonical_time_average == 0)
     {
@@ -203,7 +203,7 @@ bool Mesodyn::mesodyn() {
 
         grand_potential_average=0;
 
-        cout << endl;
+        cout << endl;*/
   } // time loop
 
   std::cout << "Done." << std::endl;
@@ -247,6 +247,18 @@ Real* Mesodyn::solve_crank_nicolson() {
   update_densities();
 
   prepare_densities_for_callback();
+
+ /*  for (auto& component : components) {
+      stl::host_vector<Real> asdf = component->rho.m_data;
+      for (size_t z = 0 ; z < 5 ; ++z)
+      for (size_t y = 0 ; y < 5 ; ++y)
+      for (size_t x = 0 ; x < 5 ; ++x)
+        {
+        cout << z << " " << y << " " << x << "  :  ";
+        cout << asdf[z*component->rho.m_subject_lattice->JZ+y*component->rho.m_subject_lattice->JY+x*component->rho.m_subject_lattice->JX] << endl;
+        }
+      cout << endl;
+    }*/
 
   return device_vector_ptr_to_raw(callback_densities);
 }
@@ -318,7 +330,8 @@ int Mesodyn::initial_conditions() {
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
   Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);
 
-  norm_densities->execute();
+  //TODO: this norm is broken for boundaries, but that doesn't really seem to pose a problem.
+  //norm_densities->execute();
 
   return 0; 
 }

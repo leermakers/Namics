@@ -15,6 +15,7 @@ GPU Accelleration:
 	- CUDA 9.0 & g++5
 	- CUDA 9.2 & g++7
 	- CUDA 10.0 & g++7
+	- CUDA 10.1 & g++8
 	
 - NOT working:
 	- CUDA 9.0 & g++ 6.5

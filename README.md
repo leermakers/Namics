@@ -11,7 +11,14 @@ Alexander Kazakov - cleng.cpp
 ### Dependencies:
 
 GPU Accelleration:
-- SCF tested on: CUDA 9.2 & g++7, CUDA 10.0 & g++7. CUDA 9.2 & g++5 does NOT work. Set the ccbin value in the NVCC flags in the makefile to the correct g++ version and replace the CUDA paths if needed. Also set the nvcc arch flag to the correct compute capability (list can be found [here](https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/))
+- SCF tested on:
+	CUDA 9.0 & g++5,
+	CUDA 9.0 & g++6,
+	CUDA 9.2 & g++7,
+	CUDA 10.0 & g++7
+- CUDA 9.2 & g++5 does NOT work.
+
+Set the ccbin value in the NVCC flags in the makefile to the correct g++ version and replace the CUDA paths if needed. Also set the nvcc arch flag to the correct compute capability (list can be found [here](https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/))
 
 ## TODO 9-4-2018
 - [x] Fix cuda for 3d : likely problem is with generating arrays in branched propagator  

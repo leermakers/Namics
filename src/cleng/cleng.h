@@ -6,7 +6,7 @@
 #include "../solve_scf.h"
 #include "../system.h"
 #include "../output.h"
-#include <cmath.h>
+#include <math.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>

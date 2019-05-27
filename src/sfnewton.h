@@ -2,7 +2,6 @@
 #define SFNEWTONxH
 #include <vector>
 #include <stdlib.h>
-#include <math.h>
 #include <float.h>
 #include "namics.h"
 

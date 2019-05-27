@@ -13,12 +13,13 @@ Alexander Kazakov - cleng.cpp
 GPU Accelleration:
 - SCF tested to work on:
 	- CUDA 9.0 & g++5
+	- CUDA 9.1 & g++5
 	- CUDA 9.2 & g++7
 	- CUDA 10.0 & g++7
-	- CUDA 10.1 & g++8
 	
 - NOT working:
-	- CUDA 9.0 & g++ 6.5
+	- CUDA 10.1 & g++8
+	- CUDA 9.0 & g++ 6
 	- CUDA 9.2 & g++ 5
 
 Set the ccbin value in the NVCC flags in the makefile to the correct g++ version and replace the CUDA paths if needed. Also set the nvcc arch flag to the correct compute capability (list can be found [here](https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/))

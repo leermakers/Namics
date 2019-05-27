@@ -23,7 +23,7 @@
 #include "checkpoint/checkpoint.h"
 #include "random/random.h"
 
-#ifdef CLENG_EXPERIMENTAL  // experimental
+#ifdef CLENG_EXPERIMENTAL
 #include "cwriter/cwriter.h"
 #endif
 
@@ -44,8 +44,8 @@ private:
 
     int cmajor_version = 1;
     int cminor_version = 2;
-    int cpatch = 0;
-    int cversion = 1;
+    int cpatch = 1;
+    int cversion = 103;
     int pseed;
 
     void fillXYZ();

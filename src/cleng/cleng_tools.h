@@ -70,6 +70,7 @@ bool Cleng::InSubBoxRange() {
 }
 
 bool Cleng::IsCommensuratable() {
+    // TODO name think about changing the name.
     bool success = true;
     // trial movement for simpleNodeList
     nodes_map[id_node_for_move].data()->get()->shift(clamped_move);
@@ -81,12 +82,13 @@ bool Cleng::IsCommensuratable() {
         auto p3 = p2 - p1;
         int path_length = abs(p3.x) + abs(p3.y) + abs(p3.z);
 
-        if (path_length >= (chain_length) ) {
-            cout << "Warning, for chain part the paths between clamps is "
-                    "not commensurate with the length of the chain fragment!" << endl;
-            success =false;
-        }
+        int path_length_even = path_length % 2;
+        int chain_length_even = chain_length % 2;
+
+        if (path_length_even == chain_length_even) success =false;
+        if (path_length >= chain_length) success =false;
     }
+    if (!success) cout << "Warning, the paths between clamps is not commensurate with the chain length!" << endl;
     // put back
     nodes_map[id_node_for_move].data()->get()->shift(clamped_move.negate());
     return success;

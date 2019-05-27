@@ -402,7 +402,6 @@ bool Cleng::MonteCarlo(bool save_vector) {
             loaded = true;
         }
     }
-    if (checkpoint_save) {checkpoint.saveCheckpoint(simpleNodeList);}
 
 // Analysis MC
     accepted = 0.0;
@@ -412,6 +411,10 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
 
 // init system outlook
+    if (!loaded) CP(to_cleng);
+    if (!Checks()) {cout << "Checks are not passed. Termination..." << endl; exit(1); }
+    if (checkpoint_save) {checkpoint.saveCheckpoint(simpleNodeList);}
+
     bool success_iteration = New[0]->Solve(true);
     free_energy_current = Sys[0]->GetFreeEnergy();
     if (is_ieee754_nan(free_energy_current)) {
@@ -433,20 +436,18 @@ bool Cleng::MonteCarlo(bool save_vector) {
 #endif
 
     cout << "Initialization done.\n" << endl;
-    if (!loaded) CP(to_cleng);
     cout << "Here we go..." << endl;
-    for (MC_attempt = 1; MC_attempt <= MCS; MC_attempt++) { // loop for trials
-        bool success_;
-
+    bool success_;
+    for (MC_attempt = 1; MC_attempt <= MCS; MC_attempt++) { // main loop for trials
         success_ = MakeMove(false);
-        CP(to_segment);
-
-        cout << endl;
-        cout << "[Cleng] System for calculation: " << endl;
-        for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
-        cout << endl;
-
         if (success_) {
+            CP(to_segment);
+
+            cout << endl;
+            cout << "[Cleng] System for calculation: " << endl;
+            for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+            cout << endl;
+
             success_iteration = New[0]->Solve(true);
             if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
                 cout << "Sorry, Free Energy is NaN. " << endl;

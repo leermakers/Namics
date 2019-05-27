@@ -1,6 +1,5 @@
 lat : vlak : n_layers : 100
-lat : vlak : geometry : planar
-lat : vlak : lattice_type : simple_cubic
+lat : vlak : geometry : planar 
 
 lat : vlak : bondlength : 0.0000000003000000
 
@@ -28,4 +27,7 @@ newton : isaac : iterationlimit : 100
 
 output : pro : append : false
 pro : mon: * : phi
+start
+
+
 

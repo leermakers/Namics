@@ -20,6 +20,7 @@ if (debug) cout << "Constructor for system " << endl;
 	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]);
 	charged=false;
 	constraintfields=false; 
+	grad_epsilon = false; 
 }
 System::~System() {
   if (debug)
@@ -47,6 +48,7 @@ System::~System() {
     cudaFree(eps);
     cudaFree(q);
     cudaFree(EE);
+    cudaFree(E);
     cudaFree(psiMask);
   }
   if (constraintfields) {
@@ -60,6 +62,7 @@ System::~System() {
   free(CHI);
   if (charged) {
     free(EE);
+    free(E);
     free(psiMask);
     free(eps);
   }
@@ -100,6 +103,7 @@ void System::AllocateMemory() {
     q = (Real*)AllOnDev(M);
     eps = (Real*)AllOnDev(M);
     EE = (Real*)AllOnDev(M);
+     E = (Real*)AllonDev(M);
     psiMask = (int*)AllIntOnDev(M);
   }
   if (constraintfields) {
@@ -114,6 +118,7 @@ void System::AllocateMemory() {
     q = H_q;
     eps = (Real*)malloc(M * sizeof(Real));
     EE = (Real*)malloc(M * sizeof(Real));
+     E = (Real*)malloc(M * sizeof(Real)); 
     psiMask = (int*)malloc(M * sizeof(int));
   }
   if (constraintfields) {
@@ -129,6 +134,7 @@ void System::AllocateMemory() {
   if (charged) {
     Zero(psi, M);
     Zero(EE, M);
+    Zero(E,M);
   }
 
   n_mol = In[0]->MolList.size();
@@ -235,6 +241,10 @@ if (constraintfields){
         fixedPsi0 = true;
         Add(psiMask, Seg[FrozenList[i]]->MASK, M);
       }
+    }
+    Real eps=Seg[0]->epsilon; 
+    for (int i=1; i<n_mon; i++) {
+	if (Seg[i]->epsilon != eps) grad_epsilon = true; 
     }
   }
   return success;

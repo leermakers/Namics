@@ -3,7 +3,7 @@ Lattice::Lattice(vector<Input*> In_,string name_) :
 	BC(6) // resize the boundary condition vector to 6 for Mesodyn
 { //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
 if (debug) cout <<"Lattice constructor" << endl;
-	In=In_; name=name_;
+	In=In_; name=name_; 
 	KEYS.push_back("gradients"); KEYS.push_back("n_layers"); KEYS.push_back("offset_first_layer");
 	KEYS.push_back("geometry");
 	KEYS.push_back("n_layers_x");   KEYS.push_back("n_layers_y"); KEYS.push_back("n_layers_z");
@@ -11,17 +11,25 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("lowerbound_x"); KEYS.push_back("upperbound_x");
 	KEYS.push_back("lowerbound_y"); KEYS.push_back("upperbound_y");
 	KEYS.push_back("lowerbound_z"); KEYS.push_back("upperbound_z");
- 	KEYS.push_back("bondlength");  KEYS.push_back("lattice_type");
-	KEYS.push_back("lambda");
-	KEYS.push_back("Z");
+ 	KEYS.push_back("bondlength");
+	KEYS.push_back("ignore_sites");  
+	//KEYS.push_back("lattice_type");
+	//KEYS.push_back("lambda");
+	//KEYS.push_back("Z");
 	KEYS.push_back("FJC_choices");
 	sub_box_on = 0;
 	all_lattice = false;
-	fjc = 0;
+	ignore_sites=false;
 	gradients=1;
 	fjc=1;
 	MX=MY=MZ=0;
+	offset_first_layer=0;
 }
+
+/*
+fjc=1: frad has stencil coefficients : (-1 1)/2; laplace: (1 -2 1)/6
+fjc=2: grad has stencil coefficients: (-1  8 -8 1)/12, laplace: (-1 16 -30 16 -1)/12
+*/
 
 Lattice::~Lattice() {
 if (debug) cout <<"lattice destructor " << endl;
@@ -39,24 +47,101 @@ if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 			free(lambda0);
 			free(L);
 		} else {
+			free(B_X1);free(B_Y1);free(B_Z1);free(B_XM);free(B_YM);free(B_ZM);
 			free(L); free(LAMBDA);
 		} 
 	}
 #ifdef CUDA
-//	if (gradients==3) X=(Real*)AllOnDev(M);
-//	if (gradients==3) cudaFree(X);
-	all_lattice=false;
+	//if (gradients==3) X=(Real*)AllOnDev(M);
+       if (gradients==3) cudaFree(X);
+	
 #endif
+all_lattice=false;
 }
 
 void Lattice::AllocateMemory(void) {
 if (debug) cout <<"AllocateMemory in lattice " << endl;
-	Real r,VL,LS;
-	Real rlow,rhigh;
-	Real one_over_lambda_min_two=1.0/lambda-2.0;
+	Real r;
 	int i {0}; int j {0}; int k {0};
-	PutM();
+	PutM();	
 	DeAllocateMemory();
+	if (fjc>1) {
+		B_X1=(int*)malloc(fjc*sizeof(int));
+		B_Y1=(int*)malloc(fjc*sizeof(int));
+		B_Z1=(int*)malloc(fjc*sizeof(int));
+		B_XM=(int*)malloc(fjc*sizeof(int));
+		B_YM=(int*)malloc(fjc*sizeof(int));
+		B_ZM=(int*)malloc(fjc*sizeof(int));
+	}
+
+	switch (gradients) {
+		case 3:
+			if (BC[4]=="mirror") {
+				if (fjc==1) BZ1=1; else {
+					for (k=0; k<fjc; k++) B_Z1[k]=fjc+k;
+				}
+			}
+			if (BC[4]=="periodic") {
+				if (fjc==1) BZ1=MZ; else {
+					for (k=0; k<fjc; k++) B_Z1[k]=MZ+fjc-k-1;
+				}
+			}
+			if (BC[5]=="mirror") {
+				if (fjc==1) BZM=MZ; else {
+					for (k=0; k<fjc; k++) B_ZM[k]=MZ+fjc-k-1;
+				}
+			}
+			if (BC[5]=="periodic") {
+				if (fjc==1) BZM=1; else {
+					for (k=0; k<fjc; k++) B_ZM[k]=fjc+k;
+				}
+			}
+			//Fall through
+		case 2:
+			if (BC[2]=="mirror") {
+				if (fjc==1) BY1=1; else {
+					for (k=0; k<fjc; k++) B_Y1[k]=fjc+k;
+				}
+			}
+			if (BC[2]=="periodic") {
+				if (fjc==1) BY1=MY; else {
+					for (k=0; k<fjc; k++) B_Y1[k]=MY+fjc-k-1;
+				}
+			}
+			if (BC[3]=="mirror") {
+				if (fjc==1) BYM=MY; else {
+					for (k=0; k<fjc; k++) B_YM[k]=MY+fjc-k-1;
+				}
+			}
+			if (BC[3]=="periodic") {
+				if (fjc==1) BYM=1; else {
+					for (k=0; k<fjc; k++) B_YM[k]=fjc+k;
+				}
+			} 
+			//Fall through
+		case 1:
+			if (BC[0]=="mirror") {
+				if (fjc==1) BX1=1; else {
+					for (k=0; k<fjc; k++) B_X1[k]=fjc+k;
+				}
+			}
+			if (BC[0]=="periodic") {
+				if (fjc==1) BX1=MX;else {
+					for (k=0; k<fjc; k++) B_X1[k]=MX+fjc-k-1;
+				}
+			}
+			if (BC[1]=="mirror") {
+				if (fjc==1) BXM=MX;else {
+					for (k=0; k<fjc; k++) B_XM[k]=MX+fjc-k-1;
+				}
+			}
+			if (BC[1]=="periodic") { 
+				if (fjc==1) BXM=1; else {
+					for (k=0; k<fjc; k++) B_XM[k]=fjc+k;
+				}
+			}
+	}
+
 	if (fjc==1) {
 		if (gradients<3) {
 		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
@@ -68,144 +153,92 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
 		LAMBDA =(Real*)malloc(FJC*M*sizeof(Real)); Zero(LAMBDA,FJC*M);
 	}
+	
 
 	switch (gradients) {
 		case 1:
+			if (geometry=="planar") {for (i=1; i<MX+1; i++) L[i]=1; }
+
 			if (fjc==1) {
-				if (geometry=="planar") {for (i=1; i<MX+1; i++) L[i]=1; }
 				if (geometry=="cylindrical") {
 					for (i=1; i<MX+1; i++) {
 						r=offset_first_layer + i;
 						L[i]=PIE*(pow(r,2)-pow(r-1,2));
-						lambda1[i]=2.0*PIE*r/L[i];
-						lambda_1[i]=2.0*PIE*(r-1)/L[i];
-						lambda0[i]=one_over_lambda_min_two;
+						lambda1[i]=PIE*r/L[i]/3.0;
+						lambda_1[i]=PIE*(r-1)/L[i]/3.0;
+						lambda0[i]=4.0/6.0;
 					}
 				}
 				if (geometry=="spherical") {
 					for (i=1; i<MX+1; i++) {
 						r=offset_first_layer + i;
 						L[i]=4.0/3.0*PIE*(pow(r,3)-pow(r-1,3));
-						lambda1[i]=4*PIE*pow(r,2)/L[i];
-						lambda_1[i]=4*PIE*pow(r-1,2)/L[i];
-						lambda0[i]=1.0/lambda-lambda1[i]-lambda_1[i];
+						lambda1[i]=2.0*PIE*pow(r,2)/L[i]/3.0;
+						lambda_1[i]=2.0*PIE*pow(r-1,2)/L[i]/3.0;
+						lambda0[i]=1.0-lambda1[i]-lambda_1[i];
 					}
 				}
-			} else { //fjc != 1;
-				if (geometry =="planar") {
-					for (i=0; i<M; i++) {
-						L[i]=1.0/fjc;
-						LAMBDA[i]=1.0/(2*(FJC-1));
-						LAMBDA[i+(FJC-1)*M]=1.0/(2*(FJC-1));
-						//LAMBDA[i+(FJC-1)/2*M]=1.0-1.0/(FJC-1);
-						LAMBDA[i+(FJC-1)/2*M]=1.0/(FJC-1);
-						for (j=1; j<FJC/2; j++) {
-							LAMBDA[i+j*M]=1.0/(FJC-1);
-							LAMBDA[i+(FJC-j-1)*M]=1.0/(FJC-1);
-							//LAMBDA[i+(FJC-1)/2*M]=LAMBDA[i+(FJC-1)/2*M]-LAMBDA[i+j*M]-LAMBDA[i+(FJC-j-1)*M];
-						}
-					}
-
-				}
+			} 
+				
+			if (fjc==2) {
 				if (geometry =="cylindrical") {
-
-					for (i=fjc; i<M-fjc; i++) {
-						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc;
-						rlow=r-0.5;
-						rhigh=r+0.5;
-						L[i]=PIE*(2.0*r)/fjc;
-						VL=L[i]/PIE*fjc;
-						if ((rlow-r)*2+r>0.0) LAMBDA[i]+=0.5/(1.0*FJC-1.0)*2.0*rlow/VL;
-						if ((rhigh-r)*2+r<MX) LAMBDA[i+(FJC-1)*M]+=0.5/(1.0*FJC-1.0)*2.0*rhigh/VL;
-						else {
-							if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001) {
-								LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*2.0*rhigh/VL;
-							}
-							for (j=1; j<=fjc; j++) {
-								if (2*rhigh-r-MX > 0.99*j/fjc && 2*rhigh-r-MX < 1.01*j/fjc) {
-									LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*2.0*(rhigh-1.0*j/fjc)/VL;
-								}
-							}
-						}
-						for (j=1; j<fjc; j++) {
-							rlow += 0.5/(fjc);
-							rhigh -= 0.5/(fjc);
-							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*2.0*rlow/VL;
-							if ((rhigh-r)*2+r < offset_first_layer+MX) LAMBDA[i+(FJC-1-j)*M]+=1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
-							else {
-								if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001 ) {
-									LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
-								}
-								for (k=1; k<=fjc; k++) {
-									if (2*rhigh-r-MX > 0.99*k/fjc && 2*rhigh-r-MX < 1.01*k/fjc) {
-										LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*2.0*(rhigh-1.0*k/fjc)/VL;
-									}
-								}
-							}
-						}
-						LS=0;
-						for (j=0; j<FJC; j++) LS+=LAMBDA[i+j*M];
-						LAMBDA[i+(FJC/2)*M]+=1.0-LS;
+					for (i=fjc; i<MX+fjc; i++) {
+						r=offset_first_layer+1.0*i/fjc;
+						L[i]=PIE*(pow(r,2)-pow(r-1,2));
+						LAMBDA[i+0*M]=-2.0*PIE*(r-1.5)/L[i]/72.0;
+						LAMBDA[i+1*M]= 32.0*PIE*(r-1.0)/L[i]/72.0;
+						LAMBDA[i+2*M]= 42.0/72.0;
+						LAMBDA[i+3*M]= 32.0*PIE*(r)/L[i]/72.0;
+						LAMBDA[i+4*M]=-2.0*PIE*(r+0.5)/L[i]/72.0;
+						
+					}
+				}
+				if (geometry =="spherical") {
+					for (i=fjc; i<MX+fjc; i++) {
+						r=offset_first_layer+1.0*i/fjc;
+						L[i]=4.0/3.0*PIE*(pow(r,3)-pow(r-1,3));
+						LAMBDA[i+0*M]=-4.0*PIE*pow(r-1.5,2)/L[i]/72.0;
+						LAMBDA[i+1*M]= 64.0*PIE*pow(r-1.0,2)/L[i]/72.0;
+						LAMBDA[i+3*M]= 64.0*PIE*pow(r,2)/L[i]/72.0;
+						LAMBDA[i+4*M]=-4.0*PIE*pow(r+0.5,2)/L[i]/72.0;
+						LAMBDA[i+2*M]= 1.0-LAMBDA[i+0*M]-LAMBDA[i+1*M]-LAMBDA[i+3*M]-LAMBDA[i+4*M];
 					}
 				}
 
-
-				if (geometry =="spherical") {//todo : test
-					for (i=fjc; i<M-fjc; i++) {
-						r=offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc;
-						rlow=r-0.5;
-						rhigh=r+0.5;
-						L[i]=PIE*4.0/3.0*(rhigh*rhigh*rhigh-rlow*rlow*rlow)/fjc;
-						VL=L[i]/PIE*fjc;
-						if ((rlow-r)*2+r>0.0) LAMBDA[i]+=0.5/(1.0*FJC-1.0)*4.0*rlow*rlow/VL;
-						if ((rhigh-r)*2+r<MX) LAMBDA[i+(FJC-1)*M]+=0.5/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
-						else {
-							if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001) {
-								LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
-							}
-							for (j=1; j<=fjc; j++) {
-								if (2*rhigh-r-MX > 0.99*j/fjc && 2*rhigh-r-MX < 1.01*j/fjc) {
-									LAMBDA[i+(FJC-1)*M]+= 0.5/(1.0*FJC-1.0)*4.0*(rhigh-1.0*j/fjc)*(rhigh-1.0*j/fjc)/VL;
-								}
-							}
-						}
-						for (j=1; j<fjc; j++) {
-							rlow += 0.5/(fjc);
-							rhigh -= 0.5/(fjc);
-							if ((rlow-r)*2+r>0.0) LAMBDA[i+j*M]+=1.0/(1.0*FJC-1.0)*4.0*rlow*rlow/VL;
-							if ((rhigh-r)*2+r < offset_first_layer+MX) LAMBDA[i+(FJC-1-j)*M]+=1.0/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
-							else {
-								if (2*rhigh-r-MX>-0.001 && 2*rhigh-r-MX < 0.001 ) {
-									LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*4.0*rhigh*rhigh/VL;
-								}
-								for (k=1; k<=fjc; k++) {
-									if (2*rhigh-r-MX > 0.99*k/fjc && 2*rhigh-r-MX < 1.01*k/fjc) {
-										LAMBDA[i+(FJC-1-j)*M]+= 1.0/(1.0*FJC-1.0)*4.0*(rhigh-1.0*k/fjc)*(rhigh-1.0*k/fjc)/VL;
-									}
-								}
-							}
-						}
-						LS=0;
-						for (j=0; j<FJC; j++) LS+=LAMBDA[i+j*M];
-						LAMBDA[i+(FJC/2)*M]+=1.0-LS;
-					}
-				}
 			}
 			break;
 		case 2:
-			if (geometry=="planar") {
-				for (i=0; i<M; i++) L[i]=1;
-			}
-			if (geometry=="cylindrical") {
-				for (i=1; i<MX+1; i++)
-				for (j=1; j<MY+1; j++) {
-					r=offset_first_layer + i;
-					L[i*JX+j]=PIE*(pow(r,2)-pow(r-1,2));
-					lambda1[i*JX+j]=2.0*PIE*r/L[i*JX+j];
-					lambda_1[i*JX+j]=2.0*PIE*(r-1)/L[i*JX+j];
-					lambda0[i*JX+j]=one_over_lambda_min_two;
+			if (fjc==1) {
+				if (geometry=="planar") {
+					for (i=0; i<M; i++) L[i]=1;
 				}
+				if (geometry=="cylindrical") {
+					for (i=1; i<MX+1; i++)
+					for (j=1; j<MY+1; j++) {
+						r=offset_first_layer + 1.0*i;
+						L[i*JX+j]=PIE*(pow(r,2)-pow(r-1,2));
+						lambda1[i*JX+j]=PIE*r/L[i*JX+j]/3.0;
+						lambda_1[i*JX+j]=PIE*(r-1)/L[i*JX+j]/3.0;
+						lambda0[i*JX+j]=4.0/6.0;
+					}
 
+				}
+			} else {
+				if (geometry=="planar") {
+					for (i=0; i<M; i++) L[i]=1;
+				}
+				if (geometry=="cylindrical") {
+					for (i=fjc; i<MX+fjc; i++)
+					for (j=fjc; j<MY+fjc; j++) {
+						r=offset_first_layer + 1.0*i/fjc;
+						L[i*JX+j]=PIE*(pow(r,2)-pow(r-1,2));
+						LAMBDA[i*JX+j+0*M]=-2.0*PIE*(r-1.5)/L[i]/72.0;
+						LAMBDA[i*JX+j+1*M]= 32.0*PIE*(r-1.0)/L[i]/72.0;
+						LAMBDA[i*JX+j+2*M]= 12.0/72.0;
+						LAMBDA[i*JX+j+3*M]= 32.0*PIE*(r)/L[i]/72.0;
+						LAMBDA[i*JX+j+4*M]=-2.0*PIE*(r+0.5)/L[i]/72.0;
+					}
+				}		
 			}
 			break;
 		case 3:
@@ -217,39 +250,15 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 		if (gradients==3)
 			X=(Real*)AllOnDev(M);
 #endif
-		all_lattice=(gradients<2 && geometry!="planar");
+		all_lattice=(gradients<3 && geometry!="planar");
 }
 
 bool Lattice::PutM() {
 	bool success=true;
-	switch (gradients) {
-		case 3:
-			if (BC[4]=="mirror") BZ1=1;
-			if (BC[4]=="periodic") BZ1=MZ;
-			//if (BC[5]=="surface") BZM=MZ+1;
-			if (BC[5]=="mirror") BZM=MZ;
-			if (BC[5]=="periodic") BZM=1;
-			//Fall through
-		case 2:
-			//if (BC[2]=="surface") BY1=0;
-			if (BC[2]=="mirror") BY1=1;
-			if (BC[2]=="periodic") BY1=MY;
-			//if (BC[3]=="surface") BYM=MY+1;
-			if (BC[3]=="mirror") BYM=MY;
-			if (BC[3]=="periodic") BYM=1;
-			//Fall through
-		case 1:
-			//if (BC[0]=="surface") BX1=0;
-			if (BC[0]=="mirror") BX1=1;
-			if (BC[0]=="periodic") BX1=MX;
-			//if (BC[1]=="surface") BXM=MX+1;
-			if (BC[1]=="mirror") BXM=MX;
-			if (BC[1]=="periodic") BXM=1;
-	}
+
 	switch(gradients) {
 		case 1:
-			JX=1; JY=0; JZ=0; M=MX+2;
-			if (fjc>1) M *=fjc;
+			JX=fjc; JY=0; JZ=0; M=MX+2*fjc;  
 			if (geometry=="planar") {volume = MX;}
 			if (geometry=="spherical") {volume = 4/3*PIE*(pow(MX+offset_first_layer,3)-pow(offset_first_layer,3));}
 			if (geometry=="cylindrical") {volume = PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));}
@@ -258,15 +267,16 @@ bool Lattice::PutM() {
 			if (geometry=="cylindrical")
 				volume = MY*PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));
 			else volume = MX*MY;
-			JX=(MY+2); JY=1; JZ=0; M=(MX+2)*(MY+2);
+			JX=MY+2*fjc; JY=fjc; JZ=0; M=(MX+2*fjc)*(MY+2*fjc);
 			break;
 		case 3:
 			volume = MX*MY*MZ;
-			JX=(MZ+2)*(MY+2); JY=(MZ+2); JZ=1; M = (MX+2)*(MY+2)*(MZ+2);
+			JX=(MZ+2*fjc)*(MY+2*fjc); JY=MZ+2*fjc; JZ=fjc; M = (MX+2*fjc)*(MY+2*fjc)*(MZ+2*fjc);
 			break;
 		default:
 			break;
 	}
+
 	return success;
 }
 
@@ -297,8 +307,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 			if (bond_length < 1e-10 || bond_length > 1e-8) {cout <<" bondlength out of range 1e-10..1e-8 " << endl; success=false;}
 		}
 
-		lambda=0;
-		lattice_type="";
+
+		lattice_type="simple_cubic"; lambda=1.0/6.0; Z=6;
+/*
 		options.push_back("simple_cubic"); options.push_back("FCC"); options.push_back("hexagonal");
 		Value=GetValue("lattice_type");
 		if (Value.length()>0) {
@@ -341,6 +352,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				}
 			}
 		}
+*/
 		offset_first_layer =0;
 		gradients=In[0]->Get_int(GetValue("gradients"),1);
 		if (gradients<0||gradients>3) {cout << "value of gradients out of bounds 1..3; default value '1' is used instead " << endl; gradients=1;}
@@ -399,15 +411,15 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					BC[1] = "mirror";
 				break;
 			case 2:
-				if (lattice_type == "") {
-					success=false;
-					cout <<" in two gradient calculations, you should set lattice type to either 'simple_cubic' or 'FCC'"<<endl;
-				}
-				if (Z==0) {
-					lattice_type  = "FCC";
-					lambda=1.0/3.0; Z=3;
-					cout <<"Correction: in two-gradient case the default of the lattice is 'FCC'. " << endl;
-				}
+				//if (lattice_type == "") {
+				//	success=false;
+				//	cout <<" in two gradient calculations, you should set lattice type to either 'simple_cubic' or 'FCC'"<<endl;
+				//}
+				//if (Z==0) {
+				//	lattice_type  = "FCC";
+				//	lambda=1.0/3.0; Z=3;
+				//	cout <<"Correction: in two-gradient case the default of the lattice is 'FCC'. " << endl;
+				//}
 				MX = In[0]->Get_int(GetValue("n_layers_x"),-123);
 				if (MX==-123) {
 					success=false;
@@ -594,22 +606,16 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		}
 		FJC=3;	fjc=1;
 		if (success && GetValue("FJC_choices").length()>0) {
-			if (!In[0]->Get_int(GetValue("FJC_choices"),FJC,"FJC_choices can adopt only few integer values: 3 + i*4, with i = 1, 2, 3, 4, ..."))
+			if (!In[0]->Get_int(GetValue("FJC_choices"),FJC,"FJC_choices can adopt only few integer values: 3 + i*2, with i = 0, 1, 2, 3, ..."))
 				success=false;
-			else if (FJC %4 != 3) {
-				cout << "FJC_choices can adopt only few integer values: 3 + i*4, with i = 1, 2, 3, 4, ...." <<endl;
-				success=false;
-			}
-			if (success && (gradients>1)) {
-				cout << "FJC_choices can only be used in combination with 'gradients == planar' " << endl;
+			else if ((FJC-3) %2 != 0) {
+				cout << "FJC_choices can adopt only few integer values: 3 + i*2, with i = 0, 1, 2, 3, ...." <<endl;
 				success=false;
 			}
-			if (success && (lattice_type != "hexagonal")) {
-				cout << "FJC_choices can only be used in combination with 'lattice_type == hexagonal' "<<endl;
-				success=false;
-			}
-			fjc=(FJC-1)/2;
+
+			fjc=(FJC-3)/2+1;
 		}
+		if (GetValue("ignore_sites").length()>0) ignore_sites=In[0]->Get_bool(GetValue("ignore_sites"),false);
 
 		//Initialize system size and indexing
 		PutM();
@@ -781,6 +787,7 @@ if (X==NULL) cout << "pointer X is zero" << endl;
 }
 
 void Lattice::TimesL(Real* X){
+if (debug) cout << "TimesL in lattice " << endl;
 	switch(gradients) {
 		case 1:
 			//fall-through
@@ -795,6 +802,7 @@ void Lattice::TimesL(Real* X){
 }
 
 void Lattice::DivL(Real* X){
+if (debug) cout << "DivL in lattice " << endl;
 	switch(gradients) {
 		case 1:
 			//fall-through
@@ -809,9 +817,11 @@ void Lattice::DivL(Real* X){
 }
 
 Real Lattice:: Moment(Real* X,int n) {
+if (debug) cout << "Moment in lattice " << endl;
 	Real Result=0;
+if (fjc>1) cout <<"Moment in lattice needs attention " << endl; 
 	Real cor; 
-	if (gradients !=1 || geometry!="planar" ) {cout << "Moments analysis can only be done on one-gradient, planar system " << endl;  return Result; }
+	if (gradients !=1 || geometry!="planar" ) {cout << "Moments analysis is only implemented for one-gradient, planar system " << endl;  return Result; }
 	remove_bounds(X);
 	for (int i = fjc; i<M; i++) {
 		cor = 1.0*(i-fjc+1)/fjc; Result += pow(cor,n)*X[i]; 
@@ -820,20 +830,17 @@ Real Lattice:: Moment(Real* X,int n) {
 }
 
 Real Lattice::WeightedSum(Real* X){
+if (debug) cout << "weighted sum in lattice " << endl;
 	Real sum{0};
 	remove_bounds(X);
 	switch(gradients) {
 		case 1:
-			if (fjc==1 && geometry=="planar")
-				Sum(sum,X,M);
-			else
-				Dot(sum,X,L,M);
+			if (geometry=="planar") Sum(sum,X,M);
+			else 	Dot(sum,X,L,M); 
 			break;
 		case 2:
-			if (geometry=="planar")
-				Sum(sum,X,M);
-			else
-				Dot(sum,X,L,M);
+			if (geometry=="planar") Sum(sum,X,M);
+			else	Dot(sum,X,L,M);
 			break;
 		case 3:
 			Sum(sum,X,M);
@@ -845,7 +852,7 @@ Real Lattice::WeightedSum(Real* X){
 	return sum;
 }
 
-void Lattice::vtk(string filename, Real* X, string id) {
+void Lattice::vtk(string filename, Real* X, string id,bool writebounds) {
 if (debug) cout << "vtk in lattice " << endl;
 	FILE *fp;
 	int i,j,k;
@@ -856,52 +863,67 @@ if (debug) cout << "vtk in lattice " << endl;
 			break;
 		case 2:
 			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MX,MY,1);
-			fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",MX*MY);
+			if (writebounds) {
+				fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",(MX+2*fjc)*(MY+2*fjc));
+			} else {
+				fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",MX*MY);
+			}
 			fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
+			if (writebounds) for (i=0; i<M; i++) fprintf(fp,"%f\n",X[i]);
 			for (i=1; i<MX+1; i++)
 			for (j=1; j<MY+1; j++)
-			fprintf(fp,"%f\n",X[i*JX+j]);
+			fprintf(fp,"%f\n",X[i*JX+fjc-1+j]);
 			break;
 		case 3:
 			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MX,MY,MZ);
-			fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",MX*MY*MZ);
+			
+			if (writebounds) {
+				fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",(MX+2*fjc)*(MY+2*fjc)*(MZ+2*fjc));
+			} else {
+				fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",MX*MY*MZ);
+			}
 			fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
-			for (i=1; i<MX+1; i++)
-			for (j=1; j<MY+1; j++)
-			for (k=1; k<MZ+1; k++)
-			fprintf(fp,"%f\n",X[i*JX+j*JY+k]);
+			if (writebounds) for(i=0; i<M; i++) fprintf(fp,"%f\n",X[i]); 
+			else {
+				for (i=1; i<MX+1; i++)
+				for (j=1; j<MY+1; j++)
+				for (k=1; k<MZ+1; k++)
+				fprintf(fp,"%f\n",X[i*JX+j*JY+fjc-1+k]);
+			}
 			break;
 		default:
 			break;
 	}
 	fclose(fp);
 }
-void Lattice::PutProfiles(FILE* pf,vector<Real*> X){
+void Lattice::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds){
 if (debug) cout <<"PutProfiles in lattice " << endl;
 	int x,y,z,i;
 	int length=X.size();
+	int a; 
+	if (writebounds) a=fjc; else a = 0;
 	switch(gradients) {
 		case 1:
-			for (x=0; x<M; x++){
-				if (fjc==1) fprintf(pf,"%i\t",x); else fprintf(pf,"%e\t",1.0*(x+1)/fjc-1.0);
-				for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][x]);
+			for (x=1-a; x<MX+1+a; x++){
+				fprintf(pf,"%e\t",offset_first_layer+1.0*x-1/(2.0));
+				for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][fjc-1+x]);
 				fprintf(pf,"\n");
 			}
 			break;
-		case 2:
-			for (x=1; x<MX+1; x++)
-			for (y=1; y<MY+1; y++){
-				fprintf(pf,"%i\t%i\t",x,y);
-				for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][x*JX+y]);
+
+			for (x=1-a; x<MX+1+a; x++)
+			for (y=1-a; y<MY+1+a; y++){
+				fprintf(pf,"%e\t%e\t",offset_first_layer+1.0*x-1/2.0,1.0*y-1/2.0);
+				for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][x*JX+fjc-1+y]);
 				fprintf(pf,"\n");
 			}
 			break;
 		case 3:
-			for (x=1; x<MX+1; x++)
-			for (y=1; y<MY+1; y++)
-			for (z=1; z<MZ+1; z++) {
-				fprintf(pf,"%i\t%i\t%i\t",x,y,z);
-				for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][x*JX+y*JY+z]);
+			for (x=1-a; x<MX+1+a; x++)
+			for (y=1-a; y<MY+1+a; y++)
+			for (z=1-a; z<MZ+1+a; z++) {
+				fprintf(pf,"%e\t%e\t%e\t",1.0*x-1/2.0,1.0*y-1/2.0,1.0*z-1/2.0);
+				for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][x*JX+y*JY+fjc-1+z]);
 				fprintf(pf,"\n");
 			}
 			break;
@@ -1041,152 +1063,216 @@ if (debug) cout <<"GetValue (long)  in lattice " << endl;
 
 void Lattice::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in lattice " << endl;
-	Real* SIDE;
-	int j,k;
-	Zero(X_side,M);
+	if (ignore_sites) {
+		Cp(X_side,X,M); return;
+	}
+	Zero(X_side,M);set_bounds(X);
 	switch(gradients) {
 		case 1:
-			set_bounds(X);
 			if (fjc==1) {
 				if (geometry=="planar") {
-					Add(X_side+1,X,M-1); Add(X_side,X+1,M-1);
-					if (lattice_type=="simple_cubic")  {
-						YplusisCtimesX(X_side,X,4.0,M);
-						Norm(X_side,lambda,M);
-					} else {
-						Add(X_side,X,M);
-						Norm(X_side,lambda,M);
-					}
+					YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
+					YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
+					YplusisCtimesX(X_side,X,4.0/6.0,M);
 				} else {
 					AddTimes(X_side,X,lambda0,M);
 					AddTimes(X_side+1,X,lambda_1+1,M-1);
 					AddTimes(X_side,X+1,lambda1,M-1);
-					Norm(X_side,lambda,M);
 				}
-			} else {
-				for (j=0; j<FJC/2; j++) {
-					k=(FJC-1)/2-j;
-					AddTimes(X_side+k,X,LAMBDA+j*M+k,M-k);
-					AddTimes(X_side,X+k,LAMBDA+(FJC-j-1)*M,M-k);
-				}
-				AddTimes(X_side,X,LAMBDA+((FJC-1)/2)*M,M);
 			}
-			Cp(X_side,X,M); //put this one back
+			if (fjc==2) {
+				if (geometry=="planar") {
+					YplusisCtimesX(X_side+2,X,-1.0/72.0,M-2);
+					YplusisCtimesX(X_side+1,X,16.0/72.0,M-1);
+					YplusisCtimesX(X_side,X,42.0/72.0,M);
+					YplusisCtimesX(X_side,X+1,16.0/72.0,M-1);
+					YplusisCtimesX(X_side,X+2,-1.0/72.0,M-2);
+				} else {
+					AddTimes(X_side+2,X,  LAMBDA+0*M+2,M-2);
+					AddTimes(X_side+1,X,  LAMBDA+1*M+1,M-1);
+					AddTimes(X_side ,X, LAMBDA+2*M,  M);
+					AddTimes(X_side,  X+1,LAMBDA+3*M,  M-1);
+					AddTimes(X_side,  X+2,LAMBDA+4*M,  M-2);
+				}
+			}
 			break;
 		case 2:
-			//set_bounds(X);
-			if (geometry=="planar") {
-				if (lattice_type =="simple_cubic" ) {
-					Add(X_side,X+1,M-1);
-					Add(X_side+1,X,M-1);
-					Add(X_side+JX,X,M-JX);
-					Add(X_side,X+JX,M-JX);
-					YplusisCtimesX(X_side,X,2.0,M);
-					Norm(X_side,lambda,M);
+			if (fjc==1) {
+				if (geometry=="planar") {
+					YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
+					YplusisCtimesX(X_side,X,2.0/6.0,M);
+					YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
+					YplusisCtimesX(X_side+JX,X,1.0/6.0,M-JX);
+					YplusisCtimesX(X_side,X+JX,1.0/6.0,M-JX);				
 				} else {
-					Add(X_side+1,X,M-1);
-					Add(X_side,X+1,M-1);
-					Add(X_side+JX,X,M-JX);
-					Add(X_side,X+JX,M-JX);
-					Add(X_side+1+JX,X,M-1-JX);
-					Add(X_side+1,X+JX,M-1-JX);
-					Add(X_side,X+1+JX,M-1-JX);
-					Add(X_side+JX,X+1,M-1-JX);
-					Add(X_side,X,M);
-					Norm(X_side,lambda*lambda,M);
-				}
-			} else {
-				if (lattice_type =="simple_cubic") {
-					Add(X_side,X+1,M-1);
-					Add(X_side+1,X,M-1);
-					YplusisCtimesX(X_side,X,2.0,M);
+					YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
+					YplusisCtimesX(X_side,X,2.0/6.0,M);
+					YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
 					AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
 					AddTimes(X_side,X+JX,lambda1,M-JX);
-					Norm(X_side,lambda,M);
-
-				} else { cout <<"Warning: In FCC the function side is not correctly implemented" << endl;
-					SIDE=new Real[M];
-					Zero(SIDE,M);
-					Add(SIDE,X+1,M-1);
-					Add(SIDE+1,X,M-1);
-					Add(SIDE,X,M);
-					AddTimes(X_side,SIDE,lambda0,M);
-					AddTimes(X_side+JX,SIDE,lambda_1+JX,M-JX);
-					AddTimes(X_side,SIDE+JX,lambda1,M-JX);
-					Norm(X_side,lambda*lambda,M);
-					delete [] SIDE;
+				}
+			} 
+			if (fjc==2) {
+				if (geometry=="planar") {
+					YplusisCtimesX(X_side+2,X,-1.0/72.0,M-2);
+					YplusisCtimesX(X_side+1,X,16.0/72.0,M-1);
+					YplusisCtimesX(X_side,X,12.0/72.0,M);
+					YplusisCtimesX(X_side,X+1,16.0/72.0,M-1);
+					YplusisCtimesX(X_side,X+2,-1.0/72.0,M-2);
+					YplusisCtimesX(X_side+2*JX,X,-1.0/72.0,M-2*JX);
+					YplusisCtimesX(X_side+JX,X,16.0/72.0,M-JX);				
+					YplusisCtimesX(X_side,X+JX,16.0/72.0,M-JX);
+					YplusisCtimesX(X_side,X+2*JX,-1.0/72.0,M-2*JX);
+				} else {
+					YplusisCtimesX(X_side+2,X,  -1.0/72.0, M-2);
+					YplusisCtimesX(X_side+1,X,   16.0/72.0,M-1);
+					YplusisCtimesX(X_side,  X,   12.0/72.0,M);
+					YplusisCtimesX(X_side,  X+1, 16.0/72.0,M-1);
+					YplusisCtimesX(X_side,  X+2,-1.0/72.0, M-2);
+					AddTimes(X_side+2*JX,X,     LAMBDA+0*M+2*JX,M-2*JX);
+					AddTimes(X_side+JX,  X,     LAMBDA+1*M+JX,  M-JX);
+					AddTimes(X_side,     X+JX,  LAMBDA+3*M,     M-JX);
+					AddTimes(X_side,     X+2*JX,LAMBDA+4*M,     M-2*JX);
 				}
 			}
+
 			break;
 		case 3:
-			//set_bounds(X);
-			Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
-			Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
-			Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
-			Norm(X_side,1.0/6.0,M);
+			if (fjc==1) {
+				Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
+				Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
+				Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
+				Norm(X_side,1.0/6.0,M);
+			}
+			if (fjc==2) {
+				YplusisCtimesX(X_side+2,   X,     -1.0/72.0, M-2);
+				YplusisCtimesX(X_side+1,   X,      16.0/72.0,M-1);
+				YplusisCtimesX(X_side,     X,     -18.0/72.0,M);
+				YplusisCtimesX(X_side,     X+1,    16.0/72.0,M-1);
+				YplusisCtimesX(X_side,     X+2,   -1.0/72.0, M-2);
+				YplusisCtimesX(X_side+2*JX,X,     -1.0/72.0, M-2*JX);
+				YplusisCtimesX(X_side+JX,  X,      16.0/72.0,M-JX);				
+				YplusisCtimesX(X_side,     X+JX,   16.0/72.0,M-JX);
+				YplusisCtimesX(X_side,     X+2*JX,-1.0/72.0, M-2*JX);
+				YplusisCtimesX(X_side+2*JY,X,     -1.0/72.0, M-2*JY);
+				YplusisCtimesX(X_side+JY,  X,      16.0/72.0,M-JY);				
+				YplusisCtimesX(X_side,     X+JY,   16.0/72.0,M-JY);
+				YplusisCtimesX(X_side,     X+2*JY,-1.0/72.0, M-2*JY);
+			}
 			break;
 		default:
 			break;
 	}
 }
 
+/*
+fjc=1: frad has stencil coefficients : (-1 1)/2; laplace: (1 -2 1)/6
+fjc=2: grad has stencil coefficients: (-1  8 -8 1)/12, laplace: (-1 16 -30 16 -1)/12
+*/
+
+
 void Lattice::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in lattice " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 	int JX_=JX, JY_=JY;
 	int k=sub_box_on;
-	int kk;
-	int j;
+	//int j;
+
+	Zero(gs,M); set_bounds(gs_1);
 	switch(gradients) {
 		case 1:
-			Zero(gs,M); set_bounds(gs_1);
-
 			if (fjc==1) {
 				if (geometry=="planar") {
-					Add(gs+1,gs_1,M-1); Add(gs,gs_1+1,M-1);
-					YplusisCtimesX(gs,gs_1,4.0,M);
-					Norm(gs,lambda,M); Times(gs,gs,G1,M);
+					YplusisCtimesX(gs+1,gs_1,1.0/6.0,M-1);
+					YplusisCtimesX(gs,gs_1,4.0/6.0,M);
+					YplusisCtimesX(gs,gs_1+1,1.0/6.0,M-1);
+					Times(gs,gs,G1,M);
 				} else {
+					
 					AddTimes(gs,gs_1,lambda0,M);
-					AddTimes(gs+1,gs_1,lambda_1+1,M-1); //is this correct?
+					AddTimes(gs+1,gs_1,lambda_1+1,M-1); 
 					AddTimes(gs,gs_1+1,lambda1,M-1);
-					Norm(gs,lambda,M); Times(gs,gs,G1,M);
+					Times(gs,gs,G1,M);
 				}
-			} else {
-				for (j=0; j<FJC/2; j++) {
-					kk=(FJC-1)/2-j;
-					AddTimes(gs+kk,gs_1,LAMBDA+j*M+kk,M-kk);
-					AddTimes(gs,gs_1+kk,LAMBDA+(FJC-j-1)*M,M-kk);
+			} 
+			if (fjc==2) {
+				if (geometry=="planar") {
+					YplusisCtimesX(gs+1,gs_1,1.0/6.0,M-2);
+					YplusisCtimesX(gs,gs_1,4.0/6.0,M-1);
+					YplusisCtimesX(gs,gs_1+1,1.0/6.0,M-2);					
+					Times(gs,gs,G1,M);				
+				} else {
+					AddTimes(gs+1,gs_1,LAMBDA+1*M+1,M-1);
+					AddTimes(gs,gs_1+1,LAMBDA+3*M,M-1);
+					AddTimes(gs,gs_1,LAMBDA+2*M,M);
+					Times(gs,gs,G1,M);
 				}
-				AddTimes(gs,gs_1,LAMBDA+(FJC-1)/2*M,M);
-				Times(gs,gs,G1,M);
 			}
 			break;
 		case 2:
-			Zero(gs,M); set_bounds(gs_1);
-			if (geometry=="planar") {
-				Add(gs,gs_1+1,M-1);
-				Add(gs+1,gs_1,M-1);
-				Add(gs+JX,gs_1,M-JX);
-				Add(gs,gs_1+JX,M-JX);
-				YplusisCtimesX(gs,gs_1,2.0,M);
-				Norm(gs,lambda,M); Times(gs,gs,G1,M);
-			} else {
-				Add(gs,gs_1+1,M-1);
-				Add(gs+1,gs_1,M-1);
-				YplusisCtimesX(gs,gs_1,2.0,M);
-				AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
-				AddTimes(gs,gs_1+JX,lambda1,M-JX);
-				Norm(gs,lambda,M);Times(gs,gs,G1,M);
+			if (fjc==1) {
+				if (geometry=="planar") {
+					YplusisCtimesX(gs,gs_1,16.0/36.0,M);
+					YplusisCtimesX(gs+1,gs_1,4.0/36.0,M-1);
+					YplusisCtimesX(gs,gs_1+1,4.0/36.0,M-1);
+					YplusisCtimesX(gs+JX,gs_1,4.0/36.0,M-JX);
+					YplusisCtimesX(gs,gs_1+JX,4.0/36.0,M-JX);
+					YplusisCtimesX(gs+JX+1,gs_1,1.0/36.0,M-JX-1);
+					YplusisCtimesX(gs+JX,gs_1+1,1.0/36.0,M-JX);
+					YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0,M-JX);
+					YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0,M-JX-1);
+					Times(gs,gs,G1,M);
+				} else {
+					AddTimes(gs+JX,gs_1,lambda_1-JX,M-JX);
+					AddTimes(gs,gs_1+JX,lambda1,M-JX);
+					Norm(gs,4.0,M);
+					AddTimes(gs+JX+1,gs_1,lambda_1-JX,M-JX-1);
+					AddTimes(gs+JX,gs_1+1,lambda_1-JX,M-JX);
+					AddTimes(gs+1,gs_1+JX,lambda1,M-JX);
+					AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1); 
+					Norm(gs,1.0/6.0,M);
+					YplusisCtimesX(gs,gs_1,16.0/36.0,M);
+					YplusisCtimesX(gs+1,gs_1,4.0/36.0,M-1);
+					YplusisCtimesX(gs,gs_1+1,4.0/36.0,M-1);
+					Times(gs,gs,G1,M);
+				}
+			} 
+			if (fjc==2) {
+				if (geometry=="planar") {
+					YplusisCtimesX(gs,gs_1,16.0/36.0,M);
+					YplusisCtimesX(gs+1,gs_1,4.0/36.0,M-1);
+					YplusisCtimesX(gs,gs_1+1,4.0/36.0,M-1);
+					YplusisCtimesX(gs+JX,gs_1,4.0/36.0,M-JX);
+					YplusisCtimesX(gs,gs_1+JX,4.0/36.0,M-JX);
+					YplusisCtimesX(gs+JX+1,gs_1,1.0/36.0,M-JX-1);
+					YplusisCtimesX(gs+JX,gs_1+1,1.0/36.0,M-JX);
+					YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0,M-JX);
+					YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0,M-JX-1);
+					Times(gs,gs,G1,M);
+				} else {
+					AddTimes(gs+JX,gs_1,LAMBDA+M-JX,M-JX);
+					AddTimes(gs,gs_1+JX,LAMBDA+3*M,M-JX);
+					Norm(gs,4.0,M);
+					AddTimes(gs+JX+1,gs_1,LAMBDA+M-JX,M-JX-1);
+					AddTimes(gs+JX,gs_1+1,LAMBDA+M-JX,M-JX);
+					AddTimes(gs+1,gs_1+JX,LAMBDA+3*M,M-JX);
+					AddTimes(gs,gs_1+JX+1,LAMBDA+3*M,M-JX-1); 
+					Norm(gs,1.0/6.0,M);
+					YplusisCtimesX(gs,gs_1,16.0/36.0,M);
+					YplusisCtimesX(gs+1,gs_1,4.0/36.0,M-1);
+					YplusisCtimesX(gs,gs_1+1,4.0/36.0,M-1);
+					Times(gs,gs,G1,M);	
+				} 
 			}
 			break;
 		case 3:
 			if (k>0) {JX_=jx[k]; JY_=jy[k];}
-			Zero(gs,M); set_bounds(gs_1);
+						
 			Add(gs+JX_,gs_1,M-JX_); Add(gs,gs_1+JX_,M-JX_);
 			Add(gs+JY_,gs_1,M-JY_); Add(gs,gs_1+JY_,M-JY_);
 			Add(gs+1,gs_1,M-1);  Add(gs,gs_1+1, M-1);
 			Norm(gs,1.0/6.0,M); Times(gs,gs,G1,M);
+
 			break;
 		default:
 			break;
@@ -1197,49 +1283,73 @@ if (debug) cout <<" propagate in lattice " << endl;
 template void Lattice::remove_bounds<int>(int*);
 template void Lattice::remove_bounds<Real>(Real*);
 
+
+
 template <typename T>
 void Lattice::remove_bounds(T *X){
-if (debug) cout <<" remove_bounds (Real) in lattice " << endl;
-	int x,y;
-	int j;
+if (debug) cout <<"remove_bounds in lattice " << endl;
+	int x,y,z;
+	int k;
 	switch(gradients) {
 		case 1:
 			if (fjc==1) {
-				X[0]=0; X[MX+1]=0;
+				X[0]=0; 
+				X[MX+1]=0;
 			} else {
-				for (j=0; j<fjc; j++) {
-					X[j]=0;
-					X[(MX+2)*fjc-j-1]=0;
-				}
+				for (k=0; k<fjc; k++) {
+					X[(fjc-1)-k]=0;
+					X[MX+fjc+k]=0;
+				} 
 			}
 			break;
 		case 2:
-			for (x=1; x<MX+1; x++) {
-				X[x*JX+0] = 0;
-				X[x*JX+MY+1]=0;
+			if (fjc==1) {
+				for (x=1; x<MX+1; x++) {
+					X[x*JX+0] = 0;
+					X[x*JX+MY+1]=0;
+				}
+				for (y=1; y<MY+1; y++) {
+					X[0+y] = 0;
+					X[(MX+1)*JX+y]=0;
+				}
+			} else {
+				for (x=fjc; x<MX+fjc; x++) {
+					for (k=0; k<fjc; k++) X[x*JX+(fjc-1)-k] =0;
+					for (k=0; k<fjc; k++) X[x*JX+MY+fjc+k]=0;
+				}
+				for (y=fjc; y<MY+fjc; y++) {
+					for (k=0; k<fjc; k++) X[(fjc-1-k)*JX +y*JY] = 0;
+					for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY]=0;
+				}
+
 			}
-			for (y=1; y<MY+1; y++) {
-				X[0+y] = 0;
-				X[(MX+1)*JX+y]=0;
-			}
-			X[0]             =0;
-			X[(MX+1)*JX]     =0;
-			X[0+MY+1]        =0;
-			X[(MX+1)*JX+MY+1]=0;
 			break;
 		case 3:
-			if (sub_box_on!=0) {int k=sub_box_on;
+			if (sub_box_on!=0) { 
+				int k=sub_box_on;
 				for (int i=0; i<n_box[k]; i++)
-				RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
-			} else {
-			RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-			}
+					RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
+			} else
+				if (fjc==1) RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
+					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
+						for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = 0;
+						for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = 0;
+					}
+					for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+						for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = 0;
+						for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = 0;
+					}
+					for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
+						for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = 0;
+						for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = 0;
+					}					
+				}
 			break;
 		default:
-
 			break;
 	}
 }
+
 
 //Specify which types can be used by set_bounds
 template void Lattice::set_bounds<int>(int*);
@@ -1247,41 +1357,63 @@ template void Lattice::set_bounds<Real>(Real*);
 
 template <typename T>
 void Lattice::set_bounds(T *X){
-if (debug) cout <<"set_bounds (Reals) in lattice " << endl;
-	int x,y;
-	int j;
+if (debug) cout <<"set_bounds in lattice " << endl;
+	int x,y,z;
+	int k;
 	switch(gradients) {
 		case 1:
 			if (fjc==1) {
-				X[0]=X[BX1]; X[MX+1]=X[BXM];
+				X[0]=X[BX1]; 
+				X[MX+1]=X[BXM];
 			} else {
-				for (j=0; j<fjc; j++) {
-					X[j]=X[(BX1+1)*fjc-j-1];
-					X[(MX+2)*fjc-j-1]=X[BXM*fjc+j];
-				}
+				for (k=0; k<fjc; k++) {
+					X[(fjc-1)-k]=X[B_X1[k]];
+					X[MX+fjc+k]=X[B_XM[k]];
+				} 
 			}
 			break;
 		case 2:
-			for (x=1; x<MX+1; x++) {
-				X[x*JX+0] = X[x*JX+BY1];
-				X[x*JX+MY+1]=X[x*JX+BYM];
+			if (fjc==1) {
+				for (x=1; x<MX+1; x++) {
+					X[x*JX+0] = X[x*JX+BY1];
+					X[x*JX+MY+1]=X[x*JX+BYM];
+				}
+				for (y=1; y<MY+1; y++) {
+					X[0+y] = X[BX1*JX+y];
+					X[(MX+1)*JX+y]=X[BXM*JX+y];
+				}
+			} else {
+				for (x=fjc; x<MX+fjc; x++) {
+					for (k=0; k<fjc; k++) X[x*JX+(fjc-1)-k] = X[x*JX+B_Y1[k]];
+					for (k=0; k<fjc; k++) X[x*JX+MY+fjc+k]=X[x*JX+B_YM[k]];
+				}
+				for (y=fjc; y<MY+fjc; y++) {
+					for (k=0; k<fjc; k++) X[(fjc-1-k)*JX +y*JY] = X[B_X1[k]*JX+y*JY];
+					for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY]=X[B_XM[k]*JX+y*JY];
+				}
+
 			}
-			for (y=1; y<MY+1; y++) {
-				X[0+y] = X[BX1*JX+y];
-				X[(MX+1)*JX+y]=X[BXM*JX+y];
-			}
-			X[0]             =X[1]*X[JX]; if (X[0]>0) X[0]=sqrt(X[0]);
-			X[(MX+1)*JX]     =X[MX*JX]*X[(MX+1)*JX+1]; if (X[(MX+1)*JX]>0) X[(MX+1)*JX]=sqrt(X[(MX+1)*JX]);
-			X[0+MY+1]        =X[JX+MY+1]*X[0+MY]; if (X[MY+1]>0) X[MY+1]=sqrt(X[MY+1]);
-			X[(MX+1)*JX+MY+1]=X[MX*JX+MY+1]*X[(MX+1)*JX+MY]; if (X[(MX+1)*JX+MY+1]>0) X[(MX+1)*JX+MY+1]=sqrt(X[(MX+1)*JX+MY+1]);
 			break;
 		case 3:
-			if (sub_box_on!=0) {
+			if (sub_box_on!=0) { 
 				int k=sub_box_on;
 				for (int i=0; i<n_box[k]; i++)
 					SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 			} else
-				SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+				if (fjc==1) SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
+					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
+						for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+B_Z1[k]];
+						for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+					}
+					for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+						for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
+						for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
+					}
+					for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
+						for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
+						for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
+					}					
+				}
 			break;
 		default:
 			break;
@@ -1534,43 +1666,43 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					In[0]->split(s,',',xyz);
 					switch(gradients) {
 					case 3:
-								if (xyz.size()!=3) {
-									cout << "In mon " + seg_name+ " pinned_range  the expected 'triple coordinate' -with brackets- structure '(x,y,z)' was not found. " << endl;  success = false;
-									break;
-								}
-									px=In[0]->Get_int(xyz[0],0);
-									if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 1.." << MX << endl; success =false;}
-									py=In[0]->Get_int(xyz[1],0);
-									if (py < 1 || py > MY) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MY << endl; success =false;}
-									pz=In[0]->Get_int(xyz[2],0);
-									if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MZ << endl; success =false;}
-								H_p[i]=px*JX+py*JY+pz;
+						if (xyz.size()!=3) {
+							cout << "In mon " + seg_name+ " pinned_range  the expected 'triple coordinate' -with brackets- structure '(x,y,z)' was not found. " << endl;  success = false;
+							break;
+						}
+						px=In[0]->Get_int(xyz[0],0);
+						if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 1.." << MX << endl; success =false;}
+						py=In[0]->Get_int(xyz[1],0);
+						if (py < 1 || py > MY) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MY << endl; success =false;}
+						pz=In[0]->Get_int(xyz[2],0);
+						if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MZ << endl; success =false;}
+						H_p[i]=px*JX+py*JY+fjc-1+pz;
 						break;
 					case 2:
-								if (xyz.size()!=2) {
-									cout << "In mon " + seg_name+ " pinned_range  the expected 'pair of coordinate' -with brackets- structure '(x,y)' was not found. " << endl;  success = false;
-								} else {
-									px=In[0]->Get_int(xyz[0],0);
-									if (px < 0 || px > MX+1) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 0.." << MX+1 << endl; success =false;}
-									py=In[0]->Get_int(xyz[1],0);
-									if (py < 0 || py > MY+1) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 0.." << MY+1 << endl; success =false;}
-								}
-								H_p[i]=px*JX+py;
+						if (xyz.size()!=2) {
+							cout << "In mon " + seg_name+ " pinned_range  the expected 'pair of coordinate' -with brackets- structure '(x,y)' was not found. " << endl;  success = false;
+						} else {
+							px=In[0]->Get_int(xyz[0],0);
+							if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 0.." << MX+1 << endl; success =false;}
+							py=In[0]->Get_int(xyz[1],0);
+							if (py < 1 || py > MY) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 0.." << MY+1 << endl; success =false;}
+						}
+						H_p[i]=px*JX+fjc-1+py;
 						break;
 					case 1:
-							if (xyz.size()!=1) {
-								cout << "In mon " + seg_name+ " pinned_range  the expected 'single coordinate' -with brackets- structure '(x)' was not found. " << endl;  success = false;
-							} else {
-								px=In[0]->Get_int(xyz[0],0);
-								if (px < 0 || px > MX+1) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 0.." << MX+1 << endl; success =false;}
-							}
-							H_p[i]=px;
-					break;
-				default:
-					break;
+						if (xyz.size()!=1) {
+							cout << "In mon " + seg_name+ " pinned_range  the expected 'single coordinate' -with brackets- structure '(x)' was not found. " << endl;  success = false;
+						} else {
+							px=In[0]->Get_int(xyz[0],0);
+							if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 0.." << MX+1 << endl; success =false;}
+						}
+						H_p[i]=fjc-1+px;
+						break;
+					default:
+						break;
+					}
 				}
 			}
-		}
 
 		}
 	}
@@ -1601,115 +1733,115 @@ if (debug) cout <<"ReadRangeFile in lattice " << endl;
 
 	switch(gradients) {
 		case 1:
-				if (length == MX) { //expect to read 'mask file';
-					if (n_pos==0) {
-						for (i = 0 ; i < length ; ++i) {
-							if (In[0]->Get_int(lines[i],0)==1) n_pos++;
-						}
-						if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
-					} else {
-						p_i=0;
-						for (x=1; x<MX+1; x++) {
-							if (In[0]->Get_int(lines[x-1],0)==1) {H_p[p_i]=x; p_i++;}
-						}
+			if (length == MX) { //expect to read 'mask file';
+				if (n_pos==0) {
+					for (i = 0 ; i < length ; ++i) {
+						if (In[0]->Get_int(lines[i],0)==1) n_pos++;
 					}
-				} else { //expect to read x only
-					px=0,py=0; i=0;
-					if (n_pos==0) n_pos=length;
-					else {
-						while (i<length) {
-							xyz.clear();
-							In[0]->split(lines[i],',',xyz);
-							length_xyz=xyz.size();
-							if (length_xyz!=1) {
-								cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'single coordinate' 'x' was not found. " << endl;  success = false;
-							} else {
-								px=In[0]->Get_int(xyz[0],0);
-								if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
-							}
-							H_p[i]=px;
-							i++;
-						}
+					if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
+				} else {
+					p_i=0;
+					for (x=1; x<MX+1; x++) {
+						if (In[0]->Get_int(lines[x-1],0)==1) {H_p[p_i]=fjc-1+x; p_i++;}
 					}
 				}
+			} else { //expect to read x only
+				px=0,py=0; i=0;
+				if (n_pos==0) n_pos=length;
+				else {
+					while (i<length) {
+						xyz.clear();
+						In[0]->split(lines[i],',',xyz);
+						length_xyz=xyz.size();
+						if (length_xyz!=1) {
+							cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'single coordinate' 'x' was not found. " << endl;  success = false;
+						} else {
+							px=In[0]->Get_int(xyz[0],0);
+							if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
+						}
+						H_p[i]=fjc-1+px;
+						i++;
+					}
+				}
+			}
 			break;
 		case 2:
-				if (length == MX*MY) { //expect to read 'mask file';
-					i=0;
-					if (n_pos==0) {
-						while (i<length){
-							if (In[0]->Get_int(lines[i],0)==1) n_pos++;
-							i++;
-						};
-						if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
-					} else {
-						i=0; p_i=0;
-						for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++)  {
-							if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=x*JX+y; p_i++;}
-							i++;
-						}
-					}
-				} else { //expect to read x,y
-					px=0,py=0; i=0;
-					if (n_pos==0) n_pos=length;
-					else {
-						while (i<length) {
-							xyz.clear();
-							In[0]->split(lines[i],',',xyz);
-							length_xyz=xyz.size();
-							if (length_xyz!=2) {
-								cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'pair of coordinates' 'x,y' was not found. " << endl;  success = false;
-							} else {
-								px=In[0]->Get_int(xyz[0],0);
-								if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
-								py=In[0]->Get_int(xyz[1],0);
-								if (py < 1 || py > MY) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MY << endl; success =false;}
-							}
-							H_p[i]=px*JX+py;
-							i++;
-						}
+			if (length == MX*MY) { //expect to read 'mask file';
+				i=0;
+				if (n_pos==0) {
+					while (i<length){
+						if (In[0]->Get_int(lines[i],0)==1) n_pos++;
+						i++;
+					};
+					if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
+				} else {
+					i=0; p_i=0;
+					for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++)  {
+						if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=x*JX+fjc-1+y; p_i++;}
+						i++;
 					}
 				}
+			} else { //expect to read x,y
+				px=0,py=0; i=0;
+				if (n_pos==0) n_pos=length;
+				else {
+					while (i<length) {
+						xyz.clear();
+						In[0]->split(lines[i],',',xyz);
+						length_xyz=xyz.size();
+						if (length_xyz!=2) {
+							cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'pair of coordinates' 'x,y' was not found. " << endl;  success = false;
+						} else {
+							px=In[0]->Get_int(xyz[0],0);
+							if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
+							py=In[0]->Get_int(xyz[1],0);
+							if (py < 1 || py > MY) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MY << endl; success =false;}
+						}
+						H_p[i]=px*JX+fjc-1+py;
+						i++;
+					}
+				}
+			}
 			break;
 		case 3:
-				if (length == MX*MY*MZ) { //expect to read 'mask file';
-					i=0;
-					if (n_pos==0) {
-						while (i<length){
-							if (In[0]->Get_int(lines[i],0)==1) n_pos++;
-							i++;
-						};
-						if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
-					} else {
-						i=0; p_i=0;
-						for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++) {
-							if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=x*JX+y*JY+z; p_i++;}
-							i++;
-						}
-					}
-				} else { //expect to read x,y,z
-					px=0,py=0,pz=0; i=0;
-					if (n_pos==0) n_pos=length;
-					else {
-						while (i<length) {
-							xyz.clear();
-							In[0]->split(lines[i],',',xyz);
-							length_xyz=xyz.size();
-							if (length_xyz!=3) {
-								cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'triple coordinate' structure 'x,y,z' was not found. " << endl;  success = false;
-							} else {
-								px=In[0]->Get_int(xyz[0],0);
-								if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
-								py=In[0]->Get_int(xyz[1],0);
-								if (py < 1 || py > MY) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MY << endl; success =false;}
-								pz=In[0]->Get_int(xyz[2],0);
-								if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MZ << endl; success =false;}
-							}
-							H_p[i]=px*JX+py*JY+pz;
-							i++;
-						}
+			if (length == MX*MY*MZ) { //expect to read 'mask file';
+				i=0;
+				if (n_pos==0) {
+					while (i<length){
+						if (In[0]->Get_int(lines[i],0)==1) n_pos++;
+						i++;
+					};
+					if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
+				} else {
+					i=0; p_i=0;
+					for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++) {
+						if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=x*JX+y*JY+fjc-1+z; p_i++;}
+						i++;
 					}
 				}
+			} else { //expect to read x,y,z
+				px=0,py=0,pz=0; i=0;
+				if (n_pos==0) n_pos=length;
+				else {
+					while (i<length) {
+						xyz.clear();
+						In[0]->split(lines[i],',',xyz);
+						length_xyz=xyz.size();
+						if (length_xyz!=3) {
+							cout << "In mon " + seg_name + " " +range_type+"_filename  the expected 'triple coordinate' structure 'x,y,z' was not found. " << endl;  success = false;
+						} else {
+							px=In[0]->Get_int(xyz[0],0);
+							if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
+							py=In[0]->Get_int(xyz[1],0);
+							if (py < 1 || py > MY) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MY << endl; success =false;}
+							pz=In[0]->Get_int(xyz[2],0);
+							if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MZ << endl; success =false;}
+						}
+						H_p[i]=px*JX+py*JY+fjc-1+pz;
+						i++;
+					}
+				}
+			}
 			break;
 		default:
 			break;
@@ -1744,7 +1876,7 @@ bool Lattice::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, s
 			} else  {
 				for (int i=0; i<length_px; i++) {
 					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; } 
-					else Mask[px[i]]=1;
+					else Mask[fjc-1+px[i]]=1;
 				}
 			} 
 			break;
@@ -1759,7 +1891,7 @@ bool Lattice::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, s
 				for (int i=0; i<length_px; i++) {
 					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; } 
 					p=py[i]; if (p<1 || p>MY) {success=false; cout<<" y-value in delta_range out of bounds; " << endl; }
-					if (success) Mask[px[i]*JX + py[i]]=1;
+					if (success) Mask[px[i]*JX + fjc-1+ py[i]]=1;
 				}
 			}
 
@@ -1778,7 +1910,7 @@ bool Lattice::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, s
 					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; } 
 					p=py[i]; if (p<1 || p>MY) {success=false; cout<<" y-value in delta_range out of bounds; " << endl; }
 					p=pz[i]; if (p<1 || p>MZ) {success=false; cout<<" z-value in delta_range out of bounds; " << endl; }
-					if (success) Mask[px[i]*JX + py[i]*JY + pz[i]]=1;
+					if (success) Mask[px[i]*JX + py[i]*JY + fjc-1+ pz[i]]=1;
 				}
 			}
 			break;
@@ -1796,24 +1928,19 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 	if (block) {
 		switch(gradients) {
 			case 1:
-				if (fjc==1) {
-					for (int x=r[0]; x<r[3]+1; x++)
-						H_MASK[x]=1;
-				} else {
-					for (int x=r[0]*fjc; x<(r[3]+1)*fjc; x++)
-						H_MASK[x]=1;
-				}
+				for (int x=r[0]; x<r[3]+1; x++)
+						H_MASK[fjc-1+x]=1;
 			break;
 			case 2:
 				for (int x=r[0]; x<r[3]+1; x++)
-					for (int y=r[1]; y<r[4]+1; y++)
-						H_MASK[x*JX+y]=1;
+				for (int y=r[1]; y<r[4]+1; y++)
+						H_MASK[x*JX+fjc-1+y]=1;
 			break;
 			case 3:
 				for (int x=r[0]; x<r[3]+1; x++)
-					for (int y=r[1]; y<r[4]+1; y++)
-						for (int z=r[2]; z<r[5]+1; z++)
-							H_MASK[x*JX+y*JY+z]=1;
+				for (int y=r[1]; y<r[4]+1; y++)
+				for (int z=r[2]; z<r[5]+1; z++)
+							H_MASK[x*JX+y*JY+fjc-1+z]=1;
 			break;
 			default:
 			break;
@@ -1824,12 +1951,14 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 	return success;
 }
 
+
 bool Lattice::GenerateGuess(Real* x, string CalculationType, string GuessType, Real A_value, Real B_value) {
 if (debug) cout <<"GenerateGuess in lattice " << endl;
 //GuessType: lamellae,Im3m,FCC,BCC,HEX,gyroid,Real_gyroid,Real_diamond,perforated_lamellae
 //CalculationType: micro_emulsion,micro_phasesegregation
 	bool success = true;
 	int i,j,k;
+	if (fjc>1) cout <<"GenerateGuess is not yet prepared to work for FJC-choices > 3 " << endl; 
 	switch (gradients) {
 		case 1:
 			if (GuessType=="lamellae") {
@@ -1881,6 +2010,7 @@ bool Lattice::GuessVar(Real* x, Real theta,string GuessType, Real A_value, Real 
 if (debug) cout << "GuessVar in Lattice " << endl;
 	bool success = true;
 	int i;
+	if (fjc>1) cout <<"GuessVar is not yet prepared to work for FJC-choices > 3 " << endl; 
 	int height = theta/1;
 	switch (gradients) {
 		case 1:
@@ -1939,6 +2069,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 	string s_charge;
 	int num_1,num_2;
 	string name;
+ 	if (fjc>1) cout <<"ReadGuess is not  yet prepared for working with FJC-choices > 3 " << endl; 
 	in_file.open(filename.c_str());
 	if (in_file.is_open()) {
 		while (in_file && readx>-1) {
@@ -1982,7 +2113,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 bool Lattice::StoreGuess(string Filename,Real *x,string method, vector<string> monlist,vector<string>statelist, bool charged, int start) {
 if (debug) cout <<"StoreGuess in output" << endl;
 	bool success=true;
-
+ 	if (fjc>1) cout <<"StoreGuess is not  yet prepared for working with FJC-choices > 3 " << endl; 
 	string s;
 	int mon_length = monlist.size();
 	int state_length = statelist.size();
@@ -2020,198 +2151,506 @@ if (debug) cout <<"StoreGuess in output" << endl;
 
 
 
-void Lattice::UpdateEE(Real* EE, Real* psi) {
-	int x,y;
-	Real Exmin,Explus,Eymin,Eyplus;
-	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_bT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
-
+void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
+	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_BT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
+	set_bounds(psi);
+	Zero(EE,M);
 	switch (gradients) {
 		case 1:
-			Explus = psi[0]-psi[1];
-			Explus *= Explus;
-			for (x=1; x<M-1; x++) {
-				Exmin = Explus;
-				Explus = psi[x]-psi[x+1];
-				Explus *= Explus;
-				if (geometry=="planar")
-					EE[x] = pf*(Exmin + Explus);
-				else
-					EE[x] = pf*(lambda_1[x]*Exmin+lambda1[x]*Explus);
+			if (fjc==1) {
+				YisAminB(EE+1,psi,psi+2,M-2);
+				Times(EE,EE,EE,M);
+				Norm(EE,pf/4.0,M);
 			}
-			if (fjc>1) cout <<"Error in updateEE " << endl;
+			if (fjc==2) {
+				Cp(EE,psi+2,M-2);
+				YplusisCtimesX(EE,psi+1,-8.0,M-1);
+				YplusisCtimesX(EE+1,psi,8.0,M-1);
+				YplusisCtimesX(EE+2,psi,-1.0,M-2);
+				Times(EE,EE,EE,M);
+				Norm(EE,pf/144.0,M);
+			}
 			break;
 		case 2:
-			for (x=1; x<MX+1; x++) {
-				Eyplus = psi[x*JX]-psi[x*JX+1];
-				Eyplus *=Eyplus;
-				for (y=1; y<MY+1; y++) {
-					Eymin=Eyplus;
-					Eyplus = psi[x*JX+y]-psi[x*JX+y+1];
-					Eyplus *=Eyplus;
-					Exmin = psi[x*JX+y]-psi[(x-1)*JX+y];
-					Exmin *=Exmin;
-					Explus=psi[x*JX+y]-psi[(x+1)*JX+y];
-					Explus *=Explus;
-					if (geometry=="flat") {
-						EE[x*JX+y]=pf*(Exmin+Explus+Eymin+Eyplus);
-					} else {
-						EE[x*JX+y]=pf*(lambda_1[x*JX+y]*Exmin+lambda1[x*JX+y]*Explus+Eymin+Eyplus);
-					}
-				}
+			if (fjc==1) {
+				YisAminB(EE+1,psi,psi+2,M-2);
+				Times(EE,EE,EE,M);
+				Norm(EE,pf/4.0,M);
+				YisAminB(E+JX,psi,psi+2*JX,M-2*JX);
+				Times(E,E,E,M);
+				YplusisCtimesX(EE,E,pf/4.0,M);
+			}
+
+			if (fjc==2) {
+				Cp(EE,psi+2,M-2);
+				YplusisCtimesX(EE,psi+1,-8.0,M-1);
+				YplusisCtimesX(EE+1,psi,8.0,M-1);
+				YplusisCtimesX(EE+2,psi,-1.0,M-2);
+				Times(EE,EE,EE,M);
+				Norm(EE,pf/144.0,M);
+				Cp(E,psi+2*JX,M-2*JX);
+				YplusisCtimesX(E,psi+JX,-8.0,M-JX);
+				YplusisCtimesX(E+JX,psi,8.0,M-JX);
+				YplusisCtimesX(E+2*JX,psi,-1.0,M-2*JX);
+				Times(E,E,E,M);
+				YplusisCtimesX(EE,E,pf/144.0,M);
+
 			}
 			break;
 		case 3:
-			Zero(EE,M);
-			AddGradSquare(EE+1,psi,psi+1,psi+2,M-2);
-			AddGradSquare(EE+JX,psi,psi+JX,psi+2*JX,M-2*JX);
-			AddGradSquare(EE+JY,psi,psi+JY,psi+2*JY,M-2*JY);
-			Norm(EE,pf,M);
+			if (fjc==1){
+				YisAminB(EE+1,psi,psi+2,M-2);
+				Times(EE,EE,EE,M);
+				Norm(EE,pf/4.0,M);
+				YisAminB(E+JX,psi,psi+2*JX,M-2*JX);
+				Times(E,E,E,M);
+				YplusisCtimesX(EE,E,pf/4.0,M);
+				YisAminB(E+JY,psi,psi+2*JY,M-2*JY);
+				Times(E,E,E,M);
+				YplusisCtimesX(EE,E,pf/4.0,M);
+			}
+			if (fjc==2) {
+				Cp(EE,psi+2,M-2);
+				YplusisCtimesX(EE,psi+1,-8.0,M-1);
+				YplusisCtimesX(EE+1,psi,8.0,M-1);
+				YplusisCtimesX(EE+2,psi,-1.0,M-2);
+				Times(EE,EE,EE,M);
+				Norm(EE,pf/144.0,M);
+				Cp(E,psi+2*JX,M-2*JX);
+				YplusisCtimesX(E,psi+JX,-8.0,M-JX);
+				YplusisCtimesX(E+JX,psi,8.0,M-JX);
+				YplusisCtimesX(E+2*JX,psi,-1.0,M-2*JX);
+				Times(E,E,E,M);
+				YplusisCtimesX(EE,E,pf/144.0,M);
+				Cp(E,psi+2*JY,M-2*JX);
+				YplusisCtimesX(E,psi+JY,-8.0,M-JY);
+				YplusisCtimesX(E+JY,psi,8.0,M-JY);
+				YplusisCtimesX(E+2*JY,psi,-1.0,M-2*JY);
+				Times(E,E,E,M);
+				YplusisCtimesX(EE,E,pf/144.0,M);				
+			}
 			break;
 		default:
-			cout <<"GetEE wrongly implemented in lattice: " << endl;
 			break;
 	}
 
 }
 
-void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask) { //not only update psi but also g (from newton).
+void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
 	int x,y;
-	#ifndef CUDA
+#ifndef CUDA
 	int z;
-	#endif
+#endif
 
-	Real epsXplus,epsXmin,epsYplus,epsYmin;
-	#ifndef CUDA
-	Real epsZplus, epsZmin;
-	#endif
+	//Real epsXplus,epsXmin,epsYplus,epsYmin;
+#ifndef CUDA
+	//Real epsZplus, epsZmin;
+#endif
+	int i; 
+	int imax;	
 
 	Real C = e*e/(eps0*k_BT*bond_length);
+   if (!fixedPsi0) {
 	switch (gradients) {
 		case 1:
-			C*=2;
-			epsXplus=(eps[0]+eps[1]);
-			for (x=1; x<M-1; x++) {
-				epsXmin=epsXplus;
-				epsXplus=eps[x]+eps[x+1];
-				if (Mask[x]==0) { //use updated psi at subsequent coordinates = Jacobian trick. Upwind to larger x.
-					if (geometry == "planar" ) {
-						psi[x] = (epsXmin*psi[x-1]+epsXplus*psi[x+1]+C*q[x])/(epsXplus+epsXmin);
-					} else {
-						psi[x] = (lambda_1[x]*epsXmin*psi[x-1]+lambda1[x]*epsXplus*psi[x+1]+C*q[x])/(lambda_1[x]*epsXplus+lambda1[x]*epsXmin);
+			imax = pow(1.0*MX,1.0/3.0); //imax repeats of the first term to 'spread' the psi over the system.
+			if (fjc==1) {
+				for (i=0; i<imax; i++) {	
+					for (x=1; x<MX+1; x++) { //for all geometries
+						psi[x]=0.5*(psi[x-1]+psi[x+1])+q[x]*C/eps[x];
+					}
+					for (x=MX; x>0; x--) { //for all geometries
+						psi[x]=0.5*(psi[x-1]+psi[x+1])+q[x]*C/eps[x];
 					}
 				}
-			}
-			epsXmin=eps[M-1]+eps[M-2];
-			for (x=M-2; x>0; x--) { //perform backward update as well in case potentials need to 'diffuse' to lower x: downwind.
-				epsXplus=epsXmin;
-				epsXmin=eps[x]+eps[x-1];
-				if (Mask[x]==0) {
-					if (geometry=="planar") {
-						psi[x] = (epsXmin*psi[x-1]+epsXplus*psi[x+1]+C*q[x])/(epsXplus+epsXmin);
-					} else {
-						psi[x] = (lambda_1[x]*epsXmin*psi[x-1]+lambda1[x]*epsXplus*psi[x+1]+C*q[x])/(lambda_1[x]*epsXplus+lambda1[x]*epsXmin);
+	
+				if (geometry=="cylindrical") {
+					for (x=1; x<MX+1; x++) {
+						psi[x]+=(psi[x+1]-psi[x-1])/(2.0*(x+offset_first_layer-0.5));
 					}
-					g[x]-=psi[x];
+				}
+				if (geometry=="spherial") {
+					for (x=1; x<MX+1; x++) {
+						psi[x]+=(psi[x+1]-psi[x-1])/(x+offset_first_layer-0.5);
+					}
+				}
+				if (grad_epsilon) for (x=1; x<MX+1; x++) {//for all geometries
+					psi[x]+=0.25*(eps[x+1]-eps[x-1])*(psi[x+1]-psi[x-1])/eps[x];
 				}
 			}
-			if (fjc>1) cout <<"error in UpdatePsi" << endl;
+			if (fjc==2) {
+				for (i=0; i<imax; i++) {
+					for (x=fjc; x<MX+fjc; x++) { //for all geometries
+						psi[fjc-1+x]=(-psi[x-2]+16.0*psi[x-1]+16.0*psi[x+1]-psi[x+2]+12*q[x]*C/eps[x])/30.0;
+					}
+					for (x=MX+fjc-1; x>fjc-1; x--) { //for all geometries
+						psi[x]=(-psi[x-2]+16.0*psi[x-1]+16.0*psi[x+1]-psi[x+2]+12*q[x]*C/eps[x])/30.0;
+					}
+				}
+	
+				if (geometry=="cylindrical") {
+					for (x=1; x<MX+1; x++) {
+						psi[x]+=(psi[x+2]-8.0*psi[x+1]+8.0*psi[x-1]-psi[x-2])/(12.0*(x+offset_first_layer-0.25)); 
+					}
+				}
+				if (geometry=="spherial") {
+					for (x=1; x<MX+1; x++) {
+						psi[x]+=(psi[x+2]-8.0*psi[x+1]+8.0*psi[x-1]-psi[x-2])/(6.0*(x+offset_first_layer-0.25));
+					}
+				}
+				if (grad_epsilon) for (x=1; x<MX+1; x++) {//for all geometries
+					psi[x]+=(eps[x+2]-8.0*eps[x+1]+8.0*eps[x-1]-eps[x-2])*
+						 (psi[x+2]-8.0*psi[x+1]+8.0*psi[x-1]-psi[x-2])/eps[x]/144.0;
+				}
+			}
+			
 			break;
 		case 2:
-			C*=4;
-			for (x=1; x<MX+1; x++) {
-				epsYplus = eps[x*JX]+eps[x*JX+1];
-				for (y=1; y<MY+1; y++) {
-					epsYmin=epsYplus;
-					epsYplus= eps[x*JX+y]+eps[x*JX+y+1];
-					epsXmin = eps[x*JX+y]+eps[(x-1)*JX+y];
-					epsXplus= eps[x*JX+y]+eps[(x+1)*JX+y];
-					if (Mask[x*JX+y]==0) {
-						if (geometry=="flat") {
-							psi[x*JX+y]= (epsXmin*psi[(x-1)*JX+y]+epsXplus*psi[(x+1)*JX+y]+
-								      epsYmin*psi[x*JX+y-1]+epsYplus*psi[x*JX+y+1]+C*q[x*JX+y])/
-								      (epsXmin+epsXplus+epsYmin+epsYplus);
-						} else {
-							psi[x*JX+y]= (lambda_1[x*JX+y]*epsXmin*psi[(x-1)*JX+y]+lambda1[x*JX+y]*epsXplus*psi[(x+1)*JX+y]+
-								      epsYmin*psi[x*JX+y-1]+epsYplus*psi[x*JX+y+1]+C*q[x*JX+y])/
-								     (lambda_1[x*JX+y]*epsXmin+lambda1[x*JX+y]*epsXplus+epsYmin+epsYplus);
-						}
+			imax = pow(1.0*MX,1.0/3.0);
+			if (fjc==1) {
+				for (i=0; i<imax; i++) {	
+					for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){ //for all geometries
+						psi[x*JX+y]=0.25*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
+								   +psi[x*JX+y-1]+psi[x*JX+y+1])
+									+0.5*q[x*JX+y]*C/eps[x*JX+y];
+					}
+					for (x=MX; x>0; x--) for (y=MY; y>0; y--){ //for all geometries
+						psi[x*JX+y]=0.25*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
+							          +psi[x*JX+y-1]+psi[x*JX+y+1])
+									+0.5*q[x*JX+y]*C/eps[x*JX+y];
 					}
 				}
-			}
-			for (x=MX; x>0; x--) {
-				epsYmin = eps[x*JX+MY]+eps[x*JX+MY+1];
-				for (y=MY; y>0; y--) {
-					epsYplus=epsYmin;
-					epsYmin= eps[x*JX+y]+eps[x*JX+y+1];
-					epsXmin = eps[x*JX+y]+eps[(x-1)*JX+y];
-					epsXplus= eps[x*JX+y]+eps[(x+1)*JX+y];
-					if (Mask[x*JX+y]==0) {
-						if (geometry=="flat") {
-							psi[x*JX+y]= (epsXmin*psi[(x-1)*JX+y]+epsXplus*psi[(x+1)*JX+y]+
-								      epsYmin*psi[x*JX+y-1]+epsYplus*psi[x*JX+y+1]+C*q[x*JX+y])/
-								     (epsXmin+epsXplus+epsYmin+epsYplus);
-						} else {
-							psi[x*JX+y]= (lambda_1[x*JX+y]*epsXmin*psi[(x-1)*JX+y]+lambda1[x*JX+y]*epsXplus*psi[(x+1)*JX+y]+
-								      epsYmin*psi[x*JX+y-1]+epsYplus*psi[x*JX+y+1]+C*q[x*JX+y])/
-							             (lambda_1[x*JX+y]*epsXmin+lambda1[x*JX+y]*epsXplus+epsYmin+epsYplus);
-						}
-						g[x*JX+y] -=psi[x*JX+y];
+	
+				if (geometry=="cylindrical") { //radial geometry in x no radial geometry in y
+					for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){
+						psi[x*JX+y]+=(psi[(x+1)*JX+y]-psi[(x-1)*JX+y])/(2.0*(x+offset_first_layer)-1);
 					}
 				}
+				if (grad_epsilon) for (x=1; x<MX+1; x++) for (y=1; y<MX+1; y++) {//for all geometries
+					psi[x*JX+y]+=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
+                                                      eps[x*JX+y+1]-eps[x*JX+y-1])*(psi[x*JX+y+1]-psi[x*JX+y-1])/eps[x*JX+y];
+				}
 			}
+			if (fjc==2) {
+				for (i=0; i<imax; i++) {
+					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) { //for all geometries
+						psi[x*JX+1+y]=(-psi[(x-2)*JX+1+y]+16.0*psi[(x-1)*JX+1+y]+16.0*psi[(x+1)*JX+1+y]-psi[(x+2)*JX+1+y]
+							        -psi[x*JX+y-1]+16.0*psi[x*JX+y]+16.0*psi[x*JX+y+2]-psi[x*JX+y+3]+
+										12*q[x*JX+1+y]*C/eps[x*JX+1+y])/60.0;
+					}
+					for (x=MX+fjc-1; x>fjc-1; x--) for (y=fjc; y<MY+fjc; y++) { //for all geometries
+						psi[x*JX+1+y]=(-psi[(x-2)*JX+1+y]+16.0*psi[(x-1)*JX+1+y]+16.0*psi[(x+1)*JX+1+y]-psi[(x+2)*JX+1+y]
+								 -psi[x*JX+y-1]+16.0*psi[x*JX+y]+16.0*psi[x*JX+y+2]-psi[x*JX+y+3]+
+										12*q[x*JX+1+y]*C/eps[x*JX+1+y])/60.0;
+					}
+				}
+	
+				if (geometry=="cylindrical") {
+					for (x=fjc; x<MX+fjc; x++)  for (y=fjc; y<MY+fjc; y++) {
+						psi[x*JX+1+y]+=(psi[(x+2)*JX+1+y]-8.0*psi[(x+1)*JX+1+y]+8.0*psi[(x-1)*JX+1+y]-psi[(x-2)*JX+1+y])/(12.0*(x+offset_first_layer-0.25));
+					}
+				}
+				if (grad_epsilon) for (x=fjc; x<MX+fjc; x++)  for (y=fjc; y<MY+fjc; y++) {//for all geometries
+						psi[x*JX+1+y]+=((eps[(x+2)*JX+1+y]-8.0*eps[(x+1)*JX+1+y]+8.0*eps[(x-1)*JX+1+y]-eps[(x-2)*JX+1+y])*
+								  (psi[(x+2)*JX+1+y]-8.0*psi[(x+1)*JX+1+y]+8.0*psi[(x-1)*JX+1+y]-psi[(x-2)*JX+1+y])+
+								  (eps[x*JX+y+3]-8.0*eps[x*JX+y+2]+8.0*eps[x*JX+y]-eps[x*JX+y-1])*
+								  (psi[x*JX+y+3]-8.0*psi[x*JX+y+2]+8.0*psi[x*JX+y]-psi[x*JX+y-1]))/eps[x*JX+1+y]/144.0;
+				}
+			}
+
 			break;
 		case 3: //Do not know how to do Jacobi trick in CUDA.
-			C*=6;
 #ifdef CUDA
+			C *=6; 
 			Cp(X,psi,M);
 			UpPsi(g+JX+JY+1,psi+JX+JY+1,X+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1));
+			if (fjc==2) cout << "in GPU FJC-choices > 3 not implemented yet " << endl; 
 #else
-
-			for (x=1; x<MX+1; x++) {
-				for (y=1; y<MY+1; y++) {
-					epsZplus=eps[x*JX+y*JY]+eps[x*JX+y*JY+1];
-					for (z=1; z<MZ+1; z++) {
-						epsZmin=epsZplus;
-						epsZplus=eps[x*JX+y*JY+z]+eps[x*JX+y*JY+z+1];
-						epsYmin= eps[x*JX+y*JY+z]+eps[x*JX+(y-1)*JY+z];
-						epsYplus=eps[x*JX+y*JY+z]+eps[x*JX+(y+1)*JY+z];
-						epsXmin = eps[x*JX+y*JY+z]+eps[(x-1)*JX+y*JY+z];
-						epsXplus= eps[x*JX+y*JY+z]+eps[(x+1)*JX+y*JY+z];
-						if (Mask[x*JX+y*JY+z]==0)
-							psi[x*JX+y*JY+z]= (epsXmin*psi[(x-1)*JX+y*JY+z]+epsXplus*psi[(x+1)*JX+y*JY+z]+
-					    		epsYmin*psi[x*JX+(y-1)*JY+z]+epsYplus*psi[x*JX+(y+1)*JY+z]+
-						 	epsZmin*psi[x*JX+y*JY+z-1]+epsZplus*psi[x*JX+y*JY+z+1]+
-					     		C*q[x*JX+y*JY+z])/(epsXmin+epsXplus+epsYmin+epsYplus+epsZmin+epsZplus);
+			imax = pow(1.0*MX,1.0/3.0);
+			if (fjc==1) {
+				for (i=0; i<imax; i++) {	
+					for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++) { //for all geometries
+						psi[x*JX+y*JY+z]=(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
+									    +psi[x*JX+(y-1)*JY+z]+psi[x*JX+(y+1)*JY+z]
+									    +psi[x*JX+y*JY+z-1]+ psi[x*JX+y*JY+z+1])/6.0
+								           +q[x*JX+y*JY+z]*C/eps[x*JX+y*JY+z]/3.0;
+					}
+					for (x=MX; x>0; x--) for (y=MY; y>0; y--){ //for all geometries
+						psi[x*JX+y*JY+z]=(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
+									    +psi[x*JX+(y-1)*JY+z]+psi[x*JX+(y+1)*JY+z]
+									    +psi[x*JX+y*JY+z-1]+ psi[x*JX+y*JY+z+1])/6.0
+								           +q[x*JX+y*JY+z]*C/eps[x*JX+y*JY+z]/3.0;
 					}
 				}
+	
+				if (grad_epsilon) for (x=1; x<MX+1; x++) for (y=1; y<MX+1; y++)  for (z=1; z<MZ+1; z++){//for all geometries
+					psi[x*JX+y*JY+z]+=0.25*(eps[(x+1)*JX+y*JY+z]-eps[(x-1)*JX+y*JY+z])*(psi[(x+1)*JX+y*JY+z]-psi[(x-1)*JX+y*JY+z]+
+                                                                  eps[x*JX+(y+1)*JY+z]-eps[x*JX+(y-1)*JY+z])*(psi[x*JX+(y+1)*JY+z]-psi[x*JX+(y-1)*JY+z]+
+								          eps[x*JX+y*JY+z-1]-eps[x*JX+y*JY+z+1])*(psi[x*JX+y*JY+z-1]-psi[x*JX+y*JY+z+1])
+								         /eps[x*JX+y*JY+z];
+				}
 			}
-			for (x=MX; x>0; x--) {
-				for (y=MY; y>0; y--) {
-					epsZmin=eps[x*JX+y*JY+MZ+1]+eps[x*JX+y*JY+MZ];
-					for (z=MZ; z>0; z--) {
-						epsZplus=epsZmin;
-						epsZmin=eps[x*JX+y*JY+z]+eps[x*JX+y*JY+z-1];
-						epsYmin= eps[x*JX+y*JY+z]+eps[x*JX+(y-1)*JY+z];
-						epsYplus=eps[x*JX+y*JY+z]+eps[x*JX+(y+1)*JY+z];
-						epsXmin = eps[x*JX+y*JY+z]+eps[(x-1)*JX+y*JY+z];
-						epsXplus= eps[x*JX+y*JY+z]+eps[(x+1)*JX+y*JY+z];
-						if (Mask[x*JX+y*JY+z]==0) {
-							psi[x*JX+y*JY+z]= (epsXmin*psi[(x-1)*JX+y*JY+z]+epsXplus*psi[(x+1)*JX+y*JY+z]+
-							epsYmin*psi[x*JX+(y-1)*JY+z]+epsYplus*psi[x*JX+(y+1)*JY+z]+
-							epsZmin*psi[x*JX+y*JY+z-1]+epsZplus*psi[x*JX+y*JY+z+1]+
-							C*q[x*JX+y*JY+z])/(epsXmin+epsXplus+epsYmin+epsYplus+epsZmin+epsZplus);
-							g[x*JX+y*JY+z]-=psi[x*JX+y*JY+z];
-						}
+			if (fjc==2) {
+				for (i=0; i<imax; i++) {
+					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++){ //for all geometries
+						psi[x*JX+y*JY+1+z]=(-psi[(x-2)*JX+y*JY+1+z]+16.0*psi[(x-1)*JX+y*JY+1+z]+16.0*psi[(x+1)*JX+y*JY+1+z]-psi[(x+2)*JX+y*JY+1+z]
+									      -psi[x*JX+(y-2)*JY+1+z]+16.0*psi[x*JX+(y-1)*JY+1+z]+16.0*psi[x*JX+(y+1)*JY+1+z]-psi[x*JX+(y+2)*JY+1+z]+
+									      -psi[x*JX+y*JY+z-1]+16.0*psi[x*JX+y*JY+z]+16.0*psi[x*JX+y*JY+z+2]-psi[x*JX+y*JY+z+3]+
+										12*q[x*JX+y*JY+1+z]*C/eps[x*JX+y*JY+1+z])/90.0;
 					}
+					for (x=MX+fjc-1; x>fjc-1; x--) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++){ //for all geometries
+						psi[x*JX+y*JY+1+z]=(-psi[(x-2)*JX+y*JY+1+z]+16.0*psi[(x-1)*JX+y*JY+1+z]+16.0*psi[(x+1)*JX+y*JY+1+z]-psi[(x+2)*JX+y*JY+1+z]
+									      -psi[x*JX+(y-2)*JY+1+z]+16.0*psi[x*JX+(y-1)*JY+1+z]+16.0*psi[x*JX+(y+1)*JY+1+z]-psi[x*JX+(y+2)*JY+1+z]+
+									      -psi[x*JX+y*JY+z-1]+16.0*psi[x*JX+y*JY+z]+16.0*psi[x*JX+y*JY+z+2]-psi[x*JX+y*JY+z+3]+
+										12*q[x*JX+y*JY+1+z]*C/eps[x*JX+y*JY+1+z])/90.0;
+					}
+				}
+	
+				if (grad_epsilon) for (x=fjc; x<MX+fjc; x++)  for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) {//for all geometries
+					psi[x*JX+y*JY+1+z]+=((eps[(x+2)*JX+y*JY+1+z]-8.0*eps[(x+1)*JX+y*JY+1+z]+8.0*eps[(x-1)*JX+y*JY+1+z]-eps[(x-2)*JX+y*JY+1+z])*
+								       (psi[(x+2)*JX+y*JY+1+z]-8.0*psi[(x+1)*JX+y*JY+1+z]+8.0*psi[(x-1)*JX+y*JY+1+z]-psi[(x-2)*JX+y*JY+1+z])+
+								       (eps[x*JX+(y+2)*JY+1+z]-8.0*eps[x*JX+(y+1)*JY+1+z]+8.0*eps[x*JX+(y-1)*JY+1+z]-eps[x*JX+(y-2)*JY+1+z])*
+								       (psi[x*JX+(y+2)*JY+1+z]-8.0*psi[x*JX+(y+1)*JY+1+z]+8.0*psi[x*JX+(y-1)*JY+1+z]-psi[x*JX+(y-2)*JY+1+z])+
+									(eps[x*JX+y*JY+z+3]    -8.0*eps[x*JX+y*JY+z+2]    +8.0*eps[x*JX+y*JY+z]      -eps[x*JX+y*JY+z-1])*
+								       (psi[x*JX+y*JY+z+3]    -8.0*psi[x*JX+y*JY+z+2]    +8.0*psi[x*JX+y*JY+z]      -psi[x*JX+y*JY+z-1]))
+									/eps[x*JX+y*JY+1+z]/144.0;
 				}
 			}
 
+
+			
 #endif
 			break;
 		default:
-			cout <<"UpdatePsi wrongly implemented in lattice: " << endl;
 			break;
-	}
+	} //end of switch
+   } else { //fixedPsi0 is true
+	switch (gradients) {
+		case 1:
+			imax = pow(1.0*MX,1.0/3.0); //imax repeats of the first term to 'spread' the psi over the system.
+			if (fjc==1) {
+				for (i=0; i<imax; i++) {	
+					for (x=1; x<MX+1; x++) { //for all geometries
+						if (Mask[x] ==0) {
+							psi[x]=0.5*(psi[x-1]+psi[x+1])+q[x]*C/eps[x];
+						}
+					}
+					for (x=MX; x>0; x--) { //for all geometries
+						if (Mask[x] ==0) {
+							psi[x]=0.5*(psi[x-1]+psi[x+1])+q[x]*C/eps[x];
+						}
+					}
+				}
+	
+				if (geometry=="cylindrical") {
+					for (x=1; x<MX+1; x++) {
+						if (Mask[x]==0) {
+							psi[x]+=(psi[x+1]-psi[x-1])/(2.0*(x+offset_first_layer-0.5));
+						}
+					}
+				}
+				if (geometry=="spherial") {
+					for (x=1; x<MX+1; x++) {
+						if (Mask[x]==0) {
+							psi[x]+=(psi[x+1]-psi[x-1])/(x+offset_first_layer-0.5);
+						}
+					}
+				}
+				if (grad_epsilon) for (x=1; x<MX+1; x++) {//for all geometries
+					if (Mask[x]==0) {
+						psi[x]+=0.25*(eps[x+1]-eps[x-1])*(psi[x+1]-psi[x-1])/eps[x];
+					}
+				}
+			}
+			if (fjc==2) {
+				for (i=0; i<imax; i++) {
+					for (x=fjc; x<MX+fjc; x++) { //for all geometries
+						if (Mask[1+x] ==0) {
+							psi[fjc-1+x]=(-psi[x-2]+16.0*psi[x-1]+16.0*psi[x+1]-psi[x+2]+12*q[x]*C/eps[x])/30.0;
+						}
+					}
+					for (x=MX+fjc-1; x>fjc-1; x--) { //for all geometries
+						if (Mask[1+x] ==0) {
+							psi[x]=(-psi[x-2]+16.0*psi[x-1]+16.0*psi[x+1]-psi[x+2]+12*q[x]*C/eps[x])/30.0;
+						}
+					}
+				}
+	
+				if (geometry=="cylindrical") {
+					for (x=1; x<MX+1; x++) {
+						if (Mask[1+x]==0) {
+							psi[x]+=(psi[x+2]-8.0*psi[x+1]+8.0*psi[x-1]-psi[x-2])/(12.0*(x+offset_first_layer-0.25)); 
+						}
+					}
+				}
+				if (geometry=="spherial") {
+					for (x=1; x<MX+1; x++) {
+						if (Mask[1+x]==0) {
+							psi[x]+=(psi[x+2]-8.0*psi[x+1]+8.0*psi[x-1]-psi[x-2])/(6.0*(x+offset_first_layer-0.25));
+						}
+					}
+				}
+				if (grad_epsilon) for (x=1; x<MX+1; x++) {//for all geometries
+					if (Mask[1+x]==0) {
+						psi[x]+=(eps[x+2]-8.0*eps[x+1]+8.0*eps[x-1]-eps[x-2])*
+						        (psi[x+2]-8.0*psi[x+1]+8.0*psi[x-1]-psi[x-2])/eps[x]/144.0;
+					}
+				}
+			}
+			
+			break;
+		case 2:
+			imax = pow(1.0*MX,1.0/3.0);
+			if (fjc==1) {
+				for (i=0; i<imax; i++) {	
+					for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){ //for all geometries
+						if (Mask[x*JX+y] ==0) {
+							psi[x*JX+y]=0.25*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
+									    +psi[x*JX+y-1]+psi[x*JX+y+1])
+									+0.5*q[x*JX+y]*C/eps[x*JX+y];
+						}
+					}
+					for (x=MX; x>0; x--) for (y=MY; y>0; y--){ //for all geometries
+						if (Mask[x*JX+y] ==0) {
+							psi[x*JX+y]=0.25*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
+									    +psi[x*JX+y-1]+psi[x*JX+y+1])
+									+0.5*q[x*JX+y]*C/eps[x*JX+y];
+						}
+					}
+				}
+	
+				if (geometry=="cylindrical") { //radial geometry in x no radial geometry in y
+					for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){
+						if (Mask[x*JX+y]==0) {
+							psi[x*JX+y]+=(psi[(x+1)*JX+y]-psi[(x-1)*JX+y])/(2.0*(x+offset_first_layer)-1);
+						}
+					}
+				}
+				if (grad_epsilon) for (x=1; x<MX+1; x++) for (y=1; y<MX+1; y++) {//for all geometries
+					if (Mask[x*JX+y]==0) {
+						psi[x*JX+y]+=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
+                                                             eps[x*JX+y+1]-eps[x*JX+y-1])*(psi[x*JX+y+1]-psi[x*JX+y-1])/eps[x*JX+y];
+					}
+				}
+			}
+			if (fjc==2) {
+				for (i=0; i<imax; i++) {
+					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) { //for all geometries
+						if (Mask[x*JX+1+y] ==0) {
+							psi[x*JX+1+y]=(-psi[(x-2)*JX+1+y]+16.0*psi[(x-1)*JX+1+y]+16.0*psi[(x+1)*JX+1+y]-psi[(x+2)*JX+1+y]
+									 -psi[x*JX+y-1]+16.0*psi[x*JX+y]+16.0*psi[x*JX+y+2]-psi[x*JX+y+3]+
+										12*q[x*JX+1+y]*C/eps[x*JX+1+y])/60.0;
+						}
+					}
+					for (x=MX+fjc-1; x>fjc-1; x--) for (y=fjc; y<MY+fjc; y++) { //for all geometries
+						if (Mask[x*JX+1+y] ==0) {
+							psi[x*JX+1+y]=(-psi[(x-2)*JX+1+y]+16.0*psi[(x-1)*JX+1+y]+16.0*psi[(x+1)*JX+1+y]-psi[(x+2)*JX+1+y]
+									 -psi[x*JX+y-1]+16.0*psi[x*JX+y]+16.0*psi[x*JX+y+2]-psi[x*JX+y+3]+
+										12*q[x*JX+1+y]*C/eps[x*JX+1+y])/60.0;
+						}
+					}
+				}
+	
+				if (geometry=="cylindrical") {
+					for (x=fjc; x<MX+fjc; x++)  for (y=fjc; y<MY+fjc; y++) {
+						if (Mask[x*JX+1+y]==0) {
+							psi[x*JX+1+y]+=(psi[(x+2)*JX+1+y]-8.0*psi[(x+1)*JX+1+y]+8.0*psi[(x-1)*JX+1+y]-psi[(x-2)*JX+1+y])/(12.0*(x+offset_first_layer-0.25));
+						}
+					}
+				}
+				if (grad_epsilon) for (x=fjc; x<MX+fjc; x++)  for (y=fjc; y<MY+fjc; y++) {//for all geometries
+					if (Mask[x*JX+1+y]==0) {
+						psi[x*JX+1+y]+=((eps[(x+2)*JX+1+y]-8.0*eps[(x+1)*JX+1+y]+8.0*eps[(x-1)*JX+1+y]-eps[(x-2)*JX+1+y])*
+								  (psi[(x+2)*JX+1+y]-8.0*psi[(x+1)*JX+1+y]+8.0*psi[(x-1)*JX+1+y]-psi[(x-2)*JX+1+y])+
+								  (eps[x*JX+y+3]-8.0*eps[x*JX+y+2]+8.0*eps[x*JX+y]-eps[x*JX+y-1])*
+								  (psi[x*JX+y+3]-8.0*psi[x*JX+y+2]+8.0*psi[x*JX+y]-psi[x*JX+y-1]))/eps[x*JX+1+y]/144.0;
+					}
+				}
+			}
+
+			break;
+		case 3: //Do not know how to do Jacobi trick in CUDA.
+#ifdef CUDA
+			C *=6; 
+			Cp(X,psi,M);
+			UpPsi(g+JX+JY+1,psi+JX+JY+1,X+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1));
+			if (fjc==2) cout << "in GPU FJC-choices > 3 not implemented yet " << endl; 
+#else
+			imax = pow(1.0*MX,1.0/3.0);
+			if (fjc==1) {
+				for (i=0; i<imax; i++) {	
+					for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++) { //for all geometries
+						if (Mask[x*JX+y*JY+z] ==0) {
+							psi[x*JX+y*JY+z]=(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
+									    +psi[x*JX+(y-1)*JY+z]+psi[x*JX+(y+1)*JY+z]
+									    +psi[x*JX+y*JY+z-1]+ psi[x*JX+y*JY+z+1])/6.0
+								           +q[x*JX+y*JY+z]*C/eps[x*JX+y*JY+z]/3.0;
+						}
+					}
+					for (x=MX; x>0; x--) for (y=MY; y>0; y--){ //for all geometries
+						if (Mask[x*JX+y*JY+z] ==0) {
+							psi[x*JX+y*JY+z]=(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
+									    +psi[x*JX+(y-1)*JY+z]+psi[x*JX+(y+1)*JY+z]
+									    +psi[x*JX+y*JY+z-1]+ psi[x*JX+y*JY+z+1])/6.0
+								           +q[x*JX+y*JY+z]*C/eps[x*JX+y*JY+z]/3.0;
+						}
+					}
+				}
+	
+				if (grad_epsilon) for (x=1; x<MX+1; x++) for (y=1; y<MX+1; y++)  for (z=1; z<MZ+1; z++){//for all geometries
+					if (Mask[x*JX+y*JY+z]==0) {
+						psi[x*JX+y*JY+z]+=0.25*(eps[(x+1)*JX+y*JY+z]-eps[(x-1)*JX+y*JY+z])*(psi[(x+1)*JX+y*JY+z]-psi[(x-1)*JX+y*JY+z]+
+                                                                  eps[x*JX+(y+1)*JY+z]-eps[x*JX+(y-1)*JY+z])*(psi[x*JX+(y+1)*JY+z]-psi[x*JX+(y-1)*JY+z]+
+								          eps[x*JX+y*JY+z-1]-eps[x*JX+y*JY+z+1])*(psi[x*JX+y*JY+z-1]-psi[x*JX+y*JY+z+1])
+								         /eps[x*JX+y*JY+z];
+					}
+				}
+			}
+			if (fjc==2) {
+				for (i=0; i<imax; i++) {
+					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++){ //for all geometries
+						if (Mask[x*JX+1+y*JY+1+z] ==0) {
+							psi[x*JX+y*JY+1+z]=(-psi[(x-2)*JX+y*JY+1+z]+16.0*psi[(x-1)*JX+y*JY+1+z]+16.0*psi[(x+1)*JX+y*JY+1+z]-psi[(x+2)*JX+y*JY+1+z]
+									      -psi[x*JX+(y-2)*JY+1+z]+16.0*psi[x*JX+(y-1)*JY+1+z]+16.0*psi[x*JX+(y+1)*JY+1+z]-psi[x*JX+(y+2)*JY+1+z]+
+									      -psi[x*JX+y*JY+z-1]+16.0*psi[x*JX+y*JY+z]+16.0*psi[x*JX+y*JY+z+2]-psi[x*JX+y*JY+z+3]+
+										12*q[x*JX+y*JY+1+z]*C/eps[x*JX+y*JY+1+z])/90.0;
+						}
+					}
+					for (x=MX+fjc-1; x>fjc-1; x--) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++){ //for all geometries
+						if (Mask[x*JZ+y*JY+1+z] ==0) {
+							psi[x*JX+y*JY+1+z]=(-psi[(x-2)*JX+y*JY+1+z]+16.0*psi[(x-1)*JX+y*JY+1+z]+16.0*psi[(x+1)*JX+y*JY+1+z]-psi[(x+2)*JX+y*JY+1+z]
+									      -psi[x*JX+(y-2)*JY+1+z]+16.0*psi[x*JX+(y-1)*JY+1+z]+16.0*psi[x*JX+(y+1)*JY+1+z]-psi[x*JX+(y+2)*JY+1+z]+
+									      -psi[x*JX+y*JY+z-1]+16.0*psi[x*JX+y*JY+z]+16.0*psi[x*JX+y*JY+z+2]-psi[x*JX+y*JY+z+3]+
+										12*q[x*JX+y*JY+1+z]*C/eps[x*JX+y*JY+1+z])/90.0;
+						}
+					}
+				}
+	
+				if (grad_epsilon) for (x=fjc; x<MX+fjc; x++)  for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) {//for all geometries
+					if (Mask[x*JX+y*JY+1+z]==0) {
+						psi[x*JX+y*JY+1+z]+=((eps[(x+2)*JX+y*JY+1+z]-8.0*eps[(x+1)*JX+y*JY+1+z]+8.0*eps[(x-1)*JX+y*JY+1+z]-eps[(x-2)*JX+y*JY+1+z])*
+								       (psi[(x+2)*JX+y*JY+1+z]-8.0*psi[(x+1)*JX+y*JY+1+z]+8.0*psi[(x-1)*JX+y*JY+1+z]-psi[(x-2)*JX+y*JY+1+z])+
+								       (eps[x*JX+(y+2)*JY+1+z]-8.0*eps[x*JX+(y+1)*JY+1+z]+8.0*eps[x*JX+(y-1)*JY+1+z]-eps[x*JX+(y-2)*JY+1+z])*
+								       (psi[x*JX+(y+2)*JY+1+z]-8.0*psi[x*JX+(y+1)*JY+1+z]+8.0*psi[x*JX+(y-1)*JY+1+z]-psi[x*JX+(y-2)*JY+1+z])+
+									(eps[x*JX+y*JY+z+3]    -8.0*eps[x*JX+y*JY+z+2]    +8.0*eps[x*JX+y*JY+z]      -eps[x*JX+y*JY+z-1])*
+								       (psi[x*JX+y*JY+z+3]    -8.0*psi[x*JX+y*JY+z+2]    +8.0*psi[x*JX+y*JY+z]      -psi[x*JX+y*JY+z-1]))
+									/eps[x*JX+y*JY+1+z]/144.0;
+					}
+				}
+			}
+
+
+			
+#endif
+			break;
+		default:
+			break;
+	} //end of switch
+
+
+
+   } //end of if then else
+   YisAminB(g,g,psi,M);
 }
 
 void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask) {//Not only update q (charge), but also g (from newton).
@@ -2219,6 +2658,7 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask) {//Not 
 	#ifndef CUDA
 	int z;
 	#endif
+cout <<"UpdateQ needs to be rewritten to work with FJC-choices >3 (also for =3 we need to bring it in line with remainder) " << endl; 
 
 	Real epsXplus,epsXmin,epsYplus,epsYmin;
 	#ifndef CUDA
@@ -2296,119 +2736,48 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask) {//Not 
 #endif
 			break;
 		default:
-			cout <<"UpdateQ wrongly implemented in lattice: " << endl;
 			break;
 	}
 }
 
-/*
 
-All below is commented out. This is stored here to recover from earlier program.
-
-void Sideh(Real *X_side, Real *X, int M) {
-	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-
-	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
-	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
-	Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
-	Add(X_side+JX,X+JY,MM-JX-JY); Add(X_side+JY,X+JX,MM-JY-JX);
-	Add(X_side+1,X+JY,MM-JY-1); Add(X_side+JY,X+1,MM-JY-1);
-	Add(X_side+1,X+JX,MM-JX-1); Add(X_side+JX,X+1,MM-JX-1);
-	Norm(X_side,1.0/12.0,M);
-}
-
-void Side(Real *X_side, Real *X, int M) {
-	Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
-	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
-	Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
-	Norm(X_side,1.0/6.0,M);
-}
-
-void advanced_average(Real *X_side, Real *X, int M){
-        Zero(X_side,M); SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-
-	Add(X_side+JX,X,M-JX); Add(X_side,X+JX,M-JX);
-	Add(X_side+JY,X,M-JY); Add(X_side,X+JY,M-JY);
-	Add(X_side+1,X,M-1);  Add(X_side,X+1, M-1);
-
-	Add(X_side+JX+JY,X,M-JX-JY); Add(X_side, X+JX+JY, M-JX-JY);
-	Add(X_side+JY+1,X,M-JY-1); Add(X_side, X+JY+1, M-JY-1);
-	Add(X_side+JX+1,X,M-JX-1); Add(X_side, X+JX+1, M-JX-1);
-        Add(X_side+JX-JY,X,M-JX+JY); Add(X_side, X+JX-JY, M-JX+JY);
-	Add(X_side+JY-1,X,M-JY+1); Add(X_side, X+JY-1, M-JY+1);
-	Add(X_side+JX-1,X,M-JX+1); Add(X_side, X+JX-1, M-JX+1);
-
-	Add(X_side+JX+JY+1,X,M-JX-JY-1); Add(X_side, X+JX+JY+1, M-JX-JY-1);
-	Add(X_side+JX+JY-1,X,M-JX-JY+1); Add(X_side, X+JX+JY-1, M-JX-JY+1);
-	Add(X_side+JX-JY+1,X,M-JX+JY-1); Add(X_side, X+JX-JY+1, M-JX+JY-1);
-	Add(X_side-JX+JY+1,X,M+JX-JY-1); Add(X_side, X-JX+JY+1, M+JX-JY-1);
-
-	Norm(X_side,1.0/26.0,M);
-}
-
-void Propagateh(Real* G, Real* G1, int s_from, int s_to) { //on small boxes
-	int MMM=M*n_box;
-	Real *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
-	Zero(gs,MMM);
-	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
-
-	Add(gs+jx,gs_1,MMM-jx); Add(gs,gs_1+jx,MMM-jx);
-	Add(gs+jy,gs_1,MMM-jy); Add(gs,gs_1+jy,MMM-jy);
-	Add(gs+1,gs_1,MMM-1);  Add(gs,gs_1+1, MMM-1);
-	Add(gs+jx,gs_1+jy,MMM-jx-jy); Add(gs+jy,gs_1+jx,MMM-jx-jy);
-	Add(gs+1,gs_1+jy,MMM-jy-1); Add(gs+jy,gs_1+1,MMM-jy-1);
-	Add(gs+1,gs_1+jx,MMM-jx-1); Add(gs+jx,gs_1+1,MMM-jx-1);
-	Norm(gs,1.0/12.0,MMM); Times(gs,gs,g,MMM);
-}
-
-void PROPAGATEh(Real *G, Real *G1, int s_from, int s_to) { //on big box
-	Real *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
-	Zero(gs,MM);
-	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
-	Add(gs+JY,gs_1,MM-JY); Add(gs,gs_1+JY,MM-JY);
-	Add(gs+1,gs_1,MM-1);  Add(gs,gs_1+1, MM-1);
-	Add(gs+JX,gs_1+JY,MM-JX-JY); Add(gs+JY,gs_1+JX,MM-JX-JY);
-	Add(gs+1,gs_1+JY,MM-JY-1); Add(gs+JY,gs_1+1,MM-JY-1);
-	Add(gs+1,gs_1+JX,MM-JX-1); Add(gs+JX,gs_1+1,MM-JX-1);
-	Norm(gs,1.0/12.0,MM); Times(gs,gs,g,MM);
-}
-
-void Propagate(Real* G, Real* G1, int s_from, int s_to) { //on small boxes
-	int MMM=M*n_box;
-	Real *gs = G+MMM*s_to, *gs_1 = G+MMM*s_from, *g = G1;
-	Zero(gs,MMM);
-	for (int p=0; p<n_box; p++) SetBoundaries(gs_1+M*p,jx,jy,bx1,bxm,by1,bym,bz1,bzm,Mx,My,Mz);
-	Add(gs+jx,gs_1,MMM-jx); Add(gs,gs_1+jx,MMM-jx);
-	Add(gs+jy,gs_1,MMM-jy); Add(gs,gs_1+jy,MMM-jy);
-	Add(gs+1,gs_1,MMM-1);  Add(gs,gs_1+1, MMM-1);
-	Norm(gs,1.0/6.0,MMM); Times(gs,gs,g,MMM);
-}
-
-void PROPAGATE(Real *G, Real *G1, int s_from, int s_to) { //on big box
-	Real *gs = G+MM*(s_to), *gs_1 = G+MM*(s_from), *g = G1;
-	Zero(gs,MM);
-	SetBoundaries(gs_1,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-	Add(gs+JX,gs_1,MM-JX); Add(gs,gs_1+JX,MM-JX);
-	Add(gs+JY,gs_1,MM-JY); Add(gs,gs_1+JY,MM-JY);
-	Add(gs+1,gs_1,MM-1);  Add(gs,gs_1+1, MM-1);
-	Norm(gs,1.0/6.0,MM); Times(gs,gs,g,MM);
-}
-
-
-void Lattice::Edis(Real *X_side, Real *X, int M) { //operation opposite to Side ;-) ....careful it distroys info in X_side.
-if (debug) cout <<"Edis in lattice " << endl;
+/* 
+template <typename T>
+void Lattice::remove_bounds(T *X){
+if (debug) cout <<" remove_bounds in lattice " << endl;
+	int x,y;
 	int j;
-	Zero(X_side,M); set_bounds(X);
-	if (fjc==1) {
-	} else {
-		for (j=0; j<fjc/2; j++) {
-			AddTimes(X_side+j,X,VL+j*M+j,M-j);
-			AddTimes(X_side,X+j,VL+(fjc-j-1)*M,M-j);
-		}
-		AddTimes(X_side,X,VL+((fjc-1)/2)*M,M);
+	switch(gradients) {
+		case 1:
+			if (fjc==1) {
+				X[0]=0; X[MX+1]=0;
+			} else {
+				for (j=0; j<fjc; j++) {
+					X[j]=0;
+					X[(MX+2)*fjc-j-1]=0;
+				}
+			}
+			break;
+		case 2:
+			for (x=1; x<MX+1; x++) {
+				X[x*JX+0] = 0;
+				X[x*JX+MY+1]=0;
+			}
+			for (y=1; y<MY+1; y++) {
+				X[0+y] = 0;
+				X[(MX+1)*JX+y]=0;
+			}
+			break;
+		case 3:
+			if (sub_box_on!=0) {int k=sub_box_on;
+				for (int i=0; i<n_box[k]; i++)
+				RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
+			} else {
+			RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			}
+			break;
+		default:
+			break;
 	}
-	Cp(X,X_side,M);
-}
+} 
 */

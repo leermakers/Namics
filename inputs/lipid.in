@@ -1,8 +1,6 @@
 lat : flat : n_layers : 50
 lat : flat : geometry : planar
 lat : flat : bondlength : 5e-10
-lat : flat : lattice_type : hexagonal
-lat : flat : FJC_choices : 7
 
 mon : C : freedom : pinned
 mon : C : pinned_range : 1;6
@@ -13,13 +11,6 @@ mon : X : freedom : free
 mol : lipid : composition : (O)5[(C)16](C)16
 mol : lipid : freedom : restricted
 mol : lipid : theta : 1.61
-
-
-mol : add : composition : (C)6[(C)6][(C)2](C)1(X)4(C)1
-mol : add : freedom : restricted
-mol : add : theta : 1.3338
-
-alias: N : value : 16
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent

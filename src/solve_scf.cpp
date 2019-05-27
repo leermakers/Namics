@@ -821,9 +821,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 			ComputePhis();
 			if (Sys[0]->charged) {
 				Sys[0]->DoElectrostatics(g+sysmon_length*M,xx+sysmon_length*M);
-				Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi);
+				Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
 				Lat[0]->set_bounds(Sys[0]->psi);
-				Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
+				Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
 				Lat[0]->remove_bounds(g+sysmon_length*M);
 			}
 			YisAplusC(g+jump*M,Sys[0]->phitot,-1.0,M);
@@ -904,7 +904,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Cp(g+itpos,xx+itpos,M);
 				Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
 				Lat[0]->set_bounds(Sys[0]->psi);
-				Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
+				Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
 				Lat[0]->remove_bounds(g+itpos);
 				itpos+=M;
 			}
@@ -1031,7 +1031,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 
 	if (Sys[0]->charged) {
 		Cp(Sys[0]->psi,xx+iv-M,M);
-		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi);
+		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
 	}
 
 	int itmonlistlength=Sys[0]->ItMonList.size();

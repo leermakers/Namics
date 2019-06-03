@@ -12,8 +12,8 @@
 #include <sstream>
 #include <unistd.h>
 #include <memory>
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 #include <regex>
 #include <map>
 

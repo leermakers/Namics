@@ -1,8 +1,8 @@
 #ifndef SFNEWTONxH
 #define SFNEWTONxH
 #include <vector>
-#include <stdlib.h>
-#include <float.h>
+#include <cstdlib>
+#include <cfloat>
 #include "namics.h"
 
 class SFNewton {

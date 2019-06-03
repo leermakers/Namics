@@ -1,8 +1,8 @@
 #ifndef NEWTTOOLxH
 #define NEWTTOOLxH
 
-#include <math.h>
-#include <float.h>
+#include <cmath>
+#include <cfloat>
 #include "namics.h"
 
 Real norm2(Real*,int);

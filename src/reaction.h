@@ -4,6 +4,9 @@
 #include "input.h"
 #include "segment.h"
 #include "state.h"
+
+#include <cmath>
+
 class Reaction {
 public:
 	Reaction(vector<Input*>,vector<Segment*>,vector<State*>,string);

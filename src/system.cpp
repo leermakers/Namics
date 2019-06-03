@@ -431,7 +431,7 @@ if (debug) cout << "CheckInput for system " << endl;
 				}
 			}
 
-			if (Mol[DeltaMolList[0]]->freedom=="restricted" || Mol[DeltaMolList[1]]->freedom=="restricted" ) {success =false;  cout <<"Molecule in list of delta_molecules has not freedom 'free'"<<endl; }
+			//if (Mol[DeltaMolList[0]]->freedom=="restricted" || Mol[DeltaMolList[1]]->freedom=="restricted" ) {success =false;  cout <<"Molecule in list of delta_molecules has not freedom 'free'"<<endl; }
 		}
 
 		vector<string> options;
@@ -1133,12 +1133,12 @@ Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " 
 		}
 	}
 	if (charged && neutralizer>-1 ) {
-		//Real phib=0;
-		//for (int i=0; i<n_mol; i++) {
-		//	if (i!=neutralizer && i!=solvent) phib+=Mol[i]->phibulk*Mol[i]->Charge();
-		//}
+		Real phib=0;
+		for (int i=0; i<n_mol; i++) {
+			if (i!=neutralizer && i!=solvent) phib+=Mol[i]->phibulk*Mol[i]->Charge();
+		}
 
-		//Mol[neutralizer]->phibulk = -phib/Mol[neutralizer]->Charge();
+		Mol[neutralizer]->phibulk = -phib/Mol[neutralizer]->Charge();
 		if (Mol[neutralizer]->Charge()==Mol[solvent]->Charge()) {
 			cout << "WARNING: solvent charge equals neutralizer charge; outcome problematic...." << endl;
 		} else Mol[neutralizer]->phibulk= ((B-1.0)*Mol[solvent]->Charge() -A)/(Mol[neutralizer]->Charge()-Mol[solvent]->Charge());
@@ -1410,7 +1410,7 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 		Cp(TEMP,phi,M); YisAplusC(TEMP,TEMP,-phibulk,M); Norm(TEMP,1.0/N,M); //GP has wrong sign. will be corrected at end of this routine;
 		Add(GP,TEMP,M);
 	}
-
+	
 	Add(GP,alpha,M);
 	Real phibulkA;
 	Real phibulkB;
@@ -1487,7 +1487,8 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 	if (!charged) Times(GP,GP,KSAM,M); //necessary to make sure that there are no contribution from solid, tagged or clamped sites in GP.
 
 if (charged) {
-	Times(TEMP,EE,eps,M); Norm(TEMP,-2.0,M);
+	Times(TEMP,EE,eps,M); 
+	Norm(TEMP,-2.0,M);
 	AddTimes(TEMP,q,psi,M); Norm(TEMP,-0.5,M); Add(GP,TEMP,M); Times(GP,GP,KSAM,M);
 	Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);
 	Add(GP,TEMP,M);

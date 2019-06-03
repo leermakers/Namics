@@ -47,6 +47,7 @@ if (debug) cout <<"Destructor in Solve " << endl;
 #else
 	free(xx);
 #endif
+if (debug) cout <<"exit for 'destructor' in Solve " << endl;
 
 }
 
@@ -114,9 +115,9 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		}
 		value_i_info=i_info;
 
-		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),e_info);
-		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),s_info);
-		super_i_info=In[0]->Get_bool(GetValue("super_i_info"),i_info);
+		super_e_info=In[0]->Get_bool(GetValue("super_e_info"),false);
+		super_s_info=In[0]->Get_bool(GetValue("super_s_info"),false);
+		super_i_info=In[0]->Get_bool(GetValue("super_i_info"),false);
 		super_iterationlimit=In[0]->Get_int(GetValue("super_iterationlimit"),iterationlimit/10);
 
 		if (GetValue("target_function").size() > 0) {
@@ -783,10 +784,10 @@ void Solve_scf::residuals(Real* x, Real* g){
 				if (SCF_method=="DIIS") {solver=diis;}
 				if (SCF_method=="Picard") {solver=PICARD;}
 				//e_info=value_e_info;
-				s_info=value_s_info;
-				e_info=false;
-				i_info=value_i_info;
-				//tolerance = value_tolerance;
+				e_info=super_e_info;
+				i_info=super_i_info;
+				s_info=super_s_info;
+				tolerance = super_tolerance;
 				Solve(false);						//find scf solution
 				control=super;
 				gradient=custum;
@@ -909,8 +910,8 @@ void Solve_scf::residuals(Real* x, Real* g){
 				itpos+=M;
 			}
 			if (Sys[0]->constraintfields) {
-				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
-				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
+				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
+				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
 				Times(g+itpos,g+itpos,Sys[0]->beta,M);
 			}
 

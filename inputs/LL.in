@@ -6,15 +6,21 @@ mon : A : freedom : pinned
 mon : A : pinned_range : 1;60
 
 mon : B : freedom : free
+mon : C : freedom : free
 
 mon : A : chi - B : 0.6
+mon : A : chi - C : 0.5
 
 mol : A : composition : (A)4
 mol : A : freedom : restricted
 mol : A : theta : 50
 
-mol : B : composition : (B)4
+mol : B : composition : (B)4(C)2
 mol : B : freedom : solvent
+
+//mol : C : composition : (C)4
+//mol : C : freedom : free
+//mol : C : phibulk : 0.2
 
 //mol : C : composition : (A)10(B)10
 //mol : C : freedom : restricted
@@ -38,4 +44,5 @@ sys : X : constraint : delta
 sys : X : delta_range : (50)
 sys : X : delta_molecules : A;B
 mol : A : freedom : free
+//mol : A : theta : 50
 mol : A : phibulk : 0.170715

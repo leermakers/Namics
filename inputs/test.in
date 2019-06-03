@@ -1,5 +1,7 @@
 lat : vlak : n_layers : 100
-lat : vlak : geometry : planar 
+lat : vlak : geometry : cylindrical 
+lat : vlak : lattice_type : hexagonal
+lat : vlak : FJC_choices : 5
 
 lat : vlak : bondlength : 0.0000000003000000
 
@@ -9,12 +11,12 @@ mon : B : freedom : free
 mon : C : freedom : free
 mon : D : freedom : free
 mon : X : freedom : pinned
-mon : X : pinned_range : 10;10
+mon : X : pinned_range : 1;1
 
 //mol : pol : save_memory : true
 mol : pol : composition : (X)1(A)1[(B)2](C)3
 mol : pol : freedom : restricted
-mol : pol : theta : 1
+mol : pol : theta : 6
 
 
 mol : Water : composition : (W)1

@@ -1,12 +1,13 @@
-lat : vlak : n_layers : 100
+lat : vlak : n_layers : 200
 lat : vlak : geometry : planar
-lat : vlak : FJC_choices : 3
+lat : vlak : lattice_type : hexagonal
+lat : vlak : FJC_choices : 7
 
 mon : S : freedom : frozen
-mon : S : frozen_range : 1;1
+mon : S : frozen_range : 1;3
 
 mon : X : freedom : pinned
-mon : X : pinned_range : 2;2
+mon : X : pinned_range : 4;4
 
 mon : A : freedom : free
 mon : W : freedom : free

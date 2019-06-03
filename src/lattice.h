@@ -32,6 +32,7 @@ public:
 	int JX,JY,JZ,M;
 	bool all_lattice;
 	bool ignore_sites;
+	bool stencil_full;
 	int sub_box_on;
 	Real volume;
 	Real Accesible_volume;

@@ -656,7 +656,7 @@ bool Input:: CheckInput(void) {
 		}
 		i++;
 	}
-	success=MakeLists(1);
+	if (success) success=MakeLists(1);
 	if (!output_info.isOutputExists()) {
 		cout << "Cannot access output folder '" << output_info.getOutputPath() << "'" << endl;
 		success = false;

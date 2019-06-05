@@ -454,6 +454,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	}
 
 	if (name=="kal") {
+		if (start >1 || subl>1) append=true;
 		ifstream my_file(filename.c_str());
 		FILE *fp;
 		if (!(my_file && append)) {
@@ -464,12 +465,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 				fprintf(fp,"%s\t",s.c_str());
 			}
-			fprintf(fp,"\n"); append=true;
-		} else 	fp=fopen(filename.c_str(),"a");
+			fprintf(fp,"\n"); 
+		} else fp=fopen(filename.c_str(),"a");
+
 		if (fp == NULL) {
 			cerr << "Error trying to open " << filename.c_str() << endl;
 			perror("Error");
-		}
+		} 
+
+
 		int length = OUT_key.size();
 		for (int i=0; i<length; i++) {
 			int int_result=0;

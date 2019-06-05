@@ -1025,7 +1025,7 @@ void System::DoElectrostatics(Real* g, Real* x) {
 bool System::ComputePhis(){
 if(debug) cout <<"ComputePhis in system" << endl;
 	int M= Lat[0]->M;
-	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi
+	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi 
 	bool success=true;
 	Zero(phitot,M);
 	int length=FrozenList.size();
@@ -1133,17 +1133,25 @@ Real sum=Lat[0]->ComputeTheta(phi); cout <<"Sumphi in mol " << i << " for mon " 
 		}
 	}
 	if (charged && neutralizer>-1 ) {
-		Real phib=0;
-		for (int i=0; i<n_mol; i++) {
-			if (i!=neutralizer && i!=solvent) phib+=Mol[i]->phibulk*Mol[i]->Charge();
-		}
+		//Real phib=0;
+		//for (int i=0; i<n_mol; i++) {
+			//if (i!=neutralizer && i!=solvent) phib+=Mol[i]->phibulk*Mol[i]->Charge();
+		//}
 
-		Mol[neutralizer]->phibulk = -phib/Mol[neutralizer]->Charge();
+		//Mol[neutralizer]->phibulk = -A/Mol[neutralizer]->Charge();
 		if (Mol[neutralizer]->Charge()==Mol[solvent]->Charge()) {
 			cout << "WARNING: solvent charge equals neutralizer charge; outcome problematic...." << endl;
 		} else Mol[neutralizer]->phibulk= ((B-1.0)*Mol[solvent]->Charge() -A)/(Mol[neutralizer]->Charge()-Mol[solvent]->Charge());
+
 		if (Mol[neutralizer]->phibulk<0) {
 			cout << "WARNING: neutralizer has negative phibulk. Consider changing neutralizer...: outcome problematic...." << endl;
+cout <<"A is " << A << endl; 
+for (int j=0; j<n_mol; j++) {
+	cout << " mol : " << Mol[j]->name << " phibulk " << Mol[j]->phibulk << endl;
+
+}
+
+
 		}
 		B+=Mol[neutralizer]->phibulk;
 		Real norm = Mol[neutralizer]->phibulk/Mol[neutralizer]->chainlength;
@@ -1379,8 +1387,18 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 	Times(F,F,KSAM,M); //clean up contributions in frozen and tagged sites.
 
 	if (charged) {
-		Times(TEMP,q,psi,M);
-		Norm(TEMP,0.5,M);
+//Lat[0]->remove_bounds(q);
+//Lat[0]->remove_bounds(psi);
+		Times(TEMP,EE,eps,M);
+//Real sum=0;
+//Sum(sum,TEMP,M); cout <<"Sum EE = " << sum << endl;
+		
+		//AddTimes(TEMP,q,psi,M);
+		Norm(TEMP,-1.0,M);
+		//Times(TEMP,q,psi,M);
+		//Norm(TEMP,0.5,M);
+
+//Sum(sum,TEMP,M); cout <<"Sum = " << sum << endl; 
 		Add(F,TEMP,M);
 	}
 	return FreeEnergy+Lat[0]->WeightedSum(F);
@@ -1487,11 +1505,12 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 	if (!charged) Times(GP,GP,KSAM,M); //necessary to make sure that there are no contribution from solid, tagged or clamped sites in GP.
 
 if (charged) {
-	Times(TEMP,EE,eps,M); 
-	Norm(TEMP,-2.0,M);
-	AddTimes(TEMP,q,psi,M); Norm(TEMP,-0.5,M); Add(GP,TEMP,M); Times(GP,GP,KSAM,M);
-	Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);
-	Add(GP,TEMP,M);
+	//Times(TEMP,EE,eps,M); 
+	///Norm(TEMP,-2.0,M);
+	//AddTimes(TEMP,q,psi,M); 
+	//Times(TEMP,q,psi,M); Norm(TEMP,0.5,M); Add(GP,TEMP,M); Times(GP,GP,KSAM,M);
+	//Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);
+	//Add(GP,TEMP,M);
 }
 	return  Lat[0]->WeightedSum(GP);
 

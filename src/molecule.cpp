@@ -1720,7 +1720,7 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 }
 
 Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int M) {
-if (debug) cout <<"propagate_forward for Mol " + name << endl;
+if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 
 	int N= n_mon[block];
 	if (save_memory) {
@@ -1773,6 +1773,7 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 	} else {
 		 return Gg_f+(s-1)*M;
 	}
+
 }
 
 
@@ -1976,6 +1977,7 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 }
 
 Real* Molecule::ForwardBra(int generation, int &s) {
+if (debug) cout <<"ForwardBra in Molecule " << endl; 
 	int b0 = first_b[generation]; 
 	int bN = last_b[generation];
 	vector<int> Br;
@@ -2021,7 +2023,7 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 }
 
 bool Molecule::ComputePhiBra() {
-	if (debug) cout <<"ComputePhiBra for Mol " + name << endl;
+if (debug) cout <<"ComputePhiBra in Mol " << endl; 
 	int M=Lat[0]->M;
 	bool success=true;
 	int generation=0;
@@ -2033,11 +2035,12 @@ bool Molecule::ComputePhiBra() {
 	s--;
 	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);} //toggle; initialize on both spots the same G1, so that we always get proper start.
 	BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
+if (debug) cout <<" ComputePhiBra in Mol " << endl;
 	return success;
 }
 
 Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int arm, int M) { //for dendrimer
-if (debug) cout <<"propagate_forward for Molecule " + name << endl;
+if (debug) cout <<"0. propagate_forward for Molecule " + name << endl;
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t;

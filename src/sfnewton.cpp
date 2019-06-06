@@ -702,7 +702,9 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 	accuracy=residue(g,p,x,nvar,ALPHA);
 
 	while ((tolerance < accuracy || tolerance*10<normg) && iterations<iterationlimit && accuracy == fabs(accuracy) ) {
-		if (e_info && it%i_info == 0){
+		if (e_info)
+		if (i_info > 0)
+		if (it%i_info == 0) {
 			printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
 		}
 		it++; iterations=it;  lineiterations=0;

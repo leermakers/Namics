@@ -1373,10 +1373,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	}
 	success=MakeMonList();
 	if (chainlength==1) MolType=monomer;
-
-	cout << success << endl;
-
-
 	return success;
 }
 

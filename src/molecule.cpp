@@ -309,8 +309,18 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 		}
 		if (GetValue("composition").size()==0) {cout << "For mol '" + name + "' the definition of 'composition' is required" << endl; success = false;
 		} else {
-			if (!Decomposition(GetValue("composition"))) {cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;}
-
+			try {
+				// The chain of success bools seems to be broken and handled incorrectly..
+				// This is the result of calling the same function (interpret(), probably) multiple times with different results,
+				// causing only the last success to transfer correctly.
+				// Throw - catch for safety. Thrown by Interpret() and Decomposition() itself;
+			if (!Decomposition(GetValue("composition")))
+				// This error message is not even displayed.
+				{cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;} 
+			} catch (const char* error) {
+				cerr << error << endl;
+				success = false;
+			}
 		}
 		if (GetValue("restricted_range").size()>0) {
 			if (GetValue("freedom")!="range_restricted") cout <<"For mol '" + name + "' freedom is not set to 'range_restricted' and therefore  the value of 'restricted_range' is ignored" << endl;
@@ -916,7 +926,11 @@ if (debug) cout <<"Molecule:: Interpret" << endl;
 			while (k<length) {
 				string segname=sub[i].substr(open[k]+1,close[k]-open[k]-1);
 				int mnr=GetMonNr(segname);
-				if (mnr <0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised"  << endl; success=false;
+				if (mnr <0)  {cerr <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised"  << endl; success = false;
+				// The entire chain of successes seems to be broken, as they are not transferred to or handled correctly by functions down the stack.
+				// This function is called multiple times with different results, causing the success handling to break by only transferring the last success result.
+				// Throwing to prevent segfaults and other undefined behavior. Caught by CheckInput.
+				throw "Composition Error";
 				} else {
 					int length=Gnr.size();
 					if (length>0) {//fragments at branchpoint need to be just 1 segment long.
@@ -939,6 +953,7 @@ if (debug) cout <<"Molecule:: Interpret" << endl;
 				}
 				int nn = In[0]->Get_int(sub[i].substr(close[k]+1,s.size()-close[k]-1),0);
 				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity " << endl; success=false;
+				throw "Composition error";
 				} else {
 					n_mon.push_back(nn);
 				}
@@ -962,7 +977,7 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 	int pos_open=0;
 	int pos_close=s.length();
 	bool openfound,closedfound;
-	while  (pos_open<pos_close) {
+	while  (pos_open<pos_close && success) {
 		pos_open =s.length()+1;
 		pos_close=s.length();
 		openfound=closedfound=false;
@@ -985,12 +1000,12 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 				pos_close=pos_open+1;
 			} else {
 				pos=pos_close;
-				Interpret(ss,generation);
+				success = Interpret(ss,generation);
 			}
 		} else {
 			ss=s.substr(pos,pos_open-pos);
 			pos=pos_open;
-			Interpret(ss,generation);
+			success = Interpret(ss,generation);
 			first_s.push_back(-1);
 			last_s.push_back(-1);
 			first_b.push_back(-1);
@@ -1088,9 +1103,12 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	}
 
 	if (!In[0]->EvenSquareBrackets(s,open,close)) {
-
+		// Another success bool that doesn't travel down the stack.
+		// The error message drowns in the rest of the output really quickly, throwing for safety instead.
+		// Caught by CheckInput
 		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl;
 		success=false;
+		throw "Composition error";
 	}
 
 	if (open.size()>0) {
@@ -1120,14 +1138,14 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			last_s.push_back(-1);
 			first_b.push_back(-1);
 			last_b.push_back(-1);
-			GenerateTree(s,generation,pos,open,close);
+			success = GenerateTree(s,generation,pos,open,close);
 			break;
 		case branched:
 			first_s.push_back(-1);
 			last_s.push_back(-1);
 			first_b.push_back(-1);
 			last_b.push_back(-1);
-			GenerateTree(s,generation,pos,open,close);
+			success = GenerateTree(s,generation,pos,open,close);
 			break;
 		case dendrimer:
 			first_a.clear();
@@ -1356,6 +1374,8 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	success=MakeMonList();
 	if (chainlength==1) MolType=monomer;
 
+	cout << success << endl;
+
 
 	return success;
 }
@@ -1396,7 +1416,8 @@ bool Molecule::IsClamped() {
 if (debug) cout <<"IsClamped for Mol " + name << endl;
 	bool success=false;
 	int length=mon_nr.size();
-	if (mon_nr[0]==mon_nr[length-1]) {
+	// In case of failed composition reading, mon_nr will be empty and mon_nr[0] will segfault, hence the empty check.
+	if (not mon_nr.empty() and mon_nr[0] == mon_nr[length-1]) {
 		if (Seg[mon_nr[0]]->freedom == "clamp") success=true;
 	}
 	if (success && MolType!=linear) {

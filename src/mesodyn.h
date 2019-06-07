@@ -54,8 +54,6 @@ private:
   vector <Output*> Out;
   const string brand;
 
-  bool input_success;
-
   /* Read from file */
   const Real D; // diffusionconstant
   const Real dt;
@@ -91,7 +89,7 @@ private:
   void update_densities();
   void prepare_densities_for_callback();
   Real* device_vector_ptr_to_raw(stl::device_vector<Real>&);
-  shared_ptr<Boundary1D> build_boundaries(Lattice_object<size_t>&);
+  shared_ptr<Boundary1D> build_boundaries(const Lattice_object<size_t>&);
   void initialize_from_file(vector<Lattice_object<Real>>& densities);
   void initialize_homogeneous(vector<Lattice_object<Real>>& densities);
   Lattice_object<size_t> load_mask_from_sys();

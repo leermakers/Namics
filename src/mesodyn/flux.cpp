@@ -1,14 +1,13 @@
 #include "flux.h"
 
-
-Register_class<IFlux, Flux1D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_one_dimensions(one_D);
-Register_class<IFlux, Flux2D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_two_dimensions(two_D);
-Register_class<IFlux, Flux3D, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_three_dimensions(three_D);
+Register_class<IFlux, Flux1D, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_one_dimensions(one_D);
+Register_class<IFlux, Flux2D, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_two_dimensions(two_D);
+Register_class<IFlux, Flux3D, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_three_dimensions(three_D);
 
 IFlux::IFlux(Lattice* lat_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_)
     : J(lat_), component_a{A_}, component_b{B_} {}
 
-Flux1D::Flux1D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
+Flux1D::Flux1D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
     : IFlux(Lat, A, B), J_plus(Lat), L(Lat), mu(Lat), t_L(Lat), t_mu(Lat), D{D}, gaussian(gaussian)
   {
   
@@ -24,7 +23,7 @@ Flux1D::Flux1D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_
   attach_neighborlists(x_neighborlist, Dimension::X);
 }
 
-Flux2D::Flux2D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
+Flux2D::Flux2D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
     : Flux1D(Lat, D, mask, A, B, gaussian)
   {
 
@@ -40,7 +39,7 @@ Flux2D::Flux2D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_
   attach_neighborlists(y_neighborlist, Dimension::Y);
 }
 
-Flux3D::Flux3D(Lattice* Lat, const Real D, Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
+Flux3D::Flux3D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
     : Flux2D(Lat, D, mask, A, B, gaussian)
   {
   

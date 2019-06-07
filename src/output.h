@@ -10,7 +10,7 @@
 #include "system.h"
 #include "solve_scf.h"
 #include "alias.h"
-#include <limits.h>
+#include <climits>
 #include <unistd.h>
 
 class Output {

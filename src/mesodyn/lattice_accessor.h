@@ -42,7 +42,7 @@ class Lattice_accessor {
     //in lattice: gradients
     const Dimensionality dimensionality;
 
-    const Coordinate coordinate(const size_t index) {
+    const Coordinate coordinate(const size_t index) const noexcept {
         
         size_t mod = 0;
         Coordinate coordinate;
@@ -61,7 +61,7 @@ class Lattice_accessor {
         return coordinate;
     }
 
-    inline void skip_bounds(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void skip_bounds(function<void(size_t, size_t, size_t)> function) {
     size_t x{0};
     size_t y{0};
 
@@ -78,7 +78,7 @@ class Lattice_accessor {
         }
     }
 
-    inline void full_system_plus_direction_neighborlist(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void full_system_plus_direction_neighborlist(function<void(size_t, size_t, size_t)> function) {
     size_t x{0};
     size_t y{0};
 
@@ -95,7 +95,7 @@ class Lattice_accessor {
         }
     }
 
-    inline void full_system_minus_direction_neighborlist(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void full_system_minus_direction_neighborlist(function<void(size_t, size_t, size_t)> function) {
     size_t x{0};
     size_t y{0};
 
@@ -112,7 +112,7 @@ class Lattice_accessor {
         }
     }
 
-    inline void system_plus_bounds(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void system_plus_bounds(function<void(size_t, size_t, size_t)> function) {
     size_t x{0};
     size_t y{0};
 
@@ -129,12 +129,12 @@ class Lattice_accessor {
         }
     }
 
-    inline size_t index (const size_t x, const size_t y, const size_t z) noexcept {
+    inline size_t index (size_t x, size_t y, size_t z) const noexcept {
         return (x*jump_x + y*jump_y + z*jump_z);
     }
 
 
-    inline void x0_boundary(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void x0_boundary(function<void(size_t, size_t, size_t)> function) {
     size_t x = 0, y = 0, z = 0;
     do {
         y = 0;
@@ -146,7 +146,7 @@ class Lattice_accessor {
         } while (z < MZ+BOUNDARIES);   
     }
 
-    inline void xm_boundary(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void xm_boundary(function<void(size_t, size_t, size_t)> function) {
       size_t x = MX + SYSTEM_EDGE_OFFSET, y = 0, z = 0;
       do {
         y = 0;
@@ -158,7 +158,7 @@ class Lattice_accessor {
       } while (z < MZ+BOUNDARIES);
     }
 
-    inline void y0_boundary(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void y0_boundary(function<void(size_t, size_t, size_t)> function) {
         size_t x = 0, y = 0, z = 0;
         do {
             x = 0;
@@ -170,7 +170,7 @@ class Lattice_accessor {
         } while (z < MZ+BOUNDARIES);
     }
 
-    inline void ym_boundary(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void ym_boundary(function<void(size_t, size_t, size_t)> function) {
         size_t x = 0, y = MY + SYSTEM_EDGE_OFFSET, z = 0;
         do {
             x = 0;
@@ -182,7 +182,7 @@ class Lattice_accessor {
         } while (z < MZ+BOUNDARIES);
     }
 
-    inline void z0_boundary(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void z0_boundary(function<void(size_t, size_t, size_t)> function) {
         size_t x = 0, y = 0, z = 0;
         do {
             x = 0;
@@ -194,7 +194,7 @@ class Lattice_accessor {
         } while (y < MY+BOUNDARIES);
     }
 
-    inline void zm_boundary(function<void(size_t, size_t, size_t)> function) noexcept {
+    inline void zm_boundary(function<void(size_t, size_t, size_t)> function) {
         size_t x = 0, y = 0, z = MZ + SYSTEM_EDGE_OFFSET;
         do {
             x = 0;

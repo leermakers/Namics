@@ -13,7 +13,7 @@
 class IFlux;
 
 namespace Flux {
-  typedef Factory_template<IFlux, Dimensionality, Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> Factory;
+  typedef Factory_template<IFlux, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> Factory;
 }
 
 class IFlux {
@@ -33,7 +33,7 @@ class IFlux {
 
 class Flux1D : public IFlux {
 public:
-  Flux1D(Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
+  Flux1D(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
   virtual ~Flux1D();
 
   virtual void flux() override;
@@ -63,7 +63,7 @@ private:
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
+  Flux2D(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
   virtual ~Flux2D();
 
   virtual void flux() override;
@@ -71,7 +71,7 @@ public:
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, const Real, Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
+  Flux3D(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
   ~Flux3D();
 
   virtual void flux() override;

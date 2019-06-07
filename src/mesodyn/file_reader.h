@@ -12,8 +12,8 @@
 #include <sstream>
 #include <unistd.h>
 #include <memory>
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 #include <regex>
 #include <map>
 
@@ -96,7 +96,7 @@ class IReader {
             ERROR_FILE_FORMAT
         };
 
-        virtual void set_lattice_geometry(std::vector<std::string>&) = 0;
+        virtual void set_lattice_geometry(const std::vector<std::string>&) = 0;
 
         virtual std::vector<std::string> tokenize(std::string line, char delimiter);
 
@@ -113,7 +113,7 @@ class Pro_reader : public IReader {
         void read_dimensions(const std::vector<std::string>& header_tokens);
         void check_component_name_format(const std::string& header_token);
         std::vector<std::string> parse_data(const size_t number_of_components, const size_t first_component_column);
-        void set_lattice_geometry(std::vector<std::string>& last_line);
+        void set_lattice_geometry(const std::vector<std::string>& last_line);
         void adjust_indexing();
 
     public:
@@ -131,7 +131,7 @@ class Vtk_structured_grid_reader : public IReader {
             ERROR
         };
 
-        void set_lattice_geometry(std::vector<std::string>& tokens);
+        void set_lattice_geometry(const std::vector<std::string>& tokens);
         STATUS parse_next_data_block(std::vector<Real>& data);
         std::vector<Real> with_bounds(std::vector<Real>& input);
 

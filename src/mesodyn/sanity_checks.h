@@ -55,7 +55,7 @@ class Checkable
         m_views.push_back(obs);
     }
 
-    virtual void perform_checks()
+    virtual void perform_checks() const
     {
         vector<thread> threadObj;
         for (size_t i = 0; i < m_views.size(); ++i)
@@ -65,16 +65,8 @@ class Checkable
           t.join();
     }
 
-    const T * get_checkable_data() {
-        return m_checkable_data;
-    }
-
     const T * get_checkable_data() const {
         return m_checkable_data;
-    }
-
-    size_t get_checkable_size() {
-        return m_size;
     }
 
     size_t get_checkable_size() const {
@@ -136,7 +128,7 @@ class Check_between_zero_and_one : public Sanity_check
     int m_identifier=0;
 
   public:
-    Check_between_zero_and_one(Checkable<T>* checkable, int identifier=0)
+    explicit Check_between_zero_and_one(Checkable<T>* checkable, int identifier=0)
     : m_checkable{checkable}, m_identifier(identifier)
     {
         checkable->attach(this);

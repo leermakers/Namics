@@ -1,16 +1,17 @@
 #include "neighborlist.h"
 #include "lattice_object.h"
 
-Neighborlist::Neighborlist(Lattice_object<size_t>& mask_) : m_mask{mask_} { }
+Neighborlist::Neighborlist(const Lattice_object<size_t>& mask_) noexcept : m_mask{mask_}  { }
 
-void Neighborlist::register_config(Neighborlist_config& configuration_) {
-      if (!configuration_.subsystem_loop)
-         configuration_.subsystem_loop = std::bind(&Lattice_object<size_t>::full_system_plus_direction_neighborlist, m_mask, std::placeholders::_1);
+void Neighborlist::register_config(const Neighborlist_config& configuration_) {
+    m_configurations.emplace_back(configuration_);
 
-       m_configurations.emplace_back(configuration_);
-    }
+    if (!m_configurations.back().subsystem_loop)
+        m_configurations.back().subsystem_loop = std::bind(&Lattice_object<size_t>::full_system_plus_direction_neighborlist, m_mask, std::placeholders::_1);
 
-std::map<Dimension,int> Neighborlist::process_configuration(Neighborlist_config& config) {
+}
+
+std::map<Dimension,int> Neighborlist::process_configuration(const Neighborlist_config& config) {
       std::map<Dimension,int> offset {
         {Dimension::X, 0},
         {Dimension::Y, 0},
@@ -24,14 +25,14 @@ std::map<Dimension,int> Neighborlist::process_configuration(Neighborlist_config&
 
 //Clears all registered configurations!
 void::Neighborlist::build() {
-  stl::host_vector<size_t> temp_mask = m_mask.m_data;
+  const stl::host_vector<size_t>& temp_mask = m_mask.m_data;
 
       for (Neighborlist_config config : m_configurations) {
 
         // No fluxes will ever be calculated going from the boundary size_to the system
         std::map<Dimension,int> offset = process_configuration(config);
 
-        config.subsystem_loop([this, config, offset, temp_mask](size_t x, size_t y, size_t z) mutable {  
+        config.subsystem_loop([this, config, offset, temp_mask](const size_t x, const size_t y, const size_t z) mutable {  
           if ( temp_mask[m_mask.index(x, y, z)] == 1) {
             temp_subject.push_back( m_mask.index(x,y,z) );
 
@@ -49,14 +50,10 @@ void::Neighborlist::build() {
   
 }
 
-const stl::device_vector<size_t>& Neighborlist::get_subject() {
-//m_subject = temp_subject;
-      
+const stl::device_vector<size_t>& Neighborlist::get_subject() const noexcept {
   return m_subject;
 }
 
-const stl::device_vector<size_t>& Neighborlist::get_neighbors() {
-
-  //m_neighbors = temp_neighbors;
+const stl::device_vector<size_t>& Neighborlist::get_neighbors() const noexcept {
   return m_neighbors;
 }

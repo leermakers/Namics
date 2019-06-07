@@ -350,7 +350,7 @@ Lattice_object<size_t> Mesodyn::load_mask_from_sys() {
   return mask; 
 }
 
-shared_ptr<Boundary1D> Mesodyn::build_boundaries(Lattice_object<size_t>& mask) {
+shared_ptr<Boundary1D> Mesodyn::build_boundaries(const Lattice_object<size_t>& mask) {
   Boundary::Map boundary_conditions;
 
   // BC0: bX0, BC1: bXm, etc.

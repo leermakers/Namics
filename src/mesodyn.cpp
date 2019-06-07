@@ -148,7 +148,7 @@ bool Mesodyn::mesodyn() {
     New[0]->SolveMesodyn(loader_callback, solver_callback);
     order_parameter->execute();
 
-    cout << "Order parameter: " << order_parameter->get() << endl;
+    cout << "Order parameter: " << order_parameter->attach() << endl;
 
     if (enable_sanity_check)
       sanity_check();
@@ -402,7 +402,7 @@ int Mesodyn::write_output() {
      New[0]->PushOutput(); 
 
      Out[0]->push("filename", filename.str());
-     Out[0]->push("order_parameter", order_parameter->get());
+     Out[0]->push("order_parameter", order_parameter->attach());
      Out[0]->push("time",(int)t);
      Out[0]->push("timesteps", (int)timesteps);
      Out[0]->push("timebetweensaves", (int)timebetweensaves);

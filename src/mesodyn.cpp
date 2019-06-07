@@ -155,7 +155,6 @@ bool Mesodyn::mesodyn() {
 
     if (not In.back()->OutputList.empty() and t > save_delay and t % timebetweensaves == 0)
       write_output();
-    }
 
  /*   grand_potential_average += Sys[0]->GetGrandPotential();
 

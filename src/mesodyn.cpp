@@ -153,7 +153,7 @@ bool Mesodyn::mesodyn() {
     if (enable_sanity_check)
       sanity_check();
 
-    if (t > save_delay && t % timebetweensaves == 0) {
+    if (not In.back()->OutputList.empty() and t > save_delay and t % timebetweensaves == 0)
       write_output();
     }
 

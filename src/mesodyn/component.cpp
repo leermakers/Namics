@@ -15,7 +15,7 @@ Component::~Component() {
 
 /******* Interface *******/
 
-int Component::update_density(const Lattice_object<Real>& J, int sign) {
+int Component::update_density(Lattice_object<Real>& J, int sign) {
   //Explicit update
 
   if (J.size() != rho.size()) {
@@ -27,7 +27,7 @@ int Component::update_density(const Lattice_object<Real>& J, int sign) {
   return 0;
 }
 
-int Component::update_density(const Lattice_object<Real>& J1, Real ratio, int sign) {
+int Component::update_density(Lattice_object<Real>& J1, Real ratio, int sign) {
   //Implicit update
   if (J1.size() != rho.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;

@@ -219,6 +219,10 @@ size_t size() {
   return (system_size);
 }
 
+size_t size() const {
+  return (system_size);
+}
+
 
 void clear() {
     m_data.clear();

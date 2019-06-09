@@ -23,8 +23,8 @@ class IComponent {
     Lattice_object<Real> alpha;
 
     //Where lattice objects are fluxes, either implicit or explicit (flux at k and k+1)
-    virtual int update_density(Lattice_object<Real>&, int) = 0;
-    virtual int update_density(Lattice_object<Real>&, Real ratio, int=0) = 0; //Implicit scheme
+    virtual int update_density(const Lattice_object<Real>&, int) = 0;
+    virtual int update_density(const Lattice_object<Real>&, Real ratio, int=0) = 0; //Implicit scheme
 
     virtual void update_boundaries() = 0;
 
@@ -37,8 +37,8 @@ public:
   Component(Lattice*, shared_ptr<Boundary1D>, Lattice_object<Real>); //1D
   ~Component();
   
-  int update_density(Lattice_object<Real>&, int) override;     //Explicit scheme
-  int update_density(Lattice_object<Real>&, Real ratio, int=0) override; //Implicit scheme
+  int update_density(const Lattice_object<Real>&, int) override;     //Explicit scheme
+  int update_density(const Lattice_object<Real>&, Real ratio, int=0) override; //Implicit scheme
   void update_boundaries() override;
   std::thread par_update_boundaries() {
     return std::thread(&Component::update_boundaries, this);

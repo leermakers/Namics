@@ -248,6 +248,10 @@ const stl::device_vector<T>& previous_state() {
   return saved_state->state;
 }
 
+const stl::device_vector<T>& previous_state() const {
+  return saved_state->state;
+}
+
 void reinstate_previous_state() {
   m_data = saved_state->state;
   set_checkable_data_wrapper();

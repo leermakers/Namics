@@ -163,7 +163,7 @@ class IProfile_writer
 
 namespace Profile_writer {
     typedef Factory_template<IProfile_writer, Writable_filetype, Lattice*, Writable_file> Factory;
-    extern map<std::string, Writable_filetype> input_options;
+    extern map<std::string, Writable_filetype> output_options;
 }
 
 class Vtk_structured_grid_writer : public IProfile_writer
@@ -221,6 +221,51 @@ class IParameter_writer
         vector<string> m_selected_variables;
         Writable_file m_file;
         std::ofstream m_filestream;
+};
+
+namespace Parameter_writer {
+    typedef Factory_template<IParameter_writer, Writable_filetype, Writable_file> Factory;
+    extern map<std::string, Writable_filetype> output_options;
+}
+
+class JSON_parameter_writer : public IParameter_writer
+{
+    public:
+        JSON_parameter_writer(Writable_file);
+        ~JSON_parameter_writer();
+
+
+        void write();
+        void prepare_for_data(vector<string>&);
+
+        enum class STATE {
+            NONE,
+            IS_OPEN,
+            IS_CLOSED,
+        };
+
+        STATE get_state();
+        void finalize();
+        
+    private:
+        STATE m_state;
+        std::vector<std::string> m_constants;
+        std::vector<std::string> m_selected_constants;
+        std::vector<std::string> m_metadata;
+        std::vector<std::string> m_selected_metadata;
+        std::vector<std::string> m_timespan;
+        std::vector<std::string> m_selected_timespan;
+        void partition_selected_variables(std::vector<std::string>&, std::vector<std::string>&);
+        void preprocess_categories();
+        void write_list(std::vector<std::string>&);
+        bool is_number(std::string&);
+        void write_array_object(std::vector<std::string>&);
+        void open_json();
+        void close_json();
+        void open_object(const std::string&);
+        void close_object();
+        void open_array(const std::string&);
+        void close_array();
 };
 
 class Kal_writer : public IParameter_writer

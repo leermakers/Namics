@@ -1,16 +1,32 @@
 #include "file_writer.h"
+#include "../lattice.h"
+
+// Writing a new writer? Check out the header for instructions
 
 Register_class<IProfile_writer, Vtk_structured_grid_writer, Writable_filetype, Lattice*, Writable_file> Vtk_structured_grid_writer_factory(Writable_filetype::VTK_STRUCTURED_GRID);
 Register_class<IProfile_writer, Vtk_structured_points_writer, Writable_filetype, Lattice*, Writable_file> Vtk_structured_points_writer_factory(Writable_filetype::VTK_STRUCTURED_POINTS);
 Register_class<IProfile_writer, Pro_writer, Writable_filetype, Lattice*, Writable_file> Pro_writer_factory(Writable_filetype::PRO);
 
-map<std::string, Writable_filetype> Profile_writer::input_options {
+map<std::string, Writable_filetype> Profile_writer::output_options {
+        {"vtk", Writable_filetype::VTK_STRUCTURED_POINTS},
         {"vtk_structured_grid", Writable_filetype::VTK_STRUCTURED_GRID},
         {"vtk_structured_points", Writable_filetype::VTK_STRUCTURED_POINTS},
-        {"pro", Writable_filetype::PRO}
+        {"pro", Writable_filetype::PRO},
     };
 
-std::map<Writable_filetype, std::string> Writable_file::extension_map {
+Register_class<IParameter_writer, Kal_writer, Writable_filetype, Writable_file> Kal_writer_factory(Writable_filetype::KAL);
+Register_class<IParameter_writer, Csv_parameter_writer, Writable_filetype, Writable_file> Csv_parameter_writer_factory(Writable_filetype::CSV);
+Register_class<IParameter_writer, JSON_parameter_writer, Writable_filetype, Writable_file> JSON_parameter_writer_factory(Writable_filetype::JSON);
+
+map<std::string, Writable_filetype> Parameter_writer::output_options {
+        {"kal", Writable_filetype::KAL},
+        {"json", Writable_filetype::JSON},
+        {"csv", Writable_filetype::CSV},
+    };
+
+typedef std::string Extension;
+
+std::map<Writable_filetype, Extension> Writable_file::extension_map {
     {Writable_filetype::KAL, "kal"},
     {Writable_filetype::VTK_STRUCTURED_GRID, "vtk"},
     {Writable_filetype::VTK_STRUCTURED_POINTS, "vtk"},

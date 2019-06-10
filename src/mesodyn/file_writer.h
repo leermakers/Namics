@@ -1,8 +1,44 @@
 #ifndef FILE_WRITER_H
 #define FILE_WRITER_H
 
+//  ***** Writing new File writers *****
+//
+//  If you follow the method below, everything will automatically work with any existing code
+//
+//  Inherit IProfile_writer when writing arrays of size M (system size incl bounds)
+//  Inherit IParameter_writer when writing invidual parameters, timesteps are supported.
+//
+//  You can basically overwrite two functions of the interface and you'll be done:
+//      -   void prepare_for_data()
+//          
+//          Meant to do operations that have to be done before any time-stepping is being done.
+//          In most writers use this to write headers or a pre-defined coordinate system.
+//          This is called only once when the output class initializes.
+//
+//      -   void write();
+//
+//          Used to write the actual data to file, everything that cannot be done on a per-timestep basis
+//          has to be done in prepare_for_data(). This is called for any timestep in a program.
+//
+//      -   NOTE: Files can then be opened using: m_filestream.open(m_file.get_filename());
+//      -   NOTE: If you want to categorise your parameter data, a Category_map is available from IParameter_writer
+//
+//  When you're done, we need to make sure your new writer is registered with the factory classes so that
+//  it is recognized when the user asks for your new writer:
+//
+//      -   Add an entry that describes your writer in the Writable_filetype enum below (use capitals)
+//      -   In file_writer.cpp register your class with the factory:
+//          Register_class< Interface, Implementation, Writable_filetype, Lattice* (only for Profile writers), Writable_file> Pro_writer_factory(Writable_filetype::YOURTYPE);
+//          where Interface is either IProfile_writer or IParameter_writer and Implementation is your class that inherited either. Remove Lattice* if you've written a
+//          parameter writer. Replace the function argument at the end by your newly added Writable_filetype from the previous step.
+//      -   Add a key for the input file for your writer by adding your Writable_filetype and the corresponding key to output_options of
+//          the corresponding namespace in file_writer.cpp.
+//      -   Feed the writers the correct extension by adding your Writable_filetype to the extension_map in file_writer.cpp
+//         
+//  DONE! Everything should now automatically work with all the existing code.
+//
+
 #include "factory.h"
-#include "../lattice.h"
 #include "../tools.h"
 #include "stl_typedef.h"
 #include "lattice_accessor.h"
@@ -14,6 +50,12 @@
 #include <functional>
 #include <iostream>
 #include <regex>
+
+#define Output_as_metadata IParameter_writer::CATEGORY::METADATA
+#define Output_as_timespan IParameter_writer::CATEGORY::TIMESPAN
+#define Output_as_constant IParameter_writer::CATEGORY::CONSTANT  
+
+class Lattice;
 
 enum class Writable_filetype
 {

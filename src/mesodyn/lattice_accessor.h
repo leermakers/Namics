@@ -2,8 +2,10 @@
 #define LATTICE_ACCESSOR_H
 
 #include <unistd.h> //size_t
-#include "../lattice.h"
 #include <map>
+#include <functional>
+
+class Lattice;
 
 enum class Dimension {
         X,
@@ -26,185 +28,36 @@ class Lattice_accessor {
     typedef std::map<Dimension, size_t> Coordinate;
 
   public:
-    Lattice_accessor(const Lattice* Lat)
-    : MX{ (size_t)Lat->MX },
-      MY{ (size_t)Lat->MY },
-      MZ{ (size_t)Lat->MZ },
-      system_size{ (size_t)Lat->M },
-      dimensionality{static_cast<Dimensionality>(Lat->gradients)},
-      jump_x{ (size_t)Lat->JX },
-      jump_y{ (size_t)Lat->JY },
-      jump_z{ (size_t)Lat->JZ }
-    { }
+    Lattice_accessor(const Lattice* Lat);
 
     const size_t MX, MY, MZ;
     const size_t system_size;
     //in lattice: gradients
     const Dimensionality dimensionality;
 
-    const Coordinate coordinate(const size_t index) const noexcept {
-        
-        size_t mod = 0;
-        Coordinate coordinate;
+    const Coordinate coordinate(size_t index);
 
-        coordinate[Dimension::X] = index / jump_x;
-        mod = index % jump_x;
+    void skip_bounds(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
-        if (dimensionality > 1) {
-            coordinate[Dimension::Y] = mod / jump_y;
-            mod = mod % jump_y;
-        }
+    void full_system_plus_direction_neighborlist(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
-        if (dimensionality > 2) {
-            coordinate[Dimension::Z] = mod / jump_z;
-        }
-        return coordinate;
-    }
+    void full_system_minus_direction_neighborlist(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
-    inline void skip_bounds(function<void(size_t, size_t, size_t)> function) {
-    size_t x{0};
-    size_t y{0};
+    void system_plus_bounds(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
-        for ( size_t z = SYSTEM_EDGE_OFFSET ; z < MZ+SYSTEM_EDGE_OFFSET ; ++z ) {
-            y = SYSTEM_EDGE_OFFSET;
-            do {
-                x = SYSTEM_EDGE_OFFSET;
-                do {
-                    function(x, y, z);
-                    ++x;
-                } while (x < MX+SYSTEM_EDGE_OFFSET );
-                ++y;
-            } while (y < MY+SYSTEM_EDGE_OFFSET );
-        }
-    }
+    size_t index (const size_t x, const size_t y, const size_t z) noexcept;
 
-    inline void full_system_plus_direction_neighborlist(function<void(size_t, size_t, size_t)> function) {
-    size_t x{0};
-    size_t y{0};
+    void x0_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
-        for ( size_t z = 0 ; z < MZ+SYSTEM_EDGE_OFFSET ; ++z ) {
-            y = SYSTEM_EDGE_OFFSET;
-            do {
-                x = SYSTEM_EDGE_OFFSET;
-                do {
-                    function(x, y, z);
-                    ++x;
-                } while (x < MX+SYSTEM_EDGE_OFFSET );
-                ++y;
-            } while (y < MY+SYSTEM_EDGE_OFFSET );
-        }
-    }
+    void xm_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
-    inline void full_system_minus_direction_neighborlist(function<void(size_t, size_t, size_t)> function) {
-    size_t x{0};
-    size_t y{0};
+    void y0_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
-        for ( size_t z = 1 ; z < MZ+SYSTEM_EDGE_OFFSET+1 ; ++z ) {
-            y = SYSTEM_EDGE_OFFSET;
-            do {
-                x = SYSTEM_EDGE_OFFSET;
-                do {
-                    function(x, y, z);
-                    ++x;
-                } while (x < MX+SYSTEM_EDGE_OFFSET );
-                ++y;
-            } while (y < MY+SYSTEM_EDGE_OFFSET );
-        }
-    }
+    void ym_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
-    inline void system_plus_bounds(function<void(size_t, size_t, size_t)> function) {
-    size_t x{0};
-    size_t y{0};
+    void z0_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
-        for ( size_t z = 0 ; z < MZ+BOUNDARIES ; ++z ) {
-            y = 0;
-            do {
-                x = 0;
-                do {
-                    function(x, y, z);
-                    ++x;
-                } while (x < MX+BOUNDARIES );
-                ++y;
-            } while (y < MY+BOUNDARIES );
-        }
-    }
-
-    inline size_t index (size_t x, size_t y, size_t z) const noexcept {
-        return (x*jump_x + y*jump_y + z*jump_z);
-    }
-
-
-    inline void x0_boundary(function<void(size_t, size_t, size_t)> function) {
-    size_t x = 0, y = 0, z = 0;
-    do {
-        y = 0;
-        do {
-            function(x,y,z);
-            ++y;
-            } while (y < MY+BOUNDARIES);
-        ++z;
-        } while (z < MZ+BOUNDARIES);   
-    }
-
-    inline void xm_boundary(function<void(size_t, size_t, size_t)> function) {
-      size_t x = MX + SYSTEM_EDGE_OFFSET, y = 0, z = 0;
-      do {
-        y = 0;
-        do {
-            function(x,y,z);
-          ++y;
-        } while (y < MY+BOUNDARIES);
-        ++z;
-      } while (z < MZ+BOUNDARIES);
-    }
-
-    inline void y0_boundary(function<void(size_t, size_t, size_t)> function) {
-        size_t x = 0, y = 0, z = 0;
-        do {
-            x = 0;
-            do {
-                function(x,y,z);
-                ++x;
-            } while (x < MX+BOUNDARIES);
-        ++z;
-        } while (z < MZ+BOUNDARIES);
-    }
-
-    inline void ym_boundary(function<void(size_t, size_t, size_t)> function) {
-        size_t x = 0, y = MY + SYSTEM_EDGE_OFFSET, z = 0;
-        do {
-            x = 0;
-            do {
-                function(x,y,z);
-                ++x;
-            } while (x < MX+BOUNDARIES);
-            ++z;
-        } while (z < MZ+BOUNDARIES);
-    }
-
-    inline void z0_boundary(function<void(size_t, size_t, size_t)> function) {
-        size_t x = 0, y = 0, z = 0;
-        do {
-            x = 0;
-            do {
-                function(x,y,z);
-                ++x;
-            } while (x < MX+BOUNDARIES);
-            ++y;
-        } while (y < MY+BOUNDARIES);
-    }
-
-    inline void zm_boundary(function<void(size_t, size_t, size_t)> function) {
-        size_t x = 0, y = 0, z = MZ + SYSTEM_EDGE_OFFSET;
-        do {
-            x = 0;
-            do {
-                function(x,y,z);
-                ++x;
-            } while (x < MX+BOUNDARIES);
-            ++y;
-        } while (y < MY+BOUNDARIES);
-    }
+    void zm_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
   private:
       //in lattice: JX

@@ -5,11 +5,16 @@
 #include <cassert>
 #include <functional>
 #include "stl_typedef.h"
-#include "lattice_accessor.h"
+
+
+// Forward declarations
+class Lattice_accessor;
+enum class Dimension;
 
 template<typename T>
 class Lattice_object;
 
+//Configuration
 enum Direction {
   minus = -1,
   plus = 1
@@ -21,7 +26,7 @@ struct Neighborlist_config {
   size_t parallel_offset;
   //optional:
   std::function<void(
-      function<void(size_t, size_t, size_t)>
+      std::function<void(size_t, size_t, size_t)>
     )> subsystem_loop;
 };
 
@@ -36,7 +41,7 @@ class Neighborlist {
     stl::host_vector<size_t> temp_subject;
     stl::host_vector<size_t> temp_neighbors;
 
-    void skip_bounds(function<void(size_t, size_t, size_t)> function);
+    void skip_bounds(std::function<void(size_t, size_t, size_t)> function);
 
   public:
     Neighborlist(const Lattice_object<size_t>& mask_) noexcept;

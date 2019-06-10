@@ -42,7 +42,7 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       timebetweensaves                 { initialize<size_t>("timebetweensaves", 1) },
       cn_ratio                         { initialize<Real>("cn_ratio", 0.5) },
       enable_sanity_check              { initialize<bool>("sanity_check", 0)},
-      output_profile_filetype          { initialize_enum<Writable_filetype>("profile_type", Writable_filetype::VTK_STRUCTURED_GRID, Profile_writer::input_options)},
+      output_profile_filetype          { initialize_enum<Writable_filetype>("profile_type", Writable_filetype::VTK_STRUCTURED_GRID, Profile_writer::output_options)},
       grand_cannonical                 { initialize<bool>("grand_cannonical", 0)},
       grand_cannonical_time_average    { initialize<size_t>("grand_cannonical_time_average", timesteps > 100 ? 20 : 5 ) },
       grand_cannonical_molecule        { initialize<size_t>("grand_cannonical_molecule", Sys[0]->solvent == 0 ? 1 : 0)},

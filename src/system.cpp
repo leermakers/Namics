@@ -1017,7 +1017,7 @@ void System::DoElectrostatics(Real* g, Real* x) {
 	if (fixedPsi0) {
 		int length=FrozenList.size();
 		for (int i=0; i<length; i++) {
-			Seg[FrozenList[i]]->UpdateValence(g,psi,q,eps);
+			Seg[FrozenList[i]]->UpdateValence(g,psi,q,eps,grad_epsilon);
 		}
 	}
 }

@@ -116,7 +116,7 @@ public:
 	Real ComputeTheta(Real*);
 	void UpdateEE(Real*, Real*,Real*);
 	void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
-	void UpdateQ(Real*,Real*,Real*,Real*,int*);
+	void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
 	bool ReadGuess(string, Real* ,string&, vector<string>&, vector<string>&, bool&, int&, int&, int&, int&, int);
 	bool StoreGuess(string,Real*,string, vector<string>,vector<string>, bool,int);
 	bool PutVarInfo(string,string,Real);

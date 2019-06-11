@@ -945,14 +945,13 @@ if (debug) cout << "DivL in lattice " << endl;
 Real Lattice:: Moment(Real* X,int n) {
 if (debug) cout << "Moment in lattice " << endl;
 	Real Result=0;
-if (fjc>1) cout <<"Moment in lattice needs attention " << endl; 
 	Real cor; 
 	if (gradients !=1 || geometry!="planar" ) {cout << "Moments analysis is only implemented for one-gradient, planar system " << endl;  return Result; }
 	remove_bounds(X);
 	for (int i = fjc; i<M; i++) {
-		cor = 1.0*(i-fjc+1)/fjc; Result += pow(cor,n)*X[i]; 
+		cor = (i-fjc+0.5)/fjc; Result += pow(cor,n)*X[i]; 
 	}	
-	return Result/fjc;
+	return Result;
 }
 
 Real Lattice::WeightedSum(Real* X){
@@ -2620,7 +2619,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 	switch (gradients) {
 		case 1:
 			a=0; b=psi[fjc-1]; c=psi[fjc];
-			for (x=fjc; x<MX+fjc; x++) { //for all geometries
+			for (x=fjc; x<MX+fjc; x++) { 
 				a=b; b=c; c=psi[x+1];
 				if (Mask[x] == 0) psi[x]=0.5*(a+c)+q[x]*C/eps[x]; 
 			}
@@ -2643,15 +2642,20 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 				a=0; b=psi[fjc-1]; c=psi[fjc];a_=0; b_=eps[fjc-1]; c_=eps[fjc];
 				for (x=fjc; x<MX+fjc; x++) {//for all geometries
 					a=b; b=c; c=psi[x+1]; a_=b_; b_=c_; c_=eps[x+1];
-					if (Mask[x] == 0) psi[x]+=0.25*(c_-a_)*(c-a)/eps[x]*fjc*fjc;
+					if (Mask[x] == 0) {
+						psi[x]+=0.25*(c_-a_)*(c-a)/eps[x]*fjc*fjc;
+						
+					}
 				}
 			}
-			YisAminB(g,g,psi,M);
+			for (x=fjc; x<MX+fjc; x++) 
+			if (Mask[x] == 0) {
+				g[x]-=psi[x];
+			}
 			break;
 		case 2:
-			
 			for (x=fjc; x<MX+fjc; x++) {
-				for (y=fjc; y<MY+fjc; y++){ //for all geometries
+				for (y=fjc; y<MY+fjc; y++){
 					if (Mask[x*JX+y] == 0)
 					X[x*JX+y]=0.25*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
 						        +psi[x*JX+y-1]  +psi[x*JX+y+1])
@@ -2670,22 +2674,25 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 			if (grad_epsilon) {
 				for (x=fjc; x<MX+fjc; x++) {
 					for (y=fjc; y<MY+fjc; y++) {
-						if (Mask[x*JX+y] == 0)
-						X[x*JX+y]+=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
-                                              		   eps[x*JX+y+1]  -eps[x*JX+y-1])  *(psi[x*JX+y+1]  -psi[x*JX+y-1])/
-					           		   eps[x*JX+y]*fjc*fjc;
-						}
+						if (Mask[x*JX+y] == 0) {
+							X[x*JX+y]+=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
+                                              		   	   eps[x*JX+y+1]  -eps[x*JX+y-1])  *(psi[x*JX+y+1]  -psi[x*JX+y-1])/
+					           		   	   eps[x*JX+y]*fjc*fjc;
+						}	
+					}
 				}
 			}
-			Cp(psi,X,M);
-			YisAminB(g,g,psi,M);
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)
+			if (Mask[x*JX+y] == 0) {
+				psi[x*JX+y]=X[x*JX+y];
+				g[x*JX+y]-=psi[x*JX+y];
+			}
 			break;
 		case 3: 
 #ifdef CUDA
 			C *=6; 
 			Cp(X,psi,M);
 			UpPsi(g+JX+JY+1,psi+JX+JY+1,X+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1));
-			if (fjc==2) cout << "in GPU FJC-choices > 3 not implemented yet " << endl; 
 #else
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) { 
 				if (Mask[x*JX+y*JY+z] == 0)
@@ -2702,8 +2709,11 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 						          eps[x*JX+y*JY+z-1]  -eps[x*JX+y*JY+z+1])  *(psi[x*JX+y*JY+z-1]  -psi[x*JX+y*JY+z+1])
 							         /eps[x*JX+y*JY+z];
 			}
-			Cp(psi,X,M);
-			YisAminB(g,g,psi,M);
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++)
+			if (Mask[x*JX+y*JY+z] == 0) {
+				psi[x*JX+y*JY+z]=X[x*JX+y*JY+z];
+				g[x*JX+y*JY+z]-=psi[x*JX+y*JY+z];
+			}
 		
 #endif
 			break;
@@ -2715,132 +2725,112 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 
 }
 
-void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask) {//Not only update q (charge), but also g (from newton).
+
+void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
 	int x,y;
 	#ifndef CUDA
 	int z;
 	#endif
-cout <<"UpdateQ needs to be extemded to work with FJC_choices >3 (also for FJC_choices =3 we need to bring it in line with UpdatePsi) " << endl; 
+	Real a,b,c,a_,b_,c_;
 
-
-	Real epsXplus,epsXmin,epsYplus,epsYmin;
-	#ifndef CUDA
-	Real epsZplus, epsZmin;
-	#endif
 	Real C = -e*e/(eps0*k_BT*bond_length);
 	switch (gradients) {
 		case 1:
-			C *=2.0;
-			epsXplus=eps[0]+eps[1];
-			for (x=1; x<M-1; x++) {
-				epsXmin=epsXplus;
-				epsXplus=eps[x]+eps[x+1];
-				if (Mask[x]==1) {
-					if (geometry=="planar") {
-						q[x] = (epsXmin*psi[x-1]+epsXplus*psi[x+1]-(epsXplus+epsXmin)*psi[x])/C;
-					} else {
-						q[x] = (lambda_1[x]*epsXmin*psi[x-1]+lambda1[x]*epsXplus*psi[x+1]-(lambda1[x]*epsXplus+lambda_1[x]*epsXmin)*psi[x])/C;
-
-					}
-					g[x]=-q[x];
+			a=0; b=psi[fjc-1]; c=psi[fjc];
+			for (x=fjc; x<MX+fjc; x++) { //for all geometries
+				a=b; b=c; c=psi[x+1];
+				if (Mask[x] == 1) q[x] = -0.5*(a-2*b+c)*fjc*fjc*eps[x]/C; 
+			}
+	
+			if (geometry=="cylindrical") {
+				a=0; b=psi[fjc-1]; c=psi[fjc];
+				for (x=fjc; x<MX+fjc; x++) {
+					a=b; b=c; c=psi[x+1];
+					if (Mask[x] == 1) q[x]-=(c-a)/(2.0*(offset_first_layer*fjc+x-fjc+0.5))*fjc*eps[x]/C;
 				}
 			}
-			if (fjc>1) cout <<"error in updateQ " << endl;
+			if (geometry=="spherial") {
+				a=0; b=psi[fjc-1]; c=psi[fjc];
+				for (x=fjc; x<MX+fjc; x++) {
+					a=b; b=c; c=psi[x+1];
+					if (Mask[x] == 1) q[x]-=(c-a)/(offset_first_layer*fjc+x-fjc+0.5)*fjc*eps[x]/C;
+				}
+			}
+			if (grad_epsilon) {
+				a=0; b=psi[fjc-1]; c=psi[fjc]; a_=0; b_=eps[fjc-1]; c_=eps[fjc];
+				for (x=fjc; x<MX+fjc; x++) {//for all geometries
+					a=b; b=c; c=psi[x+1]; a_=b_; b_=c_; c_=eps[x+1];
+					if (Mask[x] == 1) q[x]-=0.25*(c_-a_)*(c-a)*fjc*fjc/C;
+				}
+			}
+			for (x=fjc; x<MX+fjc; x++) 
+			if (Mask[x] == 1) {
+				g[x]=-q[x];
+			}			
 			break;
-		case 2:
-			C *=4.0;
-			for (x=1; x<MX+1; x++) {
-				epsYplus = eps[x*JX]+eps[x*JX+1];
-				for (y=1; y<MY+1; y++) {
-					epsYmin=epsYplus;
-					epsYplus= eps[x*JX+y]+eps[x*JX+y+1];
-					epsXmin = eps[x*JX+y]+eps[(x-1)*JX+y];
-					epsXplus= eps[x*JX+y]+eps[(x+1)*JX+y];
-					if (Mask[x*JX+y]==1) {
-						if (geometry=="flat") {
-							q[x*JX+y]= (epsXmin*psi[(x-1)*JX+y]+epsXplus*psi[(x+1)*JX+y]+
-								epsYmin*psi[x*JX+y-1]+epsYplus*psi[x*JX+y+1]-
-								(epsXmin+epsXplus+epsYmin+epsYplus)*psi[x*JX+y])/C;
-						} else {
-							q[x*JX+y]= (lambda_1[x*JX+y]*epsXmin*psi[(x-1)*JX+y]+lambda1[x*JX+y]*epsXplus*psi[(x+1)*JX+y]+
-							 	epsYmin*psi[x*JX+y-1]+epsYplus*psi[x*JX+y+1]-
-								(lambda_1[x*JX+y]*epsXmin+lambda1[x*JX+y]*epsXplus+epsYmin+epsYplus)*psi[x*JX+y])/C;
+		case 2:	
+			for (x=fjc; x<MX+fjc; x++) {
+				for (y=fjc; y<MY+fjc; y++){ //for all geometries
+					if (Mask[x*JX+y] == 1)
+					q[x*JX+y]=-0.5*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
+						        +psi[x*JX+y-1]  +psi[x*JX+y+1]
+							 -4*psi[x*JX+y])*fjc*fjc*eps[x*JX+y]/C;
+				}
+			}
+	
+			if (geometry=="cylindrical") { //radial geometry in x no radial geometry in y
+				for (x=fjc; x<MX+fjc; x++) {
+					for (y=fjc; y<MY+fjc; y++){
+						if (Mask[x*JX+y] == 1)
+						q[x*JX+y]-=(psi[(x+1)*JX+y]-psi[(x-1)*JX+y])/(2.0*(offset_first_layer+x-fjc+0.5))*fjc*eps[x]/C;
+					}
+				}
+			}
+			if (grad_epsilon) {
+				for (x=fjc; x<MX+fjc; x++) {
+					for (y=fjc; y<MY+fjc; y++) {
+						if (Mask[x*JX+y] == 1)
+						q[x*JX+y]-=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
+                                              		   eps[x*JX+y+1]  -eps[x*JX+y-1])  *(psi[x*JX+y+1]  -psi[x*JX+y-1])*fjc*fjc/C;
 						}
-						g[x*JX+y]=-q[x*JX+y];
-					}
 				}
 			}
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)
+			if (Mask[x*JX+y] == 1) {
+				g[x*JX+y]=-q[x*JX+y];
+			}
 			break;
-		case 3:
-			C *=6.0;
+		case 3: 
 #ifdef CUDA
-			UpQ(g+JX+JY+1,q+JX+JY+1,psi+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1));
+			C *=6; 
+			Cp(X,psi,M);
+		UpQ(g + JX + JY + 1, q + JX + JY + 1, psi + JX + JY + 1, eps + JX + JY + 1, JX, JY, C, Mask + JX + JY + 1, M - 2 * (JX + JY + 1));
 #else
-			for (x=1; x<MX; x++) {
-				for (y=1; y<MY; y++) {
-					epsZplus=eps[x*JX+y*JY]+eps[x*JX+y*JY+1];
-					for (z=1; z<MZ; z++) {
-						epsZmin=epsZplus;
-						epsZplus=eps[x*JX+y*JY+z]+eps[x*JX+y*JY+z+1];
-						epsYmin= eps[x*JX+y*JY+z]+eps[x*JX+(y-1)*JY+z];
-						epsYplus=eps[x*JX+y*JY+z]+eps[x*JX+(y+1)*JY+z];
-						epsXmin = eps[x*JX+y*JY+z]+eps[(x-1)*JX+y*JY+z];
-						epsXplus= eps[x*JX+y*JY+z]+eps[(x+1)*JX+y*JY+z];
-						if (Mask[x*JX+y*JY+z]==1) {
-							psi[x*JX+y*JY+z]= (epsXmin*psi[(x-1)*JX+y*JY+z]+epsXplus*psi[(x+1)*JX+y*JY+z]+
-							                    epsYmin*psi[x*JX+(y-1)*JY+z]+epsYplus*psi[x*JX+(y+1)*JY+z]+
-									    epsZmin*psi[x*JX+y*JY+z-1]+epsZplus*psi[x*JX+y*JY+z+1]-
-									   (epsXmin+epsXplus+epsYmin+epsYplus+epsZmin+epsZplus)*psi[x*JX+y*JY+z])/C;
-							g[x*JX+y*JY+z]=-q[x*JX+y*JY+z];
-						}
-					}
-				}
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) { 
+				if (Mask[x*JX+y*JY+z] == 1)
+				q[x*JX+y*JY+z]=-0.5*(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
+						 +psi[x*JX+(y-1)*JY+z]+psi[x*JX+(y+1)*JY+z]
+					        +psi[x*JX+y*JY+z-1]  +psi[x*JX+y*JY+z+1]
+					          -6.0*q[x*JX+y*JY+z])*fjc*fjc*eps[x*JX+y*JY+z]/C;
 			}
+	
+			if (grad_epsilon) for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++){
+				if (Mask[x*JX+y*JY+z] == 1)
+				q[x*JX+y*JY+z]-=0.25*(eps[(x+1)*JX+y*JY+z]-eps[(x-1)*JX+y*JY+z])*(psi[(x+1)*JX+y*JY+z]-psi[(x-1)*JX+y*JY+z]+
+                                                    eps[x*JX+(y+1)*JY+z]-eps[x*JX+(y-1)*JY+z])*(psi[x*JX+(y+1)*JY+z]-psi[x*JX+(y-1)*JY+z]+
+						          eps[x*JX+y*JY+z-1]  -eps[x*JX+y*JY+z+1])  *(psi[x*JX+y*JY+z-1]  -psi[x*JX+y*JY+z+1])*fjc*fjc/C;
+			}
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++)
+			if (Mask[x*JX+y*JY+z] == 1) {
+				g[x*JX+y*JY+z]=-q[x*JX+y*JY+z];
+			}
+		
 #endif
 			break;
 		default:
 			break;
+
 	}
 }
 
 
-/* 
-template <typename T>
-void Lattice::remove_bounds(T *X){
-if (debug) cout <<" remove_bounds in lattice " << endl;
-	int x,y;
-	int j;
-	switch(gradients) {
-		case 1:
-			if (fjc==1) {
-				X[0]=0; X[MX+1]=0;
-			} else {
-				for (j=0; j<fjc; j++) {
-					X[j]=0;
-					X[(MX+2)*fjc-j-1]=0;
-				}
-			}
-			break;
-		case 2:
-			for (x=1; x<MX+1; x++) {
-				X[x*JX+0] = 0;
-				X[x*JX+MY+1]=0;
-			}
-			for (y=1; y<MY+1; y++) {
-				X[0+y] = 0;
-				X[(MX+1)*JX+y]=0;
-			}
-			break;
-		case 3:
-			if (sub_box_on!=0) {int k=sub_box_on;
-				for (int i=0; i<n_box[k]; i++)
-				RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
-			} else {
-			RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-			}
-			break;
-		default:
-			break;
-	}
-} 
-*/

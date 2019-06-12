@@ -16,11 +16,9 @@ map<std::string, Writable_filetype> Profile_writer::output_options {
 
 Register_class<IParameter_writer, Kal_writer, Writable_filetype, Writable_file> Kal_writer_factory(Writable_filetype::KAL);
 Register_class<IParameter_writer, Csv_parameter_writer, Writable_filetype, Writable_file> Csv_parameter_writer_factory(Writable_filetype::CSV);
-Register_class<IParameter_writer, JSON_parameter_writer, Writable_filetype, Writable_file> JSON_parameter_writer_factory(Writable_filetype::JSON);
 
 map<std::string, Writable_filetype> Parameter_writer::output_options {
         {"kal", Writable_filetype::KAL},
-        {"json", Writable_filetype::JSON},
         {"csv", Writable_filetype::CSV},
     };
 

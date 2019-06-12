@@ -47,6 +47,8 @@ class Lattice_accessor {
 
     size_t index (const size_t x, const size_t y, const size_t z) noexcept;
 
+    size_t index (const size_t x, const size_t y, const size_t z) const noexcept;
+
     void x0_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
     void xm_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept;

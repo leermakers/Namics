@@ -103,6 +103,10 @@ size_t Lattice_accessor::index (const size_t x, const size_t y, const size_t z) 
     return (x*jump_x + y*jump_y + z*jump_z);
 }
 
+size_t Lattice_accessor::index (const size_t x, const size_t y, const size_t z) const noexcept {
+    return (x*jump_x + y*jump_y + z*jump_z);
+}
+
 
 void Lattice_accessor::x0_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept {
 size_t x = 0, y = 0, z = 0;

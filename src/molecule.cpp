@@ -1514,10 +1514,9 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
-	Real theta_out = 0;
-	if (theta==0) theta_out = Lat[0]->WeightedSum(phitot);
-	push("theta",theta_out);
-	Real thetaexc=theta_out-phibulk*Lat[0]->Accesible_volume;
+	if (theta==0) theta = Lat[0]->WeightedSum(phitot);
+	push("theta",theta);
+	Real thetaexc=theta-phibulk*Lat[0]->Accesible_volume;
 	push("theta_exc",thetaexc);
 	push("n",n);
 	push("chainlength",chainlength);
@@ -1755,14 +1754,13 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s>first_s[generation]) {
-				Lat[0]->propagate(Gg_f,G1,s-1,s,M);
+				Lat[0] ->propagate(Gg_f,G1,s-1,s,M);
 			} else {
 				Cp(Gg_f+first_s[generation]*M,G1,M);
 			}
 			 s++;
 		}
 	}
-
 	if (save_memory) {
 		return Gg_f+last_stored[block]*M;
 	} else {
@@ -1832,7 +1830,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			s--;
 		}
 		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
-	} else /*if !save_memory*/ {
+	} else {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) {
 				Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
@@ -2007,11 +2005,11 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 				}
 				s++;
 			}
-		} else {	
+		} else {
 			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+			//Glast=propagate_forward(G1+molmon_nr[k]*M,s,k,generation,M);
 		}
 	}
-
 	free(GS);
 	return Glast;
 }
@@ -2023,7 +2021,9 @@ bool Molecule::ComputePhiBra() {
 	int generation=0;
 	int s=0;
 	Real* G=ForwardBra(generation,s);
+	//Lat[0]->remove_bounds(G);
 	GN=Lat[0]->WeightedSum(G);
+//cout << "GN " << GN << endl;
 	s--;
 	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);} //toggle; initialize on both spots the same G1, so that we always get proper start.
 	BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
@@ -2082,8 +2082,6 @@ if (debug) cout <<"propagate_forward for Molecule " + name << endl;
 			 s++;
 		}
 	}
-
-
 	if (save_memory) {
 		return Gg_f+last_stored[block]*M;
 	} else return Gg_f+(s-1)*M;

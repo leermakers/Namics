@@ -193,6 +193,9 @@ void Vtk_structured_points_writer::prepare_for_data()
 	vtk << "VTK output \n";
 	vtk << "ASCII\n";
 	vtk << "DATASET STRUCTURED_POINTS \n";
+    vtk << "SPACING 1 1 1 \n";
+    vtk << "ORIGIN 0 0 0";
+    vtk << "POINT_DATA " << MX*MY*MZ << "\n";
 	vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
 
     m_filestream << vtk.str();

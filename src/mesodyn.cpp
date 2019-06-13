@@ -148,7 +148,7 @@ bool Mesodyn::mesodyn() {
     if (enable_sanity_check)
       sanity_check();
 
-    if (not In.back()->OutputList.empty() and t > save_delay and t % timebetweensaves == 0)
+    if (t > save_delay and t % timebetweensaves == 0)
       write_output();
 
   } // time loop
@@ -329,6 +329,7 @@ void Mesodyn::register_output() {
 }
 
 int Mesodyn::write_output() {
+  if (not In.back()->OutputList.empty()) {
      Out.emplace_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], (int)t, timesteps / timebetweensaves));
      Out[0]->CheckInput(1);
      Out[0]->output_nr = t;
@@ -349,6 +350,7 @@ int Mesodyn::write_output() {
 
      Out[0]->WriteOutput(t);
      Out.clear();
+  }
 
     for (auto& parameter_writer : parameter_writers)
       parameter_writer->write();

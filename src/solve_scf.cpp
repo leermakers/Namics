@@ -1,8 +1,9 @@
 #include "solve_scf.h"
 #include <iostream>
 
-Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) {
-	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;Var=Var_;  Sta=Sta_; Rea=Rea_;
+Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) :
+	name{name_}, In{In_}, Sys{Sys_}, Seg{Seg_}, Lat{Lat_}, Mol{Mol_}, Var{Var_}, Sta{Sta_}, Rea{Rea_}
+{
 if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("method");
 	KEYS.push_back("gradient_type");

@@ -78,12 +78,6 @@ SFNewton::~SFNewton() {
   free(reverseDirection);
 }
 
-void SFNewton::residuals(Real*,Real*){}
-void SFNewton::inneriteration(Real*,Real*,Real*,Real,Real&,Real,int){} //x g accuracy nvar
-bool SFNewton::getnewtondirection() {return newtondirection;}
-int SFNewton::getiterations() {return iterations;}
-bool SFNewton::ispseudohessian() {return pseudohessian;}
-
 
 void SFNewton::multiply(Real *v,Real alpha, Real *h, Real *w, int nvar) { //done
 if(debug) cout <<"multiply in Newton" << endl;
@@ -932,7 +926,7 @@ int nvar=nvar_;
 
 		if (e_info) printf("DIIS has been notified\n");
 		if (e_info) printf("Your guess = %1e \n",residual);
-		while (residual > tolerance && it < iterationlimit) {
+		while ( residual > tolerance and it < iterationlimit) {
 			it++;
 			Cp(x0,x,nvar);
 			residuals(x,g);

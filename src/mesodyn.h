@@ -65,6 +65,8 @@ private:
   const size_t save_delay; // wait for a number of timesteps before saving
   const size_t timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   const Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
+  const bool adaptive_tolerance;
+  Real adaptive_tolerance_modifier;
   const bool enable_sanity_check;
   const Writable_filetype output_profile_filetype;
   const bool grand_cannonical;
@@ -83,11 +85,12 @@ private:
 
   /* Flow control */
   size_t t;
-  Real* solve_crank_nicolson();
+  
   void load_alpha(Real*, const size_t);
   void sanity_check();
   void update_densities();
   void prepare_densities_for_callback();
+  void adapt_tolerance();
   Real* device_vector_ptr_to_raw(stl::device_vector<Real>&);
   shared_ptr<Boundary1D> build_boundaries(const Lattice_object<size_t>&);
   void initialize_from_file(vector<Lattice_object<Real>>& densities);
@@ -139,6 +142,7 @@ public:
 
   int write_output();
   bool CheckInput();
+  Real* solve_crank_nicolson();
   
 
   //Const-correct way of initializing member variables from file.

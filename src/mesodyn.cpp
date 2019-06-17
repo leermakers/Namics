@@ -21,7 +21,9 @@ vector<string> Mesodyn::KEYS
     "profile_type",
     "grand_cannonical",
     "grand_cannonical_time_average",
-    "grand_cannonical_molecule"
+    "grand_cannonical_molecule",
+    "adaptive_tolerance_modifier",
+    "adaptive_tolerance"
 };
 
 Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
@@ -41,6 +43,8 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       save_delay                       { initialize<size_t>("save_delay", 0) },
       timebetweensaves                 { initialize<size_t>("timebetweensaves", 1) },
       cn_ratio                         { initialize<Real>("cn_ratio", 0.5) },
+      adaptive_tolerance               { initialize<bool>("adaptive_tolerance", 1)},
+      adaptive_tolerance_modifier      { initialize<Real>("adaptive_tolerance_modifier", 100)},
       enable_sanity_check              { initialize<bool>("sanity_check", 0)},
       output_profile_filetype          { initialize_enum<Writable_filetype>("profile_type", Writable_filetype::VTK_STRUCTURED_GRID, Profile_writer::output_options)},
       grand_cannonical                 { initialize<bool>("grand_cannonical", 0)},
@@ -141,6 +145,9 @@ bool Mesodyn::mesodyn() {
     for (auto& all_components : components) all_components->rho.save_state();
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
+
+    norm_densities->execute();
+
     order_parameter->execute();
 
     cout << "Order parameter: " << order_parameter->attach() << endl;
@@ -150,6 +157,10 @@ bool Mesodyn::mesodyn() {
 
     if (t > save_delay and t % timebetweensaves == 0)
       write_output();
+
+    if (adaptive_tolerance) {
+      adapt_tolerance();
+    }
 
   } // time loop
 
@@ -181,8 +192,23 @@ std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
     return combinations;
 }
 
-Real* Mesodyn::solve_crank_nicolson() {
+void Mesodyn::adapt_tolerance() {
+  // Dynamically adjust tolerance so that namics doesn't give us negative values for densities
+  auto minmax = stl::minmax_element(callback_densities.begin(), callback_densities.end());
+  cout << *minmax.first << " " << *minmax.second << endl;
+  int magnitude = floor(log10(*minmax.first));
+  double magnitude_2 = pow(10, magnitude) / adaptive_tolerance_modifier;
+  if (magnitude_2  > treat_lower_than_as_zero and New.back()->tolerance > magnitude_2) {
+    cout << "The gradients are getting steeper, lowering tolerance accordingly. New tolerance: " << magnitude_2 << endl;
+    New.back()->tolerance = magnitude_2;
+  }
+    if (New.back()->tolerance < magnitude_2) {
+    cout << "The gradients are getting smoother, increasing tolerance accordingly. New tolerance: " << magnitude_2 << endl;
+    New.back()->tolerance = magnitude_2;
+  } 
+}
 
+Real* Mesodyn::solve_crank_nicolson() {
   for (auto& all_components : components) {
     all_components->rho.reinstate_previous_state();
     all_components->update_boundaries();

@@ -35,14 +35,14 @@ void Lattice_accessor::skip_bounds(std::function<void(size_t, size_t, size_t)> f
 size_t x{0};
 size_t y{0};
 
-    for ( size_t z = SYSTEM_EDGE_OFFSET ; z < MZ+SYSTEM_EDGE_OFFSET ; ++z ) {
+    for ( size_t x = SYSTEM_EDGE_OFFSET ; x < MX+SYSTEM_EDGE_OFFSET ; ++x ) {
         y = SYSTEM_EDGE_OFFSET;
         do {
-            x = SYSTEM_EDGE_OFFSET;
+            z = SYSTEM_EDGE_OFFSET;
             do {
                 function(x, y, z);
-                ++x;
-            } while (x < MX+SYSTEM_EDGE_OFFSET );
+                ++z;
+            } while (z < MZ+SYSTEM_EDGE_OFFSET );
             ++y;
         } while (y < MY+SYSTEM_EDGE_OFFSET );
     }
@@ -52,14 +52,14 @@ void Lattice_accessor::full_system_plus_direction_neighborlist(std::function<voi
 size_t x{0};
 size_t y{0};
 
-    for ( size_t z = 0 ; z < MZ+SYSTEM_EDGE_OFFSET ; ++z ) {
+    for ( size_t x = 0 ; x < MX+SYSTEM_EDGE_OFFSET ; ++x ) {
         y = SYSTEM_EDGE_OFFSET;
         do {
-            x = SYSTEM_EDGE_OFFSET;
+            z = SYSTEM_EDGE_OFFSET;
             do {
                 function(x, y, z);
-                ++x;
-            } while (x < MX+SYSTEM_EDGE_OFFSET );
+                ++z;
+            } while (z < MZ+SYSTEM_EDGE_OFFSET );
             ++y;
         } while (y < MY+SYSTEM_EDGE_OFFSET );
     }
@@ -69,14 +69,14 @@ void Lattice_accessor::full_system_minus_direction_neighborlist(std::function<vo
 size_t x{0};
 size_t y{0};
 
-    for ( size_t z = 1 ; z < MZ+SYSTEM_EDGE_OFFSET+1 ; ++z ) {
+    for ( size_t x = 1 ; x < MX+SYSTEM_EDGE_OFFSET+1 ; ++x ) {
         y = SYSTEM_EDGE_OFFSET;
         do {
-            x = SYSTEM_EDGE_OFFSET;
+            z = SYSTEM_EDGE_OFFSET;
             do {
                 function(x, y, z);
-                ++x;
-            } while (x < MX+SYSTEM_EDGE_OFFSET );
+                ++z;
+            } while (z < MZ+SYSTEM_EDGE_OFFSET );
             ++y;
         } while (y < MY+SYSTEM_EDGE_OFFSET );
     }
@@ -86,14 +86,14 @@ void Lattice_accessor::system_plus_bounds(std::function<void(size_t, size_t, siz
 size_t x{0};
 size_t y{0};
 
-    for ( size_t z = 0 ; z < MZ+BOUNDARIES ; ++z ) {
+    for ( size_t x = 0 ; x < MX+BOUNDARIES ; ++x ) {
         y = 0;
         do {
-            x = 0;
+            z = 0;
             do {
                 function(x, y, z);
-                ++x;
-            } while (x < MX+BOUNDARIES );
+                ++z;
+            } while (z < MZ+BOUNDARIES );
             ++y;
         } while (y < MY+BOUNDARIES );
     }
@@ -111,71 +111,71 @@ size_t Lattice_accessor::index (const size_t x, const size_t y, const size_t z) 
 void Lattice_accessor::x0_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept {
 size_t x = 0, y = 0, z = 0;
 do {
-    y = 0;
+    z = 0;
     do {
         function(x,y,z);
-        ++y;
-        } while (y < MY+BOUNDARIES);
-    ++z;
-    } while (z < MZ+BOUNDARIES);   
+        ++z;
+        } while (z < MZ+BOUNDARIES);
+    ++y;
+    } while (y < MY+BOUNDARIES);   
 }
 
 void Lattice_accessor::xm_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept {
     size_t x = MX + SYSTEM_EDGE_OFFSET, y = 0, z = 0;
     do {
-    y = 0;
+    z = 0;
     do {
         function(x,y,z);
-        ++y;
-    } while (y < MY+BOUNDARIES);
-    ++z;
+        ++z;
     } while (z < MZ+BOUNDARIES);
+    ++y;
+    } while (y < MY+BOUNDARIES);
 }
 
 void Lattice_accessor::y0_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept {
     size_t x = 0, y = 0, z = 0;
     do {
-        x = 0;
+        z = 0;
         do {
             function(x,y,z);
-            ++x;
-        } while (x < MX+BOUNDARIES);
-    ++z;
-    } while (z < MZ+BOUNDARIES);
+            ++z;
+        } while (z < MZ+BOUNDARIES);
+    ++x;
+    } while (x < MX+BOUNDARIES);
 }
 
 void Lattice_accessor::ym_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept {
     size_t x = 0, y = MY + SYSTEM_EDGE_OFFSET, z = 0;
     do {
-        x = 0;
+        z = 0;
         do {
             function(x,y,z);
-            ++x;
-        } while (x < MX+BOUNDARIES);
-        ++z;
-    } while (z < MZ+BOUNDARIES);
+            ++z;
+        } while (z < MZ+BOUNDARIES);
+        ++x;
+    } while (x < MX+BOUNDARIES);
 }
 
 void Lattice_accessor::z0_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept {
     size_t x = 0, y = 0, z = 0;
     do {
-        x = 0;
+        y = 0;
         do {
             function(x,y,z);
-            ++x;
-        } while (x < MX+BOUNDARIES);
-        ++y;
-    } while (y < MY+BOUNDARIES);
+            ++y;
+        } while (y < MY+BOUNDARIES);
+        ++x;
+    } while (x < MX+BOUNDARIES);
 }
 
 void Lattice_accessor::zm_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept {
     size_t x = 0, y = 0, z = MZ + SYSTEM_EDGE_OFFSET;
     do {
-        x = 0;
+        y = 0;
         do {
             function(x,y,z);
-            ++x;
-        } while (x < MX+BOUNDARIES);
-        ++y;
-    } while (y < MY+BOUNDARIES);
+            ++y;
+        } while (y < MY+BOUNDARIES);
+        ++x;
+    } while (x < MX+BOUNDARIES);
 }

@@ -157,7 +157,7 @@ if(debug) cout <<"decompos in Newton" << endl;
 	Real sum,lsum,usum,phi,phitr,c,l;
 	Real *ha,*hai,*haj;
 	ha = &h[-1];
-	phitr = FLT_MAX;
+	phitr = std::numeric_limits<Real>::max();
 	ntr = 0;
 	i = 0;
 	while (i++<nvar) {

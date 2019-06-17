@@ -567,9 +567,6 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 					cerr << "Detected failure to converge, exiting" << endl;
 					exit(0);
 				}
-				//m = old_m;
-				//deltamax = old_deltamax;
-				//rescue_status = NONE;
 			}
 		break;
 		case PSEUDOHESSIAN:

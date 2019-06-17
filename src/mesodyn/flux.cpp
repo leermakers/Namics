@@ -77,7 +77,7 @@ void Flux1D::attach_neighborlists(shared_ptr<Neighborlist> neighborlist, Dimensi
 void Flux1D::flux() {
 
   //Zero (with bounds checking) vector J before use
-  stl::fill(J.begin(), J.end(), 0);
+  stl::fill(J.begin(), J.end(), 0.0);
 
   if (component_a->rho.size() != J.size()) {
     //already checked: A.alpha.size = B.alpha.size and A.rho.size = B.rho.size
@@ -131,7 +131,7 @@ int Flux1D::langevin_flux(Dimension dimension) {
     //J_minus[z] = -J_plus[z - jump] (substituted into equation below)
     //J = J_plus[z] + J_minus[z]
 
-  stl::fill(J_plus.begin(), J_plus.end(), 0);
+  stl::fill(J_plus.begin(), J_plus.end(), 0.0);
 
   stl::transform(mu.available_neighbors[dimension]->begin(), mu.available_neighbors[dimension]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
   stl::transform(L.available_sites->begin(), L.available_sites->end(), L.available_neighbors[dimension]->begin(), t_L.available_sites->begin(), stl::plus<Real>());

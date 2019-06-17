@@ -2,7 +2,6 @@
 #define SFNEWTONxH
 #include <vector>
 #include <cstdlib>
-#include <cfloat>
 #include "namics.h"
 
 class SFNewton {

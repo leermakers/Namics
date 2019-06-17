@@ -66,8 +66,6 @@ enum class Writable_filetype
     PRO
 };
 
-typedef double Real;
-
 struct Header {
     std::string OUT_key;
 	std::string OUT_name;

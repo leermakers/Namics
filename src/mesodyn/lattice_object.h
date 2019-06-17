@@ -47,7 +47,7 @@ const Lattice* m_subject_lattice;
 
 ~Lattice_object() { }
 
-explicit Lattice_object(const Lattice* Lat_, T init=0)
+explicit Lattice_object(const Lattice* Lat_, T init=0.0)
 : Lattice_accessor{Lat_}, Checkable<T>{ (T*)this, system_size }, m_data(system_size, init), m_subject_lattice{ Lat_ }
     {
       //Because resizing m_data may have changed the memory

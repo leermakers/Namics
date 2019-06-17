@@ -17,12 +17,10 @@
 #include <regex>
 #include <map>
 
-typedef double Real;
-
 /*  
  *  These follow a bridge pattern with prototype IReader, concrete classes filetype_reader and bridge Reader.
  *   
- *  WRITING A NEW PARSER? IT'S EASY!
+ *  Writing a new parser?
  *      - Add your Readable_filetype to the Readable_filetype enumerator and extension_map below (Readable_file::, private)
  *      - Write your parser and (publicly) inherit and implement IReader
  *      - Add your class to Reader::read_objects_in()

@@ -34,7 +34,7 @@ int Component::update_density(const Lattice_object<Real>& J1, Real ratio, int si
   }
   // Rho <- A * J1 + Rho
   stl::transform(J1.previous_state().begin(), J1.previous_state().end(), rho.begin(), rho.begin(), saxpy_functor(sign*ratio) );
-  stl::transform(J1.begin(), J1.end(), rho.begin(), rho.begin(), saxpy_functor((1.0f-ratio)*sign) );
+  stl::transform(J1.begin(), J1.end(), rho.begin(), rho.begin(), saxpy_functor((1.0-ratio)*sign) );
 
   return 0;
 }
@@ -46,7 +46,7 @@ void Component::update_boundaries() {
 
 Real Component::theta() {
   //TODO: update once rho gets a neighborlist
-  Real sum{0};
+  Real sum{0.0};
   boundary->zero_boundaries( rho.m_data );
   #ifdef PAR_MESODYN
   sum = stl::reduce(rho.begin(), rho.end(), sum);

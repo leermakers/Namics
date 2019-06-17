@@ -15,7 +15,6 @@
 //#include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <memory>
-#include <cfloat>
 
 //extern cublasStatus_t stat;
 //extern cublasHandle_t handle;

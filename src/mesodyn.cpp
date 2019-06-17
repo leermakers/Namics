@@ -22,6 +22,7 @@ vector<string> Mesodyn::KEYS
     "grand_cannonical",
     "grand_cannonical_time_average",
     "grand_cannonical_molecule",
+    "treat_lower_than_as_zero",
     "adaptive_tolerance_modifier",
     "adaptive_tolerance"
 };
@@ -43,6 +44,7 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       save_delay                       { initialize<size_t>("save_delay", 0) },
       timebetweensaves                 { initialize<size_t>("timebetweensaves", 1) },
       cn_ratio                         { initialize<Real>("cn_ratio", 0.5) },
+      treat_lower_than_as_zero         { initialize<Real>("treat_lower_than_as_zero", New.back()->tolerance*0.1)},
       adaptive_tolerance               { initialize<bool>("adaptive_tolerance", 1)},
       adaptive_tolerance_modifier      { initialize<Real>("adaptive_tolerance_modifier", 100)},
       enable_sanity_check              { initialize<bool>("sanity_check", 0)},
@@ -117,7 +119,7 @@ bool Mesodyn::mesodyn() {
     // Attach sanity checks
     for (size_t i = 0 ; i < component_no; ++i) {
       checks.emplace_back(new Check_between_zero_and_one<Real>(&components[i]->rho, i));
-      checks.emplace_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0), i));
+      checks.emplace_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0.0), i));
     }
 
     Check_index_unity<Real> check_rho(&components[0]->rho);
@@ -135,7 +137,6 @@ bool Mesodyn::mesodyn() {
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
   /**** Main MesoDyn time loop ****/
-  //int z = 1;
   for (t = 0; t < timesteps+1; t++) {
     cout << "MESODYN: t = " << t << " / " << timesteps << endl;
 
@@ -219,6 +220,8 @@ Real* Mesodyn::solve_crank_nicolson() {
 
   update_densities();
 
+  enforce_minimum_density->execute();
+
   prepare_densities_for_callback();
 
   return device_vector_ptr_to_raw(callback_densities);
@@ -290,6 +293,7 @@ int Mesodyn::initial_conditions() {
 
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
   Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);
+  Mesodyn::enforce_minimum_density = make_unique<Treat_as_zero>(components, treat_lower_than_as_zero);
 
   norm_densities->execute();
 

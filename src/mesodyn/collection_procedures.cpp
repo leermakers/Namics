@@ -128,3 +128,15 @@ Real& Order_parameter::attach()
 {
   return m_order_parameter;
 }
+
+Treat_as_zero::Treat_as_zero(std::vector<shared_ptr<IComponent>> components_, Real tolerance_)
+    : m_components{components_}, m_tolerance{tolerance_}
+{
+}
+
+void Treat_as_zero::execute()
+{
+  auto tolerance = this->m_tolerance;
+   for (auto& component : m_components)
+    stl::for_each(component->rho.begin(), component->rho.end(), [tolerance] DEVICE_LAMBDA (Real& a) mutable { if (a < tolerance) a = tolerance; } );
+}

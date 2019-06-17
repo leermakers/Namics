@@ -561,11 +561,20 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 			{
 				gradient=MESODYN;
 
-				success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+				try {
+					success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+				} catch (...) {
+					attempt_DIIS_rescue();
+					success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+					rescue_status = NONE;
+				}
 
 				if (success == false) {
-					cerr << "Detected failure to converge, exiting" << endl;
-					exit(0);
+					cerr << "Detected failure to converge, zeroing iteration variables and giving it one more try." << endl;
+					Zero(xx,iv);
+					success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+					if (success == false)
+						exit(0);
 				}
 			}
 		break;
@@ -688,7 +697,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 			TransferDataToDevice(RHO, g, iv);
 			#endif
 			
-
+			
 			size_t k = 0;
 			for (size_t i = 0 ; i < In[0]->MolList.size() ; ++i) {
 				for (size_t a = 0 ; a < Mol[i]->MolMonList.size(); ++a) {
@@ -1093,7 +1102,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 
 
 
-bool Solve_scf::attempt_DIIS_rescue() {
+*/bool Solve_scf::attempt_DIIS_rescue() {
 	cout << "Attempting rescue!" << endl;
 	switch (rescue_status) {
 		case NONE:
@@ -1122,4 +1131,3 @@ bool Solve_scf::attempt_DIIS_rescue() {
 	}
 	return true;
 }
-*/

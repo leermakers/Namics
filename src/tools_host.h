@@ -246,26 +246,26 @@ void YisAplusB(T *Y, T *A, T *B, int M)   {
 
 template<typename T>
 void YplusisCtimesX(T *Y, T *X, T C, int M)    {
-	//for (int i=0; i<M; i++) Y[i] += C*X[i];
-	std::transform(X, X+M, Y, Y, std::placeholders::_2 + C*std::placeholders::_1);
+	for (int i=0; i<M; i++) Y[i] += C*X[i];
+	//std::transform(X, X+M, Y, Y, std::placeholders::_2 + C*std::placeholders::_1);
 }
 
 template<typename T>
 void UpdateAlpha(T *Y, T *X, T C, int M)    {
-	std::transform(X, X+M, Y, Y, std::placeholders::_2 + (std::placeholders::_1*C - 1.0*C)) ;
-	//for (int i=0; i<M; i++) Y[i] += C*(X[i]-1.0);
+	//std::transform(X, X+M, Y, Y, std::placeholders::_2 + (std::placeholders::_1*C - 1.0*C)) ;
+	for (int i=0; i<M; i++) Y[i] += C*(X[i]-1.0);
 }
 
 template<typename T>
 void Picard(T *Y, T *X, T C, int M)    {
-	std::transform(X, X+M, Y, Y, C * std::placeholders::_2 + (1.0 - C) * std::placeholders::_1) ;
-	//for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
+	//std::transform(X, X+M, Y, Y, C * std::placeholders::_2 + (1.0 - C) * std::placeholders::_1) ;
+	for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
 }
 
 template<typename T>
 void Dubble(Real *P, T *A, T norm,int M)   {
-	std::transform(A, A+M, P, P, std::placeholders::_2 * (norm/std::placeholders::_1)) ;
-	//for (int i=0; i<M; i++) P[i]*=norm/A[i];
+	//std::transform(A, A+M, P, P, std::placeholders::_2 * (norm/std::placeholders::_1)) ;
+	for (int i=0; i<M; i++) P[i]*=norm/A[i];
 }
 
 template<typename T>

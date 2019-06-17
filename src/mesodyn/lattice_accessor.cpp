@@ -32,7 +32,7 @@ const Lattice_accessor::Coordinate Lattice_accessor::coordinate(size_t index) {
 }
 
 void Lattice_accessor::skip_bounds(std::function<void(size_t, size_t, size_t)> function) noexcept {
-size_t x{0};
+size_t z{0};
 size_t y{0};
 
     for ( size_t x = SYSTEM_EDGE_OFFSET ; x < MX+SYSTEM_EDGE_OFFSET ; ++x ) {
@@ -49,7 +49,7 @@ size_t y{0};
 }
 
 void Lattice_accessor::full_system_plus_direction_neighborlist(std::function<void(size_t, size_t, size_t)> function) noexcept {
-size_t x{0};
+size_t z{0};
 size_t y{0};
 
     for ( size_t x = 0 ; x < MX+SYSTEM_EDGE_OFFSET ; ++x ) {
@@ -66,7 +66,7 @@ size_t y{0};
 }
 
 void Lattice_accessor::full_system_minus_direction_neighborlist(std::function<void(size_t, size_t, size_t)> function) noexcept {
-size_t x{0};
+size_t z{0};
 size_t y{0};
 
     for ( size_t x = 1 ; x < MX+SYSTEM_EDGE_OFFSET+1 ; ++x ) {
@@ -83,7 +83,7 @@ size_t y{0};
 }
 
 void Lattice_accessor::system_plus_bounds(std::function<void(size_t, size_t, size_t)> function) noexcept {
-size_t x{0};
+size_t z{0};
 size_t y{0};
 
     for ( size_t x = 0 ; x < MX+BOUNDARIES ; ++x ) {

@@ -4,6 +4,7 @@
 #include <numeric>
 #include <algorithm>
 #include <functional>
+#include <smmintrin.h>
 #include <cmath>
 
 struct saxpy_functor
@@ -189,8 +190,26 @@ inline void RemoveBoundaries(T* P, int jx, int jy, int bx1, int bxm, int by1, in
 
 template<typename T>
 void Dot(T &result, T *x,T *y, int M)   {
-	result=0.0;
- 	for (int i=0; i<M; i++) result +=x[i]*y[i];
+	T z = 0.0;
+	result = 0.0;
+	T ftmp[2] = { 0.0, 0.0 };
+	__m128d mres;
+	
+	if ((M / 2) != 0) {
+		mres = _mm_load_sd(&z);
+		for (int i = 0; i < M / 2; i++)
+			mres = _mm_add_pd(mres, _mm_mul_pd(_mm_loadu_pd(&x[2*i]),
+			_mm_loadu_pd(&y[2*i])));                
+
+		_mm_store_pd(ftmp, mres);                
+
+		result = ftmp[0] + ftmp[1];
+}
+
+	if ((M % 2) != 0) {
+		for (int i = M - M % 2; i < M; i++)
+			result += x[i] * y[i];
+	}
 }
 
 template<typename T>

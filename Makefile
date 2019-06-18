@@ -5,7 +5,7 @@ else
 CC			:=g++
 endif
 
-NVCC        :=nvcc
+NVCC        :=/usr/local/cuda-9.0/bin/nvcc
 
 #The Target Binary Program
 TARGET      := namics
@@ -22,12 +22,12 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -g -Wall -Ofast -std=c++14 -march=native
+CFLAGS      := -Wall -Ofast -std=c++14 -msse -march=native
 LIB         := -lm -lpthread
-INC         := -I/usr/local/cuda/include -I/usr/local/include -I/usr/include
+INC         := -I/usr/local/cuda-9.0/include -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
-	LIB        += -L/usr/local/cuda/lib64 -lcuda -lcudart
+	LIB        += -L/usr/local/cuda-9.0/lib64 -lcuda -lcudart
 	CFLAGS     += -DCUDA
 	NVCCFLAGS  := -g -ccbin gcc-5 -arch=sm_61 -std=c++14 -DCUDA
 	ifdef PAR_MESODYN

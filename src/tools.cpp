@@ -74,18 +74,18 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 __global__ void propagate_gs_1_locality(Real* gs, Real* gs_1, int JX, int JY, int JZ, int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M-JX) {
-		gs[idx+JZ_] += gs_1[idx];
-		gs[idx+JY_] += gs_1[idx];
-		gs[idx+JX_] += gs_1[idx];
+		gs[idx+JZ] += gs_1[idx];
+		gs[idx+JY] += gs_1[idx];
+		gs[idx+JX] += gs_1[idx];
 	}
 }
 
 __global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M-JX) {
-		gs[idx] += gs_1[idx+JZ_];
-		gs[idx] += gs_1[idx+JY_];
-		gs[idx] += gs_1[idx+JX_];
+		gs[idx] += gs_1[idx+JZ];
+		gs[idx] += gs_1[idx+JY];
+		gs[idx] += gs_1[idx+JX];
 		gs[idx] *= 1.0/6.0;
 		gs[idx] *= G1[idx];
 	}
@@ -659,12 +659,12 @@ void Dot(Real &result, Real *x,Real *y, int M)   {
 
 void Propagate_gs_1_locality(Real* gs, Real* gs_1, int JX, int JY, int JZ, int M) {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	propagate_gs_1_locality<<<n_blocks,block_size>>>(gs, gs_1, JX, JY, JZ);
+	propagate_gs_1_locality<<<n_blocks,block_size>>>(gs, gs_1, JX, JY, JZ, M);
 }
 
 void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	propagate_gs_locality<<<n_blocks,block_size>>>(gs, gs_1, G1 JX, JY, JZ);
+	propagate_gs_locality<<<n_blocks,block_size>>>(gs, gs_1, G1, JX, JY, JZ, M);
 }
 
 

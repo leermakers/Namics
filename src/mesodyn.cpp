@@ -230,10 +230,10 @@ Real* Mesodyn::solve_crank_nicolson() {
 
 void Mesodyn::update_densities() {
 
-    for (auto& all_fluxes : fluxes) {
-      all_fluxes->component_a->update_density(all_fluxes->J, cn_ratio, +1);
-      all_fluxes->component_b->update_density(all_fluxes->J, cn_ratio, -1);
-    }
+  for (auto& all_fluxes : fluxes) {
+    all_fluxes->component_a->update_density(all_fluxes->J, cn_ratio, +1);
+    all_fluxes->component_b->update_density(all_fluxes->J, cn_ratio, -1);
+  }
 
 }
 
@@ -385,10 +385,18 @@ int Mesodyn::write_output() {
     for (auto& parameter_writer : parameter_writers)
       parameter_writer->write();
 
+    for (auto& pair : output_profiles) {
+      dynamic_cast<Output_ptr<Real>*>(pair.second.get())->set_buffer(system_size);
+    }
+
     for (auto& profile_writer : profile_writers)
     {
       profile_writer->prepare_for_data();
       profile_writer->write();
+    }
+
+    for (auto& pair : output_profiles) {
+      dynamic_cast<Output_ptr<Real>*>(pair.second.get())->clear_buffer();
     }
 
     return 0;

@@ -80,26 +80,48 @@ class IOutput_ptr {
 template<typename T>
 class Output_ptr : public IOutput_ptr
 {
+    std::vector<Real> buffer;
+
     public:
         Output_ptr(T* parameter_)
-        : parameter{parameter_}
+        : parameter{parameter_}, buffer{0}
         {
+        }
+
+        void set_buffer(const size_t size) {
+            buffer.resize(size);
+            #ifdef PAR_MESODYN
+            TransferDataToHost(buffer.data(), const_cast<T*>(parameter), const_cast<size_t&>(size));
+            #else
+            for (size_t i = 0 ; i < size ; ++i)
+                buffer = parameter[i];
+            #endif
+        }
+
+        void clear_buffer() {
+            buffer.clear();
         }
 
         string data(const size_t offset = 0) override
         {
+            if (buffer.size() > 0) {
+                ostringstream out;
+                out << buffer[offset];
+                return out.str();
+            } else {
 
-            const T* data = new T;
+                const T* data = new T;
 
-        #ifdef PAR_MESODYN
-            TransferDataToHost(const_cast<T*>(data), const_cast<T*>(parameter+offset), 1);
-        #else
-            data = parameter+offset;
-        #endif
+            #ifdef PAR_MESODYN
+                TransferDataToHost(const_cast<T*>(data), const_cast<T*>(parameter+offset), 1);
+            #else
+                data = parameter+offset;
+            #endif
 
-            ostringstream out;
-            out << *data;
-            return out.str();
+                ostringstream out;
+                out << *data;
+                return out.str();
+            }
         }
 
         const T* parameter;

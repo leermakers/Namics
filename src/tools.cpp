@@ -71,6 +71,26 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 	}
 }
 
+__global__ void propagate_gs_1_locality(Real* gs, Real* gs_1, int JX, int JY, int JZ, int M) {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M-JX) {
+		gs[idx+JZ_] += gs_1[idx];
+		gs[idx+JY_] += gs_1[idx];
+		gs[idx+JX_] += gs_1[idx];
+	}
+}
+
+__global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M-JX) {
+		gs[idx] += gs_1[idx+JZ_];
+		gs[idx] += gs_1[idx+JY_];
+		gs[idx] += gs_1[idx+JX_];
+		gs[idx] *= 1.0/6.0;
+		gs[idx] *= G1[idx];
+	}
+}
+
 
 
 __global__ void dot(Real *a, Real *b, Real *dot_res, int M)
@@ -152,10 +172,6 @@ __global__ void zero(Real *P, int M)   {
 __global__ void unity(Real *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0;
-}
-__global__ void flux_min(Real *P, Real* T, int jump, int M)   {
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) P[idx] = -T[idx-jump];
 }
 
 __global__ void zero(int *P, int M)   {
@@ -641,6 +657,17 @@ void Dot(Real &result, Real *x,Real *y, int M)   {
 	cudaFree(_result);
 }
 
+void Propagate_gs_1_locality(Real* gs, Real* gs_1, int JX, int JY, int JZ, int M) {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	propagate_gs_1_locality<<<n_blocks,block_size>>>(gs, gs_1, JX, JY, JZ);
+}
+
+void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	propagate_gs_locality<<<n_blocks,block_size>>>(gs, gs_1, G1 JX, JY, JZ);
+}
+
+
 void Sum(Real &result, Real *x, int M)   {
 	Real* _result = (Real*)AllOnDev(1);
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
@@ -955,13 +982,13 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
         if (i < m)
         {
             for (k = i; k < m; k++)
-                scale += fabs((Real)a[k][i]);
+                scale += fabs((Real)a[i][k]);
             if (scale)
             {
                 for (k = i; k < m; k++)
                 {
-                    a[k][i] = (Real)((Real)a[k][i]/scale);
-                    s += ((Real)a[k][i] * (Real)a[k][i]);
+                    a[i][k] = (Real)((Real)a[i][k]/scale);
+                    s += ((Real)a[i][k] * (Real)a[i][k]);
                 }
                 f = (Real)a[i][i];
                 g = -SIGN(sqrt(s), f);
@@ -972,14 +999,14 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
                     for (j = l; j < n; j++)
                     {
                         for (s = 0.0, k = i; k < m; k++)
-                            s += ((Real)a[k][i] * (Real)a[k][j]);
+                            s += ((Real)a[i][k] * (Real)a[j][k]);
                         f = s / h;
                         for (k = i; k < m; k++)
-                            a[k][j] += (Real)(f * (Real)a[k][i]);
+                            a[j][k] += (Real)(f * (Real)a[i][k]);
                     }
                 }
                 for (k = i; k < m; k++)
-                    a[k][i] = (Real)((Real)a[k][i]*scale);
+                    a[i][k] = (Real)((Real)a[i][k]*scale);
             }
         }
         w[i] = (Real)(scale * g);
@@ -989,32 +1016,32 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
         if (i < m && i != n - 1)
         {
             for (k = l; k < n; k++)
-                scale += fabs((Real)a[i][k]);
+                scale += fabs((Real)a[k][i]);
             if (scale)
             {
                 for (k = l; k < n; k++)
                 {
-                    a[i][k] = (Real)((Real)a[i][k]/scale);
-                    s += ((Real)a[i][k] * (Real)a[i][k]);
+                    a[k][i] = (Real)((Real)a[k][i]/scale);
+                    s += ((Real)a[k][i] * (Real)a[k][i]);
                 }
-                f = (Real)a[i][l];
+                f = (Real)a[l][i];
                 g = -SIGN(sqrt(s), f);
                 h = f * g - s;
-                a[i][l] = (Real)(f - g);
+                a[l][i] = (Real)(f - g);
                 for (k = l; k < n; k++)
-                    rv1[k] = (Real)a[i][k] / h;
+                    rv1[k] = (Real)a[k][i] / h;
                 if (i != m - 1)
                 {
                     for (j = l; j < m; j++)
                     {
                         for (s = 0.0, k = l; k < n; k++)
-                            s += ((Real)a[j][k] * (Real)a[i][k]);
+                            s += ((Real)a[k][j] * (Real)a[k][i]);
                         for (k = l; k < n; k++)
-                            a[j][k] += (Real)(s * rv1[k]);
+                            a[k][j] += (Real)(s * rv1[k]);
                     }
                 }
                 for (k = l; k < n; k++)
-                    a[i][k] = (Real)((Real)a[i][k]*scale);
+                    a[k][i] = (Real)((Real)a[k][i]*scale);
             }
         }
         anorm = MAX(anorm, (fabs((Real)w[i]) + fabs(rv1[i])));
@@ -1028,12 +1055,12 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
             if (g)
             {
                 for (j = l; j < n; j++)
-                    v[j][i] = (Real)(((Real)a[i][j] / (Real)a[i][l]) / g);
+                    v[j][i] = (Real)(((Real)a[j][i] / (Real)a[l][i]) / g);
                     /* Real division to avoid underflow */
                 for (j = l; j < n; j++)
                 {
                     for (s = 0.0, k = l; k < n; k++)
-                        s += ((Real)a[i][k] * (Real)v[k][j]);
+                        s += ((Real)a[k][i] * (Real)v[k][j]);
                     for (k = l; k < n; k++)
                         v[k][j] += (Real)(s * (Real)v[k][i]);
                 }
@@ -1053,7 +1080,7 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
         g = (Real)w[i];
         if (i < n - 1)
             for (j = l; j < n; j++)
-                a[i][j] = 0.0;
+                a[j][i] = 0.0;
         if (g)
         {
             g = 1.0 / g;
@@ -1062,26 +1089,26 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
                 for (j = l; j < n; j++)
                 {
                     for (s = 0.0, k = l; k < m; k++)
-                        s += ((Real)a[k][i] * (Real)a[k][j]);
+                        s += ((Real)a[i][k] * (Real)a[j][k]);
                     f = (s / (Real)a[i][i]) * g;
                     for (k = i; k < m; k++)
-                        a[k][j] += (Real)(f * (Real)a[k][i]);
+                        a[j][k] += (Real)(f * (Real)a[i][k]);
                 }
             }
             for (j = i; j < m; j++)
-                a[j][i] = (Real)((Real)a[j][i]*g);
+                a[i][j] = (Real)((Real)a[i][j]*g);
         }
         else
         {
             for (j = i; j < m; j++)
-                a[j][i] = 0.0;
+                a[i][j] = 0.0;
         }
         ++a[i][i];
     }
 
     for (int i=0; i<n; i++)
       for (int j=0; j<n; j++)
-        if (a[j][i] != a[j][i])
+        if (a[i][j] != a[i][j])
             throw -3;
 
     /* diagonalize the bidiagonal form */
@@ -1118,10 +1145,10 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
                         s = (- f * h);
                         for (j = 0; j < m; j++)
                         {
-                            y = (Real)a[j][nm];
-                            z = (Real)a[j][i];
-                            a[j][nm] = (Real)(y * c + z * s);
-                            a[j][i] = (Real)(z * c - y * s);
+                            y = (Real)a[nm][j];
+                            z = (Real)a[i][j];
+                            a[nm][j] = (Real)(y * c + z * s);
+                            a[i][j] = (Real)(z * c - y * s);
                         }
                     }
                 }
@@ -1189,10 +1216,10 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
                 x = (c * y) - (s * g);
                 for (jj = 0; jj < m; jj++)
                 {
-                    y = (Real)a[jj][j];
-                    z = (Real)a[jj][i];
-                    a[jj][j] = (Real)(y * c + z * s);
-                    a[jj][i] = (Real)(z * c - y * s);
+                    y = (Real)a[j][jj];
+                    z = (Real)a[i][jj];
+                    a[j][jj] = (Real)(y * c + z * s);
+                    a[i][jj] = (Real)(z * c - y * s);
                 }
             }
             rv1[l] = 0.0;

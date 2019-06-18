@@ -780,21 +780,29 @@ Real *S = new Real[N];
 		V[i] = new Real[N];
 	}
 
-	for (int i=0; i<N; i++)
+	
+	for (int i=0; i<N; i++) {
 		for (int j=0; j<N; j++) {
-      if (A[i*N + j] !=  A[i*N + j]) //If it contains NaNs
-        throw -2;
-			U[j][i] = A[i*N + j];
+			if (A[i*N + j] !=  A[i*N + j]) //If it contains NaNs
+        		throw -2;
+			U[i][j] = A[i*N + j];
+		}
     }
 
   if (N > 1) {
 		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
   		svdcmp(U, N, N, S, V);
 		if (debug) cout << "SVDCMP done, continuing.." << endl;
-		for (int i=0; i<N; i++) X[i]=0;
-		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[j][i];// *B[j];
-		for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is use because it is no longer needed.
-		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += V[i][j]*S[j];
+		for (int i=0; i<N; i++) {
+			X[i]=0;
+			for (int j=0; j<N; j++)
+				X[i] += U[i][j];// *B[j];
+			S[i] = X[i]/S[i];
+			X[i]=0;
+		}
+		for (int i=0; i<N; i++) 
+			for (int j=0; j<N; j++) 
+				X[i] += V[i][j]*S[j];
 	} else {
 		X[0]=1;
 	}
@@ -805,41 +813,50 @@ delete [] U; delete [] S; delete [] V;
 
 void SFNewton::DIIS(Real* x, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* Ci, int k, int k_diis, int m, int nvar) {
 if(debug) cout <<"DIIS in  SFNewton " << endl;
-	Real normC=0;
-  int posi;
+  	int posi;
+	  
 	if (k_diis>m) {
-    k_diis =m;
+    	k_diis =m;
 		for (int i=1; i<m; i++)
-      for (int j=1; j<m; j++)
-		    Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
+      		for (int j=1; j<m; j++)
+		    	Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
 	}
+
 	for (int i=0; i<k_diis; i++) {
-    posi = k-k_diis+1+i;
-    if (posi<0)
-      posi +=m;
-	  Real Dvalue;
-    Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
+    	posi = k-k_diis+1+i;
+    	if (posi<0) {
+      		posi +=m;
+		}
+	  	Real Dvalue;
+    	Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
 		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue;
-  }
 		// write to (compressed) matrix Apij
-	for (int i=0; i<k_diis; i++)
-    for (int j=0; j<k_diis; j++)
+		for (int j=0; j<k_diis; j++)
 		    Apij[j+k_diis*i] = Aij[j+m*i];
+  	}
+
 	Ax(Apij,Ci,k_diis);
+
+	Real normC=0;
+
 	for (int i=0; i<k_diis; i++)
-    normC +=Ci[i];
+    	normC +=Ci[i];
 	for (int i=0; i<k_diis; i++)
-    Ci[i] =Ci[i]/normC;
+    	Ci[i] =Ci[i]/normC;
+
 	Zero(x,nvar);
 	posi = k-k_diis+1;
-  if (posi<0)
-    posi +=m;
+
+  	if (posi<0)
+    	posi +=m;
 
 	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
+
 	for (int i=1; i<k_diis; i++) {
 		posi = k-k_diis+1+i;
-    if (posi<0)
-      posi +=m;
+    	if (posi<0) {
+      		posi +=m;
+		}
 		YplusisCtimesX(x,xR+posi*nvar,Ci[i],nvar);
 	}
 }

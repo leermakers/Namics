@@ -559,23 +559,25 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 	switch (solver) {
 		case diis:
 			{
+				success = false;
 				gradient=MESODYN;
 
-				try {
-					success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
-				} catch (...) {
-					attempt_DIIS_rescue();
-					success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
-					rescue_status = NONE;
+				while (success == false) {
+					try {
+						success = iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+						if (success == false) {
+							cerr << "Detected failure to converge, zeroing iteration variables and giving it one more try." << endl;
+							Zero(xx,iv);
+							success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+							if (success == false)
+								exit(0);
+						}		
+					} catch (...) {
+						success = false;
+						attempt_DIIS_rescue();
+					}
 				}
-
-				if (success == false) {
-					cerr << "Detected failure to converge, zeroing iteration variables and giving it one more try." << endl;
-					Zero(xx,iv);
-					success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
-					if (success == false)
-						exit(0);
-				}
+				rescue_status = NONE;
 			}
 		break;
 		case PSEUDOHESSIAN:
@@ -1099,10 +1101,9 @@ if(debug) cout <<"PutU in  Solve " << endl;
 			Mol[i]->CpBoltzmann();
 		}
 	} else {
+*/
 
-
-
-*/bool Solve_scf::attempt_DIIS_rescue() {
+bool Solve_scf::attempt_DIIS_rescue() {
 	cout << "Attempting rescue!" << endl;
 	switch (rescue_status) {
 		case NONE:

@@ -106,18 +106,24 @@ void Order_parameter::execute()
   m_order_parameter = 0.0;
   for (auto &index_of : m_combinations)
   {
-
+      // Local order parameter: difference[i] = (density_a - density_b)^2
      stl::transform(m_components[index_of.first]->rho.begin(), m_components[index_of.first]->rho.end(), m_components[index_of.second]->rho.begin(),
                    difference.begin(),
                    [this] DEVICE_LAMBDA (const Real &a, const Real &b) mutable { return pow(a - b, 2); });
 
+    // Sum local order parameters for this component and add to the sum of the previous ones
 #ifdef PAR_MESODYN
     m_order_parameter = thrust::reduce(difference.begin(), difference.end(), m_order_parameter);
 #else
     m_order_parameter = std::accumulate(difference.begin(), difference.end(), m_order_parameter);
 #endif
   }
+
+  // Divide by the volume
   m_order_parameter /= m_boundaryless_volume;
+
+  //Normalize between one and zero  (max = # components - 1)
+  m_order_parameter /= m_components.size();
 }
 
 Real& Order_parameter::attach()

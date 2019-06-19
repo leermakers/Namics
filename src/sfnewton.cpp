@@ -969,7 +969,6 @@ int nvar=nvar_;
 			cerr << "Detected nan in svdcmp." << endl;
 		if (error == -4)
 			cerr << "Detected negative phibulk." << endl;
-		cerr << "Exiting." << endl;
 		free(Aij);free(Ci);free(Apij);
 		#ifdef CUDA
   		cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g);

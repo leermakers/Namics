@@ -81,6 +81,13 @@ template <typename T>
 inline void Add(T* P, T* A, int M) {
   std::transform(P, P + M, A, P, std::plus<T>());
 }
+template <typename T>
+inline void Subtract(T* P, T* A, int M) {
+  #pragma GCC ivdep
+  for (int i = 0 ; i < M ; ++i)
+	P[i] -= A[i];
+  //std::transform(P, P + M, A, P, std::plus<T>());
+}
 
 template <typename T>
 inline void Sum(T &result, T *x, int M)   {

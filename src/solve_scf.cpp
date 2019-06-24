@@ -702,11 +702,10 @@ void Solve_scf::residuals(Real* x, Real* g){
 			TransferDataToDevice(RHO, g, iv);
 			#endif
 			
-			
 			size_t k = 0;
 			for (size_t i = 0 ; i < In[0]->MolList.size() ; ++i) {
+				Subtract(g+k*M,Mol[i]->phi,M*Mol[i]->MolMonList.size());
 				for (size_t a = 0 ; a < Mol[i]->MolMonList.size(); ++a) {
-					target_function(g, k, M, i, a);
 					Lat[0]->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 					k++;
@@ -884,7 +883,7 @@ void Solve_scf::gradient_quotient(Real* g, int k, int M, int i, int j) {
 
 void Solve_scf::gradient_minus(Real* g, int k, int M, int i, int j) {
 	//Target function: g - phi < tolerance
-		YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M);
+		Subtract(g+k*M,Mol[i]->phi+j*M,M);
 }
 
 void Solve_scf::inneriteration(Real* x, Real* g, Real* h, Real accuracy, Real& deltamax, Real ALPHA, int nvar) {

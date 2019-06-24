@@ -219,19 +219,13 @@ __global__ void add(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
 }
-
-__global__ void propagate(Real *gs, Real *g_1, int JX, int JY, int JZ, int M)   {
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-
-	if (idx < (M-JX)) {
-		gs[idx] = (g_1[idx-JX] + g_1[idx+JX]) + (g_1[idx-JY] + g_1[idx+JY]) + (g_1[idx-JZ] + g_1[idx+JZ]);
-		gs[idx] *= (1.0/6.0);
-	}
-}
-
 __global__ void add(int *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
+}
+__global__ void subtract(Real *P, Real *A, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx]-=A[idx];
 }
 __global__ void dubble(Real *P, Real *A, Real norm, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;

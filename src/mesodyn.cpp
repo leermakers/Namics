@@ -199,7 +199,6 @@ std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
 void Mesodyn::adapt_tolerance() {
   // Dynamically adjust tolerance so that namics doesn't give us negative values for densities
   auto minmax = stl::minmax_element(callback_densities.begin(), callback_densities.end());
-  cout << *minmax.first << " " << *minmax.second << endl;
   int magnitude = floor(log10(*minmax.first));
   double magnitude_2 = pow(10, magnitude) / adaptive_tolerance_modifier;
   if (magnitude_2  > treat_lower_than_as_zero and New.back()->tolerance > magnitude_2) {

@@ -71,15 +71,14 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
   }
 
   cout << "Initializing.." << endl;
-
   initial_conditions();
+
   register_output();
   set_filename();
 
   Writable_file out_file(filename.str(), output_profile_filetype );
   profile_writers.push_back(Profile_writer::Factory::Create(output_profile_filetype, Lat[0], out_file));
   profile_writers[0]->bind_data(output_profiles);
-
 }
 
 Mesodyn::~Mesodyn() {
@@ -141,6 +140,7 @@ bool Mesodyn::mesodyn() {
 
   /**** Main MesoDyn time loop ****/
   for (t = 0; t < timesteps+1; t++) {
+
     cout << "MESODYN: t = " << t << " / " << timesteps << endl;
 
     gaussian->generate(system_size);
@@ -232,7 +232,6 @@ Real* Mesodyn::solve_crank_nicolson() {
 
 
 void Mesodyn::update_densities() {
-
   for (auto& all_fluxes : fluxes) {
     all_fluxes->component_a->update_density(all_fluxes->J, cn_ratio, +1);
     all_fluxes->component_b->update_density(all_fluxes->J, cn_ratio, -1);
@@ -359,6 +358,15 @@ void Mesodyn::register_output() {
       string description = "component:" + to_string(i);
       register_output_profile(description + ":density", (Real*)components[i]->rho);
     }
+
+    for (size_t i = 0 ; i < components.size() ; ++i)
+    {
+      string description = "component:" + to_string(i);
+      register_output_profile(description + ":alpha", (Real*)components[i]->alpha);
+    }
+
+    register_output_profile("free_energy_density", Sys.back()->FreeEnergyDensity);
+    register_output_profile("grand_potential_density", Sys.back()->GrandPotentialDensity);
 }
 
 int Mesodyn::write_output() {

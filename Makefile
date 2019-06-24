@@ -27,7 +27,7 @@ LIB         := -lm -lpthread
 INC         := -I/usr/local/cuda-9.0/include -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
-	LIB        += -L/usr/local/cuda-9.0/lib64 -lcuda -lcudart
+	LIB        += -L/usr/local/cuda/lib64 -lcuda -lcudart -lcurand
 	CFLAGS     += -DCUDA
 	NVCCFLAGS  := -g -ccbin gcc-5 -arch=sm_61 -std=c++14 -DCUDA
 	ifdef PAR_MESODYN

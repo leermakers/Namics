@@ -793,9 +793,10 @@ Real *S = new Real[N];
 		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
   		svdcmp(U, N, N, S, V);
 		if (debug) cout << "SVDCMP done, continuing.." << endl;
+		int j;
 		for (int i=0; i<N; i++) {
 			X[i]=0;
-			for (int j=0; j<N; j++)
+			for (j=0; j<N; j++)
 				X[i] += U[i][j];// *B[j];
 			S[i] = X[i]/S[i];
 			X[i]=0;

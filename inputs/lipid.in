@@ -1,25 +1,24 @@
-lat : flat : n_layers : 50
+lat : flat : n_layers : 100
 lat : flat : geometry : planar
 lat : flat : bondlength : 5e-10
+lat : flat : FJC_choices : 3
+lat : flat : lattice_type : hexagonal
 
 mon : C : freedom : pinned
-mon : C : pinned_range : 1;6
+mon : C : pinned_range : 1;4
 mon : O : freedom : free
 mon : W : freedom : free
-mon : X : freedom : free
 
-mol : lipid : composition : (O)5[(C)16](C)16
+mol : lipid : composition : (O)5[(C)18](C)18
 mol : lipid : freedom : restricted
-mol : lipid : theta : 1.61
+mol : lipid : theta : 3.8
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent
 
 mon : C : chi-W : 1.6
-mon : C : chi-O : 0.8
-mon : W : chi-O : 0.058
-mon : W : chi-X : -1.0
-mon : C : chi-X : 1.0
+mon : C : chi-O : 1.6
+mon : W : chi-O : -0.5
 
 output : pro : append : false
 pro : mol : * : phi
@@ -29,24 +28,14 @@ pro : mol : lipid : phi-O
 output : kal : append : false
 //output : kal : use_output_directory : false
 kal : sys : noname : grand_potential
-kal : sys : noname : KJ0
-kal : sys : noname : Kbar
 kal : mol : lipid : theta
 kal : mol : lipid : phibulk 
 kal : mol : lipid : theta_exc
-kal : mol : add : theta_exc
-kal : mol : add : phibulk
-kal : lat : flat : n_layers
-kal : mol : lipid : chainlength
-kal : mon : W : chi-O
-kal : mol : lipid : mu
 kal : mol : lipid : phibulk
 newton : isaac : i_info : 100
 newton : isaac : e_info : true
 newton : isaac : s_info : false
-newton : isaac : super_e_info : true
-newton : isaac : super_s_info : true
-newton : isaac : method : pseudohessian
+newton : isaac : method : DIIS
 newton : isaac : iterationlimit : 1000
 newton : isaac : deltamax : 0.5
 newton : isaac  : super_deltamax : 1
@@ -57,10 +46,6 @@ start
 newton : isaac : iterationlimit : 10000
 newton : isaac : tolerance : 1e-9
 newton : isaac : super_tolerance : 1e-7
-var : mon-W : scan : chi-O
-var : mon-W : step : 0.00001
-var : mon-W : end_value : 0.5
 var : mol-lipid : search : theta
 var : sys-noname: grand_potential : 0
-//var : mol-add : search : balance-membrane
 

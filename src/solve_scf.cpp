@@ -829,7 +829,6 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Cp(g+i*M,xx+i*M,M);
 				for (k=0; k<mon_length; k++) {
                        		chi= -1.0*Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  //The minus sign here is to change the sign of x! just a trick due to properties of PutAlpha where a minus sing is implemented....
-
 					if (chi!=0) PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 				}
 				if (Sys[0]->charged){
@@ -847,25 +846,13 @@ void Solve_scf::residuals(Real* x, Real* g){
 			int itmonlistlength=Sys[0]->ItMonList.size();
 			int state_length = In[0]->StateList.size();
 			int itstatelistlength=Sys[0]->ItStateList.size();
-			int itpos=(itmonlistlength+itstatelistlength)*M;
-
-						
-
- 			ComputePhis();
-			if (Sys[0]->charged) {
-				Cp(g+itpos,xx+itpos,M);
-				Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
-				Lat[0]->set_bounds(Sys[0]->psi);
-				Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
-				Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->EE);
-				Lat[0]->remove_bounds(g+itpos);
-				itpos+=M;
-			}
+			
 
 
+			Cp(g,xx,iv);				
+			ComputePhis();
 
-
-			Cp(g,xx,iv); Zero(alpha,M);
+ 			Zero(alpha,M);
 			for (i=0; i<itmonlistlength; i++) {
 				for (k=0; k<mon_length; k++) {
 					if (Seg[k]->ns<2) {
@@ -880,7 +867,6 @@ void Solve_scf::residuals(Real* x, Real* g){
 						PutAlpha(g+i*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
 					}
 				}
-				if (Sys[0]->charged) YplusisCtimesX(g+i*M,Sys[0]->EE,Seg[Sys[0]->ItMonList[i]]->epsilon,M);
 			}
 			for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
 
@@ -889,13 +875,10 @@ void Solve_scf::residuals(Real* x, Real* g){
 					if (Seg[k]->ns<2) {
 						chi =Sta[Sys[0]->ItStateList[i]]->chi[k];
 						if (chi!=0)
-//cout <<"for segment k " << k << " chi " << chi << endl;
 							PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 					}
 				}
 				
-
-
 
 				for (k=0; k<state_length; k++) {
 					chi =Sta[Sys[0]->ItStateList[i]]->chi[mon_length+k];
@@ -916,21 +899,22 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
 				Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,Sys[0]->KSAM,M);
 			}
-			
-			//if (Sys[0]->charged) {
-			//	Cp(g+itpos,xx+itpos,M);
-			//	Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
-			//	Lat[0]->set_bounds(Sys[0]->psi);
-			//	Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
-			//	Lat[0]->remove_bounds(g+itpos);
-			//	itpos+=M;
-			//}
-			if (Sys[0]->constraintfields) {
+
+			int itpos=(itmonlistlength+itstatelistlength)*M;
+
+			if (Sys[0]->charged) {
+				Cp(g+itpos,xx+itpos,M);
+				Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
+				Lat[0]->set_bounds(Sys[0]->psi);
+				Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
+				Lat[0]->remove_bounds(g+itpos);
+				itpos+=M;
+			}
+			if (Sys[0]->constraintfields) { 
 				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
 				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
 				Times(g+itpos,g+itpos,Sys[0]->beta,M);
 			}
-
 		break;
 	}
 }
@@ -1040,6 +1024,13 @@ if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
 bool Solve_scf::PutU() {
 if(debug) cout <<"PutU in  Solve " << endl;
 	int M=Lat[0]->M;
+	int itmonlistlength=Sys[0]->ItMonList.size();
+	int itstatelistlength=Sys[0]->ItStateList.size();
+	int monlistlength =In[0]->MonList.size();
+	int statelistlength=In[0]->StateList.size();
+	int k=0;
+
+	int itpos=(itmonlistlength+itstatelistlength)*M;
 	Real valence;
 	Real *u;
 	if (SCF_method == "Picard") {cout << " Picard not implemented properly " << endl; }
@@ -1047,15 +1038,11 @@ if(debug) cout <<"PutU in  Solve " << endl;
 	alpha=Sys[0]->alpha;
 
 	if (Sys[0]->charged) {
-		Cp(Sys[0]->psi,xx+iv-M,M);
+		Cp(Sys[0]->psi,xx+itpos,M); 
 		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
 	}
 
-	int itmonlistlength=Sys[0]->ItMonList.size();
-	int itstatelistlength=Sys[0]->ItStateList.size();
-	int monlistlength =In[0]->MonList.size();
-	int statelistlength=In[0]->StateList.size();
-	int k=0;
+
 	for (int i=0; i<itmonlistlength; i++) {
 		int IM=Sys[0]->ItMonList[i];
 		u=Seg[IM]->u;
@@ -1119,7 +1106,6 @@ if(debug) cout <<"PutU in  Solve " << endl;
 		}
 		k++;
 	}
-	int itpos=(itmonlistlength+itstatelistlength)*M;
 	if (Sys[0]->charged) itpos +=M; 
 	if (Sys[0]->constraintfields) Cp(Sys[0]->BETA,xx+itpos,M);
 

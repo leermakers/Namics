@@ -1012,7 +1012,7 @@ void System::DoElectrostatics(Real* g, Real* x) {
 	Div(q,phitot,M);
 	Div(eps,phitot,M);
 	Lat[0]->set_bounds(eps);
-	//Cp(psi,x,M); Cp(g,psi,M);
+	Cp(psi,x,M); Cp(g,psi,M);
 	Lat[0]->set_bounds(psi);
 	if (fixedPsi0) {
 		int length=FrozenList.size();
@@ -1386,19 +1386,15 @@ if (debug) cout << "GetFreeEnergy for system " << endl;
 	//Lat[0]->remove_bounds(F);
 	Times(F,F,KSAM,M); //clean up contributions in frozen and tagged sites.
 
+Zero(TEMP,M);
 	if (charged) {
-//Lat[0]->remove_bounds(q);
-//Lat[0]->remove_bounds(psi);
-		Times(TEMP,EE,eps,M);
-//Real sum=0;
-//Sum(sum,TEMP,M); cout <<"Sum EE = " << sum << endl;
-		
-		//AddTimes(TEMP,q,psi,M);
-		Norm(TEMP,-1.0,M);
-		//Times(TEMP,q,psi,M);
-		//Norm(TEMP,0.5,M);
+		//Times(TEMP,EE,eps,M); 
+cout <<"Sum EE*eps = " << Lat[0]->WeightedSum(TEMP) << endl;
+		//Norm(TEMP,1.0,M);
+		AddTimes(TEMP,q,psi,M);
+		Norm(TEMP,0.5,M);
 
-//Sum(sum,TEMP,M); cout <<"Sum = " << sum << endl; 
+cout <<"El to F = " << Lat[0]->WeightedSum(TEMP)  << endl; 
 		Add(F,TEMP,M);
 	}
 	return FreeEnergy+Lat[0]->WeightedSum(F);
@@ -1500,18 +1496,26 @@ if (debug) cout << "GetGrandPotential for system " << endl;
 			Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
 		}
 	}*/
-
 	Norm(GP,-1.0,M); //correct the sign.
+
+	Zero(TEMP,M);
+if (charged) {
+	Times(TEMP,EE,eps,M);
+//cout <<"eps EE/2 " << Lat[0]->WeightedSum(TEMP) << endl; 
+	Norm(TEMP,-2.0,M);
+
+	AddTimes(TEMP,q,psi,M);  
+	Norm(TEMP,-1.0/2.0,M); 
+
+cout <<"el to G " << Lat[0]->WeightedSum(TEMP) << endl;
+
+	Add(GP,TEMP,M); Times(GP,GP,KSAM,M);
+	Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);
+	Add(GP,TEMP,M);
+}
+	
 	if (!charged) Times(GP,GP,KSAM,M); //necessary to make sure that there are no contribution from solid, tagged or clamped sites in GP.
 
-if (charged) {
-	//Times(TEMP,EE,eps,M); 
-	///Norm(TEMP,-2.0,M);
-	//AddTimes(TEMP,q,psi,M); 
-	//Times(TEMP,q,psi,M); Norm(TEMP,0.5,M); Add(GP,TEMP,M); Times(GP,GP,KSAM,M);
-	//Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);
-	//Add(GP,TEMP,M);
-}
 	return  Lat[0]->WeightedSum(GP);
 
 }

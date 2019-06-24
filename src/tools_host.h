@@ -83,8 +83,8 @@ inline void Add(T* P, T* A, int M) {
 }
 
 template <typename T>
-inline void Sum(T &result, T *x, int M)   {
-  result = std::accumulate(x, x+M, 0.0);
+inline void Sum(T *result, T *x, int M)   {
+  *result = std::accumulate(x, x+M, 0.0);
 //  result = 0;
 //  for (int i=0; i<M; i++) result +=x[i];
 }
@@ -210,6 +210,11 @@ void Dot(T &result, T *x,T *y, int M)   {
 		for (int i = M - M % 2; i < M; i++)
 			result += x[i] * y[i];
 	}
+template< typename T>
+void Dot(T *result, T *x,T *y, int M)   {
+	*result = 0.0;
+	for (int i = 0 ; i < M ; i++)
+		*result += x[i] * y[i];
 }
 
 template<typename T>

@@ -1664,8 +1664,7 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	int M=Lat[0]->M;
 	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
 	if (id !=0) {
-		int molmonlistlength=MolMonList.size(); 
-		for (int i=0; i<molmonlistlength; i++) 
+		for (size_t i=0; i<MolMonList.size(); i++) 
 		if (id==1) {
 			Times(Seg[MolMonList[i]]->G1,Seg[MolMonList[i]]->G1,BETA,M); 
 		} else {
@@ -1930,9 +1929,8 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 	int M=Lat[0]->M;
 	//Real* GS = new Real[4*M];
 	Real* GS= (Real*) malloc(4*M*sizeof(Real));
-	int k=bN;
 	int ss=0;
-	while (k>=b0){
+	for (int k = bN ; k >= b0 ; k--){
 		if (k>b0 && k<bN) {
 			if (Gnr[k]!=generation) {
 				Br.clear(); Gb.clear();
@@ -1966,7 +1964,8 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 							Times(GS+2*M,GS+2*M,GS+M,M);
 						}
 					}
-					Cp(Gg_b,GS+2*M,M); Cp(Gg_b+M,GS+2*M,M);
+					Cp(Gg_b,GS+2*M,M);
+					Cp(Gg_b+M,GS+2*M,M);
 					if (i<length-1) {
 						BackwardBra(Gg_b,Br[i],s);
 					}
@@ -1980,8 +1979,6 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 		} else {
 			propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 		}
-
-		k--;
 	}
 	free(GS);
 }

@@ -10,6 +10,7 @@
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
 const int block_size = 512;
+cudaStream_t CUDA_STREAMS[CUDA_NUM_STREAMS];
 
 #if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
 #else
@@ -589,12 +590,19 @@ bool GPU_present(int deviceIndex)    {
 			deviceIndex = 0;
 		}
 		cudaSetDevice(deviceIndex);
+		cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 	}
 	//if (deviceCount>0) {
 	//	stat = cublasCreate(&handle);
 	//	if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS handle creation failed \n");}
 	//	cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
 	//}
+
+	const int num_streams = 4;
+
+	for (int i = 0; i < num_streams; i++)
+    	cudaStreamCreate(&CUDA_STREAMS[i]);
+
 	return deviceCount > 0;
 }
 #else
@@ -617,6 +625,15 @@ int* AllIntOnDev(int N) {
 Real* AllOnDev(int N) {
   Real* X;
 	cudaMalloc((void **) &X, sizeof(Real)*N);
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess)
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+	return X;
+}
+
+Real* AllUnpagableOnHost(int N) {
+  Real* X;
+	cudaHostAlloc((void **) &X, sizeof(Real)*N, cudaHostAllocDefault);
 	cudaError_t error = cudaPeekAtLastError();
 	if (error != cudaSuccess)
 		printf("CUDA error: %s\n", cudaGetErrorString(error));
@@ -907,9 +924,9 @@ void SetBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	bx<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
-	by<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
-	bz<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+	bx<<<dimGridx,dimBlock, 0, CUDA_STREAMS[0]>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
+	by<<<dimGridy,dimBlock, 0, CUDA_STREAMS[1]>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
+	bz<<<dimGridz,dimBlock, 0, CUDA_STREAMS[2]>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
 }
 
 template void RemoveBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int);
@@ -917,13 +934,13 @@ template void RemoveBoundaries<int>(int*, int, int, int, int, int, int, int, int
 
 template <typename T>
 void RemoveBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
-	dim3 dimBlock(16,16);
+	dim3 dimBlock(8,8);
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	b_x<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
-	b_y<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
-	b_z<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+	b_x<<<dimGridx,dimBlock, 0, CUDA_STREAMS[0]>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
+	b_y<<<dimGridy,dimBlock, 0, CUDA_STREAMS[1]>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
+	b_z<<<dimGridz,dimBlock, 0, CUDA_STREAMS[2]>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
 }
 
 #endif

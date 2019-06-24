@@ -18,6 +18,8 @@
 
 //extern cublasStatus_t stat;
 //extern cublasHandle_t handle;
+#define CUDA_NUM_STREAMS 3
+extern cudaStream_t CUDA_STREAMS[CUDA_NUM_STREAMS];
 extern const int block_size;
 
 __global__ void distributeg1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);

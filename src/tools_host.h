@@ -278,6 +278,19 @@ void YplusisCtimesX(T *Y, T *X, T C, int M)    {
 }
 
 template<typename T>
+void Xr_times_ci(int posi, int k_diis, int k, int m, int nvar, T* x, T* xR, T* Ci) {
+	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
+
+	for (int i=1; i<k_diis; i++) {
+		posi = k-k_diis+1+i;
+    	if (posi<0) {
+      		posi +=m;
+		}
+		YplusisCtimesX(x,xR+posi*nvar,Ci[i],nvar);
+	}
+}
+
+template<typename T>
 void UpdateAlpha(T *Y, T *X, T C, int M)    {
 	for (int i=0; i<M; i++) Y[i] += C*(X[i]-1.0);
 }

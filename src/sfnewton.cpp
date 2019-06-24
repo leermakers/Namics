@@ -843,7 +843,9 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
     	normC +=Ci[i];
 	for (int i=0; i<k_diis; i++)
     	Ci[i] =Ci[i]/normC;
+	#ifdef CUDA
 	TransferDataToDevice(Ci, d_Ci, m);
+	#endif
 	Zero(x,nvar);
 	posi = k-k_diis+1;
 
@@ -851,16 +853,6 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
     	posi +=m;
 
 	Xr_times_ci(posi, k_diis, k, m, nvar, x, xR, d_Ci);
-
-/* 	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
-
-	for (int i=1; i<k_diis; i++) {
-		posi = k-k_diis+1+i;
-    	if (posi<0) {
-      		posi +=m;
-		}
-		YplusisCtimesX(x,xR+posi*nvar,Ci[i],nvar);
-	} */
 }
 
 Real SFNewton::computeresidual(Real* array, int size) {
@@ -923,7 +915,7 @@ int nvar=nvar_;
   Real* x0 = (Real*) AllOnDev(nvar); Zero(x0,nvar);
   Real* g = (Real*) AllOnDev(nvar); Zero(g,nvar);
   #else
-  Real* Ci = (Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
+  d_Ci = Ci;
   Real* xR = (Real*) malloc(m*nvar*sizeof(Real)); Zero(xR,m*nvar);
   Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
   Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);

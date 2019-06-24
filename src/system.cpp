@@ -91,7 +91,6 @@ void System::AllocateMemory()
 	int M = Lat[0]->M;
 	//H_GN_A = new Real[n_box];
 	//H_GN_B = new Real[n_box];
-
 	H_GrandPotentialDensity = (Real *)malloc(M * sizeof(Real));
 	std::fill(H_GrandPotentialDensity,H_GrandPotentialDensity+M,0);
 
@@ -235,18 +234,8 @@ bool System::PrepareForCalculations()
 	bool success = true;
 	int M = Lat[0]->M;
 
-	// necessary part; essentially for clang
-	Zero(KSAM, M);
-	for (int i : FrozenList)
-		Add(KSAM, Seg[i]->MASK, M);
-	for (int i : SysTagList)
-		Add(KSAM, Seg[i]->MASK, M);
-	for (int i : SysClampList)
-		Add(KSAM, Seg[i]->MASK, M);
-	Invert(KSAM, KSAM, M);
-
-	if (!prepared)
-	{
+	// necessary part; essentially for cleng
+	if (In.back()->MesodynList.empty() or prepared == false) {
 		success = generate_mask();
 		prepared = true;
 	}
@@ -257,8 +246,6 @@ bool System::PrepareForCalculations()
 		//for(int i=0; i<M; i++) cout << "BETA at i: " << i << " is: " << BETA[i] << endl;
 		//cin.get();
 	}
-
-
 
 	n_mol = In[0]->MolList.size();
 	success = Lat[0]->PrepareForCalculations();

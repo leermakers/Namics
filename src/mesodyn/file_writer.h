@@ -82,7 +82,7 @@ class Output_ptr : public IOutput_ptr
 {
     public:
         Output_ptr(T* parameter_)
-        : parameter{parameter_}, buffer{0}
+        : buffer{0}, parameter{parameter_}
         {
         }
 
@@ -91,8 +91,7 @@ class Output_ptr : public IOutput_ptr
             #ifdef PAR_MESODYN
             TransferDataToHost(buffer.data(), const_cast<T*>(parameter), const_cast<size_t&>(size));
             #else
-            for (size_t i = 0 ; i < size ; ++i)
-                buffer[i] = parameter[i];
+            buffer.assign(parameter, parameter+size);
             #endif
         }
 

@@ -722,19 +722,21 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 }
 
 void Zero(Real* P, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	cudaMemset((void**)P, 0, M*sizeof(Real));
+/* int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	zero<<<n_blocks,block_size>>>(P,M);
 
 	cudaError_t error = cudaPeekAtLastError();
 	if (error != cudaSuccess) {
 		printf("CUDA error: %s\n", cudaGetErrorString(error));
 		throw 1;
+	} */
 	}
-}
 
 void Zero(int* P, int M)   {
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	zero<<<n_blocks,block_size>>>(P,M);
+	cudaMemset((void**)P, 0, M*sizeof(int));
+/* 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	zero<<<n_blocks,block_size>>>(P,M); */
 }
 
 void Cp(Real *P,Real *A, int M)   {

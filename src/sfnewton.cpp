@@ -767,7 +767,6 @@ free(h); free(g);
 	return success;
 }
 
-
 void SFNewton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  SFNewton (own svdcmp) " << endl;
 
@@ -815,7 +814,7 @@ delete [] U; delete [] S; delete [] V;
 void SFNewton::DIIS(Real* x, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* Ci, int k, int k_diis, int m, int nvar) {
 if(debug) cout <<"DIIS in  SFNewton " << endl;
   	int posi;
-	  
+
 	if (k_diis>m) {
     	k_diis =m;
 		for (int i=1; i<m; i++)
@@ -835,7 +834,7 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
 		for (int j=0; j<k_diis; j++)
 		    Apij[j+k_diis*i] = Aij[j+m*i];
   	}
-
+			
 	Ax(Apij,Ci,k_diis);
 
 	Real normC=0;
@@ -844,14 +843,16 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
     	normC +=Ci[i];
 	for (int i=0; i<k_diis; i++)
     	Ci[i] =Ci[i]/normC;
-
+	TransferDataToDevice(Ci, d_Ci, m);
 	Zero(x,nvar);
 	posi = k-k_diis+1;
 
   	if (posi<0)
     	posi +=m;
 
-	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
+	Xr_times_ci(posi, k_diis, k, m, nvar, x, xR, d_Ci);
+
+/* 	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
 
 	for (int i=1; i<k_diis; i++) {
 		posi = k-k_diis+1+i;
@@ -859,7 +860,7 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
       		posi +=m;
 		}
 		YplusisCtimesX(x,xR+posi*nvar,Ci[i],nvar);
-	}
+	} */
 }
 
 Real SFNewton::computeresidual(Real* array, int size) {
@@ -870,7 +871,6 @@ Real SFNewton::computeresidual(Real* array, int size) {
 
 	//in tools:
 	residual = ComputeResidual(array, size);
-
 	#else //CUDA OR CPU
 	
 	Real* H_array;
@@ -913,15 +913,17 @@ bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tol
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
 int nvar=nvar_;
 	bool success;
-  Real* Ci = (Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
   Real* Aij = (Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
   Real* Apij = (Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
+  Real* Ci = (Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
   #ifdef CUDA
+  d_Ci = (Real*)AllOnDev(m);
   Real* xR = (Real*) AllOnDev(m*nvar); Zero(xR,m*nvar);
   Real* x_x0 = (Real*) AllOnDev(m*nvar); Zero(x_x0,m*nvar);
   Real* x0 = (Real*) AllOnDev(nvar); Zero(x0,nvar);
   Real* g = (Real*) AllOnDev(nvar); Zero(g,nvar);
   #else
+  Real* Ci = (Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
   Real* xR = (Real*) malloc(m*nvar*sizeof(Real)); Zero(xR,m*nvar);
   Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
   Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
@@ -979,9 +981,9 @@ int nvar=nvar_;
 
 		throw error;
 	}
-  free(Aij);free(Ci);free(Apij);
+  free(Aij);free(Apij); free(Ci);
   #ifdef CUDA
-  cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g);
+  cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g); cudaFree(d_Ci);
   #else
   free(xR);free(x_x0);free(x0);free(g);
   #endif

@@ -22,6 +22,8 @@
 extern cudaStream_t CUDA_STREAMS[CUDA_NUM_STREAMS];
 extern const int block_size;
 
+__global__ void xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci);
+void Xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci);
 __global__ void distributeg1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 __global__ void collectphi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 __global__ void sum(Real*, Real*, int);

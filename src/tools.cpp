@@ -28,6 +28,39 @@ __device__ void atomicAdd(Real* address, Real val)
 }
 #endif
 
+void Xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci)   {
+	int n_blocks=(nvar)/block_size + ((nvar)%block_size == 0 ? 0:1);
+	xr_times_ci<<<n_blocks,block_size, (k_diis)*sizeof(Real)>>>(posi, k_diis, k, m, nvar, x, xR, Ci);
+}
+
+__global__ void xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci) {
+	int idx  = blockIdx.x*blockDim.x + threadIdx.x;
+
+ 	extern __shared__ Real s_Ci[];
+
+ 	if (threadIdx.x < k_diis)
+		s_Ci[threadIdx.x] = Ci[threadIdx.x];
+
+	__syncthreads();
+	 
+	if (idx < nvar) {
+		int thread_posi = posi;
+
+		Real x_register = x[idx];
+		x_register += s_Ci[0] * (xR+thread_posi*nvar)[idx];
+
+		for (int i=1; i<k_diis; i++) {
+			thread_posi = k-k_diis+1+i;
+    		if (thread_posi<0) {
+    	  		thread_posi +=m;
+			}
+			x_register += s_Ci[i] * xR[thread_posi*nvar+idx];
+		}
+
+		x[idx] = x_register;
+	}
+}
+
 __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;

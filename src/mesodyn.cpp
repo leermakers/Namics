@@ -114,6 +114,8 @@ bool Mesodyn::CheckInput() {
 
 bool Mesodyn::mesodyn() {
   
+  if (enable_sanity_check) {
+    cout << "Binding checks" << endl;
     vector<Sanity_check*> checks;
 
     // Attach sanity checks
@@ -125,6 +127,7 @@ bool Mesodyn::mesodyn() {
     Check_index_unity<Real> check_rho(&components[0]->rho);
     for (size_t i = 1 ; i < component_no ; ++i)
       check_rho.register_checkable(&components[i]->rho);
+  }
 
   //Prepare IO
   

@@ -50,7 +50,6 @@ protected:
   int onsager_coefficient(Lattice_object<Real>&, Lattice_object<Real>&);
   int potential_difference(Lattice_object<Real>&, Lattice_object<Real>&);
   int langevin_flux(Dimension);
-  //int mask(const stl::host_vector<int>&);
 
 private:
   Lattice_object<Real> L;

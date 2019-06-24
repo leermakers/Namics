@@ -60,6 +60,8 @@ public:
 	bool super_s_info, value_s_info;
 	int super_i_info, value_i_info;
 
+	Real* temp_alpha;
+
 	vector<string> ints;
 	vector<string> Reals;
 	vector<string> bools;

@@ -19,6 +19,10 @@ vector<string> Mesodyn::KEYS
     "cn_ratio",
     "sanity_check",
     "profile_type",
+    "write_grand_potential",
+    "write_free_energy",
+    "write_alpha",
+    "write_density",
     "grand_cannonical",
     "grand_cannonical_time_average",
     "grand_cannonical_molecule",
@@ -357,20 +361,25 @@ void Mesodyn::set_filename() {
 }
 
 void Mesodyn::register_output() {
-    for (size_t i = 0 ; i < components.size() ; ++i)
-    {
-      string description = "component:" + to_string(i);
-      register_output_profile(description + ":density", (Real*)components[i]->rho);
-    }
+    if (initialize<bool>("write_density", 1))
+      for (size_t i = 0 ; i < components.size() ; ++i)
+      {
+        string description = "component:" + to_string(i);
+        register_output_profile(description + ":density", (Real*)components[i]->rho);
+      }
 
-/*     for (size_t i = 0 ; i < components.size() ; ++i)
-    {
-      string description = "component:" + to_string(i);
-      register_output_profile(description + ":alpha", (Real*)components[i]->alpha);
-    }
+    if (initialize<bool>("write_alpha", 0))
+      for (size_t i = 0 ; i < components.size() ; ++i)
+      {
+        string description = "component:" + to_string(i);
+        register_output_profile(description + ":alpha", (Real*)components[i]->alpha);
+      }
 
-    register_output_profile("free_energy_density", Sys.back()->FreeEnergyDensity);
-    register_output_profile("grand_potential_density", Sys.back()->GrandPotentialDensity); */
+    if (initialize<bool>("write_free_energy", 0))
+      register_output_profile("free_energy_density", Sys.back()->FreeEnergyDensity);
+
+    if (initialize<bool>("write_grand_potential", 0))
+      register_output_profile("grand_potential_density", Sys.back()->GrandPotentialDensity);
 }
 
 int Mesodyn::write_output() {

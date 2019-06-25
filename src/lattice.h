@@ -23,8 +23,16 @@ public:
 	vector<int> n_box;
 	vector<string> BC;
 	int BX1,BY1,BZ1,BXM,BYM,BZM;
+	int *B_X1;
+	int *B_Y1;
+	int *B_Z1;
+	int *B_XM;
+	int *B_YM;
+	int *B_ZM;
 	int JX,JY,JZ,M;
 	bool all_lattice;
+	bool ignore_sites;
+	bool stencil_full;
 	int sub_box_on;
 	Real volume;
 	Real Accesible_volume;
@@ -76,8 +84,8 @@ public:
 	Real Moment(Real*,int);
 	void TimesL(Real*);
 	void DivL(Real*);
-	void vtk(string, Real*,string);
-	void PutProfiles(FILE*,vector<Real*>);
+	void vtk(string, Real*,string,bool);
+	void PutProfiles(FILE*,vector<Real*>,bool);
 
 	bool CheckInput(int);
 	bool PutM(void);
@@ -106,9 +114,9 @@ public:
 	void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int);
 	void ComputeGN(Real*, Real*, int*, int*, int*, int*, int*, int*, int, int);
 	Real ComputeTheta(Real*);
-	void UpdateEE(Real*, Real*);
-	void UpdatePsi(Real*, Real*, Real* , Real*, int*);
-	void UpdateQ(Real*,Real*,Real*,Real*,int*);
+	void UpdateEE(Real*, Real*,Real*);
+	void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
+	void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
 	bool ReadGuess(string, Real* ,string&, vector<string>&, vector<string>&, bool&, int&, int&, int&, int&, int);
 	bool StoreGuess(string,Real*,string, vector<string>,vector<string>, bool,int);
 	bool PutVarInfo(string,string,Real);

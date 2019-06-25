@@ -1,6 +1,11 @@
 bin/
 inputs/
+output/
+data/
 obj/
 run/
 .vscode/
+*.pro
+*.kal
+*.pdb
 

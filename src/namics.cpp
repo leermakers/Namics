@@ -366,7 +366,7 @@ int main(int argc, char* argv[]) {
       					New[0]->PushOutput();
 
       					for (ii = 0; ii < n_out; ii++) {
-        					Out[ii]->WriteOutput(subloop);
+        					if (substart==1) Out[ii]->WriteOutput(0); else Out[ii]->WriteOutput(subloop+1);
       					}
       					subloop++;
     				}

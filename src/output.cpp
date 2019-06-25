@@ -14,6 +14,7 @@ if (debug) cout <<"constructor in Output "<< endl;
 	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
 	//if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
 	//if (!Load()) {input_error=true;  cout <<"Error found in load output items in output module " << endl; }
+	n_starts = In[0]->GetNumStarts();
 
 }
 Output::~Output() {
@@ -368,11 +369,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	}
 
     string numc = to_string(subl);
-    string numcc = to_string(start);
+    string numcc = to_string(start); 
 
-    if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else
-	filename = sub[0].append("_").append(numc).append(".").append(name);
-//	filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
+    if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else {
+		if (n_starts==1 && subl < 1) filename=sub[0].append(".").append(name);
+		if (n_starts==1 && subl >0) filename = sub[0].append("_").append(numc).append(".").append(name);
+		if (n_starts>1  && subl < 1) filename = sub[0].append("_").append(numcc).append(".").append(name);
+		if (n_starts>1 && subl >0)  filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
+	}
+
 	filename = In[0]->output_info.getOutputPath() + filename;
 	if (name=="pos") {
 		length=OUT_key.size();
@@ -443,12 +448,13 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			} else {cout << " Error for 'pro' output. It is only possible to output quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl;}
 		}
 		fprintf(fp,"\n");
-		Lat[0] -> PutProfiles(fp,pointer);
+		Lat[0] -> PutProfiles(fp,pointer,write_bounds);
 
 		fclose(fp);
 	}
 
 	if (name=="kal") {
+		if (start >1 || subl>1) append=true;
 		ifstream my_file(filename.c_str());
 		FILE *fp;
 		if (!(my_file && append)) {
@@ -459,12 +465,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 				fprintf(fp,"%s\t",s.c_str());
 			}
-			fprintf(fp,"\n"); append=true;
-		} else 	fp=fopen(filename.c_str(),"a");
+			fprintf(fp,"\n"); 
+		} else fp=fopen(filename.c_str(),"a");
+
 		if (fp == NULL) {
 			cerr << "Error trying to open " << filename.c_str() << endl;
 			perror("Error");
-		}
+		} 
+
+
 		int length = OUT_key.size();
 		for (int i=0; i<length; i++) {
 			int int_result=0;
@@ -498,7 +507,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			key = OUT_key[0];
 			string s=key.append(":").append(OUT_name[0]).append(":").append(OUT_prop[0]);
 			if (!(X==NULL))
-			Lat[0]->vtk(filename,X,s); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
+			Lat[0]->vtk(filename,X,s,write_bounds); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
 		}
 	}
 

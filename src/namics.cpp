@@ -455,10 +455,6 @@ int main(int argc, char *argv[])
 			if (debug)
 				cout << "Creating mesodyn" << endl;
 			Mes.push_back(new Mesodyn(start, In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->MesodynList[0]));
-			if (!Mes[0]->CheckInput())
-			{
-				return 0;
-			}
 			try
 			{
 				Mes[0]->mesodyn();

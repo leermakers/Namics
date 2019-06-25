@@ -70,6 +70,8 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       Seg[i]->freedom = "free";
   }
 
+  CheckInput();
+
   cout << "Initializing.." << endl;
   initial_conditions();
 
@@ -95,7 +97,7 @@ bool Mesodyn::CheckInput() {
     }
 
     if (input_data_filetype != Readable_filetype::NONE)
-      initialization_mode = INIT_FROMFILE;
+      initialization_mode = Mesodyn::INIT_FROMFILE;
 
     if ( find(PARAMETERS.begin(), PARAMETERS.end(), "grand_cannonical_time_average") != PARAMETERS.end() 
       or find(PARAMETERS.begin(), PARAMETERS.end(), "grand_cannonical_molecule") != PARAMETERS.end()  )
@@ -128,7 +130,7 @@ bool Mesodyn::mesodyn() {
       check_rho.register_checkable(&components[i]->rho);
   }
 
-  //Prepare IO
+  // Prepare IO
   
   cout.precision(8);
 
@@ -137,6 +139,9 @@ bool Mesodyn::mesodyn() {
   // Prepare callback functions for SolveMesodyn in Newton
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
+
+  // Write initial conditions
+  write_output();
 
   /**** Main MesoDyn time loop ****/
   for (t = 0; t < timesteps+1; t++) {
@@ -358,14 +363,14 @@ void Mesodyn::register_output() {
       register_output_profile(description + ":density", (Real*)components[i]->rho);
     }
 
-    for (size_t i = 0 ; i < components.size() ; ++i)
+/*     for (size_t i = 0 ; i < components.size() ; ++i)
     {
       string description = "component:" + to_string(i);
       register_output_profile(description + ":alpha", (Real*)components[i]->alpha);
     }
 
     register_output_profile("free_energy_density", Sys.back()->FreeEnergyDensity);
-    register_output_profile("grand_potential_density", Sys.back()->GrandPotentialDensity);
+    register_output_profile("grand_potential_density", Sys.back()->GrandPotentialDensity); */
 }
 
 int Mesodyn::write_output() {

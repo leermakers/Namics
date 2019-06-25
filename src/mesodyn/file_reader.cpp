@@ -60,6 +60,12 @@ void Readable_file::read_extension()
     {
         m_extension = m_filename.substr(m_filename.find_last_of(".") + 1);
     }
+
+    if (m_extension == m_filename)
+    {
+        cerr << "No extension found in filename '" << m_filename << "'. Please include an extension!" << endl;
+        throw error::ERROR_EXTENSION;
+    }
 }
 
 void Lattice_geometry::set_jumps()
@@ -294,6 +300,7 @@ Vtk_structured_grid_reader::STATUS Vtk_structured_grid_reader::parse_next_data_b
 {
     std::string line;
 
+    //This should really be regex'ed to include possible whitespace
     while (line.find("LOOKUP_TABLE default") == string::npos)
     {
         getline(m_file, line);
@@ -301,7 +308,7 @@ Vtk_structured_grid_reader::STATUS Vtk_structured_grid_reader::parse_next_data_b
 
     while (getline(m_file, line))
     {
-        if (std::regex_match(line, std::regex(R"(^[\d]+.[\d]+$)")))
+        if (!std::regex_match(line, std::regex(R"(^[\d]+.[\d]+(e-?[\d]+)?$)")))
             return STATUS::NEW_BLOCK_FOUND;
         else
             data.emplace_back(atof(line.c_str()));
@@ -379,11 +386,7 @@ std::vector<std::vector<Real>> Vtk_structured_grid_reader::get_file_as_vectors()
         data.clear();
     }
 
-    if (status == STATUS::END)
-    {
-        data = with_bounds(data);
-        output.emplace_back(data);
-    } else
+    if (status != STATUS::END)
     {
         std::cerr << "No blocks found in file" << std::endl;
         throw ERROR_FILE_FORMAT;
@@ -401,6 +404,7 @@ Reader::Reader()
 //Callable for multiple files. returns number of objects read.
 size_t Reader::read_objects_in(Readable_file file)
 {
+    cout << "Reading file " << file.m_filename << ".." << endl;
 
     switch (file.get_filetype())
     {
@@ -419,6 +423,8 @@ size_t Reader::read_objects_in(Readable_file file)
     t_object = input_reader->get_file_as_vectors();
 
     m_read_objects.insert(m_read_objects.end(), t_object.begin(), t_object.end());
+
+    cout << "Done reading " << m_read_objects.size() << " components." << endl;
 
     return t_object.size();
 }

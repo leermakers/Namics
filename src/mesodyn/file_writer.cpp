@@ -148,7 +148,7 @@ void Vtk_structured_grid_writer::write()
 
 	    std::ostringstream vtk;
 
-	    vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default \n";
+	    vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default\n";
 
 	    subsystem_loop(
             [this, &vtk, profile] (size_t x, size_t y, size_t z)
@@ -212,7 +212,7 @@ void Vtk_structured_points_writer::write()
 
 	    std::ostringstream vtk;
 
-        vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default \n";
+        vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default\n";
 
         #ifdef PAR_MESODYN
             stl::host_vector<Real> m_data;

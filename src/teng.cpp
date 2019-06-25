@@ -429,29 +429,6 @@ bool Teng::CheckInput(int start)
 				success = In[0]->Get_int(GetValue("save_interval"), save_interval, 1, MCS, "The save interval nr should be between 1 and MCS (specified)");
 			if (debug)
 				cout << "Save_interval " << save_interval << endl;
-			//TODO: Should check what kind of constraint is moved. Switch should be made between Tagged or Deltas. 
-							// TODO: Address this part first.
-							if (Sys[0]->SysTagList.size() < 1)
-							{
-								cout << "Teng needs to have tagged molecules in the system" << endl;
-								success = false;
-							}
-							else
-							{
-								tag_seg = Sys[0]->SysTagList[0];
-								if (Sys[0]->SysTagList.size() > 1)
-								{
-									success = false;
-									cout << "Currently the Tagging is limited to one molecule per system. " << endl;
-								}
-							}
-			if (success)
-				n_particles = Seg[tag_seg]->n_pos;
-			tag_mol = -1;
-			int length = In[0]->MolList.size();
-			for (int i = 0; i < length; i++)
-				if (Mol[i]->freedom == "tagged")
-					tag_mol = i;
 		}
 		else
 		{
@@ -466,10 +443,10 @@ bool Teng::CheckInput(int start)
 		if (GetValue("move").size() > 0)
 		{
 			vector<string> moves;
-			moves.push_back("tag");
-			moves.push_back("delta");
+			moves.push_back("tags");
+			moves.push_back("interface");
 			MoveType = "";
-			if (!In[0]->Get_string(GetValue("move"), MoveType, moves, "At present TransientEngine (Teng) module can only perform moves on 'tag' or 'delta.'"))
+			if (!In[0]->Get_string(GetValue("move"), MoveType, moves, "At present TransientEngine (Teng) module can only perform moves on 'tags' or 'interface.'"))
 			{
 				success = false;
 			};
@@ -478,6 +455,37 @@ bool Teng::CheckInput(int start)
 		{
 			success = false;
 			cout << "While specifying Teng please specify 'move'. Here is the format for doing so ---> Teng: name : move : move_type " << endl;
+		}
+			
+		if (MoveType=="tags"){
+			if (Sys[0]->SysTagList.size() < 1){
+				cout << "Teng needs to have tagged molecules in the system" << endl;
+				success = false;
+			}
+			else {
+				tag_seg = Sys[0]->SysTagList[0];
+				if (Sys[0]->SysTagList.size() > 1){
+					success = false;
+					cout << "Currently the Tagging is limited to one molecule per system. " << endl;
+				}
+			}
+			if (success){
+				n_particles = Seg[tag_seg]->n_pos;
+				tag_mol = -1;
+				int length = In[0]->MolList.size();
+				for (int i = 0; i < length; i++){
+					if (Mol[i]->freedom == "tagged") tag_mol = i;}
+			}
+		}
+		else if (MoveType=="interface"){	
+			//TODO: Track the interface at every x,y
+			//Choose the number of points to be made as constraint
+			//define n_particles and mc_mol. Change tag_mol to mc_mol to generalize rest of program. 
+			n_particles=0;
+			tag_mol=0;
+		}
+		else{
+			success=false; cerr << "Problem in selecting Movetype" << endl;
 		}
 	}
 	// Creates output class and calls Engine (Currently only Montecarlo is implemented.)

@@ -74,7 +74,15 @@ bool Cleng::IsCommensuratable() {
     bool success = true;
     // trial movement for simpleNodeList
     nodes_map[id_node_for_move].data()->get()->shift(clamped_move);
-    int chain_length = Mol[0]->chainlength-2;
+
+    int length = (int) In[0]->MolList.size();
+
+    for (int i=0; i<length;i++) {
+    int chain_length = Mol[i]->chainlength-2;
+    // TODO it will not work for multicomponent systems (gel + salt for example...)!
+    // TODO to next commit
+    if (chain_length < 10) continue;
+
 
     for (auto &&SN : Enumerate(simpleNodeList)) {
         auto p1 = SN.second->get_system_point();
@@ -85,8 +93,12 @@ bool Cleng::IsCommensuratable() {
         int path_length_even = path_length % 2;
         int chain_length_even = chain_length % 2;
 
+        // cout << "path: " << path_length << endl;
+        // cout << "chain: " << chain_length << endl;
+
         if (path_length_even == chain_length_even) success =false;
         if (path_length >= chain_length) success =false;
+    }
     }
     if (!success) cout << "Warning, the paths between clamps is not commensurate with the chain length!" << endl;
     // put back
@@ -100,7 +112,7 @@ bool Cleng::NotCollapsing() {
     Point P_not_shifted (nodes_map[id_node_for_move].data()->get()->point());
     Point P_shifted(nodes_map[id_node_for_move].data()->get()->point() + clamped_move);
 
-    double min_dist = 0; // minimal distance between nodes_map
+    double min_dist = 0; // minimal distance between nodes_map. 0 for a while...
     for (auto &&n : nodes_map) {
         Point P_test = n.second.data()->get()->point();
 
@@ -308,3 +320,17 @@ void Cleng::WriteClampedNodeDistance() {
     for (auto n : distPerMC)outfile << n << " ";
     outfile << endl;
 }
+
+Real Cleng::GetN_times_mu() {
+    int n_mol = (int) In[0]->MolList.size();
+    Real n_times_mu = 0;
+    for (int i = 0; i < n_mol; i++) {
+        Real Mu = Mol[i]->Mu;
+        Real n = Mol[i]->n;
+        if (Mol[i]->IsClamped()) n = Mol[i]->n_box;
+        n_times_mu += n * Mu;
+    }
+    return n_times_mu;
+}
+
+

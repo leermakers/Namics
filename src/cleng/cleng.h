@@ -73,7 +73,7 @@ public:
     Point box{Lat[0]->MX, Lat[0]->MY, Lat[0]->MZ};
     Point J{Lat[0]->JX, Lat[0]->JY, 1};
     vector<int> dims_vtk{box.x * box.y * box.z, 1};
-    vector<int> dims_2 = {1, 2};
+    vector<int> dims_3 = {1, 3};
 
     int clamp_seg;
     int clp_mol;
@@ -90,6 +90,7 @@ public:
     bool metropolis;
     int  axis;
     Real prefactor_kT;
+    Real n_times_mu;
     string sign_move;
     bool cleng_pos;
     bool two_ends_extension;
@@ -156,6 +157,8 @@ public:
     bool CheckInput(int start, bool save_vector);
 
     string GetValue(string);
+
+    Real GetN_times_mu();
 
 };
 

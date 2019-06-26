@@ -431,8 +431,9 @@ bool Cleng::MonteCarlo(bool save_vector) {
     vector<Real>vtk = prepare_vtk();
     cleng_writer.write("/VTK_data", "vtk"+to_string(MC_attempt+MCS_checkpoint), dims_vtk, vtk);
 
-    vector<Real> MC_free_energy = {static_cast<Real>(MC_attempt+MCS_checkpoint), free_energy_current};
-    cleng_writer.append("/Free_energy", "free_energy", dims_2, MC_free_energy);
+    n_times_mu = GetN_times_mu();
+    vector<Real> MC_free_energy = {static_cast<Real>(MC_attempt+MCS_checkpoint), free_energy_current, free_energy_current-n_times_mu};
+    cleng_writer.append("/Free_energy", "free_energy", dims_3, MC_free_energy);
 #endif
 
     cout << "Initialization done.\n" << endl;
@@ -473,6 +474,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
             else {
                 if (free_energy_trial - free_energy_current <= 0.0) {
                     cout << "Accepted" << endl;
+                    n_times_mu = GetN_times_mu();
                     free_energy_current = free_energy_trial;
                     accepted++;
                 } else {
@@ -481,6 +483,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
                     if (acceptance < exp((-1.0/prefactor_kT) * (free_energy_trial - free_energy_current))) {
                         cout << "Accepted with probability" << endl;
                         free_energy_current = free_energy_trial;
+                        n_times_mu = GetN_times_mu();
                         accepted++;
                     } else {
                         cout << "Rejected" << endl;
@@ -499,8 +502,8 @@ bool Cleng::MonteCarlo(bool save_vector) {
         vtk = prepare_vtk();
         cleng_writer.write("/VTK_data", "vtk" + to_string(MC_attempt+MCS_checkpoint), dims_vtk, vtk);
 
-        MC_free_energy = {static_cast<double>(MC_attempt+MCS_checkpoint), free_energy_current};
-        cleng_writer.append("/Free_energy", "free_energy", dims_2, MC_free_energy);
+        MC_free_energy = {static_cast<Real>(MC_attempt+MCS_checkpoint), free_energy_current, free_energy_current-n_times_mu};
+        cleng_writer.append("/Free_energy", "free_energy", dims_3, MC_free_energy);
 #endif
         if (((MC_attempt + MCS_checkpoint) % delta_save) == 0) WriteOutput();
         if (checkpoint_save) checkpoint.updateCheckpoint(simpleNodeList);

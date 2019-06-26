@@ -2476,18 +2476,17 @@ if (debug) cout <<"StoreGuess in output" << endl;
 
 
 void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
-	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e)/fjc; //(k_BT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
+	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_BT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
 	set_bounds(psi);
 	Zero(EE,M); 
-	Real Exmin,Explus;
-	int x; 
+	Real Exmin,Explus,Eymin,Eyplus;
+	int x,y,z; 
 	int r; 
 
 	switch (gradients) {
 		case 1:
-
 			if (geometry =="planar" ) {
-				pf =pf/2.0;
+				pf =pf/2.0*fjc*fjc;
 				Explus=psi[fjc-1]-psi[fjc]; //van Male approach.
 				Explus *=Explus;
 				
@@ -2499,6 +2498,19 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 				}
 			}
 			if (geometry=="cylindrical" ) {
+				r=offset_first_layer*fjc;
+				pf=pf*PIE;
+				for (x=fjc; x<MX+fjc; x++) {
+					r++;
+					Exmin=psi[x]-psi[x-1];
+					Exmin*=(r-0.5)*Exmin;
+					Explus=psi[x]-psi[x+1];
+					Explus*=(r+0.5)*Explus;
+					EE[x]=pf*(Exmin+Explus)/L[x];
+				}
+
+
+/*
 				pf=pf*PIE;
 				r=offset_first_layer*fjc-1.5;
 				if (offset_first_layer <=0) {
@@ -2520,10 +2532,11 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 					Explus *= (r+0.5)*Explus;
 					EE[x]=pf*(Exmin+Explus)/L[x];
 				}
+*/
  
 			}
 			if (geometry=="spherical" ) {
-				pf=pf*PIE*2;
+				pf=pf*PIE*2/fjc;
 				r=offset_first_layer*fjc +1.0;
 				Explus=r*(psi[fjc]-psi[fjc+1]);
 				Explus *=Explus;
@@ -2533,24 +2546,48 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 					Exmin=Explus;
 					Explus=r*(psi[x]-psi[x+1]);
 					Explus *=Explus;
-					EE[x]=pf*(Exmin+Explus)/(L[x]);
+					EE[x]=pf*(Exmin+Explus)/L[x];
 				}
 
 			}
-/*			
-			YisAminB(EE+1,psi,psi+2,M-2);
-			Times(EE,EE,EE,M);
-			Norm(EE,pf/4.0,M);
-			remove_bounds(EE); 
-*/
 			break;
 		case 2:
-			YisAminB(EE+1,psi,psi+2,M-2);
-			Times(EE,EE,EE,M);
-			Norm(EE,pf/4.0,M);
-			YisAminB(E+JX,psi,psi+2*JX,M-2*JX);
-			Times(E,E,E,M);
-			YplusisCtimesX(EE,E,pf/4.0,M);
+			if (geometry=="planar") {
+				pf = pf/2.0;
+				for (x=fjc; x<MX+fjc; x++) {
+					for (y=fjc; y<MY+fjc; y++) {
+						z=x*JX+y;
+						Exmin=psi[z]-psi[z-JX];
+						Exmin*=Exmin;
+						Explus=psi[z]-psi[z+JX];
+						Explus*=Explus;
+						Eymin=psi[z]-psi[z-1];
+						Eymin*=Eymin;
+						Eyplus=psi[z]-psi[z+1];
+						Eyplus*=Eyplus;
+						EE[x*MX+y]=pf*(Exmin+Explus+Eymin+Eyplus);
+					}
+				}
+			} else {
+				pf = pf/2;
+				r=offset_first_layer*fjc;
+				for (x=fjc; x<MX+fjc; x++) {
+					r++;
+					for (y=fjc; y<MY+fjc; y++) {
+						z=x*JX+y;
+						Exmin=psi[z]-psi[z-JX];
+						Exmin*=(r-0.5)*Exmin*2*PIE;
+						Explus=psi[z]-psi[z+JX];
+						Explus*=(r+0.5)*Explus*2*PIE;
+						Eymin=(psi[z]-psi[z-1])*fjc;
+						Eymin*=Eymin;
+						Eyplus=(psi[z]-psi[z+1])*fjc;
+						Eyplus*=Eyplus;
+						EE[z]=pf*((Exmin+Explus)/L[z]+Eymin+Eyplus);
+					}
+				}
+	
+			}
 			break;
 		case 3:
 			YisAminB(EE+1,psi,psi+2,M-2);
@@ -2568,14 +2605,9 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 	}
 }
 
-/*
-fjc=1: frad has stencil coefficients : (-1 1)/2; laplace: (1 -2 1)/2
-not implemented: fjc=2: grad has stencil coefficients: (-1  8 -8 1)/12, laplace: (-1 16 -30 16 -1)/12
-*/
-
 
 void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
-	int x,y;
+	int x,y,i;
 #ifndef CUDA
 	int z;
 #endif
@@ -2585,19 +2617,19 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 #endif	
 	Real a,b,c,a_,b_,c_;
 	Real r; 
-	Real epsXplus, epsXmin;
+	Real epsXplus, epsXmin, epsYplus,epsYmin;
 	set_bounds(eps);
-	Real C =fjc*e*e/(eps0*k_BT*bond_length);
+	Real C =e*e/(eps0*k_BT*bond_length);
 
    if (!fixedPsi0) {
 	switch (gradients) {
 		case 1:
 
 			if (geometry=="planar") { //van Male approach;
-				C=C*2.0;
+				C=C*2.0/fjc/fjc;
 				epsXplus=eps[0]+eps[1];
 				a=0; b=psi[0]; c=psi[1];
-				for (x=1; x<MX+1; x++) {
+				for (x=fjc; x<MX+fjc; x++) {
 					epsXmin=epsXplus;
 					epsXplus=eps[x]+eps[x+1];
 					a=b; b=c; c=psi[x+1];
@@ -2606,10 +2638,10 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 			}
 			if (geometry=="cylindrical") {
 				C=C/PIE;
-				r=offset_first_layer;
+				r=offset_first_layer*fjc;
 				epsXplus=r*(eps[0]+eps[1]);
 				a=0; b=psi[0]; c=psi[1];
-				for (x=1; x<MX+1; x++) {
+				for (x=fjc; x<MX+fjc; x++) {
 					epsXmin=epsXplus; r++;
 					epsXplus=r*(eps[x]+eps[x+1]);
 					a=b; b=c; c=psi[x+1];
@@ -2617,11 +2649,11 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 				 }
 			}
 			if (geometry=="spherical") {
-				C=C/(2.0*PIE);
-				r=offset_first_layer;
+				C=C/(2.0*PIE)*fjc;
+				r=offset_first_layer*fjc;
 				epsXplus=r*r*(eps[0]+eps[1]);
 				a=0; b=psi[0]; c=psi[1];
-				for (x=1; x<MX+1; x++) {
+				for (x=fjc; x<MX+fjc; x++) {
 					epsXmin=epsXplus; 
 					r++;
 					epsXplus=r*r*(eps[x]+eps[x+1]);
@@ -2629,69 +2661,41 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 					X[x]=(epsXmin*a + C*q[x]*L[x] + epsXplus*c)/(epsXmin+epsXplus); 
 				 }
 			}
-
-/*
-
-
-			a=0; b=psi[fjc-1]; c=psi[fjc];
-			for (x=fjc; x<MX+fjc; x++) { 
-				a=b; b=c; c=psi[x+1];
-				X[x]=0.5*(a+c)+q[x]*C/eps[x]; 
-			}
-	
-			if (geometry=="cylindrical") {
-				a=0; b=psi[fjc-1]; c=psi[fjc];
-				for (x=fjc; x<MX+fjc; x++) {
-					a=b; b=c; c=psi[x+1];
-					X[x]+=(c-a)/(2.0*(offset_first_layer*fjc+x-fjc+0.5));
-				}
-			}
-			if (geometry=="spherial") {
-				a=0; b=psi[fjc-1]; c=psi[fjc];
-				for (x=fjc; x<MX+fjc; x++) {
-					a=b; b=c; c=psi[x+1];
-					X[x]+=(c-a)/(offset_first_layer*fjc+x-fjc+0.5);
-				}
-			}
-			if (grad_epsilon) {
-				a=0; b=psi[fjc-1]; c=psi[fjc];a_=0; b_=eps[fjc-1]; c_=eps[fjc];
-				for (x=fjc; x<MX+fjc; x++) {//for all geometries
-					a=b; b=c; c=psi[x+1]; a_=b_; b_=c_; c_=eps[x+1];
-					X[x]+=0.25*(c_-a_)*(c-a)/b_; //fjc*fjc
-				}	
-			}
-*/
-
 			//Cp(psi,X,M);
 			YisAminB(g,g,X,M);
 			break;
 		case 2:
-			
-			for (x=fjc; x<MX+fjc; x++) {
-				for (y=fjc; y<MY+fjc; y++){
-					X[x*JX+y]=0.25*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
-						        +psi[x*JX+y-1]  +psi[x*JX+y+1])
-							 +0.5*q[x*JX+y]*C/eps[x*JX+y];
-				}
-			}
-	
-			if (geometry=="cylindrical") { //radial geometry in x no radial geometry in y
-				for (x=fjc; x<MX+fjc; x++) {
-					for (y=fjc; y<MY+fjc; y++){
-						X[x*JX+y]+=(psi[(x+1)*JX+y]-psi[(x-1)*JX+y])/(2.0*(offset_first_layer+x-fjc+0.5))*fjc;
-					}
-				}
-			}
-			if (grad_epsilon) {
+			if (geometry=="planar") {
+				C=C*2.0/fjc/fjc;
 				for (x=fjc; x<MX+fjc; x++) {
 					for (y=fjc; y<MY+fjc; y++) {
-						X[x*JX+y]+=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
-                                              		   eps[x*JX+y+1]  -eps[x*JX+y-1])  *(psi[x*JX+y+1]  -psi[x*JX+y-1])/
-					           		   eps[x*JX+y]*fjc*fjc;
+						i=x*JX+y;
+						epsXmin=eps[i]+eps[i-JX];
+						epsXplus=eps[i]+eps[i+JX];
+						epsYmin=eps[i]+eps[i-1];
+						epsYplus=eps[i]+eps[i+1];
+						X[i]= (C*q[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/
+						(epsXmin+epsXplus+epsYmin+epsYplus);
 					}
 				}
+			} else {
+				C=C*2.0;
+				r=offset_first_layer*fjc;
+				for (x=fjc; x<MX+fjc; x++) {
+					r++;
+					for (y=fjc; y<MY+fjc; y++) {
+						i=x*JX+y;
+						epsXmin=2*PIE*(r-1)*(eps[i]+eps[i-JX])/L[i]*fjc*fjc;
+						epsXplus=2*PIE*r*(eps[i]+eps[i+JX])/L[i]*fjc*fjc;
+						epsYmin=eps[i]+eps[i-1];
+						epsYplus=eps[i]+eps[i+1];
+						X[i]= (C*q[i]*L[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/
+						(epsXmin+epsXplus+epsYmin+epsYplus);
+					}
+				}
+
 			}
-			Cp(psi,X,M);
+			//Cp(psi,X,M);
 			YisAminB(g,g,X,M);
 			break;
 		case 3: 

@@ -2679,7 +2679,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 					}
 				}
 			} else {
-				C=C*2.0;
+				C=C/2/fjc/fjc;
 				r=offset_first_layer*fjc;
 				for (x=fjc; x<MX+fjc; x++) {
 					r++;
@@ -2689,7 +2689,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 						epsXplus=2*PIE*r*(eps[i]+eps[i+JX])/L[i]*fjc*fjc;
 						epsYmin=eps[i]+eps[i-1];
 						epsYplus=eps[i]+eps[i+1];
-						X[i]= (C*q[i]*L[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/
+						X[i]= (C*q[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/
 						(epsXmin+epsXplus+epsYmin+epsYplus);
 					}
 				}

@@ -41,9 +41,9 @@ bool Teng::MonteCarlo()
 	int time = 0;
 	Real *copyitvar;
 	copyitvar = (Real *)malloc(New[0]->iv * sizeof(Real));
-	success = CP(to_teng);
 	New[0]->i_info = 100;
 	solved = New[0]->Solve(true);
+	success = CP(to_teng);
 	for (int i = 0; i < New[0]->iv; i++)
 	{
 		copyitvar[i] = New[0]->xx[i];
@@ -137,8 +137,8 @@ bool Teng::ChangeMode()
 			cout << "amplitude: " << Amplitude << " \t wavenumber: " << Wavenumber << endl;
 		for (int i = 0; i < n_particles; i++)
 		{
-			X[i] = X[i] + round(0.5 - round(GetRandom(1.0)));
-			Y[i] = Y[i] + round(0.5 - round(GetRandom(1.0)));
+			X[i] = X[i];// + round(0.5 - round(GetRandom(1.0)));
+			Y[i] = Y[i];// + round(0.5 - round(GetRandom(1.0)));
 			Z[i] = Z[i] + round(Amplitude * (sin(Wavenumber * pi * X[i] / Lat[0]->MX) * sin(Wavenumber * pi * Y[i] / Lat[0]->MY)));
 		}
 		success = IsLegal();
@@ -238,26 +238,39 @@ bool Teng::CP(transfer tofrom)
 	switch (tofrom)
 	{
 	case to_teng:
-		for (i = 0; i < n_particles; i++)
-		{
-			PX = Seg[tag_seg]->H_P[i] / JX;
-			PY = (Seg[tag_seg]->H_P[i] - PX * JX) / JY;
-			PZ = (Seg[tag_seg]->H_P[i] - PX * JX - PY * JY);
-			X.push_back(PX);
-			Y.push_back(PY);
-			Z.push_back(PZ);
-			X_bm.push_back(PX);
-			Y_bm.push_back(PY);
-			Z_bm.push_back(PZ);
+		if(MoveType=="tags"){
+			for (i = 0; i < n_particles; i++){
+				PX = Seg[tag_seg]->H_P[i] / JX;
+				PY = (Seg[tag_seg]->H_P[i] - PX * JX) / JY;
+				PZ = (Seg[tag_seg]->H_P[i] - PX * JX - PY * JY);
+				X.push_back(PX);
+				Y.push_back(PY);
+				Z.push_back(PZ);
+				X_bm.push_back(PX);
+				Y_bm.push_back(PY);
+				Z_bm.push_back(PZ);
+			}
+		}
+		else{
+			success=TrackInterface();
 		}
 		break;
 	case to_segment:
-		Zero(Seg[tag_seg]->H_MASK, M); //TODO: (Ram) Not sure If I have to remove the mask, all calculations use H_P after this.
-		Zero(Seg[tag_seg]->H_P, n_particles);
-		for (i = 0; i < n_particles; i++)
-		{
-			Seg[tag_seg]->H_P[i] = X[i] * JX + Y[i] * JY + Z[i];
-			Seg[tag_seg]->H_MASK[X[i] * JX + Y[i] * JY + Z[i]] = 1;
+		if(MoveType=="tags"){
+			Zero(Seg[tag_seg]->H_MASK, M); //TODO: (Ram) Not sure If I have to remove the mask, all calculations use H_P after this.
+			Zero(Seg[tag_seg]->H_P, n_particles);
+			for (i = 0; i < n_particles; i++){
+				Seg[tag_seg]->H_P[i] = X[i] * JX + Y[i] * JY + Z[i];
+				Seg[tag_seg]->H_MASK[X[i] * JX + Y[i] * JY + Z[i]] = 1;
+			}
+		}
+		else {
+			Sys[0]->constraintfields=true;
+			Zero(Sys[0]->H_beta,M);
+			for (i = 0; i < n_particles; i++){
+				Sys[0]->H_beta[X[i] * JX + Y[i] * JY + Z[i]] = 1;
+			}
+
 		}
 		break;
 	case to_bm:
@@ -283,6 +296,48 @@ bool Teng::CP(transfer tofrom)
 	}
 	return success;
 }
+
+bool Teng::TrackInterface(){
+	bool success=true;
+	n_particles=0;
+	// get the rho from the molecule.cpp
+	// run a sweep along along the x,y plane and find points that are between certain tolerance of interface 0.5+- tolerance
+	// count the number of points. more than nx*ny - saddles exist. less than nx*ny - interface might have been vanished. choose the constraints wisely (??? how to do it)
+	// Use PZ to store the interface location (PZ should have size of chosen n constrainted particles)
+	int JX=Lat[0]->JX; int JY=Lat[0]->JY; int MX=Lat[0]->MX; int MY=Lat[0]->MY; int MZ=Lat[0]->MZ;
+	success = New[0]->Solve(true);
+	
+	Real sum;
+	Real radius;
+	for(int i=1; i<=MX; i++){
+		for(int j=1; j<=MY; j++){
+			sum=0;
+			for(int k=1; k<=MZ; k++){
+				sum+=Mol[0]->phi[i*JX+j*JY+k]-Mol[0]->phi[i*JX+j*JY+MZ];
+				if(k==MZ) {
+					n_particles+=1;
+					radius=sum/(Mol[0]->phi[i*JX+j*JY+1]-Mol[0]->phi[i*JX+j*JY+MZ]);
+					cout << radius << endl;
+					PX = i;
+					PY = j;
+					PZ = round(radius);
+					X.push_back(PX);
+					Y.push_back(PY);
+					Z.push_back(PZ);
+					X_bm.push_back(PX);
+					Y_bm.push_back(PY);
+					Z_bm.push_back(PZ);
+
+				}
+			}
+		}
+	}
+
+	return success;
+}
+
+
+
 
 // TODO: Output modules should be rearranged. 
 // Push outputs from this and other classes to Output class
@@ -341,8 +396,10 @@ void Teng::PushOutput()
 		{																															//example for putting an array of Reals of arbitrary length to output
 			string s = "vector;0";																			//the keyword 'vector' is used for Reals; the value 0 is the first vector, use 1 for the next etc,
 			Out[i]->push("gn", s);																			//"gn" is the name that will appear in output file
-			Out[i]->PointerVectorReal.push_back(Mol[tag_mol]->gn);			//this is the pointer to the start of the 'vector' that is reported to output.
-			Out[i]->SizeVectorReal.push_back(sizeof(Mol[tag_mol]->gn)); //this is the size of the 'vector' that is reported to output
+			if(MoveType=="tags"){
+				Out[i]->PointerVectorReal.push_back(Mol[tag_mol]->gn);			//this is the pointer to the start of the 'vector' that is reported to output.
+				Out[i]->SizeVectorReal.push_back(sizeof(Mol[tag_mol]->gn)); //this is the size of the 'vector' that is reported to output
+			}
 		}
 		if (Out[i]->name == "ana" || Out[i]->name == "pos")
 		{ //example for putting 3 array's of Integers of arbitrary length to output
@@ -481,8 +538,8 @@ bool Teng::CheckInput(int start)
 			//TODO: Track the interface at every x,y
 			//Choose the number of points to be made as constraint
 			//define n_particles and mc_mol. Change tag_mol to mc_mol to generalize rest of program. 
-			n_particles=0;
-			tag_mol=0;
+
+
 		}
 		else{
 			success=false; cerr << "Problem in selecting Movetype" << endl;

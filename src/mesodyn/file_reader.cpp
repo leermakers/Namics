@@ -38,7 +38,7 @@ Readable_file::Readable_file(const std::string filename_, Readable_filetype file
 
     if (access(m_filename.c_str(), F_OK) == -1)
     {
-        std::cerr << "Error opening file! Is the filename correct? Is there a vtk for each component, ending in [component number].vtk, starting from 1?" << std::endl;
+        std::cerr << "Error opening file! Is the filename correct?" << std::endl;
         exit(error::ERROR_FILE_NOT_FOUND);
     }
 }

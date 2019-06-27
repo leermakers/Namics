@@ -2503,9 +2503,9 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 				for (x=fjc; x<MX+fjc; x++) {
 					r++;
 					Exmin=psi[x]-psi[x-1];
-					Exmin*=(r-0.5)*Exmin;
+					Exmin*=(r-1)*Exmin;
 					Explus=psi[x]-psi[x+1];
-					Explus*=(r+0.5)*Explus;
+					Explus*=(r)*Explus;
 					EE[x]=pf*(Exmin+Explus)/L[x];
 				}
 
@@ -2627,8 +2627,8 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 
 			if (geometry=="planar") { //van Male approach;
 				C=C*2.0/fjc/fjc;
-				epsXplus=eps[0]+eps[1];
-				a=0; b=psi[0]; c=psi[1];
+				epsXplus=eps[fjc-1]+eps[fjc];
+				a=0; b=psi[fjc-1]; c=psi[fjc];
 				for (x=fjc; x<MX+fjc; x++) {
 					epsXmin=epsXplus;
 					epsXplus=eps[x]+eps[x+1];
@@ -2639,10 +2639,11 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 			if (geometry=="cylindrical") {
 				C=C/PIE;
 				r=offset_first_layer*fjc;
-				epsXplus=r*(eps[0]+eps[1]);
-				a=0; b=psi[0]; c=psi[1];
+				epsXplus=r*(eps[fjc-1]+eps[fjc]);
+				a=0; b=psi[fjc-1]; c=psi[fjc];
 				for (x=fjc; x<MX+fjc; x++) {
-					epsXmin=epsXplus; r++;
+					r++;
+					epsXmin=epsXplus; 
 					epsXplus=r*(eps[x]+eps[x+1]);
 					a=b; b=c; c=psi[x+1];
 					X[x]=(epsXmin*a + C*q[x]*L[x] + epsXplus*c)/(epsXmin+epsXplus); 
@@ -2651,8 +2652,8 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 			if (geometry=="spherical") {
 				C=C/(2.0*PIE)*fjc;
 				r=offset_first_layer*fjc;
-				epsXplus=r*r*(eps[0]+eps[1]);
-				a=0; b=psi[0]; c=psi[1];
+				epsXplus=r*r*(eps[fjc-1]+eps[fjc]);
+				a=0; b=psi[fjc-1]; c=psi[fjc];
 				for (x=fjc; x<MX+fjc; x++) {
 					epsXmin=epsXplus; 
 					r++;

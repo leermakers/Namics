@@ -144,9 +144,6 @@ bool Mesodyn::mesodyn() {
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
-  // Write initial conditions
-  write_output();
-
   /**** Main MesoDyn time loop ****/
   for (t = 0; t < timesteps+1; t++) {
 
@@ -168,8 +165,10 @@ bool Mesodyn::mesodyn() {
     if (enable_sanity_check)
       sanity_check();
 
+    write_parameters();
+
     if (t > save_delay and t % timebetweensaves == 0)
-      write_output();
+      write_profile();
 
     if (adaptive_tolerance) {
       adapt_tolerance();
@@ -382,8 +381,29 @@ void Mesodyn::register_output() {
       register_output_profile("grand_potential_density", Sys.back()->GrandPotentialDensity);
 }
 
-int Mesodyn::write_output() {
-  if (not In.back()->OutputList.empty()) {
+int Mesodyn::write_profile() {
+    for (auto& parameter_writer : parameter_writers)
+      parameter_writer->write();
+
+    for (auto& pair : output_profiles) {
+      dynamic_cast<Output_ptr<Real>*>(pair.second.get())->set_buffer(system_size);
+    }
+
+    for (auto& profile_writer : profile_writers)
+    {
+      profile_writer->prepare_for_data();
+      profile_writer->write();
+    }
+
+    for (auto& pair : output_profiles) {
+      dynamic_cast<Output_ptr<Real>*>(pair.second.get())->clear_buffer();
+    }
+
+    return 0;
+}
+
+int Mesodyn::write_parameters() {
+    if (not In.back()->OutputList.empty()) {
      Out.emplace_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], (int)t, timesteps / timebetweensaves));
      Out[0]->CheckInput(1);
      Out[0]->output_nr = t;
@@ -405,23 +425,4 @@ int Mesodyn::write_output() {
      Out[0]->WriteOutput(t);
      Out.clear();
   }
-
-    for (auto& parameter_writer : parameter_writers)
-      parameter_writer->write();
-
-    for (auto& pair : output_profiles) {
-      dynamic_cast<Output_ptr<Real>*>(pair.second.get())->set_buffer(system_size);
-    }
-
-    for (auto& profile_writer : profile_writers)
-    {
-      profile_writer->prepare_for_data();
-      profile_writer->write();
-    }
-
-    for (auto& pair : output_profiles) {
-      dynamic_cast<Output_ptr<Real>*>(pair.second.get())->clear_buffer();
-    }
-
-    return 0;
 }

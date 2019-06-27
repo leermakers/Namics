@@ -88,10 +88,10 @@ void IProfile_writer::bind_data(map< string, shared_ptr<IOutput_ptr>>& profiles_
 void IProfile_writer::bind_subystem_loop(Boundary_mode mode_) {
     switch (mode_) {
         case Boundary_mode::WITH_BOUNDS:
-            subsystem_loop = std::bind(&Lattice_accessor::system_plus_bounds, m_adapter, std::placeholders::_1);
+            subsystem_loop = std::bind(&Lattice_accessor::system_plus_bounds_x_major, m_adapter, std::placeholders::_1);
             break;
         case Boundary_mode::WITHOUT_BOUNDS:
-            subsystem_loop = std::bind(&Lattice_accessor::skip_bounds, m_adapter, std::placeholders::_1);
+            subsystem_loop = std::bind(&Lattice_accessor::skip_bounds_x_major, m_adapter, std::placeholders::_1);
             break;
     }
 }
@@ -127,10 +127,12 @@ void Vtk_structured_grid_writer::prepare_for_data()
 	vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
 	vtk << "POINTS " << MX * MY * MZ << " int\n";
 
-	for (int x = 1; x < MX + 1; ++x)
-		for (int y = 1; y < MY + 1; ++y)
-			for (int z = 1 ; z < MZ + 1 ; ++z )
-				vtk << x << " " << y << " " << z << "\n";
+    subsystem_loop(
+        [this, &vtk] (size_t x, size_t y, size_t z)
+        {
+            vtk << x << " " << y << " " << z << "\n";
+        }
+    );
 
 	vtk << "POINT_DATA " << MX * MY * MZ << "\n";
 
@@ -214,22 +216,11 @@ void Vtk_structured_points_writer::write()
 
         vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default\n";
 
-        #ifdef PAR_MESODYN
-            stl::host_vector<Real> m_data;
-
-            subsystem_loop(
-                [this, &vtk, profile] (size_t x, size_t y, size_t z) {
-	    		    vtk << profile.second->data(x*m_geometry->JX+y*m_geometry->JY+z*m_geometry->JZ) << "\n";
-                }
-            );
-        #else
         subsystem_loop(
             [this, &vtk, profile] (size_t x, size_t y, size_t z) {
 	    		vtk << profile.second->data(x*m_geometry->JX+y*m_geometry->JY+z*m_geometry->JZ) << "\n";
             }
         );
-        #endif
-
         
         m_filestream << vtk.str();
 	    m_filestream.flush();

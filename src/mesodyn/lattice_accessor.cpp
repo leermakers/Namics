@@ -48,6 +48,23 @@ size_t y{0};
     }
 }
 
+void Lattice_accessor::skip_bounds_x_major(std::function<void(size_t, size_t, size_t)> function) noexcept {
+size_t x{0};
+size_t y{0};
+
+    for ( size_t z = SYSTEM_EDGE_OFFSET ; z < MZ+SYSTEM_EDGE_OFFSET ; ++z ) {
+        y = SYSTEM_EDGE_OFFSET;
+        do {
+            x = SYSTEM_EDGE_OFFSET;
+            do {
+                function(x, y, z);
+                ++x;
+            } while (x < MX+SYSTEM_EDGE_OFFSET );
+            ++y;
+        } while (y < MY+SYSTEM_EDGE_OFFSET );
+    }
+}
+
 void Lattice_accessor::full_system_plus_direction_neighborlist(std::function<void(size_t, size_t, size_t)> function) noexcept {
 size_t z{0};
 size_t y{0};
@@ -94,6 +111,23 @@ size_t y{0};
                 function(x, y, z);
                 ++z;
             } while (z < MZ+BOUNDARIES );
+            ++y;
+        } while (y < MY+BOUNDARIES );
+    }
+}
+
+void Lattice_accessor::system_plus_bounds_x_major(std::function<void(size_t, size_t, size_t)> function) noexcept {
+size_t x{0};
+size_t y{0};
+
+    for ( size_t z = 0 ; z < MZ+BOUNDARIES ; ++z ) {
+        y = 0;
+        do {
+            x = 0;
+            do {
+                function(x, y, z);
+                ++x;
+            } while (x < MX+BOUNDARIES );
             ++y;
         } while (y < MY+BOUNDARIES );
     }

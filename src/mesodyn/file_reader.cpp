@@ -92,6 +92,7 @@ void Lattice_geometry::set_jumps()
 
 void Lattice_geometry::assert_lattice_compatible(Lattice *Lat)
 {
+
     assert(Lat->gradients == (int)dimensions);
     assert(Lat->MX + BOUNDARIES == (int)MX);
     assert(Lat->MY + BOUNDARIES == (int)MY);
@@ -323,23 +324,23 @@ std::vector<Real> Vtk_structured_grid_reader::with_bounds(std::vector<Real> &inp
     vector<Real> output(M_bounds);
 
     size_t n = 0;
-    size_t x = SYSTEM_EDGE_OFFSET;
+    size_t z = SYSTEM_EDGE_OFFSET;
     do
     {
         size_t y = SYSTEM_EDGE_OFFSET;
         do
         {
-            size_t z = SYSTEM_EDGE_OFFSET;
+            size_t x = SYSTEM_EDGE_OFFSET;
             do
             {
                 output[x * file_lattice.JX + y * file_lattice.JY + z * file_lattice.JZ] = input[n];
                 ++n;
-                ++z;
-            } while (z < file_lattice.MZ - SYSTEM_EDGE_OFFSET);
+                ++x;
+            } while (x < file_lattice.MX - SYSTEM_EDGE_OFFSET);
             ++y;
         } while (y < file_lattice.MY - SYSTEM_EDGE_OFFSET);
-        ++x;
-    } while (x < file_lattice.MX - SYSTEM_EDGE_OFFSET);
+        ++z;
+    } while (z < file_lattice.MZ - SYSTEM_EDGE_OFFSET);
 
     return output;
 }

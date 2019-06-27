@@ -39,11 +39,15 @@ class Lattice_accessor {
 
     void skip_bounds(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
+    void skip_bounds_x_major(std::function<void(size_t, size_t, size_t)> function) noexcept;
+
     void full_system_plus_direction_neighborlist(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
     void full_system_minus_direction_neighborlist(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
     void system_plus_bounds(std::function<void(size_t, size_t, size_t)> function) noexcept;
+
+    void system_plus_bounds_x_major(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
     size_t index (const size_t x, const size_t y, const size_t z) noexcept;
 

@@ -402,7 +402,7 @@ int Mesodyn::write_profile() {
     return 0;
 }
 
-int Mesodyn::write_parameters() {
+void Mesodyn::write_parameters() {
     if (not In.back()->OutputList.empty()) {
      Out.emplace_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], (int)t, timesteps / timebetweensaves));
      Out[0]->CheckInput(1);

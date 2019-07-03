@@ -143,7 +143,7 @@ public:
   /* Inputs / output class interface functions */
 
   int write_profile();
-  int write_parameters();
+  void write_parameters();
   bool CheckInput();
   Real* solve_crank_nicolson();
   

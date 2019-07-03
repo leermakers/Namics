@@ -64,8 +64,7 @@ public:
 	Real* H_BETA;
 	Real* BETA;
 	int* H_beta;
-	int* beta;
-	Real* Sum_result;
+	int* beta; 
 	bool GPU;
 	int n_mol;
 	int solvent;

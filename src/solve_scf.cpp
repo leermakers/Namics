@@ -47,7 +47,7 @@ if (debug) cout <<"Destructor in Solve " << endl;
 	cudaFree(x_x0);
 	cudaFree(temp_alpha);
 #else
-free(temp_alpha);
+	delete temp_alpha;
 	free(xx);
 #endif
 //if (debug) cout <<"exit for 'destructor' in Solve " << endl;
@@ -60,6 +60,11 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	int M=Lat[0]->M;
 	if (mesodyn) {
 		iv = Sys[0]->SysMolMonList.size()*M;
+		#ifdef CUDA
+			temp_alpha = (Real*)AllOnDev(M); // Doing this while iterating is a gigantic performance hog
+		#else
+			temp_alpha = new Real[M];	
+		#endif
 	} else {
 		iv = (Sys[0]->ItMonList.size() + Sys[0]->ItStateList.size())* M;
 	}
@@ -67,14 +72,12 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	if (SCF_method=="Picard") iv += M;
 	if (Sys[0]->constraintfields) iv +=M;
 #ifdef CUDA
-	temp_alpha = (Real*)AllOnDev(M); // Doing this while iterating is a gigantic performance hog
 	xx  = (Real*)AllOnDev(iv); Zero(xx,iv);
 	x0  = (Real*)AllOnDev(iv); Zero(x0,iv);
 	g   = (Real*)AllOnDev(iv); Zero(g,iv);
 	xR  = (Real*)AllOnDev(m*iv); Zero(xR,m*iv);
 	x_x0= (Real*)AllOnDev(m*iv); Zero(x_x0,m*iv);
 #else
-	temp_alpha = (Real*)malloc(M*sizeof(Real));	
 	xx=(Real*) malloc(iv*sizeof(Real)); Zero(xx,iv);
 #endif
 	Sys[0]->AllocateMemory();
@@ -709,12 +712,6 @@ void Solve_scf::residuals(Real* x, Real* g){
 					k++;
 				}
 			}
-
-			#ifdef CUDA
-			cudaFree(temp_alpha);
-			#else
-			free(temp_alpha);
-			#endif
 		}
 		break;
 		case custum:

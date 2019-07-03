@@ -71,21 +71,11 @@ C Copyright (2018) Wageningen University, NL.
 	numIterationsForHessian=100;
 	minAccuracyForHessian=0.1;
 	reverseDirection=(int*) malloc(reverseDirectionRange*sizeof(int)); H_Zero(reverseDirection,reverseDirectionRange);
-	#ifdef CUDA
-		Sum_result = (Real*)AllOnDev(1);
-	#else
-		Sum_result = new Real;
-	#endif
 
 }
 
 SFNewton::~SFNewton() {
   free(reverseDirection);
-  #ifdef CUDA
-	cudaFree(Sum_result);
-  #else
-	delete Sum_result;
-  #endif
 }
 
 
@@ -285,15 +275,8 @@ if(debug) cout <<"residue in Newton " << endl;
 Real SFNewton::linecriterion(Real *g, Real *g0, Real *p, Real *p0, int nvar) { //done
 if(debug) cout <<"linecriterion in Newton " << endl;
 	Real normg,gg0;
-	gg0 = 0.0;
 	normg = norm2(g0,nvar);
-  	Dot(Sum_result,g,g0,nvar);
-
-	#ifdef CUDA
-		TransferDataToHost(&gg0, Sum_result, 1);
-	#else
-		gg0 = *Sum_result;
-	#endif
+  Dot(gg0,g,g0,nvar);
 
 	gg0=gg0/normg/normg;
 	normg = pow(norm2(g,nvar)/normg,2);
@@ -376,14 +359,7 @@ if(debug) cout <<"newhessian in Newton" << endl;
 				for (int i=0; i<nvar; i++) hp[i] = -g0[i];
 			}
 
-			Dot(Sum_result,p,hp,nvar);
-
-			#ifdef CUDA
-				TransferDataToHost(&php, Sum_result, 1);
-			#else
-				php = *Sum_result;
-			#endif
-					
+			Dot(php,p,hp,nvar);
 			theta = py/(10*dmin+ALPHA*php);
 
 			if ( nvar>=1 && theta>0 && iterations==resetiteration+1 && accuracy > max_accuracy_for_hessian_scaling) {
@@ -851,14 +827,8 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
     	if (posi<0) {
       		posi +=m;
 		}
-	  	Real Dvalue{0.0};
-    	Dot(Sum_result,x_x0+posi*nvar, x_x0+k*nvar,nvar);
-		#ifdef CUDA
-			TransferDataToHost(&Dvalue, Sum_result, 1);
-		#else
-			Dvalue = *Sum_result;
-		#endif
-
+	  	Real Dvalue;
+    	Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
 		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue;
 		// write to (compressed) matrix Apij
 		for (int j=0; j<k_diis; j++)
@@ -927,14 +897,14 @@ Real SFNewton::computeresidual(Real* array, int size) {
   } else {
     // Compute residual based on sum of errors
 	#ifdef CUDA
-    Dot(Sum_result,array,array,size);
-	TransferDataToHost(&residual, Sum_result, 1);
+    Dot(residual,array,array,size);
     residual = sqrt(residual);
 		#else //CPU
 		residual = H_Dot(array,array,size);
 		residual = sqrt(residual);
 	#endif //CUDA
   }
+
   return residual;
 }
 

@@ -51,7 +51,6 @@ public:
 	Real *LAMBDA;
 	int fjc, FJC;
 	Real *X;
-	Real *Sum_result;
 	int VarInitValue;
 	string Var_type;
 	int Var_target;

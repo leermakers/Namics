@@ -47,6 +47,7 @@ if (debug) cout <<"Destructor in Solve " << endl;
 #else
 	free(xx);
 #endif
+//if (debug) cout <<"exit for 'destructor' in Solve " << endl;
 
 }
 
@@ -364,27 +365,23 @@ void Solve_scf::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 	int jy=Lat[0]->JY;
 	int i,j,k;
 	int pos_i,pos_o;
-	int JX=(MY+2)*(MZ+2);
-	int JY=(MZ+2);
-	Real Xvalue;
 	int fjc=Lat[0]->fjc;
+	int JX=(MY+2*fjc)*(MZ+2*fjc);
+	int JY=(MZ+2*fjc);
+	Real Xvalue;
+	
 
 	switch (Lat[0]->gradients) {
 		case 1:
 			if (fjc==1 and fjc_old==1) {
-			if (MY>0||MZ>0) {
-				cout <<" Copy from more than one gradient to one gradient: (i) =(1,i) or (1,1,i) is used "<< endl;
-			}
-			if (MZ>0) { pos_i=JX+JY; pos_o=MZ+2;} else {if (MY>0) {pos_i=JX; pos_o=MY+2; } else { pos_i=0; pos_o=MX+2; } }
-			for (i=0; i<mx+2; i++)  if (i<pos_o) x[i]=X[pos_i+i];
+				if (MY>0||MZ>0) {
+					cout <<" Copy from more than one gradient to one gradient: (i) =(1,i) or (1,1,i) is used "<< endl;
+				}
+				if (MZ>0) { pos_i=JX+JY; pos_o=MZ+2;} else {if (MY>0) {pos_i=JX; pos_o=MY+2; } else { pos_i=0; pos_o=MX+2; } }
+				for (i=0; i<mx+2; i++)  if (i<pos_o) x[i]=X[pos_i+i];
 			} else {
-				for (i=0; i<mx+2; i++) {
-					Xvalue=0; pos_i=0; pos_o=MX+2;
-					if (i<pos_o) {
-						for (j=0; j<fjc_old; j++) Xvalue+=X[i*fjc_old+j];
-						Xvalue/=fjc_old;
-						for (j=0; j<fjc; j++) {if (fjc!=fjc_old) x[i*fjc+j]=Xvalue; else  x[i*fjc+j]= X[i*fjc+j];}
-					} else for (j=0; j<fjc; j++) x[i*fjc+j]=0;
+				for (i=0; i<mx+2*fjc; i++) {
+					x[i]=X[i];
 				}
 			}
 			break;
@@ -446,11 +443,12 @@ bool Solve_scf::Guess(Real *X, string METHOD, vector<string> MONLIST, vector<str
 	bool success=true;
 
 	if (start ==1 && Sys[0]->GuessType != "")  {
+		cout <<"guessing " << endl; 
 		Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
 	} else {
 		int m;
-		if (MZ>0) {m=(MX+2)*(MY+2)*(MZ+2); } else { if (MY>0) { m=(MX+2)*(MY+2); } else {  m=(MX+2);}}
-		if (fjc_old>1) m*=fjc_old;
+		if (MZ>0) {m=(MX+2)*(MY+2)*(MZ+2); } else { if (MY>0) { m=(MX+2*fjc_old)*(MY+2*fjc_old); } else {  m=(MX+2*fjc_old);}}
+	
 		int length_old_mon=MONLIST.size();
 		int length_old_state=STATELIST.size();
 		int length_new_mon=Sys[0]->ItMonList.size();
@@ -470,7 +468,7 @@ bool Solve_scf::Guess(Real *X, string METHOD, vector<string> MONLIST, vector<str
 			}
 		}
 
-		if (CHARGED && Sys[0]->charged) {cout <<"both charged" << endl;
+		if (CHARGED && Sys[0]->charged) {
 			Copy(xx+(length_new_mon+length_new_state)*M,X+(length_old_mon+length_old_state)*m,MX,MY,MZ,fjc_old);
 		}
 	}
@@ -727,9 +725,10 @@ void Solve_scf::residuals(Real* x, Real* g){
 				if (SCF_method=="pseudohessian") {hessian=false; pseudohessian=true; solver=PSEUDOHESSIAN;}
 				if (SCF_method=="DIIS") {solver=diis;}
 				if (SCF_method=="Picard") {solver=PICARD;}
-				s_info=super_s_info;
+				//e_info=value_e_info;
 				e_info=super_e_info;
 				i_info=super_i_info;
+				s_info=super_s_info;
 				tolerance = super_tolerance;
 				Solve(false);						//find scf solution
 				control=super;
@@ -761,9 +760,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 			ComputePhis();
 			if (Sys[0]->charged) {
 				Sys[0]->DoElectrostatics(g+sysmon_length*M,xx+sysmon_length*M);
-				Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi);
+				Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
 				Lat[0]->set_bounds(Sys[0]->psi);
-				Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
+				Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
 				Lat[0]->remove_bounds(g+sysmon_length*M);
 			}
 			YisAplusC(g+jump*M,Sys[0]->phitot,-1.0,M);
@@ -771,7 +770,6 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Cp(g+i*M,xx+i*M,M);
 				for (k=0; k<mon_length; k++) {
                        		chi= -1.0*Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  //The minus sign here is to change the sign of x! just a trick due to properties of PutAlpha where a minus sing is implemented....
-
 					if (chi!=0) PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 				}
 				if (Sys[0]->charged){
@@ -791,10 +789,11 @@ void Solve_scf::residuals(Real* x, Real* g){
 			int itstatelistlength=Sys[0]->ItStateList.size();
 			
 
-						
 
- 			ComputePhis();
-			Cp(g,xx,iv); Zero(alpha,M);
+			Cp(g,xx,iv);				
+			ComputePhis();
+
+ 			Zero(alpha,M);
 			for (i=0; i<itmonlistlength; i++) {
 				for (k=0; k<mon_length; k++) {
 					if (Seg[k]->ns<2) {
@@ -811,15 +810,17 @@ void Solve_scf::residuals(Real* x, Real* g){
 				}
 			}
 			for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
+
 			for (i=0; i<itstatelistlength; i++) {
 				for (k=0; k<mon_length; k++) {
 					if (Seg[k]->ns<2) {
 						chi =Sta[Sys[0]->ItStateList[i]]->chi[k];
 						if (chi!=0)
-//cout <<"for segment k " << k << " chi " << chi << endl;
 							PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 					}
 				}
+				
+
 				for (k=0; k<state_length; k++) {
 					chi =Sta[Sys[0]->ItStateList[i]]->chi[mon_length+k];
 					if (chi!=0)
@@ -839,21 +840,22 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
 				Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,Sys[0]->KSAM,M);
 			}
+
 			int itpos=(itmonlistlength+itstatelistlength)*M;
+
 			if (Sys[0]->charged) {
 				Cp(g+itpos,xx+itpos,M);
 				Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
 				Lat[0]->set_bounds(Sys[0]->psi);
-				Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask);
+				Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
 				Lat[0]->remove_bounds(g+itpos);
 				itpos+=M;
 			}
-			if (Sys[0]->constraintfields) {
+			if (Sys[0]->constraintfields) { 
 				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
 				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
 				Times(g+itpos,g+itpos,Sys[0]->beta,M);
 			}
-
 		break;
 	}
 }
@@ -963,6 +965,13 @@ if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
 bool Solve_scf::PutU() {
 if(debug) cout <<"PutU in  Solve " << endl;
 	int M=Lat[0]->M;
+	int itmonlistlength=Sys[0]->ItMonList.size();
+	int itstatelistlength=Sys[0]->ItStateList.size();
+	int monlistlength =In[0]->MonList.size();
+	int statelistlength=In[0]->StateList.size();
+	int k=0;
+
+	int itpos=(itmonlistlength+itstatelistlength)*M;
 	Real valence;
 	Real *u;
 	if (SCF_method == "Picard") {cout << " Picard not implemented properly " << endl; }
@@ -970,15 +979,11 @@ if(debug) cout <<"PutU in  Solve " << endl;
 	alpha=Sys[0]->alpha;
 
 	if (Sys[0]->charged) {
-		Cp(Sys[0]->psi,xx+iv-M,M);
-		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi);
+		Cp(Sys[0]->psi,xx+itpos,M); 
+		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
 	}
 
-	int itmonlistlength=Sys[0]->ItMonList.size();
-	int itstatelistlength=Sys[0]->ItStateList.size();
-	int monlistlength =In[0]->MonList.size();
-	int statelistlength=In[0]->StateList.size();
-	int k=0;
+
 	for (int i=0; i<itmonlistlength; i++) {
 		int IM=Sys[0]->ItMonList[i];
 		u=Seg[IM]->u;
@@ -1042,7 +1047,6 @@ if(debug) cout <<"PutU in  Solve " << endl;
 		}
 		k++;
 	}
-	int itpos=(itmonlistlength+itstatelistlength)*M;
 	if (Sys[0]->charged) itpos +=M; 
 	if (Sys[0]->constraintfields) Cp(Sys[0]->BETA,xx+itpos,M);
 

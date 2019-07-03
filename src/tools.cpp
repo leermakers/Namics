@@ -657,29 +657,18 @@ void Dot(Real &result, Real *x,Real *y, int M)   {
 	cudaFree(_result);
 }
 
-void Propagate_gs_1_locality(Real* gs, Real* gs_1, int JX, int JY, int JZ, int M) {
+void Sum(Real* preallocated_result, Real *x, int M)   {
+	cudaMemset((void**)preallocated_result, 0, sizeof(Real));
+	//Use a pre-allocated (member) variable! Allocating memory for every call is way too costly
+	//Memcopies can be masked by asynchronous transfer, allocations and frees are blocking.
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	propagate_gs_1_locality<<<n_blocks,block_size>>>(gs, gs_1, JX, JY, JZ, M);
+	sum<<<n_blocks,block_size>>>(x,preallocated_result,M);
 }
 
-void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	propagate_gs_locality<<<n_blocks,block_size>>>(gs, gs_1, G1, JX, JY, JZ, M);
-}
-
-
-void Sum(Real &result, Real *x, int M)   {
-	Real* _result = (Real*)AllOnDev(1);
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	sum<<<n_blocks,block_size>>>(x,_result,M);
-	TransferDataToHost(&result, _result,1);
-	cudaFree(_result);
-}
-
-void Sum(int &result, int *x, int M)   {
+void Sum(int *result, int *x, int M)   {
 	int *H_XXX=(int*) malloc(M*sizeof(int));
 	TransferDataToHost(H_XXX, x, M);
-	result=H_Sum(H_XXX,M);
+	*result=H_Sum(H_XXX,M);
 	for (int i=0; i<M; i++) if (std::isnan(H_XXX[i])) cout <<" At "  << i << " NaN" << endl;
  	free(H_XXX);
 }

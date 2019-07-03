@@ -52,6 +52,7 @@ System::~System()
 	}
 #ifdef CUDA
   cudaFree(phitot);
+  cudaFree(Sum_result);
   cudaFree(alpha);
   cudaFree(GrandPotentialDensity);
   cudaFree(FreeEnergyDensity);
@@ -70,6 +71,7 @@ System::~System()
 	cudaFree(BETA);
   }
 #else
+delete Sum_result;
   free(phitot);
   free(TEMP);
   free(KSAM);
@@ -110,6 +112,7 @@ void System::AllocateMemory()
 		Lat[0]->FillMask(H_beta, px, py, pz, delta_inputfile);
 	}
 #ifdef CUDA
+	Sum_result = (Real*)AllOnDev(1);
 	phitot = (Real *)AllOnDev(M);
 	alpha = (Real *)AllOnDev(M);
 	GrandPotentialDensity = (Real *)AllOnDev(M);
@@ -130,6 +133,7 @@ void System::AllocateMemory()
 	beta = (int*)AllIntOnDev(M);
   }
 #else
+Sum_result = new Real;
   phitot = (Real*)malloc(M * sizeof(Real));
   alpha = H_alpha;
   if (charged) {
@@ -214,7 +218,7 @@ bool System::generate_mask()
 	}
 	else
 	{
-		Sum(volume, KSAM, M);
+		Sum(&volume, KSAM, M);
 	}
 
 	// Used to initialize densities in mesodyn.
@@ -1530,8 +1534,13 @@ if(debug) cout <<"ComputePhis in system" << endl;
 
 				if (debug)
 				{
-					Real sum;
-					Sum(sum, phi, M);
+					Sum(Sum_result, phi, M);
+					Real sum{0};
+					#ifdef CUDA
+						TransferDataToHost(&sum, Sum_result, 1);
+					#else
+						sum = *Sum_result;
+					#endif
 					cout << "Sumphi in mol " << i << " for mon " << Mol[i]->MolMonList[k] << ": " << sum << endl;
 				}
 			}
@@ -1628,8 +1637,13 @@ for (int j=0; j<n_mol; j++) {
 			Norm(phi, norm, M);
 		if (debug)
 		{
-			Real sum;
-			Sum(sum, phi, M);
+			Sum(Sum_result, phi, M);
+			Real sum{0};
+			#ifdef CUDA
+				TransferDataToHost(&sum, Sum_result, 1);
+			#else
+				sum = *Sum_result;
+			#endif
 			cout << "Sumphi in mol " << solvent << "for mon " << k << ":" << sum << endl;
 		}
 		k++;
@@ -1645,8 +1659,13 @@ for (int j=0; j<n_mol; j++) {
 				Norm(phi, Mol[neutralizer]->norm, M);
 			if (debug)
 			{
-				Real sum;
-				Sum(sum, phi, M);
+				Sum(Sum_result, phi, M);
+				Real sum{0};
+				#ifdef CUDA
+					TransferDataToHost(&sum, Sum_result, 1);
+				#else
+					sum = *Sum_result;
+				#endif
 				cout << "Sumphi in mol " << neutralizer << "for mon " << k << ":" << sum << endl;
 			}
 			k++;

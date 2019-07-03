@@ -54,6 +54,7 @@ public:
 	Real epsilon;
 	int* reverseDirection;
 	int* mask;
+	Real* Sum_result;
 	int IV;
 	int iterations;
 	Real minimum;

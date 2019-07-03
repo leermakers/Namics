@@ -30,11 +30,18 @@ if (debug) cout <<"Lattice constructor" << endl;
 	offset_first_layer=0;
 }
 
-
-
-Lattice::~Lattice() {
-if (debug) cout <<"lattice destructor " << endl;
-			DeAllocateMemory();
+Lattice::~Lattice()
+{
+	if (debug)
+		cout << "lattice destructor " << endl;
+	//In this program, we will assume that the propagator will work on a simple cubic lattice.
+	//Interactions will be treated either with simple cubic or FCC 'lambda's.
+	DeAllocateMemory();
+	#ifdef CUDA
+	cudaFree(Sum_result);
+	#else
+	delete Sum_result;
+	#endif
 }
 
 void Lattice::DeAllocateMemory(void) {
@@ -366,7 +373,12 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 			break;
 	}
 #ifdef CUDA
-		X=(Real*)AllOnDev(M);
+	Sum_result = (Real*)AllOnDev(1);
+	if (gradients == 3) {
+		X = (Real *)AllOnDev(M);
+	}
+#else
+	Sum_result = new Real;
 #endif
 	
 	all_lattice=(gradients<3 && geometry!="planar");
@@ -962,16 +974,48 @@ if (debug) cout << "weighted sum in lattice " << endl;
 	switch(gradients) {
 		case 1:
 			if (geometry=="planar") {
-				Sum(sum,X,M); sum/=fjc;
-			} else Dot(sum,X,L,M); 
+				Sum(Sum_result,X,M);
+				#ifdef CUDA
+					TransferDataToHost(&sum, Sum_result, 1);
+				#else
+					sum = *Sum_result;
+				#endif
+				sum/=fjc;
+			} else {
+				Dot(Sum_result,X,L,M);
+				#ifdef CUDA
+					TransferDataToHost(&sum, Sum_result, 1);
+				#else
+					sum = *Sum_result;
+				#endif
+			}
 			break;
 		case 2:
 			if (geometry=="planar") {
-				Sum(sum,X,M); sum = sum/(fjc*fjc);
-			} else	Dot(sum,X,L,M);
+				Sum(Sum_result,X,M);
+				#ifdef CUDA
+					TransferDataToHost(&sum, Sum_result, 1);
+				#else
+					sum = *Sum_result;
+				#endif
+				sum/=fjc;
+			} else	{
+				Dot(Sum_result,X,L,M);
+				#ifdef CUDA
+					TransferDataToHost(&sum, Sum_result, 1);
+				#else
+					sum = *Sum_result;
+				#endif
+			}
 			break;
 		case 3:
-			Sum(sum,X,M);
+			Sum(Sum_result,X,M);
+				#ifdef CUDA
+					TransferDataToHost(&sum, Sum_result, 1);
+				#else
+					sum = *Sum_result;
+				#endif
+				sum/=fjc;
 			break;
 		default:
 			return 0;
@@ -2379,9 +2423,24 @@ void Lattice::ComputeGN(Real* GN, Real* Gg_f, int* H_Bx, int* H_By, int* H_Bz, i
 #endif
 }
 
-Real Lattice::ComputeTheta(Real* phi) {
-	Real result=0; remove_bounds(phi);
-	if (gradients<3 && geometry !="planar") Dot(result,phi,L,M); else {if (fjc==1) Sum(result,phi,M); else  Dot(result,phi,L,M);}
+Real Lattice::ComputeTheta(Real *phi)
+{
+	Real result = 0;
+	remove_bounds(phi);
+	if (gradients < 3 && geometry != "planar")
+		Dot(Sum_result, phi, L, M);
+	else
+	{
+		if (fjc == 1)
+			Sum(Sum_result, phi, M);
+		else
+			Dot(Sum_result, phi, L, M);
+	}
+	#ifdef CUDA
+		TransferDataToHost(&result, Sum_result, 1);
+	#else
+		result = *Sum_result;
+	#endif
 	return result;
 }
 

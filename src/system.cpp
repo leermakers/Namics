@@ -121,7 +121,7 @@ void System::AllocateMemory()
     q = (Real*)AllOnDev(M);
     eps = (Real*)AllOnDev(M);
     EE = (Real*)AllOnDev(M);
-     E = (Real*)AllonDev(M);
+     E = (Real*)AllOnDev(M);
     psiMask = (int*)AllIntOnDev(M);
   }
   if (constraintfields) {

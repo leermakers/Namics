@@ -48,14 +48,13 @@ if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 		} else {
 			free(B_X1);free(B_Y1);free(B_Z1);free(B_XM);free(B_YM);free(B_ZM);
 			free(L); free(LAMBDA);
+			#ifdef CUDA
+			cudaFree(X);
+			#else
 			free(X);
+			#endif
 		} 
 	}
-#ifdef CUDA
-	//if (gradients==3) X=(Real*)AllOnDev(M);
-       if (gradients>1) cudaFree(X);
-	
-#endif
 all_lattice=false;
 }
 
@@ -155,7 +154,11 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 		LAMBDA =(Real*)malloc(FJC*M*sizeof(Real)); Zero(LAMBDA,FJC*M);
 	}
 
+#ifdef CUDA
+	X=(Real*)AllOnDev(M);
+#else
 	X=(Real*)malloc(M*sizeof(Real));
+#endif
 
 	switch (gradients) {
 		case 1:
@@ -365,10 +368,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 		default:
 			break;
 	}
-#ifdef CUDA
-		X=(Real*)AllOnDev(M);
-#endif
-	
+
 	all_lattice=(gradients<3 && geometry!="planar");
 }
 

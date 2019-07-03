@@ -210,6 +210,8 @@ void Dot(T &result, T *x,T *y, int M)   {
 		for (int i = M - M % 2; i < M; i++)
 			result += x[i] * y[i];
 	}
+}
+
 template< typename T>
 void Dot(T *result, T *x,T *y, int M)   {
 	*result = 0.0;

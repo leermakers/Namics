@@ -369,7 +369,6 @@ void Solve_scf::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 	int fjc=Lat[0]->fjc;
 	int JX=(MY+2*fjc)*(MZ+2*fjc);
 	int JY=(MZ+2*fjc);
-	Real Xvalue;
 	
 
 	switch (Lat[0]->gradients) {

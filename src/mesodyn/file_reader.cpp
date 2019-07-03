@@ -180,7 +180,7 @@ std::vector<std::string> Pro_reader::parse_data(const size_t number_of_component
     return tokens;
 }
 
-void Pro_reader::set_lattice_geometry(std::vector<std::string> &last_line)
+void Pro_reader::set_lattice_geometry(const std::vector<std::string> &last_line)
 {
     switch (file_lattice.dimensions)
     {
@@ -274,7 +274,7 @@ std::vector<std::vector<Real>> Pro_reader::get_file_as_vectors()
     return m_data;
 }
 
-void Vtk_structured_grid_reader::set_lattice_geometry(std::vector<std::string> &tokens)
+void Vtk_structured_grid_reader::set_lattice_geometry(const std::vector<std::string> &tokens)
 {
     switch (file_lattice.dimensions)
     {

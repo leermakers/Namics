@@ -219,6 +219,10 @@ size_t size() {
   return (system_size);
 }
 
+size_t size() const {
+  return (system_size);
+}
+
 
 void clear() {
     m_data.clear();
@@ -241,6 +245,10 @@ void save_state() {
 }
 
 const stl::device_vector<T>& previous_state() {
+  return saved_state->state;
+}
+
+const stl::device_vector<T>& previous_state() const {
   return saved_state->state;
 }
 

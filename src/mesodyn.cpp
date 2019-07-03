@@ -42,7 +42,7 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       timebetweensaves                 { initialize<size_t>("timebetweensaves", 1) },
       cn_ratio                         { initialize<Real>("cn_ratio", 0.5) },
       enable_sanity_check              { initialize<bool>("sanity_check", 0)},
-      output_profile_filetype          { initialize_enum<Writable_filetype>("profile_type", Writable_filetype::VTK_STRUCTURED_GRID, Profile_writer::input_options)},
+      output_profile_filetype          { initialize_enum<Writable_filetype>("profile_type", Writable_filetype::VTK_STRUCTURED_GRID, Profile_writer::output_options)},
       grand_cannonical                 { initialize<bool>("grand_cannonical", 0)},
       grand_cannonical_time_average    { initialize<size_t>("grand_cannonical_time_average", timesteps > 100 ? 20 : 5 ) },
       grand_cannonical_molecule        { initialize<size_t>("grand_cannonical_molecule", Sys[0]->solvent == 0 ? 1 : 0)},
@@ -130,14 +130,9 @@ bool Mesodyn::mesodyn() {
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
-  //Real grand_potential_average{0};
-
-  //Norm_densities_relative relative_norm( Mol, components, Sys[0]->solvent );
-
   /**** Main MesoDyn time loop ****/
   //int z = 1;
   for (t = 0; t < timesteps+1; t++) {
-    //cout << "\x1b[A" << "\x1b[A" << "MESODYN: t = " << t << " / " << timesteps << endl;
     cout << "MESODYN: t = " << t << " / " << timesteps << endl;
 
     gaussian->generate(system_size);
@@ -148,62 +143,14 @@ bool Mesodyn::mesodyn() {
     New[0]->SolveMesodyn(loader_callback, solver_callback);
     order_parameter->execute();
 
-    cout << "Order parameter: " << order_parameter->get() << endl;
+    cout << "Order parameter: " << order_parameter->attach() << endl;
 
     if (enable_sanity_check)
       sanity_check();
 
-    if (t > save_delay && t % timebetweensaves == 0) {
+    if (not In.back()->OutputList.empty() and t > save_delay and t % timebetweensaves == 0)
       write_output();
-    }
 
- /*   grand_potential_average += Sys[0]->GetGrandPotential();
-
-    if (grand_cannonical and t > save_delay && t % grand_cannonical_time_average == 0)
-    {
-        grand_potential_average /= z;
-        z=1;
-        Real adjustment = -1;
-      
-        if( grand_potential_average < 0) {
-          relative_norm.adjust_theta(Sys[0]->solvent, -0.001);
-          relative_norm.execute();
-
-          for (size_t j = 0 ; j < Mol.size() ; ++j)
-            {
-              if (j != Sys[0]->solvent)
-              {
-                Real sum {0};
-	              for (size_t i = 0 ; i < Mol[j]->MolMonList.size() ; ++i) {
-                  sum += components[Mol[j]->MolMonList[i]]->theta();
-                }
-                  
-                Mol[j]->theta = sum;
-              }
-            }
-        }
-        else if( grand_potential_average > 0)
-        {
-          adjustment = -1.0*static_cast<Real>(system_size)*0.001; //(Mol[grand_cannonical_molecule]->theta*(grand_cannonical_average*10));
-
-          for(int i = 0 ; i < (int)Mol.size() ; ++i)
-            if (i != Sys[0]->solvent)
-                norm_densities->adjust_theta(i, adjustment);
-
-          norm_densities->execute();
-        }
-
-      }
-
-      cout << grand_potential_average/z << endl;
-      ++z;
-        for ( auto& asdf : Mol) {
-          cout << asdf->theta << " ";
-        }
-
-        grand_potential_average=0;
-
-        cout << endl;*/
   } // time loop
 
   std::cout << "Done." << std::endl;
@@ -247,18 +194,6 @@ Real* Mesodyn::solve_crank_nicolson() {
   update_densities();
 
   prepare_densities_for_callback();
-
- /*  for (auto& component : components) {
-      stl::host_vector<Real> asdf = component->rho.m_data;
-      for (size_t z = 0 ; z < 5 ; ++z)
-      for (size_t y = 0 ; y < 5 ; ++y)
-      for (size_t x = 0 ; x < 5 ; ++x)
-        {
-        cout << z << " " << y << " " << x << "  :  ";
-        cout << asdf[z*component->rho.m_subject_lattice->JZ+y*component->rho.m_subject_lattice->JY+x*component->rho.m_subject_lattice->JX] << endl;
-        }
-      cout << endl;
-    }*/
 
   return device_vector_ptr_to_raw(callback_densities);
 }
@@ -330,8 +265,7 @@ int Mesodyn::initial_conditions() {
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
   Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);
 
-  //TODO: this norm is broken for boundaries, but that doesn't really seem to pose a problem.
-  //norm_densities->execute();
+  norm_densities->execute();
 
   return 0; 
 }
@@ -350,7 +284,7 @@ Lattice_object<size_t> Mesodyn::load_mask_from_sys() {
   return mask; 
 }
 
-shared_ptr<Boundary1D> Mesodyn::build_boundaries(Lattice_object<size_t>& mask) {
+shared_ptr<Boundary1D> Mesodyn::build_boundaries(const Lattice_object<size_t>& mask) {
   Boundary::Map boundary_conditions;
 
   // BC0: bX0, BC1: bXm, etc.
@@ -402,7 +336,7 @@ int Mesodyn::write_output() {
      New[0]->PushOutput(); 
 
      Out[0]->push("filename", filename.str());
-     Out[0]->push("order_parameter", order_parameter->get());
+     Out[0]->push("order_parameter", order_parameter->attach());
      Out[0]->push("time",(int)t);
      Out[0]->push("timesteps", (int)timesteps);
      Out[0]->push("timebetweensaves", (int)timebetweensaves);
@@ -427,33 +361,3 @@ int Mesodyn::write_output() {
 
     return 0;
 }
-
-/*      Writable_file kal_file(filename.str(), Writable_filetype::KAL);
-    parameter_writers.push_back( make_shared<Kal_writer>(kal_file) );
-    for (auto& parameter_writer : parameter_writers) {
-      parameter_writer->bind_data(output_params);
-      parameter_writer->prepare_for_data(selected_options);
-    }
-
-    *******************
-
-    Out.emplace_back(new Output(In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->OutputList[0], (int)t, timesteps / timebetweensaves));
-    if (!Out[0]->CheckInput(1)) {
-        cout << "input_error in output " << endl;
-        exit(0);
-    }
-
-    for (size_t i = 0 ; i < Out[0]->OUT_key.size() ; ++i)
-      if( Out[0]->OUT_key[i] == "mesodyn")
-        selected_options.push_back(Out[0]->OUT_prop[i]);
-
-    register_output_param("time", &t);
-    register_output_param("timesteps", &timesteps);
-    register_output_param("timebetweensaves", &timebetweensaves);
-    register_output_param("diffusionconstant", &D);
-    register_output_param("seed", &seed);
-    register_output_param("mean", &mean);
-    register_output_param("stddev", &stddev);
-    register_output_param("delta_t", &dt);
-    register_output_param("cn_ratio", &cn_ratio);
-    register_output_param("order_parameter", &order_parameter->get());*/

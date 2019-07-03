@@ -4,7 +4,7 @@ template <typename T>
 class Memento
 {
   public:
-    Memento(stl::device_vector<T>& val_)
+    explicit Memento(stl::device_vector<T>& val_) noexcept
     {
         state = val_;
     }

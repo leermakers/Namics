@@ -2,7 +2,6 @@
 #define TOOLSxH
 #include "namics.h"
 #include <numeric>
-#include "lattice.h"
 
 #ifdef PAR_MESODYN
 	#include <thrust/extrema.h>

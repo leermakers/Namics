@@ -80,6 +80,9 @@ class IOutput_ptr {
 template<typename T>
 class Output_ptr : public IOutput_ptr
 {
+    private:
+        std::vector<Real> buffer;
+        
     public:
         Output_ptr(T* parameter_)
         : buffer{0}, parameter{parameter_}
@@ -122,9 +125,6 @@ class Output_ptr : public IOutput_ptr
         }
 
         const T* parameter;
-
-    private:
-        std::vector<Real> buffer;
 };
 
 class Writable_file {

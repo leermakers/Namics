@@ -7,6 +7,8 @@
 #define MAX_BLOCK_SZ 512
 #define HALF_MAX_BLOCK_SZ 256
 
+Real* SUM_RESULT;
+
 #ifdef CUDA
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);

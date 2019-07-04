@@ -3,6 +3,8 @@
 #include "namics.h"
 #include <numeric>
 
+extern Real* SUM_RESULT;
+
 #ifdef PAR_MESODYN
 	#include <thrust/extrema.h>
 	#include <thrust/device_vector.h>

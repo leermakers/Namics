@@ -71,6 +71,7 @@ public:
 	int neutralizer;
 	int tag_segment;
 	int volume;
+	int boundaryless_volume;
 	bool input_error;
 	bool cuda;
 	bool charged;

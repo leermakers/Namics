@@ -1,8 +1,9 @@
 #include "solve_scf.h"
 #include <iostream>
 
-Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) {
-	In=In_; name=name_; Sys=Sys_; Seg=Seg_; Lat=Lat_; Mol=Mol_;Var=Var_;  Sta=Sta_; Rea=Rea_;
+Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) :
+	name{name_}, In{In_}, Sys{Sys_}, Seg{Seg_}, Lat{Lat_}, Mol{Mol_}, Var{Var_}, Sta{Sta_}, Rea{Rea_}
+{
 if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("method");
 	KEYS.push_back("gradient_type");
@@ -44,7 +45,9 @@ if (debug) cout <<"Destructor in Solve " << endl;
 	cudaFree(g);
 	cudaFree(xR);
 	cudaFree(x_x0);
+	cudaFree(temp_alpha);
 #else
+	delete temp_alpha;
 	free(xx);
 #endif
 //if (debug) cout <<"exit for 'destructor' in Solve " << endl;
@@ -52,10 +55,16 @@ if (debug) cout <<"Destructor in Solve " << endl;
 }
 
 void Solve_scf::AllocateMemory() {
+
 if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	int M=Lat[0]->M;
 	if (mesodyn) {
 		iv = Sys[0]->SysMolMonList.size()*M;
+		#ifdef CUDA
+			temp_alpha = (Real*)AllOnDev(M); // Doing this while iterating is a gigantic performance hog
+		#else
+			temp_alpha = new Real[M];	
+		#endif
 	} else {
 		iv = (Sys[0]->ItMonList.size() + Sys[0]->ItStateList.size())* M;
 	}
@@ -63,15 +72,14 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	if (SCF_method=="Picard") iv += M;
 	if (Sys[0]->constraintfields) iv +=M;
 #ifdef CUDA
-	xx  = (Real*)AllOnDev(iv);
-	x0  = (Real*)AllOnDev(iv);
-	g   = (Real*)AllOnDev(iv);
-	xR  = (Real*)AllOnDev(m*iv);
-	x_x0= (Real*)AllOnDev(m*iv);
+	xx  = (Real*)AllOnDev(iv); Zero(xx,iv);
+	x0  = (Real*)AllOnDev(iv); Zero(x0,iv);
+	g   = (Real*)AllOnDev(iv); Zero(g,iv);
+	xR  = (Real*)AllOnDev(m*iv); Zero(xR,m*iv);
+	x_x0= (Real*)AllOnDev(m*iv); Zero(x_x0,m*iv);
 #else
-	xx=(Real*) malloc(iv*sizeof(Real));
+	xx=(Real*) malloc(iv*sizeof(Real)); Zero(xx,iv);
 #endif
-	Zero(xx,iv);
 	Sys[0]->AllocateMemory();
 }
 
@@ -369,7 +377,6 @@ void Solve_scf::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 	int fjc=Lat[0]->fjc;
 	int JX=(MY+2*fjc)*(MZ+2*fjc);
 	int JY=(MZ+2*fjc);
-	Real Xvalue;
 	
 
 	switch (Lat[0]->gradients) {
@@ -410,20 +417,26 @@ void Solve_scf::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 				cout <<"Copy from one gradient to three gradients: (x,y,i) = (i) is used for all x,y " << endl;
 				for (i=0; i<mx+2; i++)
 				for (j=0; j<my+2; j++)
-				for (k=0; k<mz+2; k++) if (k<MX+2) x[i*jx+j*jy+k]=X[k];
+					// TODO: This Cp is a really dirty fix and we should really write a kernel for this.
+					// Reason I did this, is because afaik it's only used once when generating the guess in main.
+				for (k=0; k<mz+2; k++) if (k<MX+2) Cp( x + (i*jx+j*jy+k) , X+k, 1);
 			} else {
 				if (MZ==0) {
 					cout <<"Copy form two gradients to three: (x,i,j) = (i,j) for all x " << endl;
 					JX=(MY+2);
 					for (i=0; i<mx+2; i++)
 					for (j=0; j<my+2; j++)
-					for (k=0; k<mz+2; k++) if (j<MX+2 && k<MY+2) x[i*jx+j*jy+k]=X[j*JX+k];
+					// TODO: This Cp is a really dirty fix and we should really write a kernel for this.
+					// Reason I did this, is because afaik it's only used once when generating the guess in main.
+					for (k=0; k<mz+2; k++) if (j<MX+2 && k<MY+2) Cp( x + (i*jx+j*jy+k), X + (j*JX+k), 1);
 				} else {
 					JX=(MY+2)*(MZ+2);
 					JY=(MZ+2);
 					for (i=0; i<mx+2; i++)
 					for (j=0; j<my+2; j++)
-					for (k=0; k<mz+2; k++) if (i<MX+2 && j<MY+2 && k<MZ+2) x[i*jx+j*jy+k]=X[i*JX+j*JY+k];
+					// TODO: This Cp is a really dirty fix and we should really write a kernel for this.
+					// Reason I did this, is because afaik it's only used once when generating the guess in main.
+					for (k=0; k<mz+2; k++) if (i<MX+2 && j<MY+2 && k<MZ+2) Cp( x + (i*jx+j*jy+k), (X+i*JX+j*JY+k), 1);
 				}
 			}
 			break;
@@ -537,35 +550,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	return success;
 }
 
-bool Solve_scf::attempt_DIIS_rescue() {
-	cout << "Attempting rescue!" << endl;
-	switch (rescue_status) {
-		case NONE:
-			cout << "Zeroing iteration variables." << endl;
-			Zero(xx,iv);
-			rescue_status = ZERO;
-			break;
-		case ZERO:
-			cout << "Adjusting memory depth." << endl;
-			m *= 0.5;
-			cout << "Zeroing iteration variables." << endl;
-			Zero(xx,iv);
-			rescue_status = M;
-			break;
-		case M:
-			cout << "Decreasing delta_max." << endl;
-			deltamax *= 0.1;
-			cout << "Zeroing iteration variables." << endl;
-			Zero(xx,iv);
-			rescue_status = DELTA_MAX;
-			break;
-		case DELTA_MAX:
-			cerr << "Exhausted all rescue options. Crash is imminent, exiting." << endl;
-			exit(0);
-			break;
-	}
-	return true;
-}
+
 
 bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, function< Real*() > flux_callback) {
 	if(debug) cout <<"Solve (mesodyn) in  Solve_scf " << endl;
@@ -576,55 +561,32 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 	gradient=MESODYN;
 
 	bool success=true;
-	Real old_deltamax = deltamax;
+	//Real old_deltamax = deltamax;
 
 	switch (solver) {
 		case diis:
-			gradient=MESODYN;
-			try {
-				success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
-			}
-			catch (int error) {
-				if (error == -1)
-				{
-					cerr << "Detected GN not larger than 0." << endl;
-					attempt_DIIS_rescue();
-					cout << "Restarting iteration." << endl;
-					SolveMesodyn(alpha_callback, flux_callback);
+			{
+				success = false;
+				gradient=MESODYN;
+
+				while (success == false) {
+					try {
+						success = iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+						if (success == false) {
+							cerr << "Detected failure to converge, zeroing iteration variables and giving it one more try." << endl;
+							Zero(xx,iv);
+							success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+							if (success == false)
+								exit(0);
+						}		
+					} catch (...) {
+						success = false;
+						attempt_DIIS_rescue();
+					}
 				}
-				if (error == -2)
-				{
-					cerr << "Detected nan in U in Ax." << endl;
-					attempt_DIIS_rescue();
-					cout << "Restarting iteration." << endl;
-					SolveMesodyn(alpha_callback, flux_callback);
-				}
-				if (error == -3)
-				{
-					cerr << "Detected nan in svdcmp." << endl;
-					attempt_DIIS_rescue();
-					cout << "Restarting iteration." << endl;
-					SolveMesodyn(alpha_callback, flux_callback);
-				}
-				if (error == -4)
-				{
-					cerr << "Detected negative phibulk." << endl;
-					attempt_DIIS_rescue();
-					cout << "Restarting iteration." << endl;
-					SolveMesodyn(alpha_callback, flux_callback);
-				}
-			}
-			if (success == false) {
-				cerr << "Detected failure to converge" << endl;
-				attempt_DIIS_rescue();
-				cout << "Restarting iteration." << endl;
-				SolveMesodyn(alpha_callback, flux_callback);
-			}	else {
-				//m = old_m;
-				deltamax = old_deltamax;
 				rescue_status = NONE;
 			}
-			break;
+		break;
 		case PSEUDOHESSIAN:
 			success=iterate(xx,iv,iterationlimit,tolerance,deltamax,deltamin,true);
 		break;
@@ -688,7 +650,6 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 	return success;
 }
 
-
 void Solve_scf::residuals(Real* x, Real* g){
  if (debug) cout <<"residuals in Solve_scf " << endl;
 	int M=Lat[0]->M;
@@ -720,12 +681,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 		case MESODYN:
 		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
+					
 			ComputePhis();
-			#ifdef CUDA
-			Real* temp_alpha = (Real*)AllOnDev(M);
-			#else
-			Real* temp_alpha = (Real*)malloc(M*sizeof(Real));
-			#endif
+			
 			for (size_t i = 0; i < Sys[0]->SysMolMonList.size() ; i++) {
 					Cp(temp_alpha, &xx[i*M] , M);
 				for (int k=0; k<mon_length; k++) {
@@ -744,22 +702,15 @@ void Solve_scf::residuals(Real* x, Real* g){
 			TransferDataToDevice(RHO, g, iv);
 			#endif
 			
-
 			size_t k = 0;
 			for (size_t i = 0 ; i < In[0]->MolList.size() ; ++i) {
+				Subtract(g+k*M,Mol[i]->phi,M*Mol[i]->MolMonList.size());
 				for (size_t a = 0 ; a < Mol[i]->MolMonList.size(); ++a) {
-					target_function(g, k, M, i, a);
 					Lat[0]->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 					k++;
 				}
 			}
-
-			#ifdef CUDA
-			cudaFree(temp_alpha);
-			#else
-			free(temp_alpha);
-			#endif
 		}
 		break;
 		case custum:
@@ -932,10 +883,10 @@ void Solve_scf::gradient_quotient(Real* g, int k, int M, int i, int j) {
 
 void Solve_scf::gradient_minus(Real* g, int k, int M, int i, int j) {
 	//Target function: g - phi < tolerance
-		YplusisCtimesX(g+k*M,Mol[i]->phi+j*M,-1.0,M);
+		Subtract(g+k*M,Mol[i]->phi+j*M,M);
 }
 
-void Solve_scf::inneriteration(Real* x, Real* g, float* h, Real accuracy, Real& deltamax, Real ALPHA, int nvar) {
+void Solve_scf::inneriteration(Real* x, Real* g, Real* h, Real accuracy, Real& deltamax, Real ALPHA, int nvar) {
 if(debug) cout <<"inneriteration in Solve_scf " << endl;
 	residual=accuracy; //hoping this is not creating problems with the use of residual...
 	switch(control) {
@@ -1147,3 +1098,33 @@ if(debug) cout <<"PutU in  Solve " << endl;
 		}
 	} else {
 */
+
+bool Solve_scf::attempt_DIIS_rescue() {
+	cout << "Attempting rescue!" << endl;
+	switch (rescue_status) {
+		case NONE:
+			cout << "Zeroing iteration variables." << endl;
+			Zero(xx,iv);
+			rescue_status = ZERO;
+			break;
+		case ZERO:
+			cout << "Adjusting memory depth." << endl;
+			m *= 0.5;
+			cout << "Zeroing iteration variables." << endl;
+			Zero(xx,iv);
+			rescue_status = M;
+			break;
+		case M:
+			cout << "Decreasing delta_max." << endl;
+			deltamax *= 0.1;
+			cout << "Zeroing iteration variables." << endl;
+			Zero(xx,iv);
+			rescue_status = DELTA_MAX;
+			break;
+		case DELTA_MAX:
+			cerr << "Exhausted all rescue options. Crash is imminent, exiting." << endl;
+			exit(0);
+			break;
+	}
+	return true;
+}

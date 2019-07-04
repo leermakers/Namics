@@ -239,7 +239,7 @@ bool Cleng::CP(transfer tofrom) {
             break;
 
         case to_segment:
-            Zero(clamped->H_MASK, M);
+            std::fill(Seg[clamp_seg]->H_MASK, Seg[clamp_seg]->H_MASK+M, 0);
 
             for (auto &&n : nodes) n->pushSystemPoints(system_points);
 

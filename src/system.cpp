@@ -26,9 +26,11 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("GPU");
 	KEYS.push_back("X");
 	int length = In[0]->MonList.size();
-	for (int i=0; i<length; i++) KEYS.push_back("guess-"+In[0]->MonList[i]);
+	for (int i=0; i<length; i++)
+	  KEYS.push_back("guess-" + In[0]->MonList[i]);
 	charged=false;
 	constraintfields=false; 
+  boundaryless_volume=0;
 	grad_epsilon = false; 
 }
 System::~System()
@@ -78,6 +80,7 @@ System::~System()
     free(psiMask);
     free(eps);
   }
+
 #endif
 }
 
@@ -88,9 +91,8 @@ void System::AllocateMemory()
 	int M = Lat[0]->M;
 	//H_GN_A = new Real[n_box];
 	//H_GN_B = new Real[n_box];
-
 	H_GrandPotentialDensity = (Real *)malloc(M * sizeof(Real));
-	Zero(H_GrandPotentialDensity, M);
+	std::fill(H_GrandPotentialDensity,H_GrandPotentialDensity+M,0);
 
 	H_FreeEnergyDensity = (Real *)malloc(M * sizeof(Real));
 	H_alpha = (Real *)malloc(M * sizeof(Real));
@@ -102,7 +104,7 @@ void System::AllocateMemory()
 	if (constraintfields)
 	{
 		H_beta = (int *)malloc(M * sizeof(int));
-		Zero(H_beta, M);
+		std::fill(H_beta,H_beta+M,0);
 		H_BETA = (Real *)malloc(M * sizeof(Real));
 		Lat[0]->FillMask(H_beta, px, py, pz, delta_inputfile);
 	}
@@ -119,7 +121,7 @@ void System::AllocateMemory()
     q = (Real*)AllOnDev(M);
     eps = (Real*)AllOnDev(M);
     EE = (Real*)AllOnDev(M);
-     E = (Real*)AllonDev(M);
+     E = (Real*)AllOnDev(M);
     psiMask = (int*)AllIntOnDev(M);
   }
   if (constraintfields) {
@@ -152,6 +154,7 @@ void System::AllocateMemory()
     Zero(EE, M);
     Zero(E,M);
   }
+
 	n_mol = In[0]->MolList.size();
 	Lat[0]->AllocateMemory();
 	int n_mon = In[0]->MonList.size();
@@ -213,7 +216,12 @@ bool System::generate_mask()
 		Sum(volume, KSAM, M);
 	}
 
-	Lat[0]->Accesible_volume = volume;
+	// Used to initialize densities in mesodyn.
+	// I know it's hideous, but it works for all dimensions.
+	// If you really care about legibility you could do this with a switch or object.
+	this->boundaryless_volume = this->volume - ((2 * Lat[0]->gradients - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * Lat[0]->gradients) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, Lat[0]->gradients));
+
+	Lat[0]->Accesible_volume=volume;
 
 	return success;
 }
@@ -226,18 +234,8 @@ bool System::PrepareForCalculations()
 	bool success = true;
 	int M = Lat[0]->M;
 
-	// necessary part; essentially for clang
-	Zero(KSAM, M);
-	for (int i : FrozenList)
-		Add(KSAM, Seg[i]->MASK, M);
-	for (int i : SysTagList)
-		Add(KSAM, Seg[i]->MASK, M);
-	for (int i : SysClampList)
-		Add(KSAM, Seg[i]->MASK, M);
-	Invert(KSAM, KSAM, M);
-
-	if (!prepared)
-	{
+	// necessary part; essentially for cleng
+	if (In.back()->MesodynList.empty() or prepared == false) {
 		success = generate_mask();
 		prepared = true;
 	}
@@ -248,8 +246,6 @@ bool System::PrepareForCalculations()
 		//for(int i=0; i<M; i++) cout << "BETA at i: " << i << " is: " << BETA[i] << endl;
 		//cin.get();
 	}
-
-
 
 	n_mol = In[0]->MolList.size();
 	success = Lat[0]->PrepareForCalculations();
@@ -556,6 +552,7 @@ bool System::CheckInput(int start)
 				}
 			}
 
+			//if (Mol[DeltaMolList[0]]->freedom=="restricted" || Mol[DeltaMolList[1]]->freedom=="restricted" ) {success =false;  cout <<"Molecule in list of delta_molecules has not freedom 'free'"<<endl; }
 		}
 
 		vector<string> options;
@@ -1776,10 +1773,17 @@ Real System::GetFreeEnergy(void)
 		if (Mol[i]->freedom == "clamped")
 		{
 			int n_box = Mol[i]->n_box;
+			#ifdef CUDA
+			Real* hgn = NULL;
+			TransferDataToHost(hgn, Mol[i]->gn, n_box);
 			for (int p = 0; p < n_box; p++)
 			{
-				FreeEnergy -= log(Mol[i]->gn[p]);
+				FreeEnergy -= log(hgn[p]);
 			}
+			#else
+			for (int p=0; p<n_box; p++) 
+				FreeEnergy -= log(Mol[i]->gn[p]);
+			#endif
 		}
 		else
 		{
@@ -1962,6 +1966,7 @@ Real System::GetGrandPotential(void)
 		Norm(TEMP, 1.0 / N, M); //GP has wrong sign. will be corrected at end of this routine;
 		Add(GP, TEMP, M);
 	}
+	
 	Add(GP,alpha,M);
 	Real phibulkA;
 	Real phibulkB;
@@ -2109,12 +2114,18 @@ bool System::CreateMu()
 		{
 			n = Mol[i]->n_box;
 			int n_box = Mol[i]->n_box;
-			GN = 0;
-			for (int p = 0; p < n_box; p++)
-			{
-				GN += log(Mol[i]->gn[p]);
+			GN=0;
+			#ifdef CUDA
+			Real* hgn = NULL;
+			TransferDataToHost(hgn, Mol[i]->gn, n_box);
+			for (int p=0; p<n_box; p++) {
+				GN += log(hgn[p]);
 			}
-			Mu = -GN / n + 1;
+			#else
+			for (int p=0; p<n_box; p++) 
+				GN += log(Mol[i]->gn[p]);
+			#endif
+			Mu = -GN / n +1;
 		}
 		else
 		{

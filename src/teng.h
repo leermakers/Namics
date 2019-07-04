@@ -51,6 +51,7 @@ public:
   int PX;
   int PY;
   int PZ;
+  vector<Real> density;
   vector<int> P;
   vector<int> Sx;
   vector<int> Sy;
@@ -65,6 +66,7 @@ public:
   bool MonteCarlo();
   bool ChangeMode();
   bool IsLegal();
+  bool TrackInterface();
 
   void push(string, Real);
   void push(string, int);

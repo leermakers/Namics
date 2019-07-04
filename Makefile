@@ -22,7 +22,7 @@ DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -Ofast -std=c++14 -msse -march=native
+CFLAGS      := -Wall -Ofast -std=c++14 -march=native
 LIB         := -lm -lpthread
 INC         := -I/usr/local/cuda-9.0/include -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)

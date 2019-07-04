@@ -29,6 +29,7 @@ public:
 	vector<System*> Sys;
 	vector<Solve_scf*> New;
 	int n_output;
+	int n_starts; 
 	int start;
 	int output_nr;
 	bool write_bounds;

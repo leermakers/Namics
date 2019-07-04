@@ -78,12 +78,6 @@ SFNewton::~SFNewton() {
   free(reverseDirection);
 }
 
-void SFNewton::residuals(Real*,Real*){}
-void SFNewton::inneriteration(Real*,Real*,Real*,Real,Real&,Real,int){} //x g accuracy nvar
-bool SFNewton::getnewtondirection() {return newtondirection;}
-int SFNewton::getiterations() {return iterations;}
-bool SFNewton::ispseudohessian() {return pseudohessian;}
-
 
 void SFNewton::multiply(Real *v,Real alpha, Real *h, Real *w, int nvar) { //done
 if(debug) cout <<"multiply in Newton" << endl;
@@ -163,7 +157,7 @@ if(debug) cout <<"decompos in Newton" << endl;
 	Real sum,lsum,usum,phi,phitr,c,l;
 	Real *ha,*hai,*haj;
 	ha = &h[-1];
-	phitr = FLT_MAX;
+	phitr = std::numeric_limits<Real>::max();
 	ntr = 0;
 	i = 0;
 	while (i++<nvar) {
@@ -702,7 +696,9 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 	accuracy=residue(g,p,x,nvar,ALPHA);
 
 	while ((tolerance < accuracy || tolerance*10<normg) && iterations<iterationlimit && accuracy == fabs(accuracy) ) {
-		if (e_info && it%i_info == 0){
+		if (e_info)
+		if (i_info > 0)
+		if (it%i_info == 0) {
 			printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
 		}
 		it++; iterations=it;  lineiterations=0;
@@ -771,7 +767,6 @@ free(h); free(g);
 	return success;
 }
 
-
 void SFNewton::Ax(Real* A, Real* X, int N){//From Ax_B; below B is not used: it is assumed to contain a row of unities.
 if(debug) cout <<"Ax in  SFNewton (own svdcmp) " << endl;
 
@@ -784,21 +779,30 @@ Real *S = new Real[N];
 		V[i] = new Real[N];
 	}
 
-	for (int i=0; i<N; i++)
+	
+	for (int i=0; i<N; i++) {
 		for (int j=0; j<N; j++) {
-      if (A[i*N + j] !=  A[i*N + j]) //If it contains NaNs
-        throw -2;
-			U[j][i] = A[i*N + j];
+			if (A[i*N + j] !=  A[i*N + j]) //If it contains NaNs
+        		throw -2;
+			U[i][j] = A[i*N + j];
+		}
     }
 
   if (N > 1) {
 		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
   		svdcmp(U, N, N, S, V);
 		if (debug) cout << "SVDCMP done, continuing.." << endl;
-		for (int i=0; i<N; i++) X[i]=0;
-		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += U[j][i];// *B[j];
-		for (int i=0; i<N; i++) {S[i] = X[i]/S[i]; X[i]=0;} //S is use because it is no longer needed.
-		for (int i=0; i<N; i++) for (int j=0; j<N; j++) X[i] += V[i][j]*S[j];
+		int j;
+		for (int i=0; i<N; i++) {
+			X[i]=0;
+			for (j=0; j<N; j++)
+				X[i] += U[i][j];// *B[j];
+			S[i] = X[i]/S[i];
+			X[i]=0;
+		}
+		for (int i=0; i<N; i++) 
+			for (int j=0; j<N; j++) 
+				X[i] += V[i][j]*S[j];
 	} else {
 		X[0]=1;
 	}
@@ -809,43 +813,46 @@ delete [] U; delete [] S; delete [] V;
 
 void SFNewton::DIIS(Real* x, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* Ci, int k, int k_diis, int m, int nvar) {
 if(debug) cout <<"DIIS in  SFNewton " << endl;
-	Real normC=0;
-  int posi;
+  	int posi;
+
 	if (k_diis>m) {
-    k_diis =m;
+    	k_diis =m;
 		for (int i=1; i<m; i++)
-      for (int j=1; j<m; j++)
-		    Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
+      		for (int j=1; j<m; j++)
+		    	Aij[m*(i-1)+j-1]=Aij[m*i+j]; //remove oldest elements
 	}
+
 	for (int i=0; i<k_diis; i++) {
-    posi = k-k_diis+1+i;
-    if (posi<0)
-      posi +=m;
-	  Real Dvalue;
-    Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
+    	posi = k-k_diis+1+i;
+    	if (posi<0) {
+      		posi +=m;
+		}
+	  	Real Dvalue;
+    	Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
 		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue;
-  }
 		// write to (compressed) matrix Apij
-	for (int i=0; i<k_diis; i++)
-    for (int j=0; j<k_diis; j++)
+		for (int j=0; j<k_diis; j++)
 		    Apij[j+k_diis*i] = Aij[j+m*i];
+  	}
+			
 	Ax(Apij,Ci,k_diis);
+
+	Real normC=0;
+
 	for (int i=0; i<k_diis; i++)
-    normC +=Ci[i];
+    	normC +=Ci[i];
 	for (int i=0; i<k_diis; i++)
-    Ci[i] =Ci[i]/normC;
+    	Ci[i] =Ci[i]/normC;
+	#ifdef CUDA
+	TransferDataToDevice(Ci, d_Ci, m);
+	#endif
 	Zero(x,nvar);
 	posi = k-k_diis+1;
-  if (posi<0)
-    posi +=m;
 
-	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
-	for (int i=1; i<k_diis; i++) {
-		posi = k-k_diis+1+i;
-    if (posi<0)
-      posi +=m;
-		YplusisCtimesX(x,xR+posi*nvar,Ci[i],nvar);
-	}
+  	if (posi<0)
+    	posi +=m;
+
+	Xr_times_ci(posi, k_diis, k, m, nvar, x, xR, d_Ci);
 }
 
 Real SFNewton::computeresidual(Real* array, int size) {
@@ -856,7 +863,6 @@ Real SFNewton::computeresidual(Real* array, int size) {
 
 	//in tools:
 	residual = ComputeResidual(array, size);
-
 	#else //CUDA OR CPU
 	
 	Real* H_array;
@@ -899,15 +905,17 @@ bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tol
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
 int nvar=nvar_;
 	bool success;
-  Real* Ci = (Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
   Real* Aij = (Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
   Real* Apij = (Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
+  Real* Ci = (Real*) malloc(m*sizeof(Real)); H_Zero(Ci,m);
   #ifdef CUDA
+  d_Ci = (Real*)AllOnDev(m);
   Real* xR = (Real*) AllOnDev(m*nvar); Zero(xR,m*nvar);
   Real* x_x0 = (Real*) AllOnDev(m*nvar); Zero(x_x0,m*nvar);
   Real* x0 = (Real*) AllOnDev(nvar); Zero(x0,nvar);
   Real* g = (Real*) AllOnDev(nvar); Zero(g,nvar);
   #else
+  d_Ci = Ci;
   Real* xR = (Real*) malloc(m*nvar*sizeof(Real)); Zero(xR,m*nvar);
   Real* x_x0 = (Real*) malloc(m*nvar*sizeof(Real)); Zero(x_x0,m*nvar);
   Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
@@ -930,7 +938,7 @@ int nvar=nvar_;
 
 		if (e_info) printf("DIIS has been notified\n");
 		if (e_info) printf("Your guess = %1e \n",residual);
-		while (residual > tolerance && it < iterationlimit) {
+		while ( residual > tolerance and it < iterationlimit) {
 			it++;
 			Cp(x0,x,nvar);
 			residuals(x,g);
@@ -956,7 +964,6 @@ int nvar=nvar_;
 			cerr << "Detected nan in svdcmp." << endl;
 		if (error == -4)
 			cerr << "Detected negative phibulk." << endl;
-		cerr << "Exiting." << endl;
 		free(Aij);free(Ci);free(Apij);
 		#ifdef CUDA
   		cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g);
@@ -966,9 +973,9 @@ int nvar=nvar_;
 
 		throw error;
 	}
-  free(Aij);free(Ci);free(Apij);
+  free(Aij);free(Apij); free(Ci);
   #ifdef CUDA
-  cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g);
+  cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g); cudaFree(d_Ci);
   #else
   free(xR);free(x_x0);free(x0);free(g);
   #endif

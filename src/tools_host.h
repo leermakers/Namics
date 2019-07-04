@@ -4,6 +4,9 @@
 #include <numeric>
 #include <algorithm>
 #include <functional>
+#if __SSE__
+	#include <smmintrin.h>
+#endif
 #include <cmath>
 
 struct saxpy_functor
@@ -80,17 +83,24 @@ template <typename T>
 inline void Add(T* P, T* A, int M) {
   std::transform(P, P + M, A, P, std::plus<T>());
 }
+template <typename T>
+inline void Subtract(T* P, T* A, int M) {
+  #pragma GCC ivdep
+  for (int i = 0 ; i < M ; ++i)
+	P[i] -= A[i];
+  //std::transform(P, P + M, A, P, std::plus<T>());
+}
 
 template <typename T>
 inline void Sum(T &result, T *x, int M)   {
-  //result = std::accumulate(x, x+M, 0);
-  result = 0;
-  for (int i=0; i<M; i++) result +=x[i];
+  result = std::accumulate(x, x+M, 0.0);
+//  result = 0;
+//  for (int i=0; i<M; i++) result +=x[i];
 }
 
 template <typename T>
 inline void Invert(T* KSAM, T* MASK, int M) {
-  std::transform(MASK, MASK + M, KSAM, KSAM, [](Real A, Real B) { if (A==0) return 1.0; else return 0.0; });
+  std::transform(MASK, MASK + M, KSAM, KSAM, [](Real A, Real B) { if (A==0.0) return 1.0; else return 0.0; });
   //std::transform(MASK, MASK + M, KSAM, KSAM, (1.0 - std::placeholders::_1) *(1.0 - std::placeholders::_1);
 }
 
@@ -187,11 +197,41 @@ inline void RemoveBoundaries(T* P, int jx, int jy, int bx1, int bxm, int by1, in
   b_z(P, Mx + 2, My + 2, Mz + 1, bz1, bzm, jx, jy);
 }
 
+#if __SSE__
 template<typename T>
 void Dot(T &result, T *x,T *y, int M)   {
-	result=0.0;
- 	for (int i=0; i<M; i++) result +=x[i]*y[i];
+	T z = 0.0;
+	result = 0.0;
+	T ftmp[2] = { 0.0, 0.0 };
+	__m128d mres;
+	
+	if ((M / 2) != 0) {
+		mres = _mm_load_sd(&z);
+		for (int i = 0; i < M / 2; i++)
+			mres = _mm_add_pd(mres, _mm_mul_pd(_mm_loadu_pd(&x[2*i]),
+			_mm_loadu_pd(&y[2*i])));                
+
+		_mm_store_pd(ftmp, mres);                
+
+		result = ftmp[0] + ftmp[1];
 }
+
+	if ((M % 2) != 0) {
+		for (int i = M - M % 2; i < M; i++)
+			result += x[i] * y[i];
+	}
+}
+
+#else
+
+template< typename T>
+void Dot(T &result, T *x,T *y, int M)   {
+	result = 0.0;
+	for (int i = 0 ; i < M ; i++)
+		result += x[i] * y[i];
+}
+
+#endif
 
 template<typename T>
 void AddTimes(T *P, T *A, T *B, int M)   {
@@ -205,7 +245,8 @@ void Composition(T* phi, T* Gf, T* Gb, T* G1, T C, int M)   {
 
 template<typename T, typename D>
 void Norm(T *P, D C, int M)   {
-    for (int i=0; i<M; i++) P[i] *= C;
+     for_each(P, P+M, [C](T& a) { a *= C;} );
+	 //for (int i=0; i<M; i++) P[i] *= C;
 	}
 
 template<typename T>
@@ -221,11 +262,6 @@ void Assign(T* P, T C, int M)   {
 template<typename T>
 void Assign(T* P, T* C, int M)   {
   std::copy(P, P+M, C);
-}
-
-template<typename T>
-void YisAplusCtimesB(T *Y, T *A, T*B, T C, int M)   {
-	std::transform(A, A+M, B, Y, std::placeholders::_1 + std::placeholders::_2 * C);
 }
 
 template<typename T>
@@ -246,25 +282,34 @@ void YisAplusB(T *Y, T *A, T *B, int M)   {
 template<typename T>
 void YplusisCtimesX(T *Y, T *X, T C, int M)    {
 	for (int i=0; i<M; i++) Y[i] += C*X[i];
-	//std::transform(X, X+M, Y, Y, std::placeholders::_2 + C*std::placeholders::_1);
+}
+
+template<typename T>
+void Xr_times_ci(int posi, int k_diis, int k, int m, int nvar, T* x, T* xR, T* Ci) {
+	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
+
+	for (int i=1; i<k_diis; i++) {
+		posi = k-k_diis+1+i;
+    	if (posi<0) {
+      		posi +=m;
+		}
+		YplusisCtimesX(x,xR+posi*nvar,Ci[i],nvar);
+	}
 }
 
 template<typename T>
 void UpdateAlpha(T *Y, T *X, T C, int M)    {
-	std::transform(X, X+M, Y, Y, std::placeholders::_2 + (std::placeholders::_1*C - 1.0f*C)) ;
-	//for (int i=0; i<M; i++) Y[i] += C*(X[i]-1.0);
+	for (int i=0; i<M; i++) Y[i] += C*(X[i]-1.0);
 }
 
 template<typename T>
 void Picard(T *Y, T *X, T C, int M)    {
-	std::transform(X, X+M, Y, Y, C * std::placeholders::_2 + (1.0f - C) * std::placeholders::_1) ;
-	//for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
+	for (int i=0; i<M; i++) Y[i] = C*Y[i]+(1.0-C)*X[i];
 }
 
 template<typename T>
 void Dubble(Real *P, T *A, T norm,int M)   {
-	std::transform(A, A+M, P, P, std::placeholders::_2 * (norm/std::placeholders::_1)) ;
-	//for (int i=0; i<M; i++) P[i]*=norm/A[i];
+	for (int i=0; i<M; i++) P[i]*=norm/A[i];
 }
 
 template<typename T>

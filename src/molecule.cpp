@@ -309,8 +309,18 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 		}
 		if (GetValue("composition").size()==0) {cout << "For mol '" + name + "' the definition of 'composition' is required" << endl; success = false;
 		} else {
-			if (!Decomposition(GetValue("composition"))) {cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;}
-
+			try {
+				// The chain of success bools seems to be broken and handled incorrectly..
+				// This is the result of calling the same function (interpret(), probably) multiple times with different results,
+				// causing only the last success to transfer correctly.
+				// Throw - catch for safety. Thrown by Interpret() and Decomposition() itself;
+			if (!Decomposition(GetValue("composition")))
+				// This error message is not even displayed.
+				{cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;} 
+			} catch (const char* error) {
+				cerr << error << endl;
+				success = false;
+			}
 		}
 		if (GetValue("restricted_range").size()>0) {
 			if (GetValue("freedom")!="range_restricted") cout <<"For mol '" + name + "' freedom is not set to 'range_restricted' and therefore  the value of 'restricted_range' is ignored" << endl;
@@ -916,7 +926,11 @@ if (debug) cout <<"Molecule:: Interpret" << endl;
 			while (k<length) {
 				string segname=sub[i].substr(open[k]+1,close[k]-open[k]-1);
 				int mnr=GetMonNr(segname);
-				if (mnr <0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised"  << endl; success=false;
+				if (mnr <0)  {cerr <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised"  << endl; success = false;
+				// The entire chain of successes seems to be broken, as they are not transferred to or handled correctly by functions down the stack.
+				// This function is called multiple times with different results, causing the success handling to break by only transferring the last success result.
+				// Throwing to prevent segfaults and other undefined behavior. Caught by CheckInput.
+				throw "Composition Error";
 				} else {
 					int length=Gnr.size();
 					if (length>0) {//fragments at branchpoint need to be just 1 segment long.
@@ -939,6 +953,7 @@ if (debug) cout <<"Molecule:: Interpret" << endl;
 				}
 				int nn = In[0]->Get_int(sub[i].substr(close[k]+1,s.size()-close[k]-1),0);
 				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity " << endl; success=false;
+				throw "Composition error";
 				} else {
 					n_mon.push_back(nn);
 				}
@@ -962,7 +977,7 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 	int pos_open=0;
 	int pos_close=s.length();
 	bool openfound,closedfound;
-	while  (pos_open<pos_close) {
+	while  (pos_open<pos_close && success) {
 		pos_open =s.length()+1;
 		pos_close=s.length();
 		openfound=closedfound=false;
@@ -985,12 +1000,12 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 				pos_close=pos_open+1;
 			} else {
 				pos=pos_close;
-				Interpret(ss,generation);
+				success = Interpret(ss,generation);
 			}
 		} else {
 			ss=s.substr(pos,pos_open-pos);
 			pos=pos_open;
-			Interpret(ss,generation);
+			success = Interpret(ss,generation);
 			first_s.push_back(-1);
 			last_s.push_back(-1);
 			first_b.push_back(-1);
@@ -1088,9 +1103,12 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	}
 
 	if (!In[0]->EvenSquareBrackets(s,open,close)) {
-
+		// Another success bool that doesn't travel down the stack.
+		// The error message drowns in the rest of the output really quickly, throwing for safety instead.
+		// Caught by CheckInput
 		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl;
 		success=false;
+		throw "Composition error";
 	}
 
 	if (open.size()>0) {
@@ -1120,14 +1138,14 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			last_s.push_back(-1);
 			first_b.push_back(-1);
 			last_b.push_back(-1);
-			GenerateTree(s,generation,pos,open,close);
+			success = GenerateTree(s,generation,pos,open,close);
 			break;
 		case branched:
 			first_s.push_back(-1);
 			last_s.push_back(-1);
 			first_b.push_back(-1);
 			last_b.push_back(-1);
-			GenerateTree(s,generation,pos,open,close);
+			success = GenerateTree(s,generation,pos,open,close);
 			break;
 		case dendrimer:
 			first_a.clear();
@@ -1355,8 +1373,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	}
 	success=MakeMonList();
 	if (chainlength==1) MolType=monomer;
-
-
 	return success;
 }
 
@@ -1396,7 +1412,8 @@ bool Molecule::IsClamped() {
 if (debug) cout <<"IsClamped for Mol " + name << endl;
 	bool success=false;
 	int length=mon_nr.size();
-	if (mon_nr[0]==mon_nr[length-1]) {
+	// In case of failed composition reading, mon_nr will be empty and mon_nr[0] will segfault, hence the empty check.
+	if (not mon_nr.empty() and mon_nr[0] == mon_nr[length-1]) {
 		if (Seg[mon_nr[0]]->freedom == "clamp") success=true;
 	}
 	if (success && MolType!=linear) {
@@ -1514,10 +1531,9 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
-	Real theta_out = 0;
-	if (theta==0) theta_out = Lat[0]->WeightedSum(phitot);
-	push("theta",theta_out);
-	Real thetaexc=theta_out-phibulk*Lat[0]->Accesible_volume;
+	if (theta==0) theta = Lat[0]->WeightedSum(phitot);
+	push("theta",theta);
+	Real thetaexc=theta-phibulk*Lat[0]->Accesible_volume;
 	push("theta_exc",thetaexc);
 	push("n",n);
 	push("chainlength",chainlength);
@@ -1648,8 +1664,7 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	int M=Lat[0]->M;
 	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
 	if (id !=0) {
-		int molmonlistlength=MolMonList.size(); 
-		for (int i=0; i<molmonlistlength; i++) 
+		for (size_t i=0; i<MolMonList.size(); i++) 
 		if (id==1) {
 			Times(Seg[MolMonList[i]]->G1,Seg[MolMonList[i]]->G1,BETA,M); 
 		} else {
@@ -1715,7 +1730,7 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 }
 
 Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int M) {
-if (debug) cout <<"propagate_forward for Mol " + name << endl;
+if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 
 	int N= n_mon[block];
 	if (save_memory) {
@@ -1755,19 +1770,19 @@ if (debug) cout <<"propagate_forward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s>first_s[generation]) {
-				Lat[0]->propagate(Gg_f,G1,s-1,s,M);
+				Lat[0] ->propagate(Gg_f,G1,s-1,s,M);
 			} else {
 				Cp(Gg_f+first_s[generation]*M,G1,M);
 			}
 			 s++;
 		}
 	}
-
 	if (save_memory) {
 		return Gg_f+last_stored[block]*M;
 	} else {
 		 return Gg_f+(s-1)*M;
 	}
+
 }
 
 
@@ -1832,7 +1847,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			s--;
 		}
 		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
-	} else /*if !save_memory*/ {
+	} else {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) {
 				Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
@@ -1914,9 +1929,8 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 	int M=Lat[0]->M;
 	//Real* GS = new Real[4*M];
 	Real* GS= (Real*) malloc(4*M*sizeof(Real));
-	int k=bN;
 	int ss=0;
-	while (k>=b0){
+	for (int k = bN ; k >= b0 ; k--){
 		if (k>b0 && k<bN) {
 			if (Gnr[k]!=generation) {
 				Br.clear(); Gb.clear();
@@ -1950,7 +1964,8 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 							Times(GS+2*M,GS+2*M,GS+M,M);
 						}
 					}
-					Cp(Gg_b,GS+2*M,M); Cp(Gg_b+M,GS+2*M,M);
+					Cp(Gg_b,GS+2*M,M);
+					Cp(Gg_b+M,GS+2*M,M);
 					if (i<length-1) {
 						BackwardBra(Gg_b,Br[i],s);
 					}
@@ -1964,13 +1979,12 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 		} else {
 			propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 		}
-
-		k--;
 	}
 	free(GS);
 }
 
 Real* Molecule::ForwardBra(int generation, int &s) {
+if (debug) cout <<"ForwardBra in Molecule " << endl; 
 	int b0 = first_b[generation]; 
 	int bN = last_b[generation];
 	vector<int> Br;
@@ -2007,31 +2021,34 @@ Real* Molecule::ForwardBra(int generation, int &s) {
 				}
 				s++;
 			}
-		} else {	
+		} else {
 			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+			//Glast=propagate_forward(G1+molmon_nr[k]*M,s,k,generation,M);
 		}
 	}
-
 	free(GS);
 	return Glast;
 }
 
 bool Molecule::ComputePhiBra() {
-	if (debug) cout <<"ComputePhiBra for Mol " + name << endl;
+if (debug) cout <<"ComputePhiBra in Mol " << endl; 
 	int M=Lat[0]->M;
 	bool success=true;
 	int generation=0;
 	int s=0;
 	Real* G=ForwardBra(generation,s);
+	//Lat[0]->remove_bounds(G);
 	GN=Lat[0]->WeightedSum(G);
+//cout << "GN " << GN << endl;
 	s--;
 	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);} //toggle; initialize on both spots the same G1, so that we always get proper start.
 	BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
+if (debug) cout <<" ComputePhiBra in Mol " << endl;
 	return success;
 }
 
 Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int arm, int M) { //for dendrimer
-if (debug) cout <<"propagate_forward for Molecule " + name << endl;
+if (debug) cout <<"0. propagate_forward for Molecule " + name << endl;
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t;
@@ -2082,8 +2099,6 @@ if (debug) cout <<"propagate_forward for Molecule " + name << endl;
 			 s++;
 		}
 	}
-
-
 	if (save_memory) {
 		return Gg_f+last_stored[block]*M;
 	} else return Gg_f+(s-1)*M;

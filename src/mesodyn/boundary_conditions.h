@@ -32,19 +32,19 @@ namespace Boundary {
 
   typedef std::map<Dimension, Boundary::Type> Map;
 
-  typedef Factory_template<Boundary1D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> Factory;
+  typedef Factory_template<Boundary1D, Dimensionality, const Lattice_object<size_t>&, Boundary::Map> Factory;
 }
 
 class Boundary1D {
   public:
-    Boundary1D( Lattice_object<size_t>& mask, Boundary::Map boundary_type );
+    Boundary1D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type ) noexcept;
     virtual ~Boundary1D() { }
     void update_boundaries(stl::device_vector<Real>&);
     void zero_boundaries(stl::device_vector<Real>&);
 
   protected:
 
-    Lattice_object<size_t>& m_mask;
+    const Lattice_object<size_t>& m_mask;
     Neighborlist m_neighborlist;
 
     Boundary::Type X_BOUNDARY_TYPE;
@@ -55,7 +55,7 @@ class Boundary1D {
 
 class Boundary2D : public Boundary1D {
   public:
-    Boundary2D(Lattice_object<size_t>& mask, Boundary::Map boundary_type_);
+    Boundary2D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type_) noexcept;
     virtual ~Boundary2D() { }
 
 
@@ -68,7 +68,7 @@ class Boundary2D : public Boundary1D {
 
 class Boundary3D : public Boundary2D {
   public:
-    Boundary3D(Lattice_object<size_t>& mask, Boundary::Map boundary_type_);
+    Boundary3D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type_) noexcept;
     ~Boundary3D() { }
 
 

@@ -1,15 +1,15 @@
 #include "boundary_conditions.h"
 
-Register_class<Boundary1D, Boundary1D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> boundary_one_dimensions(one_D);
-Register_class<Boundary1D, Boundary2D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> boundary_two_dimensions(two_D);
-Register_class<Boundary1D, Boundary3D, Dimensionality, Lattice_object<size_t>&, Boundary::Map> boundary_three_dimensions(three_D);
+Register_class<Boundary1D, Boundary1D, Dimensionality, const Lattice_object<size_t>&, Boundary::Map> boundary_one_dimensions(one_D);
+Register_class<Boundary1D, Boundary2D, Dimensionality, const Lattice_object<size_t>&, Boundary::Map> boundary_two_dimensions(two_D);
+Register_class<Boundary1D, Boundary3D, Dimensionality, const Lattice_object<size_t>&, Boundary::Map> boundary_three_dimensions(three_D);
 
 Boundary::Adapter_type Adapter {
     {"mirror", Boundary::Type::MIRROR},
     {"periodic", Boundary::Type::PERIODIC}
 };
 
-Boundary1D::Boundary1D(Lattice_object<size_t>& mask, Boundary::Map boundary_type_for_dim)
+Boundary1D::Boundary1D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type_for_dim) noexcept
 : m_mask{mask}, m_neighborlist(mask),
   X_BOUNDARY_TYPE{
       boundary_type_for_dim[Dimension::X]
@@ -21,7 +21,7 @@ Boundary1D::Boundary1D(Lattice_object<size_t>& mask, Boundary::Map boundary_type
     set_x_neighbors();
 }
 
-Boundary2D::Boundary2D(Lattice_object<size_t>& mask, Boundary::Map boundary_type_for_dim)
+Boundary2D::Boundary2D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type_for_dim) noexcept
 : Boundary1D(mask, boundary_type_for_dim),
   Y_BOUNDARY_TYPE {
       boundary_type_for_dim[Dimension::Y]
@@ -33,7 +33,7 @@ Boundary2D::Boundary2D(Lattice_object<size_t>& mask, Boundary::Map boundary_type
     set_y_neighbors();
 }
 
-Boundary3D::Boundary3D(Lattice_object<size_t>& mask, Boundary::Map boundary_type_for_dim)
+Boundary3D::Boundary3D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type_for_dim) noexcept
 : Boundary2D(mask, boundary_type_for_dim),
   Z_BOUNDARY_TYPE{
       boundary_type_for_dim[Dimension::Z]

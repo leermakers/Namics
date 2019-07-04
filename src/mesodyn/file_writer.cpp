@@ -1,16 +1,30 @@
 #include "file_writer.h"
+#include "../lattice.h"
+
+// Writing a new writer? Check out the header for instructions
 
 Register_class<IProfile_writer, Vtk_structured_grid_writer, Writable_filetype, Lattice*, Writable_file> Vtk_structured_grid_writer_factory(Writable_filetype::VTK_STRUCTURED_GRID);
 Register_class<IProfile_writer, Vtk_structured_points_writer, Writable_filetype, Lattice*, Writable_file> Vtk_structured_points_writer_factory(Writable_filetype::VTK_STRUCTURED_POINTS);
 Register_class<IProfile_writer, Pro_writer, Writable_filetype, Lattice*, Writable_file> Pro_writer_factory(Writable_filetype::PRO);
 
-map<std::string, Writable_filetype> Profile_writer::input_options {
+map<std::string, Writable_filetype> Profile_writer::output_options {
+        {"vtk", Writable_filetype::VTK_STRUCTURED_POINTS},
         {"vtk_structured_grid", Writable_filetype::VTK_STRUCTURED_GRID},
         {"vtk_structured_points", Writable_filetype::VTK_STRUCTURED_POINTS},
-        {"pro", Writable_filetype::PRO}
+        {"pro", Writable_filetype::PRO},
     };
 
-std::map<Writable_filetype, std::string> Writable_file::extension_map {
+Register_class<IParameter_writer, Kal_writer, Writable_filetype, Writable_file> Kal_writer_factory(Writable_filetype::KAL);
+Register_class<IParameter_writer, Csv_parameter_writer, Writable_filetype, Writable_file> Csv_parameter_writer_factory(Writable_filetype::CSV);
+
+map<std::string, Writable_filetype> Parameter_writer::output_options {
+        {"kal", Writable_filetype::KAL},
+        {"csv", Writable_filetype::CSV},
+    };
+
+typedef std::string Extension;
+
+std::map<Writable_filetype, Extension> Writable_file::extension_map {
     {Writable_filetype::KAL, "kal"},
     {Writable_filetype::VTK_STRUCTURED_GRID, "vtk"},
     {Writable_filetype::VTK_STRUCTURED_POINTS, "vtk"},
@@ -74,10 +88,10 @@ void IProfile_writer::bind_data(map< string, shared_ptr<IOutput_ptr>>& profiles_
 void IProfile_writer::bind_subystem_loop(Boundary_mode mode_) {
     switch (mode_) {
         case Boundary_mode::WITH_BOUNDS:
-            subsystem_loop = std::bind(&Lattice_accessor::system_plus_bounds, m_adapter, std::placeholders::_1);
+            subsystem_loop = std::bind(&Lattice_accessor::system_plus_bounds_x_major, m_adapter, std::placeholders::_1);
             break;
         case Boundary_mode::WITHOUT_BOUNDS:
-            subsystem_loop = std::bind(&Lattice_accessor::skip_bounds, m_adapter, std::placeholders::_1);
+            subsystem_loop = std::bind(&Lattice_accessor::skip_bounds_x_major, m_adapter, std::placeholders::_1);
             break;
     }
 }
@@ -113,10 +127,12 @@ void Vtk_structured_grid_writer::prepare_for_data()
 	vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
 	vtk << "POINTS " << MX * MY * MZ << " int\n";
 
-	for (int x = 1; x < MX + 1; ++x)
-		for (int y = 1; y < MY + 1; ++y)
-			for (int z = 1 ; z < MZ + 1 ; ++z )
-				vtk << x << " " << y << " " << z << "\n";
+    subsystem_loop(
+        [this, &vtk] (size_t x, size_t y, size_t z)
+        {
+            vtk << x << " " << y << " " << z << "\n";
+        }
+    );
 
 	vtk << "POINT_DATA " << MX * MY * MZ << "\n";
 
@@ -134,7 +150,7 @@ void Vtk_structured_grid_writer::write()
 
 	    std::ostringstream vtk;
 
-	    vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default \n";
+	    vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default\n";
 
 	    subsystem_loop(
             [this, &vtk, profile] (size_t x, size_t y, size_t z)
@@ -179,7 +195,10 @@ void Vtk_structured_points_writer::prepare_for_data()
 	vtk << "VTK output \n";
 	vtk << "ASCII\n";
 	vtk << "DATASET STRUCTURED_POINTS \n";
+    vtk << "SPACING 1 1 1 \n";
+    vtk << "ORIGIN 0 0 0 \n";
 	vtk << "DIMENSIONS " << MX << " " << MY << " " << MZ << "\n";
+    vtk << "POINT_DATA " << (MX*MY*MZ) << "\n";
 
     m_filestream << vtk.str();
 	m_filestream.flush();
@@ -195,24 +214,13 @@ void Vtk_structured_points_writer::write()
 
 	    std::ostringstream vtk;
 
-        vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default \n";
+        vtk << "SCALARS " << profile.first << " float\nLOOKUP_TABLE default\n";
 
-        #ifdef PAR_MESODYN
-            stl::host_vector<Real> m_data;
-
-            subsystem_loop(
-                [this, &vtk, profile] (size_t x, size_t y, size_t z) {
-	    		    vtk << profile.second->data(x*m_geometry->JX+y*m_geometry->JY+z*m_geometry->JZ) << "\n";
-                }
-            );
-        #else
         subsystem_loop(
             [this, &vtk, profile] (size_t x, size_t y, size_t z) {
 	    		vtk << profile.second->data(x*m_geometry->JX+y*m_geometry->JY+z*m_geometry->JZ) << "\n";
             }
         );
-        #endif
-
         
         m_filestream << vtk.str();
 	    m_filestream.flush();

@@ -1,5 +1,6 @@
 #include <map>
 #include "density_initializer.h"
+#include "stl_typedef.h"
 #include "../molecule.h"
 #include "../tools.h"
 #include "lattice_object.h"
@@ -23,13 +24,26 @@ class Order_parameter : public Lattice_object_collection_procedure {
     ~Order_parameter() { }
 
     void execute() override;
-    Real& get();
+    Real& attach();
 
   private:
     Real m_boundaryless_volume;
     Real m_order_parameter;
     std::vector< shared_ptr<IComponent> > m_components;
     std::map<size_t, size_t> m_combinations;
+};
+
+class Treat_as_zero : public Lattice_object_collection_procedure {
+  public:
+
+    Treat_as_zero(std::vector< shared_ptr<IComponent> > components_, Real tolerance_);
+    ~Treat_as_zero() { }
+
+    void execute() override;
+
+  private:
+    std::vector< shared_ptr<IComponent> > m_components;
+    Real m_tolerance;
 };
 
 class Norm_densities : public Lattice_object_collection_procedure {

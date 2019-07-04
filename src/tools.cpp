@@ -7,6 +7,8 @@
 #define MAX_BLOCK_SZ 512
 #define HALF_MAX_BLOCK_SZ 256
 
+Real* SUM_RESULT;
+
 #ifdef CUDA
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
@@ -37,7 +39,7 @@ void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int J
 __global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
 	int index = blockIdx.x*blockDim.x+threadIdx.x;
 
-	if (index < M) {
+	if (index < M-JX) {
 		Real gs_register = gs[index];
 
 		gs_register += gs_1[index-JZ];

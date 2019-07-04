@@ -139,7 +139,7 @@ bool Teng::ChangeMode()
 		{
 			X[i] = X[i];// + round(0.5 - round(GetRandom(1.0)));
 			Y[i] = Y[i];// + round(0.5 - round(GetRandom(1.0)));
-			Z[i] = Z[i] + round(Amplitude * (sin(Wavenumber * pi * X[i] / Lat[0]->MX) * sin(Wavenumber * pi * Y[i] / Lat[0]->MY)));
+			Z[i] = Z[i] + round(0.5-round(GetRandom(1.0))); //round(Amplitude * (sin(Wavenumber * pi * X[i] / Lat[0]->MX) * sin(Wavenumber * pi * Y[i] / Lat[0]->MY)));
 		}
 		success = IsLegal();
 		if (success)
@@ -300,13 +300,7 @@ bool Teng::CP(transfer tofrom)
 bool Teng::TrackInterface(){
 	bool success=true;
 	n_particles=0;
-	// get the rho from the molecule.cpp
-	// run a sweep along along the x,y plane and find points that are between certain tolerance of interface 0.5+- tolerance
-	// count the number of points. more than nx*ny - saddles exist. less than nx*ny - interface might have been vanished. choose the constraints wisely (??? how to do it)
-	// Use PZ to store the interface location (PZ should have size of chosen n constrainted particles)
 	int JX=Lat[0]->JX; int JY=Lat[0]->JY; int MX=Lat[0]->MX; int MY=Lat[0]->MY; int MZ=Lat[0]->MZ;
-	success = New[0]->Solve(true);
-	
 	Real sum;
 	Real radius;
 	for(int i=1; i<=MX; i++){
@@ -332,7 +326,6 @@ bool Teng::TrackInterface(){
 			}
 		}
 	}
-
 	return success;
 }
 

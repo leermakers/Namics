@@ -4,8 +4,8 @@
 #include <numeric>
 #include <algorithm>
 #include <functional>
-#if __AVX2__
-#include <x86intrin.h>
+#if __SSE__
+	#include <smmintrin.h>
 #endif
 #include <cmath>
 
@@ -197,39 +197,41 @@ inline void RemoveBoundaries(T* P, int jx, int jy, int bx1, int bxm, int by1, in
   b_z(P, Mx + 2, My + 2, Mz + 1, bz1, bzm, jx, jy);
 }
 
-#if __AVX2__
+#if __SSE__
 template<typename T>
-void Dot(T &result, T *x, T *y, int M)   {
+void Dot(T &result, T *x,T *y, int M)   {
+	T z = 0.0;
 	result = 0.0;
-	alignas(32) T ftmp[4] = { 0.0, 0.0, 0.0, 0.0};
-	alignas(32)  T * z = new T[4];
-	__m256d mres;
+	T ftmp[2] = { 0.0, 0.0 };
+	__m128d mres;
 	
-	if ((M / 4) != 0) {
-		mres = _mm256_loadu_pd(z);
-		for (int i = 0; i < M / 4 ; i++)
-			mres = _mm256_fmadd_pd( _mm256_loadu_pd(&x[4*i]), _mm256_loadu_pd(&y[4*i]), mres );                
-	
-		_mm256_store_pd(ftmp, mres);                
+	if ((M / 2) != 0) {
+		mres = _mm_load_sd(&z);
+		for (int i = 0; i < M / 2; i++)
+			mres = _mm_add_pd(mres, _mm_mul_pd(_mm_loadu_pd(&x[2*i]),
+			_mm_loadu_pd(&y[2*i])));                
 
-		*result = ftmp[0] + ftmp[1] + ftmp[2] + ftmp[3];
-	}
+		_mm_store_pd(ftmp, mres);                
 
-	if ((M % 4) != 0) {
-		for (int i = M - M % 4; i < M; i++)
+		result = ftmp[0] + ftmp[1];
+}
+
+	if ((M % 2) != 0) {
+		for (int i = M - M % 2; i < M; i++)
 			result += x[i] * y[i];
 	}
+}
 
-	delete [] z;
-	}
 #else
+
 template< typename T>
 void Dot(T &result, T *x,T *y, int M)   {
 	result = 0.0;
 	for (int i = 0 ; i < M ; i++)
 		result += x[i] * y[i];
 }
-#endif 
+
+#endif
 
 template<typename T>
 void AddTimes(T *P, T *A, T *B, int M)   {

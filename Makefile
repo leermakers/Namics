@@ -5,7 +5,7 @@ else
 CC			:=g++
 endif
 
-NVCC        :=nvcc
+NVCC        :=/usr/local/cuda-9.0/bin/nvcc
 
 #The Target Binary Program
 TARGET      := namics
@@ -17,18 +17,19 @@ BUILDDIR    := obj
 TARGETDIR   := bin
 RESDIR      := res
 SRCEXT      := cpp
+CUDAEXT		:= cu
 DEPEXT      := d
 OBJEXT      := o
 
 #Flags, Libraries and Includes
-CFLAGS      := -g -Wall -Ofast -std=c++14 -march=native
+CFLAGS      := -Wall -Ofast -std=c++14 -march=native
 LIB         := -lm -lpthread
-INC         := -I/usr/local/cuda-10.0/include -I/usr/local/include -I/usr/include
+INC         := -I/usr/local/cuda-9.0/include -I/usr/local/include -I/usr/include
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
-	LIB        += -L/usr/local/cuda-10.0/lib64 -lcuda -lcudart
+	LIB        += -L/usr/local/cuda/lib64 -lcuda -lcudart -lcurand
 	CFLAGS     += -DCUDA
-	NVCCFLAGS  := -g -ccbin gcc-7 -arch=sm_61 -std=c++14 -DCUDA
+	NVCCFLAGS  := -g -ccbin gcc-5 -arch=sm_61 -std=c++14 -DCUDA
 	ifdef PAR_MESODYN
 		CFLAGS += -DPAR_MESODYN
 		NVCCFLAGS += --expt-relaxed-constexpr --expt-extended-lambda -DPAR_MESODYN
@@ -41,13 +42,9 @@ endif
 #---------------------------------------------------------------------------------
 
 SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.cpp=.$(OBJEXT)))
-ifdef CUDA
-OBJECTS     += $(BUILDDIR)/tools.o
-ifdef PAR_MESODYN
-OBJECTS     += $(BUILDDIR)/mesodyn.o $(BUILDDIR)/neighborlist.o $(BUILDDIR)/file_reader.o $(BUILDDIR)/file_writer.o $(BUILDDIR)/boundary_conditions.o $(BUILDDIR)/flux.o $(BUILDDIR)/component.o $(BUILDDIR)/gaussian_noise.o $(BUILDDIR)/collection_procedures.o $(BUILDDIR)/density_initializer.o
-endif
-endif
+CUDASOURCES := $(shell find $(SRCDIR) -type f -name *.$(CUDAEXT))
+OBJECTS     := $(filter $(BUILDDIR)/%, $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT))) \
+	$(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CUDASOURCES:.$(CUDAEXT)=.$(OBJEXT))))
 
 #Defauilt Make
 all: resources $(TARGET)
@@ -76,33 +73,10 @@ cleaner: clean
 -include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))
 
 #Link
-#$(TARGET): $(OBJECTS)
 $(TARGET): $(OBJECTS)
 	$(CC) -o $(TARGETDIR)/$(TARGET) $^ $(LIB)
 
-
 #Compile
-ifdef PAR_MESODYN
-$(BUILDDIR)/tools.o:
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/tools.o $(SRCDIR)/tools.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/mesodyn.o $(SRCDIR)/mesodyn.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/neighborlist.o $(SRCDIR)/mesodyn/neighborlist.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/boundary_conditions.o $(SRCDIR)/mesodyn/boundary_conditions.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/flux.o $(SRCDIR)/mesodyn/flux.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/component.o $(SRCDIR)/mesodyn/component.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/gaussian_noise.o $(SRCDIR)/mesodyn/gaussian_noise.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/collection_procedures.o $(SRCDIR)/mesodyn/collection_procedures.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/density_initializer.o $(SRCDIR)/mesodyn/density_initializer.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/file_reader.o $(SRCDIR)/mesodyn/file_reader.cu
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/file_writer.o $(SRCDIR)/mesodyn/file_writer.cu
-
-else
-ifdef CUDA
-$(BUILDDIR)/tools.o:
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $(BUILDDIR)/tools.o $(SRCDIR)/tools.cu
-endif
-endif
-
 $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
@@ -111,6 +85,13 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@sed -e 's|.*:|$(BUILDDIR)/$*.$(OBJEXT):|' < $(BUILDDIR)/$*.$(DEPEXT).tmp > $(BUILDDIR)/$*.$(DEPEXT)
 	@sed -e 's/.*://' -e 's/\\$$//' < $(BUILDDIR)/$*.$(DEPEXT).tmp | fmt -1 | sed -e 's/^ *//' -e 's/$$/:/' >> $(BUILDDIR)/$*.$(DEPEXT)
 	@rm -f $(BUILDDIR)/$*.$(DEPEXT).tmp
+
+ifdef CUDA
+$(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(CUDAEXT)
+	@mkdir -p $(dir $@)
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $@ $<
+endif
+
 
 #Non-File Targets
 .PHONY: all remake clean cleaner resources

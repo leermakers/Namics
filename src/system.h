@@ -48,8 +48,10 @@ public:
 	Real* H_q;
 	Real* psi;
 	Real* EE;
+	Real* E;
 	int* psiMask;
 	bool fixedPsi0;
+	bool grad_epsilon;
 	bool constraintfields;	
 	Real* q;
 	Real* H_GrandPotentialDensity;

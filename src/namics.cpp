@@ -32,6 +32,7 @@ Real e = 1.60217e-19;
 Real T = 298.15;
 Real k_B = 1.38065e-23;
 Real k_BT = k_B * T;
+Real* SUM_RESULT;
 Real eps0 = 8.85418e-12;
 Real PIE = 3.14159265;
 int DEBUG_BREAK = 1;
@@ -92,6 +93,11 @@ int main(int argc, char *argv[])
 			exit(0);
 		}
 	}
+	#ifdef CUDA
+		SUM_RESULT = (Real*)AllOnDev(1);
+	#else
+		SUM_RESULT = new Real;
+	#endif
 
 	bool cuda;
 	int start = 0;
@@ -455,10 +461,6 @@ int main(int argc, char *argv[])
 			if (debug)
 				cout << "Creating mesodyn" << endl;
 			Mes.push_back(new Mesodyn(start, In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->MesodynList[0]));
-			if (!Mes[0]->CheckInput())
-			{
-				return 0;
-			}
 			try
 			{
 				Mes[0]->mesodyn();

@@ -2,7 +2,6 @@
 #define NEWTTOOLxH
 
 #include <cmath>
-#include <cfloat>
 #include "namics.h"
 
 Real norm2(Real*,int);

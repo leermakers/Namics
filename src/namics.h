@@ -38,6 +38,7 @@ extern Real PIE;
 extern int DEBUG_BREAK;
 extern Real eps0;
 extern bool debug;
+extern Real* SUM_RESULT;
 
 //extern Real factor;
 #endif

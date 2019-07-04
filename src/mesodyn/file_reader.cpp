@@ -60,6 +60,12 @@ void Readable_file::read_extension()
     {
         m_extension = m_filename.substr(m_filename.find_last_of(".") + 1);
     }
+
+    if (m_extension == m_filename)
+    {
+        cerr << "No extension found in filename '" << m_filename << "'. Please include an extension!" << endl;
+        throw error::ERROR_EXTENSION;
+    }
 }
 
 void Lattice_geometry::set_jumps()
@@ -86,6 +92,7 @@ void Lattice_geometry::set_jumps()
 
 void Lattice_geometry::assert_lattice_compatible(Lattice *Lat)
 {
+
     assert(Lat->gradients == (int)dimensions);
     assert(Lat->MX + BOUNDARIES == (int)MX);
     assert(Lat->MY + BOUNDARIES == (int)MY);
@@ -180,7 +187,7 @@ std::vector<std::string> Pro_reader::parse_data(const size_t number_of_component
     return tokens;
 }
 
-void Pro_reader::set_lattice_geometry(std::vector<std::string> &last_line)
+void Pro_reader::set_lattice_geometry(const std::vector<std::string> &last_line)
 {
     switch (file_lattice.dimensions)
     {
@@ -274,7 +281,7 @@ std::vector<std::vector<Real>> Pro_reader::get_file_as_vectors()
     return m_data;
 }
 
-void Vtk_structured_grid_reader::set_lattice_geometry(std::vector<std::string> &tokens)
+void Vtk_structured_grid_reader::set_lattice_geometry(const std::vector<std::string> &tokens)
 {
     switch (file_lattice.dimensions)
     {
@@ -294,6 +301,7 @@ Vtk_structured_grid_reader::STATUS Vtk_structured_grid_reader::parse_next_data_b
 {
     std::string line;
 
+    //This should really be regex'ed to include possible whitespace
     while (line.find("LOOKUP_TABLE default") == string::npos)
     {
         getline(m_file, line);
@@ -301,7 +309,7 @@ Vtk_structured_grid_reader::STATUS Vtk_structured_grid_reader::parse_next_data_b
 
     while (getline(m_file, line))
     {
-        if (std::regex_match(line, std::regex(R"(^[\d]+.[\d]+$)")))
+        if (!std::regex_match(line, std::regex(R"(^[\d]+.[\d]+(e-?[\d]+)?$)")))
             return STATUS::NEW_BLOCK_FOUND;
         else
             data.emplace_back(atof(line.c_str()));
@@ -316,23 +324,23 @@ std::vector<Real> Vtk_structured_grid_reader::with_bounds(std::vector<Real> &inp
     vector<Real> output(M_bounds);
 
     size_t n = 0;
-    size_t x = SYSTEM_EDGE_OFFSET;
+    size_t z = SYSTEM_EDGE_OFFSET;
     do
     {
         size_t y = SYSTEM_EDGE_OFFSET;
         do
         {
-            size_t z = SYSTEM_EDGE_OFFSET;
+            size_t x = SYSTEM_EDGE_OFFSET;
             do
             {
                 output[x * file_lattice.JX + y * file_lattice.JY + z * file_lattice.JZ] = input[n];
                 ++n;
-                ++z;
-            } while (z < file_lattice.MZ - SYSTEM_EDGE_OFFSET);
+                ++x;
+            } while (x < file_lattice.MX - SYSTEM_EDGE_OFFSET);
             ++y;
         } while (y < file_lattice.MY - SYSTEM_EDGE_OFFSET);
-        ++x;
-    } while (x < file_lattice.MX - SYSTEM_EDGE_OFFSET);
+        ++z;
+    } while (z < file_lattice.MZ - SYSTEM_EDGE_OFFSET);
 
     return output;
 }
@@ -379,11 +387,7 @@ std::vector<std::vector<Real>> Vtk_structured_grid_reader::get_file_as_vectors()
         data.clear();
     }
 
-    if (status == STATUS::END)
-    {
-        data = with_bounds(data);
-        output.emplace_back(data);
-    } else
+    if (status != STATUS::END)
     {
         std::cerr << "No blocks found in file" << std::endl;
         throw ERROR_FILE_FORMAT;
@@ -401,6 +405,7 @@ Reader::Reader()
 //Callable for multiple files. returns number of objects read.
 size_t Reader::read_objects_in(Readable_file file)
 {
+    cout << "Reading file " << file.m_filename << ".." << endl;
 
     switch (file.get_filetype())
     {
@@ -419,6 +424,8 @@ size_t Reader::read_objects_in(Readable_file file)
     t_object = input_reader->get_file_as_vectors();
 
     m_read_objects.insert(m_read_objects.end(), t_object.begin(), t_object.end());
+
+    cout << "Done reading " << m_read_objects.size() << " components." << endl;
 
     return t_object.size();
 }

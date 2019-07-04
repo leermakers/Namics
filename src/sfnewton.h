@@ -2,7 +2,6 @@
 #define SFNEWTONxH
 #include <vector>
 #include <cstdlib>
-#include <cfloat>
 #include "namics.h"
 
 class SFNewton {
@@ -55,12 +54,13 @@ public:
 	Real epsilon;
 	int* reverseDirection;
 	int* mask;
+	Real* d_Ci;
 	int IV;
 	int iterations;
 	Real minimum;
 
-	virtual void residuals(Real*,Real*); //x,g
-	virtual void inneriteration(Real*,Real*,Real*, Real, Real&, Real, int); //x g accuracy nvar
+	virtual void residuals(Real*,Real*) = 0; //x,g
+	virtual void inneriteration(Real*,Real*,Real*, Real, Real&, Real, int) = 0; //x g accuracy nvar
 	bool getnewtondirection();
 	int getiterations();
 	bool ispseudohessian();

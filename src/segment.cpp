@@ -94,11 +94,13 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 	int M=Lat[0]->M;
 #ifdef CUDA
-	if (prepared == 0) {
+	if (In[0]->MesodynList.empty() or prepared == false) {
 	TransferDataToDevice(H_MASK, MASK, M);
-	TransferDataToDevice(H_u, u, M);
-	prepared = 1;
+		if (In[0]->MesodynList.empty())
+			TransferDataToDevice(H_u, u, M); //Wrong: This clears u for every CUDA application and messes up mesodyn
+		prepared = true;
 }
+
 //}
 	//TransferDataToDevice(H_Px, Px, n_pos);
 	//TransferDataToDevice(H_Py, Py, n_pos);
@@ -950,12 +952,12 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 	}
 	return 0;
 }
-void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps) {
+void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps,bool grad_epsilon) {
 	int M=Lat[0]->M;
 	if (fixedPsi0) {
 		OverwriteC(psi,MASK,PSI0,M);
 		Lat[0]->set_bounds(psi);
-		Lat[0]->UpdateQ(g,psi,q,eps,MASK);
+		Lat[0]->UpdateQ(g,psi,q,eps,MASK,grad_epsilon);
 	}
 
 }

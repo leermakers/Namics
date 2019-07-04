@@ -6,6 +6,7 @@
 #include <iostream>
 #include <assert.h>
 #include <thread>
+#include <limits>
 #include "../tools.h"
 
 #ifdef PAR_MESODYN
@@ -55,26 +56,19 @@ class Checkable
         m_views.push_back(obs);
     }
 
-    virtual void perform_checks()
+    virtual void perform_checks() const
     {
-        vector<thread> threadObj;
-        for (size_t i = 0; i < m_views.size(); ++i)
-          threadObj.push_back( thread(&Sanity_check::check, m_views[i]));
+    //    vector<thread> threadObj;
+      for (size_t i = 0; i < m_views.size(); ++i)
+     //   threadObj.push_back( thread(&Sanity_check::check, m_views[i]));
+        m_views[i]->check();
 
-        for(auto& t : threadObj)
-          t.join();
-    }
-
-    const T * get_checkable_data() {
-        return m_checkable_data;
+     //   for(auto& t : threadObj)
+    //      t.join();
     }
 
     const T * get_checkable_data() const {
         return m_checkable_data;
-    }
-
-    size_t get_checkable_size() {
-        return m_size;
     }
 
     size_t get_checkable_size() const {
@@ -108,7 +102,7 @@ class Check_theta : public Sanity_check
 
     void check() override
     {
-        Real sum{0};
+        Real sum{0.0};
         #ifdef PAR_MESODYN
         const thrust::device_ptr<const Real> data = thrust::device_pointer_cast(m_checkable->get_checkable_data());
         #else
@@ -136,7 +130,7 @@ class Check_between_zero_and_one : public Sanity_check
     int m_identifier=0;
 
   public:
-    Check_between_zero_and_one(Checkable<T>* checkable, int identifier=0)
+    explicit Check_between_zero_and_one(Checkable<T>* checkable, int identifier=0)
     : m_checkable{checkable}, m_identifier(identifier)
     {
         checkable->attach(this);
@@ -154,7 +148,7 @@ class Check_between_zero_and_one : public Sanity_check
         #endif
         const size_t size = m_checkable->get_checkable_size();
 
-        errors = stl::count_if(data, data+size, is_negative_functor());
+        errors = stl::count_if(data, data+size, is_negative_functor(std::numeric_limits<T>::epsilon()));
 
         if (errors > 0) {
             std::cerr << "Found " << errors << " values < 0 || > 1 in identifier " << m_identifier << std::endl;
@@ -198,7 +192,7 @@ class Check_index_unity : public Sanity_check
           stl::transform(data, data+size, sum.begin(), sum.begin(), stl::plus<T>());
         }
 
-        errors = stl::count_if(sum.begin(), sum.end(), is_not_unity_functor());
+        errors = stl::count_if(sum.begin(), sum.end(), is_not_unity_functor(std::numeric_limits<T>::epsilon()));
 
         if (errors > 0) {
             std::cerr << "Found " << errors << " indices where sum != 1 in identifier " << m_identifier << std::endl;

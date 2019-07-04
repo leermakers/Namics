@@ -14,7 +14,7 @@ if (debug) cout <<"Lattice constructor" << endl;
  	KEYS.push_back("bondlength");
 	KEYS.push_back("ignore_site_fraction");
   	KEYS.push_back("lattice_type");
-	KEYS.push_back("stencil_fulll");
+	KEYS.push_back("stencil_full");
 	KEYS.push_back("");
 	//KEYS.push_back("lambda");
 	//KEYS.push_back("Z");
@@ -1552,14 +1552,18 @@ if (debug) cout <<" propagate in lattice " << endl;
 			}
 			break;
 		case 3:
-			if (k>0) {JX_=jx[k]; JY_=jy[k];}				
-			Add(gs+JX_,gs_1,M-JX_); 
-			Add(gs,gs_1+JX_,M-JX_);
-			Add(gs+JY_,gs_1,M-JY_); 
-			Add(gs,gs_1+JY_,M-JY_);
-			Add(gs+1,gs_1,M-1);  
-			Add(gs,gs_1+1, M-1);
+			if (k>0) {
+				JX_=jx[k];
+				JY_=jy[k];
+			}
+
 			if (stencil_full) {
+				Add(gs+JX_,gs_1,M-JX_); 
+				Add(gs,gs_1+JX_,M-JX_);
+				Add(gs+JY_,gs_1,M-JY_); 
+				Add(gs,gs_1+JY_,M-JY_);
+				Add(gs+1,gs_1,M-1);  
+				Add(gs,gs_1+1, M-1);
 				if (lattice_type == "simple_cubic") {
 					Norm(gs,4.0,M);
 				} else {
@@ -1595,8 +1599,20 @@ if (debug) cout <<" propagate in lattice " << endl;
 				} else {
 					Norm(gs,1.0/56.0,M);
 				}
-			} else Norm(gs,1.0/6.0,M);
-			Times(gs,gs,G1,M);			
+			} else {
+			#ifdef CUDA
+				Propagate_gs_locality(gs, gs_1, G1, JX, JY, JZ, M);
+			#else
+				Add(gs+JX_,gs_1,M-JX_); 
+				Add(gs,gs_1+JX_,M-JX_);
+				Add(gs+JY_,gs_1,M-JY_); 
+				Add(gs,gs_1+JY_,M-JY_);
+				Add(gs+1,gs_1,M-1);  
+				Add(gs,gs_1+1, M-1);
+				Norm(gs,1.0/6.0,M);
+				Times(gs,gs,G1,M);		
+			#endif
+			}
 			break;
 		default:
 			break;

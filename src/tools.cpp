@@ -52,6 +52,92 @@ __global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, in
 	}
 }
 
+#define BDIMX    	16			// tile (and threadblock) size in x
+#define BDIMY    	16			// tile (and threadblock) size in y
+#define WAVEFRONTS 	1			// use multiple wave-fronts
+#define radius   	1 			// half of the order in space (k/2)
+#define BDIMZ    	2			// tile (and threadblock) size in z
+
+ void Second_order_fd_stencil(Real *g_output, Real *g_input, Real coeff, const int dimx, const int dimy, const int dimz) {
+
+	dim3 dimBlock(BDIMX,BDIMY,BDIMZ);
+	dim3 dimGridz(ceil(static_cast<Real>(dimz)/static_cast<Real>(BDIMX)),ceil(static_cast<Real>(dimy)/static_cast<Real>(BDIMY)),1);
+
+	second_order_fd_stencil<<<dimGridz,dimBlock>>>(g_output, g_input, coeff, dimz, dimy, dimx);
+}
+
+__global__ void second_order_fd_stencil(Real *g_output, Real *g_input, Real coeff, const int dimx, const int dimy, const int dimz)
+{ 
+
+// **********	WARNING: OUR ARRAYS ARE DEPTH MAJOR, SO .x SHOULD BE FILLED WITH ELEMENTS IN Z AND VICE VERSA *********
+	// Contains the current 2D slice
+	__shared__ Real s_data[BDIMY+2*radius][BDIMX+2*radius];
+
+	int ix  = blockIdx.x*blockDim.x + threadIdx.x;
+	int iy  = blockIdx.y*blockDim.y + threadIdx.y;
+	
+	if (ix < dimx and iy < dimy) {
+		int wavefront = blockIdx.z;
+		int end = dimz/WAVEFRONTS;
+		
+		if (wavefront == gridDim.z-1)
+			end = dimz-((end-radius)*wavefront)-radius;
+
+		int stride  = dimx*dimy; 											// distance between 2D slices (in elements) 
+		int in_idx  = ix + iy*dimx + stride*(dimz/WAVEFRONTS-radius)*wavefront;	// index for reading input
+		int out_idx = 0;              										// index for writing output  
+
+		Real infront1;								 	// variables for input “in front of” the current slice: Add more for higher order stencils.
+		Real behind1; 									// variables for input “behind” the current slice: Add more for higher order stencils.
+		Real current;                           		// input value in the current slice
+
+		int tx = threadIdx.x + radius;  				// thread’s x-index into corresponding shared memory tile (adjusted for halos)
+		int ty = threadIdx.y + radius; 					// thread’s y-index into corresponding shared memory tile (adjusted for halos)
+
+		// fill the "in-front" and "behind" data
+		// This is read into the GPU's register, tiles are in shared mem
+		// Add in_idx += stride; for every extra stencil order register variable
+		current  = g_input[in_idx];		out_idx = in_idx; in_idx += stride;
+		infront1 = g_input[in_idx];		in_idx += stride;
+
+		for(int i=radius; i < end; i++) { 
+
+			////////////////////////////////////////// // advance the slice (move the thread-front)     
+			behind1  = current;     
+			current  = infront1;     
+			infront1 = g_input[in_idx];
+
+			in_idx  += stride;     
+			out_idx += stride;    
+
+			__syncthreads();
+
+			///////////////////////////////////////// // update the data slice in smem 
+			if(threadIdx.y<radius) // halo above/below     
+			{     
+				s_data[threadIdx.y][tx]              = g_input[out_idx-radius*dimx];     
+				s_data[threadIdx.y+BDIMY+radius][tx] = g_input[out_idx+BDIMY*dimx];    
+			} 
+			if(threadIdx.x<radius) // halo left/right     
+			{          
+				s_data[ty][threadIdx.x]              = g_input[out_idx-radius];          
+				s_data[ty][threadIdx.x+BDIMX+radius] = g_input[out_idx+BDIMX];     
+			} // update the slice in smem     
+
+			s_data[ty][tx] = current;
+
+			__syncthreads(); 
+
+			///////////////////////////////////////// // compute the output value     
+
+			// Optionally multiply any of the following with a coefficient
+			Real div  = 0; //current;  
+			div += coeff*(infront1 + behind1     + s_data[ty-1][tx] + s_data[ty+1][tx] + s_data[ty][tx-1] + s_data[ty][tx+1]);
+			g_output[out_idx] += div;
+		} 
+	}
+}
+
 void Xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci)   {
 	int n_blocks=(nvar)/block_size + ((nvar)%block_size == 0 ? 0:1);
 	xr_times_ci<<<n_blocks,block_size, (k_diis)*sizeof(Real)>>>(posi, k_diis, k, m, nvar, x, xR, Ci);

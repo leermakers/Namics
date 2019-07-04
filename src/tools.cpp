@@ -29,6 +29,29 @@ __device__ void atomicAdd(Real* address, Real val)
 }
 #endif
 
+void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	propagate_gs_locality<<<n_blocks,block_size>>>(gs, gs_1, G1, JX, JY, JZ, M);
+}
+
+__global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
+	int index = blockIdx.x*blockDim.x+threadIdx.x;
+
+	if (index < M) {
+		Real gs_register = gs[index];
+
+		gs_register += gs_1[index-JZ];
+		gs_register += gs_1[index+JZ];
+		gs_register += gs_1[index-JY];
+		gs_register += gs_1[index+JY];
+		gs_register += gs_1[index-JX];
+		gs_register += gs_1[index+JX];
+		gs_register *= 1.0/6.0;
+		gs_register *= G1[index];
+		gs[index] = gs_register;
+	}
+}
+
 void Xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci)   {
 	int n_blocks=(nvar)/block_size + ((nvar)%block_size == 0 ? 0:1);
 	xr_times_ci<<<n_blocks,block_size, (k_diis)*sizeof(Real)>>>(posi, k_diis, k, m, nvar, x, xR, Ci);

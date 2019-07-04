@@ -5,6 +5,7 @@
 	#include <thrust/inner_product.h>
 #endif
 #define MAX_BLOCK_SZ 512
+#define HALF_MAX_BLOCK_SZ 256
 
 #ifdef CUDA
 //cublasHandle_t handle;
@@ -105,52 +106,23 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 	}
 }
 
-__global__ void propagate_gs_1_locality(Real* gs, Real* gs_1, int JX, int JY, int JZ, int M) {
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M-JX) {
-		gs[idx+JZ] += gs_1[idx];
-		gs[idx+JY] += gs_1[idx];
-		gs[idx+JX] += gs_1[idx];
-	}
-}
-
-__global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M-JX) {
-		gs[idx] += gs_1[idx+JZ];
-		gs[idx] += gs_1[idx+JY];
-		gs[idx] += gs_1[idx+JX];
-		gs[idx] *= 1.0/6.0;
-		gs[idx] *= G1[idx];
-	}
-}
-
-
-
-__global__ void dot(Real *a, Real *b, Real *dot_res, int M)
+__global__ void dot(Real *v1, Real *v2, Real *out, int N)
 {
-    __shared__ Real cache[MAX_BLOCK_SZ]; //thread shared memory
-    int global_tid=threadIdx.x + blockIdx.x * blockDim.x;
-    Real temp = 0;
-
-    int cacheIndex = threadIdx.x;
-	cache[cacheIndex] = -DBL_MAX;
-    while (global_tid < M) {
-        temp += a[global_tid] * b[global_tid];
-        global_tid += blockDim.x * gridDim.x;
+	__shared__ Real cache[ MAX_BLOCK_SZ ];
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    cache[ threadIdx.x ] = 0.0;
+    while( i < N ) {
+        cache[ threadIdx.x ] += v1[ i ] * v2[ i ];
+        i += gridDim.x * blockDim.x;
     }
-    cache[cacheIndex] = temp;
     __syncthreads();
-    for (int i=blockDim.x/2; i>0; i>>=1) {
-        if (threadIdx.x < i) {
-            cache[threadIdx.x] += cache[threadIdx.x + i];
-        }
+    i = HALF_MAX_BLOCK_SZ;
+    while( i > 0 ) {
+        if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
         __syncthreads();
+        i /= 2; 
     }
-    __syncthreads();
-    if (cacheIndex==0) {
-        atomicAdd(dot_res,cache[0]);
-    }
+    if( threadIdx.x == 0 ) atomicAdd( out, cache[ 0 ] );
 }
 
 __global__ void sum(Real *g_idata, Real *g_odata, int M) {
@@ -690,30 +662,21 @@ Real* AllManagedOnDev(int N) {
 }
 
 void Dot(Real &result, Real *x,Real *y, int M)   {
-	Real* _result = (Real*)AllOnDev(1);
+	cudaMemset((void**)SUM_RESULT, 0, sizeof(Real));
+	//Use a pre-allocated (member) variable! Allocating memory for every call is way too costly
+	//Memcopies can be masked by asynchronous transfer, allocations and frees are blocking.
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	dot<<<n_blocks,block_size>>>(x,y,_result,M);
-	TransferDataToHost(&result, _result,1);
-	cudaFree(_result);
+	dot<<<n_blocks,block_size>>>(x,y,SUM_RESULT,M);
+	TransferDataToHost(&result, SUM_RESULT, 1);
 }
 
-void Propagate_gs_1_locality(Real* gs, Real* gs_1, int JX, int JY, int JZ, int M) {
+void Sum(Real& result, Real *x, int M)   {
+	cudaMemset((void**)SUM_RESULT, 0, sizeof(Real));
+	//Use a pre-allocated (member) variable! Allocating memory for every call is way too costly
+	//Memcopies can be masked by asynchronous transfer, allocations and frees are blocking.
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	propagate_gs_1_locality<<<n_blocks,block_size>>>(gs, gs_1, JX, JY, JZ, M);
-}
-
-void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	propagate_gs_locality<<<n_blocks,block_size>>>(gs, gs_1, G1, JX, JY, JZ, M);
-}
-
-
-void Sum(Real &result, Real *x, int M)   {
-	Real* _result = (Real*)AllOnDev(1);
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	sum<<<n_blocks,block_size>>>(x,_result,M);
-	TransferDataToHost(&result, _result,1);
-	cudaFree(_result);
+	sum<<<n_blocks,block_size>>>(x,SUM_RESULT,M);
+	TransferDataToHost(&result, SUM_RESULT, 1);
 }
 
 void Sum(int &result, int *x, int M)   {
@@ -750,29 +713,25 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 }
 
 void Unity(Real* P, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	unity<<<n_blocks,block_size>>>(P,M);
+	cudaMemset((void**)P, 1.0, M*sizeof(Real)); //much faster than a kernel
+//int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+//	unity<<<n_blocks,block_size>>>(P,M);
 }
 
 void Zero(Real* P, int M)   {
-	cudaMemset((void**)P, 0, M*sizeof(Real));
-/* int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	zero<<<n_blocks,block_size>>>(P,M);
-
-	cudaError_t error = cudaPeekAtLastError();
-	if (error != cudaSuccess) {
-		printf("CUDA error: %s\n", cudaGetErrorString(error));
-		throw 1;
-	} */
-	}
+	cudaMemset((void**)P, 0.0, M*sizeof(Real)); //much faster than a kernel
+/*  int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	zero<<<n_blocks,block_size, 0>>>(P,M); */
+}
 
 void Zero(int* P, int M)   {
-	cudaMemset((void**)P, 0, M*sizeof(int));
+	cudaMemset((void**)P, 0, M*sizeof(int)); //much faster than a kernel
 /* 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	zero<<<n_blocks,block_size>>>(P,M); */
+	zero<<<n_blocks,block_size, 0>>>(P,M);  */
 }
 
 void Cp(Real *P,Real *A, int M)   {
+	//cudaMemcpy(P, A, sizeof(Real)*M,cudaMemcpyDeviceToDevice); //much slower than a kernel
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	cp<<<n_blocks,block_size>>>(P,A,M);
 }
@@ -902,7 +861,6 @@ void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 
 #ifdef PAR_MESODYN
 Real ComputeResidual(Real* array, int size) {
-
 	Real residual{0};
 
     auto temp_residual = thrust::minmax_element( thrust::device_pointer_cast(array), thrust::device_pointer_cast(array+size) );
@@ -911,7 +869,6 @@ Real ComputeResidual(Real* array, int size) {
     } else {
       residual = abs(*temp_residual.second);
     }
-
 	return residual;
 }
 

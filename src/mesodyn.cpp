@@ -297,6 +297,11 @@ int Mesodyn::initial_conditions() {
     Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev);  
 
   for (auto& index_of : combinations)
+    if (Lat.back()->stencil_full) {
+      assert (three_D == dimensionality and "Full stencil is only supported in 3D when using mesodyn.");
+      Mesodyn::fluxes.emplace_back(make_shared<Flux3D_extended_stencil>(Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
+    }
+    else
     Mesodyn::fluxes.emplace_back(
       Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
 

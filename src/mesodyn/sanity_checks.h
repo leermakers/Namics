@@ -102,7 +102,7 @@ class Check_theta : public Sanity_check
 
     void check() override
     {
-        Real sum{0.0};
+        Real sum{(Real)0.0};
         #ifdef PAR_MESODYN
         const thrust::device_ptr<const Real> data = thrust::device_pointer_cast(m_checkable->get_checkable_data());
         #else
@@ -116,7 +116,7 @@ class Check_theta : public Sanity_check
         sum = std::accumulate(data, data+size, sum);
         #endif
         
-        if (round(sum) < m_theta) {
+        if (std::round(sum) < m_theta) {
             std::cerr << "Error! Theta for component " << m_component_index << " = "
                       << sum << " whereas " << m_theta << " was expected!" << std::endl;
         }

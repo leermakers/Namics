@@ -1599,6 +1599,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 				} else {
 					Norm(gs,1.0/56.0,M);
 				}
+				Times(gs,gs,G1,M);
 			} else {
 			#ifdef CUDA
 				Propagate_gs_locality(gs, gs_1, G1, JX, JY, JZ, M);

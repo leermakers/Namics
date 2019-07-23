@@ -45,7 +45,7 @@ int Gaussian_noise::generate(size_t system_size) {
 
   noise = tmp_noise;
 
-  boundary->update_boundaries(noise);
+  //boundary->update_boundaries(noise);
 
   return 0;
 }

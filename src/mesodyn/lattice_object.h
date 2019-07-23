@@ -42,7 +42,10 @@ public:
 //Stores the system minus the boundaries
 stl::device_vector<T> m_data;
 shared_ptr<Value_index_pair<T>> available_sites;
-std::map<Dimension, shared_ptr<Value_index_pair<T>>> available_neighbors;
+
+typedef std::map<Offset_map, shared_ptr<Value_index_pair<T>>> Neighborlist_map;
+
+Neighborlist_map available_neighbors;
 const Lattice* m_subject_lattice;
 
 ~Lattice_object() { }
@@ -73,14 +76,16 @@ Lattice_object(const Lattice_object<OtherT>& copy)
       set_checkable_data_wrapper();
     }
 
+void attach_neighborlist(shared_ptr<Neighborlist> neighborlist, Offset_map offset)
 
-void attach_neighborlist(shared_ptr<Neighborlist> neighborlist, Dimension dimension){
+	{
       m_neighborlist.push_back( neighborlist );
+
       if (available_sites)
         assert_available_sites_equal(neighborlist);
   
       available_sites = make_shared<Value_index_pair<T>>(m_data, neighborlist->get_subject() );
-      available_neighbors[dimension] = make_shared<Value_index_pair<T>>(m_data, neighborlist->get_neighbors() );
+      available_neighbors[offset] = make_shared<Value_index_pair<T>>(m_data, neighborlist->get_neighbors() );
   }
 
 void assert_available_sites_equal(shared_ptr<Neighborlist> neighborlist) {
@@ -116,7 +121,7 @@ void load_array(T* data, size_t size)
     }
 
 
-T& operator[](size_t x) {
+T& operator[](T x) {
       #ifdef PAR_MESODYN
       return m_data[x];
       #else
@@ -188,7 +193,7 @@ typename thrust::device_vector<T>& operator=(thrust::host_vector<OtherT>& rhs)
 
 operator T *() {
   #ifdef PAR_MESODYN
-    return stl::raw_pointer_cast(m_data.data()); //thrust::device_pointer_cast(m_data); //
+    return thrust::raw_pointer_cast(m_data.data());
   #else
     return const_cast<T*>(m_data.data());
   #endif

@@ -306,6 +306,8 @@ bool Teng::TrackInterface(){
 	for(int i=1; i<=MX; i++){
 		for(int j=1; j<=MY; j++){
 			sum=0;
+			// Now tracks at every x and y and makes a node there. It should rather be limited to a certain number of points.
+			// Also assumes that there is only one interface at given (x,y). 
 			for(int k=1; k<=MZ; k++){
 				sum+=Mol[0]->phi[i*JX+j*JY+k]-Mol[0]->phi[i*JX+j*JY+MZ];
 				if(k==MZ) {

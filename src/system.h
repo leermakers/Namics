@@ -63,6 +63,7 @@ public:
 	Real* TEMP;
 	Real* H_BETA;
 	Real* BETA;
+	Real phi_ratio;
 	int* H_beta;
 	int* beta; 
 	bool GPU;

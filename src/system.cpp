@@ -18,6 +18,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("delta_range");
 	KEYS.push_back("delta_inputfile");
 	KEYS.push_back("delta_molecules");
+	KEYS.push_back("phi_ratio");
 	KEYS.push_back("generate_guess");
 	KEYS.push_back("initial_guess");
 	KEYS.push_back("guess_inputfile");
@@ -550,6 +551,10 @@ bool System::CheckInput(int start)
 					success = false;
 					cout << "When 'constraint' is set to 'delta', you should specify a set of 'delta_molecules' " << endl;
 				}
+
+
+				phi_ratio=1.0;
+				if(GetValue("phi_ratio").size()>0){phi_ratio=In[0]->Get_Real(GetValue("phi_ratio"),1);}
 			}
 
 			//if (Mol[DeltaMolList[0]]->freedom=="restricted" || Mol[DeltaMolList[1]]->freedom=="restricted" ) {success =false;  cout <<"Molecule in list of delta_molecules has not freedom 'free'"<<endl; }

@@ -20,6 +20,16 @@ struct saxpy_functor
         }
 };
 
+struct reverse_minus_functor
+{
+    reverse_minus_functor() {}
+
+      double operator()(const double& x, const double& y) const { 
+            return y - x;
+        }
+};
+
+
 struct const_multiply_functor
 {
     const double a;

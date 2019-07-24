@@ -140,5 +140,5 @@ void Treat_as_zero::execute()
 {
   auto tolerance = this->m_tolerance;
    for (auto& component : m_components)
-    stl::for_each(component->rho.begin(), component->rho.end(), [tolerance] DEVICE_LAMBDA (Real& a) mutable { if (a < tolerance) a = tolerance; } );
+    stl::for_each(component->rho.begin(), component->rho.end(), [tolerance] DEVICE_LAMBDA (Real& a) mutable { if (a < tolerance and a != 0.0) a = tolerance; } );
 }

@@ -2,7 +2,7 @@
 #include "../lattice.h"
 
 Lattice_accessor::Lattice_accessor(const Lattice* Lat)
-: MX{ (size_t)Lat->MX },
+  : MX{ (size_t)Lat->MX },
     MY{ (size_t)Lat->MY },
     MZ{ (size_t)Lat->MZ },
     system_size{ (size_t)Lat->M },
@@ -12,7 +12,7 @@ Lattice_accessor::Lattice_accessor(const Lattice* Lat)
     jump_z{ (size_t)Lat->JZ }
 { }
 
-const Lattice_accessor::Coordinate Lattice_accessor::coordinate(size_t index) {
+Lattice_accessor::Coordinate Lattice_accessor::coordinate(size_t index) {
     
     size_t mod = 0;
     Coordinate coordinate;

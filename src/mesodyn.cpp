@@ -59,7 +59,7 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
 
       //Variables for rho initialization
       initialization_mode              { INIT_HOMOGENEOUS },
-      component_no                     { Sys.front()->SysMolMonList.size() },
+      component_no                     { Sys.back()->SysMolMonList.size() },
       t                                { 0 }
 {
   // to get the correct KSAM and volume.
@@ -129,9 +129,9 @@ bool Mesodyn::mesodyn() {
       checks.emplace_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0.0), i));
     }
 
-    Check_index_unity<Real> check_rho(&components[0]->rho);
-    for (size_t i = 1 ; i < component_no ; ++i)
-      check_rho.register_checkable(&components[i]->rho);
+  //  Check_index_unity<Real> check_rho(&components[0]->rho);
+  //  for (size_t i = 1 ; i < component_no ; ++i)
+  //    check_rho.register_checkable(&components[i]->rho);
   }
 
   // Prepare IO
@@ -156,7 +156,15 @@ bool Mesodyn::mesodyn() {
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
+    Mol[0]->theta = components[0]->theta();
+    Mol[1]->theta = components[1]->theta();
+
     norm_densities->execute();
+
+    //Somehow if stencil_full in combination with frozen segments gives wrong densities
+   // if (Lat.back()->stencil_full)
+      for (auto& all_components : components)
+        Times(all_components->rho.data(), all_components->rho.data(), Sys.back()->KSAM, system_size);
 
     order_parameter->execute();
 
@@ -223,6 +231,7 @@ Real* Mesodyn::solve_crank_nicolson() {
   for (auto& all_components : components) {
     all_components->rho.reinstate_previous_state();
     all_components->update_boundaries();
+    Times(all_components->rho.data(), all_components->rho.data(), Sys.back()->KSAM, system_size);
   }
 
   for (auto& all_fluxes : fluxes)
@@ -301,9 +310,11 @@ int Mesodyn::initial_conditions() {
       assert (three_D == dimensionality and "Full stencil is only supported in 3D when using mesodyn.");
       Mesodyn::fluxes.emplace_back(make_shared<Flux3D_extended_stencil>(Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
     }
-    else
-    Mesodyn::fluxes.emplace_back(
-      Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
+    else {
+   // if (Seg[index_of.first]->freedom != "frozen" and Seg[index_of.second]->freedom != "frozen")
+      Mesodyn::fluxes.emplace_back(
+        Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
+    }
 
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
   Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);

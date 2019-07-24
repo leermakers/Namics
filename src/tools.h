@@ -78,17 +78,17 @@ template <typename T>
 void TransferDataToHost(T*, T*, int);
 template <typename T>
 void TransferDataToDevice(T*, T*, int);
-__global__ void bx(Real*, int, int, int, int, int, int, int);
+__global__ void bx(Real*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_x(Real*, int, int, int, int, int, int, int);
-__global__ void by(Real*, int, int, int, int, int, int, int);
+__global__ void by(Real*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_y(Real*, int, int, int, int, int, int, int);
-__global__ void bz(Real*, int, int, int, int, int, int, int);
+__global__ void bz(Real*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_z(Real*, int, int, int, int, int, int, int);
-__global__ void bx(int*, int, int, int, int, int, int, int);
+__global__ void bx(int*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_x(int*, int, int, int, int, int, int, int);
-__global__ void by(int*, int, int, int, int, int, int, int);
+__global__ void by(int*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_y(int*, int, int, int, int, int, int, int);
-__global__ void bz(int*, int, int, int, int, int, int, int);
+__global__ void bz(int*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_z(int*, int, int, int, int, int, int, int);
 void Dot(Real&, Real*, Real*, int);
 void Sum(Real&, Real*, int);
@@ -132,7 +132,7 @@ void AddG(Real*, Real*, Real*, int);
 void OneMinusPhitot(Real*, Real*, int);
 void ComputeGN(Real*, Real*, int, int);
 template <typename T>
-void SetBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
+void SetBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int, bool);
 template <typename T>
 void RemoveBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
 namespace tools {

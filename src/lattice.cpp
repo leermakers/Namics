@@ -1739,9 +1739,9 @@ if (debug) cout <<"set_bounds in lattice " << endl;
 			if (sub_box_on!=0) { 
 				int k=sub_box_on;
 				for (int i=0; i<n_box[k]; i++)
-					SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
+					SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k], stencil_full);
 			} else
-				if (fjc==1) SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
+				if (fjc==1) SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ,stencil_full); else {
 					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
 						for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+B_Z1[k]];
 						for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];

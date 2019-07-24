@@ -24,7 +24,7 @@ Gaussian_noise::~Gaussian_noise() {
 int Gaussian_noise::generate(size_t system_size) {
   curandGenerateNormalDouble(gen, thrust::raw_pointer_cast(noise.data()), system_size, mean, stddev);
 
-  boundary->update_boundaries(noise);
+  //boundary->update_boundaries(noise);
 
   return 0;
 }

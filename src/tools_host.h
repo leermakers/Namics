@@ -115,16 +115,28 @@ inline void Cp(Real* P, T* A, int M) {
 }
 
 template <typename T>
-void bx(T* P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+void bx(T *P, int mmx, int My, int Mz, int bx1, int bxm, int by1, int bym, int jx, int jy, bool corner)   {
 	int i;
 	int jx_mmx=jx*mmx;
 	int jx_bxm=jx*bxm;
-	int bx1_jx=bx1*jx;
+	int bx1_jx=bx1*jx, jy_bym=jy*bym, jy_by1=jy*by1;
 	for (int y=0; y<My; y++)
 	for (int z=0; z<Mz; z++){
 		i=jy*y+z;
 		P[i]=P[bx1_jx+i];
 		P[jx_mmx+i]=P[jx_bxm+i];
+
+
+		if (corner) {
+			if (y == 0) {
+				P[i]=P[bx1_jx+i+jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1];
+			}
+			if (y == My-1) {
+				P[i]=P[bx1_jx+i+jy_bym];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_bym];
+			}
+		}
 	}
 }
 
@@ -140,13 +152,24 @@ void b_x(T *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 }
 
 template<typename T>
-void by(T *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+void by(T *P, int Mx, int mmy, int Mz, int by1, int bym, int bz1, int bzm, int jx, int jy, bool corner)   {
 	int i, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	for (int x=0; x<Mx; x++)
 	for (int z=0; z<Mz; z++) {
 		i=jx*x+z;
 		P[i]=P[jy_by1+i];
 		P[jy_mmy+i]=P[jy_bym+i];
+
+		if (corner) {
+			if (z == 0) {
+				P[i]=P[jy_by1+i+bz1];
+				P[jy_mmy+i]=P[jy_bym+i+bz1];
+			}
+			if (z == Mz-1) {
+				P[i]=P[jy_by1+i+bzm];
+				P[jy_mmy+i]=P[jy_bym+i+bzm];
+			}
+		}
 	}
 }
 
@@ -162,13 +185,25 @@ void b_y(T *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 }
 
 template<typename T>
-void bz(T *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+void bz(T *P, int Mx, int My, int mmz, int bz1, int bzm, int bx1, int bxm, int jx, int jy, bool corner)   {
+	int jx_bxm=jx*bxm, bx1_jx=bx1*jx;
 	int i;
 	for (int x=0; x<Mx; x++)
 	for (int y=0; y<My; y++) {
 		i=jx*x+jy*y;
 		P[i]=P[i+bz1];
 		P[i+mmz]=P[i+bzm];
+
+ 		if (corner) {
+			if (x == 0) {
+				P[i]=P[i+bz1+bx1_jx];
+				P[i+mmz]=P[i+bzm+bx1_jx];
+			}
+			if (x == Mx-1) {
+				P[i]=P[i+bz1+jx_bxm];
+				P[i+mmz]=P[i+bzm+jx_bxm];
+			}
+		}
 	}
 }
 
@@ -184,10 +219,10 @@ void b_z(T *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 }
 
 template <typename T>
-inline void SetBoundaries(T* P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz) {
-  bx(P, Mx + 1, My + 2, Mz + 2, bx1, bxm, jx, jy);
-  by(P, Mx + 2, My + 1, Mz + 2, by1, bym, jx, jy);
-  bz(P, Mx + 2, My + 2, Mz + 1, bz1, bzm, jx, jy);
+inline void SetBoundaries(T* P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz, bool corners) {
+  bx(P, Mx + 1, My + 2, Mz + 2, bx1, bxm, by1, bym, jx, jy, corners);
+  by(P, Mx + 2, My + 1, Mz + 2, by1, bym, bz1, bzm, jx, jy, corners);
+  bz(P, Mx + 2, My + 2, Mz + 1, bz1, bzm, bx1, bxm, jx, jy, corners);
 }
 
 template <typename T>

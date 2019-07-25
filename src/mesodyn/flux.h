@@ -59,11 +59,11 @@ public:
     ERROR_NOT_IMPLEMENTED,
   };
 
-  Lattice_object<Real> J_plus;
-
 protected:
   void attach_neighborlists(shared_ptr<Neighborlist>, const Offset_map&);
   int langevin_flux(const Offset_map&);
+
+  Lattice_object<Real> J_plus;
 
   Lattice_object<Real> t_L;
   Lattice_object<Real> t_mu;

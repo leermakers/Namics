@@ -29,12 +29,23 @@ struct reverse_minus_functor
         }
 };
 
-
-struct const_multiply_functor
+struct norm_functor
 {
     const double a;
 
-    const_multiply_functor(double _a) : a(_a) {}
+    norm_functor(double _a) : a(_a) {}
+
+	double operator()(const double& x) const { 
+		return a * x;
+	}
+};
+
+
+struct binary_norm_functor
+{
+    const double a;
+
+    binary_norm_functor(double _a) : a(_a) {}
 
       double operator()(const double& x, const double& y) const { 
             return a * x * y;
@@ -125,34 +136,51 @@ inline void Cp(Real* P, T* A, int M) {
 }
 
 template <typename T>
-void bx(T *P, int mmx, int My, int Mz, int bx1, int bxm, int by1, int bym, int jx, int jy, bool corner)   {
+void bx(T *P, int mmx, int My, int Mz, int bx1, int bxm, int by1, int bz1, int jx, int jy, bool corner)   {
 	int i;
 	int jx_mmx=jx*mmx;
 	int jx_bxm=jx*bxm;
-	int bx1_jx=bx1*jx, jy_bym=jy*bym, jy_by1=jy*by1;
+	int bx1_jx=bx1*jx, jy_by1=jy*by1;
 	for (int y=0; y<My; y++)
 	for (int z=0; z<Mz; z++){
 		i=jy*y+z;
 		P[i]=P[bx1_jx+i];
 		P[jx_mmx+i]=P[jx_bxm+i];
 
-
-		if (corner) {
+ 		if (corner) {
+			//corner of box
+ 			if (y == 0 and z == 0) {
+				P[i]=P[bx1_jx+i+jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1+bz1];
+			}
+			if (y == My-1 and z == 0) {
+				P[i]=P[bx1_jx+i-jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1+bz1];
+			}
+			if (y == 0 and z == Mz-1) {
+				P[i]=P[bx1_jx+i+jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1-bz1];
+			}
+			if (y == My-1 and z == Mz-1) {
+				P[i]=P[bx1_jx+i-jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1-bz1];
+			}
+			//halo edge
 			if (y == 0) {
 				P[i]=P[bx1_jx+i+jy_by1];
 				P[jx_mmx+i]=P[jx_bxm+i+jy_by1];
 			}
 			if (y == My-1) {
-				P[i]=P[bx1_jx+i+jy_bym];
-				P[jx_mmx+i]=P[jx_bxm+i+jy_bym];
+				P[i]=P[bx1_jx+i-jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1];
 			}
-		}
+		} 
 	}
 }
 
 template<typename T>
 void b_x(T *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
-	int i, jx_mmx=jx*mmx;// jx_bxm=jx*bxm, bx1_jx=bx1*jx;
+	int i, jx_mmx=jx*mmx;
 	for (int y=0; y<My; y++)
 	for (int z=0; z<Mz; z++){
 		i=jy*y+z;
@@ -162,7 +190,7 @@ void b_x(T *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 }
 
 template<typename T>
-void by(T *P, int Mx, int mmy, int Mz, int by1, int bym, int bz1, int bzm, int jx, int jy, bool corner)   {
+void by(T *P, int Mx, int mmy, int Mz, int by1, int bym, int bz1, int jx, int jy, bool corner)   {
 	int i, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	for (int x=0; x<Mx; x++)
 	for (int z=0; z<Mz; z++) {
@@ -170,14 +198,14 @@ void by(T *P, int Mx, int mmy, int Mz, int by1, int bym, int bz1, int bzm, int j
 		P[i]=P[jy_by1+i];
 		P[jy_mmy+i]=P[jy_bym+i];
 
-		if (corner) {
+ 		if (corner) {
 			if (z == 0) {
 				P[i]=P[jy_by1+i+bz1];
 				P[jy_mmy+i]=P[jy_bym+i+bz1];
 			}
 			if (z == Mz-1) {
-				P[i]=P[jy_by1+i+bzm];
-				P[jy_mmy+i]=P[jy_bym+i+bzm];
+				P[i]=P[jy_by1+i-bz1];
+				P[jy_mmy+i]=P[jy_bym+i-bz1];
 			}
 		}
 	}
@@ -195,8 +223,8 @@ void b_y(T *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 }
 
 template<typename T>
-void bz(T *P, int Mx, int My, int mmz, int bz1, int bzm, int bx1, int bxm, int jx, int jy, bool corner)   {
-	int jx_bxm=jx*bxm, bx1_jx=bx1*jx;
+void bz(T *P, int Mx, int My, int mmz, int bz1, int bzm, int bx1, int jx, int jy, bool corner)   {
+	int bx1_jx=bx1*jx;
 	int i;
 	for (int x=0; x<Mx; x++)
 	for (int y=0; y<My; y++) {
@@ -204,14 +232,14 @@ void bz(T *P, int Mx, int My, int mmz, int bz1, int bzm, int bx1, int bxm, int j
 		P[i]=P[i+bz1];
 		P[i+mmz]=P[i+bzm];
 
- 		if (corner) {
+  		if (corner) {
 			if (x == 0) {
 				P[i]=P[i+bz1+bx1_jx];
 				P[i+mmz]=P[i+bzm+bx1_jx];
 			}
 			if (x == Mx-1) {
-				P[i]=P[i+bz1+jx_bxm];
-				P[i+mmz]=P[i+bzm+jx_bxm];
+				P[i]=P[i+bz1-bx1_jx];
+				P[i+mmz]=P[i+bzm-bx1_jx];
 			}
 		}
 	}
@@ -230,9 +258,9 @@ void b_z(T *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 
 template <typename T>
 inline void SetBoundaries(T* P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz, bool corners) {
-  bx(P, Mx + 1, My + 2, Mz + 2, bx1, bxm, by1, bym, jx, jy, corners);
-  by(P, Mx + 2, My + 1, Mz + 2, by1, bym, bz1, bzm, jx, jy, corners);
-  bz(P, Mx + 2, My + 2, Mz + 1, bz1, bzm, bx1, bxm, jx, jy, corners);
+  bx(P, Mx + 1, My + 2, Mz + 2, bx1, bxm, by1, bz1, jx, jy, corners);
+  by(P, Mx + 2, My + 1, Mz + 2, by1, bym, bz1, jx, jy, corners);
+  bz(P, Mx + 2, My + 2, Mz + 1, bz1, bzm, bx1, jx, jy, corners);
 }
 
 template <typename T>

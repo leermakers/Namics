@@ -156,15 +156,13 @@ bool Mesodyn::mesodyn() {
 
     New[0]->SolveMesodyn(loader_callback, solver_callback);
 
-    Mol[0]->theta = components[0]->theta();
-    Mol[1]->theta = components[1]->theta();
-
-    norm_densities->execute();
+   // norm_densities->execute();
 
     //Somehow if stencil_full in combination with frozen segments gives wrong densities
-   // if (Lat.back()->stencil_full)
+    // Breaks periodic boundaries
+/*     if (Lat.back()->stencil_full)
       for (auto& all_components : components)
-        Times(all_components->rho.data(), all_components->rho.data(), Sys.back()->KSAM, system_size);
+        Times((Real*)all_components->rho, (Real*)all_components->rho, Sys.back()->KSAM, system_size); */
 
     order_parameter->execute();
 
@@ -231,7 +229,7 @@ Real* Mesodyn::solve_crank_nicolson() {
   for (auto& all_components : components) {
     all_components->rho.reinstate_previous_state();
     all_components->update_boundaries();
-    Times(all_components->rho.data(), all_components->rho.data(), Sys.back()->KSAM, system_size);
+  //  Times((Real*)all_components->rho, (Real*)all_components->rho, Sys.back()->KSAM, system_size);
   }
 
   for (auto& all_fluxes : fluxes)
@@ -304,6 +302,8 @@ int Mesodyn::initial_conditions() {
     Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev, seed);
   else
     Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev);  
+
+  cout << "Building neighborlists.." << endl;
 
   for (auto& index_of : combinations)
     if (Lat.back()->stencil_full) {

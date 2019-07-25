@@ -78,7 +78,7 @@ template <typename T>
 void TransferDataToHost(T*, T*, int);
 template <typename T>
 void TransferDataToDevice(T*, T*, int);
-__global__ void bx(Real*, int, int, int, int, int, int, int, int, bool);
+__global__ void bx(Real*, int, int, int, int, int, int, int, int, int, bool);
 __global__ void b_x(Real*, int, int, int, int, int, int, int);
 __global__ void by(Real*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_y(Real*, int, int, int, int, int, int, int);
@@ -168,15 +168,27 @@ struct reverse_minus_functor
         }
 };
 
-struct const_multiply_functor
+struct binary_norm_functor
 {
     const double a;
 
-    const_multiply_functor(double _a) : a(_a) {}
+    binary_norm_functor(double _a) : a(_a) {}
 
     __host__ __device__
         double operator()(const double& x, const double& y) const { 
             return a * x * y;
+        }
+};
+
+struct norm_functor
+{
+    const double a;
+
+    norm_functor(double _a) : a(_a) {}
+
+    __host__ __device__
+        double operator()(const double& x) const { 
+            return a * x;
         }
 };
 

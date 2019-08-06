@@ -50,6 +50,7 @@ System::~System()
 	{
 		free(H_beta);
 		free(H_BETA);
+		free(RATIO);
 	}
 #ifdef CUDA
   cudaFree(phitot);
@@ -105,9 +106,15 @@ void System::AllocateMemory()
 	if (constraintfields)
 	{
 		H_beta = (int *)malloc(M * sizeof(int));
+		RATIO = (Real *)malloc(M * sizeof(Real));
 		std::fill(H_beta,H_beta+M,0);
+		std::fill(RATIO,RATIO+M,0);
 		H_BETA = (Real *)malloc(M * sizeof(Real));
 		Lat[0]->FillMask(H_beta, px, py, pz, delta_inputfile);
+		if (phi_ratio.size()>0 ) {
+			int length=px.size();
+			for (int i=0; i<length; i++) RATIO[px[i]]=(phi_ratio[i]-1)/(phi_ratio[i]+1);
+		}
 	}
 #ifdef CUDA
 	phitot = (Real *)AllOnDev(M);
@@ -445,7 +452,8 @@ bool System::CheckInput(int start)
 				success = false;
 			};
 			if (ConstraintType == "delta")
-			{
+			{	
+				int n_deltas=0;	
 				if (GetValue("delta_range").size() > 0)
 				{
 					string s = GetValue("delta_range");
@@ -454,6 +462,7 @@ bool System::CheckInput(int start)
 					vector<string> coor;
 					In[0]->split(s, ';', sub);
 					int n_points = sub.size();
+					n_deltas=n_points;
 					for (int i = 0; i < n_points; i++)
 					{
 						set.clear();
@@ -553,8 +562,31 @@ bool System::CheckInput(int start)
 				}
 
 
-				phi_ratio=1.0;
-				if(GetValue("phi_ratio").size()>0){phi_ratio=In[0]->Get_Real(GetValue("phi_ratio"),1);}
+				
+				if (GetValue("phi_ratio").size() > 0)
+				{
+					string s = GetValue("phi_ratio");
+					vector<string> sub;
+					vector<string> set;
+					vector<string> coor;
+					In[0]->split(s, ';', sub);
+					int n_points = sub.size();
+
+					if(n_points == n_deltas && Lat[0]->gradients==1 && In[0]->MolList.size()==2){
+						for(int i=0; i<n_points; i++) {
+							phi_ratio.push_back(In[0]->Get_Real(sub[i],1));
+						}
+					
+						//Now phiratio is a M sized vector with different values at different deltas unlike before.
+						//Then phiratio can be read in solvescf and copied to g as YisAplusB for size of M
+					} else {
+						success=false;
+						cout << "Number of deltas and number of phi_ratios should be same and only works in 1 Gradient problems with two components" << endl;
+					}
+
+				}
+
+
 			}
 
 			//if (Mol[DeltaMolList[0]]->freedom=="restricted" || Mol[DeltaMolList[1]]->freedom=="restricted" ) {success =false;  cout <<"Molecule in list of delta_molecules has not freedom 'free'"<<endl; }

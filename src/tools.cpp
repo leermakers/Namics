@@ -39,7 +39,7 @@ void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int J
 __global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
 	int index = blockIdx.x*blockDim.x+threadIdx.x;
 
-	if (index < M-JX) {
+	if (index < M-JX and index > JX) {
 		Real gs_register = gs[index];
 
 		gs_register += gs_1[index-JZ];

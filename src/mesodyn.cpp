@@ -186,7 +186,7 @@ bool Mesodyn::mesodyn() {
   return true;
 }
 
-std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
+std::multimap<size_t, size_t> Mesodyn::generate_pairs(size_t N)
 {
     // Returns every combination in a set of size N, e.g.
     // 0,1 - 0,2 - 0,3 - 1,2 - 1,3 - 2,3
@@ -194,17 +194,20 @@ std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
     std::string bitmask(2, 1); // K leading 1's
     bitmask.resize(N, 0); // N-K trailing 0's
 
-    std::map<size_t, size_t> combinations;
+    using combimap = std::multimap<size_t, size_t>;
+    using combipair = combimap::value_type;
 
+    combimap combinations;
+
+    // print integers and permute bitmask
     do {
+        std::deque<size_t> index;
 
-      std::vector<size_t> index;
-
-      for (size_t i = 0; i < N; ++i) // [0..N-1] integers
-        if (bitmask[i]) index.emplace_back(i);
-
-      combinations[ index[0] ] = index[1];
-
+        for (size_t i = 0; i < N; ++i) // [0..N-1] integers
+        {
+            if (bitmask[i]) index.push_back(i);
+        }
+        combinations.insert(combipair(index.front(), index.back()));
     } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
 
     return combinations;
@@ -296,7 +299,7 @@ int Mesodyn::initial_conditions() {
   for (auto& density : densities)
     Mesodyn::components.emplace_back(make_shared<Component>(Lat[0], boundary, density));
 
-  std::map<size_t, size_t> combinations = generate_pairs(components.size());
+  std::multimap<size_t, size_t> combinations = generate_pairs(components.size());
 
   if (seed_specified == true)
     Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev, seed);
@@ -320,7 +323,7 @@ int Mesodyn::initial_conditions() {
   Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);
   Mesodyn::enforce_minimum_density = make_unique<Treat_as_zero>(components, treat_lower_than_as_zero);
 
-  norm_densities->execute();
+  //norm_densities->execute();
 
   return 0; 
 }

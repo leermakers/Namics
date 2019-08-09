@@ -107,7 +107,7 @@ private:
   stl::device_vector<Real> callback_densities;
   string read_filename;
   int initial_conditions();
-  std::map<size_t, size_t> generate_pairs(size_t);
+  std::multimap<size_t, size_t> generate_pairs(size_t);
   
 
   /* Helper class instances */

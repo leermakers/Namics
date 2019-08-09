@@ -20,7 +20,7 @@ class Lattice_object_collection_procedure {
 class Order_parameter : public Lattice_object_collection_procedure {
   public:
 
-    Order_parameter(vector< shared_ptr<IComponent> > components_, std::map<size_t, size_t> combinations_, Real boundaryless_volume_);
+    Order_parameter(vector< shared_ptr<IComponent> > components_, std::multimap<size_t, size_t> combinations_, Real boundaryless_volume_);
     ~Order_parameter() { }
 
     void execute() override;
@@ -30,7 +30,7 @@ class Order_parameter : public Lattice_object_collection_procedure {
     Real m_boundaryless_volume;
     Real m_order_parameter;
     std::vector< shared_ptr<IComponent> > m_components;
-    std::map<size_t, size_t> m_combinations;
+    std::multimap<size_t, size_t> m_combinations;
 };
 
 class Treat_as_zero : public Lattice_object_collection_procedure {

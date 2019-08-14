@@ -678,10 +678,10 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 	tolerance=super_tolerance;
 	cout << "super tolerance and super deltamax: " << super_tolerance << "\t" << super_deltamax << endl;
 	solver=diis;
-	    if (ets==-1 && etm==-1 && bm ==-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi search: ");
-	    if (ets>-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi Eq-to_solvent search: ");
-	    if (etm>-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi Eq-to_mu search: ");
-	    if (bm>-1) success=iterate_RF(x,1,iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi balance-membrane search: ");
+	    if (ets==-1 && etm==-1 && bm ==-1) success=iterate_RF(x,1,super_iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi search: ");
+	    if (ets>-1) success=iterate_RF(x,1,super_iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi Eq-to_solvent search: ");
+	    if (etm>-1) success=iterate_RF(x,1,super_iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi Eq-to_mu search: ");
+	    if (bm>-1) success=iterate_RF(x,1,super_iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi balance-membrane search: ");
 	//    success=iterate_DIIS(x,1,m,iterationlimit,super_tolerance,super_deltamax);
 	//success=iterate(x,1,super_iterationlimit,super_tolerance,super_deltamax,deltamin,false);	//iterate is called with just one iteration variable
 	if (bm>-1) super_tolerance /=10;

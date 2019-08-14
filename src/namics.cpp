@@ -46,6 +46,7 @@ void improperInput() {
 
 int main(int argc, char* argv[]) {
 	vector<string> args(argv, argv+argc);
+	vector<int>out_first_list;
 //Output error if no filename has been specified.
  	if (argc == 1) {
     		improperInput();
@@ -209,6 +210,7 @@ int main(int argc, char* argv[]) {
     		int n_etm = 0;
     		int n_target = 0;
     		int search_nr = -1, scan_nr = -1, target_nr = -1, ets_nr = -1, bm_nr=-1, etm_nr = -1;
+		
 
 // Create variate class instance and check inputs (reference above)
     		for (int k = 0; k < n_var; k++) {
@@ -335,6 +337,7 @@ int main(int argc, char* argv[]) {
 
 		int ii;
 		int n_out=0;
+		int first_size=0;
 		switch(TheEngine) {
 			case SCF:
 				// Prepare, catch errors for output class creation
@@ -345,6 +348,8 @@ int main(int argc, char* argv[]) {
 				// Create output class instance and check inputs (reference above)
     				for (int ii = 0; ii < n_out; ii++) {
       					Out.push_back(new Output(In, Lat, Seg,Sta,Rea, Mol, Sys, New, In[0]->OutputList[ii], ii, n_out));
+					first_size= out_first_list.size();
+					if (ii < first_size) Out[ii]->first=out_first_list[ii]; 
       					if (!Out[ii]->CheckInput(start)) {
         					cout << "input_error in output " << endl;
         					return 0;
@@ -456,8 +461,8 @@ int main(int argc, char* argv[]) {
    		}
 
 /******** Clear all class instances ********/
-
-    		for (int i = 0; i < n_out; i++) delete Out[i];
+		out_first_list.clear();
+    		for (int i = 0; i < n_out; i++) {out_first_list.push_back(Out[i]->first); delete Out[i]; }
 		    Out.clear();
    	 	  for (int i = 0; i < n_var; i++) delete Var[i];
     		Var.clear();

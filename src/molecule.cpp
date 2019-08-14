@@ -1516,7 +1516,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
 	if (theta==0) theta = Lat[0]->WeightedSum(phitot);
 	push("theta",theta);
-	Real thetaexc=theta-phibulk*Lat[0]->Accesible_volume;
+	Real thetaexc=theta-phibulk*Lat[0]->volume;
 	push("theta_exc",thetaexc);
 	push("n",n);
 	push("chainlength",chainlength);

@@ -952,7 +952,7 @@ if (debug) cout << "Moment in lattice " << endl;
 	for (int i = fjc; i<M; i++) {
 		cor = (i-fjc+0.5)/fjc; Result += pow(cor,n)*X[i]; 
 	}	
-	return Result;
+	return Result/fjc;
 }
 
 Real Lattice::WeightedSum(Real* X){

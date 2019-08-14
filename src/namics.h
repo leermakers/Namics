@@ -47,12 +47,14 @@ extern int DEBUG_BREAK;
 extern Real eps0;
 extern bool debug;
 
+
 //extern Real factor;
 #endif
 
 enum MoleculeType {monomer, linear, branched, dendrimer, comb, ring};
 enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};
 enum EngineType {SCF, CLENG, MESODYN, TENG};
+
 
 template<typename T>
   auto load_argument_value(vector<string> args, string argument, T t) -> decltype(t) {

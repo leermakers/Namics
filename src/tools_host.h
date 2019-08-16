@@ -395,7 +395,7 @@ void Boltzmann(Real *P, T *A, int M)   {
 	for (int i=0; i<M; i++) P[i]=exp(-A[i]);
 }
 
-template<typename T>
+template<typename T>	
 void AddGradSquare(T* EE, T* X, T* Y, T* Z, int M)    {
 	for (int i=0; i<M; i++) EE[i] += pow(X[i]-Y[i],2)+pow(Y[i]-Z[i],2);
 }

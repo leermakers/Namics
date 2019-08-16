@@ -31,6 +31,139 @@ __device__ void atomicAdd(Real* address, Real val)
 }
 #endif
 
+void Naive(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	naive<<<n_blocks,block_size>>>(gs, gs_1, G1, JX, JY, JZ, M);
+}
+
+/* __global__ void naive(Real *g_output, Real *g_input, Real* coeff, int JX, int JY, int JZ, int M)
+{
+	int index = blockIdx.x*blockDim.x+threadIdx.x;
+
+	if ( index < M) {
+		if( index < M-JX) {
+			g_output[index+JX] += g_input[index];
+			g_output[index] += g_input[index+JX];
+		}
+		if( index < M-JY) {
+			g_output[index+JY] += g_input[index]; 
+			g_output[index] += g_input[index+JY];
+		}
+		if( index < M-1) {
+			g_output[index+1] += g_input[index]; 
+			g_output[index] += g_input[index+1];
+		}
+
+		g_output[index]*=4.0;
+
+		if( index < M-JX-JY) {
+			g_output[index+JX+JY] += g_input[index];
+			g_output[index] += g_input[index+JX+JY];
+			g_output[index+JY] += g_input[index+JX];
+			g_output[index+JX] += g_input[index+JY];
+		}
+		if( index < M-JX-1) {
+			g_output[index+JX+1] += g_input[index];
+			g_output[index] += g_input[index+JX+1];
+		}
+		if( index < M-JX) {
+			g_output[index+JX] += g_input[index+1];
+			g_output[index+1] += g_input[index+JX];
+		}
+		if( index < M-JY-1) {
+			g_output[index+JY+1] += g_input[index];
+			g_output[index] += g_input[index+JY+1];
+		}
+		if( index < M-JY) {
+			g_output[index+JY] += g_input[index+1];
+			g_output[index+1] += g_input[index+JY];
+		}
+
+		g_output[index] *= 4.0;
+
+		if( index < M-JX-JY-1) {
+			g_output[index+JX+JY+1] += g_input[index];
+			g_output[index] += g_input[index+JX+JY+1];
+			g_output[index+JX+JY] += g_input[index+1];
+			g_output[index+1] += g_input[index+JX+JY];
+			g_output[index+JX+1] += g_input[index+JY];
+			g_output[index+JY] += g_input[index+JX+1];
+			g_output[index+JY+1] += g_input[index+JX];
+			g_output[index+JX] += g_input[index+JY+1];		
+		}			
+
+		g_output[index]/=152.0;
+
+		g_output[index]*=coeff[index];
+	}
+} */
+
+  __global__ void naive(Real *g_output, Real *g_input, Real* coeff, int JX, int JY, int JZ, int M)
+{
+	int index = blockIdx.x*blockDim.x+threadIdx.x;
+
+	if ( index < M) {
+		
+	Real gs_register = g_output[index];
+
+	if (index > JX) {
+
+		gs_register += g_input[index-JZ];
+		gs_register += g_input[index-JX];
+		gs_register += g_input[index-JY];
+	}
+
+	if (index < M-JX) {
+		gs_register += g_input[index+JZ];
+		gs_register += g_input[index+JY];
+		gs_register += g_input[index+JX];
+	}
+
+ 		gs_register *= 4.0;
+
+	if (index < M-(JX+JY) && index > (JX+JY)) {
+
+        gs_register += g_input[index-JY+JZ];
+        gs_register += g_input[index-JY-JZ];
+		gs_register += g_input[index-JY-JX];
+		gs_register += g_input[index-JY+JX];
+		gs_register += g_input[index+JY-JX];
+		gs_register += g_input[index+JY+JX];
+        gs_register += g_input[index+JY+JZ];
+        gs_register += g_input[index+JY-JZ];
+		gs_register += g_input[index+JX+JZ];
+        gs_register += g_input[index+JX-JZ];
+        gs_register += g_input[index-JX+JZ];
+        gs_register += g_input[index-JX-JZ];
+
+	}
+
+		gs_register *= 4.0;
+
+	if (index < M-(JX+JY+JZ) && index > (JX+JY+JZ)) {
+
+        gs_register += g_input[index-JY-JX+JZ];
+        gs_register += g_input[index-JY-JX-JZ];
+        
+        gs_register += g_input[index+JY-JX+JZ];
+        gs_register += g_input[index+JY-JX-JZ];
+        
+        gs_register += g_input[index+JY+JX+JZ];
+        gs_register += g_input[index+JY+JX-JZ];
+
+        gs_register += g_input[index-JY+JX+JZ];
+        gs_register += g_input[index-JY+JX-JZ];
+
+	}
+
+		gs_register /= 152.0; 
+
+		gs_register *= coeff[index];
+		g_output[index] = gs_register;
+	}
+}
+
+
 void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	propagate_gs_locality<<<n_blocks,block_size>>>(gs, gs_1, G1, JX, JY, JZ, M);

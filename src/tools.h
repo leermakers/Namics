@@ -26,6 +26,8 @@ extern const int block_size;
 
 __global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M);
 void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M);
+void Naive(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M);
+__global__ void naive(Real *g_output, Real *g_input, Real* coeff, int JX, int JY, int JZ, int M);
 __global__ void second_order_fd_stencil(Real *g_output, Real *g_input, Real coeff, const int dimx, const int dimy, const int dimz);
 void Second_order_fd_stencil(Real *g_output, Real *g_input, Real coeff, const int dimx, const int dimy, const int dimz);
 __global__ void xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci);

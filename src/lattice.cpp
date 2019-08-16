@@ -1558,6 +1558,9 @@ if (debug) cout <<" propagate in lattice " << endl;
 			}
 
 			if (stencil_full) {
+ 			#ifdef CUDA
+				Naive(gs, gs_1, G1, JX_, JY_, JZ, M);
+			#else 
 				Add(gs+JX_,gs_1,M-JX_); 
 				Add(gs,gs_1+JX_,M-JX_);
 				Add(gs+JY_,gs_1,M-JY_); 
@@ -1578,7 +1581,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 				Add(gs+JX_,gs_1+1,M-JX_); 
 				Add(gs+1,gs_1+JX_,M-JX_);
 				Add(gs+JY_+1,gs_1,M-JY_-1); 
-				Add(gs,gs_1+JY_+1,M-JX_-1);
+				Add(gs,gs_1+JY_+1,M-JY_-1);
 				Add(gs+JY_,gs_1+1,M-JY_); 
 				Add(gs+1,gs_1+JY_,M-JY_);				
 				if (lattice_type == "simple_cubic") {
@@ -1600,6 +1603,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 					Norm(gs,1.0/56.0,M);
 				}
 				Times(gs,gs,G1,M);
+		 	#endif
 			} else {
  			#ifdef CUDA
 				Propagate_gs_locality(gs, gs_1, G1, JX, JY, JZ, M);

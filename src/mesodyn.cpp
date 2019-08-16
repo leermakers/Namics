@@ -41,7 +41,7 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       D                                { initialize<Real>("diffusionconstant", 0.01) },
       dt                               { initialize<Real>("delta_t", 0.1) },
       mean                             { initialize<Real>("mean", 0.0) },
-      stddev                           { initialize<Real>("stddev", (2 * D * sqrt(dt) ) )},
+      stddev                           { initialize<Real>("stddev", sqrt(2 * D))},
       seed                             { initialize<Real>("seed", -12345.6789) },
       seed_specified                   { seed != -12345.6789 ? true : false },   
       timesteps                        { initialize<size_t>("timesteps", 100) },
@@ -179,6 +179,9 @@ bool Mesodyn::mesodyn() {
     if (adaptive_tolerance) {
       adapt_tolerance();
     }
+
+    //Zero(New.back()->xx, system_size);
+    
 
   } // time loop
 

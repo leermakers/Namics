@@ -58,7 +58,7 @@ private:
   const Real D; // diffusionconstant
   const Real dt;
   const Real mean; // mean of gaussian noise (should be 0)
-  const Real stddev; // stdev of gaussian noise (should be 1*D)
+  const Real variance; // stdev of gaussian noise (should be 1*D)
   const Real seed;  // seed of gaussian noise
   const bool seed_specified;
   const size_t timesteps; // length of the time evolution

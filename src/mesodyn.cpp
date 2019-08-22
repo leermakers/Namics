@@ -11,7 +11,7 @@ vector<string> Mesodyn::KEYS
     "diffusionconstant",
     "delta_t",
     "mean",
-    "stddev",
+    "variance",
     "seed",
     "timesteps",
     "timebetweensaves",
@@ -38,10 +38,10 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
 
       //Const-correct way of initializing member variables from file, see template in header file.
       //Initialization syntax: initialize<Datatype>("option", default_value);
-      D                                { initialize<Real>("diffusionconstant", 0.01) },
+      D                                { initialize<Real>("diffusionconstant", 0.1) },
       dt                               { initialize<Real>("delta_t", 0.1) },
       mean                             { initialize<Real>("mean", 0.0) },
-      stddev                           { initialize<Real>("stddev", sqrt(2 * D))},
+      variance                         { initialize<Real>("variance", 2*D)},
       seed                             { initialize<Real>("seed", -12345.6789) },
       seed_specified                   { seed != -12345.6789 ? true : false },   
       timesteps                        { initialize<size_t>("timesteps", 100) },
@@ -144,6 +144,9 @@ bool Mesodyn::mesodyn() {
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
+  Real grand_potential_average{0};
+  Norm_densities_relative relative_norm( Mol, components, Sys[0]->solvent );
+
   /**** Main MesoDyn time loop ****/
   for (t = 0; t < timesteps+1; t++) {
 
@@ -180,7 +183,30 @@ bool Mesodyn::mesodyn() {
       adapt_tolerance();
     }
 
-    //Zero(New.back()->xx, system_size);
+    grand_potential_average += Sys[0]->GetGrandPotential();
+
+    if (grand_cannonical and t > save_delay and t % grand_cannonical_time_average == 0 and Sys[0]->GetGrandPotential() > 0)
+    {
+      grand_potential_average /= grand_cannonical_time_average;
+      if (grand_potential_average > 0) {
+        norm_densities->adjust_theta(2, 20.0);
+        norm_densities->adjust_theta(0, -10.0);
+        norm_densities->adjust_theta(1, -10.0);
+      } else {
+        norm_densities->adjust_theta(2, -20.0);
+        norm_densities->adjust_theta(0, 10.0);
+        norm_densities->adjust_theta(1, 10.0);
+      }
+
+      norm_densities->execute();
+
+      grand_potential_average=0;
+
+      cout << Mol[2]->theta << endl;
+      cout << Sys.back()->GetGrandPotential() << endl;
+    }
+
+   // Zero(New.back()->xx, system_size);
     
 
   } // time loop
@@ -304,10 +330,15 @@ int Mesodyn::initial_conditions() {
 
   std::multimap<size_t, size_t> combinations = generate_pairs(components.size());
 
+  size_t stencil_size {
+    (Lat.back()->stencil_full ? static_cast<size_t>(26) : static_cast<size_t>(6))
+  };
+  
+
   if (seed_specified == true)
-    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev, seed);
+    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, variance, stencil_size, seed);
   else
-    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev);  
+    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, variance, stencil_size);  
 
   cout << "Building neighborlists.." << endl;
 
@@ -326,7 +357,7 @@ int Mesodyn::initial_conditions() {
   Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);
   Mesodyn::enforce_minimum_density = make_unique<Treat_as_zero>(components, treat_lower_than_as_zero);
 
-  //norm_densities->execute();
+  norm_densities->execute();
 
   return 0; 
 }
@@ -440,7 +471,7 @@ void Mesodyn::write_parameters() {
      Out[0]->push("diffusionconstant", D);
      Out[0]->push("seed", seed);
      Out[0]->push("mean", mean);
-     Out[0]->push("stddev", stddev);
+     Out[0]->push("variance", variance);
      Out[0]->push("delta_t", dt);
      Out[0]->push("cn_ratio", cn_ratio);
 

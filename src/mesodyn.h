@@ -65,6 +65,7 @@ private:
   const size_t save_delay; // wait for a number of timesteps before saving
   const size_t timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
   const Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
+  const size_t realizations;
   const Real treat_lower_than_as_zero;
   const bool adaptive_tolerance;
   Real adaptive_tolerance_modifier;

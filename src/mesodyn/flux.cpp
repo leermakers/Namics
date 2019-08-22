@@ -198,7 +198,7 @@ void Flux3D_extended_stencil::flux() {
 int Flux3D_extended_stencil::langevin_flux_forward(const Offset_map& offset_) {
   stl::transform(mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
   stl::transform(L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
-  stl::transform(t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-D));
+  stl::transform(t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D));
   stl::transform(J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::plus<Real>());
 
   return 0;
@@ -207,7 +207,7 @@ int Flux3D_extended_stencil::langevin_flux_forward(const Offset_map& offset_) {
 int Flux3D_extended_stencil::langevin_flux_backward(const Offset_map& offset_) {
   stl::transform(mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), reverse_minus_functor());
   stl::transform(L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
-  stl::transform(t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-D) );
+  stl::transform(t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D) );
   stl::transform(J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::minus<Real>());
 
   return 0;
@@ -222,7 +222,7 @@ int Flux1D::langevin_flux(const Offset_map& offset_) {
 
   stl::transform(mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
   stl::transform(L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
-  stl::transform(t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), binary_norm_functor(-D) );
+  stl::transform(t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), binary_norm_functor(-1.0/6.0*D) );
 
   stl::transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), stl::plus<Real>());
   stl::transform(J.available_neighbors[offset_]->begin(), J.available_neighbors[offset_]->end(), J_plus.available_sites->begin(), J.available_neighbors[offset_]->begin(), stl::minus<Real>());

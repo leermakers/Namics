@@ -48,6 +48,7 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       save_delay                       { initialize<size_t>("save_delay", 0) },
       timebetweensaves                 { initialize<size_t>("timebetweensaves", 1) },
       cn_ratio                         { initialize<Real>("cn_ratio", 0.5) },
+      realizations                     { initialize<size_t>("realizations", 1) },
       treat_lower_than_as_zero         { initialize<Real>("treat_lower_than_as_zero", New.back()->tolerance*0.1)},
       adaptive_tolerance               { initialize<bool>("adaptive_tolerance", 1)},
       adaptive_tolerance_modifier      { initialize<Real>("adaptive_tolerance_modifier", 100)},
@@ -149,66 +150,66 @@ bool Mesodyn::mesodyn() {
 
   /**** Main MesoDyn time loop ****/
   for (t = 0; t < timesteps+1; t++) {
+    for(size_t r = 0 ; r < realizations ; ++r) {
+      cout << "MESODYN: t = " << t << " / " << timesteps << endl;
 
-    cout << "MESODYN: t = " << t << " / " << timesteps << endl;
+      gaussian->generate(system_size);
 
-    gaussian->generate(system_size);
+      for (auto& all_fluxes : fluxes) all_fluxes->J.save_state();
+      for (auto& all_components : components) all_components->rho.save_state();
 
-    for (auto& all_fluxes : fluxes) all_fluxes->J.save_state();
-    for (auto& all_components : components) all_components->rho.save_state();
+      New[0]->SolveMesodyn(loader_callback, solver_callback);
 
-    New[0]->SolveMesodyn(loader_callback, solver_callback);
+      // norm_densities->execute();
 
-   // norm_densities->execute();
+      //Somehow if stencil_full in combination with frozen segments gives wrong densities
+      // Breaks periodic boundaries
+      /* if (Lat.back()->stencil_full)
+          for (auto& all_components : components)
+          Times((Real*)all_components->rho, (Real*)all_components->rho, Sys.back()->KSAM, system_size); */
 
-    //Somehow if stencil_full in combination with frozen segments gives wrong densities
-    // Breaks periodic boundaries
-/*     if (Lat.back()->stencil_full)
-      for (auto& all_components : components)
-        Times((Real*)all_components->rho, (Real*)all_components->rho, Sys.back()->KSAM, system_size); */
+      order_parameter->execute();
 
-    order_parameter->execute();
+      cout << "Order parameter: " << order_parameter->attach() << endl;
 
-    cout << "Order parameter: " << order_parameter->attach() << endl;
+      if (enable_sanity_check)
+        sanity_check();
 
-    if (enable_sanity_check)
-      sanity_check();
+      write_parameters();
 
-    write_parameters();
+      if (t > save_delay and t % timebetweensaves == 0)
+        write_profile();
 
-    if (t > save_delay and t % timebetweensaves == 0)
-      write_profile();
-
-    if (adaptive_tolerance) {
-      adapt_tolerance();
-    }
-
-    grand_potential_average += Sys[0]->GetGrandPotential();
-
-    if (grand_cannonical and t > save_delay and t % grand_cannonical_time_average == 0 and Sys[0]->GetGrandPotential() > 0)
-    {
-      grand_potential_average /= grand_cannonical_time_average;
-      if (grand_potential_average > 0) {
-        norm_densities->adjust_theta(2, 20.0);
-        norm_densities->adjust_theta(0, -10.0);
-        norm_densities->adjust_theta(1, -10.0);
-      } else {
-        norm_densities->adjust_theta(2, -20.0);
-        norm_densities->adjust_theta(0, 10.0);
-        norm_densities->adjust_theta(1, 10.0);
+      if (adaptive_tolerance) {
+        adapt_tolerance();
       }
 
-      norm_densities->execute();
+      grand_potential_average += Sys[0]->GetGrandPotential();
 
-      grand_potential_average=0;
+      if (grand_cannonical and t > save_delay and t % grand_cannonical_time_average == 0 and Sys[0]->GetGrandPotential() > 0)
+      {
+        grand_potential_average /= grand_cannonical_time_average;
+        if (grand_potential_average > 0) {
+          norm_densities->adjust_theta(2, 20.0);
+          norm_densities->adjust_theta(0, -10.0);
+          norm_densities->adjust_theta(1, -10.0);
+        } else {
+          norm_densities->adjust_theta(2, -20.0);
+          norm_densities->adjust_theta(0, 10.0);
+          norm_densities->adjust_theta(1, 10.0);
+        }
 
-      cout << Mol[2]->theta << endl;
-      cout << Sys.back()->GetGrandPotential() << endl;
-    }
+        norm_densities->execute();
 
-   // Zero(New.back()->xx, system_size);
+        grand_potential_average=0;
+
+        cout << Mol[2]->theta << endl;
+        cout << Sys.back()->GetGrandPotential() << endl;
+      }
+
+      // Zero(New.back()->xx, system_size);
     
-
+    }
   } // time loop
 
   std::cout << "Done." << std::endl;

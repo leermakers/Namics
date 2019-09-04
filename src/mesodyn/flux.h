@@ -7,13 +7,13 @@
 #include "lattice_object.h"
 #include "neighborlist.h"
 #include "component.h"
-#include "gaussian_noise.h"
+#include "perturbation.h"
 #include "lattice_accessor.h"
 
 class IFlux;
 
 namespace Flux {
-  typedef Factory_template<IFlux, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> Factory;
+  typedef Factory_template<IFlux, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>> Factory;
 }
 
 class IFlux {
@@ -34,7 +34,7 @@ class IFlux {
 
 class ILangevin_flux : public IFlux {
   public:
-    ILangevin_flux(Lattice*, Real, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
+    ILangevin_flux(Lattice*, Real, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>);
 
   protected:
     int onsager_coefficient(Lattice_object<Real>&, Lattice_object<Real>&);
@@ -44,12 +44,12 @@ class ILangevin_flux : public IFlux {
     Lattice_object<Real> mu;
 
     const Real D;
-    shared_ptr<Gaussian_noise> gaussian;
+    std::vector<shared_ptr<IPerturbation>> perturbation;
 };
 
 class Flux1D : public ILangevin_flux {
 public:
-  Flux1D(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
+  Flux1D(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>);
   virtual ~Flux1D();
 
   virtual void flux() override;
@@ -74,7 +74,7 @@ private:
 
 class Flux2D : public Flux1D {
 public:
-  Flux2D(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
+  Flux2D(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>);
   virtual ~Flux2D();
 
   virtual void flux() override;
@@ -85,7 +85,7 @@ private:
 
 class Flux3D : public Flux2D {
 public:
-  Flux3D(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
+  Flux3D(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>);
   ~Flux3D();
 
   virtual void flux() override;
@@ -96,7 +96,7 @@ private:
 
 class Flux3D_extended_stencil : public ILangevin_flux {
 public:
-  Flux3D_extended_stencil(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>);
+  Flux3D_extended_stencil(Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>);
   ~Flux3D_extended_stencil();
 
   virtual void flux() override;

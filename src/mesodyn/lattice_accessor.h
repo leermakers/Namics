@@ -1,17 +1,61 @@
 #ifndef LATTICE_ACCESSOR_H
 #define LATTICE_ACCESSOR_H
 
+#include "stl_typedef.h"
+
 #include <unistd.h> //size_t
 #include <map>
 #include <functional>
+#include <sstream>
+#include <vector>
 
 class Lattice;
+class Lattice_accessor;
 
 enum class Dimension {
         X,
         Y,
         Z,
         ALL
+};
+
+class Coordinate {
+  public:
+    Coordinate(std::string in);
+    Coordinate(size_t x, size_t y, size_t z);
+    Coordinate() {};
+    ~Coordinate() {};
+
+    friend std::istringstream & operator >> (std::istringstream &in,  Coordinate &coordinate);
+    friend std::ostream & operator << (std::ostream& out,  const Coordinate &coordinate_class) ;
+    size_t& operator [] (Dimension d);
+    size_t operator [] (Dimension d) const;
+    size_t at(Dimension d);
+
+  private:
+    void tokens_to_map(std::vector<std::string>& tokens);
+    std::map<Dimension, size_t> m_coordinate;
+};
+
+class Range {
+  public:
+    Range(const std::string& in);
+    Range(const Coordinate& low, const Coordinate& high);
+    Range() {};
+    ~Range();
+
+    void loop(std::function<void(size_t, size_t, size_t)> function) noexcept;
+    const stl::device_vector<size_t>& get_indices(const Lattice_accessor& geometry_);
+    
+    friend std::istringstream & operator >> (std::istringstream &in,  Range &range);
+    friend std::ostream & operator << (std::ostream& out,  const Range &range_class) ;
+
+    size_t size();
+
+  private:
+    stl::device_vector<size_t> m_indices;
+    Coordinate m_low;
+    Coordinate m_high;
 };
 
 enum Dimensionality {
@@ -37,7 +81,6 @@ class external_const {
 class Lattice_accessor {
     static constexpr uint8_t SYSTEM_EDGE_OFFSET = 1;
     static constexpr uint8_t BOUNDARIES = 2;
-    typedef std::map<Dimension, size_t> Coordinate;
 
   public:
     Lattice_accessor(const Lattice* Lat);

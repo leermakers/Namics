@@ -6,7 +6,8 @@
 vector<string> Mesodyn::PARAMETERS;
 vector<string> Mesodyn::VALUES;
 vector<string> Mesodyn::KEYS
-{   "read_pro",
+{
+    "read_pro",
     "read_vtk",
     "diffusionconstant",
     "delta_t",
@@ -15,9 +16,15 @@ vector<string> Mesodyn::KEYS
     "seed",
     "timesteps",
     "timebetweensaves",
+    "perturb_interval",
     "save_delay",
     "cn_ratio",
+    "realizations",
     "sanity_check",
+    "perturb_type",
+    "perturb_range",
+    "sine_wavelength",
+    "perturb_amplitude",
     "profile_type",
     "write_grand_potential",
     "write_free_energy",
@@ -47,6 +54,11 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       timesteps                        { initialize<size_t>("timesteps", 100) },
       save_delay                       { initialize<size_t>("save_delay", 0) },
       timebetweensaves                 { initialize<size_t>("timebetweensaves", 1) },
+      perturb_interval                 { initialize<size_t>("perturb_interval", 1) },
+      perturb_range                    { initialize<Range>("perturb_range", Range()) },
+      sine_wavelength                   { initialize<Real>("sine_wavelength", 0.0) },
+      perturb_amplitude                { initialize<Real>("perturb_amplitude", 0.0) },
+      perturbation_type                { initialize<string>("perturb_type", "")},
       cn_ratio                         { initialize<Real>("cn_ratio", 0.5) },
       realizations                     { initialize<size_t>("realizations", 1) },
       treat_lower_than_as_zero         { initialize<Real>("treat_lower_than_as_zero", New.back()->tolerance*0.1)},
@@ -145,15 +157,27 @@ bool Mesodyn::mesodyn() {
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
-  Real grand_potential_average{0};
   Norm_densities_relative relative_norm( Mol, components, Sys[0]->solvent );
 
   /**** Main MesoDyn time loop ****/
-  for (t = 0; t < timesteps+1; t++) {
-    for(size_t r = 0 ; r < realizations ; ++r) {
-      cout << "MESODYN: t = " << t << " / " << timesteps << endl;
+  for (t = 1; t < timesteps+1; t++) {
+    for (size_t r = 0 ; r < realizations; t % timebetweensaves == 0 ? ++r : r = realizations) {
+      cout << "MESODYN: t = " << t << " / " << timesteps;
 
-      gaussian->generate(system_size);
+      if (realizations > 1 and r != 0) {
+        for (auto& all_fluxes : fluxes) all_fluxes->J.reinstate_previous_state();
+        for (auto& all_components : components) all_components->rho.reinstate_previous_state();
+      }
+
+      if (t % timebetweensaves == 0 and realizations != 1)
+        cout << " realization: " << r+1 << " / " << realizations;
+
+      cout << endl;
+
+      if (perturb_interval != 0)
+        if (t % perturb_interval == 0)
+          for (auto& perturbation : perturbations)
+            perturbation->next();
 
       for (auto& all_fluxes : fluxes) all_fluxes->J.save_state();
       for (auto& all_components : components) all_components->rho.save_state();
@@ -184,30 +208,7 @@ bool Mesodyn::mesodyn() {
         adapt_tolerance();
       }
 
-      grand_potential_average += Sys[0]->GetGrandPotential();
-
-      if (grand_cannonical and t > save_delay and t % grand_cannonical_time_average == 0 and Sys[0]->GetGrandPotential() > 0)
-      {
-        grand_potential_average /= grand_cannonical_time_average;
-        if (grand_potential_average > 0) {
-          norm_densities->adjust_theta(2, 20.0);
-          norm_densities->adjust_theta(0, -10.0);
-          norm_densities->adjust_theta(1, -10.0);
-        } else {
-          norm_densities->adjust_theta(2, -20.0);
-          norm_densities->adjust_theta(0, 10.0);
-          norm_densities->adjust_theta(1, 10.0);
-        }
-
-        norm_densities->execute();
-
-        grand_potential_average=0;
-
-        cout << Mol[2]->theta << endl;
-        cout << Sys.back()->GetGrandPotential() << endl;
-      }
-
-      // Zero(New.back()->xx, system_size);
+       Zero(New.back()->xx, system_size);
     
     }
   } // time loop
@@ -334,24 +335,30 @@ int Mesodyn::initial_conditions() {
   size_t stencil_size {
     (Lat.back()->stencil_full ? static_cast<size_t>(26) : static_cast<size_t>(6))
   };
-  
 
   if (seed_specified == true)
-    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, variance, stencil_size, seed);
+    Mesodyn::gaussian = make_shared<Gaussian_noise>(mean, variance, stencil_size, seed);
   else
-    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, variance, stencil_size);  
+    Mesodyn::gaussian = make_shared<Gaussian_noise>(mean, variance, stencil_size);
+
+  Range full_system(Coordinate(0,0,0), Coordinate(MX+2,MY+2,MZ+2));
+  perturbations.emplace_back( make_shared<Gaussian_perturbation>(full_system, gaussian) );
+  perturbations.back()->next();
+
+  if (not perturbation_type.empty())
+    perturbations.emplace_back(Perturbation::Factory::Create(perturbation_type, perturb_range, perturb_amplitude, sine_wavelength));
 
   cout << "Building neighborlists.." << endl;
 
   for (auto& index_of : combinations)
     if (Lat.back()->stencil_full) {
       assert (three_D == dimensionality and "Full stencil is only supported in 3D when using mesodyn.");
-      Mesodyn::fluxes.emplace_back(make_shared<Flux3D_extended_stencil>(Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
+      Mesodyn::fluxes.emplace_back(make_shared<Flux3D_extended_stencil>(Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], perturbations));
     }
     else {
    // if (Seg[index_of.first]->freedom != "frozen" and Seg[index_of.second]->freedom != "frozen")
       Mesodyn::fluxes.emplace_back(
-        Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
+        Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], perturbations));
     }
 
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);

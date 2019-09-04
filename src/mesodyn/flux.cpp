@@ -1,17 +1,17 @@
 #include "flux.h"
 
-Register_class<IFlux, Flux1D, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_one_dimensions(one_D);
-Register_class<IFlux, Flux2D, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_two_dimensions(two_D);
-Register_class<IFlux, Flux3D, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, shared_ptr<Gaussian_noise>> flux_three_dimensions(three_D);
+Register_class<IFlux, Flux1D, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>> flux_one_dimensions(one_D);
+Register_class<IFlux, Flux2D, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>> flux_two_dimensions(two_D);
+Register_class<IFlux, Flux3D, Dimensionality, Lattice*, Real, const Lattice_object<size_t>&, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>> flux_three_dimensions(three_D);
 
 IFlux::IFlux(Lattice* lat_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_)
     : J(lat_), m_lat{lat_}, component_a{A_}, component_b{B_} { }
 
-ILangevin_flux::ILangevin_flux(Lattice* Lat, Real D_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_, shared_ptr<Gaussian_noise> gaussian_)
-    : IFlux(Lat, A_, B_), L(Lat), mu(Lat), D{D_}, gaussian(gaussian_) { }
+ILangevin_flux::ILangevin_flux(Lattice* Lat, Real D_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_, std::vector<shared_ptr<IPerturbation>> perturbation_)
+    : IFlux(Lat, A_, B_), L(Lat), mu(Lat), D{D_}, perturbation(perturbation_) { }
 
-Flux1D::Flux1D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
-    : ILangevin_flux(Lat, D, A, B, gaussian), J_plus(Lat),  t_L(Lat), t_mu(Lat)
+Flux1D::Flux1D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, std::vector<shared_ptr<IPerturbation>> perturbation)
+    : ILangevin_flux(Lat, D, A, B, perturbation), J_plus(Lat),  t_L(Lat), t_mu(Lat)
 {
   Neighborlist_config configuration {
     Dimension::X,
@@ -27,8 +27,8 @@ Flux1D::Flux1D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_
   attach_neighborlists(x_neighborlist, offset);
 }
 
-Flux2D::Flux2D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
-    : Flux1D(Lat, D, mask, A, B, gaussian)
+Flux2D::Flux2D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, std::vector<shared_ptr<IPerturbation>> perturbation)
+    : Flux1D(Lat, D, mask, A, B, perturbation)
 {
 
   Neighborlist_config configuration {
@@ -45,8 +45,8 @@ Flux2D::Flux2D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_
   attach_neighborlists(y_neighborlist, offset);
 }
 
-Flux3D::Flux3D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
-    : Flux2D(Lat, D, mask, A, B, gaussian)
+Flux3D::Flux3D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, std::vector<shared_ptr<IPerturbation>> perturbation)
+    : Flux2D(Lat, D, mask, A, B, perturbation)
 {
   
   Neighborlist_config configuration {
@@ -64,8 +64,8 @@ Flux3D::Flux3D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_
   attach_neighborlists(z_neighborlist, offset);
 }
 
-Flux3D_extended_stencil::Flux3D_extended_stencil(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, shared_ptr<Gaussian_noise> gaussian)
-    : ILangevin_flux(Lat, D, A, B, gaussian), t_L(Lat), t_mu(Lat), t_J(Lat)
+Flux3D_extended_stencil::Flux3D_extended_stencil(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, std::vector<shared_ptr<IPerturbation>> perturbation)
+    : ILangevin_flux(Lat, D, A, B, perturbation), t_L(Lat), t_mu(Lat), t_J(Lat)
 {
   for (short x = -1 ; x < 2 ; ++x)
     for ( short y = -1 ; y < 2 ; ++y )
@@ -132,7 +132,8 @@ int ILangevin_flux::potential_difference(Lattice_object<Real>& A, Lattice_object
 
   stl::transform(A.begin(), A.end(), B.begin(), mu.begin(), stl::minus<Real>());
 
-  gaussian->add_noise(mu);
+  for (auto& all_perturbations : perturbation)
+    all_perturbations->perturb(mu);
 
   m_lat->set_bounds((Real*)mu);
 

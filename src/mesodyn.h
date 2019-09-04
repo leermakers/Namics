@@ -26,6 +26,7 @@
 #include "mesodyn/component.h"
 #include "mesodyn/flux.h"
 #include "mesodyn/collection_procedures.h"
+#include "mesodyn/perturbation.h"
 
 #ifdef PAR_MESODYN
 #include <thrust/device_vector.h>
@@ -64,6 +65,11 @@ private:
   const size_t timesteps; // length of the time evolution
   const size_t save_delay; // wait for a number of timesteps before saving
   const size_t timebetweensaves; // how many timesteps before mesodyn writes the current variables to file
+  const size_t perturb_interval;
+  const Range perturb_range;
+  const Real sine_wavelength;
+  const Real perturb_amplitude;
+  const std::string perturbation_type;
   const Real cn_ratio; // how much of the old J gets mixed in the crank-nicolson scheme
   const size_t realizations;
   const Real treat_lower_than_as_zero;
@@ -115,6 +121,7 @@ private:
   vector< shared_ptr<IComponent> > components;
   shared_ptr<Gaussian_noise> gaussian;
   vector< shared_ptr<IFlux> > fluxes;
+  vector< shared_ptr<IPerturbation> > perturbations;
 
   /* Mesodyn specific output */
   ostringstream filename;

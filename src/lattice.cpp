@@ -1558,9 +1558,9 @@ if (debug) cout <<" propagate in lattice " << endl;
 			}
 
 			if (stencil_full) {
- 			#ifdef CUDA
+ 		/* 	#ifdef CUDA
 				Naive(gs, gs_1, G1, JX_, JY_, JZ, M);
-			#else 
+			#else  */
 				Add(gs+JX_,gs_1,M-JX_); 
 				Add(gs,gs_1+JX_,M-JX_);
 				Add(gs+JY_,gs_1,M-JY_); 
@@ -1603,11 +1603,11 @@ if (debug) cout <<" propagate in lattice " << endl;
 					Norm(gs,1.0/56.0,M);
 				}
 				Times(gs,gs,G1,M);
-		 	#endif
+		 	/* #endif */
 			} else {
- 			#ifdef CUDA
+/*  			#ifdef CUDA
 				Propagate_gs_locality(gs, gs_1, G1, JX, JY, JZ, M);
-			#else
+			#else */
 				Add(gs+JX_,gs_1,M-JX_); 
 				Add(gs,gs_1+JX_,M-JX_);
 				Add(gs+JY_,gs_1,M-JY_); 
@@ -1616,7 +1616,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 				Add(gs,gs_1+1, M-1);
 				Norm(gs,1.0/6.0,M);
 				Times(gs,gs,G1,M);		
-			#endif
+//			#endif
 			}
 			break;
 		default:

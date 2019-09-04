@@ -106,22 +106,34 @@ void load_array(T* data, size_t size)
       #endif
     }
 
-
- const T operator()(size_t x, size_t y, size_t z) {
-      #ifdef PAR_MESODYN
-      return m_data[index(x,y,z)];
-      #else
-      try {
-        return m_data.at(index(x,y,z));
-      } catch (const std::out_of_range& oor) {
-        std::cerr << "Out of Range error in Lattice_object: " << oor.what() << '\n';
-        exit(0);
-      }
-      #endif
+T& operator()(size_t x, size_t y, size_t z) {
+    #ifdef PAR_MESODYN
+    return m_data[index(x,y,z)];
+    #else
+    try {
+      return m_data.at(index(x,y,z));
+    } catch (const std::out_of_range& oor) {
+      std::cerr << "Out of Range error in Lattice_object: " << oor.what() << '\n';
+      exit(0);
     }
+    #endif
+  }
+
+const T operator()(size_t x, size_t y, size_t z) const {
+    #ifdef PAR_MESODYN
+    return m_data[index(x,y,z)];
+    #else
+    try {
+      return m_data.at(index(x,y,z));
+    } catch (const std::out_of_range& oor) {
+      std::cerr << "Out of Range error in Lattice_object: " << oor.what() << '\n';
+      exit(0);
+    }
+    #endif
+  }
 
 
-T& operator[](T x) {
+T& operator[](size_t x) {
       #ifdef PAR_MESODYN
       return m_data[x];
       #else

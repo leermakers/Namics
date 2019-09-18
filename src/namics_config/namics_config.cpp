@@ -225,16 +225,6 @@ bool NamicsConfig::initCleng(
         ) {
     bool success = true;
 
-    // Prepare, catch errors for output class creation
-    int n_out = In[0]->OutputList.size();
-    if (n_out == 0) cout << "Warning: no output defined!" << endl;
-
-    // Create output class instance and check inputs (reference above)
-    for (int ii = 0; ii < n_out; ii++) {
-        success = createOutClass(start, ii, n_out);
-        if (!success) return success;
-    }
-
     New[0]->AllocateMemory();
     New[0]->Guess(X, METHOD, std::move(MONLIST), std::move(STATELIST), CHARGED, MX, MY, MZ, fjc_old);
     if (!debug) cout << "Creating Cleng module" << endl;

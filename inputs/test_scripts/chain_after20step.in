@@ -30,7 +30,7 @@ newton : isaac : e_info : false
 newton : isaac : iterationlimit : 7000
 newton : isaac : tolerance : 1e-7
 
-out_info : folder : path : data_chain_after20step
+out_info : folder : path : data
 
 output : kal : append : true
 kal : output : variable : MC_attempt

@@ -30,7 +30,7 @@ newton : isaac : e_info : false
 newton : isaac : iterationlimit : 7000
 newton : isaac : tolerance : 1e-7
 
-out_info : folder : path : data_chain_go_along_axis1
+out_info : folder : path : data
 
 output : vtk : append : false
 vtk : mol : pol : phi

@@ -16,6 +16,7 @@
 #include <cassert>
 #include <fstream>
 #include <utility>
+#include <chrono>
 // features
 #include "nodes/simple_node.h"
 #include "nodes/monolit.h"
@@ -44,8 +45,8 @@ private:
 
     int cmajor_version = 1;
     int cminor_version = 2;
-    int cpatch = 1;
-    int cversion = 103;
+    int cpatch = 2;
+    int cversion = 110;
     int pseed;
 
     void fillXYZ();
@@ -93,8 +94,12 @@ public:
     Real n_times_mu;
     string sign_move;
     bool cleng_pos;
+    bool cleng_dis;
     bool two_ends_extension;
     vector<int> ids_node4move;
+    vector<int> ids_node4fix;
+    std::chrono::steady_clock::time_point begin_simulation;
+    std::chrono::steady_clock::time_point end_simulation;
     int MCS_checkpoint = 0;
     bool loaded = false;
     string save_filename;
@@ -114,7 +119,7 @@ public:
 
     ofstream out;
     Point clamped_move;
-    int id_node_for_move;
+    int id_node_for_move=0;
     Real free_energy_current;
     Real free_energy_trial;
 
@@ -146,9 +151,13 @@ public:
 
     void WriteClampedNodeDistance();
 
+    void WriteClampedNodePosition();
+
     void make_BC();
 
     int getLastMCS();
+
+    void update_ids_node4move();
 
     Point prepareMove();
 

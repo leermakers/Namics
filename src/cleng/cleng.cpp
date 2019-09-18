@@ -32,6 +32,7 @@ Cleng::Cleng(
     KEYS.emplace_back("checkpoint_save");
     KEYS.emplace_back("checkpoint_load");
     KEYS.emplace_back("cleng_pos");
+    KEYS.emplace_back("cleng_dis");
     KEYS.emplace_back("simultaneous");
     KEYS.emplace_back("movement_along");
     KEYS.emplace_back("sign_move");
@@ -126,6 +127,11 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         else cleng_pos = false;
         if (debug) cout << "cleng_pos " << cleng_pos << endl;
 
+        // saving distance between of nodes_map
+        if (!GetValue("cleng_dis").empty()) {cleng_dis = In[0]->Get_bool(GetValue("cleng_dis"), false);}
+        else cleng_dis = false;
+        if (debug) cout << "cleng_dis " << cleng_dis << endl;
+
         // simultaneous
         if (!GetValue("simultaneous").empty()) simultaneous = In[0]->Get_bool(GetValue("simultaneous"), false);
         else simultaneous = false;
@@ -163,14 +169,30 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         if (!GetValue("user_node_id_move").empty()) {
             success = In[0]->Get_string(GetValue("user_node_id_move"), struser_node_move_id, "");
             string node_id;
+            string _ ;
             stringstream stream(struser_node_move_id);
             while( getline(stream, node_id, ',') ) {
-                try { ids_node4move.push_back(stoi(node_id)); }
-                catch (invalid_argument& e) {success = false; cout << "Check yours node id structure" << endl; return success;}
+                if (node_id[0] == '~') {
+                    _ = node_id.erase(0,1);
+                    try { ids_node4fix.push_back(stoi(_)); }
+                    catch (invalid_argument &e) {
+                        success = false;
+                        cout << "Check yours node id structure" << endl;
+                        return success;
+                    }
+                } else {
+                    try { ids_node4move.push_back(stoi(node_id)); }
+                    catch (invalid_argument &e) {
+                        success = false;
+                        cout << "Check yours node id structure" << endl;
+                        return success;
+                    }
+                }
             }
         }
         else ids_node4move = {-1};
-        if (debug) for (auto &&id:ids_node4move) cout << "user_node_id_move " << id << endl;
+        if (!debug) for (auto &&id:ids_node4move) cout << "user_node_id_move " << id << endl;
+        if (!debug) for (auto &&id:ids_node4fix)  cout << "user_node_id_fix "  << id << endl;
 
         // 2 end extension mode
         if (!GetValue("two_ends_extension").empty()) {two_ends_extension = In[0]->Get_bool(GetValue("two_ends_extension"), false);}
@@ -219,9 +241,21 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         filename = In[0]->output_info.getOutputPath() + sub[0];
 
         cout << cmajor_version << "." << cminor_version << "." << cpatch << " v." << cversion << endl;
+        begin_simulation = std::chrono::steady_clock::now();
         success = MonteCarlo(save_vector);
     }
     return success;
+}
+
+void Cleng::update_ids_node4move() {
+    vector<int> _ = ids_node4move;
+    if (!ids_node4fix.empty()) {
+        ids_node4move.clear();
+        for (auto const &n_: nodes_map) {
+            bool exists = any_of(begin(ids_node4fix), end(ids_node4fix), [&](int i) { return i == n_.first; });
+            if (!exists) ids_node4move.push_back(n_.first);
+        }
+    }
 }
 
 bool Cleng::CP(transfer tofrom) {
@@ -400,6 +434,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
             CP(to_segment);
             if (getLastMCS() != 0) MCS_checkpoint = getLastMCS() + 1;
             loaded = true;
+            update_ids_node4move();
         }
     }
 
@@ -426,6 +461,8 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
 // init save
     WriteOutput();
+    if (cleng_dis) WriteClampedNodeDistance();
+    if (cleng_pos) WriteClampedNodePosition();
 
 #ifdef CLENG_EXPERIMENTAL
     vector<Real>vtk = prepare_vtk();
@@ -437,6 +474,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
 #endif
 
     cout << "Initialization done.\n" << endl;
+    update_ids_node4move();
     cout << "Here we go..." << endl;
     bool success_;
     for (MC_attempt = 1; MC_attempt <= MCS; MC_attempt++) { // main loop for trials
@@ -507,6 +545,8 @@ bool Cleng::MonteCarlo(bool save_vector) {
 #endif
         if (((MC_attempt + MCS_checkpoint) % delta_save) == 0) WriteOutput();
         if (checkpoint_save) checkpoint.updateCheckpoint(simpleNodeList);
+        if (cleng_dis) WriteClampedNodeDistance();
+        if (cleng_pos) WriteClampedNodePosition();
         if (cleng_flag_termination) break;
     }
 
@@ -515,6 +555,11 @@ bool Cleng::MonteCarlo(bool save_vector) {
     cout << "Monte Carlo attempts: " << MC_attempt << endl;
     cout << "Accepted: # " << accepted << " | " << 100 * (accepted / (MC_attempt-1)) << "%" << endl;
     cout << "Rejected: # " << rejected << " | " << 100 * (rejected / (MC_attempt-1)) << "%" << endl;
+
+    end_simulation= std::chrono::steady_clock::now();
+    std::cout << "# It took (s) = " << std::chrono::duration_cast<std::chrono::seconds> (end_simulation - begin_simulation).count() <<
+    " or (m) = " << std::chrono::duration_cast<std::chrono::minutes> (end_simulation - begin_simulation).count() <<
+    " or (h) = " << std::chrono::duration_cast<std::chrono::hours> (end_simulation - begin_simulation).count() << std::endl;
 
     cout << "Have a fun. " << endl;
     return success;

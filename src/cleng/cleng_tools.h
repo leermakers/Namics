@@ -231,7 +231,6 @@ void Cleng::WriteOutput() {
     PushOutput();
     New[0]->PushOutput();
     for (int i = 0; i < n_out; i++) Out[i]->WriteOutput(MC_attempt + MCS_checkpoint);
-    if (cleng_pos) WriteClampedNodeDistance();
 }
 
 void Cleng::PushOutput() {
@@ -315,11 +314,33 @@ void Cleng::WriteClampedNodeDistance() {
     }
 
     ofstream outfile;
-    outfile.open(filename + ".cpos", std::ios_base::app);
+    outfile.open(filename + ".cdis", std::ios_base::app);
     outfile << MC_attempt + MCS_checkpoint << " ";
     for (auto n : distPerMC)outfile << n << " ";
     outfile << endl;
 }
+
+void Cleng::WriteClampedNodePosition() {
+
+    ofstream outfile;
+    outfile.open(filename + ".cpos", std::ios_base::app);
+
+//    cout
+    outfile
+    << "#step " << MC_attempt + MCS_checkpoint << " {X, Y, Z} #" << endl;
+
+    int i = 0;
+    for (auto &&SN :  simpleNodeList) {
+        if (!(i % 2)) {
+//            cout
+            outfile
+//            << SN->get_system_point().to_string() << SN->get_cnode()->get_system_point().to_string() << endl;
+            << SN->get_system_point().to_string() << endl;
+        }
+        i++;
+    }
+}
+
 
 Real Cleng::GetN_times_mu() {
     int n_mol = (int) In[0]->MolList.size();

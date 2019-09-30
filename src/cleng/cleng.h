@@ -45,7 +45,7 @@ private:
 
     int cmajor_version = 1;
     int cminor_version = 2;
-    int cpatch = 2;
+    int cpatch = 3;
     int cversion = 110;
     int pseed;
 

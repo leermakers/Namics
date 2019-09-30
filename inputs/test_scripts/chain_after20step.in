@@ -32,6 +32,9 @@ newton : isaac : tolerance : 1e-7
 
 out_info : folder : path : data
 
+output : vtk : append : false
+vtk : mol : pol : phi
+
 output : kal : append : true
 kal : output : variable : MC_attempt
 kal : output : variable : free_energy

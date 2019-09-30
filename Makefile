@@ -26,7 +26,7 @@ LIB         := -lm -lpthread -lgomp
 INC         := -I/usr/local/include -I/usr/include
 
 ifdef CLENG_EXPERIMENTAL
-CFLAGS      := -Wall -Ofast -std=c++14 -march=native -DCLENG_EXPERIMENTAL
+CFLAGS      := -Wall -Ofast -std=c++14 -DCLENG_EXPERIMENTAL
 LIB         += -L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_cpp -lhdf5
 INC         += -I/usr/include/hdf5/serial
 endif

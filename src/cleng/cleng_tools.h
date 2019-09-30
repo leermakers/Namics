@@ -334,8 +334,8 @@ void Cleng::WriteClampedNodePosition() {
         if (!(i % 2)) {
 //            cout
             outfile
-//            << SN->get_system_point().to_string() << SN->get_cnode()->get_system_point().to_string() << endl;
-            << SN->get_system_point().to_string() << endl;
+            << SN->get_system_point().to_string() << SN->get_cnode()->get_system_point().to_string() << endl;
+//            << SN->get_system_point().to_string() << endl;
         }
         i++;
     }

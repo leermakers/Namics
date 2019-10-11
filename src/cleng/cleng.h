@@ -23,6 +23,7 @@
 #include "nodes/point.h"
 #include "checkpoint/checkpoint.h"
 #include "random/random.h"
+#include "matrix.h"
 
 #ifdef CLENG_EXPERIMENTAL
 #include "cwriter/cwriter.h"
@@ -161,6 +162,10 @@ public:
 
     Point prepareMove();
 
+    void random_one_choice();
+
+    void simple_pivot(int, float, const Point&);
+
     vector<Real> prepare_vtk();
 
     bool CheckInput(int start, bool save_vector);
@@ -168,6 +173,7 @@ public:
     string GetValue(string);
 
     Real GetN_times_mu();
+
 
 };
 

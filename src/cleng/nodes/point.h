@@ -1,8 +1,9 @@
 #pragma once
 
 #include <tuple>
-//#include <string>
 #include "../../namics.h"
+#include <map>
+#include <string>
 
 struct Point {
 
@@ -16,6 +17,12 @@ public:
     Point() : x(0), y(0), z(0) {}
 
     Point negate() const {return {-x, -y, -z};}
+
+    int &operator[](int index) {
+        if (index == 0) return static_cast<int &>(this->x);
+        if (index == 1) return static_cast<int &>(this->y);
+        if (index == 2) return static_cast<int &>(this->z);
+    }
 
     Point operator+(const Point &p) const {return {x + p.x, y + p.y, z + p.z};}
 

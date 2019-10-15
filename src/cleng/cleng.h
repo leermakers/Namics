@@ -21,9 +21,9 @@
 #include "nodes/simple_node.h"
 #include "nodes/monolit.h"
 #include "nodes/point.h"
+//#include "matrix.h"
 #include "checkpoint/checkpoint.h"
 #include "random/random.h"
-#include "matrix.h"
 
 #ifdef CLENG_EXPERIMENTAL
 #include "cwriter/cwriter.h"
@@ -84,6 +84,11 @@ public:
     Point sub_box_size;
     int MCS;
     int delta_step;
+    int pivot_move;
+    int pivot_axis;
+
+    Matrix<Real> rotation_matrix;
+
     int t;
     int delta_save;
     bool checkpoint_save;
@@ -162,9 +167,12 @@ public:
 
     Point prepareMove();
 
+    Matrix<Real> prepareRotationMatrix();
+
     void random_one_choice();
 
-    void simple_pivot(int, float, const Point&);
+    template <class T>
+    Matrix<T> create_rotational_matrix(int axis_rotation, int grad);
 
     vector<Real> prepare_vtk();
 

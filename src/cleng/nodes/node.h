@@ -1,14 +1,15 @@
 #pragma once
 
-#include "point.h"
-#include <map>
-#include <string>
+//#include "point.h"
+#include "../matrix.h"
 
 class Node {
 public:
     virtual Point point() const = 0;
 
     virtual void shift(const Point &shift) = 0;
+
+    virtual void shift(const Matrix<Real> &matrix) = 0;
 
     virtual void pushSystemPoints(std::map<int, Point> &pointsById) const = 0;
 

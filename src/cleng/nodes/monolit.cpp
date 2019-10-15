@@ -17,6 +17,12 @@ void Monolit::shift(const Point &shift) {
     }
 }
 
+void Monolit::shift(const Matrix<Real> &matrix) {
+    for (auto &&node : m_nodes) {
+        node->shift(matrix);
+    }
+}
+
 void Monolit::pushSystemPoints(std::map<int, Point> &pointsById) const {
     for (auto &&n : m_nodes) {
         n->pushSystemPoints(pointsById);

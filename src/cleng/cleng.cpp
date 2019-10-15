@@ -40,6 +40,8 @@ Cleng::Cleng(
     KEYS.emplace_back("two_ends_extension");
     KEYS.emplace_back("metropolis");
     KEYS.emplace_back("prefactor_kT");
+    KEYS.emplace_back("pivot_move");
+    KEYS.emplace_back("pivot_axis");
 
     // Debug.log
     //out.open("debug.out", ios_base::out);
@@ -91,8 +93,34 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         if (!GetValue("delta_step").empty()) {
             success = In[0]->Get_int(GetValue("delta_step"), delta_step, 1, 5, "The number of delta_step should be between 1 and 5");
             if (!success) { cout << "The delta_step will be equal 1" << endl; delta_step = 1;}
-        } else delta_step = 1;
-        if (debug) cout << "delta_step is " << delta_step << endl;
+        } else delta_step = 0;
+        if (!debug) cout << "delta_step is " << delta_step << endl;
+
+        // pivot_move
+        if (!GetValue("pivot_move").empty()) {
+            success = In[0]->Get_int(GetValue("pivot_move"), pivot_move, 1, 360, "The angle of pivot_move should be between 1 and 360");
+            if (!success) { cout << "The pivot_move will be disable." << endl; pivot_move = 0;}
+        } else pivot_move = 0;
+        if (!debug) cout << "pivot_move is " << pivot_move << endl;
+
+        // pivot_axis
+        if (pivot_move) {
+            if (!GetValue("pivot_axis").empty()) {
+                success = In[0]->Get_int(GetValue("pivot_axis"), pivot_axis, 1, 3,
+                                         "The axis of pivot_move should be between 1 and 3");
+                if (!success) {
+                    cout << "The pivot_axis will be all axis." << endl;
+                    pivot_axis = -1;
+                }
+            } else pivot_axis = -1;
+            if (!debug) cout << "pivot_axis is " << pivot_axis << endl;
+        } else {pivot_axis = 0;} // pivot_axis = 0 means disable pivot.
+
+        if ((delta_step) and (pivot_move)) {
+            cout << "Sorry, but you have to choose either simple_move by delta_step or pivot_move by pivot_move parameter" << endl;
+            cout << "Termination..." << endl;
+            exit(0);
+        }
 
         // delta_save
         if (!GetValue("delta_save").empty()) {
@@ -364,53 +392,76 @@ bool Cleng::MakeMove(bool back) {
     if (debug) cout << "MakeMove in Cleng" << endl;
     bool success = true;
 
-    if (back) {
-        cout << "MakeMove back" << endl;
-        Point _clamped_move = clamped_move.negate();
-        if (!simultaneous) nodes_map[id_node_for_move].data()->get()->shift(_clamped_move);
-        else for (auto &node : nodes_map) node.second.data()->get()->shift(_clamped_move);
+    if (!pivot_move) {
 
-    } else {
-        clamped_move = prepareMove();
-        if (!simultaneous) {
+        cout << "[Cleng] Simple move..." << endl;
 
-            if (ids_node4move[0] != -1) {id_node_for_move = ids_node4move[rand.getInt(0, (int) ids_node4move.size() - 1)];}
-            else {id_node_for_move = rand.getInt(0, (int) nodes_map.size() - 1);}
-
-            if (id_node_for_move > (int) nodes_map.size()-1) {
-                cout << "###" << endl;
-                cout << "Node id is too high. Trying to move node id: " << id_node_for_move << "." << endl;
-                cout << "Available nodes_map: " << endl;
-                for (auto &&n: nodes_map) cout << "id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
-                cout << "Termination..." << endl;
-                exit(0);
-            }
-
-            cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
-            while (!Checks()) {
-                cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
-                clamped_move = {0, 0, 0};
-                rejected++;
-                success = false;
-            }
-            nodes_map[id_node_for_move].data()->get()->shift(clamped_move);
-            cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string() << endl;
+        if (back) {
+            cout << "MakeMove back" << endl;
+            Point _clamped_move = clamped_move.negate();
+            if (!simultaneous) nodes_map[id_node_for_move].data()->get()->shift(_clamped_move);
+            else for (auto &node : nodes_map) node.second.data()->get()->shift(_clamped_move);
 
         } else {
+            clamped_move = prepareMove();
+            if (!simultaneous) {
 
-            if (two_ends_extension) {
-                for (auto &&node : nodes_map) {
-                    int index = node.first;
-
-                    if (index % 2 == 0) node.second.data()->get()->shift(clamped_move.negate());
-                    else node.second.data()->get()->shift(clamped_move);
+                if (ids_node4move[0] != -1) {
+                    id_node_for_move = ids_node4move[rand.getInt(0, (int) ids_node4move.size() - 1)];
                 }
-                cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << " and " << clamped_move.negate().to_string() << endl;
+                else { id_node_for_move = rand.getInt(0, (int) nodes_map.size() - 1); }
+
+                if (id_node_for_move > (int) nodes_map.size() - 1) {
+                    cout << "###" << endl;
+                    cout << "Node id is too high. Trying to move node id: " << id_node_for_move << "." << endl;
+                    cout << "Available nodes_map: " << endl;
+                    for (auto &&n: nodes_map)
+                        cout << "id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+                    cout << "Termination..." << endl;
+                    exit(0);
+                }
+
+                cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
+                while (!Checks()) {
+                    cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
+                    clamped_move = {0, 0, 0};
+                    rejected++;
+                    success = false;
+                }
+                nodes_map[id_node_for_move].data()->get()->shift(clamped_move);
+                cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
+                     << endl;
 
             } else {
-                for (auto &&node : nodes_map) node.second.data()->get()->shift(clamped_move);
-                cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << endl;
+
+                if (two_ends_extension) {
+                    for (auto &&node : nodes_map) {
+                        int index = node.first;
+
+                        if (index % 2 == 0) node.second.data()->get()->shift(clamped_move.negate());
+                        else node.second.data()->get()->shift(clamped_move);
+                    }
+                    cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << " and "
+                         << clamped_move.negate().to_string() << endl;
+
+                } else {
+                    for (auto &&node : nodes_map) node.second.data()->get()->shift(clamped_move);
+                    cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << endl;
+                }
             }
+        }
+    } else {
+        cout << "[Cleng] Pivot move..." << endl;
+
+        if (back) {
+            cout << "MakeMove back" << endl;
+            Matrix<Real> _rotation_matrix = rotation_matrix.negate();
+            nodes_map[id_node_for_move].data()->get()->shift(_rotation_matrix);
+        } else {
+
+            rotation_matrix = prepareRotationMatrix();
+            cout << rotation_matrix << endl;
+            nodes_map[id_node_for_move].data()->get()->shift(rotation_matrix);
         }
     }
     return success;

@@ -8,9 +8,11 @@ using std::shared_ptr;
 
 class SimpleNode : public Node {
 public:
-    SimpleNode(const Point &p, int id, Point box_size);
+    SimpleNode(const Point &p, int id, const Point& box_size);
 
     void shift(const Point &shift) override;
+
+    void shift(const Matrix<Real> &matrix) override;
 
     std::string to_string() const override;
 

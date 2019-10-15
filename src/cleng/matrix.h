@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <stdexcept>
+#include "nodes/point.h"
 
 template <class T>
 class Matrix{
@@ -25,6 +26,8 @@ public:
     Matrix<T> subtract(const Matrix<T>& m) const;
     Matrix<T> multiply(const Matrix<T>& m) const;
     Matrix<T> dot(const Matrix<T>& m) const;
+    Point dot(Point &point) const;
+    Matrix<T> negate() const;
     Matrix<T> transpose() const;
     Matrix<T> multiply(const T& value) const;
     Matrix<T> divide(const T& value) const;
@@ -184,6 +187,21 @@ Matrix<T> Matrix<T>::multiply(const Matrix& m) const{
     return result;
 }
 
+template<class T>
+Point Matrix<T>::dot(Point &point) const {
+    Point result;
+
+    for (int i=0 ; i<height ; i++){
+        for (int h=0 ; h<width ; h++){
+            result[h] += array[i][h] * point[h];
+        }
+    }
+
+    cout << result.to_string() << endl;
+
+    return result;
+}
+
 template <class T>
 Matrix<T> Matrix<T>::dot(const Matrix& m) const{
     if(width != m.height)
@@ -203,6 +221,18 @@ Matrix<T> Matrix<T>::dot(const Matrix& m) const{
         }
     }
 
+    return result;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::negate() const{
+    Matrix<T> result(width, height);
+
+    for (int i=0 ; i<width ; i++){
+        for (int j=0 ; j<height ; j++){
+            result.array[i][j] = -array[i][j];
+        }
+    }
     return result;
 }
 

@@ -182,79 +182,93 @@ Point Cleng::prepareMove() {
         if (axis == 2) clamped_move = {0, c1*c2, 0};
         if (axis == 3) clamped_move = {0, 0, c1*c2};
     } else {
-//        random_one_choice();
-        Point a = {0,0,0};
-        cout << "0" << endl;
-        simple_pivot(0, 90., a);
-        cout << "1" << endl;
-        simple_pivot(1, 90., a);
-        cout << "2" << endl;
-        simple_pivot(2, 90., a);
+        clamped_move = {
+                rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
+                rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
+                rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
+        };
+
+        if ((delta_step % 2) == 1) {  // 1 3 5
+            int id4rm = rand.getInt(0, 2);
+            if (id4rm == 0) clamped_move.x = 0;
+            else { if (id4rm == 1) clamped_move.y = 0; else clamped_move.z = 0;}
+        } else {  // 2 4 6
+            int id4rm1 = rand.getInt(0, 2);
+            int id4rm2 = rand.getInt(0, 2);
+
+            if (id4rm1 == 0) clamped_move.x = 0;
+            else {if (id4rm1 == 1) clamped_move.y = 0; else clamped_move.z = 0;}
+
+            if (id4rm2 == 0) clamped_move.x = 0;
+            else { if (id4rm2 == 1) clamped_move.y = 0; else clamped_move.z = 0;}
+        }
     }
     return clamped_move;
 }
 
-void Cleng::random_one_choice() {
-    clamped_move = {
-            rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
-            rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
-            rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
-    };
+Matrix<Real> Cleng::prepareRotationMatrix() {
+    if (debug) cout << "prepareRotationMatrix in Cleng" << endl;
 
-    if ((delta_step % 2) == 1) {  // 1 3 5
-        int id4rm = rand.getInt(0, 2);
-        if (id4rm == 0) clamped_move.x = 0;
-        else { if (id4rm == 1) clamped_move.y = 0; else clamped_move.z = 0;}
-    } else {  // 2 4 6
-        int id4rm1 = rand.getInt(0, 2);
-        int id4rm2 = rand.getInt(0, 2);
-
-        if (id4rm1 == 0) clamped_move.x = 0;
-        else {if (id4rm1 == 1) clamped_move.y = 0; else clamped_move.z = 0;}
-
-        if (id4rm2 == 0) clamped_move.x = 0;
-        else { if (id4rm2 == 1) clamped_move.y = 0; else clamped_move.z = 0;}
+    if (pivot_axis) {
+        if (pivot_axis == -1) {
+            int pivot_axis_current = rand.getInt(1, 3);
+            rotation_matrix = create_rotational_matrix<Real>(pivot_axis_current, pivot_move);
+        } else rotation_matrix = create_rotational_matrix<Real>(pivot_axis, pivot_move);
+        return rotation_matrix;
     }
 
 }
 
-void Cleng::simple_pivot(int axis_rotation, float grad, const Point& point) {
-
-//    Matrix<Real> rotation_matrix(3,3);
-    vector<vector<Real>> rotation_matrix_(3, vector<Real>(3));
+template <class T>
+Matrix<T> Cleng::create_rotational_matrix(int axis_rotation, int grad) {
+    Matrix<Real> rotation_matrix_(3,3);
     switch ( axis_rotation ) {
-        case 0:
-
-//            array = {
-//                    {1, 0, 0},
-//                    {0, cos(grad * PIE / 180.0), -sin(grad * PIE / 180.0)},
-//                    {0, sin(grad * PIE / 180.0), cos(grad * PIE / 180.0)}
-//                    };
-
-            rotation_matrix_[0] = {1,                          0,  0                         };
-            rotation_matrix_[1] = {0, cos(grad * PIE / 180.0), -sin(grad * PIE / 180.0)};
-            rotation_matrix_[2] = {0, sin(grad * PIE / 180.0),  cos(grad * PIE / 180.0)};
-//            Matrix<Real> matrix(vector<vector<Real>> &array);
-            break;
         case 1:
-            rotation_matrix_[0] = { cos(grad * PIE / 180.0), 0,  sin(grad * PIE / 180.0)};
-            rotation_matrix_[1] = {                          0, 1,  0                         };
-            rotation_matrix_[2] = {-sin(grad * PIE / 180.0), 0, cos(grad * PIE / 180.0)};
+            rotation_matrix_.put(0, 0, 1);
+            rotation_matrix_.put(0, 1, 0);
+            rotation_matrix_.put(0, 2, 0);
+
+            rotation_matrix_.put(1,0, 0);
+            rotation_matrix_.put(1,1, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(1,2, -sin(grad * PIE / 180.0));
+
+            rotation_matrix_.put(2,0, 0);
+            rotation_matrix_.put(2,1, sin(grad * PIE / 180.0));
+            rotation_matrix_.put(2,2, cos(grad * PIE / 180.0));
+
             break;
         case 2:
-            rotation_matrix_[0] = {cos(grad * PIE / 180.0), -sin(grad * PIE / 180.0), 0};
-            rotation_matrix_[1] = {sin(grad * PIE / 180.0),  cos(grad * PIE / 180.0), 0};
-            rotation_matrix_[2] = {                         0,                           0, 1};
+            rotation_matrix_.put(0,0, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(0,1, 0);
+            rotation_matrix_.put(0,2, sin(grad * PIE / 180.0));
+
+            rotation_matrix_.put(1,0, 0);
+            rotation_matrix_.put(1,1, 1);
+            rotation_matrix_.put(1,2, 0);
+
+            rotation_matrix_.put(2,0, -sin(grad * PIE / 180.0));
+            rotation_matrix_.put(2,1, 0);
+            rotation_matrix_.put(2,2, cos(grad * PIE / 180.0));
+
             break;
+        case 3:
+            rotation_matrix_.put(0,0, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(0,1, -sin(grad * PIE / 180.0));
+            rotation_matrix_.put(0,2, 0);
+
+            rotation_matrix_.put(1,0, sin(grad * PIE / 180.0));
+            rotation_matrix_.put(1,1, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(1,2, 0);
+
+            rotation_matrix_.put(2,0, 0);
+            rotation_matrix_.put(2,1, 0);
+            rotation_matrix_.put(2,2, 1);
+            break;
+
         default:
             cout << "[Warning] Strange axis: " << axis_rotation << endl;
     }
-
-    cout << "CHECK: " << endl;
-    for (auto &&element:rotation_matrix[0]) cout << element << endl;
-    for (auto &&element:rotation_matrix[1]) cout << element << endl;
-    for (auto &&element:rotation_matrix[2]) cout << element << endl;
-    cout << "CHECK END" << endl;
+    return rotation_matrix_;
 }
 
 int Cleng::getLastMCS() {

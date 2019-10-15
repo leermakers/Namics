@@ -1,7 +1,7 @@
 #include <utility>
 #include "simple_node.h"
 
-SimpleNode::SimpleNode(const Point &p, int id, Point box_size) :
+SimpleNode::SimpleNode(const Point &p, int id, const Point& box_size) :
         system_point(p),
         box_size(box_size),
         id(id) {}
@@ -10,6 +10,9 @@ void SimpleNode::shift(const Point &shift) {
     system_point = system_point + shift;
 }
 
+void SimpleNode::shift(const Matrix<Real> &matrix) {
+    system_point = matrix.dot(system_point);
+}
 
 Point SimpleNode::point() const {
     Point p = system_point % box_size;

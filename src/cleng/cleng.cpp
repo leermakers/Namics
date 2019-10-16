@@ -549,7 +549,12 @@ bool Cleng::MonteCarlo(bool save_vector) {
                 if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
                     cout << "Sorry, Free Energy is still NaN. " << endl;
                     cout << "Here is result from solver: " << success_iteration << endl;
-                    break;
+
+                    cout << "The step will be rejected! Simulation will continue... " << endl;
+                    MakeMove(true);
+                    rejected++;
+                    continue;
+//                    break;
                 }
             } else {free_energy_trial = Sys[0]->GetFreeEnergy();}
             if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy());

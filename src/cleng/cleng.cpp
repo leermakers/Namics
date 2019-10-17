@@ -33,7 +33,7 @@ Cleng::Cleng(
     KEYS.emplace_back("checkpoint_load");
     KEYS.emplace_back("cleng_pos");
     KEYS.emplace_back("cleng_dis");
-    KEYS.emplace_back("simultaneous");
+    KEYS.emplace_back("simultaneously");
     KEYS.emplace_back("movement_along");
     KEYS.emplace_back("sign_move");
     KEYS.emplace_back("user_node_id_move");
@@ -55,7 +55,7 @@ Cleng::~Cleng() {
     //out.close();
 }
 
-string Cleng::GetValue(string parameter) {
+string Cleng::GetValue(const string& parameter) {
     int i = 0;
     int length = (int) PARAMETERS.size();
     while (i < length) {
@@ -160,10 +160,10 @@ bool Cleng::CheckInput(int start, bool save_vector) {
         else cleng_dis = false;
         if (debug) cout << "cleng_dis " << cleng_dis << endl;
 
-        // simultaneous
-        if (!GetValue("simultaneous").empty()) simultaneous = In[0]->Get_bool(GetValue("simultaneous"), false);
-        else simultaneous = false;
-        if (debug) cout << "simultaneous move " << simultaneous << endl;
+        // simultaneously
+        if (!GetValue("simultaneously").empty()) simultaneously = In[0]->Get_bool(GetValue("simultaneously"), false);
+        else simultaneously = false;
+        if (debug) cout << "simultaneously move " << simultaneously << endl;
 
         // movement_along
         if (!GetValue("movement_along").empty()) {
@@ -365,18 +365,16 @@ bool Cleng::CP(transfer tofrom) {
     return success;
 }
 
-bool Cleng::Checks() {
+bool Cleng::Checks(int id_node_for_move, const Point& clamped_move) {
     bool in_range;
 
-    // check subbox_ranges
-    bool in_subbox_range = InSubBoxRange();
+    bool in_subbox_range = InSubBoxRange(id_node_for_move);
 
-    // check distances between all nodes_map => preventing collapsing
-    bool not_collapsing = NotCollapsing();
+    bool not_collapsing = NotCollapsing(id_node_for_move);
 
     // check distance between all nodes_map and constrains (walls)
     // BC.x, BC.y, BC.z = mirror
-    if (BC.x and BC.y and BC.z) in_range = InRange();
+    if (BC.x and BC.y and BC.z) in_range = InRange(id_node_for_move);
     // BC.x and/or BC.y and/or BC.z != mirror
     else in_range = true;
 
@@ -384,84 +382,117 @@ bool Cleng::Checks() {
     bool commensurate = IsCommensuratable();
 
     bool result = not_collapsing and in_range and in_subbox_range and commensurate;
+    cout << "[Checks] result: " << result << endl;
     return result;
 }
 
-bool Cleng::MakeMove(bool back) {
-
-    if (debug) cout << "MakeMove in Cleng" << endl;
+bool Cleng::MakeChecks(int id_node_for_move, const Point& clamped_move) {
     bool success = true;
+    while (!Checks(id_node_for_move, clamped_move)) {
+        cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
+        MakeMove(true);
+        rejected++;
+        cout << "<><>DEBUG: rejected: " << rejected << endl;
+        cout << "[Cleng] Current state of system: " << endl;
+        for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+        cout << endl;
+        success = false;
+        return success; // TODO: CHECK THIS RETURN
+    }
+    return success;
+}
 
-    if (!pivot_move) {
-
-        cout << "[Cleng] Simple move..." << endl;
-
-        if (back) {
-            cout << "MakeMove back" << endl;
-            Point _clamped_move = clamped_move.negate();
-            if (!simultaneous) nodes_map[id_node_for_move].data()->get()->shift(_clamped_move);
-            else for (auto &node : nodes_map) node.second.data()->get()->shift(_clamped_move);
+void Cleng::_moveClampedNode(bool back, int id_node_for_move, const Point& clamped_move) {
+    if (back) {
+        cout << "MakeMove back" << endl;
+        Point _clamped_move = clamped_move.negate();
+        if (!simultaneously) nodes_map[id_node_for_move].data()->get()->shift(_clamped_move);
+        else for (auto &node : nodes_map) node.second.data()->get()->shift(_clamped_move);
+    } else {
+        if (!simultaneously) {
+            cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
+            nodes_map[id_node_for_move].data()->get()->shift(clamped_move);
+            cout << "Moved: \n"
+                 << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string() << endl;
 
         } else {
-            clamped_move = prepareMove();
-            if (!simultaneous) {
+            // simultaneously procedure (+ two_ends_extention)
+            if (two_ends_extension) {
+                // TODO: deprecate in future...
+                for (auto &&node : nodes_map) {
+                    int index = node.first;
 
-                if (ids_node4move[0] != -1) {
-                    id_node_for_move = ids_node4move[rand.getInt(0, (int) ids_node4move.size() - 1)];
+                    if (index % 2 == 0) node.second.data()->get()->shift(clamped_move.negate());
+                    else node.second.data()->get()->shift(clamped_move);
                 }
-                else { id_node_for_move = rand.getInt(0, (int) nodes_map.size() - 1); }
-
-                if (id_node_for_move > (int) nodes_map.size() - 1) {
-                    cout << "###" << endl;
-                    cout << "Node id is too high. Trying to move node id: " << id_node_for_move << "." << endl;
-                    cout << "Available nodes_map: " << endl;
-                    for (auto &&n: nodes_map)
-                        cout << "id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
-                    cout << "Termination..." << endl;
-                    exit(0);
-                }
-
-                cout << "Prepared id: " << id_node_for_move << " clamped_move: " << clamped_move.to_string() << endl;
-                while (!Checks()) {
-                    cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
-                    clamped_move = {0, 0, 0};
-                    rejected++;
-                    success = false;
-                }
-                nodes_map[id_node_for_move].data()->get()->shift(clamped_move);
-                cout << "Moved: \n" << "node: " << id_node_for_move << ", " << "MC step: " << clamped_move.to_string()
+                cout << "Moved: \n" << "*All* "
+                     << "MC step: " << clamped_move.to_string() << " and " << clamped_move.negate().to_string()
                      << endl;
 
             } else {
-
-                if (two_ends_extension) {
-                    for (auto &&node : nodes_map) {
-                        int index = node.first;
-
-                        if (index % 2 == 0) node.second.data()->get()->shift(clamped_move.negate());
-                        else node.second.data()->get()->shift(clamped_move);
-                    }
-                    cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << " and "
-                         << clamped_move.negate().to_string() << endl;
-
-                } else {
-                    for (auto &&node : nodes_map) node.second.data()->get()->shift(clamped_move);
-                    cout << "Moved: \n" << "*All* " << "MC step: " << clamped_move.to_string() << endl;
-                }
+                for (auto &&node : nodes_map) node.second.data()->get()->shift(clamped_move);
+                cout << "Moved: \n" << "*All* "
+                     << "MC step: " << clamped_move.to_string() << endl;
             }
         }
+    }
+}
+
+Point Cleng::preparePivotClampedMove(int id_node_for_move) {
+    // TODO: instead need to use system point...
+    Point current_Point = nodes_map[id_node_for_move].data()->get()->point();
+    Point point_shifted_by_matrix = rotation_matrix.dot(current_Point);;
+    Point clamped_move = point_shifted_by_matrix - current_Point;
+    return clamped_move;
+}
+
+bool Cleng::MakeMove(bool back) {
+    if (debug) cout << "MakeMove in Cleng" << endl;
+    Point clamped_move;
+    int id_node_for_move;
+    bool success = true;
+
+    if (back) {
+        cout << "Returning back the points..." << endl;
+        for (auto &&nodeID_clampedMove : nodeIDs_clampedMove) {
+            cout << "ID: " << nodeID_clampedMove.first
+                 << " clamped_move: " << nodeID_clampedMove.second.to_string() << endl;
+            _moveClampedNode(back, nodeID_clampedMove.first, nodeID_clampedMove.second);
+        }
     } else {
-        cout << "[Cleng] Pivot move..." << endl;
+        if (pivot_move) {
+            cout << "Pivot_move ..." << endl;
+            nodeIDs_clampedMove.clear();
 
-        if (back) {
-            cout << "MakeMove back" << endl;
-            Matrix<Real> _rotation_matrix = rotation_matrix.negate();
-            nodes_map[id_node_for_move].data()->get()->shift(_rotation_matrix);
+            for (auto &&node_id : pivot_node_ids) {
+                clamped_move = preparePivotClampedMove(node_id);  // need to create for each node_id!
+                _moveClampedNode(back, node_id, clamped_move);
+                nodeIDs_clampedMove[node_id] = clamped_move;
+            }
+
+            cout << "[Cleng] System for checking: " << endl;
+            for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+            cout << endl;
+
+            for (auto &&node_id : pivot_node_ids) {
+                success = MakeChecks(node_id, clamped_move);
+                if (!success) return success;
+            }
+
+            for (auto &&nodeID_clampedMove : nodeIDs_clampedMove) {
+                cout << "ID: " << nodeID_clampedMove.first
+                     << " clamped_move: " << nodeID_clampedMove.second.to_string() << endl;
+            }
+
         } else {
-
-            rotation_matrix = prepareRotationMatrix();
-            cout << rotation_matrix << endl;
-            nodes_map[id_node_for_move].data()->get()->shift(rotation_matrix);
+            cout << "Simple_move ..." << endl;
+            nodeIDs_clampedMove.clear();
+            id_node_for_move = prepareIdNode();
+            clamped_move = prepareMove();
+            _moveClampedNode(back, id_node_for_move, clamped_move);
+            success = MakeChecks(id_node_for_move, clamped_move);
+            if (!success) return success;
+            nodeIDs_clampedMove[id_node_for_move] = clamped_move;
         }
     }
     return success;
@@ -498,7 +529,8 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
 // init system outlook
     if (!loaded) CP(to_cleng);
-    if (!Checks()) {cout << "Checks are not passed. Termination..." << endl; exit(1); }
+    // TODO Why I need this Checks at initialization?!?
+//    if (!Checks(id_node_for_move, clamped_move)) {cout << "Checks are not passed. Termination..." << endl; exit(1); }
     if (checkpoint_save) {checkpoint.saveCheckpoint(simpleNodeList);}
 
     bool success_iteration = New[0]->Solve(true);
@@ -526,9 +558,13 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
     cout << "Initialization done.\n" << endl;
     update_ids_node4move();
+    cout << "[Cleng] System: " << endl;
+    for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+    cout << endl;
     cout << "Here we go..." << endl;
     bool success_;
     for (MC_attempt = 1; MC_attempt <= MCS; MC_attempt++) { // main loop for trials
+        prepareMove();
         success_ = MakeMove(false);
         if (success_) {
             CP(to_segment);
@@ -552,9 +588,9 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
                     cout << "The step will be rejected! Simulation will continue... " << endl;
                     MakeMove(true);
+                    CP(to_segment);
                     rejected++;
                     continue;
-//                    break;
                 }
             } else {free_energy_trial = Sys[0]->GetFreeEnergy();}
             if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy());
@@ -564,8 +600,11 @@ bool Cleng::MonteCarlo(bool save_vector) {
             cout << "   prefactor kT: " << prefactor_kT        << endl;
             cout << endl;
 
-            if (!metropolis) {cout << "Metropolis is disabled. " << endl; free_energy_current = free_energy_trial;}
-            else {
+            if (!metropolis) {
+                cout << "Metropolis is disabled. " << endl;
+                free_energy_current = free_energy_trial;
+                accepted++;
+            } else {
                 if (free_energy_trial - free_energy_current <= 0.0) {
                     cout << "Accepted" << endl;
                     n_times_mu = GetN_times_mu();
@@ -588,10 +627,11 @@ bool Cleng::MonteCarlo(bool save_vector) {
                 }
             }
         }
-        cout << "Monte Carlo attempt: " << MC_attempt << endl;
-        cout << "Accepted: # " << accepted << " | " << 100 * (accepted / MC_attempt) << "%" << endl;
-        cout << "Rejected: # " << rejected << " | " << 100 * (rejected / MC_attempt) << "%" << endl;
-
+        if (metropolis) {
+            cout << "Monte Carlo attempt: " << MC_attempt << endl;
+            cout << "Accepted: # " << accepted << " | " << 100 * (accepted / MC_attempt) << "%" << endl;
+            cout << "Rejected: # " << rejected << " | " << 100 * (rejected / MC_attempt) << "%" << endl;
+        }
 #ifdef CLENG_EXPERIMENTAL
         vtk = prepare_vtk();
         cleng_writer.write("/VTK_data", "vtk" + to_string(MC_attempt+MCS_checkpoint), dims_vtk, vtk);

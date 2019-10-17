@@ -48,7 +48,7 @@ private:
     int cminor_version = 2;
     int cpatch = 3;
     int cversion = 110;
-    int pseed;
+    int pseed{};
 
     void fillXYZ();
 
@@ -77,31 +77,33 @@ public:
     vector<int> dims_vtk{box.x * box.y * box.z, 1};
     vector<int> dims_3 = {1, 3};
 
-    int clamp_seg;
-    int clp_mol;
-    int n_boxes;
-    int n_out;
+    int clamp_seg{};
+    int clp_mol{};
+    int n_boxes{};
+    int n_out{};
     Point sub_box_size;
-    int MCS;
-    int delta_step;
-    int pivot_move;
-    int pivot_axis;
+    int MCS{};
+    int delta_step{};
+    int pivot_move{};
+    int pivot_axis{};
+    vector<int> pivot_node_ids;
+    map<int, Point> nodeIDs_clampedMove;
 
     Matrix<Real> rotation_matrix;
 
-    int t;
-    int delta_save;
-    bool checkpoint_save;
-    bool checkpoint_load;
-    bool simultaneous;
-    bool metropolis;
-    int  axis;
-    Real prefactor_kT;
-    Real n_times_mu;
+    int t{};
+    int delta_save{};
+    bool checkpoint_save{};
+    bool checkpoint_load{};
+    bool simultaneously{};
+    bool metropolis{};
+    int axis{};
+    Real prefactor_kT{};
+    Real n_times_mu{};
     string sign_move;
-    bool cleng_pos;
-    bool cleng_dis;
-    bool two_ends_extension;
+    bool cleng_pos{};
+    bool cleng_dis{};
+    bool two_ends_extension{};
     vector<int> ids_node4move;
     vector<int> ids_node4fix;
     std::chrono::steady_clock::time_point begin_simulation;
@@ -124,14 +126,14 @@ public:
     int *zs = nullptr;
 
     ofstream out;
-    Point clamped_move;
-    int id_node_for_move=0;
-    Real free_energy_current;
-    Real free_energy_trial;
+//    Point clamped_move;
+//    int id_node_for_move=0;
+    Real free_energy_current{};
+    Real free_energy_trial{};
 
-    Real accepted;
-    Real rejected;
-    int MC_attempt;
+    Real accepted{};
+    Real rejected{};
+    int MC_attempt{};
 
     vector<Real> test_vector;
 
@@ -141,15 +143,21 @@ public:
 
     bool MakeMove(bool back);
 
-    bool Checks();
+    bool MakeChecks(int id_node_for_move, const Point &clamped_move);
 
-    bool InSubBoxRange();
+    void _moveClampedNode(bool back, int id_node_for_move, const Point &clamped_move);
 
-    bool NotCollapsing();
+    Point preparePivotClampedMove(int id_node_for_move);
 
-    bool InRange();
+    bool Checks(int id_node_for_move, const Point &clamped_move);
+
+    bool InSubBoxRange(int id_node_for_move);
 
     bool IsCommensuratable();
+
+    bool NotCollapsing(int id_node_for_move);
+
+    bool InRange(int id_node_for_move);
 
     void PushOutput();
 
@@ -167,18 +175,20 @@ public:
 
     Point prepareMove();
 
+    int prepareIdNode();
+
+    void prepareIdsNode();
+
     Matrix<Real> prepareRotationMatrix();
 
-    void random_one_choice();
-
-    template <class T>
-    Matrix<T> create_rotational_matrix(int axis_rotation, int grad);
+    template<class T>
+    Matrix<T> _create_rotational_matrix(int axis_rotation, int grad);
 
     vector<Real> prepare_vtk();
 
     bool CheckInput(int start, bool save_vector);
 
-    string GetValue(string);
+    string GetValue(const string&);
 
     Real GetN_times_mu();
 

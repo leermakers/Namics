@@ -22,7 +22,7 @@ public:
 
     void pushSystemPoints(std::map<int, Point> &pointsById) const override;
 
-    bool inSubBoxRange(const Point &subBoxRange, const Point &shift) const override;
+    bool inSubBoxRange(const Point &subBoxRange) const override;
 
 private:
     std::vector<shared_ptr<SimpleNode>> m_nodes;

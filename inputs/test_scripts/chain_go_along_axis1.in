@@ -44,7 +44,7 @@ cleng : parameters : MCS : 200
 cleng : parameters : delta_save : 1
 cleng : parameters : delta_step : 1
 cleng : parameters : seed : 1
-cleng : parameters : simultaneous : true
+cleng : parameters : simultaneously : true
 cleng : parameters : movement_along : 1
 
 start

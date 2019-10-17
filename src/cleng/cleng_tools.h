@@ -4,28 +4,29 @@
 volatile sig_atomic_t cleng_flag_termination = 0;
 
 using Fp_info = numeric_limits<double>;
-inline auto is_ieee754_nan( double const x ) -> bool {
-    static constexpr bool   is_claimed_ieee754  = Fp_info::is_iec559;
-    static constexpr int    n_bits_per_byte     = CHAR_BIT;
+
+inline auto is_ieee754_nan(double const x) -> bool {
+    static constexpr bool is_claimed_ieee754 = Fp_info::is_iec559;
+    static constexpr int n_bits_per_byte = CHAR_BIT;
     using Byte = unsigned char;
 
-    static_assert( is_claimed_ieee754, "!" );
-    static_assert( n_bits_per_byte == 8, "!" );
-    static_assert( sizeof( x ) == sizeof( uint64_t ), "!" );
+    static_assert(is_claimed_ieee754, "!");
+    static_assert(n_bits_per_byte == 8, "!");
+    static_assert(sizeof(x) == sizeof(uint64_t), "!");
 
 #ifdef _MSC_VER
     uint64_t const bits = reinterpret_cast<uint64_t const&>( x );
 #else
     Byte bytes[sizeof(x)];
-    memcpy( bytes, &x, sizeof( x ) );
+    memcpy(bytes, &x, sizeof(x));
     uint64_t int_value;
-    memcpy( &int_value, bytes, sizeof( x ) );
-    uint64_t const& bits = int_value;
+    memcpy(&int_value, bytes, sizeof(x));
+    uint64_t const &bits = int_value;
 #endif
 
-    static constexpr uint64_t   sign_mask       = 0x8000000000000000;
-    static constexpr uint64_t   exp_mask        = 0x7FF0000000000000;
-    static constexpr uint64_t   mantissa_mask   = 0x000FFFFFFFFFFFFF;
+    static constexpr uint64_t sign_mask = 0x8000000000000000;
+    static constexpr uint64_t exp_mask = 0x7FF0000000000000;
+    static constexpr uint64_t mantissa_mask = 0x000FFFFFFFFFFFFF;
 
     (void) sign_mask;
     return (bits & exp_mask) == exp_mask and (bits & mantissa_mask) != 0;
@@ -37,13 +38,13 @@ shared_ptr<SimpleNode> fromSystemToNode(int x, int y, int z, int id, const Point
 
 map<int, vector<shared_ptr<Node>>> createNodes(const vector<shared_ptr<SimpleNode>> &simple_nodes) {
     map<int, vector<shared_ptr<Node>>> result_map;
-    int index=0;
+    int index = 0;
     map<SimpleNode, vector<shared_ptr<SimpleNode>>> m;
     for (auto &&n  : simple_nodes) { m[*n].push_back(n); }
     for (auto &&entry : m) {
         if (entry.second.size() == 1) result_map[index] = {entry.second[0]};
         else result_map[index] = {make_shared<Monolit>(entry.second)};
-        index ++;
+        index++;
     }
     return result_map;
 }
@@ -54,13 +55,14 @@ vector<int> makeExcludedArray(int step) {
     return result;
 }
 
-bool Cleng::InSubBoxRange() {
+bool Cleng::InSubBoxRange(int id_node_for_move) {
     bool success = true;
     vector<int> id_nodes;
     Point sub_box = {sub_box_size.x - 2, sub_box_size.y - 2, sub_box_size.z - 2};  // change it in future
 
-    if (!nodes_map[id_node_for_move].data()->get()->inSubBoxRange(sub_box, clamped_move)) {
-        id_nodes.push_back(id_node_for_move); success = false;
+    if (!nodes_map[id_node_for_move].data()->get()->inSubBoxRange(sub_box)) {
+        id_nodes.push_back(id_node_for_move);
+        success = false;
     }
     if (!id_nodes.empty()) {
         cout << "These nodes_map[id] are not in sub-box range:" << endl;
@@ -70,79 +72,65 @@ bool Cleng::InSubBoxRange() {
 }
 
 bool Cleng::IsCommensuratable() {
-    // TODO name think about changing the name.
     bool success = true;
-    // trial movement for simpleNodeList
-    nodes_map[id_node_for_move].data()->get()->shift(clamped_move);
-
     int length = (int) In[0]->MolList.size();
 
-    for (int i=0; i<length;i++) {
-    int chain_length = Mol[i]->chainlength-2;
-    // TODO it will not work for multicomponent systems (gel + salt for example...)!
-    // TODO to next commit
-    if (chain_length < 10) continue;
+    // TODO: procedure goes throw all Molecules in the System...
+    // TODO: Need to take only Polymer molecules...
+    for (int i = 0; i < length; i++) {
+        int chain_length = Mol[i]->chainlength - 2;
+        if (chain_length < 10) continue;
 
+        for (auto &&SN : Enumerate(simpleNodeList)) {
+            auto p3 = SN.second->get_cnode()->get_system_point() - SN.second->get_system_point();
+            int path_length = abs(p3.x) + abs(p3.y) + abs(p3.z);
 
-    for (auto &&SN : Enumerate(simpleNodeList)) {
-        auto p1 = SN.second->get_system_point();
-        auto p2 = SN.second->get_cnode()->get_system_point();
-        auto p3 = p2 - p1;
-        int path_length = abs(p3.x) + abs(p3.y) + abs(p3.z);
+            int path_length_even = path_length % 2;
+            int chain_length_even = chain_length % 2;
 
-        int path_length_even = path_length % 2;
-        int chain_length_even = chain_length % 2;
-
-        // cout << "path: " << path_length << endl;
-        // cout << "chain: " << chain_length << endl;
-
-        if (path_length_even == chain_length_even) success =false;
-        if (path_length >= chain_length) success =false;
+            if (path_length_even == chain_length_even) success = false;
+            if (path_length >= chain_length) success = false;
+        }
     }
-    }
-    if (!success) cout << "Warning, the paths between clamps is not commensurate with the chain length!" << endl;
-    // put back
-    nodes_map[id_node_for_move].data()->get()->shift(clamped_move.negate());
+    if (!success) cout << "[WARNING] paths between clamps is not commensurate with the chain length!" << endl;
     return success;
 }
 
-bool Cleng::NotCollapsing() {
+bool Cleng::NotCollapsing(int id_node_for_move) {
     bool not_collapsing = true;
-
-    Point P_not_shifted (nodes_map[id_node_for_move].data()->get()->point());
-    Point P_shifted(nodes_map[id_node_for_move].data()->get()->point() + clamped_move);
-
+    Point shifted_point(nodes_map[id_node_for_move].data()->get()->point());
     double min_dist = 0; // minimal distance between nodes_map. 0 for a while...
-    for (auto &&n : nodes_map) {
-        Point P_test = n.second.data()->get()->point();
 
-        if (P_not_shifted != P_test) {
-            Real distance = P_shifted.distance(n.second.data()->get()->point());
+    for (auto &&n : nodes_map) {
+        Point test_point = n.second.data()->get()->point();
+        if (shifted_point != test_point) {
+            Real distance = shifted_point.distance(n.second.data()->get()->point());
             if (distance <= min_dist) {
-                cout << "Nodes are too close to each other."           << endl;
-                cout << "Shifted nodes_map: " << P_shifted.to_string() << endl;
-                cout << "Nodes id:          " << P_test.to_string()    << endl;
-                not_collapsing =false;
+                cout << "Nodes are too close to each other." << endl;
+                cout << "Shifted point from nodes_map: " << shifted_point.to_string() << endl;
+                cout << "Test point from nodes_map:    " << test_point.to_string() << endl;
+                not_collapsing = false;
             }
         }
     }
     return not_collapsing;
 }
 
+bool Cleng::InRange(int id_node_for_move) {
+    bool in_range = false;
+    Point down_boundary = {1, 1, 1};
+    Point up_boundary = box - down_boundary;
+    Point shifted_point(nodes_map[id_node_for_move].data()->get()->point());
+    if ((down_boundary.all_elements_less_than(shifted_point)) and
+        (shifted_point.all_elements_less_than(up_boundary)))
+        in_range = true;
+    return in_range;
+}
+
 void signalHandler(int signum) {
     cout << "Termination..." << endl;
     cleng_flag_termination++;
     if (cleng_flag_termination > 1) exit(signum);
-}
-
-bool Cleng::InRange() {
-    bool in_range = false;
-    Point down_boundary = {1, 1, 1};
-    Point up_boundary = box - down_boundary;
-    Point MPs(nodes_map[id_node_for_move].data()->get()->point() + clamped_move);
-
-    if ((down_boundary.all_elements_less_than(MPs)) and (MPs.all_elements_less_than(up_boundary))) in_range = true;
-    return in_range;
 }
 
 void Cleng::make_BC() {
@@ -168,39 +156,72 @@ vector<Real> Cleng::prepare_vtk() {
     return vtk;
 }
 
+int Cleng::prepareIdNode() {
+    if (debug) cout << "prepareIdNode in Cleng" << endl;
+    int id_node_for_move = 0;
+    if (ids_node4move[0] != -1) { id_node_for_move = ids_node4move[rand.getInt(0, (int) ids_node4move.size() - 1)]; }
+    else { id_node_for_move = rand.getInt(0, (int) nodes_map.size() - 1); }
+
+    if (id_node_for_move > (int) nodes_map.size() - 1) {
+        cout << "###" << endl;
+        cout << "Node id is too high. Trying to move node id: " << id_node_for_move << "." << endl;
+        cout << "Available nodes_map: " << endl;
+        for (auto &&n: nodes_map)
+            cout << "id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+        cout << "Termination..." << endl;
+        exit(0);
+    }
+
+    return id_node_for_move;
+}
+
+void Cleng::prepareIdsNode() {
+    if (debug) cout << "prepareIdsNode in Cleng" << endl;
+    pivot_node_ids = {0, 1, 2};
+}
+
 Point Cleng::prepareMove() {
     if (debug) cout << "prepareMove in Cleng" << endl;
+    Point clamped_move;
 
-    if (axis) {
-        int c1=1;  // sing of movement +1 or -1
-        int c2=2;  // MC step by default 2; could be 1 in two_ends_extension mode
+    if (pivot_move) {
+        // create in cleng pivot_node_ids
+        prepareIdsNode();
+        // create in cleng rotation_matrix
+        prepareRotationMatrix();
 
-        if (two_ends_extension) c2 = 1;
-        if (sign_move == "-") c1=-1;
-        // currently it is implemented for step
-        if (axis == 1) clamped_move = {c1*c2, 0, 0};
-        if (axis == 2) clamped_move = {0, c1*c2, 0};
-        if (axis == 3) clamped_move = {0, 0, c1*c2};
     } else {
-        clamped_move = {
-                rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
-                rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
-                rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
-        };
+        if (axis) {
+            int c1 = 1;  // sing of movement +1 or -1
+            int c2 = 2;  // MC step by default 2; could be 1 in two_ends_extension mode
 
-        if ((delta_step % 2) == 1) {  // 1 3 5
-            int id4rm = rand.getInt(0, 2);
-            if (id4rm == 0) clamped_move.x = 0;
-            else { if (id4rm == 1) clamped_move.y = 0; else clamped_move.z = 0;}
-        } else {  // 2 4 6
-            int id4rm1 = rand.getInt(0, 2);
-            int id4rm2 = rand.getInt(0, 2);
+            if (two_ends_extension) c2 = 1;
+            if (sign_move == "-") c1 = -1;
+            // currently it is implemented for step
+            if (axis == 1) clamped_move = {c1 * c2, 0, 0};
+            if (axis == 2) clamped_move = {0, c1 * c2, 0};
+            if (axis == 3) clamped_move = {0, 0, c1 * c2};
+        } else {
+            clamped_move = {
+                    rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
+                    rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
+                    rand.getIntExcludeArray(-delta_step, delta_step, makeExcludedArray(delta_step)),
+            };
 
-            if (id4rm1 == 0) clamped_move.x = 0;
-            else {if (id4rm1 == 1) clamped_move.y = 0; else clamped_move.z = 0;}
+            if ((delta_step % 2) == 1) {  // 1 3 5
+                int id4rm = rand.getInt(0, 2);
+                if (id4rm == 0) clamped_move.x = 0;
+                else { if (id4rm == 1) clamped_move.y = 0; else clamped_move.z = 0; }
+            } else {  // 2 4 6
+                int id4rm1 = rand.getInt(0, 2);
+                int id4rm2 = rand.getInt(0, 2);
 
-            if (id4rm2 == 0) clamped_move.x = 0;
-            else { if (id4rm2 == 1) clamped_move.y = 0; else clamped_move.z = 0;}
+                if (id4rm1 == 0) clamped_move.x = 0;
+                else { if (id4rm1 == 1) clamped_move.y = 0; else clamped_move.z = 0; }
+
+                if (id4rm2 == 0) clamped_move.x = 0;
+                else { if (id4rm2 == 1) clamped_move.y = 0; else clamped_move.z = 0; }
+            }
         }
     }
     return clamped_move;
@@ -212,57 +233,57 @@ Matrix<Real> Cleng::prepareRotationMatrix() {
     if (pivot_axis) {
         if (pivot_axis == -1) {
             int pivot_axis_current = rand.getInt(1, 3);
-            rotation_matrix = create_rotational_matrix<Real>(pivot_axis_current, pivot_move);
-        } else rotation_matrix = create_rotational_matrix<Real>(pivot_axis, pivot_move);
+            rotation_matrix = _create_rotational_matrix<Real>(pivot_axis_current, pivot_move);
+        } else rotation_matrix = _create_rotational_matrix<Real>(pivot_axis, pivot_move);
         return rotation_matrix;
     }
 
 }
 
-template <class T>
-Matrix<T> Cleng::create_rotational_matrix(int axis_rotation, int grad) {
-    Matrix<Real> rotation_matrix_(3,3);
-    switch ( axis_rotation ) {
+template<class T>
+Matrix<T> Cleng::_create_rotational_matrix(int axis_rotation, int grad) {
+    Matrix<Real> rotation_matrix_(3, 3);
+    switch (axis_rotation) {
         case 1:
             rotation_matrix_.put(0, 0, 1);
             rotation_matrix_.put(0, 1, 0);
             rotation_matrix_.put(0, 2, 0);
 
-            rotation_matrix_.put(1,0, 0);
-            rotation_matrix_.put(1,1, cos(grad * PIE / 180.0));
-            rotation_matrix_.put(1,2, -sin(grad * PIE / 180.0));
+            rotation_matrix_.put(1, 0, 0);
+            rotation_matrix_.put(1, 1, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(1, 2, -sin(grad * PIE / 180.0));
 
-            rotation_matrix_.put(2,0, 0);
-            rotation_matrix_.put(2,1, sin(grad * PIE / 180.0));
-            rotation_matrix_.put(2,2, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(2, 0, 0);
+            rotation_matrix_.put(2, 1, sin(grad * PIE / 180.0));
+            rotation_matrix_.put(2, 2, cos(grad * PIE / 180.0));
 
             break;
         case 2:
-            rotation_matrix_.put(0,0, cos(grad * PIE / 180.0));
-            rotation_matrix_.put(0,1, 0);
-            rotation_matrix_.put(0,2, sin(grad * PIE / 180.0));
+            rotation_matrix_.put(0, 0, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(0, 1, 0);
+            rotation_matrix_.put(0, 2, sin(grad * PIE / 180.0));
 
-            rotation_matrix_.put(1,0, 0);
-            rotation_matrix_.put(1,1, 1);
-            rotation_matrix_.put(1,2, 0);
+            rotation_matrix_.put(1, 0, 0);
+            rotation_matrix_.put(1, 1, 1);
+            rotation_matrix_.put(1, 2, 0);
 
-            rotation_matrix_.put(2,0, -sin(grad * PIE / 180.0));
-            rotation_matrix_.put(2,1, 0);
-            rotation_matrix_.put(2,2, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(2, 0, -sin(grad * PIE / 180.0));
+            rotation_matrix_.put(2, 1, 0);
+            rotation_matrix_.put(2, 2, cos(grad * PIE / 180.0));
 
             break;
         case 3:
-            rotation_matrix_.put(0,0, cos(grad * PIE / 180.0));
-            rotation_matrix_.put(0,1, -sin(grad * PIE / 180.0));
-            rotation_matrix_.put(0,2, 0);
+            rotation_matrix_.put(0, 0, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(0, 1, -sin(grad * PIE / 180.0));
+            rotation_matrix_.put(0, 2, 0);
 
-            rotation_matrix_.put(1,0, sin(grad * PIE / 180.0));
-            rotation_matrix_.put(1,1, cos(grad * PIE / 180.0));
-            rotation_matrix_.put(1,2, 0);
+            rotation_matrix_.put(1, 0, sin(grad * PIE / 180.0));
+            rotation_matrix_.put(1, 1, cos(grad * PIE / 180.0));
+            rotation_matrix_.put(1, 2, 0);
 
-            rotation_matrix_.put(2,0, 0);
-            rotation_matrix_.put(2,1, 0);
-            rotation_matrix_.put(2,2, 1);
+            rotation_matrix_.put(2, 0, 0);
+            rotation_matrix_.put(2, 1, 0);
+            rotation_matrix_.put(2, 2, 1);
             break;
 
         default:
@@ -292,6 +313,7 @@ int Cleng::getLastMCS() {
 
 void Cleng::WriteOutput() {
     if (debug) cout << "WriteOutput in Cleng" << endl;
+    cout << "[Cleng] Saving... " << MC_attempt + MCS_checkpoint << endl;
     PushOutput();
     New[0]->PushOutput();
     for (int i = 0; i < n_out; i++) Out[i]->WriteOutput(MC_attempt + MCS_checkpoint);
@@ -391,14 +413,14 @@ void Cleng::WriteClampedNodePosition() {
 
 //    cout
     outfile
-    << "#step " << MC_attempt + MCS_checkpoint << " {X, Y, Z} #" << endl;
+            << "#step " << MC_attempt + MCS_checkpoint << " {X, Y, Z} #" << endl;
 
     int i = 0;
     for (auto &&SN :  simpleNodeList) {
         if (!(i % 2)) {
 //            cout
             outfile
-            << SN->get_system_point().to_string() << SN->get_cnode()->get_system_point().to_string() << endl;
+                    << SN->get_system_point().to_string() << SN->get_cnode()->get_system_point().to_string() << endl;
 //            << SN->get_system_point().to_string() << endl;
         }
         i++;

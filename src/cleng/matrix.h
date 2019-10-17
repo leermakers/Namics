@@ -26,7 +26,7 @@ public:
     Matrix<T> subtract(const Matrix<T>& m) const;
     Matrix<T> multiply(const Matrix<T>& m) const;
     Matrix<T> dot(const Matrix<T>& m) const;
-    Point dot(Point &point) const;
+    Point dot(Point point) const;
     Matrix<T> negate() const;
     Matrix<T> transpose() const;
     Matrix<T> multiply(const T& value) const;
@@ -188,7 +188,7 @@ Matrix<T> Matrix<T>::multiply(const Matrix& m) const{
 }
 
 template<class T>
-Point Matrix<T>::dot(Point &point) const {
+Point Matrix<T>::dot(Point point) const {
     Point result;
 
     for (int i=0 ; i<height ; i++){
@@ -197,7 +197,7 @@ Point Matrix<T>::dot(Point &point) const {
         }
     }
 
-    cout << result.to_string() << endl;
+    cout << "MATRIX: result: " << result.to_string() << endl;
 
     return result;
 }

@@ -38,8 +38,8 @@ string Monolit::to_string() const {
     return res;
 }
 
-bool Monolit::inSubBoxRange(const Point &subBoxRange, const Point &shift) const {
-    for (auto &&n : m_nodes) if (!n->inSubBoxRange(subBoxRange, shift)) return false;
+bool Monolit::inSubBoxRange(const Point &subBoxRange) const {
+    for (auto &&n : m_nodes) if (!n->inSubBoxRange(subBoxRange)) return false;
     return true;
 }
 

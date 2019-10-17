@@ -24,9 +24,7 @@ public:
 
     shared_ptr<SimpleNode> get_cnode();
 
-    bool inSubBoxRange(const Point &subBoxRange, const Point &shift) const override;
-
-    Real distance_with_shift(const Point &point, const Point &shift) const;
+    bool inSubBoxRange(const Point &subBoxRange) const override;
 
     Real distance(const Point &other) const;
 

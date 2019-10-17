@@ -304,7 +304,7 @@ bool Cleng::CP(transfer tofrom) {
                 //
                 simpleNodeList.push_back(first_node);
                 simpleNodeList.push_back(second_node);}
-            nodes_map = createNodes(simpleNodeList);
+            nodes_map = createNodes(simpleNodeList, pivot_arm_nodes, pivot_arms);
             break;
 
         case to_segment:
@@ -365,7 +365,7 @@ bool Cleng::CP(transfer tofrom) {
     return success;
 }
 
-bool Cleng::Checks(int id_node_for_move, const Point& clamped_move) {
+bool Cleng::Checks(int id_node_for_move) {
     bool in_range;
 
     bool in_subbox_range = InSubBoxRange(id_node_for_move);
@@ -386,9 +386,47 @@ bool Cleng::Checks(int id_node_for_move, const Point& clamped_move) {
     return result;
 }
 
-bool Cleng::MakeChecks(int id_node_for_move, const Point& clamped_move) {
+bool Cleng::MakeChecks(int id_node_for_move) {
     bool success = true;
-    while (!Checks(id_node_for_move, clamped_move)) {
+
+    //TODO Think again about bad shifts...
+//    map<int, int> bad_nodes;
+//
+//    for (auto &&n : nodes_map) {
+//        cout << "Node id: " << n.first << " " << endl;
+//        if (!n.second.data()->get()->_isGood()) bad_nodes[n.first] = 0;
+//    }
+//
+//    for (auto &&pair: bad_nodes) {
+//        cout << ">>> bad node index : " << pair.first << endl;
+//        cout << "I will slightly move it..." << endl;
+//        while (!nodes_map[pair.first].data()->get()->_isGood()) {
+//            Point move_ = {
+//                    rand.getInt(-1, 1),
+//                    rand.getInt(-1, 1),
+//                    rand.getInt(-1, 1)
+//            };
+//            cout << "little move: " << move_.to_string() << endl;
+//            nodes_map[pair.first].data()->get()->shift(move_);
+//
+////            cout << "[Cleng] After movement: " << endl;
+////            for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+////            cout << endl;
+//
+//            if (!nodes_map[pair.first].data()->get()->_isGood()) {
+//                cout << "Returning..." << endl;
+//                nodes_map[pair.first].data()->get()->shift(move_.negate());
+////                cout << "[Cleng] After returning: " << endl;
+////                for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+////                cout << endl;
+//            }
+//        }
+//    }
+//
+//    cout << endl;
+
+
+    while (!Checks(id_node_for_move)) {
         cout << "Prepared MC step for a node does not pass checks. Rejected." << endl;
         MakeMove(true);
         rejected++;
@@ -396,6 +434,16 @@ bool Cleng::MakeChecks(int id_node_for_move, const Point& clamped_move) {
         cout << "[Cleng] Current state of system: " << endl;
         for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
         cout << endl;
+
+        if (pivot_move) {
+            cout << "[Cleng] System_pivot: " << endl;
+            for (auto &&pair_pivot : pivot_arm_nodes) {
+                cout << " arm: " << pair_pivot.first << " ids: ";
+                for (auto &&ids: pair_pivot.second) cout << ids << " ";
+                cout << endl;
+            }
+            cout << endl;
+        }
         success = false;
         return success; // TODO: CHECK THIS RETURN
     }
@@ -439,10 +487,12 @@ void Cleng::_moveClampedNode(bool back, int id_node_for_move, const Point& clamp
 }
 
 Point Cleng::preparePivotClampedMove(int id_node_for_move) {
-    // TODO: instead need to use system point...
-    Point current_Point = nodes_map[id_node_for_move].data()->get()->point();
+
+    Point current_Point = nodes_map[id_node_for_move].data()->get()->_returnSystemPoint();
+    cout << "Current_point: " << nodes_map[id_node_for_move].data()->get()->_returnSystemPoint().to_string() << endl;
     Point point_shifted_by_matrix = rotation_matrix.dot(current_Point);;
     Point clamped_move = point_shifted_by_matrix - current_Point;
+    cout << "[Clamped Move] : " << clamped_move.to_string() << endl;
     return clamped_move;
 }
 
@@ -475,7 +525,7 @@ bool Cleng::MakeMove(bool back) {
             cout << endl;
 
             for (auto &&node_id : pivot_node_ids) {
-                success = MakeChecks(node_id, clamped_move);
+                success = MakeChecks(node_id);
                 if (!success) return success;
             }
 
@@ -490,7 +540,7 @@ bool Cleng::MakeMove(bool back) {
             id_node_for_move = prepareIdNode();
             clamped_move = prepareMove();
             _moveClampedNode(back, id_node_for_move, clamped_move);
-            success = MakeChecks(id_node_for_move, clamped_move);
+            success = MakeChecks(id_node_for_move);
             if (!success) return success;
             nodeIDs_clampedMove[id_node_for_move] = clamped_move;
         }
@@ -510,7 +560,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
     if (checkpoint_load) {
         if (checkpoint.isLoadable()) {
             simpleNodeList = checkpoint.loadCheckpoint(simpleNodeList, box);
-            nodes_map = createNodes(simpleNodeList);
+            nodes_map = createNodes(simpleNodeList, pivot_arm_nodes, pivot_arms);
             cout << "From checkpoint next nodes_map are available: " << endl;
             for (auto &&n : nodes_map) cout << "id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
             CP(to_segment);
@@ -561,6 +611,15 @@ bool Cleng::MonteCarlo(bool save_vector) {
     cout << "[Cleng] System: " << endl;
     for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
     cout << endl;
+    if (pivot_move) {
+        cout << "[Cleng] System_pivot: " << endl;
+        for (auto &&pair_pivot : pivot_arm_nodes) {
+            cout << " arm: " << pair_pivot.first << " ids: ";
+            for (auto &&ids: pair_pivot.second) cout << ids << " ";
+            cout << endl;
+        }
+        cout << endl;
+    }
     cout << "Here we go..." << endl;
     bool success_;
     for (MC_attempt = 1; MC_attempt <= MCS; MC_attempt++) { // main loop for trials

@@ -14,6 +14,10 @@ public:
 
     void shift(const Matrix<Real> &matrix) override;
 
+    Point _returnSystemPoint() const override;
+
+    bool _isGood() const override;
+
     std::string to_string() const override;
 
     Point point() const override;
@@ -29,6 +33,10 @@ public:
     Real distance(const Point &other) const;
 
     Point get_system_point() const;
+
+    int get_ID() const;
+
+    bool isIdInside(const int &ID) const override;
 
 private:
     Point system_point;

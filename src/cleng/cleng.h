@@ -87,7 +87,10 @@ public:
     int pivot_move{};
     int pivot_axis{};
     vector<int> pivot_node_ids;
+    int pivot_arms;
+
     map<int, Point> nodeIDs_clampedMove;
+    map<int, vector<int>> pivot_arm_nodes;
 
     Matrix<Real> rotation_matrix;
 
@@ -126,8 +129,6 @@ public:
     int *zs = nullptr;
 
     ofstream out;
-//    Point clamped_move;
-//    int id_node_for_move=0;
     Real free_energy_current{};
     Real free_energy_trial{};
 
@@ -143,13 +144,13 @@ public:
 
     bool MakeMove(bool back);
 
-    bool MakeChecks(int id_node_for_move, const Point &clamped_move);
+    bool MakeChecks(int id_node_for_move);
 
     void _moveClampedNode(bool back, int id_node_for_move, const Point &clamped_move);
 
     Point preparePivotClampedMove(int id_node_for_move);
 
-    bool Checks(int id_node_for_move, const Point &clamped_move);
+    bool Checks(int id_node_for_move);
 
     bool InSubBoxRange(int id_node_for_move);
 

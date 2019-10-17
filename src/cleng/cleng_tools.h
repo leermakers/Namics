@@ -36,16 +36,34 @@ shared_ptr<SimpleNode> fromSystemToNode(int x, int y, int z, int id, const Point
     return make_shared<SimpleNode>(Point(x, y, z), id, box);
 }
 
-map<int, vector<shared_ptr<Node>>> createNodes(const vector<shared_ptr<SimpleNode>> &simple_nodes) {
+map<int, vector<shared_ptr<Node>>> createNodes(const vector<shared_ptr<SimpleNode>> &simple_nodes, map<int, vector<int>> &pivot_arm_nodes, int &arms) {
     map<int, vector<shared_ptr<Node>>> result_map;
     int index = 0;
+    arms = 0;
     map<SimpleNode, vector<shared_ptr<SimpleNode>>> m;
-    for (auto &&n  : simple_nodes) { m[*n].push_back(n); }
+    for (auto &&n : simple_nodes) m[*n].push_back(n);
     for (auto &&entry : m) {
         if (entry.second.size() == 1) result_map[index] = {entry.second[0]};
         else result_map[index] = {make_shared<Monolit>(entry.second)};
         index++;
     }
+    // pivot_arm_nodes
+    Point P_first = simple_nodes[0]->point();
+    for (auto &&n : simple_nodes) {
+        int ID_test = n->get_ID();
+//        cout << "ID_test: " << ID_test << endl;
+        if (n->point() == P_first) arms++;
+        for (auto &&node : result_map) {
+            if (node.second.data()->get()->isIdInside(ID_test)) {pivot_arm_nodes[arms].push_back(node.first);}
+        }
+    }
+    // clean up the repeating elements
+    for (auto &&pair : pivot_arm_nodes){
+        int arm_ = pair.first;
+        auto last = std::unique(pivot_arm_nodes[arm_].begin(), pivot_arm_nodes[arm_].end());
+        pivot_arm_nodes[arm_].erase(last, pivot_arm_nodes[arm_].end());
+    }
+
     return result_map;
 }
 
@@ -177,7 +195,19 @@ int Cleng::prepareIdNode() {
 
 void Cleng::prepareIdsNode() {
     if (debug) cout << "prepareIdsNode in Cleng" << endl;
-    pivot_node_ids = {0, 1, 2};
+    pivot_node_ids.clear();
+
+    int _arm = rand.getInt(1, pivot_arms);
+    int _start_index = rand.getInt(1, pivot_arm_nodes[_arm].size()-1);
+
+    for (int i = _start_index; i<pivot_arm_nodes[_arm].size(); i++)
+        pivot_node_ids.push_back(pivot_arm_nodes[_arm][i]);
+
+    cout << "LOOK HERE" << endl;
+    cout << "arm : " << _arm << endl;
+    cout << "start_index : " << _start_index << endl;
+    for (auto &&iD: pivot_node_ids) cout << "id: " << iD << endl;
+    cout << "LOOK HERE" << endl;
 }
 
 Point Cleng::prepareMove() {

@@ -12,13 +12,17 @@ public:
 
     virtual void pushSystemPoints(std::map<int, Point> &pointsById) const = 0;
 
-    virtual bool operator<(const Node &other) const {
-        return point() < other.point();
-    }
+    virtual bool operator<(const Node &other) const {return point() < other.point();}
 
     virtual std::string to_string() const = 0;
 
     virtual bool inSubBoxRange(const Point &subBoxRange) const = 0;
+
+    virtual Point _returnSystemPoint() const = 0;
+
+    virtual bool _isGood() const = 0;
+
+    virtual bool isIdInside(const int &ID) const = 0;
 
     virtual ~Node() = default;
 };

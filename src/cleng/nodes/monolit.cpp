@@ -43,3 +43,23 @@ bool Monolit::inSubBoxRange(const Point &subBoxRange) const {
     return true;
 }
 
+Point Monolit::_returnSystemPoint() const {
+    for (auto &&n : m_nodes) return n->_returnSystemPoint();
+}
+
+bool Monolit::_isGood() const {
+    bool success = false;
+    vector<bool> results;
+    for (auto &&n : m_nodes) results.push_back(n->_isGood());
+    for (auto &&result: results) if (result) success = true;
+    return success;
+}
+
+bool Monolit::isIdInside(const int &ID) const {
+    bool success = false;
+    vector<bool> results;
+    for (auto &&n : m_nodes) results.push_back(n->isIdInside(ID));
+    for (auto &&result: results) if (result) success = true;
+    return success;
+
+}

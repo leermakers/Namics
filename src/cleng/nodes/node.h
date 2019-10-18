@@ -20,8 +20,6 @@ public:
 
     virtual Point _returnSystemPoint() const = 0;
 
-    virtual bool _isGood() const = 0;
-
     virtual bool isIdInside(const int &ID) const = 0;
 
     virtual ~Node() = default;

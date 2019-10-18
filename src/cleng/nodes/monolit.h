@@ -26,8 +26,6 @@ public:
 
     Point _returnSystemPoint() const override;
 
-    bool _isGood() const override;
-
     bool isIdInside(const int &ID) const override;
 
 private:

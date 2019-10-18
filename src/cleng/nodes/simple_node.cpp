@@ -1,6 +1,5 @@
 #include <utility>
 #include "simple_node.h"
-#include "random/random.h"
 
 SimpleNode::SimpleNode(const Point &p, int id, const Point &box_size) :
         system_point(p),
@@ -45,6 +44,7 @@ bool SimpleNode::inSubBoxRange(const Point &subBoxRange) const {
 
 // TODO: implement operator=>
     if (distance > subBoxRange) {
+        cout << endl;
         cout << "Nodes are too far away from each other: " << this->id << " and " << cnode->id << endl;
         cout << "(int) Distance: " << std::to_string((int) dist) << " between of " << system_point.to_string()
              << " and " << cnode->system_point.to_string() << endl;
@@ -72,25 +72,6 @@ Point SimpleNode::_returnSystemPoint() const {
 
 int SimpleNode::get_ID() const {
     return this->id;
-}
-
-bool SimpleNode::_isGood() const {
-    bool success = true;
-    int chain_length = 49;  // TODO FIX IT!
-    Point p3 = cnode->get_system_point() - system_point;
-    int path_length = abs(p3.x) + abs(p3.y) + abs(p3.z);
-
-    int path_length_even = path_length % 2;
-    int chain_length_even = chain_length % 2;
-
-//    cout << "[path_length]  " << path_length << endl;
-//    cout << "[chain_length] " << chain_length << endl;
-
-    if (path_length_even == chain_length_even) success = false;
-    if (path_length >= chain_length) success = false;
-
-    cout << "[SimpleNode _isGood] success " << success << endl;
-    return success;
 }
 
 bool SimpleNode::isIdInside(const int &ID) const {

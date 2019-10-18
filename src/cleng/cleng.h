@@ -45,10 +45,13 @@ private:
     const string brand;
 
     int cmajor_version = 1;
-    int cminor_version = 2;
-    int cpatch = 3;
-    int cversion = 110;
+    int cminor_version = 3;
+    int cpatch = 0;
+    int cversion = 120;
     int pseed{};
+    string internal_name = "[Cleng] ";
+    string metropolis_name = "[Metropolis] ";
+    string analysis_name = "[Analysis] ";
 
     void fillXYZ();
 
@@ -92,7 +95,8 @@ public:
     map<int, Point> nodeIDs_clampedMove;
     map<int, vector<int>> pivot_arm_nodes;
 
-    Matrix<Real> rotation_matrix;
+// TODO: expand to template
+    Matrix<int> rotation_matrix;
 
     int t{};
     int delta_save{};
@@ -134,6 +138,7 @@ public:
 
     Real accepted{};
     Real rejected{};
+    Real cleng_rejected{};
     int MC_attempt{};
 
     vector<Real> test_vector;
@@ -180,7 +185,8 @@ public:
 
     void prepareIdsNode();
 
-    Matrix<Real> prepareRotationMatrix();
+    template<class T>
+    Matrix<T> prepareRotationMatrix();
 
     template<class T>
     Matrix<T> _create_rotational_matrix(int axis_rotation, int grad);
@@ -192,8 +198,6 @@ public:
     string GetValue(const string&);
 
     Real GetN_times_mu();
-
-
 };
 
 #endif

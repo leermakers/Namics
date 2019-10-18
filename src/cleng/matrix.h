@@ -190,15 +190,11 @@ Matrix<T> Matrix<T>::multiply(const Matrix& m) const{
 template<class T>
 Point Matrix<T>::dot(Point point) const {
     Point result;
-
     for (int i=0 ; i<height ; i++){
         for (int h=0 ; h<width ; h++){
-            result[h] += array[i][h] * point[h];
+            result[i] += array[i][h] * point[h];
         }
     }
-
-    cout << "MATRIX: result: " << result.to_string() << endl;
-
     return result;
 }
 

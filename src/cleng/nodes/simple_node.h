@@ -16,8 +16,6 @@ public:
 
     Point _returnSystemPoint() const override;
 
-    bool _isGood() const override;
-
     std::string to_string() const override;
 
     Point point() const override;

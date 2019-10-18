@@ -82,10 +82,6 @@ bool Cleng::InSubBoxRange(int id_node_for_move) {
         id_nodes.push_back(id_node_for_move);
         success = false;
     }
-    if (!id_nodes.empty()) {
-        cout << "These nodes_map[id] are not in sub-box range:" << endl;
-        for (auto &&nid: id_nodes) cout << nid << endl;
-    }
     return success;
 }
 
@@ -110,7 +106,10 @@ bool Cleng::IsCommensuratable() {
             if (path_length >= chain_length) success = false;
         }
     }
-    if (!success) cout << "[WARNING] paths between clamps is not commensurate with the chain length!" << endl;
+    if (!success) {
+        cout << endl;
+        cout << "[WARNING] paths between clamps is not commensurate with the chain length!" << endl;
+    }
     return success;
 }
 
@@ -124,9 +123,10 @@ bool Cleng::NotCollapsing(int id_node_for_move) {
         if (shifted_point != test_point) {
             Real distance = shifted_point.distance(n.second.data()->get()->point());
             if (distance <= min_dist) {
+                cout << endl;
                 cout << "Nodes are too close to each other." << endl;
-                cout << "Shifted point from nodes_map: " << shifted_point.to_string() << endl;
-                cout << "Test point from nodes_map:    " << test_point.to_string() << endl;
+                cout << "Shifted point from nodes_map: "     << shifted_point.to_string() << endl;
+                cout << "Test point from nodes_map:    "     << test_point.to_string()    << endl;
                 not_collapsing = false;
             }
         }
@@ -146,7 +146,7 @@ bool Cleng::InRange(int id_node_for_move) {
 }
 
 void signalHandler(int signum) {
-    cout << "Termination..." << endl;
+    cout << "---> Termination..." << endl;
     cleng_flag_termination++;
     if (cleng_flag_termination > 1) exit(signum);
 }
@@ -196,18 +196,11 @@ int Cleng::prepareIdNode() {
 void Cleng::prepareIdsNode() {
     if (debug) cout << "prepareIdsNode in Cleng" << endl;
     pivot_node_ids.clear();
-
     int _arm = rand.getInt(1, pivot_arms);
-    int _start_index = rand.getInt(1, pivot_arm_nodes[_arm].size()-1);
-
-    for (int i = _start_index; i<pivot_arm_nodes[_arm].size(); i++)
+    int _start_index = rand.getInt(0, pivot_arm_nodes[_arm].size()-2);
+    for (size_t i = _start_index; i<pivot_arm_nodes[_arm].size(); i++)
         pivot_node_ids.push_back(pivot_arm_nodes[_arm][i]);
-
-    cout << "LOOK HERE" << endl;
-    cout << "arm : " << _arm << endl;
-    cout << "start_index : " << _start_index << endl;
-    for (auto &&iD: pivot_node_ids) cout << "id: " << iD << endl;
-    cout << "LOOK HERE" << endl;
+//    for (auto &&iD: pivot_node_ids) cout << "id: " << iD << endl;
 }
 
 Point Cleng::prepareMove() {
@@ -215,10 +208,8 @@ Point Cleng::prepareMove() {
     Point clamped_move;
 
     if (pivot_move) {
-        // create in cleng pivot_node_ids
         prepareIdsNode();
-        // create in cleng rotation_matrix
-        prepareRotationMatrix();
+        prepareRotationMatrix<int>();
 
     } else {
         if (axis) {
@@ -257,22 +248,19 @@ Point Cleng::prepareMove() {
     return clamped_move;
 }
 
-Matrix<Real> Cleng::prepareRotationMatrix() {
+template<class T>
+Matrix<T> Cleng::prepareRotationMatrix() {
     if (debug) cout << "prepareRotationMatrix in Cleng" << endl;
-
-    if (pivot_axis) {
-        if (pivot_axis == -1) {
-            int pivot_axis_current = rand.getInt(1, 3);
-            rotation_matrix = _create_rotational_matrix<Real>(pivot_axis_current, pivot_move);
-        } else rotation_matrix = _create_rotational_matrix<Real>(pivot_axis, pivot_move);
-        return rotation_matrix;
-    }
-
+    if (pivot_axis == -1) {
+        int pivot_axis_current = rand.getInt(1, 3);
+        rotation_matrix = _create_rotational_matrix<T>(pivot_axis_current, pivot_move);
+    } else rotation_matrix = _create_rotational_matrix<T>(pivot_axis, pivot_move);
+    return rotation_matrix;
 }
 
 template<class T>
 Matrix<T> Cleng::_create_rotational_matrix(int axis_rotation, int grad) {
-    Matrix<Real> rotation_matrix_(3, 3);
+    Matrix<T> rotation_matrix_(3, 3);
     switch (axis_rotation) {
         case 1:
             rotation_matrix_.put(0, 0, 1);

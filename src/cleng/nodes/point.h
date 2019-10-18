@@ -28,6 +28,7 @@ public:
         if (index == 0) return static_cast<int &>(this->x);
         if (index == 1) return static_cast<int &>(this->y);
         if (index == 2) return static_cast<int &>(this->z);
+        else {cout << "[WARNING!] index is out of the range" << endl; return static_cast<int &>(this->x);}
     }
 
     Point operator+(const Point &p) const { return {x + p.x, y + p.y, z + p.z}; }

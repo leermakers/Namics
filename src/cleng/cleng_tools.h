@@ -251,10 +251,11 @@ Point Cleng::prepareMove() {
 template<class T>
 Matrix<T> Cleng::prepareRotationMatrix() {
     if (debug) cout << "prepareRotationMatrix in Cleng" << endl;
+    int pivot_coef = rand.getIntExcludeArray(-1, 1, {0});
     if (pivot_axis == -1) {
         int pivot_axis_current = rand.getInt(1, 3);
-        rotation_matrix = _create_rotational_matrix<T>(pivot_axis_current, pivot_move);
-    } else rotation_matrix = _create_rotational_matrix<T>(pivot_axis, pivot_move);
+        rotation_matrix = _create_rotational_matrix<T>(pivot_axis_current, pivot_move*pivot_coef);
+    } else rotation_matrix = _create_rotational_matrix<T>(pivot_axis, pivot_move*pivot_coef);
     return rotation_matrix;
 }
 

@@ -451,6 +451,8 @@ bool Cleng::MakeMove(bool back) {
         for (auto &&nodeID_clampedMove : nodeIDs_clampedMove) {
             _moveClampedNode(back, nodeID_clampedMove.first, nodeID_clampedMove.second);
         }
+        CP(to_segment);
+        New[0]->Solve(true);
         cout << "[Moved back]" << endl;
     } else {
         if (pivot_move) {
@@ -596,7 +598,6 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
                     cout << "%?% The step will be rejected! Simulation will continue... " << endl;
                     MakeMove(true);
-                    CP(to_segment);
                     rejected++;
                     cleng_rejected++;
                     continue;
@@ -630,7 +631,6 @@ bool Cleng::MonteCarlo(bool save_vector) {
                     } else {
                         cout << internal_name << metropolis_name << "Rejected" << endl;
                         MakeMove(true);
-                        CP(to_segment);
                         rejected++;
                     }
                 }

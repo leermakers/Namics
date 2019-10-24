@@ -184,8 +184,13 @@ bool NamicsConfig::guess_geometry(
 
         if (CHARGED) IV += m;
         if (start > 1) {
+#ifdef CUDA
+            cudaFree(X);
+            X = (Real *)AllOnDev(IV);
+#else
             free(X);
             X = (Real *) malloc(IV * sizeof(Real));
+#endif
         }
         MONLIST.clear();
         STATELIST.clear();
@@ -250,7 +255,7 @@ bool NamicsConfig::initMesodyn(
     New[0]->Guess(X, METHOD, std::move(MONLIST), std::move(STATELIST), CHARGED, MX, MY, MZ, fjc_old);
     if (debug) cout << "Creating mesodyn" << endl;
     Mes.push_back(new Mesodyn(start, In, Lat, Seg, Sta, Rea, Mol, Sys, New, In[0]->MesodynList[0]));
-    if (!Mes[0]->CheckInput(start)) {
+    if (!Mes[0]->CheckInput()) {
         if (debug) cout << "CheckInput in Mes raises error! " << endl;
         success = false;
         return success;
@@ -290,7 +295,7 @@ bool NamicsConfig::initSCF(
         int &start,
         int &subloop, int &substart, int &scan_nr, int &search_nr, int &ets_nr, int &etm_nr,
         int &target_nr, int &bm_nr,
-        Real *&X, string &METHOD, vector<string> MONLIST, vector<string> STATELIST,
+        Real *&X, string &METHOD, const vector<string>& MONLIST, const vector<string>& STATELIST,
         bool &CHARGED, int &MX, int &MY, int &MZ, int &fjc_old
         ) {
     bool success = true;

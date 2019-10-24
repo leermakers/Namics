@@ -398,7 +398,7 @@ bool Cleng::Checks(int id_node_for_move) {
     bool commensurate = IsCommensuratable();
 
     bool result = not_collapsing and in_range and in_subbox_range and commensurate;
-    cout << "[Checks] result: " << result << endl;
+//    cout << "[Checks] result: " << result << endl;
     return result;
 }
 
@@ -671,7 +671,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
                         cout << internal_name << metropolis_name << "returning back the system configuration... " << endl;
                         New[0]->Solve(true);
                         rejected++;
-                        cout << " done" << endl;
+                        cout << "... [Done]" << endl;
                     }
                 }
             }

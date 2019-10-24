@@ -84,7 +84,7 @@ public:
             int &start,
             int &subloop, int &substart, int &scan_nr, int &search_nr, int &ets_nr, int &etm_nr,
             int &target_nr, int &bm_nr,
-            Real *&X, string &METHOD, vector<string> MONLIST, vector<string> STATELIST,
+            Real *&X, string &METHOD, const vector<string>& MONLIST, const vector<string>& STATELIST,
             bool &CHARGED, int &MX, int &MY, int &MZ, int &fjc_old
             );
 

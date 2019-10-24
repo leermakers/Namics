@@ -42,6 +42,7 @@ Cleng::Cleng(
     KEYS.emplace_back("prefactor_kT");
     KEYS.emplace_back("pivot_move");
     KEYS.emplace_back("pivot_axis");
+    KEYS.emplace_back("pivot+one_node");
 
     // Debug.log
     //out.open("debug.out", ios_base::out);
@@ -116,11 +117,23 @@ bool Cleng::CheckInput(int start, bool save_vector) {
             if (debug) cout << "pivot_axis is " << pivot_axis << endl;
         } else {pivot_axis = 0;} // pivot_axis = 0 means disable pivot.
 
-        if ((delta_step) and (pivot_move)) {
-            cout << "Sorry, but you have to choose either one_node_move by `delta_step` parameter or `pivot_move`." << endl;
-            cout << "Termination..." << endl;
+        // pivot+one_node
+        if (!GetValue("pivot+one_node").empty()) {
+            pivot_one_node = In[0]->Get_bool(GetValue("pivot+one_node"), false);
+        } else pivot_one_node = false;
+        if (debug) cout << "pivot+one_node " << pivot_one_node << endl;
+        if ((pivot_one_node) and (!pivot_move)) {
+            cout << "Sorry, if you like to use combination pivot+one_node move, please, specify pivot movement "
+                    "by parameter 'pivot_move'"
+                    "\n Termination..." << endl;
             exit(0);
         }
+
+//        if ((delta_step) and (pivot_move) and ()) {
+//            cout << "Sorry, but you have to choose either one_node_move by `delta_step` parameter or `pivot_move`"
+//                    "\n Termination..." << endl;
+//            exit(0);
+//        }
 
         // delta_save
         if (!GetValue("delta_save").empty()) {
@@ -382,7 +395,7 @@ bool Cleng::Checks(int id_node_for_move) {
     bool commensurate = IsCommensuratable();
 
     bool result = not_collapsing and in_range and in_subbox_range and commensurate;
-//    cout << "[Checks] result: " << result << endl;
+    cout << "[Checks] result: " << result << endl;
     return result;
 }
 
@@ -429,10 +442,12 @@ void Cleng::_moveClampedNode(bool back, int id_node_for_move, const Point& clamp
 }
 
 Point Cleng::preparePivotClampedMove(int id_node_for_move) {
+//    Point center_of_rotation = nodes_map[pivot_node_ids[0]].data()->get()->point();
     Point center_of_rotation = nodes_map[pivot_node_ids[0]].data()->get()->_returnSystemPoint();
     // moving center of rotation to the center
     for (auto &&node : nodes_map) node.second.data()->get()->shift(center_of_rotation.negate());
     Point current_Point = nodes_map[id_node_for_move].data()->get()->_returnSystemPoint();
+//    Point current_Point = nodes_map[id_node_for_move].data()->get()->point();
     Point point_shifted_by_matrix = rotation_matrix.dot(current_Point);;
     Point clamped_move = point_shifted_by_matrix - current_Point;
     // moving center of rotation to initial place
@@ -442,8 +457,6 @@ Point Cleng::preparePivotClampedMove(int id_node_for_move) {
 
 bool Cleng::MakeMove(bool back) {
     if (debug) cout << "MakeMove in Cleng" << endl;
-    Point clamped_move;
-    int id_node_for_move;
     bool success = true;
 
     if (back) {
@@ -451,40 +464,61 @@ bool Cleng::MakeMove(bool back) {
         for (auto &&nodeID_clampedMove : nodeIDs_clampedMove) {
             _moveClampedNode(back, nodeID_clampedMove.first, nodeID_clampedMove.second);
         }
-        CP(to_segment);
-        New[0]->Solve(true);
         cout << "[Moved back]" << endl;
     } else {
+        nodeIDs_clampedMove.clear();
         if (pivot_move) {
-            cout << internal_name << "[pivot_move]" << endl;
-            nodeIDs_clampedMove.clear();
-
-            for (size_t node_position_in_vector=1; node_position_in_vector != pivot_node_ids.size(); node_position_in_vector++) {
-                clamped_move = preparePivotClampedMove(pivot_node_ids[node_position_in_vector]);  // need to create for each node_id!
-                _moveClampedNode(back, pivot_node_ids[node_position_in_vector], clamped_move);
-                nodeIDs_clampedMove[pivot_node_ids[node_position_in_vector]] = clamped_move;
-            }
-
-            cout << internal_name << "checking positions...";
-            for (auto &&node_id : pivot_node_ids) {
-                success = MakeChecks(node_id);
-                if (!success) return success;
-            }
-            cout << " OK" << endl;
-        } else {
-            cout << internal_name << "[one_node_move]" << endl;
-            nodeIDs_clampedMove.clear();
-            id_node_for_move = prepareIdNode();
-            clamped_move = prepareMove();
-            _moveClampedNode(back, id_node_for_move, clamped_move);
-
-            cout << internal_name << "checking positions...";
-            success = MakeChecks(id_node_for_move);
-            if (!success) return success;
-            nodeIDs_clampedMove[id_node_for_move] = clamped_move;
-            cout << " OK" << endl;
-        }
+            if (pivot_one_node) {
+                int type_move = rand.getInt(0, 1);
+                if (type_move) success = _pivotMoveClampedNode(false);
+                else success = _oneNodeMoveClampedNode(false);
+            } else success = _pivotMoveClampedNode(false);
+        } else success = _oneNodeMoveClampedNode(false);
     }
+    return success;
+}
+
+bool Cleng::_pivotMoveClampedNode(const bool &back) {
+    Point clamped_move;
+    bool success = true;
+    cout << internal_name << "[pivot_move]" << endl;
+    prepareMove("pivot_move");
+    for (size_t node_position_in_vector=1; node_position_in_vector != pivot_node_ids.size(); node_position_in_vector++) {
+        clamped_move = preparePivotClampedMove(pivot_node_ids[node_position_in_vector]);  // need to create for each node_id!
+        _moveClampedNode(back, pivot_node_ids[node_position_in_vector], clamped_move);
+        nodeIDs_clampedMove[pivot_node_ids[node_position_in_vector]] = clamped_move;
+    }
+
+//    cout << endl;
+//    cout << "&&&&Check&&&" << endl;
+//    for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
+//    cout << endl;
+//    cout << "&&&&Check&&&" << endl;
+
+    cout << internal_name << "checking positions...";
+    for (auto &&node_id : pivot_node_ids) {
+        success = MakeChecks(node_id);
+        if (!success) return success;
+    }
+    cout << " OK" << endl;
+    return  success;
+}
+
+bool Cleng::_oneNodeMoveClampedNode(const bool &back) {
+    int id_node_for_move;
+    Point clamped_move;
+    bool success = true;
+
+    cout << internal_name << "[one_node_move]" << endl;
+    id_node_for_move = prepareIdNode();
+    clamped_move = prepareMove("one_node_move");
+    _moveClampedNode(back, id_node_for_move, clamped_move);
+
+    cout << internal_name << "checking positions...";
+    success = MakeChecks(id_node_for_move);
+    if (!success) return success;
+    nodeIDs_clampedMove[id_node_for_move] = clamped_move;
+    cout << " OK" << endl;
     return success;
 }
 
@@ -565,7 +599,6 @@ bool Cleng::MonteCarlo(bool save_vector) {
     cout << internal_name <<  "Here we go..." << endl;
     bool success_;
     for (MC_attempt = 1; MC_attempt <= MCS; MC_attempt++) { // main loop for trials
-        prepareMove();
         success_ = MakeMove(false);
         if (success_) {
             CP(to_segment);
@@ -631,7 +664,11 @@ bool Cleng::MonteCarlo(bool save_vector) {
                     } else {
                         cout << internal_name << metropolis_name << "Rejected" << endl;
                         MakeMove(true);
+                        CP(to_segment);
+                        cout << internal_name << metropolis_name << "returning back the system configuration... " << endl;
+                        New[0]->Solve(true);
                         rejected++;
+                        cout << " done" << endl;
                     }
                 }
             }

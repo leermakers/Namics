@@ -102,6 +102,11 @@ bool Cleng::IsCommensuratable() {
             int path_length_even = path_length % 2;
             int chain_length_even = chain_length % 2;
 
+//            cout << "path_length:  "  << path_length << endl;
+//            cout << "chain_length: " << chain_length << endl;
+//            if (path_length > 20) cout << "Ooowww!! path_len > 20! "<< endl;
+//            if (chain_length > 20) cout << "Ooowww!! chain_len > 20! "<< endl;
+
             if (path_length_even == chain_length_even) success = false;
             if (path_length >= chain_length) success = false;
         }
@@ -203,13 +208,14 @@ void Cleng::prepareIdsNode() {
 //    for (auto &&iD: pivot_node_ids) cout << "id: " << iD << endl;
 }
 
-Point Cleng::prepareMove() {
+Point Cleng::prepareMove(const string& type_move) {
     if (debug) cout << "prepareMove in Cleng" << endl;
     Point clamped_move;
 
-    if (pivot_move) {
+    if (type_move == "pivot_move") {
         prepareIdsNode();
         prepareRotationMatrix<int>();
+//        prepareScalingMatrix<Real>();
 
     } else {
         if (axis) {
@@ -257,6 +263,18 @@ Matrix<T> Cleng::prepareRotationMatrix() {
         rotation_matrix = _create_rotational_matrix<T>(pivot_axis_current, pivot_move*pivot_coef);
     } else rotation_matrix = _create_rotational_matrix<T>(pivot_axis, pivot_move*pivot_coef);
     return rotation_matrix;
+}
+
+template<class T>
+Matrix<T> Cleng::prepareScalingMatrix() {
+    if (debug) cout << "prepareScalingMatrix in Cleng" << endl;
+    vector<Real> scaling_coeff = {0.5, 1.0, 2.0};
+    int scaling_index = rand.getInt(0, 2);
+    scaling_matrix = _create_scaling_matrix<Real>(scaling_coeff[scaling_index]);
+
+    cout << "Scaling matrix" << endl;
+    cout << scaling_matrix << endl;
+    return scaling_matrix;
 }
 
 template<class T>
@@ -309,6 +327,23 @@ Matrix<T> Cleng::_create_rotational_matrix(int axis_rotation, int grad) {
             cout << "[Warning] Strange axis: " << axis_rotation << endl;
     }
     return rotation_matrix_;
+}
+
+template<class T>
+Matrix<T> Cleng::_create_scaling_matrix(Real scaling_coef) {
+    Matrix<T> scaling_matrix_(3, 3);
+    scaling_matrix_.put(0, 0, 1*scaling_coef);
+    scaling_matrix_.put(0, 1, 0);
+    scaling_matrix_.put(0, 2, 0);
+
+    scaling_matrix_.put(1, 0, 0);
+    scaling_matrix_.put(1, 1, 1*scaling_coef);
+    scaling_matrix_.put(1, 2, 0);
+
+    scaling_matrix_.put(2, 0, 0);
+    scaling_matrix_.put(2, 1, 0);
+    scaling_matrix_.put(2, 2, 1*scaling_coef);
+    return scaling_matrix_;
 }
 
 int Cleng::getLastMCS() {

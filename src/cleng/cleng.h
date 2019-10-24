@@ -91,12 +91,14 @@ public:
     int pivot_axis{};
     vector<int> pivot_node_ids;
     int pivot_arms;
+    bool pivot_one_node;
 
     map<int, Point> nodeIDs_clampedMove;
     map<int, vector<int>> pivot_arm_nodes;
 
 // TODO: expand to template
     Matrix<int> rotation_matrix;
+    Matrix<Real> scaling_matrix;
 
     int t{};
     int delta_save{};
@@ -153,6 +155,10 @@ public:
 
     void _moveClampedNode(bool back, int id_node_for_move, const Point &clamped_move);
 
+    bool _pivotMoveClampedNode(const bool &back);
+
+    bool _oneNodeMoveClampedNode(const bool &back);
+
     Point preparePivotClampedMove(int id_node_for_move);
 
     bool Checks(int id_node_for_move);
@@ -179,7 +185,7 @@ public:
 
     void update_ids_node4move();
 
-    Point prepareMove();
+    Point prepareMove(const string& type_move);
 
     int prepareIdNode();
 
@@ -189,7 +195,13 @@ public:
     Matrix<T> prepareRotationMatrix();
 
     template<class T>
+    Matrix<T> prepareScalingMatrix();
+
+    template<class T>
     Matrix<T> _create_rotational_matrix(int axis_rotation, int grad);
+
+    template<class T>
+    Matrix<T> _create_scaling_matrix(Real scaling_coef);
 
     vector<Real> prepare_vtk();
 

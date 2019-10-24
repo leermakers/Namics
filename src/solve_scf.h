@@ -1,5 +1,6 @@
 #ifndef SOLVE_SCFxH
 #define SOLVE_SCFxH
+#include <limits>
 #include "namics.h"
 #include "input.h"
 #include "system.h"
@@ -42,7 +43,6 @@ public:
 	vector<Reaction*> Rea;
 
 	int start;
-	Real Value_tolerance;
 	string SCF_method;
 	string gradients;
 	string StoreFileGuess;
@@ -59,6 +59,8 @@ public:
 	bool super_e_info, value_e_info;
 	bool super_s_info, value_s_info;
 	int super_i_info, value_i_info;
+
+	Real* temp_alpha;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -125,7 +127,7 @@ public:
 	void gradient_minus(Real*, int, int, int, int);
 	function<void(Real*, int, int, int, int)> target_function;
 
-	void inneriteration(Real*,Real*,float*,Real,Real&,Real,int);
+	void inneriteration(Real*,Real*,Real*,Real,Real&,Real,int);
 
 };
 #endif

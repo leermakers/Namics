@@ -38,7 +38,7 @@ void help() {
     cerr << "              Choose all by <-#> or by specific tag name [name_of_test]" << endl;
     cerr << "              Use additional -l flag for showing all available test cases. [-?] for details.]" << endl;
     cerr << "-d [Enables debugging mode]" << endl;
-
+    cerr << "-GPU [index] Sets the GPU to be used in multi-GPU systems." << endl;
 }
 
 /**
@@ -123,8 +123,12 @@ int main(int argc, char *argv[]) {
     vector<string> STATELIST;
 
 #ifdef CUDA
-    GPU_present(cudaDeviceIndex);
-    cuda = true;
+	GPU_present(cudaDeviceIndex);
+	cuda = true;
+	SUM_RESULT = (Real*)AllOnDev(1);
+#else
+	cuda = false;
+	SUM_RESULT = new Real;
 #endif
 
 // Now NamicsConfig knows all about class instances
@@ -141,7 +145,8 @@ int main(int argc, char *argv[]) {
 /******** This while loop basically contains the rest of main, initializes all classes and performs  ********/
 /******** calculations for a given number (start) of cycles ********/
 
-    while (start < n_starts) {
+    while (start < n_starts)
+	{
 
         start++;
         config.In[0]->MakeLists(start);
@@ -199,9 +204,11 @@ int main(int argc, char *argv[]) {
 
         EngineType TheEngine;
         TheEngine = SCF;
-        if (!config.In[0]->MesodynList.empty()) { TheEngine = MESODYN; }
-        if (!config.In[0]->ClengList.empty()) { TheEngine = CLENG; }
-        if (!config.In[0]->TengList.empty()) { TheEngine = TENG; }
+        if (!config.In[0]->MesodynList.empty()) { TheEngine = MESODYN;
+        }
+		if (!config.In[0]->ClengList.empty()) { TheEngine = CLENG;
+        }
+		if (!config.In[0]->TengList.empty()) { TheEngine = TENG; }
 
         int n_out = 0;
         switch (TheEngine) {
@@ -236,7 +243,7 @@ int main(int argc, char *argv[]) {
                 // end of unreachable part
         }
 
-        for (auto all_segments : config.Seg) all_segments->prepared = false;
+		for (auto all_segments : config.Seg) all_segments->prepared = false;
         if (scan_nr > -1) config.Var[scan_nr]->ResetScanValue();
 
         // TODO: What does it do?
@@ -247,13 +254,19 @@ int main(int argc, char *argv[]) {
             MZ = config.Lat[0]->MZ;
             CHARGED = config.Sys[0]->charged;
             int IV_new = config.New[0]->iv; //check this
-            if (start > 1 || (start == 1 && config.Sys[0]->initial_guess == "file")) free(X);
-            X = (Real *) malloc(IV_new * sizeof(Real));
+            if (start > 1 || (start == 1 && config.Sys[0]->initial_guess == "file"))
 #ifdef CUDA
-            TransferDataToHost(X, New[0]->xx, IV_new);
+                cudaFree(X);
 #else
-            for (int i = 0; i < IV_new; i++) X[i] = config.New[0]->xx[i];
+                free(X);
 #endif
+#ifdef CUDA
+            X = (Real *)AllOnDev(IV_new);
+#else
+            X = (Real *)malloc(IV_new * sizeof(Real));
+#endif
+            //for (int i = 0; i < IV_new; i++) X[i] = config.New[0]->xx[i];
+            Cp(X, config.New[0]->xx, IV_new);
             fjc_old = config.Lat[0]->fjc;
             int mon_length = config.Sys[0]->ItMonList.size();
             int state_length = config.Sys[0]->ItStateList.size();
@@ -279,7 +292,11 @@ int main(int argc, char *argv[]) {
 /******** Clear all class instances ********/
         config.clear_(n_out);
     } //loop over starts.
-    free(X);
+    #ifdef CUDA
+	cudaFree(X);
+#else
+	free(X);
+#endif
     delete config.In[0];
     config.In.clear();
     return 0;

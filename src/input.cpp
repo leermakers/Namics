@@ -300,6 +300,7 @@ bool Input:: InSet(std::vector<std::string> &Standard, int &pos, string keyword)
 	}
 	return success;
 }
+
 bool Input:: InSet(vector<int> &Standard, int keyword){
 	bool success=false;
 	int S_length = Standard.size();
@@ -321,6 +322,7 @@ bool Input:: InSet(vector<int> &Standard, int &pos, int keyword){
 	return success;
 }
 
+//In[0]->CheckParameters("mesodyn", name, start, KEYS, PARAMETERS, VALUES)
 bool Input:: CheckParameters(string keyword, string name,int start, std::vector<std::string> &Standard, std::vector<std::string> &Input,std::vector<std::string> &Input_values) {
 	bool success=true;
 	bool prop_found;
@@ -389,21 +391,18 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::vector<std::string> &Out_name, std::vector<std::string> &Out_prop) {
 if (debug) cout <<"LoadItems in Input " << endl;
 	bool success=true;
-	int length = elems.size();
 	bool wild_monlist=false;
 	bool wild_mollist=false;
 	bool wild_aliaslist=false;
-	int key_length = KEYS.size();
 	int name_length;
 	bool key_found,name_found;
-	int i=0;
- 	int j,k;
-	while (i<length){
+ 	int k;
+	for (size_t i = 0; i < elems.size() ; i++) {
 		vector<std::string> set;
 		split(elems[i],':',set);
 		if (set[1] == template_) {
-			j=0; key_found=false;
-			while (j<key_length) {
+			key_found=false;
+			for (size_t j = 0 ; j < KEYS.size() ; j++) {
 				if (KEYS[j] == set[2]) {
 					key_found=true;
 					switch (j-1) {
@@ -529,7 +528,6 @@ if (debug) cout <<"LoadItems in Input " << endl;
 						}
 
 				}
-				j++;
 			}
 			if (!key_found) {cout<< "In line " << set[0] << " the keyword '" << set[2] << "' not recognized. Choose keywords from: " << endl;
 				int length = KEYS.size();
@@ -560,7 +558,6 @@ if (debug) cout <<"LoadItems in Input " << endl;
 				for (int i=0; i<length; i++) {cout << set[1] << " : " << Out_key[i] << " : " << Out_name[i] << " : " << Out_prop[i] << endl; }
 			}
 		} //end temp
-		i++;
 	} //end i;
 	return success;
 }
@@ -588,9 +585,11 @@ bool Input:: CheckInput(void) {
 		if (set[1]=="start") last_start=true;
 		i++;
 	}
+
 	if (!last_start) {
 		elems.push_back("0:start"); length++;
 	}
+	
 	i=0;
 	while (success && i<length) {
 		vector<std::string> set;
@@ -656,7 +655,7 @@ bool Input:: CheckInput(void) {
 		}
 		i++;
 	}
-	success=MakeLists(1);
+	if (success) success=MakeLists(1);
 	if (!output_info.isOutputExists()) {
 		cout << "Cannot access output folder '" << output_info.getOutputPath() << "'" << endl;
 		success = false;
@@ -711,263 +710,4 @@ void Input::parseOutputInfo() {
 		}
 		output_info.addProperty(param[2], param[3], param[4]);
 	}
-}
-
-Reader::Reader(string filename) : dimensions(0), filetype(NONE), rho(0), multicomponent_rho(0) {
-    string extension = filename.substr(filename.find_last_of(".")+1);
-    if (extension == "vtk") {
-      filetype = Reader::VTK;
-      init_rho_fromvtk(filename);
-    } else if (extension == "pro") {
-      filetype = Reader::PRO;
-      headers = init_rho_frompro(filename);
-    } else {
-      throw ERROR_EXTENSION;
-    }
-
-    switch (dimensions) {
-      case 1:
-        JX=1; JY=0; JZ=0;
-        break;
-      case 2:
-        JX=(MY); JY=1; JZ=0;
-        break;
-      case 3:
-        JX=(MZ)*(MY); JY=(MZ); JZ=1;
-        break;
-    }
-
-		//Values are in the wrong order (blocks of x form y, blocks of y form z), sort everything (to blocks of z form y, blocks of y form x).
-		if (extension == "pro")
-			adjust_pro_indexing();
-		if (extension == "vtk")
-			rho = with_bounds(rho);
-}
-
-Reader::~Reader() {
-
-}
-
-void Reader::get_rho(vector<double>& rho_output) {
-  if (filetype != VTK) {
-    throw ERROR_EXTENSION;
-  }
-  rho_output = rho;
-}
-
-void Reader::get_rho(vector<vector<double>>& rho_output) {
-  if (filetype != PRO) {
-    throw ERROR_EXTENSION;
-  }
-  rho_output = multicomponent_rho;
-}
-
-vector<string> Reader::tokenize(string line, char delim) {
-  istringstream stream{line};
-
-  vector<string> tokens;
-  string token;
-
-  //Read lines as tokens (tab delimited)
-  while (getline(stream, token, delim)) {
-    tokens.push_back(token);
-  }
-
-  return tokens;
-}
-
-//WARNING: VTK IS WRITTEN AND THUS READ WITHOUT BOUNDS
-int Reader::init_rho_fromvtk(string filename) {
-  rho.clear();
-
-  ifstream rho_input;
-
-  rho_input.open(filename);
-
-  if (!rho_input.is_open()) {
-    cerr << "Error opening file! Is the filename correct? Is there a vtk for each component, ending in [component number].vtk, starting from 1?" << endl;
-    throw ERROR_FILE_FORMAT;
-  }
-
-  string line;
-
-  while (line.find("DIMENSIONS") == string::npos ) {
-    getline(rho_input, line);
-  }
-
-  vector<string> tokens;
-  tokens = tokenize(line, ' ');
-  if (tokens.size() == 4) {
-    dimensions = 3;
-  } else if (tokens.size() == 3) {
-    dimensions = 2;
-  } else if (tokens.size() == 2) {
-    dimensions = 1;
-  } else {
-    throw ERROR_FILE_FORMAT;
-  }
-
-  switch (dimensions) {
-    case 3:
-      MZ = atof(tokens[3].c_str())+2;
-    case 2:
-      MY = atof(tokens[2].c_str())+2;
-    case 1:
-      MX = atof(tokens[1].c_str())+2;
-      break;
-  }
-
-  while (line.find("LOOKUP_TABLE default") == string::npos ) {
-    getline(rho_input, line);
-  }
-
-  while( getline(rho_input, line) ) {
-    rho.push_back(atof(line.c_str()));
-  }
-
-  return 0;
-}
-
-vector<double> Reader::with_bounds(vector<double> rho) {
-
-	size_t M_bounds = (MX)*(MY)*(MZ);
-	vector<double> output(M_bounds);
-	int n = 0;
-
-	size_t x{1};
-	size_t y{1};
-	size_t z{1};
-	do {
-		y = 1;
-		do {
-			z = 1;
-			do {
-				*val_ptr(output, x, y, z) = rho[n];
-				++n;
-				++z;
-			} while (z < MZ-1);
-			++y;
-		} while (y < MY-1);
-		++x;
-	} while (x < MX-1);
-	
-	return output;
-}
-
-//WARNING: PRO IS WRITTEN AND THUS READ WITH BOUNDS
-vector<string> Reader::init_rho_frompro(string filename) {
-  vector<string> headers;
-  ifstream rho_input;
-  rho_input.open(filename);
-
-  if (!rho_input.is_open()) {
-    cerr << "Error opening file! Is the filename correct?" << endl;
-    throw ERROR_FILE_FORMAT;
-  }
-
-  //Find in which column the density profile starts
-  //This depends on the fact that the first mon output is phi
-  string line;
-  getline(rho_input, line);
-
-  if (line.find('\t') == string::npos) {
-    cerr << "Wrong delimiter! Please use tabs.";
-    throw ERROR_FILE_FORMAT;
-  }
-
-  vector<string> tokens = tokenize(line, '\t');
-  int first_column{-1};
-  int last_column{0};
-
-  if ( find(tokens.begin(), tokens.end(), "x") != tokens.end() ) {
-    if( find(tokens.begin(), tokens.end(), "y") != tokens.end() ) {
-      if( find(tokens.begin(), tokens.end(), "z") != tokens.end() ) {
-          dimensions = 3;
-        } else { dimensions = 2; }
-    } else { dimensions = 1; }
-  } else { dimensions = 0; }
-
-  size_t i = dimensions;
-
-  component_no = tokens.size()-dimensions;
-
-  bool found = false;
-  for (; i < tokens.size(); ++i) {
-    vector<string> header_tokens = tokenize(tokens[i], ':');
-    if (header_tokens.size() == 3) {
-      if (header_tokens[0] == "mol" && header_tokens[2].size() > 3)
-        if (header_tokens[2].substr(0, 4) == "phi-") {
-          if (first_column == -1)
-            first_column = i;
-          found = true;
-          last_column = i;
-        }
-    }
-  }
-
-  if (found != true) {
-    cerr << "No headers in the format mol:[molecule]:phi-[monomer]." << endl;
-    throw ERROR_FILE_FORMAT;
-  }
-
-  if (component_no != (size_t)(last_column - first_column + 1)) {
-    cerr << "Not enough components detected in the headers, please adjust .pro file accordingly." << endl;
-    throw ERROR_FILE_FORMAT;
-  }
-
-  for (int i = first_column; i < last_column + 1; ++i) {
-    headers.push_back(tokens[i]);
-  }
-
-  multicomponent_rho.resize(component_no);
-
-  //Read lines one at a time
-  while (getline(rho_input, line)) {
-
-    tokens = tokenize(line, '\t');
-    //Read all densities into rho.
-    for (size_t i = 0; i < component_no; ++i) {
-      multicomponent_rho[i].push_back(atof(tokens[first_column + i].c_str()));
-    }
-  }
-
-	switch (dimensions) {
-		case 3:
-			MZ = atof(tokens[2].c_str())+1;
-		case 2:
-			MY = atof(tokens[1].c_str())+1;
-		case 1:
-			MX = atof(tokens[0].c_str())+1;
-			break;
-	}
-
-  return headers;
-}
-
-void Reader::adjust_pro_indexing() {
-
-	vector< vector<double> > adjusted_rho(multicomponent_rho.size());
-	for (vector<double>& all_components : adjusted_rho)
-		all_components.resize(multicomponent_rho[0].size());
-
-	int n = 0;
-	size_t x{0};
-	size_t y{0};
-	size_t z{0};
-	do {
-		y = 0;
-		do {
-			x = 0;
-			do {
-				for (size_t c = 0 ; c < multicomponent_rho.size() ; ++c)
-					*val_ptr(adjusted_rho[c], x, y, z) = multicomponent_rho[c][n];
-				++n;
-				++x;
-			} while (x < MX);
-			++y;
-		} while (y < MY);
-		++z;
-	} while (z < MZ);
-
-	multicomponent_rho = adjusted_rho;
 }

@@ -48,8 +48,10 @@ public:
 	Real* H_q;
 	Real* psi;
 	Real* EE;
+	Real* E;
 	int* psiMask;
 	bool fixedPsi0;
+	bool grad_epsilon;
 	bool constraintfields;	
 	Real* q;
 	Real* H_GrandPotentialDensity;
@@ -61,6 +63,7 @@ public:
 	Real* TEMP;
 	Real* H_BETA;
 	Real* BETA;
+	Real phi_ratio;
 	int* H_beta;
 	int* beta; 
 	bool GPU;
@@ -69,6 +72,7 @@ public:
 	int neutralizer;
 	int tag_segment;
 	int volume;
+	int boundaryless_volume;
 	bool input_error;
 	bool cuda;
 	bool charged;

@@ -10,7 +10,7 @@
 #include "system.h"
 #include "solve_scf.h"
 #include "alias.h"
-#include <limits.h>
+#include <climits>
 #include <unistd.h>
 
 class Output {
@@ -29,6 +29,7 @@ public:
 	vector<System*> Sys;
 	vector<Solve_scf*> New;
 	int n_output;
+	int n_starts; 
 	int start;
 	int output_nr;
 	bool write_bounds;
@@ -65,7 +66,8 @@ public:
 	string GetValue(string);
 	bool Load();
 	void vtk(string, Real *);
-	void vtk_structured_grid(string, Real*, int = 1);
+	void prepare_vtk_structured_grid(string);
+	void write_vtk_data(string, Real*, int, ios_base::openmode = ios_base::app);
 	void density();
 	void printlist();
 	void WriteOutput(int);

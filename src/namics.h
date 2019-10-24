@@ -2,9 +2,9 @@
 #ifndef NAMICSxH
 #define NAMICSxH
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 #include <iostream>
 #include <cstring>
@@ -16,19 +16,11 @@
 #include <algorithm>
 //#include <f2c.h>
 #include <iomanip>
+
 using namespace std;
 //these are our options.
 typedef double Real;
 
-#ifndef SMTHxBREAK
-#define BREAKPOINT cout << "Breakpoint: " << DEBUG_BREAK << endl; cin.get(); DEBUG_BREAK++;
-#endif
-
-#ifdef CUDA
-//#include <cuda.h>
-//#include <cublas_v2.h>
-//#include <cuda_runtime.h>
-#endif
 
 //nvcc Open.cu -lm -lcuda -lcudart -llapack -lblas -lf2c -lcublas -arch=sm_20 -o box
 //I.V. Ionova, E.A. Carter, "Error vector choice in direct inversion in the iterative subspace method, J. Compt. Chem. 17, 1836-1847, 1996.

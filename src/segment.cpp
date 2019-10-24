@@ -94,11 +94,13 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 	int M=Lat[0]->M;
 #ifdef CUDA
-	if (prepared == 0) {
+	if (In[0]->MesodynList.empty() or prepared == false) {
 	TransferDataToDevice(H_MASK, MASK, M);
-	TransferDataToDevice(H_u, u, M);
-	prepared = 1;
+		if (In[0]->MesodynList.empty())
+			TransferDataToDevice(H_u, u, M); //Wrong: This clears u for every CUDA application and messes up mesodyn
+		prepared = true;
 }
+
 //}
 	//TransferDataToDevice(H_Px, Px, n_pos);
 	//TransferDataToDevice(H_Py, Py, n_pos);
@@ -196,7 +198,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				}
 			}
 		} else {
-			r=(int*) malloc(6*sizeof(int)); Zero(r,6);
+			r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
 		}
 
 		if (freedom =="clamp" ) {
@@ -306,7 +308,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
 				}
 			}
@@ -315,7 +317,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
@@ -335,7 +337,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),name,s);
 				}
 			}
@@ -344,7 +346,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
@@ -364,7 +366,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),name,s);
 				}
 			}
@@ -373,13 +375,13 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				n_pos=0;
 			 	if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); Zero(H_P,n_pos);
+					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 			 		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
 				}
 			}
 		}
 		if (freedom!="free") {
-			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int)); Zero(H_MASK,Lat[0]->M);
+			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int)); std::fill(H_MASK, H_MASK+Lat[0]->M,0);
 			if (freedom=="clamp") {
 				int JX=Lat[0]->JX;
 				int JY=Lat[0]->JY;
@@ -950,12 +952,12 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 	}
 	return 0;
 }
-void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps) {
+void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps,bool grad_epsilon) {
 	int M=Lat[0]->M;
 	if (fixedPsi0) {
 		OverwriteC(psi,MASK,PSI0,M);
 		Lat[0]->set_bounds(psi);
-		Lat[0]->UpdateQ(g,psi,q,eps,MASK);
+		Lat[0]->UpdateQ(g,psi,q,eps,MASK,grad_epsilon);
 	}
 
 }

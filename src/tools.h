@@ -2,7 +2,8 @@
 #define TOOLSxH
 #include "namics.h"
 #include <numeric>
-#include "lattice.h"
+
+extern Real* SUM_RESULT;
 
 #ifdef PAR_MESODYN
 	#include <thrust/extrema.h>
@@ -16,12 +17,19 @@
 //#include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <memory>
-#include <float.h>
 
 //extern cublasStatus_t stat;
 //extern cublasHandle_t handle;
+#define CUDA_NUM_STREAMS 3
+extern cudaStream_t CUDA_STREAMS[CUDA_NUM_STREAMS];
 extern const int block_size;
 
+__global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M);
+void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M);
+__global__ void second_order_fd_stencil(Real *g_output, Real *g_input, Real coeff, const int dimx, const int dimy, const int dimz);
+void Second_order_fd_stencil(Real *g_output, Real *g_input, Real coeff, const int dimx, const int dimy, const int dimz);
+__global__ void xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci);
+void Xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci);
 __global__ void distributeg1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 __global__ void collectphi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 __global__ void sum(Real*, Real*, int);
@@ -40,7 +48,6 @@ __global__ void flux_min(Real *, Real*, int, int);
 __global__ void flux(Real*, Real*, Real*, int, int, int);
 __global__ void cp(Real*, Real*, int);
 __global__ void cp(Real*, int*, int);
-__global__ void yisaplusctimesb(Real*, Real*, Real*, Real, int);
 __global__ void yisaminb(Real*, Real*, Real*, int);
 __global__ void yisaplusc(Real*, Real*, Real, int);
 __global__ void yisaplusb(Real*, Real*, Real*, int);
@@ -49,6 +56,7 @@ __global__ void updatealpha(Real*, Real*, Real, int);
 __global__ void picard(Real*, Real*, Real, int);
 __global__ void add(Real*, Real*, int);
 __global__ void add(int*, int*, int);
+__global__ void subtract(Real*, Real*, int);
 __global__ void dubble(Real*, Real*, Real, int);
 __global__ void minlog(Real*, Real*, int);
 __global__ void boltzmann(Real*, Real*, int);
@@ -58,6 +66,7 @@ __global__ void addgradsquare(Real*, Real*, Real*, Real*, int);
 __global__ void putalpha(Real*, Real*, Real*, Real, Real, int);
 __global__ void putalpha(Real*, Real*, Real, Real, int);
 __global__ void div(Real*, Real*, int);
+__global__ void propagate(Real *gs, Real *g_1, int JX, int JY, int JZ, int M);
 __global__ void oneminusphitot(Real*, Real*, int);
 __global__ void addg(Real*, Real*, Real*, int);
 __global__ void computegn(Real*, Real*, int, int);
@@ -88,12 +97,11 @@ bool GPU_present(int);
 int* AllIntOnDev(int);
 Real* AllOnDev(int);
 int* AllManagedIntOnDev(int);
+Real* AllManagedOnDev(int);
 Real* AllOnDev(int);
 void AddTimes(Real*, Real*, Real*, int);
 void Times(Real*, Real*, Real*, int);
 void Times(Real*, Real*, int*, int);
-void Flux_min(Real*, Real*, int, int);
-void Flux(Real*, Real*, Real*, int, int, int);
 void Composition(Real*, Real*, Real*, Real*, Real, int);
 void Norm(Real*, Real, int);
 void Zero(Real*, int);
@@ -101,7 +109,6 @@ void Zero(int*, int);
 void Unity(Real*, int);
 void Cp(Real*, Real*, int);
 void Cp(Real*, int*, int);
-void YisAplusCtimesB(Real*, Real*, Real*, Real, int);
 void YisAminB(Real*, Real*, Real*, int);
 void YisAplusC(Real*, Real*, Real, int);
 void YisAplusB(Real*, Real*, Real*, int);
@@ -110,6 +117,7 @@ void UpdateAlpha(Real*, Real*, Real, int);
 void Picard(Real*, Real*, Real, int);
 void Add(Real*, Real*, int);
 void Add(int*, int*, int);
+void Subtract(Real*, Real*, int);
 void Dubble(Real*, Real*, Real, int);
 void MinLog(Real*, Real*, int);
 void Boltzmann(Real*, Real*, int);
@@ -119,6 +127,7 @@ void AddGradSquare(Real*, Real*, Real*, Real*, int);
 void PutAlpha(Real*, Real*, Real*, Real, Real, int);
 void PutAlpha(Real*, Real*, Real, Real, int);
 void Div(Real*, Real*, int);
+void Propagate(Real *gs, Real *g_1, int JX, int JY, int JZ, int M);
 void AddG(Real*, Real*, Real*, int);
 void OneMinusPhitot(Real*, Real*, int);
 void ComputeGN(Real*, Real*, int, int);

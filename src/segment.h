@@ -124,7 +124,7 @@ public:
 	void DeAllocateMemory();
 	void AllocateMemory();
 	bool PrepareForCalculations(int*);
-	void UpdateValence(Real*,Real*,Real*,Real*);
+	void UpdateValence(Real*,Real*,Real*,Real*,bool);
 	bool PutVarInfo(string,string,Real);
 	int PutVarScan(Real,Real,int,string);
 	bool ResetInitValue() ;

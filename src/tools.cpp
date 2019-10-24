@@ -1,33 +1,176 @@
 #include "tools.h"
 #include "namics.h"
 #include "stdio.h"
+#ifdef PAR_MESODYN
+	#include <thrust/inner_product.h>
+#endif
 #define MAX_BLOCK_SZ 512
+#define HALF_MAX_BLOCK_SZ 256
+
+Real* SUM_RESULT;
 
 #ifdef CUDA
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
-const int block_size = 256;
+const int block_size = 512;
+cudaStream_t CUDA_STREAMS[CUDA_NUM_STREAMS];
 
-
-__device__ void atomicAdd(Real* address, Real val, short dummy)
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#else
+__device__ void atomicAdd(Real* address, Real val)
 {
     unsigned long long int* address_as_ull =
                              (unsigned long long int*)address;
     unsigned long long int old = *address_as_ull, assumed;
     do {
         assumed = old;
-	old = atomicCAS(address_as_ull, assumed,
+        old = atomicCAS(address_as_ull, assumed,
                         __double_as_longlong(val +
                                __longlong_as_double(assumed)));
     } while (assumed != old);
 }
+#endif
 
-__global__ void flux(Real* flux, Real* L, Real* mu, int D, int jump, int M)
-{
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	int idx_plus = idx + jump;
-	if (idx < M-jump)
-			flux[idx] = -D * ((L[idx] + L[idx_plus]) * (mu[idx_plus] - mu[idx]));
+void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	propagate_gs_locality<<<n_blocks,block_size>>>(gs, gs_1, G1, JX, JY, JZ, M);
+}
+
+__global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
+	int index = blockIdx.x*blockDim.x+threadIdx.x;
+
+	if (index < M-JX) {
+		Real gs_register = gs[index];
+
+		gs_register += gs_1[index-JZ];
+		gs_register += gs_1[index+JZ];
+		gs_register += gs_1[index-JY];
+		gs_register += gs_1[index+JY];
+		gs_register += gs_1[index-JX];
+		gs_register += gs_1[index+JX];
+		gs_register *= 1.0/6.0;
+		gs_register *= G1[index];
+		gs[index] = gs_register;
+	}
+}
+
+#define BDIMX    	16			// tile (and threadblock) size in x
+#define BDIMY    	16			// tile (and threadblock) size in y
+#define WAVEFRONTS 	1			// use multiple wave-fronts
+#define radius   	1 			// half of the order in space (k/2)
+#define BDIMZ    	2			// tile (and threadblock) size in z
+
+ void Second_order_fd_stencil(Real *g_output, Real *g_input, Real coeff, const int dimx, const int dimy, const int dimz) {
+
+	dim3 dimBlock(BDIMX,BDIMY,BDIMZ);
+	dim3 dimGridz(ceil(static_cast<Real>(dimz)/static_cast<Real>(BDIMX)),ceil(static_cast<Real>(dimy)/static_cast<Real>(BDIMY)),1);
+
+	second_order_fd_stencil<<<dimGridz,dimBlock>>>(g_output, g_input, coeff, dimz, dimy, dimx);
+}
+
+__global__ void second_order_fd_stencil(Real *g_output, Real *g_input, Real coeff, const int dimx, const int dimy, const int dimz)
+{ 
+
+// **********	WARNING: OUR ARRAYS ARE DEPTH MAJOR, SO .x SHOULD BE FILLED WITH ELEMENTS IN Z AND VICE VERSA *********
+	// Contains the current 2D slice
+	__shared__ Real s_data[BDIMY+2*radius][BDIMX+2*radius];
+
+	int ix  = blockIdx.x*blockDim.x + threadIdx.x;
+	int iy  = blockIdx.y*blockDim.y + threadIdx.y;
+	
+	if (ix < dimx and iy < dimy) {
+		int wavefront = blockIdx.z;
+		int end = dimz/WAVEFRONTS;
+		
+		if (wavefront == gridDim.z-1)
+			end = dimz-((end-radius)*wavefront)-radius;
+
+		int stride  = dimx*dimy; 											// distance between 2D slices (in elements) 
+		int in_idx  = ix + iy*dimx + stride*(dimz/WAVEFRONTS-radius)*wavefront;	// index for reading input
+		int out_idx = 0;              										// index for writing output  
+
+		Real infront1;								 	// variables for input “in front of” the current slice: Add more for higher order stencils.
+		Real behind1; 									// variables for input “behind” the current slice: Add more for higher order stencils.
+		Real current;                           		// input value in the current slice
+
+		int tx = threadIdx.x + radius;  				// thread’s x-index into corresponding shared memory tile (adjusted for halos)
+		int ty = threadIdx.y + radius; 					// thread’s y-index into corresponding shared memory tile (adjusted for halos)
+
+		// fill the "in-front" and "behind" data
+		// This is read into the GPU's register, tiles are in shared mem
+		// Add in_idx += stride; for every extra stencil order register variable
+		current  = g_input[in_idx];		out_idx = in_idx; in_idx += stride;
+		infront1 = g_input[in_idx];		in_idx += stride;
+
+		for(int i=radius; i < end; i++) { 
+
+			////////////////////////////////////////// // advance the slice (move the thread-front)     
+			behind1  = current;     
+			current  = infront1;     
+			infront1 = g_input[in_idx];
+
+			in_idx  += stride;     
+			out_idx += stride;    
+
+			__syncthreads();
+
+			///////////////////////////////////////// // update the data slice in smem 
+			if(threadIdx.y<radius) // halo above/below     
+			{     
+				s_data[threadIdx.y][tx]              = g_input[out_idx-radius*dimx];     
+				s_data[threadIdx.y+BDIMY+radius][tx] = g_input[out_idx+BDIMY*dimx];    
+			} 
+			if(threadIdx.x<radius) // halo left/right     
+			{          
+				s_data[ty][threadIdx.x]              = g_input[out_idx-radius];          
+				s_data[ty][threadIdx.x+BDIMX+radius] = g_input[out_idx+BDIMX];     
+			} // update the slice in smem     
+
+			s_data[ty][tx] = current;
+
+			__syncthreads(); 
+
+			///////////////////////////////////////// // compute the output value     
+
+			// Optionally multiply any of the following with a coefficient
+			Real div  = 0; //current;  
+			div += coeff*(infront1 + behind1     + s_data[ty-1][tx] + s_data[ty+1][tx] + s_data[ty][tx-1] + s_data[ty][tx+1]);
+			g_output[out_idx] += div;
+		} 
+	}
+}
+
+void Xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci)   {
+	int n_blocks=(nvar)/block_size + ((nvar)%block_size == 0 ? 0:1);
+	xr_times_ci<<<n_blocks,block_size, (k_diis)*sizeof(Real)>>>(posi, k_diis, k, m, nvar, x, xR, Ci);
+}
+
+__global__ void xr_times_ci(int posi, int k_diis, int k, int m, int nvar, Real* x, Real* xR, Real* Ci) {
+	int idx  = blockIdx.x*blockDim.x + threadIdx.x;
+
+ 	extern __shared__ Real s_Ci[];
+
+ 	if (threadIdx.x < k_diis)
+		s_Ci[threadIdx.x] = Ci[threadIdx.x];
+
+	__syncthreads();
+	 
+	if (idx < nvar) {
+		int thread_posi = posi;
+
+		Real x_register = x[idx];
+		x_register += s_Ci[0] * (xR+thread_posi*nvar)[idx];
+
+		for (int i=1; i<k_diis; i++) {
+			thread_posi = k-k_diis+1+i;
+    		if (thread_posi<0) {
+    	  		thread_posi +=m;
+			}
+			x_register += s_Ci[i] * xR[thread_posi*nvar+idx];
+		}
+
+		x[idx] = x_register;
+	}
 }
 
 __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
@@ -53,11 +196,9 @@ __global__ void distributeg1(Real *G1, Real *g1, int* Bx, int* By, int* Bz, int 
 
 
 __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, int M, int n_box, int Mx, int My, int Mz, int MX, int MY, int MZ, int jx, int jy, int JX, int JY) {
-	short dummy = 0;
 	int i = blockIdx.x*blockDim.x+threadIdx.x;
 	int j = blockIdx.y*blockDim.y+threadIdx.y;
 	int k = blockIdx.z*blockDim.z+threadIdx.z;
-	int pos_r=MM+(JX+JY+1);
 	int pM=jx+jy+1+jx*i+jy*j+k;
 	int ii,jj,kk;
 	int MXm1 = MX-1;
@@ -70,47 +211,32 @@ __global__ void collectphi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int
 			if (Bz[p]+k > MZm1)  kk=(Bz[p]+k-MZ); else kk=(Bz[p]+k);
 			//__syncthreads(); //will not work when two boxes are idential....
 			//phi[pos_r+ii+jj+kk]+=rho[pM+jx*i+jy*j+k]*Inv_GNp;
-			atomicAdd(&phi[pos_r+ii+jj+kk], rho[pM]/GN[p], dummy);
+			atomicAdd(&phi[ii+jj+kk], rho[pM]/GN[p]);
 			pM+=M;
 		}
 	}
 }
 
-
-
-__global__ void dot(Real *a, Real *b, Real *dot_res, int M)
+__global__ void dot(Real *v1, Real *v2, Real *out, int N)
 {
-	short dummy = 0;
-    __shared__ Real cache[MAX_BLOCK_SZ]; //thread shared memory
-    int global_tid=threadIdx.x + blockIdx.x * blockDim.x;
-    Real temp = 0;
-
-    int cacheIndex = threadIdx.x;
-	cache[cacheIndex] = -DBL_MAX;
-    while (global_tid < M) {
-        temp += a[global_tid] * b[global_tid];
-        global_tid += blockDim.x * gridDim.x;
+	__shared__ Real cache[ MAX_BLOCK_SZ ];
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    cache[ threadIdx.x ] = 0.0;
+    while( i < N ) {
+        cache[ threadIdx.x ] += v1[ i ] * v2[ i ];
+        i += gridDim.x * blockDim.x;
     }
-    cache[cacheIndex] = temp;
     __syncthreads();
-    for (int i=blockDim.x/2; i>0; i>>=1) {
-        if (threadIdx.x < i) {
-            cache[threadIdx.x] += cache[threadIdx.x + i];
-        }
+    i = HALF_MAX_BLOCK_SZ;
+    while( i > 0 ) {
+        if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
         __syncthreads();
+        i /= 2; 
     }
-    __syncthreads();
-    if (cacheIndex==0) {
-		#ifdef PAR_MESODYN
-        Real result=atomicAdd_system(dot_res,cache[0]);
-		#else
-		atomicAdd(dot_res,cache[0], dummy);
-		#endif
-    }
+    if( threadIdx.x == 0 ) atomicAdd( out, cache[ 0 ] );
 }
 
 __global__ void sum(Real *g_idata, Real *g_odata, int M) {
-	short dummy = 0;
     __shared__ Real sdata[MAX_BLOCK_SZ]; //thread shared memory
 	int tid = threadIdx.x;
     int i=threadIdx.x + blockIdx.x * blockDim.x;
@@ -132,11 +258,7 @@ __global__ void sum(Real *g_idata, Real *g_odata, int M) {
     }
     __syncthreads();
     if (tid==0) {
-		#ifdef PAR_MESODYN
-        Real result=atomicAdd_system(g_odata,sdata[0]);
-		#else
-		atomicAdd(g_odata,sdata[0], dummy);
-		#endif
+        atomicAdd(g_odata,sdata[0]);
     }
 }
 
@@ -168,10 +290,6 @@ __global__ void unity(Real *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0;
 }
-__global__ void flux_min(Real *P, Real* T, int jump, int M)   {
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) P[idx] = -T[idx-jump];
-}
 
 __global__ void zero(int *P, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -184,10 +302,6 @@ __global__ void cp (Real *P, Real *A, int M)   {
 __global__ void cp (Real *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx] = 1.0*A[idx];
-}
-__global__ void yisaplusctimesb(Real *Y, Real *A,Real *B, Real C, int M)   {
-	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) Y[idx] = A[idx]+ C * B[idx];
 }
 __global__ void yisaminb(Real *Y, Real *A,Real *B, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -221,6 +335,10 @@ __global__ void add(Real *P, Real *A, int M)   {
 __global__ void add(int *P, int *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]+=A[idx];
+}
+__global__ void subtract(Real *P, Real *A, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) P[idx]-=A[idx];
 }
 __global__ void dubble(Real *P, Real *A, Real norm, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -588,12 +706,19 @@ bool GPU_present(int deviceIndex)    {
 			deviceIndex = 0;
 		}
 		cudaSetDevice(deviceIndex);
+		cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 	}
 	//if (deviceCount>0) {
 	//	stat = cublasCreate(&handle);
 	//	if (stat !=CUBLAS_STATUS_SUCCESS) {printf("CUBLAS handle creation failed \n");}
 	//	cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
 	//}
+
+	const int num_streams = 4;
+
+	for (int i = 0; i < num_streams; i++)
+    	cudaStreamCreate(&CUDA_STREAMS[i]);
+
 	return deviceCount > 0;
 }
 #else
@@ -615,8 +740,19 @@ int* AllIntOnDev(int N) {
 
 Real* AllOnDev(int N) {
   Real* X;
-	if (cudaSuccess != cudaMalloc((void **) &X, sizeof(Real)*N))
-	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
+	cudaMalloc((void **) &X, sizeof(Real)*N);
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess)
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+	return X;
+}
+
+Real* AllUnpagableOnHost(int N) {
+  Real* X;
+	cudaHostAlloc((void **) &X, sizeof(Real)*N, cudaHostAllocDefault);
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess)
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
 	return X;
 }
 
@@ -629,25 +765,29 @@ int* AllManagedIntOnDev(int N) {
 
 Real* AllManagedOnDev(int N) {
   Real* X;
-	if (cudaSuccess != cudaMallocManaged((void **) &X, sizeof(Real)*N))
-	printf("Memory allocation on GPU failed.\n Please reduce size of lattice and/or chain length(s) or turn on CUDA\n");
+	cudaMallocManaged((void **) &X, sizeof(Real)*N);
+	cudaError_t error = cudaPeekAtLastError();
+	if (error != cudaSuccess)
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
 	return X;
 }
 
 void Dot(Real &result, Real *x,Real *y, int M)   {
-	Real* _result = (Real*)AllOnDev(1);
+	cudaMemset((void**)SUM_RESULT, 0, sizeof(Real));
+	//Use a pre-allocated (member) variable! Allocating memory for every call is way too costly
+	//Memcopies can be masked by asynchronous transfer, allocations and frees are blocking.
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	dot<<<n_blocks,block_size>>>(x,y,_result,M);
-	TransferDataToHost(&result, _result,1);
-	cudaFree(_result);
+	dot<<<n_blocks,block_size>>>(x,y,SUM_RESULT,M);
+	TransferDataToHost(&result, SUM_RESULT, 1);
 }
 
-void Sum(Real &result, Real *x, int M)   {
-	Real* _result = (Real*)AllOnDev(1);
+void Sum(Real& result, Real *x, int M)   {
+	cudaMemset((void**)SUM_RESULT, 0, sizeof(Real));
+	//Use a pre-allocated (member) variable! Allocating memory for every call is way too costly
+	//Memcopies can be masked by asynchronous transfer, allocations and frees are blocking.
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	sum<<<n_blocks,block_size>>>(x,_result,M);
-	TransferDataToHost(&result, _result,1);
-	cudaFree(_result);
+	sum<<<n_blocks,block_size>>>(x,SUM_RESULT,M);
+	TransferDataToHost(&result, SUM_RESULT, 1);
 }
 
 void Sum(int &result, int *x, int M)   {
@@ -684,32 +824,26 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 }
 
 void Unity(Real* P, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	unity<<<n_blocks,block_size>>>(P,M);
-}
-
-void Flux_min(Real* P, Real* T, int jump, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	flux_min<<<n_blocks,block_size>>>(P,T,jump,M);
-}
-
-void Flux(Real* flux_ptr, Real* L, Real* mu, int D, int jump, int M) {
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	flux<<<n_blocks,block_size>>>(flux_ptr,L,mu,D,jump,M);
+	cudaMemset((void**)P, 1.0, M*sizeof(Real)); //much faster than a kernel
+//int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+//	unity<<<n_blocks,block_size>>>(P,M);
 }
 
 void Zero(Real* P, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	zero<<<n_blocks,block_size>>>(P,M);
+	cudaMemset((void**)P, 0.0, M*sizeof(Real)); //much faster than a kernel
+/*  int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	zero<<<n_blocks,block_size, 0>>>(P,M); */
 }
 
 void Zero(int* P, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	zero<<<n_blocks,block_size>>>(P,M);
+	cudaMemset((void**)P, 0, M*sizeof(int)); //much faster than a kernel
+/* 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	zero<<<n_blocks,block_size, 0>>>(P,M);  */
 }
 
 void Cp(Real *P,Real *A, int M)   {
-int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	//cudaMemcpy(P, A, sizeof(Real)*M,cudaMemcpyDeviceToDevice); //much slower than a kernel
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	cp<<<n_blocks,block_size>>>(P,A,M);
 }
 
@@ -738,11 +872,6 @@ void YplusisCtimesX(Real *Y, Real *X, Real C, int M)   {
 	yplusisctimesx<<<n_blocks,block_size>>>(Y,X,C,M);
 }
 
-void YisAplusCtimesB(Real *Y, Real *A, Real*B, Real C, int M)   {
-	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	yisaplusctimesb<<<n_blocks,block_size>>>(Y,A,B,C,M);
-}
-
 void UpdateAlpha(Real *Y, Real *X, Real C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	updatealpha<<<n_blocks,block_size>>>(Y,X,C,M);
@@ -757,9 +886,15 @@ void Add(Real *P, Real *A, int M)    {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	add<<<n_blocks,block_size>>>(P,A,M);
 }
+
 void Add(int *P, int *A, int M)    {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	add<<<n_blocks,block_size>>>(P,A,M);
+}
+
+void Subtract(Real *P, Real *A, int M)    {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	subtract<<<n_blocks,block_size>>>(P,A,M);
 }
 
 void Dubble(Real *P, Real *A, Real norm,int M)   {
@@ -835,8 +970,8 @@ void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 	oneminusphitot<<<n_blocks,block_size>>>(g,phitot,M);
 }
 
+#ifdef PAR_MESODYN
 Real ComputeResidual(Real* array, int size) {
-
 	Real residual{0};
 
     auto temp_residual = thrust::minmax_element( thrust::device_pointer_cast(array), thrust::device_pointer_cast(array+size) );
@@ -845,9 +980,10 @@ Real ComputeResidual(Real* array, int size) {
     } else {
       residual = abs(*temp_residual.second);
     }
-
 	return residual;
 }
+
+#endif
 
 namespace tools {
 
@@ -891,9 +1027,9 @@ void SetBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	bx<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
-	by<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
-	bz<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+	bx<<<dimGridx,dimBlock, 0, CUDA_STREAMS[0]>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
+	by<<<dimGridy,dimBlock, 0, CUDA_STREAMS[1]>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
+	bz<<<dimGridz,dimBlock, 0, CUDA_STREAMS[2]>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
 }
 
 template void RemoveBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int);
@@ -901,13 +1037,13 @@ template void RemoveBoundaries<int>(int*, int, int, int, int, int, int, int, int
 
 template <typename T>
 void RemoveBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
-	dim3 dimBlock(16,16);
+	dim3 dimBlock(8,8);
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	b_x<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
-	b_y<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
-	b_z<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+	b_x<<<dimGridx,dimBlock, 0, CUDA_STREAMS[0]>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
+	b_y<<<dimGridy,dimBlock, 0, CUDA_STREAMS[1]>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
+	b_z<<<dimGridz,dimBlock, 0, CUDA_STREAMS[2]>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
 }
 
 #endif
@@ -951,13 +1087,13 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
         if (i < m)
         {
             for (k = i; k < m; k++)
-                scale += fabs((Real)a[k][i]);
+                scale += fabs((Real)a[i][k]);
             if (scale)
             {
                 for (k = i; k < m; k++)
                 {
-                    a[k][i] = (Real)((Real)a[k][i]/scale);
-                    s += ((Real)a[k][i] * (Real)a[k][i]);
+                    a[i][k] = (Real)((Real)a[i][k]/scale);
+                    s += ((Real)a[i][k] * (Real)a[i][k]);
                 }
                 f = (Real)a[i][i];
                 g = -SIGN(sqrt(s), f);
@@ -968,14 +1104,14 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
                     for (j = l; j < n; j++)
                     {
                         for (s = 0.0, k = i; k < m; k++)
-                            s += ((Real)a[k][i] * (Real)a[k][j]);
+                            s += ((Real)a[i][k] * (Real)a[j][k]);
                         f = s / h;
                         for (k = i; k < m; k++)
-                            a[k][j] += (Real)(f * (Real)a[k][i]);
+                            a[j][k] += (Real)(f * (Real)a[i][k]);
                     }
                 }
                 for (k = i; k < m; k++)
-                    a[k][i] = (Real)((Real)a[k][i]*scale);
+                    a[i][k] = (Real)((Real)a[i][k]*scale);
             }
         }
         w[i] = (Real)(scale * g);
@@ -985,32 +1121,32 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
         if (i < m && i != n - 1)
         {
             for (k = l; k < n; k++)
-                scale += fabs((Real)a[i][k]);
+                scale += fabs((Real)a[k][i]);
             if (scale)
             {
                 for (k = l; k < n; k++)
                 {
-                    a[i][k] = (Real)((Real)a[i][k]/scale);
-                    s += ((Real)a[i][k] * (Real)a[i][k]);
+                    a[k][i] = (Real)((Real)a[k][i]/scale);
+                    s += ((Real)a[k][i] * (Real)a[k][i]);
                 }
-                f = (Real)a[i][l];
+                f = (Real)a[l][i];
                 g = -SIGN(sqrt(s), f);
                 h = f * g - s;
-                a[i][l] = (Real)(f - g);
+                a[l][i] = (Real)(f - g);
                 for (k = l; k < n; k++)
-                    rv1[k] = (Real)a[i][k] / h;
+                    rv1[k] = (Real)a[k][i] / h;
                 if (i != m - 1)
                 {
                     for (j = l; j < m; j++)
                     {
                         for (s = 0.0, k = l; k < n; k++)
-                            s += ((Real)a[j][k] * (Real)a[i][k]);
+                            s += ((Real)a[k][j] * (Real)a[k][i]);
                         for (k = l; k < n; k++)
-                            a[j][k] += (Real)(s * rv1[k]);
+                            a[k][j] += (Real)(s * rv1[k]);
                     }
                 }
                 for (k = l; k < n; k++)
-                    a[i][k] = (Real)((Real)a[i][k]*scale);
+                    a[k][i] = (Real)((Real)a[k][i]*scale);
             }
         }
         anorm = MAX(anorm, (fabs((Real)w[i]) + fabs(rv1[i])));
@@ -1024,12 +1160,12 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
             if (g)
             {
                 for (j = l; j < n; j++)
-                    v[j][i] = (Real)(((Real)a[i][j] / (Real)a[i][l]) / g);
+                    v[j][i] = (Real)(((Real)a[j][i] / (Real)a[l][i]) / g);
                     /* Real division to avoid underflow */
                 for (j = l; j < n; j++)
                 {
                     for (s = 0.0, k = l; k < n; k++)
-                        s += ((Real)a[i][k] * (Real)v[k][j]);
+                        s += ((Real)a[k][i] * (Real)v[k][j]);
                     for (k = l; k < n; k++)
                         v[k][j] += (Real)(s * (Real)v[k][i]);
                 }
@@ -1049,7 +1185,7 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
         g = (Real)w[i];
         if (i < n - 1)
             for (j = l; j < n; j++)
-                a[i][j] = 0.0;
+                a[j][i] = 0.0;
         if (g)
         {
             g = 1.0 / g;
@@ -1058,26 +1194,26 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
                 for (j = l; j < n; j++)
                 {
                     for (s = 0.0, k = l; k < m; k++)
-                        s += ((Real)a[k][i] * (Real)a[k][j]);
+                        s += ((Real)a[i][k] * (Real)a[j][k]);
                     f = (s / (Real)a[i][i]) * g;
                     for (k = i; k < m; k++)
-                        a[k][j] += (Real)(f * (Real)a[k][i]);
+                        a[j][k] += (Real)(f * (Real)a[i][k]);
                 }
             }
             for (j = i; j < m; j++)
-                a[j][i] = (Real)((Real)a[j][i]*g);
+                a[i][j] = (Real)((Real)a[i][j]*g);
         }
         else
         {
             for (j = i; j < m; j++)
-                a[j][i] = 0.0;
+                a[i][j] = 0.0;
         }
         ++a[i][i];
     }
 
     for (int i=0; i<n; i++)
       for (int j=0; j<n; j++)
-        if (a[j][i] != a[j][i])
+        if (a[i][j] != a[i][j])
             throw -3;
 
     /* diagonalize the bidiagonal form */
@@ -1114,10 +1250,10 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
                         s = (- f * h);
                         for (j = 0; j < m; j++)
                         {
-                            y = (Real)a[j][nm];
-                            z = (Real)a[j][i];
-                            a[j][nm] = (Real)(y * c + z * s);
-                            a[j][i] = (Real)(z * c - y * s);
+                            y = (Real)a[nm][j];
+                            z = (Real)a[i][j];
+                            a[nm][j] = (Real)(y * c + z * s);
+                            a[i][j] = (Real)(z * c - y * s);
                         }
                     }
                 }
@@ -1185,10 +1321,10 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
                 x = (c * y) - (s * g);
                 for (jj = 0; jj < m; jj++)
                 {
-                    y = (Real)a[jj][j];
-                    z = (Real)a[jj][i];
-                    a[jj][j] = (Real)(y * c + z * s);
-                    a[jj][i] = (Real)(z * c - y * s);
+                    y = (Real)a[j][jj];
+                    z = (Real)a[i][jj];
+                    a[j][jj] = (Real)(y * c + z * s);
+                    a[i][jj] = (Real)(z * c - y * s);
                 }
             }
             rv1[l] = 0.0;

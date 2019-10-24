@@ -321,7 +321,10 @@ bool Cleng::CP(transfer tofrom) {
             break;
 
         case to_segment:
-            Zero(clamped->H_MASK, Lat[0]->M);
+            //Zero(clamped->H_MASK, Lat[0]->M);  [CLENG]
+            // merged:
+            std::fill(clamped->H_MASK, clamped->H_MASK+Lat[0]->M, 0);
+            //std::fill(Seg[clamp_seg]->H_MASK, Seg[clamp_seg]->H_MASK+M, 0); [Master]
 
             for (auto &&SN : Enumerate(simpleNodeList)) {
                 size_t index = SN.first;    //

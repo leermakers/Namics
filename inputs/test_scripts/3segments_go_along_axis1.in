@@ -30,15 +30,15 @@ newton : isaac : e_info : false
 newton : isaac : iterationlimit : 7000
 newton : isaac : tolerance : 1e-7
 
-//out_info : folder : path : data
+out_info : folder : path : data
 
-//output : vtk : append : false
-//vtk : mol : pol : phi
+output : vtk : append : false
+vtk : mol : pol : phi
 
-//output : kal : append : true
-//kal : output : variable : MC_attempt
-//kal : output : variable : free_energy
-//kal : sys : variable : free_energy
+output : kal : append : true
+kal : output : variable : MC_attempt
+kal : output : variable : free_energy
+kal : sys : variable : free_energy
 
 cleng : parameters : MCS : 200
 cleng : parameters : delta_save : 1

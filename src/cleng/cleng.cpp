@@ -128,7 +128,7 @@ bool Cleng::CheckInput(int start, bool save_vector) {
                     "\n Termination..." << endl;
             exit(0);
         }
-
+        // TODO: think about user
 //        if ((delta_step) and (pivot_move) and ()) {
 //            cout << "Sorry, but you have to choose either one_node_move by `delta_step` parameter or `pivot_move`"
 //                    "\n Termination..." << endl;
@@ -445,14 +445,20 @@ void Cleng::_moveClampedNode(bool back, int id_node_for_move, const Point& clamp
 }
 
 Point Cleng::preparePivotClampedMove(int id_node_for_move) {
-//    Point center_of_rotation = nodes_map[pivot_node_ids[0]].data()->get()->point();
-    Point center_of_rotation = nodes_map[pivot_node_ids[0]].data()->get()->_returnSystemPoint();
+    Point center_of_rotation = nodes_map[pivot_node_ids[0]].data()->get()->point();
     // moving center of rotation to the center
     for (auto &&node : nodes_map) node.second.data()->get()->shift(center_of_rotation.negate());
     Point current_Point = nodes_map[id_node_for_move].data()->get()->_returnSystemPoint();
-//    Point current_Point = nodes_map[id_node_for_move].data()->get()->point();
     Point point_shifted_by_matrix = rotation_matrix.dot(current_Point);;
     Point clamped_move = point_shifted_by_matrix - current_Point;
+    // center +1
+    if (clamped_move.x < -(box.x / 2) +1) clamped_move.x += box.x;
+    if (clamped_move.y < -(box.y / 2) +1) clamped_move.y += box.y;
+    if (clamped_move.z < -(box.z / 2) +1) clamped_move.z += box.z;
+
+    if (clamped_move.x > (box.x / 2)+1) clamped_move.x -= box.x;
+    if (clamped_move.y > (box.y / 2)+1) clamped_move.y -= box.y;
+    if (clamped_move.z > (box.z / 2)+1) clamped_move.z -= box.z;
     // moving center of rotation to initial place
     for (auto &&node : nodes_map) node.second.data()->get()->shift(center_of_rotation);
     return clamped_move;
@@ -491,13 +497,6 @@ bool Cleng::_pivotMoveClampedNode(const bool &back) {
         _moveClampedNode(back, pivot_node_ids[node_position_in_vector], clamped_move);
         nodeIDs_clampedMove[pivot_node_ids[node_position_in_vector]] = clamped_move;
     }
-
-//    cout << endl;
-//    cout << "&&&&Check&&&" << endl;
-//    for (auto &&n : nodes_map) cout << "Node id: " << n.first << " " << n.second.data()->get()->to_string() << endl;
-//    cout << endl;
-//    cout << "&&&&Check&&&" << endl;
-
     cout << internal_name << "checking positions...";
     for (auto &&node_id : pivot_node_ids) {
         success = MakeChecks(node_id);
@@ -510,7 +509,7 @@ bool Cleng::_pivotMoveClampedNode(const bool &back) {
 bool Cleng::_oneNodeMoveClampedNode(const bool &back) {
     int id_node_for_move;
     Point clamped_move;
-    bool success = true;
+    bool success;
 
     cout << internal_name << "[one_node_move]" << endl;
     id_node_for_move = prepareIdNode();

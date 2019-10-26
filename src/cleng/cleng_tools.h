@@ -92,7 +92,7 @@ bool Cleng::IsCommensuratable() {
     // TODO: procedure goes throw all Molecules in the System...
     // TODO: Need to take only Polymer molecules...
     for (int i = 0; i < length; i++) {
-        int chain_length = Mol[i]->chainlength - 2;
+        int chain_length = Mol[i]->chainlength;
         if (chain_length < 10) continue;
 
         for (auto &&SN : Enumerate(simpleNodeList)) {

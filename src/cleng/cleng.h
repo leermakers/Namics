@@ -45,8 +45,8 @@ private:
 
     int cmajor_version = 1;
     int cminor_version = 3;
-    int cpatch = 0;
-    int cversion = 120;
+    int cpatch = 1;
+    int cversion = 123;
     int pseed{};
     string internal_name = "[Cleng] ";
     string metropolis_name = "[Metropolis] ";
@@ -89,8 +89,8 @@ public:
     int pivot_move{};
     int pivot_axis{};
     vector<int> pivot_node_ids;
-    int pivot_arms;
-    bool pivot_one_node;
+    int pivot_arms{};
+    bool pivot_one_node{};
 
     map<int, Point> nodeIDs_clampedMove;
     map<int, vector<int>> pivot_arm_nodes;

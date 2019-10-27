@@ -549,8 +549,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
                 for (auto &&ids: pair_pivot.second) cout << ids << " ";
                 cout << endl;
             }
-            cout << internal_name << "Fixing center of the star..." << endl;
-            ids_node4fix.clear(); ids_node4fix.push_back(pivot_arm_nodes[1][0]);
+            if (pivot_move) {ids_node4fix.clear();ids_node4fix.push_back(pivot_arm_nodes[1][0]);}
         }
     }
 
@@ -563,7 +562,10 @@ bool Cleng::MonteCarlo(bool save_vector) {
 
 
 // init system outlook
-    if (!loaded) CP(to_cleng);
+    if (!loaded) {
+        CP(to_cleng);
+        if (pivot_move) {ids_node4fix.clear();ids_node4fix.push_back(pivot_arm_nodes[1][0]);}
+    }
     if (!Checks(0)) {cout << internal_name << "Some checks are not passed. Termination..." << endl; exit(1); }
     if (checkpoint_save) {checkpoint.saveCheckpoint(simpleNodeList);}
 

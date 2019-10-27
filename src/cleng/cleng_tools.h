@@ -76,7 +76,7 @@ vector<int> makeExcludedArray(int step) {
 bool Cleng::InSubBoxRange(int id_node_for_move) {
     bool success = true;
     vector<int> id_nodes;
-    Point sub_box = {sub_box_size.x - 2, sub_box_size.y - 2, sub_box_size.z - 2};  // change it in future
+    Point sub_box = {sub_box_size.x, sub_box_size.y, sub_box_size.z};  // change it in future
 
     if (!nodes_map[id_node_for_move].data()->get()->inSubBoxRange(sub_box)) {
         id_nodes.push_back(id_node_for_move);

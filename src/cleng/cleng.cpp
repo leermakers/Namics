@@ -544,7 +544,13 @@ bool Cleng::MonteCarlo(bool save_vector) {
             CP(to_segment);
             if (getLastMCS() != 0) MCS_checkpoint = getLastMCS() + 1;
             loaded = true;
-            update_ids_node4move();
+            for (auto &&pair_pivot : pivot_arm_nodes) {
+                cout << "---> arm: " << pair_pivot.first << " ids: ";
+                for (auto &&ids: pair_pivot.second) cout << ids << " ";
+                cout << endl;
+            }
+            cout << internal_name << "Fixing center of the star..." << endl;
+            ids_node4fix.clear(); ids_node4fix.push_back(pivot_arm_nodes[1][0]);
         }
     }
 
@@ -631,7 +637,10 @@ bool Cleng::MonteCarlo(bool save_vector) {
                     cout << "%?% Sorry, Free Energy is still NaN. " << endl;
                     cout << "%?% Here is result from solver: " << success_iteration << endl;
 
-                    cout << "%?% The step will be rejected! Simulation will continue... " << endl;
+                    cout << "%?% The step will be rejected! "
+                            "Probably your system is too dense! "
+                            "Simulation will continue... " << endl;
+                    cout << internal_name << "[CRASH STATE] " << "returning back the system configuration... " << endl;
                     MakeMove(true);
                     rejected++;
                     cleng_rejected++;

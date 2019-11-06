@@ -91,6 +91,7 @@ public:
     vector<int> pivot_node_ids;
     int pivot_arms{};
     bool pivot_one_node{};
+    bool pivot_one_bond{};
 
     map<int, Point> nodeIDs_clampedMove;
     map<int, vector<int>> pivot_arm_nodes;
@@ -155,6 +156,8 @@ public:
     void _moveClampedNode(bool back, int id_node_for_move, const Point &clamped_move);
 
     bool _pivotMoveClampedNode(const bool &back);
+
+    bool _pivotMoveOneBond(const bool &back);
 
     bool _oneNodeMoveClampedNode(const bool &back);
 

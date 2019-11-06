@@ -218,6 +218,7 @@ Point Cleng::prepareMove(const string& type_move) {
 //        prepareScalingMatrix<Real>();
 
     } else {
+        if (type_move == "pivot_one_bond_move") {prepareIdsNode();}
         if (axis) {
             int c1 = 1;  // sing of movement +1 or -1
             int c2 = 2;  // MC step by default 2; could be 1 in two_ends_extension mode

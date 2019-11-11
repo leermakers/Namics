@@ -45,8 +45,8 @@ private:
 
     int cmajor_version = 1;
     int cminor_version = 4;
-    int cpatch = 0;
-    int cversion = 128;
+    int cpatch = 1;
+    int cversion = 129;
     int pseed{};
     string internal_name = "[Cleng] ";
     string metropolis_name = "[Metropolis] ";

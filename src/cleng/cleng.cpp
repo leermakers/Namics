@@ -671,27 +671,47 @@ bool Cleng::MonteCarlo(bool save_vector) {
             }
 
             success_iteration = New[0]->Solve(true);
+            //// Simulation without rescue procedure ---> TODO: [1nd solution]
             if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
-                cout << "%?% Sorry, Free Energy is NaN.  " << endl;
+                cout << "%?% Sorry, Free Energy is NaN. " << endl;
                 cout << "%?% Here is result from solver: " << success_iteration << endl;
-                New[0]->attempt_DIIS_rescue();
-                cout << "%?% Restarting iteration." << endl;
-                success_iteration = New[0]->Solve(true);
 
-                if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
-                    cout << "%?% Sorry, Free Energy is still NaN. " << endl;
-                    cout << "%?% Here is result from solver: " << success_iteration << endl;
-
-                    cout << "%?% The step will be rejected! "
-                            "Probably your system is too dense! "
-                            "Simulation will continue... " << endl;
-                    cout << internal_name << "[CRASH STATE] " << "returning back the system configuration... " << endl;
-                    MakeMove(true);
-                    rejected++;
-                    cleng_rejected++;
-                    continue;
-                }
+                cout << "%?% The step will be rejected! "
+                        "Probably your system is too dense! "
+                        "Simulation will continue... " << endl;
+                cout << internal_name << "[CRASH STATE] " << "returning back the system configuration... " << endl;
+                MakeMove(true);
+                rejected++;
+                cleng_rejected++;
+                continue;
             } else {free_energy_trial = Sys[0]->GetFreeEnergy();}
+            //// Simulation without rescue procedure <---
+
+            //// Simulation with rescue procedure --->
+//            if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
+//                cout << "%?% Sorry, Free Energy is NaN.  " << endl;
+//                cout << "%?% Here is result from solver: " << success_iteration << endl;
+////                New[0]->rescue_status = NONE;  # TODO need to rescue?
+//                New[0]->attempt_DIIS_rescue();
+//                cout << "%?% Restarting iteration." << endl;
+//                success_iteration = New[0]->Solve(true);
+//
+//                if (is_ieee754_nan(Sys[0]->GetFreeEnergy())) {
+//                    cout << "%?% Sorry, Free Energy is still NaN. " << endl;
+//                    cout << "%?% Here is result from solver: " << success_iteration << endl;
+//
+//                    cout << "%?% The step will be rejected! "
+//                            "Probably your system is too dense! "
+//                            "Simulation will continue... " << endl;
+//                    cout << internal_name << "[CRASH STATE] " << "returning back the system configuration... " << endl;
+//                    MakeMove(true);
+//                    rejected++;
+//                    cleng_rejected++;
+//                    continue;
+//                }
+//            } else {free_energy_trial = Sys[0]->GetFreeEnergy();}
+
+            //// Simulation with rescue procedure <---
             if (save_vector) test_vector.push_back(Sys[0]->GetFreeEnergy());
 
             cout << "Free Energy (c): " << free_energy_current << endl;
@@ -723,6 +743,7 @@ bool Cleng::MonteCarlo(bool save_vector) {
                         CP(to_segment);
                         cout << internal_name << metropolis_name << "returning back the system configuration... " << endl;
                         New[0]->Solve(true);
+                        // TODO check cleng returned to normal numbers... [2nd solution]
                         rejected++;
                         cout << "... [Done]" << endl;
                     }

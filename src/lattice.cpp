@@ -2717,6 +2717,49 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 			UpPsi(g+JX+JY+1,psi+JX+JY+1,X+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1));
 			if (fjc==2) cout << "in GPU FJC-choices > 3 not implemented yet " << endl; 
 #else
+
+			for (x=1; x<MX+1; x++) {
+				for (y=1; y<MY+1; y++) {
+					epsZplus=eps[x*JX+y*JY]+eps[x*JX+y*JY+1];
+					for (z=1; z<MZ+1; z++) {
+						epsZmin=epsZplus;
+						epsZplus=eps[x*JX+y*JY+z]+eps[x*JX+y*JY+z+1];
+						epsYmin= eps[x*JX+y*JY+z]+eps[x*JX+(y-1)*JY+z];
+						epsYplus=eps[x*JX+y*JY+z]+eps[x*JX+(y+1)*JY+z];
+						epsXmin = eps[x*JX+y*JY+z]+eps[(x-1)*JX+y*JY+z];
+						epsXplus= eps[x*JX+y*JY+z]+eps[(x+1)*JX+y*JY+z];
+						if (Mask[x*JX+y*JY+z]==0)
+							psi[x*JX+y*JY+z]= (epsXmin*psi[(x-1)*JX+y*JY+z]+epsXplus*psi[(x+1)*JX+y*JY+z]+
+					    		epsYmin*psi[x*JX+(y-1)*JY+z]+epsYplus*psi[x*JX+(y+1)*JY+z]+
+						 	epsZmin*psi[x*JX+y*JY+z-1]+epsZplus*psi[x*JX+y*JY+z+1]+
+					     		C*q[x*JX+y*JY+z])/(epsXmin+epsXplus+epsYmin+epsYplus+epsZmin+epsZplus);
+					}
+				}
+			}
+			for (x=MX; x>0; x--) {
+				for (y=MY; y>0; y--) {
+					epsZmin=eps[x*JX+y*JY+MZ+1]+eps[x*JX+y*JY+MZ];
+					for (z=MZ; z>0; z--) {
+						epsZplus=epsZmin;
+						epsZmin=eps[x*JX+y*JY+z]+eps[x*JX+y*JY+z-1];
+						epsYmin= eps[x*JX+y*JY+z]+eps[x*JX+(y-1)*JY+z];
+						epsYplus=eps[x*JX+y*JY+z]+eps[x*JX+(y+1)*JY+z];
+						epsXmin = eps[x*JX+y*JY+z]+eps[(x-1)*JX+y*JY+z];
+						epsXplus= eps[x*JX+y*JY+z]+eps[(x+1)*JX+y*JY+z];
+						if (Mask[x*JX+y*JY+z]==0) {
+							psi[x*JX+y*JY+z]= (epsXmin*psi[(x-1)*JX+y*JY+z]+epsXplus*psi[(x+1)*JX+y*JY+z]+
+							epsYmin*psi[x*JX+(y-1)*JY+z]+epsYplus*psi[x*JX+(y+1)*JY+z]+
+							epsZmin*psi[x*JX+y*JY+z-1]+epsZplus*psi[x*JX+y*JY+z+1]+
+							C*q[x*JX+y*JY+z])/(epsXmin+epsXplus+epsYmin+epsYplus+epsZmin+epsZplus);
+							g[x*JX+y*JY+z]-=psi[x*JX+y*JY+z];
+						}
+					}
+				}
+			}
+
+
+
+/*
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) { 
 				X[x*JX+y*JY+z]=(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
 						 +psi[x*JX+(y-1)*JY+z]+psi[x*JX+(y+1)*JY+z]
@@ -2732,6 +2775,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 			}
 			Cp(psi,X,M);
 			YisAminB(g,g,psi,M);
+*/
 		
 #endif
 			break;
@@ -2902,6 +2946,7 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool gra
 	int z;
 	#endif
 	Real a,b,c,a_,b_,c_;
+	Real epsXplus,epsXmin,epsYplus,epsYmin,epsZplus,epsZmin;
 
 	Real C = -e*e/(eps0*k_BT*bond_length);
 	switch (gradients) {
@@ -2976,6 +3021,31 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool gra
 			Cp(X,psi,M);
 		UpQ(g + JX + JY + 1, q + JX + JY + 1, psi + JX + JY + 1, eps + JX + JY + 1, JX, JY, C, Mask + JX + JY + 1, M - 2 * (JX + JY + 1));
 #else
+
+			for (x=1; x<MX; x++) {
+				for (y=1; y<MY; y++) {
+					epsZplus=eps[x*JX+y*JY]+eps[x*JX+y*JY+1];
+					for (z=1; z<MZ; z++) {
+						epsZmin=epsZplus;
+						epsZplus=eps[x*JX+y*JY+z]+eps[x*JX+y*JY+z+1];
+						epsYmin= eps[x*JX+y*JY+z]+eps[x*JX+(y-1)*JY+z];
+						epsYplus=eps[x*JX+y*JY+z]+eps[x*JX+(y+1)*JY+z];
+						epsXmin = eps[x*JX+y*JY+z]+eps[(x-1)*JX+y*JY+z];
+						epsXplus= eps[x*JX+y*JY+z]+eps[(x+1)*JX+y*JY+z];
+						if (Mask[x*JX+y*JY+z]==1) {
+							psi[x*JX+y*JY+z]= (epsXmin*psi[(x-1)*JX+y*JY+z]+epsXplus*psi[(x+1)*JX+y*JY+z]+
+							                    epsYmin*psi[x*JX+(y-1)*JY+z]+epsYplus*psi[x*JX+(y+1)*JY+z]+
+									    epsZmin*psi[x*JX+y*JY+z-1]+epsZplus*psi[x*JX+y*JY+z+1]-
+									   (epsXmin+epsXplus+epsYmin+epsYplus+epsZmin+epsZplus)*psi[x*JX+y*JY+z])/C;
+							g[x*JX+y*JY+z]=-q[x*JX+y*JY+z];
+						}
+					}
+				}
+			}
+
+
+/* in lattice refinement charge in 3d not working trying to restore....
+
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) { 
 				if (Mask[x*JX+y*JY+z] == 1)
 				q[x*JX+y*JY+z]=-0.5*(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
@@ -2994,6 +3064,7 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool gra
 			if (Mask[x*JX+y*JY+z] == 1) {
 				g[x*JX+y*JY+z]=-q[x*JX+y*JY+z];
 			}
+*/
 		
 #endif
 			break;

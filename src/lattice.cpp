@@ -2590,6 +2590,16 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 			}
 			break;
 		case 3:
+
+			Zero(EE,M);
+			AddGradSquare(EE+1,psi,psi+1,psi+2,M-2);
+			AddGradSquare(EE+JX,psi,psi+JX,psi+2*JX,M-2*JX);
+			AddGradSquare(EE+JY,psi,psi+JY,psi+2*JY,M-2*JY);
+			Norm(EE,pf,M);
+			break;
+
+
+/* In lattice refinement. this is possibly not working...old version restored.
 			YisAminB(EE+1,psi,psi+2,M-2);
 			Times(EE,EE,EE,M);
 			Norm(EE,pf/4.0,M);
@@ -2600,6 +2610,7 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 			Times(E,E,E,M);
 			YplusisCtimesX(EE,E,pf/4.0,M);
 			break;
+*/
 		default:
 			break;
 	}
@@ -2613,7 +2624,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 #endif
 
 #ifndef CUDA
-	//Real epsZplus, epsZmin;
+	Real epsZplus, epsZmin;
 #endif	
 	Real a,b,c,a_,b_,c_;
 	Real r; 
@@ -2806,6 +2817,52 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 			Cp(X,psi,M);
 			UpPsi(g+JX+JY+1,psi+JX+JY+1,X+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1));
 #else
+
+			for (x=1; x<MX+1; x++) {
+				for (y=1; y<MY+1; y++) {
+					epsZplus=eps[x*JX+y*JY]+eps[x*JX+y*JY+1];
+					for (z=1; z<MZ+1; z++) {
+						epsZmin=epsZplus;
+						epsZplus=eps[x*JX+y*JY+z]+eps[x*JX+y*JY+z+1];
+						epsYmin= eps[x*JX+y*JY+z]+eps[x*JX+(y-1)*JY+z];
+						epsYplus=eps[x*JX+y*JY+z]+eps[x*JX+(y+1)*JY+z];
+						epsXmin = eps[x*JX+y*JY+z]+eps[(x-1)*JX+y*JY+z];
+						epsXplus= eps[x*JX+y*JY+z]+eps[(x+1)*JX+y*JY+z];
+						if (Mask[x*JX+y*JY+z]==0)
+							psi[x*JX+y*JY+z]= (epsXmin*psi[(x-1)*JX+y*JY+z]+epsXplus*psi[(x+1)*JX+y*JY+z]+
+					    		epsYmin*psi[x*JX+(y-1)*JY+z]+epsYplus*psi[x*JX+(y+1)*JY+z]+
+						 	epsZmin*psi[x*JX+y*JY+z-1]+epsZplus*psi[x*JX+y*JY+z+1]+
+					     		C*q[x*JX+y*JY+z])/(epsXmin+epsXplus+epsYmin+epsYplus+epsZmin+epsZplus);
+					}
+				}
+			}
+			for (x=MX; x>0; x--) {
+				for (y=MY; y>0; y--) {
+					epsZmin=eps[x*JX+y*JY+MZ+1]+eps[x*JX+y*JY+MZ];
+					for (z=MZ; z>0; z--) {
+						epsZplus=epsZmin;
+						epsZmin=eps[x*JX+y*JY+z]+eps[x*JX+y*JY+z-1];
+						epsYmin= eps[x*JX+y*JY+z]+eps[x*JX+(y-1)*JY+z];
+						epsYplus=eps[x*JX+y*JY+z]+eps[x*JX+(y+1)*JY+z];
+						epsXmin = eps[x*JX+y*JY+z]+eps[(x-1)*JX+y*JY+z];
+						epsXplus= eps[x*JX+y*JY+z]+eps[(x+1)*JX+y*JY+z];
+						if (Mask[x*JX+y*JY+z]==0) {
+							psi[x*JX+y*JY+z]= (epsXmin*psi[(x-1)*JX+y*JY+z]+epsXplus*psi[(x+1)*JX+y*JY+z]+
+							epsYmin*psi[x*JX+(y-1)*JY+z]+epsYplus*psi[x*JX+(y+1)*JY+z]+
+							epsZmin*psi[x*JX+y*JY+z-1]+epsZplus*psi[x*JX+y*JY+z+1]+
+							C*q[x*JX+y*JY+z])/(epsXmin+epsXplus+epsYmin+epsYplus+epsZmin+epsZplus);
+							g[x*JX+y*JY+z]-=psi[x*JX+y*JY+z];
+						}
+					}
+				}
+			}
+
+
+
+
+
+/*  in lattice refinement this part is appartently not working. previous lines is for previous version...
+
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) { 
 				if (Mask[x*JX+y*JY+z] == 0)
 				X[x*JX+y*JY+z]=(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
@@ -2826,6 +2883,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 				psi[x*JX+y*JY+z]=X[x*JX+y*JY+z];
 				g[x*JX+y*JY+z]-=psi[x*JX+y*JY+z];
 			}
+*/
 		
 #endif
 			break;

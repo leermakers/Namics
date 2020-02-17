@@ -1713,6 +1713,38 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	return success;
 }
 
+bool Molecule::ComputePhi(){
+if (debug) cout <<"ComputePhi for Mol " + name << endl;
+	bool success=true;
+	//int M=Lat[0]->M;
+	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition	
+
+	switch (MolType) {
+		case monomer:
+			success=ComputePhiMon();
+			break;
+		case linear:
+			if (freedom == "clamped") {
+				Lat[0]->sub_box_on=Seg[mon_nr[0]]->clamp_nr; //slecting sub_box boundary conditions.
+				//success=ComputePhiLin();
+				success=ComputeClampLin();
+				Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
+			} else success=ComputePhiBra();
+    	break;
+		case branched:
+			success=ComputePhiBra();
+			break;
+		case dendrimer:
+			success=ComputePhiDendrimer();
+			break;
+		default:
+			cout << "Programming error " << endl;
+			break;
+	}
+	return success;
+}
+
+
 bool Molecule::ComputePhiMon(){
 if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	int M=Lat[0]->M;

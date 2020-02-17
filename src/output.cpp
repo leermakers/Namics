@@ -373,7 +373,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		if (n_starts==1 && subl < 1) filename=sub[0].append(".").append(name);
 		if (n_starts==1 && subl >0) filename = sub[0].append("_").append(numc).append(".").append(name);
 		if (n_starts>1  && subl < 1) filename = sub[0].append("_").append(numcc).append(".").append(name);
-		if (n_starts>1 && subl >0)  filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
+		if (n_starts>1 && subl >0)  filename=sub[0].append("_").append(numcc).append("_").append(numc).append(".").append(name);
 	}
 
 	filename = In[0]->output_info.getOutputPath() + filename;

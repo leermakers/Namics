@@ -33,9 +33,13 @@ public:
 	vector<int> XstateList_1;
 	vector<int> XstateList_2;
 	vector<int> DeltaMolList;
+	vector<int> ExternsMolList;
 	vector<int> px;
 	vector<int> py;
 	vector<int> pz;
+	vector<int> pointx;
+	vector<int> liney;
+	vector<int> surfacez;
 	vector<int> Xn_1;
 	Real FreeEnergy; 
 	Real GrandPotential;
@@ -52,7 +56,8 @@ public:
 	int* psiMask;
 	bool fixedPsi0;
 	bool grad_epsilon;
-	bool constraintfields;	
+	bool constraintfields;
+	bool externsfields;	
 	Real* q;
 	Real* H_GrandPotentialDensity;
 	Real* H_FreeEnergyDensity;
@@ -63,7 +68,10 @@ public:
 	Real* TEMP;
 	Real* H_BETA;
 	Real* BETA;
-	Real phi_ratio;
+	Real* RATIO;
+	vector<Real> phi_ratio;
+	Real* H_mu_ex;
+	Real* mu_ex;
 	int* H_beta;
 	int* beta; 
 	bool GPU;
@@ -82,6 +90,7 @@ public:
 	string final_guess;
 	string guess_outputfile;
 	string ConstraintType;
+	string externstype;
 	string delta_inputfile; 
 	int Var_target;
 	Real Var_target_value;

@@ -47,10 +47,11 @@ if (debug) cout <<"Destructor in Solve " << endl;
 	cudaFree(x_x0);
 	cudaFree(temp_alpha);
 #else
-	delete temp_alpha;
-	free(xx);
+	//delete temp_alpha;
+	//delete xx;
+	//free(xx);
 #endif
-//if (debug) cout <<"exit for 'destructor' in Solve " << endl;
+if (debug) cout <<"exit for 'destructor' in Solve " << endl;
 
 }
 
@@ -813,6 +814,13 @@ void Solve_scf::residuals(Real* x, Real* g){
 						PutAlpha(g+i*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
 					}
 				}
+
+				//if boolean in system is true for adding externalfield run a loop to add info to alpha for specific segement
+				if (Sys[0]->externsfields){
+					//for (int looper=0; looper<itmonlistlength; looper++){
+						if(Seg[i]==Seg[Sys[0]->ExternsMolList[0]]) Add(g+i*M,Sys[0]->mu_ex,M);
+					//}
+				}
 			}
 			for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
 
@@ -859,8 +867,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 			if (Sys[0]->constraintfields) { 
 				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
 				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
-				Real R = (Sys[0]->phi_ratio-1)/(Sys[0]->phi_ratio+1);
-				YisAplusC(g+itpos,g+itpos,R,M);
+				YisAplusB(g+itpos,g+itpos,Sys[0]->RATIO,M);
 				Times(g+itpos,g+itpos,Sys[0]->beta,M);
 			}
 		break;

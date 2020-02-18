@@ -19,6 +19,10 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("delta_inputfile");
 	KEYS.push_back("delta_molecules");
 	KEYS.push_back("phi_ratio");
+	KEYS.push_back("externs");
+	KEYS.push_back("layer");
+	KEYS.push_back("externs_molecules");
+	KEYS.push_back("amplitude");
 	KEYS.push_back("generate_guess");
 	KEYS.push_back("initial_guess");
 	KEYS.push_back("guess_inputfile");
@@ -30,8 +34,9 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	for (int i=0; i<length; i++)
 	  KEYS.push_back("guess-" + In[0]->MonList[i]);
 	charged=false;
-	constraintfields=false; 
-  boundaryless_volume=0;
+	constraintfields=false;
+        externsfields=false;	
+  	boundaryless_volume=0;
 	grad_epsilon = false; 
 }
 System::~System()
@@ -50,6 +55,11 @@ System::~System()
 	{
 		free(H_beta);
 		free(H_BETA);
+		free(RATIO);
+	}
+
+	if (externsfields){
+		free(H_mu_ex);
 	}
 #ifdef CUDA
   cudaFree(phitot);
@@ -69,6 +79,10 @@ System::~System()
   if (constraintfields) {
 	cudaFree(beta);
 	cudaFree(BETA);
+  }
+
+  if (externsfields){
+  	cudaFree(mu_ex)
   }
 #else
   free(phitot);
@@ -105,9 +119,21 @@ void System::AllocateMemory()
 	if (constraintfields)
 	{
 		H_beta = (int *)malloc(M * sizeof(int));
+		RATIO = (Real *)malloc(M * sizeof(Real));
 		std::fill(H_beta,H_beta+M,0);
+		std::fill(RATIO,RATIO+M,0);
 		H_BETA = (Real *)malloc(M * sizeof(Real));
 		Lat[0]->FillMask(H_beta, px, py, pz, delta_inputfile);
+		if (phi_ratio.size()>0 ) {
+			int length=px.size();
+			for (int i=0; i<length; i++) RATIO[px[i]]=(phi_ratio[i]-1)/(phi_ratio[i]+1);
+		}
+	}
+
+	if (externsfields){
+		H_mu_ex = (Real *)malloc(M * sizeof(Real));
+		std::fill(H_mu_ex,H_mu_ex+M,0);
+		Lat[0]->FillMask(H_mu_ex,surfacez);	
 	}
 #ifdef CUDA
 	phitot = (Real *)AllOnDev(M);
@@ -129,6 +155,10 @@ void System::AllocateMemory()
 	BETA = (Real*)AllOnDev(M);
 	beta = (int*)AllIntOnDev(M);
   }
+
+  if (externsfields){
+  	mu_ex = (Real*)AllonDev(M);
+  }
 #else
   phitot = (Real*)malloc(M * sizeof(Real));
   alpha = H_alpha;
@@ -143,6 +173,10 @@ void System::AllocateMemory()
   if (constraintfields) {
 	beta=H_beta;
 	BETA=H_BETA;
+  }
+
+  if (externsfields){
+  	mu_ex=H_mu_ex;
   }
   KSAM = (int*)malloc(M * sizeof(int));
   FreeEnergyDensity = H_FreeEnergyDensity;
@@ -265,6 +299,9 @@ bool System::PrepareForCalculations()
 	{
 		//TransferDataToDevice(H_BETA, BETA, M);
 		TransferDataToDevice(H_beta, beta, M);
+	}
+	if (externsfields){
+	       	TransferDataToDevice(H_mu_ex, mu_ex, M);
 	}
 #endif
 
@@ -445,7 +482,8 @@ bool System::CheckInput(int start)
 				success = false;
 			};
 			if (ConstraintType == "delta")
-			{
+			{	
+				int n_deltas=0;	
 				if (GetValue("delta_range").size() > 0)
 				{
 					string s = GetValue("delta_range");
@@ -454,6 +492,7 @@ bool System::CheckInput(int start)
 					vector<string> coor;
 					In[0]->split(s, ';', sub);
 					int n_points = sub.size();
+					n_deltas=n_points;
 					for (int i = 0; i < n_points; i++)
 					{
 						set.clear();
@@ -553,11 +592,141 @@ bool System::CheckInput(int start)
 				}
 
 
-				phi_ratio=1.0;
-				if(GetValue("phi_ratio").size()>0){phi_ratio=In[0]->Get_Real(GetValue("phi_ratio"),1);}
+				
+				if (GetValue("phi_ratio").size() > 0)
+				{
+					string s = GetValue("phi_ratio");
+					vector<string> sub;
+					vector<string> set;
+					vector<string> coor;
+					In[0]->split(s, ';', sub);
+					int n_points = sub.size();
+
+					if(n_points == n_deltas && Lat[0]->gradients==1 && In[0]->MolList.size()==2){
+						for(int i=0; i<n_points; i++) {
+							phi_ratio.push_back(In[0]->Get_Real(sub[i],1));
+						}
+					
+						//Now phiratio is a M sized vector with different values at different deltas unlike before.
+						//Then phiratio can be read in solvescf and copied to g as YisAplusB for size of M
+					} else {
+						success=false;
+						cout << "Number of deltas and number of phi_ratios should be same and only works in 1 Gradient problems with two components" << endl;
+					}
+
+				}
+
+
 			}
 
 			//if (Mol[DeltaMolList[0]]->freedom=="restricted" || Mol[DeltaMolList[1]]->freedom=="restricted" ) {success =false;  cout <<"Molecule in list of delta_molecules has not freedom 'free'"<<endl; }
+		}
+
+
+
+		if (GetValue("externs").size() > 0)
+		{
+			externsfields = true;
+			pointx.clear();
+			liney.clear();
+			surfacez.clear();
+			vector<string> externs;
+			externs.push_back("potential");
+			externstype = "";
+			if (!In[0]->Get_string(GetValue("externs"), externstype, externs, "Info about 'constraint' rejected"))
+			{
+				success = false;
+			};
+			if (externstype == "potential")
+			{
+				if (GetValue("layer").size() > 0)
+				{
+					string s = GetValue("layer");
+					vector<string> sub;
+					vector<string> set;
+					vector<string> coor;
+					In[0]->split(s, ';', sub);
+					int n_points = sub.size();
+					for (int i = 0; i < n_points; i++)
+					{
+						set.clear();
+						In[0]->split(sub[i], '(', set);
+						int length = set.size();
+						if (length != 2)
+						{
+							if (length == 1 && set[0] == "file")
+							{
+									success = false;
+									cout << " 'layer' has to be set in the format (x,y,layer_number)." << endl;
+							}
+						}
+						else
+						{
+							coor.clear();
+							In[0]->split(set[1], ',', coor);
+							int grad = Lat[0]->gradients;
+							int corsize = coor.size();
+							if (corsize != grad)
+							{
+								success = false;
+								if (grad == 1)
+									cout << "In 'layer', for position " << i << " the expected '(x)' format was not found " << endl;
+								if (grad == 2)
+									cout << "In 'layer', for position " << i << " the expected '(x,y)' format was not found " << endl;
+								if (grad == 3)
+									cout << "In 'layer', for position " << i << " the expected '(x,y,z)' format was not found " << endl;
+							}
+							else
+							{
+								if (grad ==1)
+									pointx.push_back(In[0]->Get_int(coor[0], -1));
+								if (grad == 2)
+									liney.push_back(In[0]->Get_int(coor[1], -1));
+								if (grad == 3)
+									surfacez.push_back(In[0]->Get_int(coor[2], -1));
+							}
+						}
+					}
+				}
+				else
+				{
+					success = false;
+					cout << "When 'externs' is set to 'potential', you should specify a 'layer' on which this potential should be applied. " << endl;
+				}
+
+				if (GetValue("externs_molecules").size() > 0)
+				{
+					string deltamols = GetValue("externs_molecules");
+					vector<string> sub;
+					In[0]->split(deltamols, ';', sub);
+					int length_sub = sub.size();
+					if (length_sub != 1)
+					{
+						success = false;
+						cout << " externs_molecule item should contain only one 'monomer name.' " << endl;
+					}
+					else
+					{
+						ExternsMolList.clear();
+						int length = In[0]->MonList.size();
+						for (int i = 0; i < length; i++)
+						{
+							if (sub[0] == Seg[i]->name)
+								ExternsMolList.push_back(i);
+						}
+						if (ExternsMolList.size() < 1)
+						{
+							success = false;
+							cout << " In 'externs_molecules', monomer names are not recognized" << endl;
+						}
+					}
+				}
+				else
+				{
+					success = false;
+					cout << "When 'externs' is set to 'potentials', you should specify an 'externs_molecules' " << endl;
+				}
+			}
 		}
 
 		vector<string> options;
@@ -1449,7 +1618,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 			}
 		}
 		else
-			success = Mol[i]->ComputePhi(BETA, 0);
+			success = Mol[i]->ComputePhi();
 	}
 
 	for (int i = 0; i < n_mol; i++)
@@ -1772,6 +1941,14 @@ Real System::GetFreeEnergy(void)
 	}
 
 	Zero(F, M);
+	Real F_ext=0;
+	if(externsfields){
+	for (int i=0; i< M; i++){
+		F_ext+=Seg[ExternsMolList[0]]->phi[i]*mu_ex[i];
+	}
+	}
+	cout << "External Free energy : " << F_ext << endl;
+
 
 	for (int i = 0; i < n_mol; i++)
 	{
@@ -1971,7 +2148,13 @@ Real System::GetGrandPotential(void)
 		Norm(TEMP, 1.0 / N, M); //GP has wrong sign. will be corrected at end of this routine;
 		Add(GP, TEMP, M);
 	}
-	
+
+	if(externsfields){
+		Times(TEMP,mu_ex,Seg[ExternsMolList[0]]->phi,M);
+		Norm(TEMP, -1.0, M);
+		Add(GP, TEMP, M);
+	}
+
 	Add(GP,alpha,M);
 	Real phibulkA;
 	Real phibulkB;

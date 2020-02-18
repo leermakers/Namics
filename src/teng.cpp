@@ -1,6 +1,7 @@
 // TODO: Code review required. (Look at Checkinput for language reference) 
 // Preprocessor Dependencies.
 #include "teng.h"
+#include <math.h>
 #include "output.h"
 #include <string>
 // Constructor
@@ -40,15 +41,19 @@ bool Teng::MonteCarlo()
 	bool solved = false;
 	int time = 0;
 	Real *copyitvar;
+	Real *itvarstart;
 	copyitvar = (Real *)malloc(New[0]->iv * sizeof(Real));
+	itvarstart = (Real *)malloc(New[0]->iv * sizeof(Real));
 	New[0]->i_info = 100;
 	solved = New[0]->Solve(true);
 	success = CP(to_teng);
 	for (int i = 0; i < New[0]->iv; i++)
 	{
 		copyitvar[i] = New[0]->xx[i];
+		itvarstart[i] = New[0]->xx[i];
 	}
 	Real F_bm = Sys[0]->FreeEnergy; //Real G_bm = Sys[0]->GrandPotential;
+	//Real F_bmgs = Sys[0]->FreeEnergy;
 	Real F_am;
 	WriteOutput(time);
 	Real accepted = 0.0;
@@ -61,12 +66,21 @@ bool Teng::MonteCarlo()
 	{
 		success = CP(to_bm);
 		ChangeMode();
-		solved = New[0]->Solve(true);
+		//solved = New[0]->Solve(true);
+
+			//Block to reset and use the initial start point for new mode.
+			if(New[0]->residual>New[0]->tolerance || 1<2){
+				for (int j = 0; j < New[0]->iv; j++){
+					New[0]->xx[j] = itvarstart[j];
+				}
+				solved = New[0]->Solve(true);
+				if(New[0]->residual>New[0]->tolerance){cout << "Warning. Not converged. Press enter to Continue" << endl; cin.get();}
+			}
 		F_am = Sys[0]->FreeEnergy;
 
 		acceptance = GetRandom(1.0);
-
-		if ((F_am - F_bm <= 0 || acceptance < exp(-1.0 * (F_am - F_bm))) && solved)
+		// basically accepts the first two moves to start up the problem.
+		if (((F_am - F_bm <= 0 || acceptance < exp(-1.0*(F_am - F_bm))) && New[0]->residual<New[0]->tolerance && solved) || time <=2 )
 		{
 			F_bm = Sys[0]->FreeEnergy; // G_bm=Sys[0]->GrandPotential;
 			for (int i = 0; i < New[0]->iv; i++)
@@ -83,6 +97,7 @@ bool Teng::MonteCarlo()
 			for (int j = 0; j < New[0]->iv; j++)
 			{
 				New[0]->xx[j] = copyitvar[j];
+				//New[0]->xx[j] = itvarstart[j];
 			}
 			solved = New[0]->Solve(true);
 			F_bm = Sys[0]->FreeEnergy; //	G_bm=Sys[0]->GrandPotential;
@@ -125,22 +140,46 @@ bool Teng::ChangeMode()
 	bool copy = false;
 	while (!success)
 	{
-		Real Amplitude;
-		Real Wavenumber;
+		Real Amplitude1, Amplitude2;
+		Real Wavenumberx, Wavenumbery;
 		Real pi = 4.0 * atan(1.0);
-		Amplitude = GetRandom(1.0);
-		Wavenumber = round(GetRandom(Lat[0]->MZ / 2.0)) * 2; //creates even wavenumbers in uniform space
+		Real average = 0; 
+		Amplitude1 = round(0.5-round(GetRandom(1.0)));
+		Amplitude2 = round(0.5-round(GetRandom(1.0)));
+		Wavenumberx = round(GetRandom(pow(n_particles,0.5) / 2.0)) * 2; //creates even wavenumbers in uniform space
+		Wavenumbery = round(GetRandom(pow(n_particles,0.5)/ 2.0)) * 2; 
+		//Wavenumberx = round(GetRandom(Lat[0]->MX / 2.0)) * 2; //creates even wavenumbers in uniform space
+		//Wavenumbery = round(GetRandom(Lat[0]->MY / 2.0)) * 2; 
 
 		//TODO : Select random number of particles and translate them randomly
 
 		if (debug)
-			cout << "amplitude: " << Amplitude << " \t wavenumber: " << Wavenumber << endl;
+			cout << "amplitude: " << Amplitude1 << " \t wavenumber: " << Wavenumberx << endl;
 		for (int i = 0; i < n_particles; i++)
-		{
-			X[i] = X[i];// + round(0.5 - round(GetRandom(1.0)));
-			Y[i] = Y[i];// + round(0.5 - round(GetRandom(1.0)));
-			Z[i] = Z[i] + round(0.5-round(GetRandom(1.0))); //round(Amplitude * (sin(Wavenumber * pi * X[i] / Lat[0]->MX) * sin(Wavenumber * pi * Y[i] / Lat[0]->MY)));
+		{	
+			if(GetRandom(1.0)>2){
+			X[i] = X[i]+round(0.5 - round(GetRandom(1.0)));
+			Y[i] = Y[i]+ round(0.5 - round(GetRandom(1.0)));
+			average+=Z[i];
+			} else {
+			Z[i] = Z[i] + round(GetRandom(4.0)*(Amplitude1*(sin(Wavenumberx * pi * X[i] / Lat[0]->MX))*(Amplitude2*(sin(Wavenumbery * pi * Y[i] / Lat[0]->MY)))));
+			average+=Z[i];
+			}
 		}
+		average/=n_particles;
+		
+		for (int i = 0; i < n_particles; i++){
+		Z[i]+=round(Lat[0]->MZ/2-average);
+			if((Z[i]-Lat[0]->MZ/2)>5 || (Z[i]-Lat[0]->MZ/2)<-5) {
+				//cout<<"Readjusting z position: " << Z[i]<<endl; 
+				//Z[i]=Lat[0]->MZ/2+round((Z[i]-Lat[0]->MZ/2)/5.0);
+				//cout <<"New z position: "<< Z[i] << endl;
+			}
+		}
+
+		
+
+
 		success = IsLegal();
 		if (success)
 			copy = CP(to_segment);
@@ -300,30 +339,31 @@ bool Teng::CP(transfer tofrom)
 bool Teng::TrackInterface(){
 	bool success=true;
 	n_particles=0;
-	int JX=Lat[0]->JX; int JY=Lat[0]->JY; int MX=Lat[0]->MX; int MY=Lat[0]->MY; int MZ=Lat[0]->MZ;
-	Real sum;
-	Real radius;
+	//int JX=Lat[0]->JX; int JY=Lat[0]->JY; 
+	int MX=Lat[0]->MX; int MY=Lat[0]->MY; int MZ=Lat[0]->MZ;
+	//Real sum;
+	//Real radius;
 	for(int i=1; i<=MX; i++){
 		for(int j=1; j<=MY; j++){
-			sum=0;
+			//sum=0;
 			// Now tracks at every x and y and makes a node there. It should rather be limited to a certain number of points.
 			// Also assumes that there is only one interface at given (x,y). 
-			for(int k=1; k<=MZ; k++){
-				sum+=Mol[0]->phi[i*JX+j*JY+k]-Mol[0]->phi[i*JX+j*JY+MZ];
-				if(k==MZ) {
-					n_particles+=1;
-					radius=sum/(Mol[0]->phi[i*JX+j*JY+1]-Mol[0]->phi[i*JX+j*JY+MZ]);
-					cout << radius << endl;
-					PX = i;
-					PY = j;
-					PZ = round(radius);
-					X.push_back(PX);
-					Y.push_back(PY);
-					Z.push_back(PZ);
-					X_bm.push_back(PX);
-					Y_bm.push_back(PY);
-					Z_bm.push_back(PZ);
-
+			if ( i % 4 == 0 && j % 4 == 0  && i!=MX && j!=MY && i!=1 && j!=1){
+				for(int k=2; k<=MZ-1; k++){
+					//sum+=Mol[0]->phi[i*JX+j*JY+k]-Mol[0]->phi[i*JX+j*JY+MZ];
+					if(k==MZ-1) {
+						n_particles+=1;
+						//radius=sum/(Mol[0]->phi[i*JX+j*JY+1]-Mol[0]->phi[i*JX+j*JY+MZ]);
+						PX = i;
+						PY = j;
+						PZ = MZ/2;
+						X.push_back(PX);
+						Y.push_back(PY);
+						Z.push_back(PZ);
+						X_bm.push_back(PX);
+						Y_bm.push_back(PY);
+						Z_bm.push_back(PZ);
+					}
 				}
 			}
 		}
@@ -363,6 +403,31 @@ void Teng::WritePdb(int time)
 		fprintf(fp, "%s%7d%s%12d%7d%7d%7d\n", "ATOM", (time * n_particles) + (i + 1), "  H", (i + 1) + (time * n_particles), X[i], Y[i], Z[i]);
 	fprintf(fp, "%s\n", "ENDML");
 	fclose(fp);
+
+/*	FILE *fp1
+	string filename2;
+	filename2= name;
+	filename2.append("_").append(time).append(".vtk");
+	fp1=fopen(filename2.c_str()."a");
+	fprintf(fp1,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",Lat[0]->MZ,Lat[0]->MY,Lat[0]->MX);
+	fprintf(fp1,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",Lat[0]->MX*Lat[0]->MY*Lat[0]->MZ);
+	fprintf(fp1,"SCALARS pins double\nLOOKUP_TABLE default\n");
+				for (int a=1; a<Lat[0]->MX+1; i++)
+				for (int j=1; j<Lat[0]->MY+1; j++)
+				for (int k=1; k<Lat[0]->MZ+1; k++){
+					for (int l=0; l <n_particles; l++){
+						if (i==X[l] || j==Y[l] || k=Z[l]){
+							fprintf(fp1,"%f\n",1.0);
+						}else{
+							fprintf(fp1,"%f\n",0.0);
+						}
+					}
+
+				}
+	fclose(fp1)
+
+*/
+
 }
 
 // Additional information to pass outputs from Teng class.
@@ -446,7 +511,7 @@ string Teng::GetValue(string parameter)
 // teng : engine_name : save_interval : INTEGER
 bool Teng::CheckInput(int start)
 {
-	if (debug)
+	if (!debug)
 		cout << "CheckInput in Teng" << endl;
 	bool success = true;
 	success = In[0]->CheckParameters("teng", name, start, KEYS, PARAMETERS, VALUES);

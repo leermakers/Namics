@@ -157,6 +157,7 @@ public:
 	void DeAllocateMemory(void);
 	void AllocateMemory(void);
 	bool PrepareForCalculations(int*);
+	bool ComputePhi();
 	bool ComputePhi(Real*,int);
 	//void propagate_forward(Real*, Real*, int&, int,int, int);
 	Real* propagate_forward(Real*,int&,int,int,int); //for branched

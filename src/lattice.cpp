@@ -1003,7 +1003,7 @@ if (debug) cout << "vtk in lattice " << endl;
 			fprintf(fp,"%f\n",X[i*JX+fjc-1+j]);
 			break;
 		case 3:
-			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MX,MY,MZ);
+			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MZ,MY,MX);
 			
 			if (writebounds) {
 				fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",(MX+2*fjc)*(MY+2*fjc)*(MZ+2*fjc));
@@ -1740,7 +1740,7 @@ if (debug) cout <<"set_bounds in lattice " << endl;
 				int k=sub_box_on;
 				for (int i=0; i<n_box[k]; i++)
 					SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
-			} else
+			} else{
 				if (fjc==1) SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
 					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
 						for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+B_Z1[k]];
@@ -1755,6 +1755,7 @@ if (debug) cout <<"set_bounds in lattice " << endl;
 						for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
 					}					
 				}
+			}
 			break;
 		default:
 			break;
@@ -2260,6 +2261,27 @@ bool Lattice::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, s
 	}
 	for (int i=0; i<M; i++) if (!(Mask[i]==0 || Mask[i]==1)) {success =false; cout <<"Delta_range does not contain '0' or '1' values. Check delta_inputfile values"<<endl; }
 	return success; 
+}
+
+
+bool Lattice::FillMask(Real* Mask, vector<int> surfacez){
+	bool success=true;
+	if (gradients == 3){
+		for (int x=1; x<MX+1; x++){
+			for (int y=1; y<MY+1; y++){
+				for (int z=1; z<MZ+1; z++){
+					// Amplitude should be passed and a random wavenumber should also be passed later on to define a random gaussian surface.
+					if(z == surfacez[0]) Mask[x*JX + y*JY +z]=0.01*(sin(x*PIE/2)+sin(y*PIE/2));
+				}
+			}
+		}
+		
+	}else{
+	success=false;
+	cout << "Extern field only implemented for 3 gradient problems for now." << endl;
+	}
+
+	return success;
 }
 
 bool Lattice::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {

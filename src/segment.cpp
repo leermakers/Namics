@@ -122,6 +122,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	} else {
 		Zero(G1,M);
 		for (int i=0; i<ns; i++) {
+			cout << i << ": " << ns << endl;
 			Lat[0]->set_bounds(u+M*i);
 			Boltzmann(alpha+M*i,u+M*i,M);
 			Norm(alpha+M*i,state_alphabulk[i],M);

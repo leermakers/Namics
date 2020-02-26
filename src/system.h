@@ -37,7 +37,7 @@ public:
 	vector<int> py;
 	vector<int> pz;
 	vector<int> Xn_1;
-	Real FreeEnergy; 
+	Real FreeEnergy;
 	Real GrandPotential;
 	Real KJ0;
 	Real Kbar;
@@ -52,7 +52,7 @@ public:
 	int* psiMask;
 	bool fixedPsi0;
 	bool grad_epsilon;
-	bool constraintfields;	
+	bool constraintfields;
 	Real* q;
 	Real* H_GrandPotentialDensity;
 	Real* H_FreeEnergyDensity;
@@ -65,7 +65,7 @@ public:
 	Real* BETA;
 	Real phi_ratio;
 	int* H_beta;
-	int* beta; 
+	int* beta;
 	bool GPU;
 	int n_mol;
 	int solvent;
@@ -82,7 +82,7 @@ public:
 	string final_guess;
 	string guess_outputfile;
 	string ConstraintType;
-	string delta_inputfile; 
+	string delta_inputfile;
 	int Var_target;
 	Real Var_target_value;
 

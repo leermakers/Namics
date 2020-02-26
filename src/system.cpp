@@ -1,6 +1,7 @@
 #include "system.h"
 #include "tools.h"
 
+
 System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, vector<State *> Sta_, vector<Reaction *> Rea_, vector<Molecule *> Mol_, string name_)
 {
 	Seg = Seg_;
@@ -13,7 +14,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	prepared = false;
 	if (debug)
 		cout << "Constructor for system " << endl;
-	KEYS.push_back("calculation_type");
+  KEYS.push_back("calculation_type");
 	KEYS.push_back("constraint");
 	KEYS.push_back("delta_range");
 	KEYS.push_back("delta_inputfile");
@@ -30,9 +31,9 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	for (int i=0; i<length; i++)
 	  KEYS.push_back("guess-" + In[0]->MonList[i]);
 	charged=false;
-	constraintfields=false; 
+	constraintfields=false;
   boundaryless_volume=0;
-	grad_epsilon = false; 
+	grad_epsilon = false;
 }
 System::~System()
 {
@@ -109,6 +110,7 @@ void System::AllocateMemory()
 		H_BETA = (Real *)malloc(M * sizeof(Real));
 		Lat[0]->FillMask(H_beta, px, py, pz, delta_inputfile);
 	}
+
 #ifdef CUDA
 	phitot = (Real *)AllOnDev(M);
 	alpha = (Real *)AllOnDev(M);
@@ -137,7 +139,7 @@ void System::AllocateMemory()
     q = H_q;
     eps = (Real*)malloc(M * sizeof(Real));
     EE = (Real*)malloc(M * sizeof(Real));
-     E = (Real*)malloc(M * sizeof(Real)); 
+     E = (Real*)malloc(M * sizeof(Real));
     psiMask = (int*)malloc(M * sizeof(int));
   }
   if (constraintfields) {
@@ -243,7 +245,7 @@ bool System::PrepareForCalculations()
 
 	if (constraintfields)
 	{
-		Boltzmann(BETA, BETA, M);	
+		Boltzmann(BETA, BETA, M);
 		//for(int i=0; i<M; i++) cout << "BETA at i: " << i << " is: " << BETA[i] << endl;
 		//cin.get();
 	}
@@ -278,9 +280,9 @@ bool System::PrepareForCalculations()
         Add(psiMask, Seg[FrozenList[i]]->MASK, M);
       }
     }
-    Real eps=Seg[0]->epsilon; 
+    Real eps=Seg[0]->epsilon;
     for (int i=1; i<n_mon; i++) {
-	if (Seg[i]->epsilon != eps) grad_epsilon = true; 
+	if (Seg[i]->epsilon != eps) grad_epsilon = true;
     }
   }
   return success;
@@ -560,8 +562,9 @@ bool System::CheckInput(int start)
 			//if (Mol[DeltaMolList[0]]->freedom=="restricted" || Mol[DeltaMolList[1]]->freedom=="restricted" ) {success =false;  cout <<"Molecule in list of delta_molecules has not freedom 'free'"<<endl; }
 		}
 
+
 		vector<string> options;
-		options.push_back("micro_emulsion");
+
 		options.push_back("micro_phasesegregation");
 		CalculationType = "";
 		if (GetValue("calculation_type").size() > 0)
@@ -1427,7 +1430,7 @@ void System::DoElectrostatics(Real *g, Real *x)
 bool System::ComputePhis(){
 if(debug) cout <<"ComputePhis in system" << endl;
 	int M= Lat[0]->M;
-	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi 
+	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi
 	bool success=true;
 	Zero(phitot,M);
 	int length=FrozenList.size();
@@ -1440,9 +1443,9 @@ if(debug) cout <<"ComputePhis in system" << endl;
 		if (constraintfields) {
 			if (i==DeltaMolList[0]) {
 				success=Mol[i]->ComputePhi(BETA,1);
-			} else { 
+			} else {
 				if (i==DeltaMolList[1]) {
-					success=Mol[i]->ComputePhi(BETA,-1); 
+					success=Mol[i]->ComputePhi(BETA,-1);
 				} else {
 					success=Mol[i]->ComputePhi(BETA,0);
 				}
@@ -1582,7 +1585,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 
 		if (Mol[neutralizer]->phibulk<0) {
 			cout << "WARNING: neutralizer has negative phibulk. Consider changing neutralizer...: outcome problematic...." << endl;
-cout <<"A is " << A << endl; 
+cout <<"A is " << A << endl;
 for (int j=0; j<n_mol; j++) {
 	cout << " mol : " << Mol[j]->name << " phibulk " << Mol[j]->phibulk << endl;
 
@@ -1786,7 +1789,7 @@ Real System::GetFreeEnergy(void)
 				FreeEnergy -= log(hgn[p]);
 			}
 			#else
-			for (int p=0; p<n_box; p++) 
+			for (int p=0; p<n_box; p++)
 				FreeEnergy -= log(Mol[i]->gn[p]);
 			#endif
 		}
@@ -1922,13 +1925,13 @@ Real System::GetFreeEnergy(void)
 
 Zero(TEMP,M);
 	if (charged) {
-		//Times(TEMP,EE,eps,M); 
+		//Times(TEMP,EE,eps,M);
 cout <<"Sum EE*eps = " << Lat[0]->WeightedSum(TEMP) << endl;
 		//Norm(TEMP,1.0,M);
 		AddTimes(TEMP,q,psi,M);
 		Norm(TEMP,0.5,M);
 
-cout <<"El to F = " << Lat[0]->WeightedSum(TEMP)  << endl; 
+cout <<"El to F = " << Lat[0]->WeightedSum(TEMP)  << endl;
 		Add(F,TEMP,M);
 	}
 	return FreeEnergy + Lat[0]->WeightedSum(F);
@@ -1971,7 +1974,7 @@ Real System::GetGrandPotential(void)
 		Norm(TEMP, 1.0 / N, M); //GP has wrong sign. will be corrected at end of this routine;
 		Add(GP, TEMP, M);
 	}
-	
+
 	Add(GP,alpha,M);
 	Real phibulkA;
 	Real phibulkB;
@@ -2077,11 +2080,11 @@ Real System::GetGrandPotential(void)
 	Zero(TEMP,M);
 if (charged) {
 	Times(TEMP,EE,eps,M);
-//cout <<"eps EE/2 " << Lat[0]->WeightedSum(TEMP) << endl; 
+//cout <<"eps EE/2 " << Lat[0]->WeightedSum(TEMP) << endl;
 	Norm(TEMP,-2.0,M);
 
-	AddTimes(TEMP,q,psi,M);  
-	Norm(TEMP,-1.0/2.0,M); 
+	AddTimes(TEMP,q,psi,M);
+	Norm(TEMP,-1.0/2.0,M);
 
 cout <<"el to G " << Lat[0]->WeightedSum(TEMP) << endl;
 
@@ -2089,7 +2092,7 @@ cout <<"el to G " << Lat[0]->WeightedSum(TEMP) << endl;
 	Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);
 	Add(GP,TEMP,M);
 }
-	
+
 	if (!charged) Times(GP,GP,KSAM,M); //necessary to make sure that there are no contribution from solid, tagged or clamped sites in GP.
 
 	return  Lat[0]->WeightedSum(GP);
@@ -2127,7 +2130,7 @@ bool System::CreateMu()
 				GN += log(hgn[p]);
 			}
 			#else
-			for (int p=0; p<n_box; p++) 
+			for (int p=0; p<n_box; p++)
 				GN += log(Mol[i]->gn[p]);
 			#endif
 			Mu = -GN / n +1;

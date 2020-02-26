@@ -91,6 +91,7 @@ public:
 	int* H_MASK;
 	Real* H_u;
 	Real* H_phi;
+	Real* H_u_ext;
 
 	Real* H_phi_state;
 	Real* H_alpha;
@@ -102,6 +103,7 @@ public:
 	Real* phi_state;
 	Real* phi_side;
 	Real* u;
+	Real* u_ext;
 
 	Real* alpha;
 

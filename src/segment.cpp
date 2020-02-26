@@ -1,4 +1,5 @@
 #include "segment.h"
+#include <random>
 #include <fstream>
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; prepared = 0;
@@ -16,6 +17,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("clamp_filename");
 	KEYS.push_back("sub_box_size");
 	KEYS.push_back("clamp_info");
+	KEYS.push_back("fluctuation_potentials");
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -32,6 +34,7 @@ if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 		 free(r);
 	}
 	free(H_u);
+	free(H_u_ext);
 	free(H_phi);
 	free(H_MASK);
 	free(H_alpha);
@@ -40,6 +43,7 @@ if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 #ifdef CUDA
 	if(n_pos>0) cudaFree(P);
 	cudaFree(u);
+	cudaFree(u_ext);
 	cudaFree(phi);
 	cudaFree(phi_state);
 	cudaFree(G1);
@@ -58,6 +62,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	H_u = (Real*) malloc(M*ns*sizeof(Real));
 	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
 	H_phi = (Real*) malloc(M*sizeof(Real));
+	H_u_ext = (Real*) malloc(M*sizeof(Real));
 	H_alpha=(Real*) malloc(M*ns*sizeof(Real));
 	H_Zero(H_u,M*ns);
 	H_Zero(H_phi,M);
@@ -73,6 +78,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	phi_state=(Real*)AllOnDev(M*ns); Zero(phi_state,M*ns);
 	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
+	u_ext=(Real*)AllOnDev(M); Zero(u_ext,M);
 	phi_side=(Real*)AllOnDev(ns*M); Zero(phi_side,ns*M);
 	alpha=(Real*)AllOnDev(ns*M); Zero(alpha,ns*M);
 #else
@@ -80,6 +86,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	MASK=H_MASK;
 	phi =H_phi;
 	u = H_u;
+	u_ext=H_u_ext;	KEYS.push_back("fluctuation_coordinates");
 	phi_state = H_phi_state;
 	alpha=H_alpha;
 	G1 = (Real*)malloc(M*sizeof(Real));
@@ -135,6 +142,40 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	}
 	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);
 
+	if (GetValue("fluctuation_potentials").size()>0) {
+		string s = GetValue("fluctuation_potentials");
+		vector<string> sub;
+		In[0]->split(s, ',', sub);
+		if (sub.size()<3) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info, such as: x,y,5 or x,y,z "<<endl; }
+		else {
+			if (sub[0] != "x" || sub[1] != "y" ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  first two coordinates to be : x,y  "<<endl; }
+			int MX=Lat[0]->MX;
+			int JX=Lat[0]->JX;
+			int MY=Lat[0]->MY;
+			int JY=Lat[0]->JY;
+			int M=Lat[0]->M;
+			int MZ=0;
+			int mz=0;
+			if (sub[2] == "z") {
+				MZ=Lat[0]->MZ;
+				if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..8" << endl; }
+				success=false; cout <<"currently only fluctuation potentials in x-y plane are implemented"<<endl;
+			} else {
+				mz=In[0]->Get_int(sub[2],0);
+				if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
+				if (success) {
+					Zero(u_ext,M);
+					for (int lambda=2; lambda <=MX; lambda*=2){
+						Real shift = rand() % lambda;
+						for (int x=0; x<=MX; x++) for (int y=0; y<=MY; y++) {
+							u_ext[x*JX+y*JY+mz]+=(sin(2.0*PIE*(x+shift)/lambda)+sin(2.0*PIE*(y+shift)/lambda))/2;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	return success;
 }
 
@@ -184,7 +225,6 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		options.push_back("frozen");
 		options.push_back("tagged");
 		options.push_back("clamp");
-
 		freedom = In[0]->Get_string(GetValue("freedom"),"free");
 		if (!In[0]->InSet(options,freedom)) {
 			cout << "Freedom: '"<< freedom  <<"' for mon " + name + " not recognized. "<< endl;
@@ -197,7 +237,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					if (start==1) {success=false; cout <<"In mon " + name + " you should not combine 'freedom : free' with 'frozen_range' or 'pinned_range' or 'tagged_range' or corresponding filenames." << endl;
 				}
 			}
-		} else {
+		} else {	KEYS.push_back("fluctuation_coordinates");
 			r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
 		}
 
@@ -284,7 +324,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 							}
 							bx.push_back((px2[i]+px1[i]-mx)/2);
 							by.push_back((py2[i]+py1[i]-mx)/2);
-							bz.push_back((pz2[i]+pz1[i]-mx)/2);//box is equal in size in x y and z. 
+							bz.push_back((pz2[i]+pz1[i]-mx)/2);//box is equal in size in x y and z.
 						}
 					}
 				} else {
@@ -297,12 +337,12 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		if (freedom == "pinned") {
 			phibulk=0;
 			if (GetValue("frozen_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("frozen_filename").size()>0 || GetValue("tag_filename").size()>0) {
-			cout<< "For mon " + name + ", you should exclusively combine 'freedom : pinned' with 'pinned_range' or 'pinned_filename'" << endl;  success=false;}
+			cout<< "For mon :" + name + ", you should exclusively combine freedom : pinned with pinned_range or pinned_filename" << endl;  success=false;}
 			if (GetValue("pinned_range").size()>0 && GetValue("pinned_filename").size()>0) {
-				cout<< "For mon " + name + ", you can not combine 'pinned_range' with 'pinned_filename' " <<endl; success=false;
+				cout<< "For mon " + name + ", you can not combine pinned_range with 'pinned_filename' " <<endl; success=false;
 			}
 			if (GetValue("pinned_range").size()==0 && GetValue("pinned_filename").size()==0) {
-				cout<< "For mon " + name + ", you should provide either 'pinned_range' or 'pinned_filename' " <<endl; success=false;
+				cout<< "For mon " + name + ", you should provide either pinned_range or pinned_filename " <<endl; success=false;
 			}
 			if (GetValue("pinned_range").size()>0) { s="pinned_range";
 				n_pos=0;
@@ -455,6 +495,18 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 		}
 		chi[i]=Chi;
+	}
+
+	if (GetValue("fluctuation_potentials").size()>0) {
+		if (Lat[0]->gradients<3) {
+				success=false; cout<<"fluction_potentials only allowed when 'lat: * : gradients : 3'. "<<endl;
+			} else {
+				int MX=Lat[0]->MX;
+				int MY=Lat[0]->MY;
+				int MZ=Lat[0]->MZ;
+				if (!(MX==2 || MX==4 || MX==8 || MX==16 ||MX==32 || MX==64 ||MX==128 || MX==256)) {success=false; cout << "Expecting n_layers_x to have a value 2^a with a = 1..8" << endl; }
+				if (!(MY==2 || MY==4 || MY==8 || MY==16 ||MY==32 || MY==64 ||MY==128 || MY==256)) {success=false; cout << "Expecting n_layers_y to have a value 2^a with a = 1..8" << endl; }
+			}
 	}
 	return success;
 }

@@ -154,21 +154,34 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 			int MY=Lat[0]->MY;
 			int JY=Lat[0]->JY;
 			int M=Lat[0]->M;
-			int MZ=0;
-			int mz=0;
+			Zero(u_ext,M);
 			if (sub[2] == "z") {
-				MZ=Lat[0]->MZ;
+				int MZ=Lat[0]->MZ;
 				if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..8" << endl; }
-				success=false; cout <<"currently only fluctuation potentials in x-y plane are implemented"<<endl;
+				if (success) {
+					Real shift_x,shift_y,shift_z;
+					for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
+					for (int lambda_y=2; lambda_y <=MY; lambda_y*=2)
+					for (int lambda_z=2; lambda_z <=MZ; lambda_z*=2){
+						shift_x = rand() % lambda_x;
+						shift_y = rand() % lambda_y;
+						shift_z = rand() % lambda_z;
+						for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) {
+							u_ext[x*JX+y*JY+MZ]+=sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y)+sin(2.0*PIE*(z+shift_z)/lambda_z);
+						}
+					}
+				}
 			} else {
-				mz=In[0]->Get_int(sub[2],0);
+				int mz=In[0]->Get_int(sub[2],0);
 				if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
 				if (success) {
-					Zero(u_ext,M);
-					for (int lambda=2; lambda <=MX; lambda*=2){
-						Real shift = rand() % lambda;
-						for (int x=0; x<=MX; x++) for (int y=0; y<=MY; y++) {
-							u_ext[x*JX+y*JY+mz]+=(sin(2.0*PIE*(x+shift)/lambda)+sin(2.0*PIE*(y+shift)/lambda))/2;
+					Real shift_x,shift_y;
+					for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
+					for (int lambda_y=2; lambda_y <=MY; lambda_y*=2){
+						shift_x = rand() % lambda_x;
+						shift_y = rand() % lambda_y;
+						for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) {
+							u_ext[x*JX+y*JY+mz]+=sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y);
 						}
 					}
 				}
@@ -503,7 +516,6 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			} else {
 				int MX=Lat[0]->MX;
 				int MY=Lat[0]->MY;
-				int MZ=Lat[0]->MZ;
 				if (!(MX==2 || MX==4 || MX==8 || MX==16 ||MX==32 || MX==64 ||MX==128 || MX==256)) {success=false; cout << "Expecting n_layers_x to have a value 2^a with a = 1..8" << endl; }
 				if (!(MY==2 || MY==4 || MY==8 || MY==16 ||MY==32 || MY==64 ||MY==128 || MY==256)) {success=false; cout << "Expecting n_layers_y to have a value 2^a with a = 1..8" << endl; }
 			}

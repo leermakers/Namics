@@ -993,35 +993,40 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
 	Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
   #endif
-	Real a, b, c, fa, fb, fc, res;
-	int k,it;
+	Real a=0, b=0, c=0, fa=0, fb=0, fc=0;
+	Real res=100.0;
+	int k=0,it=0;
 
-	residuals(x,g);
-	a=x[0];
-	fa=g[0];
-	x[0]=x[0]+delta_max;
-	residuals(x,g);
-	b=x[0];
-	fb=g[0];
-	if(fa==fb){success=false; cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;}
-	c = a - ((fa*(a-b))/(fa-fb));
-	x[0]=c;
-	residuals(x,g);
-	fc=g[0]; res=fc;
-	k=0; it=0;
+	while ((it<iterationlimit) && (abs(res)>tolerance)) {	
+		if (it>0) cout <<"restart regular falsi" << endl;
+		Real x_start=x[0]; 
+		residuals(x,g);
+		a=1;
+		fa=g[0];
+		x[0]=(a+delta_max)*x_start;
+		residuals(x,g);
+		b=x[0]/x_start;
+		fb=g[0];
+		if(fa==fb) cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;
+		c = a - 0.5*((fa*(a-b))/(fa-fb));
+		x[0]=c*x_start;
+		residuals(x,g);
+		fc=g[0]; res=fc;
+		it=k;
+		k=0;
 
-	while((k<iterationlimit) && (abs(res)>tolerance)){
-		c = a-((fa*(a-b))/(fa-fb)); x[0]=c;residuals(x,g);fc=g[0];
-		if(fc*fb<0){
-		b=c; x[0]=b; residuals(x,g); fb=g[0]; res=fb;
-		} else {
-		a=c; x[0]=a; residuals(x,g); fa=g[0]; res=fa;
+		while((k<iterationlimit/10) && (abs(res)>tolerance)){
+			c = a-0.5*((fa*(a-b))/(fa-fb)); x[0]=c*x_start;residuals(x,g);fc=g[0];
+			if(fc*fb<0){
+				b=c; x[0]=b*x_start; residuals(x,g); fb=g[0]; res=fb;
+			} else {
+				a=c; x[0]=a*x_start; residuals(x,g); fa=g[0]; res=fa;
+			}
+			k++; it++;
+			if(fa==fb) cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;
+			cout << s << it << "\t Residual: " <<	res << endl;
 		}
-		k++; it=k;
-		if(fa==fb){success=false; cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;}
-	cout << s << k << "\t Residual: " <<	res << endl;
 	}
-
 
 	success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
   #ifdef CUDA

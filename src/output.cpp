@@ -15,6 +15,7 @@ if (debug) cout <<"constructor in Output "<< endl;
 	//if (!CheckOutInput()) {input_error = true; cout << "Error found in ChcekOutInput in output module "<<endl;}
 	//if (!Load()) {input_error=true;  cout <<"Error found in load output items in output module " << endl; }
 	n_starts = In[0]->GetNumStarts();
+	first=0;
 
 }
 Output::~Output() {
@@ -94,12 +95,14 @@ if (debug) cout <<"Load in output " << endl;
 bool Output::CheckInput(int start_) {
 if (debug) cout << "CheckInput in output " << endl;
 	start=start_;
+	
 	bool success=true;
 	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		if (GetValue("append").size()>0) {
 			if (name=="ana") append=true;			
 			append=In[0]->Get_bool(GetValue("append"),append);
+			if (first==0) first=start;
 		} else {
 			if (name=="ana") append=true;
 			if (name=="kal") append=true;
@@ -452,7 +455,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	}
 
 	if (name=="kal") {
-		if (start >1 || subl>1) append=true;
+		if (start >first || subl>1) append=true;
 		ifstream my_file(filename.c_str());
 		FILE *fp;
 		if (!(my_file && append)) {

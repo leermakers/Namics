@@ -35,6 +35,7 @@ public:
 	bool write_bounds;
 	bool append;
 	bool input_error;
+	int first;
 	string output_folder;
 	string bin_folder;
 	bool use_output_folder;

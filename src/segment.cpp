@@ -524,7 +524,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			}
 	}
 	if (GetValue("fluctuation_amplitude").size()>0) {
-		Amplitude = In[0]->Get_Real(GetValue("fluctuation_amplitude"),0);
+		Amplitude = In[0]->Get_Real(GetValue("fluctuation_amplitude"),1);
 		if (Amplitude < 0 || Amplitude > 1) {
 			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 1 (full fluctuations). " << endl; 
 		}

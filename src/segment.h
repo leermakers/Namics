@@ -68,6 +68,7 @@ public:
 	int chi_var_seg;
 	int chi_var_state;
 	Real chi_value;
+	Real Amplitude;
 
 	vector<string> ints;
 	vector<string> Reals;

@@ -18,6 +18,8 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("sub_box_size");
 	KEYS.push_back("clamp_info");
 	KEYS.push_back("fluctuation_potentials");
+	KEYS.push_back("fluctuation_amplitude");
+	Amplitude=0;
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -167,7 +169,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 						shift_y = rand() % lambda_y;
 						shift_z = rand() % lambda_z;
 						for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) {
-							u_ext[x*JX+y*JY+MZ]+=sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y)+sin(2.0*PIE*(z+shift_z)/lambda_z);
+							u_ext[x*JX+y*JY+MZ]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y)+sin(2.0*PIE*(z+shift_z)/lambda_z));
 						}
 					}
 				}
@@ -181,12 +183,13 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 						shift_x = rand() % lambda_x;
 						shift_y = rand() % lambda_y;
 						for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) {
-							u_ext[x*JX+y*JY+mz]+=sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y);
+							u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y));
 						}
 					}
 				}
 			}
 		}
+
 	}
 
 	return success;
@@ -520,6 +523,14 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				if (!(MY==2 || MY==4 || MY==8 || MY==16 ||MY==32 || MY==64 ||MY==128 || MY==256)) {success=false; cout << "Expecting n_layers_y to have a value 2^a with a = 1..8" << endl; }
 			}
 	}
+	if (GetValue("fluctuation_amplitude").size()>0) {
+		Amplitude = In[0]->Get_Real(GetValue("fluctuation_amplitude"),0);
+		if (Amplitude < 0 || Amplitude > 1) {
+			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 1 (full fluctuations). " << endl; 
+		}
+	}
+	
+			//valence=In[0]->Get_Real(GetValue("valence"),0);
 	return success;
 }
 

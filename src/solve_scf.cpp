@@ -799,8 +799,10 @@ void Solve_scf::residuals(Real* x, Real* g){
 			ComputePhis(iterations==0);
 
  			Zero(alpha,M);
+
 			for (i=0; i<itmonlistlength; i++) {
-				if (Lat[0]->gradients==3) Add(g+i*M,Seg[i]->u_ext,M);//Flucutation contributions temporarily only on 'segment' level;
+				if (Lat[0]->gradients==3)  
+					Add(g+i*M,Seg[i]->u_ext,M);
 				for (k=0; k<mon_length; k++) {
 					if (Seg[k]->ns<2) {
 						chi =Seg[Sys[0]->ItMonList[i]]->chi[k];
@@ -967,6 +969,7 @@ void Solve_scf::ComputePhis(bool first_time) {
 	if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
 	PutU();
 	Sys[0]->PrepareForCalculations(first_time);
+
 	if (first_time && Sys[0]->initial_guess=="polymer_adsorption") Put_U();
 	Sys[0]->ComputePhis();
 }

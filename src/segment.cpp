@@ -80,7 +80,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	phi_state=(Real*)AllOnDev(M*ns); Zero(phi_state,M*ns);
 	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
-	u_ext=(Real*)AllOnDev(M); Zero(u_ext,M);
+	u_ext=(Real*)AllOnDev(M); Zero(u_ext,M); 
 	phi_side=(Real*)AllOnDev(ns*M); Zero(phi_side,ns*M);
 	alpha=(Real*)AllOnDev(ns*M); Zero(alpha,ns*M);
 #else
@@ -88,7 +88,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	MASK=H_MASK;
 	phi =H_phi;
 	u = H_u;
-	u_ext=H_u_ext; Zero(u_ext,M);
+	u_ext=H_u_ext; Zero(u_ext,M);  
 	KEYS.push_back("fluctuation_coordinates");
 	phi_state = H_phi_state;
 	alpha=H_alpha;
@@ -145,7 +145,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	}
 	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);
 
-	if (GetValue("fluctuation_potentials").size()>0) {
+	if (GetValue("fluctuation_potentials").size()>0&& first_time) {
 		string s = GetValue("fluctuation_potentials");
 		vector<string> sub;
 		In[0]->split(s, ',', sub);
@@ -157,7 +157,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 			int MY=Lat[0]->MY;
 			int JY=Lat[0]->JY;
 			int M=Lat[0]->M;
-			Zero(u_ext,M);
+			
 			if (first_time){
 				if (sub[2] == "z") {
 					int MZ=Lat[0]->MZ;
@@ -179,6 +179,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 					int mz=In[0]->Get_int(sub[2],0);
 					if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
 					if (success) {
+					cout <<"fluctutions set " << Amplitude << endl; 
 						Real shift_x,shift_y;
 						for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
 						for (int lambda_y=2; lambda_y <=MY; lambda_y*=2){
@@ -194,6 +195,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 		}
 
 	}
+//for (int kkk=0; kkk<M; kkk++) if (u_ext[kkk] !=0) cout <<"at " << kkk << " : " << u_ext[kkk] << endl;
 
 	return success;
 }

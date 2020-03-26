@@ -47,10 +47,10 @@ if (debug) cout <<"Destructor in Solve " << endl;
 	cudaFree(x_x0);
 	cudaFree(temp_alpha);
 #else
-	delete temp_alpha;
-	free(xx);
+	if (mesodyn) delete [] temp_alpha;
+	delete [] xx;
 #endif
-//if (debug) cout <<"exit for 'destructor' in Solve " << endl;
+if (debug) cout <<"exit for 'destructor' in Solve " << endl;
 
 }
 
@@ -800,7 +800,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 
  			Zero(alpha,M);
 			for (i=0; i<itmonlistlength; i++) {
-				Add(g+i*M,Seg[i]->u_ext,M);//Flucutation contributions temporarily only on 'segment' level;
+				if (Lat[0]->gradients==3) Add(g+i*M,Seg[i]->u_ext,M);//Flucutation contributions temporarily only on 'segment' level;
 				for (k=0; k<mon_length; k++) {
 					if (Seg[k]->ns<2) {
 						chi =Seg[Sys[0]->ItMonList[i]]->chi[k];

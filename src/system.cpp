@@ -181,7 +181,7 @@ bool System::generate_mask()
 	}
 	if (FrozenList.size() + SysMonList.size() + SysTagList.size() + SysClampList.size() != In[0]->MonList.size())
 	{
-		cout << " There are un-used monomers in system. Remove them before starting" << endl;
+		cout << " Thera are un-used monomers in system. Remove them before starting" << endl;
 		success = false;
 	}
 
@@ -231,7 +231,6 @@ bool System::generate_mask()
 
 bool System::PrepareForCalculations(bool first_time)
 {
-bool start=first_time;
 	if (debug)
 		cout << "PrepareForCalculations in System " << endl;
 
@@ -270,7 +269,7 @@ bool start=first_time;
 		TransferDataToDevice(H_beta, beta, M);
 	}
 #endif
-	if (start) {
+	if (first_time) {
   if (charged) {
     int length = FrozenList.size();
     Zero(psiMask, M);

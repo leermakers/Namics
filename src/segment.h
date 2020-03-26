@@ -86,6 +86,7 @@ public:
 	Real* GetPointer(string,int&);
 	int* GetPointerInt(string,int&);
 	int GetValue(string,int&,Real&,string&);
+	bool SetExternalPotentials();
 
 
 	int* H_P;
@@ -126,7 +127,8 @@ public:
 	Real* GetPhi();
 	void DeAllocateMemory();
 	void AllocateMemory();
-	bool PrepareForCalculations(int*);
+	bool PrepareForCalculations(int*,bool);
+	bool PutAdsorptionGuess(Real,int*);
 	void UpdateValence(Real*,Real*,Real*,Real*,bool);
 	bool PutVarInfo(string,string,Real);
 	int PutVarScan(Real,Real,int,string);

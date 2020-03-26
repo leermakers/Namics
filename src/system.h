@@ -120,7 +120,7 @@ public:
 	bool IsCharged();
 	bool IsUnique(int,int);
 	void AllocateMemory();
-	bool PrepareForCalculations();
+	bool PrepareForCalculations(bool);
 	bool generate_mask();
 	bool ComputePhis();
 	void DoElectrostatics(Real*,Real*);

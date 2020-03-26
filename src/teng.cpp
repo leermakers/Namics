@@ -127,7 +127,7 @@ bool Teng::ChangeMode()
 	{
 		Real Amplitude;
 		Real Wavenumber;
-		Real pi = 4.0 * atan(1.0);
+		//Real pi = 4.0 * atan(1.0);
 		Amplitude = GetRandom(1.0);
 		Wavenumber = round(GetRandom(Lat[0]->MZ / 2.0)) * 2; //creates even wavenumbers in uniform space
 

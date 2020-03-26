@@ -119,8 +119,9 @@ public:
 	void DeAllocateMemory();
 	void AllocateMemory();
 	bool PrepareForCalculations(void);
-	void ComputePhis();
+	void ComputePhis(bool);
 	bool PutU();
+	bool Put_U();
 	void residuals(Real*,Real*);
 	void gradient_log(Real*, int, int, int, int);
 	void gradient_quotient(Real*, int, int, int, int);

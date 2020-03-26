@@ -63,7 +63,7 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       t                                { 0 }
 {
   // to get the correct KSAM and volume.
-  Sys.front()->PrepareForCalculations();
+  Sys.front()->PrepareForCalculations(false);
 
   callback_densities.resize(component_no*system_size);
   

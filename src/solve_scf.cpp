@@ -63,7 +63,7 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 		#ifdef CUDA
 			temp_alpha = (Real*)AllOnDev(M); // Doing this while iterating is a gigantic performance hog
 		#else
-			temp_alpha = new Real[M];	
+			temp_alpha = new Real[M];
 		#endif
 	} else {
 		iv = (Sys[0]->ItMonList.size() + Sys[0]->ItStateList.size())* M;
@@ -377,7 +377,7 @@ void Solve_scf::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 	int fjc=Lat[0]->fjc;
 	int JX=(MY+2*fjc)*(MZ+2*fjc);
 	int JY=(MZ+2*fjc);
-	
+
 
 	switch (Lat[0]->gradients) {
 		case 1:
@@ -451,12 +451,12 @@ bool Solve_scf::Guess(Real *X, string METHOD, vector<string> MONLIST, vector<str
 	bool success=true;
 
 	if (start ==1 && Sys[0]->GuessType != "")  {
-		cout <<"guessing " << endl; 
+		cout <<"guessing " << endl;
 		Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
 	} else {
 		int m;
 		if (MZ>0) {m=(MX+2)*(MY+2)*(MZ+2); } else { if (MY>0) { m=(MX+2*fjc_old)*(MY+2*fjc_old); } else {  m=(MX+2*fjc_old);}}
-	
+
 		int length_old_mon=MONLIST.size();
 		int length_old_state=STATELIST.size();
 		int length_new_mon=Sys[0]->ItMonList.size();
@@ -578,7 +578,7 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 							success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 							if (success == false)
 								exit(0);
-						}		
+						}
 					} catch (...) {
 						success = false;
 						attempt_DIIS_rescue();
@@ -631,7 +631,7 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 		if (etm>-1) x[0] = Var[etm]->GetValue();
 		if (bm>-1) { x[0] = Var[bm]->GetValue(); super_tolerance *=10;}
 	}
-	if(debug) cout <<"Your guess for X: " << x[0] << endl; 
+	if(debug) cout <<"Your guess for X: " << x[0] << endl;
 	gradient=custum; 				//the proper gradient is used
 	control=super;				//this is for inneriteration
 	e_info=super_e_info;
@@ -681,9 +681,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 		case MESODYN:
 		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
-					
-			ComputePhis();
-			
+
+			ComputePhis(false);
+
 			for (size_t i = 0; i < Sys[0]->SysMolMonList.size() ; i++) {
 					Cp(temp_alpha, &xx[i*M] , M);
 				for (int k=0; k<mon_length; k++) {
@@ -701,7 +701,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 			#else
 			TransferDataToDevice(RHO, g, iv);
 			#endif
-			
+
 			size_t k = 0;
 			for (size_t i = 0 ; i < In[0]->MolList.size() ; ++i) {
 				Subtract(g+k*M,Mol[i]->phi,M*Mol[i]->MolMonList.size());
@@ -762,7 +762,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 			int jump=sysmon_length;
 			if (Sys[0]->charged) jump++;
 			Cp(alpha,xx+jump*M,M);
-			ComputePhis();
+			ComputePhis(iterations==0);
 			if (Sys[0]->charged) {
 				Sys[0]->DoElectrostatics(g+sysmon_length*M,xx+sysmon_length*M);
 				Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
@@ -792,11 +792,11 @@ void Solve_scf::residuals(Real* x, Real* g){
 			int itmonlistlength=Sys[0]->ItMonList.size();
 			int state_length = In[0]->StateList.size();
 			int itstatelistlength=Sys[0]->ItStateList.size();
-			
 
 
-			Cp(g,xx,iv);				
-			ComputePhis();
+
+			Cp(g,xx,iv);
+			ComputePhis(iterations==0);
 
  			Zero(alpha,M);
 			for (i=0; i<itmonlistlength; i++) {
@@ -825,7 +825,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 							PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 					}
 				}
-				
+
 
 				for (k=0; k<state_length; k++) {
 					chi =Sta[Sys[0]->ItStateList[i]]->chi[mon_length+k];
@@ -857,7 +857,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Lat[0]->remove_bounds(g+itpos);
 				itpos+=M;
 			}
-			if (Sys[0]->constraintfields) { 
+			if (Sys[0]->constraintfields) {
 				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
 				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
 				Real R = (Sys[0]->phi_ratio-1)/(Sys[0]->phi_ratio+1);
@@ -963,11 +963,25 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 	}
 }
 
-void Solve_scf::ComputePhis() {
-if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
+void Solve_scf::ComputePhis(bool first_time) {
+	if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
 	PutU();
-	Sys[0]->PrepareForCalculations();
+	Sys[0]->PrepareForCalculations(first_time);
+	if (first_time && Sys[0]->initial_guess=="polymer_adsorption") Put_U();
 	Sys[0]->ComputePhis();
+}
+
+bool Solve_scf::Put_U(){
+	if (debug) cout << "Put_U in Solve" << endl;
+	bool success=true;
+	int M=Lat[0]->M;
+	int itmonlistlength=Sys[0]->ItMonList.size();
+	for (int i=0; i<itmonlistlength; i++) {
+		int IM=Sys[0]->ItMonList[i];
+	 	Real *u=Seg[IM]->u;
+		Cp(xx+i*M,u,M);
+	}
+	return success;
 }
 
 bool Solve_scf::PutU() {
@@ -987,7 +1001,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 	alpha=Sys[0]->alpha;
 
 	if (Sys[0]->charged) {
-		Cp(Sys[0]->psi,xx+itpos,M); 
+		Cp(Sys[0]->psi,xx+itpos,M);
 		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
 	}
 
@@ -1055,7 +1069,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 		}
 		k++;
 	}
-	if (Sys[0]->charged) itpos +=M; 
+	if (Sys[0]->charged) itpos +=M;
 	if (Sys[0]->constraintfields) Cp(Sys[0]->BETA,xx+itpos,M);
 
 	return success;

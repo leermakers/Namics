@@ -229,8 +229,9 @@ bool System::generate_mask()
 	return success;
 }
 
-bool System::PrepareForCalculations()
+bool System::PrepareForCalculations(bool first_time)
 {
+bool start=first_time;
 	if (debug)
 		cout << "PrepareForCalculations in System " << endl;
 
@@ -256,7 +257,7 @@ bool System::PrepareForCalculations()
 
 	for (int i = 0; i < n_mon; i++)
 	{
-		success = Seg[i]->PrepareForCalculations(KSAM);
+		success = Seg[i]->PrepareForCalculations(KSAM,first_time);
 	}
 	for (int i = 0; i < n_mol; i++)
 	{
@@ -269,7 +270,7 @@ bool System::PrepareForCalculations()
 		TransferDataToDevice(H_beta, beta, M);
 	}
 #endif
-
+	if (start) {
   if (charged) {
     int length = FrozenList.size();
     Zero(psiMask, M);
@@ -285,6 +286,15 @@ bool System::PrepareForCalculations()
 	if (Seg[i]->epsilon != eps) grad_epsilon = true;
     }
   }
+  if (initial_guess == "polymer_adsorption") {
+	  int length=FrozenList.size();
+	  for (int i=0; i<length; i++){
+		  for (int j=0; j<n_mon; j++) {if (!CHI[i+n_mon*j] == 0) Seg[j]->PutAdsorptionGuess(CHI[i+n_mon*j],Seg[i]->MASK);
+		  }
+	  }
+  }
+	}
+
   return success;
 }
 
@@ -669,10 +679,8 @@ bool System::CheckInput(int start)
 			options.clear();
 			options.push_back("previous_result");
 			options.push_back("file");
-			if (!In[0]->Get_string(GetValue("initial_guess"), initial_guess, options, " Info about 'initial_guess' rejected; default: 'previous_result' used."))
-			{
-				initial_guess = "previous_result";
-			}
+			options.push_back("polymer_adsorption");
+			In[0]->Get_string(GetValue("initial_guess"), initial_guess, options, " Info about 'initial_guess' rejected;");
 			if (initial_guess == "file")
 			{
 				if (GetValue("guess_inputfile").size() > 0)
@@ -684,6 +692,9 @@ bool System::CheckInput(int start)
 					success = false;
 					cout << " When 'initial_guess' is set to 'file', you need to supply 'guess_inputfile', but this entry is missing. Problem terminated " << endl;
 				}
+			}
+			if (initial_guess=="polymer_adsorption") {
+				//cout <<"guess for polymer adsorption not implemented" << endl;
 			}
 		}
 		final_guess = "next_problem";

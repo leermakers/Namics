@@ -921,7 +921,7 @@ int nvar=nvar_;
   Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
   Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
   #endif
-	int it=0;
+	iterations=0;
 	int k_diis=0;
 	int k=0;
 	Cp(x0,x,nvar);
@@ -938,22 +938,22 @@ int nvar=nvar_;
 
 		if (e_info) printf("DIIS has been notified\n");
 		if (e_info) printf("Your guess = %1e \n",residual);
-		while ( residual > tolerance and it < iterationlimit) {
-			it++;
+		while ( residual > tolerance and iterations < iterationlimit) {
+			iterations++;
 			Cp(x0,x,nvar);
 			residuals(x,g);
-			k=it % m; k_diis++; //plek voor laatste opslag
+			k=iterations % m; k_diis++; //plek voor laatste opslag
 			YplusisCtimesX(x,g,-delta_max,nvar);
 			Cp(xR+k*nvar,x,nvar);
 			YisAminB(x_x0+k*nvar,x,x0,nvar);
 			DIIS(x,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,nvar);
     		residual = computeresidual(g, nvar);
-			if(e_info && it%i_info == 0){
-				printf("it = %i g = %1e \n",it,residual);
+			if(e_info && iterations%i_info == 0){
+				printf("iterations = %i g = %1e \n",iterations,residual);
 			}
 		}	
 		
-		success=Message(e_info,s_info,it,iterationlimit,residual,tolerance,"");
+		success=Message(e_info,s_info,iterations,iterationlimit,residual,tolerance,"");
 
 	} catch (int error) {
 		if (error == -1)

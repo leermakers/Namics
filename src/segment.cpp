@@ -98,7 +98,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 #endif
 }
 
-bool Segment::PrepareForCalculations(int* KSAM) {
+bool Segment::PrepareForCalculations(int* KSAM, bool first_time) {
 if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 	int M=Lat[0]->M;
@@ -157,39 +157,75 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 			int JY=Lat[0]->JY;
 			int M=Lat[0]->M;
 			Zero(u_ext,M);
-			if (sub[2] == "z") {
-				int MZ=Lat[0]->MZ;
-				if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..8" << endl; }
-				if (success) {
-					Real shift_x,shift_y,shift_z;
-					for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
-					for (int lambda_y=2; lambda_y <=MY; lambda_y*=2)
-					for (int lambda_z=2; lambda_z <=MZ; lambda_z*=2){
-						shift_x = rand() % lambda_x;
-						shift_y = rand() % lambda_y;
-						shift_z = rand() % lambda_z;
-						for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) {
-							u_ext[x*JX+y*JY+MZ]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y)+sin(2.0*PIE*(z+shift_z)/lambda_z));
+			if (first_time){
+				if (sub[2] == "z") {
+					int MZ=Lat[0]->MZ;
+					if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..8" << endl; }
+					if (success) {
+						Real shift_x,shift_y,shift_z;
+						for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
+						for (int lambda_y=2; lambda_y <=MY; lambda_y*=2)
+						for (int lambda_z=2; lambda_z <=MZ; lambda_z*=2){
+							shift_x = rand() % lambda_x;
+							shift_y = rand() % lambda_y;
+							shift_z = rand() % lambda_z;
+							for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) {
+								u_ext[x*JX+y*JY+MZ]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y)+sin(2.0*PIE*(z+shift_z)/lambda_z));
+							}
 						}
 					}
-				}
-			} else {
-				int mz=In[0]->Get_int(sub[2],0);
-				if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
-				if (success) {
-					Real shift_x,shift_y;
-					for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
-					for (int lambda_y=2; lambda_y <=MY; lambda_y*=2){
-						shift_x = rand() % lambda_x;
-						shift_y = rand() % lambda_y;
-						for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) {
-							u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y));
+				} else {
+					int mz=In[0]->Get_int(sub[2],0);
+					if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
+					if (success) {
+						Real shift_x,shift_y;
+						for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
+						for (int lambda_y=2; lambda_y <=MY; lambda_y*=2){
+							shift_x = rand() % lambda_x;
+							shift_y = rand() % lambda_y;
+							for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) {
+								u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y));
+							}
 						}
 					}
 				}
 			}
 		}
 
+	}
+
+	return success;
+}
+
+bool Segment::PutAdsorptionGuess(Real chi,int* Mask) {
+if (debug) cout <<"PutAdsorptionGuess" + name << endl;
+	bool success=true;
+	Real lambda;
+	if (Lat[0]->lattice_type=="hexagonal") lambda=0.25; else lambda=1.0/6.0;
+	int gradients=Lat[0]->gradients;
+	int MX=Lat[0]->MX;
+	int MY=Lat[0]->MY;
+	int MZ=Lat[0]->MZ;
+	int JX=Lat[0]->JX;
+	int JY=Lat[0]->JY;
+	switch(gradients) {
+		case 1:
+			for (int x=1; x<MX+1; x++)
+				if (Mask[x-1]==1 ||Mask[x+1]==1)
+					u[x]=-lambda*chi;
+			break;
+		case 2:
+			for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++)
+				if (Mask[(x-1)*JX+y]==1 ||Mask[(x+1)*JX+y]==1 || Mask[x*JX+y-1]==1 || Mask[x*JX+y+1]==1)
+					u[x*JX+y]=-lambda*chi;
+			break;
+		case 3:
+			for (int x=1; x<MX+1; x++) for (int y=1;y<MY+1; y++) for (int z=1; z<MZ+1; z++)
+				if (Mask[(x-1)*JX+y*JY+z]==1 ||Mask[(x+1)*JX+y*JY+z]==1 || Mask[x*JX+(y-1)*JY+z]==1 || Mask[x*JX+(y+1)*JY+z]==1 || Mask[x*JX+y*JY+z-1]==1 || Mask[x*JX+y*JY+z+1]==1)
+					u[x*JX+y*JY+z]=-lambda*chi;
+			break;
+		default:
+			break;
 	}
 
 	return success;
@@ -526,10 +562,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	if (GetValue("fluctuation_amplitude").size()>0) {
 		Amplitude = In[0]->Get_Real(GetValue("fluctuation_amplitude"),1);
 		if (Amplitude < 0 || Amplitude > 1) {
-			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 1 (full fluctuations). " << endl; 
+			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 1 (full fluctuations). " << endl;
 		}
 	}
-	
+
 			//valence=In[0]->Get_Real(GetValue("valence"),0);
 	return success;
 }
@@ -892,8 +928,6 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	strings_value.clear();
 	bools.clear();
 	bools_value.clear();
-	Reals.clear();
-	Reals_value.clear();
 	ints.clear();
 	ints_value.clear();
 	push("freedom",freedom);
@@ -902,6 +936,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	push("theta",theta);
 	push("theta_exc",theta-Lat[0]->Accesible_volume*phibulk);
 	push("phibulk",phibulk);
+	push("Fluctuation_amplitude",Amplitude);
 	if (ns>1) {
 		state_theta.clear();
 		for (int i=0; i<ns; i++){
@@ -923,6 +958,10 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	string profile="profile;0"; push("phi",profile);
 
 	profile="profile;1"; push("G1",profile);
+	if (Lat[0]->gradients==3) {
+		profile="profile;2"; push("phi[z]",profile);
+
+	}
 	int k=1;
 	string s;
 	string str;
@@ -958,6 +997,23 @@ if (debug) cout <<"Get Pointer for segment " + name << endl;
 
 	if (sub[1]=="0") return phi;
 	if (sub[1]=="1") return G1;
+        if (sub[1]=="2") {
+		int MX=Lat[0]->MX;
+		int MY=Lat[0]->MY;
+		int MZ=Lat[0]->MZ;
+		int JX=Lat[0]->JX;
+		int JY=Lat[0]->JY;
+		Real Sum;
+		Zero(phi_side,M); //phi_side is reused because this array is no longer needed (hopefully....).
+		for (int z=0; z<MZ; z++) {
+			Sum=0;
+			for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++)
+				Sum +=phi[x*JX+y*JY+z];
+			Sum /=MX*MY;
+			phi_side[JX+JY+z]=Sum;
+		}
+		return phi_side;
+	}
 	if (ns>1) {
 		for (int i=0; i<ns; i++) {
 			stringstream ss; ss<<i+2; string str=ss.str();
@@ -972,6 +1028,7 @@ if (debug) cout <<"Get Pointer for segment " + name << endl;
 			if (sub[1]==str) return u+i*M;
 		}
 	}
+
 
 	} else {//sub[0]=="vector" ..do not forget to set SIZE before returning the pointer.
 	}

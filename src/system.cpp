@@ -1941,8 +1941,6 @@ cout <<"Sum EE*eps = " << Lat[0]->WeightedSum(TEMP) << endl;
 		AddTimes(TEMP,q,psi,M);
 		Norm(TEMP,0.5,M);
 
-cout <<"El to F = " << Lat[0]->WeightedSum(TEMP)  << endl;
-		Add(F,TEMP,M);
 	}
 	return FreeEnergy + Lat[0]->WeightedSum(F);
 }
@@ -1991,6 +1989,7 @@ Real System::GetGrandPotential(void)
 	Real chi;
 	Real *phi;
 	Real *phi_side;
+	Real *u_ext;
 	int n_seg = In[0]->MonList.size();
 	int n_states = In[0]->StateList.size();
 
@@ -2036,6 +2035,14 @@ Real System::GetGrandPotential(void)
 					}
 			}
 		}
+	for (int j=0; j< n_seg; j++)
+	{
+		phi=Seg[j]->phi;
+		u_ext=Seg[j]->u_ext;
+		Times(TEMP,phi,u_ext,M);
+		Subtract(GP,TEMP,M);
+	}
+
 
 	for (int j = 0; j < n_states; j++)
 	{

@@ -28,6 +28,7 @@ Input::Input(string name_) {
 			line_nr++;
 			std::getline(in_file,In_line);
 			In_line.erase(std::remove(In_line.begin(), In_line.end(), ' '), In_line.end());
+			In_line.erase(std::remove(In_line.begin(), In_line.end(), '\t'), In_line.end());
 			if (In_line.length()==0) add = false;
 			if (In_line.length()>2) {if (In_line.substr(0,2) == "//") {add = false;}}
 //			if (add) elems.push_back(SSTR(line_nr).append(":").append(In_line)); else add=true;
@@ -589,7 +590,7 @@ bool Input:: CheckInput(void) {
 	if (!last_start) {
 		elems.push_back("0:start"); length++;
 	}
-	
+
 	i=0;
 	while (success && i<length) {
 		vector<std::string> set;

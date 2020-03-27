@@ -151,7 +151,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		if (deltamin < 0 || deltamin>100) {deltamin = deltamax/100000;  cout << "Value of deltamin out of range 0..100, and value set to default value deltamax/100000" <<endl; }
 		tolerance=In[0]->Get_Real(GetValue("tolerance"),1e-7);
 		super_tolerance=In[0]->Get_Real(GetValue("super_tolerance"),tolerance*10);
-		if (tolerance < 1e-12 ||tolerance>10) {tolerance = 1e-5;  cout << "Value of tolerance out of range 1e-12..10 Value set to default value 1e-5" <<endl; }
+		if (tolerance < 1e-16 ||tolerance>10) {tolerance = 1e-5;  cout << "Value of tolerance out of range 1e-12..10 Value set to default value 1e-5" <<endl; }
 		if (GetValue("method").size()==0) {SCF_method="pseudohessian";} else {
 			vector<string>method_options;
 			method_options.push_back("DIIS");

@@ -779,14 +779,14 @@ Real *S = new Real[N];
 		V[i] = new Real[N];
 	}
 
-	
+
 	for (int i=0; i<N; i++) {
 		for (int j=0; j<N; j++) {
 			if (A[i*N + j] !=  A[i*N + j]) //If it contains NaNs
         		throw -2;
 			U[i][j] = A[i*N + j];
 		}
-    }
+  }
 
   if (N > 1) {
 		//old function svdcmp still exists, simply remove modern_ prefix to switch back. The new function uses vectors for safety.
@@ -800,8 +800,8 @@ Real *S = new Real[N];
 			S[i] = X[i]/S[i];
 			X[i]=0;
 		}
-		for (int i=0; i<N; i++) 
-			for (int j=0; j<N; j++) 
+		for (int i=0; i<N; i++)
+			for (int j=0; j<N; j++)
 				X[i] += V[i][j]*S[j];
 	} else {
 		X[0]=1;
@@ -834,7 +834,7 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
 		for (int j=0; j<k_diis; j++)
 		    Apij[j+k_diis*i] = Aij[j+m*i];
   	}
-			
+
 	Ax(Apij,Ci,k_diis);
 
 	Real normC=0;
@@ -864,7 +864,7 @@ Real SFNewton::computeresidual(Real* array, int size) {
 	//in tools:
 	residual = ComputeResidual(array, size);
 	#else //CUDA OR CPU
-	
+
 	Real* H_array;
 
 	#ifdef CUDA
@@ -951,8 +951,8 @@ int nvar=nvar_;
 			if(e_info && iterations%i_info == 0){
 				printf("iterations = %i g = %1e \n",iterations,residual);
 			}
-		}	
-		
+		}
+
 		success=Message(e_info,s_info,iterations,iterationlimit,residual,tolerance,"");
 
 	} catch (int error) {
@@ -997,9 +997,9 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	Real res=100.0;
 	int k=0,it=0;
 
-	while ((it<iterationlimit) && (abs(res)>tolerance)) {	
+	while ((it<iterationlimit) && (abs(res)>tolerance)) {
 		if (it>0) cout <<"restart regular falsi" << endl;
-		Real x_start=x[0]; 
+		Real x_start=x[0];
 		residuals(x,g);
 		a=1;
 		fa=g[0];
@@ -1167,5 +1167,3 @@ void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real
 	}*/
 	for (int i=0; i<nvar; i++) H_q[i] = (dg[i]-g[i])/delta;
 }
-
-

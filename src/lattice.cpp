@@ -3,7 +3,7 @@ Lattice::Lattice(vector<Input*> In_,string name_) :
 	BC(6) // resize the boundary condition vector to 6 for Mesodyn
 { //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
 if (debug) cout <<"Lattice constructor" << endl;
-	In=In_; name=name_; 
+	In=In_; name=name_;
 	KEYS.push_back("gradients"); KEYS.push_back("n_layers"); KEYS.push_back("offset_first_layer");
 	KEYS.push_back("geometry");
 	KEYS.push_back("n_layers_x");   KEYS.push_back("n_layers_y"); KEYS.push_back("n_layers_z");
@@ -15,10 +15,8 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("ignore_site_fraction");
   	KEYS.push_back("lattice_type");
 	KEYS.push_back("stencil_full");
-	KEYS.push_back("");
 	//KEYS.push_back("lambda");
 	//KEYS.push_back("Z");
-
 	KEYS.push_back("FJC_choices");
 	sub_box_on = 0;
 	all_lattice = false;
@@ -53,7 +51,7 @@ if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 			#else
 			free(X);
 			#endif
-		} 
+		}
 	}
 all_lattice=false;
 }
@@ -63,8 +61,9 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	Real r, VL, LS;
 	Real rlow, rhigh;
 	int i {0}; int j {0}; int k {0}; int kk {0};
-	PutM();	
+
 	DeAllocateMemory();
+	PutM();
 	if (fjc>1) {
 		B_X1=(int*)malloc(fjc*sizeof(int));
 		B_Y1=(int*)malloc(fjc*sizeof(int));
@@ -100,7 +99,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 		case 2:
 			if (BC[2]=="mirror") {
 				if (fjc==1) BY1=1; else {
-					for (k=0; k<fjc; k++) B_Y1[k]=fjc+k;
+					for (k=0; k<fjc; k++) B_Y1[k]=fjc+k-1;
 				}
 			}
 			if (BC[2]=="periodic") {
@@ -110,14 +109,14 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 			}
 			if (BC[3]=="mirror") {
 				if (fjc==1) BYM=MY; else {
-					for (k=0; k<fjc; k++) B_YM[k]=MY+fjc-k-1;
+					for (k=0; k<fjc; k++) B_YM[k]=MY+fjc-k;
 				}
 			}
 			if (BC[3]=="periodic") {
 				if (fjc==1) BYM=1; else {
 					for (k=0; k<fjc; k++) B_YM[k]=fjc+k;
 				}
-			} 
+			}
 			//Fall through
 		case 1:
 			if (BC[0]=="mirror") {
@@ -135,7 +134,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 					for (k=0; k<fjc; k++) B_XM[k]=MX+fjc-k-1;
 				}
 			}
-			if (BC[1]=="periodic") { 
+			if (BC[1]=="periodic") {
 				if (fjc==1) BXM=1; else {
 					for (k=0; k<fjc; k++) B_XM[k]=fjc+k;
 				}
@@ -163,11 +162,11 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	switch (gradients) {
 		case 1:
 			if (geometry=="planar") {
-				for (i=1; i<MX+1; i++) L[i]=1; 
+				for (i=1; i<MX+1; i++) L[i]=1;
 			}
 
 			if (fjc==1) {
- 
+
 				if (geometry=="cylindrical") {
 					for (i=1; i<MX+1; i++) {
 						r=offset_first_layer + i;
@@ -186,8 +185,8 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 						lambda0[i]=1.0-lambda1[i]-lambda_1[i];
 					}
 				}
-			} 
-				
+			}
+
 			if (fjc>1) {
 				if (geometry=="planar") {
 					for (i = 0; i < M; i++) {
@@ -247,7 +246,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 					}
 				}
 
-				if (geometry == "spherical") { 
+				if (geometry == "spherical") {
 					for (i = fjc; i < M - fjc; i++) {
 						r = offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc;
 						rlow = r-0.5;
@@ -310,7 +309,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 					}
 
 				}
-			} 
+			}
 			if (fjc==2) {
 				if (geometry=="planar") {
 					for (i=0; i<M; i++) L[i]=1/fjc;
@@ -343,7 +342,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 								LAMBDA[i*JX+j + k*M] += 1.0/(1.0*FJC-1.0)*2.0*rlow/VL;
 							if ((rhigh-r)*2+r < offset_first_layer + 1.0*MX/fjc)
 								LAMBDA[i*JX+j + (FJC-1-k) * M] += 1.0 / (1.0*FJC-1.0)*2.0*rhigh/VL;
-							else { 
+							else {
 								if (2*rhigh-r-1.0*MX/fjc > -0.001 && 2*rhigh-r-1.0*MX/fjc < 0.001) {
 									LAMBDA[i*JX+j + (FJC-1-k)*M] += 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
 								}
@@ -360,7 +359,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 						LAMBDA[i*JX+j+(FJC/2)*M] += 1.0-LS;
 					}
 				}
-		
+
 			}
 			break;
 		case 3:
@@ -372,13 +371,24 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 	all_lattice=(gradients<3 && geometry!="planar");
 }
 
+int Lattice::P(int x, int y, int z) {
+	return (x+fjc-1)*JX + (y+fjc-1)*JY +z+1;
+}
+int Lattice::P(int x, int y) {
+	return (x+fjc-1)*JX +y+1;
+}
+
+int Lattice::P(int x) {
+	return x+fjc-1;
+}
+
 bool Lattice::PutM() {
 	bool success=true;
 
 	switch(gradients) {
 		case 1:
-			JX=fjc; JY=0; JZ=0; M=MX+2*fjc;  
-			if (geometry=="planar") {volume = MX;}
+			JX=fjc; JY=0; JZ=0; M=MX+2*fjc;
+			if (geometry=="planar") {volume = MX; }
 			if (geometry=="spherical") {volume = 4/3*PIE*(pow(MX+offset_first_layer,3)-pow(offset_first_layer,3));}
 			if (geometry=="cylindrical") {volume = PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));}
 			break;
@@ -386,16 +396,17 @@ bool Lattice::PutM() {
 			if (geometry=="cylindrical")
 				volume = MY*PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));
 			else volume = MX*MY;
-			JX=MY+2*fjc; JY=fjc; JZ=0; M=(MX+2*fjc)*(MY+2*fjc);
+			JX=MY+2*fjc; JY=1; JZ=0; M=(MX+2*fjc)*(MY+2*fjc);
 			break;
 		case 3:
 			volume = MX*MY*MZ;
-			JX=(MZ+2*fjc)*(MY+2*fjc); JY=MZ+2*fjc; JZ=fjc; M = (MX+2*fjc)*(MY+2*fjc)*(MZ+2*fjc);
+			JX=(MZ+2*fjc)*(MY+2*fjc); JY=MZ+2*fjc; JZ=1; M = (MX+2*fjc)*(MY+2*fjc)*(MZ+2*fjc);
 			break;
 		default:
 			break;
 	}
 
+	Accesible_volume=volume;
 	return success;
 }
 
@@ -437,7 +448,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				//if (lattice_type == "FCC") {lambda = 1.0/3.0; Z=3;}
 				if (lattice_type == "hexagonal") {lambda=1.0/4.0; Z=4;}
 			}
-		};
+		} else {
+			success=false; cout <<"Namics can not run without input for 'lattice_type'" << endl;
+		}
 /*			else {
 			if (lambda>0) {
 				if (GetValue("lambda").size()>0) cout <<"'lattice_type' has been set: 'lambda'-value is ignored" << endl;
@@ -593,7 +606,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					cout << "upperbound_z is not allowed in 2-gradient calculations" << endl;
 					success=false;
 				}
-				
+
 				Value.clear();
 				Value=GetValue("lowerbound_x");
 				if (Value.length()>0) {
@@ -601,7 +614,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						success=false;
 				} else
 					BC[0]="mirror";
-	
+
 
 				Value.clear();
 				Value=GetValue("upperbound_x");
@@ -658,7 +671,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						success=false;
 				} else
 					BC[0]="mirror";
-	
+
 
 				Value.clear();
 				Value=GetValue("upperbound_x");
@@ -946,12 +959,12 @@ if (debug) cout << "DivL in lattice " << endl;
 Real Lattice:: Moment(Real* X,int n) {
 if (debug) cout << "Moment in lattice " << endl;
 	Real Result=0;
-	Real cor; 
+	Real cor;
 	if (gradients !=1 || geometry!="planar" ) {cout << "Moments analysis is only implemented for one-gradient, planar system " << endl;  return Result; }
 	remove_bounds(X);
 	for (int i = fjc; i<M; i++) {
-		cor = (i-fjc+0.5)/fjc; Result += pow(cor,n)*X[i]; 
-	}	
+		cor = (i-fjc+0.5)/fjc; Result += pow(cor,n)*X[i];
+	}
 	return Result/fjc;
 }
 
@@ -963,7 +976,7 @@ if (debug) cout << "weighted sum in lattice " << endl;
 		case 1:
 			if (geometry=="planar") {
 				Sum(sum,X,M); sum/=fjc;
-			} else Dot(sum,X,L,M); 
+			} else Dot(sum,X,L,M);
 			break;
 		case 2:
 			if (geometry=="planar") {
@@ -983,7 +996,7 @@ if (debug) cout << "weighted sum in lattice " << endl;
 void Lattice::vtk(string filename, Real* X, string id,bool writebounds) {
 if (debug) cout << "vtk in lattice " << endl;
 	FILE *fp;
-	int i,j,k;
+	int i;
 	fp = fopen(filename.c_str(),"w+");
 	switch(gradients) {
 		case 1:
@@ -998,25 +1011,25 @@ if (debug) cout << "vtk in lattice " << endl;
 			}
 			fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
 			if (writebounds) for (i=0; i<M; i++) fprintf(fp,"%f\n",X[i]);
-			for (i=1; i<MX+1; i++)
-			for (j=1; j<MY+1; j++)
-			fprintf(fp,"%f\n",X[i*JX+fjc-1+j]);
+			for (int x=1; x<MX+1; x++)
+			for (int y=1; y<MY+1; y++)
+			fprintf(fp,"%f\n",X[P(x,y)]);
 			break;
 		case 3:
 			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MX,MY,MZ);
-			
+
 			if (writebounds) {
 				fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",(MX+2*fjc)*(MY+2*fjc)*(MZ+2*fjc));
 			} else {
 				fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",MX*MY*MZ);
 			}
 			fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
-			if (writebounds) for(i=0; i<M; i++) fprintf(fp,"%f\n",X[i]); 
+			if (writebounds) for(i=0; i<M; i++) fprintf(fp,"%f\n",X[i]);
 			else {
-				for (i=1; i<MX+1; i++)
-				for (j=1; j<MY+1; j++)
-				for (k=1; k<MZ+1; k++)
-				fprintf(fp,"%f\n",X[i*JX+j*JY+fjc-1+k]);
+				for (int x=1; x<MX+1; x++)
+				for (int y=1; y<MY+1; y++)
+				for (int z=1; z<MZ+1; z++)
+				fprintf(fp,"%f\n",X[P(x,y,z)]);
 			}
 			break;
 		default:
@@ -1028,7 +1041,7 @@ void Lattice::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds){
 if (debug) cout <<"PutProfiles in lattice " << endl;
 	int x,y,z,i;
 	int length=X.size();
-	int a; 
+	int a;
 	if (writebounds) a=fjc; else a = 0;
 	switch(gradients) {
 		case 1:
@@ -1037,12 +1050,12 @@ if (debug) cout <<"PutProfiles in lattice " << endl;
 				for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][fjc-1+x]);
 				fprintf(pf,"\n");
 			}
-			break;
-
+	    break;
+		case 2:
 			for (x=1-a; x<MX+1+a; x++)
 			for (y=1-a; y<MY+1+a; y++){
-				fprintf(pf,"%e\t%e\t",offset_first_layer+1.0*x*fjc-1/(2.0*fjc),1.0*y*fjc-1/(2.0*fjc));
-				for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][x*JX+fjc-1+y]);
+				fprintf(pf,"%e\t%e\t",offset_first_layer+1.0*x/fjc-1/(2.0*fjc),1.0*y/fjc-1/(2.0*fjc));
+			  for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][P(x,y)]);
 				fprintf(pf,"\n");
 			}
 			break;
@@ -1195,7 +1208,7 @@ if (debug) cout <<" Side in lattice " << endl;
 		Cp(X_side,X,M); return;
 	}
 	Zero(X_side,M);set_bounds(X);
-	int j, kk; 
+	int j, kk;
 	switch(gradients) {
 		case 1:
 			if (fjc==1) {
@@ -1249,7 +1262,7 @@ if (debug) cout <<" Side in lattice " << endl;
 						YplusisCtimesX(X_side+JX,X+1,3.0/8.0,M-JX);
 						YplusisCtimesX(X_side+1,X+JX,3.0/8.0,M-JX);
 						YplusisCtimesX(X_side,X+JX+1,3.0/8.0,M-JX-1);
-					}			
+					}
 				} else {
 					if (lattice_type =="simple_cubic") {
 						YplusisCtimesX(X_side,X,4.0/6.0,M);
@@ -1276,7 +1289,7 @@ if (debug) cout <<" Side in lattice " << endl;
 						Norm(X_side,6.0,M);
 					}
 				}
-			} 
+			}
 			if (fjc==2) {
 				if (geometry=="planar") {
 					Add(X_side,X,M);
@@ -1308,7 +1321,7 @@ if (debug) cout <<" Side in lattice " << endl;
 					Add(X_side+2,X+2*JX,M-2*JX);
 					Norm(X_side,1.0/64.0,M);
 				} else {
-					Add(X_side,X,M);					
+					Add(X_side,X,M);
 					Add(X_side+1,X,M-1);
 					Add(X_side,X+1,M-1);
 					Norm(X_side,1.0/4.0,M);
@@ -1341,11 +1354,11 @@ if (debug) cout <<" Side in lattice " << endl;
 			}
 			break;
 		case 3:
-			Add(X_side+JX,X,M-JX); 
+			Add(X_side+JX,X,M-JX);
 			Add(X_side,X+JX,M-JX);
-			Add(X_side+JY,X,M-JY); 
+			Add(X_side+JY,X,M-JY);
 			Add(X_side,X+JY,M-JY);
-			Add(X_side+1,X,M-1);  
+			Add(X_side+1,X,M-1);
 			Add(X_side,X+1, M-1);
 			if (stencil_full) {
 				if (lattice_type == "simple_cubic") {
@@ -1353,31 +1366,31 @@ if (debug) cout <<" Side in lattice " << endl;
 				} else {
 					Norm(X_side,2.0,M);
 				}
-				Add(X_side+JX+JY, X,         M-JX-JY); 
+				Add(X_side+JX+JY, X,         M-JX-JY);
 				Add(X_side,         X+JX+JY, M-JX-JY);
-				Add(X_side+JY,     X+JX,     M-JY-JX); 
+				Add(X_side+JY,     X+JX,     M-JY-JX);
 				Add(X_side+JX,      X+JY,    M-JY-JX);
-				Add(X_side+JX+1,   X,        M-JX-1); 
+				Add(X_side+JX+1,   X,        M-JX-1);
 				Add(X_side,         X+JX+1,  M-JX-1);
-				Add(X_side+JX,     X+1,      M-JX); 
+				Add(X_side+JX,     X+1,      M-JX);
 				Add(X_side+1,       X+JX,    M-JX);
-				Add(X_side+JY+1,   X,        M-JY-1); 
+				Add(X_side+JY+1,   X,        M-JY-1);
 				Add(X_side,         X+JY+1,  M-JX-1);
-				Add(X_side+JY,     X+1,      M-JY); 
-				Add(X_side+1,       X+JY,    M-JY);				
+				Add(X_side+JY,     X+1,      M-JY);
+				Add(X_side+1,       X+JY,    M-JY);
 				if (lattice_type == "simple_cubic") {
 					Norm(X_side,4.0,M);
 				} else {
 					Norm(X_side,2.0,M);
 				}
-				Add(X_side+JX+JY+1,  X,	    M-JX-JY-1); 
+				Add(X_side+JX+JY+1,  X,	    M-JX-JY-1);
 				Add(X_side,          X+JX+JY+1, M-JX-JY-1);
-				Add(X_side+JX+JY,    X+1,       M-JX-JY-1); 
+				Add(X_side+JX+JY,    X+1,       M-JX-JY-1);
 				Add(X_side+1,        X+JX+JY,   M-JX-JY-1);
-				Add(X_side+JX+1,     X+JY,      M-JX-JY-1); 
+				Add(X_side+JX+1,     X+JY,      M-JX-JY-1);
 				Add(X_side+JY,       X+JX+1,    M-JX-JY-1);
-				Add(X_side+JY+1,     X+JX,      M-JX-JY-1); 
-				Add(X_side+JX,       X+JY+1,    M-JX-JY-1);								
+				Add(X_side+JY+1,     X+JX,      M-JX-JY-1);
+				Add(X_side+JX,       X+JY+1,    M-JX-JY-1);
 				if (lattice_type == "simple_cubic") {
 					Norm(X_side,1.0/152.0,M);
 				} else {
@@ -1395,7 +1408,7 @@ if (debug) cout <<" Side in lattice " << endl;
 void Lattice::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in lattice " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
-	int JX_=JX, JY_=JY; int kk;  
+	int JX_=JX, JY_=JY; int kk;
 	int k=sub_box_on;
 	int j;
 
@@ -1417,7 +1430,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 					}
 				} else { //cylindrical or spherical
 					AddTimes(gs,gs_1,lambda0,M);
-					AddTimes(gs+1,gs_1,lambda_1+1,M-1); 
+					AddTimes(gs+1,gs_1,lambda_1+1,M-1);
 					AddTimes(gs,gs_1+1,lambda1,M-1);
 					Times(gs,gs,G1,M);
 				}
@@ -1485,7 +1498,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 						Times(gs,gs,G1,M);
 					}
 				}
-			} 
+			}
 			if (fjc==2) { //25 point stencil only fjc==2 implemented....
 				if (geometry=="planar") { //lattice_type = hexagonal
 					Add(gs,gs_1,M);
@@ -1518,7 +1531,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 					Norm(gs,1.0/64.0,M);
 					Times(gs,gs,G1,M);
 				} else { //lattice_type hexagonal.; cylindrical geometry.
-					Add(gs,gs_1,M);					
+					Add(gs,gs_1,M);
 					Add(gs+1,gs_1,M-1);
 					Add(gs,gs_1+1,M-1);
 					Norm(gs,1.0/4.0,M);
@@ -1547,8 +1560,8 @@ if (debug) cout <<" propagate in lattice " << endl;
 					AddTimes(gs+2*JX,gs_1+2,LAMBDA+2*JX,M-2*JX);
 					AddTimes(gs+2,gs_1+2*JX,LAMBDA+4*M+2,M-2*JX);
 					Norm(gs,1.0/16.0,M);
-					Times(gs,gs,G1,M);	
-				} 
+					Times(gs,gs,G1,M);
+				}
 			}
 			break;
 		case 3:
@@ -1558,42 +1571,42 @@ if (debug) cout <<" propagate in lattice " << endl;
 			}
 
 			if (stencil_full) {
-				Add(gs+JX_,gs_1,M-JX_); 
+				Add(gs+JX_,gs_1,M-JX_);
 				Add(gs,gs_1+JX_,M-JX_);
-				Add(gs+JY_,gs_1,M-JY_); 
+				Add(gs+JY_,gs_1,M-JY_);
 				Add(gs,gs_1+JY_,M-JY_);
-				Add(gs+1,gs_1,M-1);  
+				Add(gs+1,gs_1,M-1);
 				Add(gs,gs_1+1, M-1);
 				if (lattice_type == "simple_cubic") {
 					Norm(gs,4.0,M);
 				} else {
 					Norm(gs,2.0,M);
 				}
-				Add(gs+JX_+JY_,gs_1,M-JX_-JY_); 
+				Add(gs+JX_+JY_,gs_1,M-JX_-JY_);
 				Add(gs,gs_1+JX_+JY_,M-JX_-JY_);
-				Add(gs+JY_,gs_1+JX,M-JY_-JX_); 
+				Add(gs+JY_,gs_1+JX,M-JY_-JX_);
 				Add(gs+JX,gs_1+JY_,M-JY_-JX_);
-				Add(gs+JX_+1,gs_1,M-JX_-1); 
+				Add(gs+JX_+1,gs_1,M-JX_-1);
 				Add(gs,gs_1+JX_+1,M-JX_-1);
-				Add(gs+JX_,gs_1+1,M-JX_); 
+				Add(gs+JX_,gs_1+1,M-JX_);
 				Add(gs+1,gs_1+JX_,M-JX_);
-				Add(gs+JY_+1,gs_1,M-JY_-1); 
+				Add(gs+JY_+1,gs_1,M-JY_-1);
 				Add(gs,gs_1+JY_+1,M-JX_-1);
-				Add(gs+JY_,gs_1+1,M-JY_); 
-				Add(gs+1,gs_1+JY_,M-JY_);				
+				Add(gs+JY_,gs_1+1,M-JY_);
+				Add(gs+1,gs_1+JY_,M-JY_);
 				if (lattice_type == "simple_cubic") {
 					Norm(gs,4.0,M);
 				} else {
 					Norm(gs,2.0,M);
 				}
-				Add(gs+JX_+JY_+1,gs_1,M-JX_-JY_-1); 
+				Add(gs+JX_+JY_+1,gs_1,M-JX_-JY_-1);
 				Add(gs,gs_1+JX_+JY_+1,M-JX_-JY_-1);
-				Add(gs+JX_+JY_,gs_1+1,M-JX_-JY_-1); 
+				Add(gs+JX_+JY_,gs_1+1,M-JX_-JY_-1);
 				Add(gs+1,gs_1+JX_+JY_,M-JX_-JY_-1);
-				Add(gs+JX_+1,gs_1+JY_,M-JX_-JY_-1); 
+				Add(gs+JX_+1,gs_1+JY_,M-JX_-JY_-1);
 				Add(gs+JY_,gs_1+JX_+1,M-JX_-JY_-1);
-				Add(gs+JY_+1,gs_1+JX_,M-JX_-JY_-1); 
-				Add(gs+JX_,gs_1+JY_+1,M-JX_-JY_-1);								
+				Add(gs+JY_+1,gs_1+JX_,M-JX_-JY_-1);
+				Add(gs+JX_,gs_1+JY_+1,M-JX_-JY_-1);
 				if (lattice_type == "simple_cubic") {
 					Norm(gs,1.0/152.0,M);
 				} else {
@@ -1604,14 +1617,14 @@ if (debug) cout <<" propagate in lattice " << endl;
 			#ifdef CUDA
 				Propagate_gs_locality(gs, gs_1, G1, JX, JY, JZ, M);
 			#else
-				Add(gs+JX_,gs_1,M-JX_); 
+				Add(gs+JX_,gs_1,M-JX_);
 				Add(gs,gs_1+JX_,M-JX_);
-				Add(gs+JY_,gs_1,M-JY_); 
+				Add(gs+JY_,gs_1,M-JY_);
 				Add(gs,gs_1+JY_,M-JY_);
-				Add(gs+1,gs_1,M-1);  
+				Add(gs+1,gs_1,M-1);
 				Add(gs,gs_1+1, M-1);
 				Norm(gs,1.0/6.0,M);
-				Times(gs,gs,G1,M);		
+				Times(gs,gs,G1,M);
 			#endif
 			}
 			break;
@@ -1624,8 +1637,6 @@ if (debug) cout <<" propagate in lattice " << endl;
 template void Lattice::remove_bounds<int>(int*);
 template void Lattice::remove_bounds<Real>(Real*);
 
-
-
 template <typename T>
 void Lattice::remove_bounds(T *X){
 if (debug) cout <<"remove_bounds in lattice " << endl;
@@ -1634,39 +1645,38 @@ if (debug) cout <<"remove_bounds in lattice " << endl;
 	switch(gradients) {
 		case 1:
 			if (fjc==1) {
-				X[0]=0; 
+				X[0]=0;
 				X[MX+1]=0;
 			} else {
 				for (k=0; k<fjc; k++) {
 					X[(fjc-1)-k]=0;
 					X[MX+fjc+k]=0;
-				} 
+				}
 			}
 			break;
 		case 2:
 			if (fjc==1) {
-				for (x=1; x<MX+1; x++) {
+				for (x=0; x<MX+2; x++) {
 					X[x*JX+0] = 0;
 					X[x*JX+MY+1]=0;
 				}
-				for (y=1; y<MY+1; y++) {
+				for (y=0; y<MY+2; y++) {
 					X[0+y] = 0;
 					X[(MX+1)*JX+y]=0;
 				}
 			} else {
-				for (x=fjc; x<MX+fjc; x++) {
-					for (k=0; k<fjc; k++) X[x*JX+(fjc-1)-k] =0;
-					for (k=0; k<fjc; k++) X[x*JX+MY+fjc+k]=0;
+				for (x=1-fjc; x<MX+1+fjc; x++) {
+					for (k=0; k<fjc; k++) X[P(x,-k)] =0;
+					for (k=0; k<fjc; k++) X[P(x,MY+1+k)]=0;
 				}
-				for (y=fjc; y<MY+fjc; y++) {
-					for (k=0; k<fjc; k++) X[(fjc-1-k)*JX +y*JY] = 0;
-					for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY]=0;
+				for (y=1-fjc; y<MY+1+fjc; y++) {
+					for (k=0; k<fjc; k++) X[P(-k,y)] = 0;
+					for (k=0; k<fjc; k++) X[P(MX+1+k,y)]=0;
 				}
-
 			}
 			break;
 		case 3:
-			if (sub_box_on!=0) { 
+			if (sub_box_on!=0) {
 				int k=sub_box_on;
 				for (int i=0; i<n_box[k]; i++)
 					RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
@@ -1674,16 +1684,16 @@ if (debug) cout <<"remove_bounds in lattice " << endl;
 				if (fjc==1) RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
 					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
 						for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = 0;
-						for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = 0;
+						for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc-k]  = 0;
 					}
 					for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
 						for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = 0;
-						for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = 0;
+						for (k=0; k<fjc; k++) X[(MX+fjc-k)*JX+y*JY+z*JZ] = 0;
 					}
 					for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
 						for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = 0;
-						for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = 0;
-					}					
+						for (k=0; k<fjc; k++) X[x*JX+(MY+fjc-k)*JY+z*JZ] = 0;
+					}
 				}
 			break;
 		default:
@@ -1700,17 +1710,17 @@ template <typename T>
 void Lattice::set_bounds(T *X){
 if (debug) cout <<"set_bounds in lattice " << endl;
 	int x,y,z;
-	int k;
+	int k=0;
 	switch(gradients) {
-		case 1:  
+		case 1:
 			if (fjc==1) {
-				X[0]=X[BX1]; 
+				X[0]=X[BX1];
 				X[MX+1]=X[BXM];
 			} else {
 				for (k=0; k<fjc; k++) {
 					X[(fjc-1)-k]=X[B_X1[k]];
 					X[MX+fjc+k]=X[B_XM[k]];
-				} 
+				}
 			}
 			break;
 		case 2:
@@ -1723,20 +1733,69 @@ if (debug) cout <<"set_bounds in lattice " << endl;
 					X[0+y] = X[BX1*JX+y];
 					X[(MX+1)*JX+y]=X[BXM*JX+y];
 				}
+				//corners
+				for (x=0; x<1; x++) {
+					X[x*JX+0] = X[x*JX+1];
+					X[x*JX+MY+1]=X[x*JX+MY];
+				}
+				for (x=MX+1; x<MX+2; x++) {
+					X[x*JX+0] = X[x*JX+1];
+					X[x*JX+MY+1]=X[x*JX+MY];
+				}
 			} else {
-				for (x=fjc; x<MX+fjc; x++) {
-					for (k=0; k<fjc; k++) X[x*JX+(fjc-1)-k] = X[x*JX+B_Y1[k]];
-					for (k=0; k<fjc; k++) X[x*JX+MY+fjc+k]=X[x*JX+B_YM[k]];
+				for (x=1; x<MX+1; x++) {
+					for (k=0; k<fjc; k++) {
+						//if (P(x,-k)<0 || P(x,-k)>M) cout << "P(x,-k) =" << P(x,-k) << endl;
+						//if (P(x,1+k)<0 || P(x,1+k)>M) cout << "P(x,1+k) =" << P(x,1+k) << endl;
+						X[P(x,-k)] = X[P(x,1+k)];
+					}
+					for (k=0; k<fjc; k++) {
+						//if (P(x,MY+k)<0 || P(x,MY+k)>M) cout << "P(x,MY+k) =" << P(x,MY+k) << endl;
+						//if (P(x,MY+1-k)<0 || P(x,MY+1-k)>M) cout << "P(x,MY+1-k) =" << P(x,MY+1-k) << endl;
+						X[P(x,MY+1+k)]=X[P(x,MY-k)];
+					}
 				}
-				for (y=fjc; y<MY+fjc; y++) {
-					for (k=0; k<fjc; k++) X[(fjc-1-k)*JX +y*JY] = X[B_X1[k]*JX+y*JY];
-					for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY]=X[B_XM[k]*JX+y*JY];
+				for (y=1; y<MY+1; y++) {
+					for (k=0; k<fjc; k++) {
+						//if (P(-k,y)<0 || P(-k,y)>M) cout << "P(-k,y) =" << P(-k,y) << endl;
+						//if (P(1+k,y)<0 || P(1+k,y)>M) cout << "P(1+k,y) =" << P(1+k,y) << endl;
+						X[P(-k,y)] = X[P(1+k,y)];
+					}
+					for (k=0; k<fjc; k++) {
+						//if (P(MX+1+k,y)<0 || P(MX+1+k,y)>M) cout << "P(MX+1+k,y) =" << P(MX+1+k,y) << endl;
+						//if (P(MX-k,y)<0 || P(MX-k,y)>M) cout << "P(MX-k,y) =" << P(MX-k,y) << endl;
+						X[P(MX+1+k,y)]=X[P(MX-k,y)];
+					}
 				}
-
+				//corners
+				for (x=1-fjc; x<1; x++) {
+					for (k=0; k<fjc; k++) {
+						//if (P(x,-k)<0 || P(x,-k)>M) cout << "1. P(x,-k) =" << P(x,-k) << "x" << x << "k" << k << endl;//
+						//if (P(x,1+k)<0 || P(x,1+k)>M) cout << "P(x,1+k) =" << P(x,1+k) << endl;
+						X[P(x,-k)] = X[P(x,1+k)];
+					}
+					for (k=0; k<fjc; k++) {
+						//if (P(x,MY+1+k)<0 || P(x,MY+1+k)>M) cout << "P(x,MY+1+k) =" << P(x,MY+1+k) << endl;
+						//if (P(x,MY-k)<0 || P(x,MY-k)>M) cout << "P(x,MY-k) =" << P(x,MY-k) << endl;
+						X[P(x,MY+1+k)]=X[P(x,MY-k)];
+					}
+				}
+				for (x=MX+1; x<MX+1+fjc; x++) {
+					for (k=0; k<fjc; k++) {
+						//if (P(x,-k)<0 || P(x,-k)>M) cout << "2. P(x,-k) =" << P(x,-k) << endl;
+						//if (P(x,1+k)<0 || P(x,1+k)>M) cout << "P(x,1+k) =" << P(x,1+k) << endl;
+						X[P(x,-k)] = X[P(x,1+k)];
+					}
+					for (k=0; k<fjc; k++) {
+						//if (P(x,MY+1+k)<0 || P(x,MY+1+k)>M) cout << "P(x,MY+1+k)) =" << P(x,MY+1+k) << endl;
+						//if (P(x,MY-k)<0 || P(x,MY-k)>M) cout << "P(x,MY-k) =" << P(x,MY-k) << endl;
+						X[P(x,MY+1+k)]=X[P(x,MY-k)];
+					}
+				}
 			}
 			break;
 		case 3:
-			if (sub_box_on!=0) { 
+			if (sub_box_on!=0) {
 				int k=sub_box_on;
 				for (int i=0; i<n_box[k]; i++)
 					SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
@@ -1753,7 +1812,7 @@ if (debug) cout <<"set_bounds in lattice " << endl;
 					for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
 						for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
 						for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
-					}					
+					}
 				}
 			break;
 		default:
@@ -2118,7 +2177,7 @@ if (debug) cout <<"ReadRangeFile in lattice " << endl;
 				} else {
 					i=0; p_i=0;
 					for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++)  {
-						if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=x*JX+fjc-1+y; p_i++;}
+						if (In[0]->Get_int(lines[i],0)==1) {H_p[p_i]=P(x,y); p_i++;}
 						i++;
 					}
 				}
@@ -2138,7 +2197,8 @@ if (debug) cout <<"ReadRangeFile in lattice " << endl;
 							py=In[0]->Get_int(xyz[1],0);
 							if (py < 1 || py > MY) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the y-coordinate in "+range_type+"_filename out of bounds: 1.." << MY << endl; success =false;}
 						}
-						H_p[i]=px*JX+fjc-1+py;
+						cout <<"reading px " << px << " and py " << py << endl;
+						H_p[i]=P(px,py);
 						i++;
 					}
 				}
@@ -2193,73 +2253,73 @@ if (debug) cout <<"ReadRangeFile in lattice " << endl;
 bool Lattice::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, string filename) {
 	bool success=true;
 	bool readfile=false;
-	int length=0; 
-	int length_px = px.size(); 
+	int length=0;
+	int length_px = px.size();
 
 	vector<string> lines;
-	int p; 
+	int p;
 	if (px.size()==0) {
-		readfile=true; 
+		readfile=true;
 		string content;
 		success=In[0]->ReadFile(filename,content);
 		if (success) {
-			In[0]->split(content,'#',lines);	
+			In[0]->split(content,'#',lines);
 			length = lines.size();
 		}
 	}
 	switch (gradients) {
 		case 1:
 			if (readfile) {
-				if (MX!=length) {success=false; cout <<"inputfile for filling delta_range has not expected length in x-direction" << endl; 
+				if (MX!=length) {success=false; cout <<"inputfile for filling delta_range has not expected length in x-direction" << endl;
 				} else {
-					for (int x=1; x<MX+1; x++) Mask[x]=In[0]->Get_int(lines[x],-1);  
+					for (int x=1; x<MX+1; x++) Mask[x]=In[0]->Get_int(lines[x],-1);
 				}
 			} else  {
 				for (int i=0; i<length_px; i++) {
-					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; } 
+					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; }
 					else Mask[fjc-1+px[i]]=1;
 				}
-			} 
+			}
 			break;
-		case 2: 
+		case 2:
 			if (readfile) {
-				if (MX*MY!=length) {success=false; cout <<"inputfile for filling delta_range has not expected length in x,y-directions" << endl; 
+				if (MX*MY!=length) {success=false; cout <<"inputfile for filling delta_range has not expected length in x,y-directions" << endl;
 				} else {
 					for (int x=1; x<MX+1; x++)
-					for (int y=1; y<MY+1; y++) Mask[x*JX + y]=In[0]->Get_int(lines[x*JX+y],-1); 
+					for (int y=1; y<MY+1; y++) Mask[x*JX + y]=In[0]->Get_int(lines[x*JX+y],-1);
 				}
 			} else  {
 				for (int i=0; i<length_px; i++) {
-					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; } 
+					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; }
 					p=py[i]; if (p<1 || p>MY) {success=false; cout<<" y-value in delta_range out of bounds; " << endl; }
-					if (success) Mask[px[i]*JX + fjc-1+ py[i]]=1;
+					if (success) Mask[P(px[i],py[i])]=1; //Mask[px[i]*JX + fjc-1+ py[i]]=1;
 				}
 			}
 
 			break;
-		case 3: 
+		case 3:
 			if (readfile) {
 				if (MX*MY*MZ!=length) {
-					success=false; cout <<"inputfile for filling delta_range has not expected length in x,y,z-directions" << endl; 
+					success=false; cout <<"inputfile for filling delta_range has not expected length in x,y,z-directions" << endl;
 				} else {
 					for (int x=1; x<MX+1; x++)
-					for (int y=1; y<MY+1; y++) 	
-					for (int z=1; z<MZ+1; z++) Mask[x*JX + y*JY + z]=In[0]->Get_int(lines[x*JX + y*JY + z],-1); 
+					for (int y=1; y<MY+1; y++)
+					for (int z=1; z<MZ+1; z++) Mask[x*JX + y*JY + z]=In[0]->Get_int(lines[x*JX + y*JY + z],-1);
 				}
 			} else  {
 				for (int i=0; i<length_px; i++) {
-					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; } 
+					p=px[i]; if (p<1 || p>MX) {success=false; cout<<" x-value in delta_range out of bounds; " << endl; }
 					p=py[i]; if (p<1 || p>MY) {success=false; cout<<" y-value in delta_range out of bounds; " << endl; }
 					p=pz[i]; if (p<1 || p>MZ) {success=false; cout<<" z-value in delta_range out of bounds; " << endl; }
 					if (success) Mask[px[i]*JX + py[i]*JY + fjc-1+ pz[i]]=1;
 				}
 			}
 			break;
-		default: 
+		default:
 			break;
 	}
 	for (int i=0; i<M; i++) if (!(Mask[i]==0 || Mask[i]==1)) {success =false; cout <<"Delta_range does not contain '0' or '1' values. Check delta_inputfile values"<<endl; }
-	return success; 
+	return success;
 }
 
 bool Lattice::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {
@@ -2274,8 +2334,11 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 			break;
 			case 2:
 				for (int x=r[0]; x<r[3]+1; x++)
-				for (int y=r[1]; y<r[4]+1; y++)
-						H_MASK[x*JX+fjc-1+y]=1;
+				for (int y=r[1]; y<r[4]+1; y++){
+						H_MASK[P(x,y)]=1;
+						cout <<"mask for x: " << x << " y: " << y << " : " << P(x,y) << endl;
+					}
+						//H_MASK[x*JX+fjc-1+y]=1;
 			break;
 			case 3:
 				for (int x=r[0]; x<r[3]+1; x++)
@@ -2299,7 +2362,7 @@ if (debug) cout <<"GenerateGuess in lattice " << endl;
 //CalculationType: micro_emulsion,micro_phasesegregation
 	bool success = true;
 	int i,j,k;
-	if (fjc>1) cout <<"GenerateGuess is not yet prepared to work for FJC-choices > 3 " << endl; 
+	if (fjc>1) cout <<"GenerateGuess is not yet prepared to work for FJC-choices > 3 " << endl;
 	switch (gradients) {
 		case 1:
 			if (GuessType=="lamellae") {
@@ -2351,7 +2414,7 @@ bool Lattice::GuessVar(Real* x, Real theta,string GuessType, Real A_value, Real 
 if (debug) cout << "GuessVar in Lattice " << endl;
 	bool success = true;
 	int i;
-	if (fjc>1) cout <<"GuessVar is not yet prepared to work for FJC-choices > 3 " << endl; 
+	if (fjc>1) cout <<"GuessVar is not yet prepared to work for FJC-choices > 3 " << endl;
 	int height = theta/1;
 	switch (gradients) {
 		case 1:
@@ -2410,7 +2473,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 	string s_charge;
 	int num_1,num_2;
 	string name;
- 	if (fjc>1) cout <<"ReadGuess is not  yet prepared for working with FJC-choices > 3 " << endl; 
+ 	if (fjc>1) cout <<"ReadGuess is not  yet prepared for working with FJC-choices > 3 " << endl;
 	in_file.open(filename.c_str());
 	if (in_file.is_open()) {
 		while (in_file && readx>-1) {
@@ -2454,7 +2517,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 bool Lattice::StoreGuess(string Filename,Real *x,string method, vector<string> monlist,vector<string>statelist, bool charged, int start) {
 if (debug) cout <<"StoreGuess in output" << endl;
 	bool success=true;
- 	if (fjc>1) cout <<"StoreGuess is not  yet prepared for working with FJC-choices > 3 " << endl; 
+ 	if (fjc>1) cout <<"StoreGuess is not  yet prepared for working with FJC-choices > 3 " << endl;
 	string s;
 	int mon_length = monlist.size();
 	int state_length = statelist.size();
@@ -2495,10 +2558,10 @@ if (debug) cout <<"StoreGuess in output" << endl;
 void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_BT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
 	set_bounds(psi);
-	Zero(EE,M); 
+	Zero(EE,M);
 	Real Exmin,Explus,Eymin,Eyplus;
-	int x,y,z; 
-	int r; 
+	int x,y,z;
+	int r;
 
 	switch (gradients) {
 		case 1:
@@ -2506,12 +2569,12 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 				pf =pf/2.0*fjc*fjc;
 				Explus=psi[fjc-1]-psi[fjc]; //van Male approach.
 				Explus *=Explus;
-				
-				for (x=fjc; x<MX+fjc; x++) {	 
+
+				for (x=fjc; x<MX+fjc; x++) {
 					Exmin=Explus;
 					Explus=psi[x]-psi[x+1];
 					Explus *=Explus;
-					EE[x]=pf*(Exmin+Explus);			
+					EE[x]=pf*(Exmin+Explus);
 				}
 			}
 			if (geometry=="cylindrical" ) {
@@ -2534,7 +2597,7 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 					r++;
 					Explus = psi[fjc+1]-psi[fjc+2];
 					Explus *=(r+0.5)*Explus;
-					EE[fjc+1]=pf*Explus/L[fjc+1]; 
+					EE[fjc+1]=pf*Explus/L[fjc+1];
 					x=fjc+2;
 				} else {
 					Explus=psi[fjc]-psi[fjc+1];
@@ -2543,14 +2606,14 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 				}
 
 				for (; x<MX+fjc; x++) {
-					r +=1.0;  
+					r +=1.0;
 					Exmin=Explus;
 					Explus=(psi[x]-psi[x+1]);
 					Explus *= (r+0.5)*Explus;
 					EE[x]=pf*(Exmin+Explus)/L[x];
 				}
 */
- 
+
 			}
 			if (geometry=="spherical" ) {
 				pf=pf*PIE*2/fjc;
@@ -2559,7 +2622,7 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 				Explus *=Explus;
 				EE[fjc]=pf*Explus/(L[fjc]);
 				for (x=fjc+1; x<MX+fjc; x++) {
-					r +=1.0;  
+					r +=1.0;
 					Exmin=Explus;
 					Explus=r*(psi[x]-psi[x+1]);
 					Explus *=Explus;
@@ -2603,7 +2666,7 @@ void Lattice::UpdateEE(Real* EE, Real* psi, Real* E) {
 						EE[z]=pf*((Exmin+Explus)/L[z]+Eymin+Eyplus);
 					}
 				}
-	
+
 			}
 			break;
 		case 3:
@@ -2642,9 +2705,9 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 
 #ifndef CUDA
 	Real epsZplus, epsZmin;
-#endif	
+#endif
 	Real a,b,c,a_,b_,c_;
-	Real r; 
+	Real r;
 	Real epsXplus, epsXmin, epsYplus,epsYmin;
 	set_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
@@ -2661,7 +2724,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 					epsXmin=epsXplus;
 					epsXplus=eps[x]+eps[x+1];
 					a=b; b=c; c=psi[x+1];
-					X[x]=(epsXmin*a  +C*q[x] + epsXplus*c)/(epsXmin+epsXplus); 
+					X[x]=(epsXmin*a  +C*q[x] + epsXplus*c)/(epsXmin+epsXplus);
 				 }
 			}
 			if (geometry=="cylindrical") {
@@ -2671,10 +2734,10 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 				a=0; b=psi[fjc-1]; c=psi[fjc];
 				for (x=fjc; x<MX+fjc; x++) {
 					r++;
-					epsXmin=epsXplus; 
+					epsXmin=epsXplus;
 					epsXplus=r*(eps[x]+eps[x+1]);
 					a=b; b=c; c=psi[x+1];
-					X[x]=(epsXmin*a + C*q[x]*L[x] + epsXplus*c)/(epsXmin+epsXplus); 
+					X[x]=(epsXmin*a + C*q[x]*L[x] + epsXplus*c)/(epsXmin+epsXplus);
 				 }
 			}
 			if (geometry=="spherical") {
@@ -2683,11 +2746,11 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 				epsXplus=r*r*(eps[fjc-1]+eps[fjc]);
 				a=0; b=psi[fjc-1]; c=psi[fjc];
 				for (x=fjc; x<MX+fjc; x++) {
-					epsXmin=epsXplus; 
+					epsXmin=epsXplus;
 					r++;
 					epsXplus=r*r*(eps[x]+eps[x+1]);
 					a=b; b=c; c=psi[x+1];
-					X[x]=(epsXmin*a + C*q[x]*L[x] + epsXplus*c)/(epsXmin+epsXplus); 
+					X[x]=(epsXmin*a + C*q[x]*L[x] + epsXplus*c)/(epsXmin+epsXplus);
 				 }
 			}
 			//Cp(psi,X,M);
@@ -2727,12 +2790,12 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 			//Cp(psi,X,M);
 			YisAminB(g,g,X,M);
 			break;
-		case 3: 
+		case 3:
 #ifdef CUDA
-			C *=6; 
+			C *=6;
 			Cp(X,psi,M);
 			UpPsi(g+JX+JY+1,psi+JX+JY+1,X+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1));
-			if (fjc==2) cout << "in GPU FJC-choices > 3 not implemented yet " << endl; 
+			if (fjc==2) cout << "in GPU FJC-choices > 3 not implemented yet " << endl;
 #else
 
 			for (x=1; x<MX+1; x++) {
@@ -2777,13 +2840,13 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 
 
 /*
-			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) { 
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) {
 				X[x*JX+y*JY+z]=(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
 						 +psi[x*JX+(y-1)*JY+z]+psi[x*JX+(y+1)*JY+z]
 					        +psi[x*JX+y*JY+z-1]  +psi[x*JX+y*JY+z+1])/6.0
 					          +q[x*JX+y*JY+z]*C/eps[x*JX+y*JY+z]/3.0;
 			}
-	
+
 			if (grad_epsilon) for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++){
 				X[x*JX+y*JY+z]+=0.25*(eps[(x+1)*JX+y*JY+z]-eps[(x-1)*JX+y*JY+z])*(psi[(x+1)*JX+y*JY+z]-psi[(x-1)*JX+y*JY+z]+
                                                     eps[x*JX+(y+1)*JY+z]-eps[x*JX+(y-1)*JY+z])*(psi[x*JX+(y+1)*JY+z]-psi[x*JX+(y-1)*JY+z]+
@@ -2793,7 +2856,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 			Cp(psi,X,M);
 			YisAminB(g,g,psi,M);
 */
-		
+
 #endif
 			break;
 		default:
@@ -2803,11 +2866,11 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 	switch (gradients) {
 		case 1:
 			a=0; b=psi[fjc-1]; c=psi[fjc];
-			for (x=fjc; x<MX+fjc; x++) { 
+			for (x=fjc; x<MX+fjc; x++) {
 				a=b; b=c; c=psi[x+1];
-				if (Mask[x] == 0) psi[x]=0.5*(a+c)+q[x]*C/eps[x]; 
+				if (Mask[x] == 0) psi[x]=0.5*(a+c)+q[x]*C/eps[x];
 			}
-	
+
 			if (geometry=="cylindrical") {
 				a=0; b=psi[fjc-1]; c=psi[fjc];
 				for (x=fjc; x<MX+fjc; x++) {
@@ -2828,11 +2891,11 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 					a=b; b=c; c=psi[x+1]; a_=b_; b_=c_; c_=eps[x+1];
 					if (Mask[x] == 0) {
 						psi[x]+=0.25*(c_-a_)*(c-a)/eps[x]*fjc*fjc;
-						
+
 					}
 				}
 			}
-			for (x=fjc; x<MX+fjc; x++) 
+			for (x=fjc; x<MX+fjc; x++)
 			if (Mask[x] == 0) {
 				g[x]-=psi[x];
 			}
@@ -2846,7 +2909,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 							 +0.5*q[x*JX+y]*C/eps[x*JX+y];
 				}
 			}
-	
+
 			if (geometry=="cylindrical") { //radial geometry in x no radial geometry in y
 				for (x=fjc; x<MX+fjc; x++) {
 					for (y=fjc; y<MY+fjc; y++){
@@ -2862,7 +2925,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 							X[x*JX+y]+=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
                                               		   	   eps[x*JX+y+1]  -eps[x*JX+y-1])  *(psi[x*JX+y+1]  -psi[x*JX+y-1])/
 					           		   	   eps[x*JX+y]*fjc*fjc;
-						}	
+						}
 					}
 				}
 			}
@@ -2872,9 +2935,9 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 				g[x*JX+y]-=psi[x*JX+y];
 			}
 			break;
-		case 3: 
+		case 3:
 #ifdef CUDA
-			C *=6; 
+			C *=6;
 			Cp(X,psi,M);
 			UpPsi(g+JX+JY+1,psi+JX+JY+1,X+JX+JY+1,eps+JX+JY+1,JX,JY,C,Mask+JX+JY+1,M-2*(JX+JY+1));
 #else
@@ -2924,14 +2987,14 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 
 /*  in lattice refinement this part is appartently not working. previous lines is for previous version...
 
-			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) { 
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) {
 				if (Mask[x*JX+y*JY+z] == 0)
 				X[x*JX+y*JY+z]=(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
 						 +psi[x*JX+(y-1)*JY+z]+psi[x*JX+(y+1)*JY+z]
 					        +psi[x*JX+y*JY+z-1]  +psi[x*JX+y*JY+z+1])/6.0
 					          +q[x*JX+y*JY+z]*C/eps[x*JX+y*JY+z]/3.0;
 			}
-	
+
 			if (grad_epsilon) for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++){
 				if (Mask[x*JX+y*JY+z] == 0)
 				X[x*JX+y*JY+z]+=0.25*(eps[(x+1)*JX+y*JY+z]-eps[(x-1)*JX+y*JY+z])*(psi[(x+1)*JX+y*JY+z]-psi[(x-1)*JX+y*JY+z]+
@@ -2945,7 +3008,7 @@ void Lattice::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool 
 				g[x*JX+y*JY+z]-=psi[x*JX+y*JY+z];
 			}
 */
-		
+
 #endif
 			break;
 		default:
@@ -2971,9 +3034,9 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool gra
 			a=0; b=psi[fjc-1]; c=psi[fjc];
 			for (x=fjc; x<MX+fjc; x++) { //for all geometries
 				a=b; b=c; c=psi[x+1];
-				if (Mask[x] == 1) q[x] = -0.5*(a-2*b+c)*fjc*fjc*eps[x]/C; 
+				if (Mask[x] == 1) q[x] = -0.5*(a-2*b+c)*fjc*fjc*eps[x]/C;
 			}
-	
+
 			if (geometry=="cylindrical") {
 				a=0; b=psi[fjc-1]; c=psi[fjc];
 				for (x=fjc; x<MX+fjc; x++) {
@@ -2995,12 +3058,12 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool gra
 					if (Mask[x] == 1) q[x]-=0.25*(c_-a_)*(c-a)*fjc*fjc/C;
 				}
 			}
-			for (x=fjc; x<MX+fjc; x++) 
+			for (x=fjc; x<MX+fjc; x++)
 			if (Mask[x] == 1) {
 				g[x]=-q[x];
-			}			
+			}
 			break;
-		case 2:	
+		case 2:
 			for (x=fjc; x<MX+fjc; x++) {
 				for (y=fjc; y<MY+fjc; y++){ //for all geometries
 					if (Mask[x*JX+y] == 1)
@@ -3009,7 +3072,7 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool gra
 							 -4*psi[x*JX+y])*fjc*fjc*eps[x*JX+y]/C;
 				}
 			}
-	
+
 			if (geometry=="cylindrical") { //radial geometry in x no radial geometry in y
 				for (x=fjc; x<MX+fjc; x++) {
 					for (y=fjc; y<MY+fjc; y++){
@@ -3032,9 +3095,9 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool gra
 				g[x*JX+y]=-q[x*JX+y];
 			}
 			break;
-		case 3: 
+		case 3:
 #ifdef CUDA
-			C *=6; 
+			C *=6;
 			Cp(X,psi,M);
 		UpQ(g + JX + JY + 1, q + JX + JY + 1, psi + JX + JY + 1, eps + JX + JY + 1, JX, JY, C, Mask + JX + JY + 1, M - 2 * (JX + JY + 1));
 #else
@@ -3063,14 +3126,14 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool gra
 
 /* in lattice refinement charge in 3d not working trying to restore....
 
-			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) { 
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++) {
 				if (Mask[x*JX+y*JY+z] == 1)
 				q[x*JX+y*JY+z]=-0.5*(psi[(x-1)*JX+y*JY+z]+psi[(x+1)*JX+y*JY+z]
 						 +psi[x*JX+(y-1)*JY+z]+psi[x*JX+(y+1)*JY+z]
 					        +psi[x*JX+y*JY+z-1]  +psi[x*JX+y*JY+z+1]
 					          -6.0*q[x*JX+y*JY+z])*fjc*fjc*eps[x*JX+y*JY+z]/C;
 			}
-	
+
 			if (grad_epsilon) for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)  for (z=fjc; z<MZ+fjc; z++){
 				if (Mask[x*JX+y*JY+z] == 1)
 				q[x*JX+y*JY+z]-=0.25*(eps[(x+1)*JX+y*JY+z]-eps[(x-1)*JX+y*JY+z])*(psi[(x+1)*JX+y*JY+z]-psi[(x-1)*JX+y*JY+z]+
@@ -3082,7 +3145,7 @@ void Lattice::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool gra
 				g[x*JX+y*JY+z]=-q[x*JX+y*JY+z];
 			}
 */
-		
+
 #endif
 			break;
 		default:

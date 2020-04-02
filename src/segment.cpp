@@ -20,6 +20,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("fluctuation_potentials");
 	KEYS.push_back("fluctuation_amplitude");
 	Amplitude=0;
+	ns=1;
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -80,7 +81,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	phi_state=(Real*)AllOnDev(M*ns); Zero(phi_state,M*ns);
 	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
-	u_ext=(Real*)AllOnDev(M); Zero(u_ext,M); 
+	u_ext=(Real*)AllOnDev(M); Zero(u_ext,M);
 	phi_side=(Real*)AllOnDev(ns*M); Zero(phi_side,ns*M);
 	alpha=(Real*)AllOnDev(ns*M); Zero(alpha,ns*M);
 #else
@@ -88,7 +89,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	MASK=H_MASK;
 	phi =H_phi;
 	u = H_u;
-	u_ext=H_u_ext; Zero(u_ext,M);  
+	u_ext=H_u_ext; Zero(u_ext,M);
 	KEYS.push_back("fluctuation_coordinates");
 	phi_state = H_phi_state;
 	alpha=H_alpha;
@@ -101,7 +102,6 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 
 bool Segment::PrepareForCalculations(int* KSAM, bool first_time) {
 if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
-
 	int M=Lat[0]->M;
 #ifdef CUDA
 	if (In[0]->MesodynList.empty() or prepared == false) {
@@ -123,7 +123,6 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 		Cp(phi,MASK,M);
 	} else Zero(phi,M);
 
-
 	if (freedom=="tagged" || freedom=="clamp" ) Zero(u,M); //no internal states for these segments.
 
 	if (ns==1) {
@@ -144,7 +143,6 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	if (freedom=="tagged") {Cp(G1,MASK,M);
 	}
 	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);
-
 	if (GetValue("fluctuation_potentials").size()>0&& first_time) {
 		string s = GetValue("fluctuation_potentials");
 		vector<string> sub;
@@ -156,8 +154,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 			int JX=Lat[0]->JX;
 			int MY=Lat[0]->MY;
 			int JY=Lat[0]->JY;
-			int M=Lat[0]->M;
-			
+			//int M=Lat[0]->M;
 			if (first_time){
 				if (sub[2] == "z") {
 					int MZ=Lat[0]->MZ;
@@ -179,7 +176,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 					int mz=In[0]->Get_int(sub[2],0);
 					if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
 					if (success) {
-					cout <<"fluctutions set " << Amplitude << endl; 
+					cout <<"fluctutions set " << Amplitude << endl;
 						Real shift_x,shift_y;
 						for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
 						for (int lambda_y=2; lambda_y <=MY; lambda_y*=2){
@@ -196,7 +193,6 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 	}
 //for (int kkk=0; kkk<M; kkk++) if (u_ext[kkk] !=0) cout <<"at " << kkk << " : " << u_ext[kkk] << endl;
-
 	return success;
 }
 
@@ -206,6 +202,7 @@ if (debug) cout <<"PutAdsorptionGuess" + name << endl;
 	Real lambda;
 	if (Lat[0]->lattice_type=="hexagonal") lambda=0.25; else lambda=1.0/6.0;
 	int gradients=Lat[0]->gradients;
+	int M=Lat[0]->M;
 	int MX=Lat[0]->MX;
 	int MY=Lat[0]->MY;
 	int MZ=Lat[0]->MZ;
@@ -230,9 +227,60 @@ if (debug) cout <<"PutAdsorptionGuess" + name << endl;
 		default:
 			break;
 	}
-
+	Boltzmann(G1,u,M);
 	return success;
 }
+
+bool Segment::PutTorusPotential(int sign) {
+if (!debug) cout <<"PutTorusPotential" + name << endl;
+	bool success=true;
+	Real distance=0;
+	int count=0;
+	Real L=0;
+	int M=Lat[0]->M;
+	int MX=Lat[0]->MX;
+	int MY=Lat[0]->MY;
+	int JX=Lat[0]->JX;
+	int R_offset=Lat[0]->offset_first_layer;
+	Real R_center = R_offset + MX/2.0;
+	Real R=R_center/sqrt(2.0);
+	if (R<MX/2.0) {
+		for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++) {
+	 		distance = sqrt((MX/2.0 -x)*(MX/2.0-x) + y*y);
+			if ((distance-R)*(distance-R)<4) {
+				u[x*JX+y]=-log(2)*sign; count++;
+				//cout << "at x " << x << "and y " << y << "potential is set" << endl;
+			}
+		}
+		int ylast=0;
+		int xlow=0,xhigh=0;
+		for (int y=1; y<MY+1; y++) {
+			bool neg_found=false;
+			bool pos_found=false;
+			for (int x=1; x<MX+1; x++) {
+				distance = sqrt((MX/2.0 -x)*(MX/2.0-x) + y*y);
+				if (!neg_found && (distance-R<0)) {
+					xlow = x; ylast=y;
+					neg_found=true; L+=Lat[0]->L[x*JX+y];
+					//cout <<"x " << x << "y " << y << endl;
+				}
+				if (neg_found && !pos_found && (distance-R)>0) {
+					xhigh=x; ylast=y;
+					pos_found=true; L+=Lat[0]->L[x*JX+y];
+					//cout <<"x " << x << "y " << y << endl;
+				}
+			}
+		}
+		for (int x=xlow+1; x<xhigh; x++) L+=Lat[0]->L[x*JX+ylast];
+		if (sign>0) cout << "Measured area is " << L << endl;
+		cout << "For segment " << name << ", 'torus potentials' set at " << count << "coordinates" << endl;
+		Boltzmann(G1,u,M);
+	} else {
+		success=false; cout <<" Probably the 'offset_first_layer' is too large so that the torus does not fit into the system.... Inital guess for torus is failing...."<<endl;
+	}
+	return success;
+}
+
 
 void Segment::SetPhiSide(){
 if (debug) cout <<"SetPhiSide in Segment " + name << endl;

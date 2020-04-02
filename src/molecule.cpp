@@ -6,7 +6,7 @@ Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg
 if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("freedom");
 	KEYS.push_back("composition");
-	KEYS.push_back("theta"); 
+	KEYS.push_back("theta");
 	KEYS.push_back("phibulk");
 	KEYS.push_back("n");
 	KEYS.push_back("save_memory");
@@ -250,7 +250,7 @@ int M=Lat[0]->M;
 	for (int i=0; i<length_al; i++) Al[i]->PrepareForCalculations();
 	bool success=true;
 	Zero(phitot,M);
-	
+
 	//int length = MolMonList.size();
 	//int i=0;
 	//while (i<length) {
@@ -285,8 +285,8 @@ int M=Lat[0]->M;
 		n = n_box;
 		theta=n_box*chainlength;
 	}
-		
-	
+
+
 	return success;
 }
 
@@ -294,7 +294,7 @@ bool Molecule::CheckInput(int start_) {
 if (debug) cout <<"Molecule:: CheckInput" << endl;
 start=start_;
 phibulk=0;
-n=0; 
+n=0;
 theta=0;
 norm=0;
 var_al_nr=-1;
@@ -316,7 +316,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				// Throw - catch for safety. Thrown by Interpret() and Decomposition() itself;
 			if (!Decomposition(GetValue("composition")))
 				// This error message is not even displayed.
-				{cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;} 
+				{cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;}
 			} catch (const char* error) {
 				cerr << error << endl;
 				success = false;
@@ -499,7 +499,7 @@ if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 				success=false;
 				cout <<"In var: searching for theta to balance membrane can only be done for a molecule with 'freedom' restricted" << endl;
 			}
-		}		
+		}
 
 		if (Var_search_value == -1) {
 			cout <<"In var: searching value for molecule was not recognized. Choose from {theta, n, phibulk, equate_to_solvent}. " << endl;
@@ -721,7 +721,7 @@ if (debug) cout <<"Molecule:: GetError" << endl;
 
 	if (Var_search_value==3||Var_search_value==4) {
 		Error=theta;
-		cout<<"Get Error in mol " + name + "unexpectedly called. Shouldn't sys[0]->GetError be called? Returning the value for theta " << endl; 
+		cout<<"Get Error in mol " + name + "unexpectedly called. Shouldn't sys[0]->GetError be called? Returning the value for theta " << endl;
 	}
 	return Error;
 }
@@ -852,6 +852,7 @@ if (debug) cout <<"Molecule:: ExpandAlias" << endl;
 bool Molecule::ExpandBrackets(string &s) {
 if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 	bool success=true;
+	if (s[0] != '(') {cout <<"illegal composition: " << s << endl; return false;}
 	vector<int> open;
 	vector<int> close;
 	bool done=false; //now interpreted the (expanded) composition
@@ -1021,11 +1022,8 @@ if (debug) cout <<"Molecule:: GenerateDend" << endl;
 return true;
 }
 
-
-
 bool Molecule::Decomposition(string s){
 if (debug) cout <<"Decomposition for Mol " + name << endl;
-
 	bool success = true;
 	bool aliases = true;
 	MolType=linear;//default;
@@ -1034,6 +1032,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	vector<int> open;
 	vector<int> close;
 	vector<string>sub;
+
 	sub.clear();
 	In[0]->split(s,'@',sub);
 
@@ -1041,6 +1040,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		bool keyfound=false;
 		vector<string>SUB;
 		In[0]->split(sub[1],'(',SUB);
+
 		if (SUB[0]=="dend") {
 			MolType=dendrimer; keyfound=true;
 			s=s.substr(6,s.length()-7);
@@ -1101,7 +1101,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			if (!ExpandBrackets(s)) success=false;
 		break;
 	}
-
 	if (!In[0]->EvenSquareBrackets(s,open,close)) {
 		// Another success bool that doesn't travel down the stack.
 		// The error message drowns in the rest of the output really quickly, throwing for safety instead.
@@ -1110,7 +1109,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		success=false;
 		throw "Composition error";
 	}
-
 	if (open.size()>0) {
 		if (MolType==linear) { //overwrite default.
 			MolType=branched;
@@ -1131,7 +1129,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	int length_g,length_dd,mnr,nn,arm=-1,degeneracy=1,arms=0;
 	string segname;
 	int N=0;
-
 	switch(MolType) {
 		case linear:
 			first_s.push_back(-1);
@@ -1157,7 +1154,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			n_arm.clear();
 			mon_nr.clear();
 			n_mon.clear();
-			cout <<" s is " << s << endl;
 			In[0]->split(s,';',sub_gen);
 			n_generations=sub_gen.size();
 			sym_dend=true; //default.
@@ -1664,13 +1660,13 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	int M=Lat[0]->M;
 	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
 	if (id !=0) {
-		for (size_t i=0; i<MolMonList.size(); i++) 
+		for (size_t i=0; i<MolMonList.size(); i++)
 		if (id==1) {
-			Times(Seg[MolMonList[i]]->G1,Seg[MolMonList[i]]->G1,BETA,M); 
+			Times(Seg[MolMonList[i]]->G1,Seg[MolMonList[i]]->G1,BETA,M);
 		} else {
 			Div(Seg[MolMonList[i]]->G1,BETA,M);
 		}
-	}	
+	}
 
 	switch (MolType) {
 		case monomer:
@@ -1696,7 +1692,7 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	}
 
 	if (id !=0) {
-		int molmonlistlength=MolMonList.size(); 
+		int molmonlistlength=MolMonList.size();
 
 		for (int i=0; i<molmonlistlength; i++) {
 			if (id==1) {
@@ -1706,7 +1702,7 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 				Times(phi+i*M,phi+i*M,BETA,M);
 				Times(Seg[MolMonList[i]]->G1,Seg[MolMonList[i]]->G1,BETA,M);
 			}
-			
+
 		}
 
 	}
@@ -1854,7 +1850,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			} else {
 				Cp(Gg_b+(s%2)*M,G1,M);
 			}
- 
+
 			AddTimes(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
 
 			if (compute_phi_alias) {
@@ -1923,7 +1919,7 @@ bool Molecule::ComputeClampLin(){
 
 void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU
 	int b0 = first_b[generation];
-	int bN = last_b[generation]; 
+	int bN = last_b[generation];
 	vector<int> Br;
 	vector<Real*> Gb;
 	int M=Lat[0]->M;
@@ -1937,7 +1933,7 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 				while (Gnr[k] != generation){
 					Br.push_back(Gnr[k]);
 					if (save_memory) {
-						Gb.push_back(Gg_f+last_stored[k]*M); 
+						Gb.push_back(Gg_f+last_stored[k]*M);
 					} else {
 						Gb.push_back(Gg_f+last_s[Gnr[k]]*M);
 					}
@@ -1947,7 +1943,7 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 				}
 				Br.push_back(generation); ss--;
 				if (save_memory) {
-					Gb.push_back(Gg_f+last_stored[k]*M); 
+					Gb.push_back(Gg_f+last_stored[k]*M);
 				} else {
 					Gb.push_back(Gg_f+ss*M);
 				}
@@ -1972,7 +1968,7 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 				}
 				free(GX);
 				k++;
-			} else { 
+			} else {
 				propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 			}
 
@@ -1984,8 +1980,8 @@ void Molecule::BackwardBra(Real* G_start, int generation, int &s){//not yet robu
 }
 
 Real* Molecule::ForwardBra(int generation, int &s) {
-if (debug) cout <<"ForwardBra in Molecule " << endl; 
-	int b0 = first_b[generation]; 
+if (debug) cout <<"ForwardBra in Molecule " << endl;
+	int b0 = first_b[generation];
 	int bN = last_b[generation];
 	vector<int> Br;
 	vector<Real*> Gb;
@@ -1995,7 +1991,7 @@ if (debug) cout <<"ForwardBra in Molecule " << endl;
 	Real* Glast=NULL;
 	for (int k = b0; k<=bN ; ++k) {
 		if (b0<k && k<bN) {
-			if (Gnr[k]==generation ){ 
+			if (Gnr[k]==generation ){
 				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 			} else {
 				Br.clear(); Gb.clear();
@@ -2015,7 +2011,7 @@ if (debug) cout <<"ForwardBra in Molecule " << endl;
 				}
 				if (save_memory) {
 					Cp(Gs,GS+2*M,M); Cp(Gs+M,GS+2*M,M);
-					Cp(Gg_f+(memory[k]-1)*M,GS+2*M,M); //correct because in this block there is just one segment. 
+					Cp(Gg_f+(memory[k]-1)*M,GS+2*M,M); //correct because in this block there is just one segment.
 				} else {
 					Cp(Gg_f+s*M,GS+2*M,M);
 				}
@@ -2031,7 +2027,7 @@ if (debug) cout <<"ForwardBra in Molecule " << endl;
 }
 
 bool Molecule::ComputePhiBra() {
-if (debug) cout <<"ComputePhiBra in Mol " << endl; 
+if (debug) cout <<"ComputePhiBra in Mol " << endl;
 	int M=Lat[0]->M;
 	bool success=true;
 	int generation=0;

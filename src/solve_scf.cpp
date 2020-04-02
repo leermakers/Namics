@@ -801,7 +801,7 @@ void Solve_scf::residuals(Real* x, Real* g){
  			Zero(alpha,M);
 
 			for (i=0; i<itmonlistlength; i++) {
-				if (Lat[0]->gradients==3)  
+				if (Lat[0]->gradients==3)
 					Add(g+i*M,Seg[i]->u_ext,M);
 				for (k=0; k<mon_length; k++) {
 					if (Seg[k]->ns<2) {
@@ -970,7 +970,7 @@ void Solve_scf::ComputePhis(bool first_time) {
 	PutU();
 	Sys[0]->PrepareForCalculations(first_time);
 
-	if (first_time && Sys[0]->initial_guess=="polymer_adsorption") Put_U();
+	if (first_time && (Sys[0]->initial_guess=="polymer_adsorption"||Sys[0]->initial_guess=="membrane_torus")) Put_U();
 	Sys[0]->ComputePhis();
 }
 

@@ -129,6 +129,7 @@ public:
 	void AllocateMemory();
 	bool PrepareForCalculations(int*,bool);
 	bool PutAdsorptionGuess(Real,int*);
+	bool PutTorusPotential(int);
 	void UpdateValence(Real*,Real*,Real*,Real*,bool);
 	bool PutVarInfo(string,string,Real);
 	int PutVarScan(Real,Real,int,string);

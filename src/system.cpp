@@ -270,28 +270,38 @@ bool System::PrepareForCalculations(bool first_time)
 	}
 #endif
 	if (first_time) {
-  if (charged) {
-    int length = FrozenList.size();
-    Zero(psiMask, M);
-    fixedPsi0 = false;
-    for (int i = 0; i < length; ++i) {
-      if (Seg[FrozenList[i]]->fixedPsi0) {
-        fixedPsi0 = true;
-        Add(psiMask, Seg[FrozenList[i]]->MASK, M);
-      }
-    }
-    Real eps=Seg[0]->epsilon;
-    for (int i=1; i<n_mon; i++) {
-	if (Seg[i]->epsilon != eps) grad_epsilon = true;
-    }
-  }
-  if (initial_guess == "polymer_adsorption") {
-	  int length=FrozenList.size();
-	  for (int i=0; i<length; i++){
-		  for (int j=0; j<n_mon; j++) {if (!CHI[i+n_mon*j] == 0) Seg[j]->PutAdsorptionGuess(CHI[i+n_mon*j],Seg[i]->MASK);
-		  }
-	  }
-  }
+  	if (charged) {
+    	int length = FrozenList.size();
+    	Zero(psiMask, M);
+    	fixedPsi0 = false;
+    	for (int i = 0; i < length; ++i) {
+      	if (Seg[FrozenList[i]]->fixedPsi0) {
+        	fixedPsi0 = true;
+        	Add(psiMask, Seg[FrozenList[i]]->MASK, M);
+      	}
+    	}
+    	Real eps=Seg[0]->epsilon;
+    	for (int i=1; i<n_mon; i++) {
+					if (Seg[i]->epsilon != eps) grad_epsilon = true;
+    	}
+  	}
+  	if (initial_guess == "polymer_adsorption") {
+	  	int length=FrozenList.size();
+	  	for (int i=0; i<length; i++){
+		  	for (int j=0; j<n_mon; j++) {if (!CHI[i+n_mon*j] == 0) Seg[j]->PutAdsorptionGuess(CHI[i+n_mon*j],Seg[i]->MASK);
+		  	}
+	  	}
+  	}
+		if (initial_guess == "membrane_torus") {
+			bool found=false;
+			int segnr = Mol[solvent]->MolMonList[0];
+			for (int j=0; j<n_mon; j++) {
+					if (CHI[segnr+n_mon*j]>0.8) {
+						found=true; Seg[j]->PutTorusPotential(1);
+					} else Seg[j]->PutTorusPotential(-1);
+			}
+			if (!found) cout <<"Unable to locate a 'solvo'phobic segment. Initial guess for membrane_torus might not work...."<< endl;
+		}
 	}
 
   return success;
@@ -679,6 +689,7 @@ bool System::CheckInput(int start)
 			options.push_back("previous_result");
 			options.push_back("file");
 			options.push_back("polymer_adsorption");
+			options.push_back("membrane_torus");
 			In[0]->Get_string(GetValue("initial_guess"), initial_guess, options, " Info about 'initial_guess' rejected;");
 			if (initial_guess == "file")
 			{
@@ -692,8 +703,17 @@ bool System::CheckInput(int start)
 					cout << " When 'initial_guess' is set to 'file', you need to supply 'guess_inputfile', but this entry is missing. Problem terminated " << endl;
 				}
 			}
-			if (initial_guess=="polymer_adsorption") {
-				//cout <<"guess for polymer adsorption not implemented" << endl;
+			if (initial_guess=="polymer_adsorption"){
+				//test here whether or not the system is ready for adsorption, e.g. solids must be defined....
+			}
+			if (initial_guess=="membrane_torus"){
+				if (Lat[0]->gradients!=2) {success = false; cout <<" Option 'membrane_torus' is only possible for two gradient coordinate system."<<endl;}
+				if (Lat[0]->geometry!="cylindrical") {success = false; cout <<" Option 'membrane_torus' is only possible for two gradient cylindrical coordinate system."<<endl;}
+				int length = Mol[solvent]->MolMonList.size();
+				if (length>1) {
+					cout <<"solvent does contain more than one segment type. Initial guess membrane_torus will not work" << endl;
+					success=false;
+				}
 			}
 		}
 		final_guess = "next_problem";

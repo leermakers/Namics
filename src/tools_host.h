@@ -15,7 +15,7 @@ struct saxpy_functor
 
     saxpy_functor(double _a) : a(_a) {}
 
-      double operator()(const double& x, const double& y) const { 
+      double operator()(const double& x, const double& y) const {
             return a * x + y;
         }
 };
@@ -26,7 +26,7 @@ struct const_multiply_functor
 
     const_multiply_functor(double _a) : a(_a) {}
 
-      double operator()(const double& x, const double& y) const { 
+      double operator()(const double& x, const double& y) const {
             return a * x * y;
         }
 };
@@ -37,7 +37,7 @@ struct order_param_functor
 
     order_param_functor() {}
 
-        double operator()(const double& x, const double& y) const { 
+        double operator()(const double& x, const double& y) const {
             return pow(x-y,2);
         }
 };
@@ -206,14 +206,14 @@ void Dot(T &result, T *x,T *y, int M)   {
 	result = 0.0;
 	T ftmp[2] = { 0.0, 0.0 };
 	__m128d mres;
-	
+
 	if ((M / 2) != 0) {
 		mres = _mm_load_sd(&z);
 		for (int i = 0; i < M / 2; i++)
 			mres = _mm_add_pd(mres, _mm_mul_pd(_mm_loadu_pd(&x[2*i]),
-			_mm_loadu_pd(&y[2*i])));                
+			_mm_loadu_pd(&y[2*i])));
 
-		_mm_store_pd(ftmp, mres);                
+		_mm_store_pd(ftmp, mres);
 
 		result = ftmp[0] + ftmp[1];
 }

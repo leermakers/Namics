@@ -77,6 +77,9 @@ public:
 	void PushOutput();
 	Real* GetPointer(string,int&);
 	int* GetPointerInt(string,int&);
+	int P(int,int,int);
+	int P(int,int);
+	int P(int);
 
 	int GetValue(string,int&,Real&,string&);
 	Real GetValue(Real*,string);

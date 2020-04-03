@@ -247,8 +247,8 @@ if (!debug) cout <<"PutTorusPotential" + name << endl;
 	if (R<MX/2.0) {
 		for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++) {
 	 		distance = sqrt((MX/2.0 -x)*(MX/2.0-x) + y*y);
-			if ((distance-R)*(distance-R)<4) {
-				u[x*JX+y]=-log(2)*sign; count++;
+			if ((distance-R)*(distance-R)<10) {
+				u[x*JX+y]=-log(1.5)*sign; count++;
 				//cout << "at x " << x << "and y " << y << "potential is set" << endl;
 			}
 		}

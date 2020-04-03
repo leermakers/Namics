@@ -48,7 +48,8 @@ if (debug) cout <<"Destructor in Solve " << endl;
 	cudaFree(temp_alpha);
 #else
 	if (mesodyn) delete [] temp_alpha;
-	delete [] xx;
+	//delete [] xx;
+	free(xx);
 #endif
 if (debug) cout <<"exit for 'destructor' in Solve " << endl;
 

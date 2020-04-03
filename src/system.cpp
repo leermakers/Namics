@@ -298,7 +298,7 @@ bool System::PrepareForCalculations(bool first_time)
 			for (int j=0; j<n_mon; j++) {
 					if (CHI[segnr+n_mon*j]>0.8) {
 						found=true; Seg[j]->PutTorusPotential(1);
-					} else Seg[j]->PutTorusPotential(-1);
+					} //else Seg[j]->PutTorusPotential(-1);
 			}
 			if (!found) cout <<"Unable to locate a 'solvo'phobic segment. Initial guess for membrane_torus might not work...."<< endl;
 		}
@@ -1481,8 +1481,9 @@ if(debug) cout <<"ComputePhis in system" << endl;
 				}
 			}
 		}
-		else
+		else {
 			success = Mol[i]->ComputePhi(BETA, 0);
+		}
 	}
 
 	for (int i = 0; i < n_mol; i++)

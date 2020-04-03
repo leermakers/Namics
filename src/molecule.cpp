@@ -1714,7 +1714,7 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	int M=Lat[0]->M;
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
-	GN=Lat[0]->WeightedSum(phi);
+	GN=Lat[0]->WeightedSum(phi); 
 	if (compute_phi_alias)
 		for (auto& alias : Al) //For every alias in the Al vector (same as Al[i])
 			if (alias->frag[0]==1) {

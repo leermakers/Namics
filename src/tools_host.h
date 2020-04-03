@@ -76,7 +76,8 @@ typedef double Real;
 
 template <typename T>
 inline void Times(Real* P, Real* A, T* B, int M) {
-  std::transform(A, A + M, B, P, std::multiplies<Real>());
+  //std::transform(A, A + M, B, P, std::multiplies<Real>());
+	for (int i=0; i<M; ++i) P[i]=A[i]*B[i];
 }
 
 template <typename T>
@@ -112,7 +113,7 @@ inline void Zero(T* P, int M) {
 }
 
 template <typename T>
-inline void Cp(Real* P, T* A, int M) {
+inline void Cp(Real* P, T* A, int M) { 
   std::copy(A, A + M, P);
 }
 

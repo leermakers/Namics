@@ -28,8 +28,6 @@ if (debug) cout <<"Lattice constructor" << endl;
 	offset_first_layer=0;
 }
 
-
-
 Lattice::~Lattice() {
 if (debug) cout <<"lattice destructor " << endl;
 			DeAllocateMemory();
@@ -60,7 +58,7 @@ void Lattice::AllocateMemory(void) {
 if (debug) cout <<"AllocateMemory in lattice " << endl;
 	Real r, VL, LS;
 	Real rlow, rhigh;
-	int i {0}; int j {0}; int k {0}; int kk {0};
+	int i {0}; int j {0}; int k {0}; //int kk {0};
 
 	DeAllocateMemory();
 	PutM();
@@ -299,68 +297,70 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 					for (i=0; i<M; i++) L[i]=1;
 				}
 				if (geometry=="cylindrical") {
-					for (i=1; i<MX+1; i++)
-					for (j=1; j<MY+1; j++) {
-						r=offset_first_layer + 1.0*i;
-						L[i*JX+j]=PIE*(pow(r,2)-pow(r-1,2));
-						lambda1[i*JX+j]=2.0*PIE*r/L[i*JX+j]*lambda;
-						lambda_1[i*JX+j]=2.0*PIE*(r-1)/L[i*JX+j]*lambda;
-						lambda0[i*JX+j]=1.0-2.0*lambda;
+					for (int x=1; x<MX+1; x++)
+					for (int y=1; y<MY+1; y++) {
+						r=offset_first_layer + 1.0*x;
+						L[P(x,y)]=PIE*(pow(r,2)-pow(r-1,2));
+						lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]*lambda;
+						lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]*lambda;
+						lambda0[P(x,y)]=1.0-2.0*lambda;
 					}
-
 				}
 			}
 			if (fjc==2) {
 				if (geometry=="planar") {
-					for (i=0; i<M; i++) L[i]=1/fjc;
+					for (i=0; i<M; i++) L[i]=1.0/fjc;
 				}
 				if (geometry == "cylindrical") {
-					for (i=fjc; i<MX+fjc; i++) for (j=fjc; j<MY+fjc; j++) {
-						r = offset_first_layer+1.0*(1.0*i-1.0*fjc+1.0)/fjc;
-						rlow = r-0.5;
-						rhigh = r+0.5;
-						L[i*JX+j] = PIE*(2.0*r)/fjc;
-						VL = L[i*JX+j]/PIE*fjc;
-						if ((rlow-r)*2+r > 0.0)
-							LAMBDA[i*JX+j] += 0.5/(1.0*FJC-1.0)*2.0*rlow/VL;
-						if ((rhigh-r)*2+r < 1.0*MX/fjc)
-							LAMBDA[i*JX+j+(FJC-1)*M] += 0.5/(1.0*FJC-1.0)*2.0*rhigh/VL;
-						else {
-							if (2*rhigh-r-1.0*MX/fjc>-0.001 && 2*rhigh-r-1.0*MX/fjc<0.001) {
-								LAMBDA[i*JX+j+(FJC-1)*M] += 0.5/(1.0*FJC-1.0)*2.0*rhigh/VL;
+					for (int y=1-fjc; y<MY+fjc; y++) {
+						for (int x = fjc; x < MX+fjc; x++) {
+							r = offset_first_layer+1.0*(x-fjc+1.0)/fjc;
+							rlow = r - 0.5;
+							rhigh = r + 0.5;
+							L[P(x,y)] = PIE * (2.0 * r) / fjc;
+							VL = L[P(x,y)] / PIE * fjc;
+							if ((rlow - r) * 2 + r > 0.0) {
+								LAMBDA[P(x,y)] += 1.0/(1.0*FJC-1.0)*rlow/VL;
 							}
-							for (k = 1; k <= fjc; k++) {
-								if (2*rhigh-r-1.0*MX/fjc > 0.99*k/fjc && 2*rhigh-r-1.0*MX/fjc < 1.01*k/fjc) {
-									LAMBDA[i*JX+j+(FJC-1)*M] += 0.5/(1.0*FJC-1.0)*2.0*(rhigh-1.0*k/fjc)/VL;
+							if ((rhigh - r) * 2 + r < 1.0*MX/fjc) {
+								LAMBDA[P(x,y)+(FJC-1)*M] += 1.0/(1.0*FJC-1.0)*rhigh/VL;
+							} else {
+								if (2*rhigh-r-1.0*MX/fjc > -0.001 && 2 * rhigh-r-1.0*MX/fjc < 0.001) {
+									LAMBDA[P(x,y)+(FJC-1)*M] += 1.0/(1.0*FJC-1.0)*rhigh/VL;
 								}
-							}
-						}
-						for (k = 1; k < fjc; k++) {
-							rlow += 0.5 / (fjc);
-							rhigh -= 0.5 / (fjc);
-							if ((rlow - r) * 2 + r > 0.0)
-								LAMBDA[i*JX+j + k*M] += 1.0/(1.0*FJC-1.0)*2.0*rlow/VL;
-							if ((rhigh-r)*2+r < offset_first_layer + 1.0*MX/fjc)
-								LAMBDA[i*JX+j + (FJC-1-k) * M] += 1.0 / (1.0*FJC-1.0)*2.0*rhigh/VL;
-							else {
-								if (2*rhigh-r-1.0*MX/fjc > -0.001 && 2*rhigh-r-1.0*MX/fjc < 0.001) {
-									LAMBDA[i*JX+j + (FJC-1-k)*M] += 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
-								}
-								for (kk = 1; kk <= fjc; kk++) {
-									if (2*rhigh-r-1.0*MX/fjc > 0.99*kk/fjc && 2*rhigh-r-1.0*MX/fjc < 1.01*kk/fjc) {
-										LAMBDA[i*JX+j + (FJC-1-k)*M] += 1.0/(1.0*FJC-1.0)*2.0*(rhigh-1.0*kk/fjc)/VL;
+								for (j = 1; j <= fjc; j++) {
+									if (2*rhigh-r-1.0*MX/fjc > 0.99*j/fjc && 2*rhigh-r-1.0*MX/fjc < 1.01*j/fjc) {
+										LAMBDA[P(x,y)+(FJC-1)*M] += 1.0/(1.0*FJC-1.0)*(rhigh-1.0*j/fjc)/VL;
+									}
+								}								}
+							for (j = 1; j < fjc; j++) {
+								rlow += 0.5/(fjc);
+								rhigh -= 0.5/(fjc);
+								if ((rlow-r)*2+r > 0.0)
+								LAMBDA[P(x,y)+j*M] += 1.0/(1.0*FJC-1.0)*2.0*rlow/VL;
+								if ((rhigh-r)*2+r < offset_first_layer+1.0*MX/fjc)
+								LAMBDA[P(x,y)+(FJC-1-j)*M] += 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
+								else {
+									if (2 * rhigh-r-1.0*MX/fjc > -0.001 && 2*rhigh-r-1.0*MX/fjc < 0.001) {
+										LAMBDA[P(x,y)+(FJC-1-j)*M] += 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
+									}
+									for (k = 1; k <= fjc; k++) {
+										if (2 * rhigh-r-1.0*MX/fjc > 0.99*k/fjc && 2*rhigh-r-1.0*MX/fjc<1.01*k/fjc) {
+											LAMBDA[P(x,y) + (FJC-1-j)*M] += 1.0/(1.0*FJC-1.0)*2.0*(rhigh-1.0*k/fjc)/VL;
+										}
 									}
 								}
 							}
+							LS = 0;
+							for (j = 0; j < FJC; j++)
+							LS += LAMBDA[P(x,y)+j*M];
+							LAMBDA[P(x,y)+(FJC/2)*M] += 1.0 - LS;
 						}
-						LS = 0;
-						for (k = 0; k < FJC; k++)
-							LS += LAMBDA[i*JX+j + k*M];
-						LAMBDA[i*JX+j+(FJC/2)*M] += 1.0-LS;
 					}
 				}
-
 			}
+			for (k=0; k<FJC; k++) for (int y=1-fjc; y<MY+fjc; y++) for (int x=MX+1; x< MX+fjc; x++)
+				LAMBDA[P(x,y)+k*M]=LAMBDA[P(2*MX-x+1,y)+(FJC-k-1)*M];
 			break;
 		case 3:
 			break;
@@ -372,10 +372,10 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 }
 
 int Lattice::P(int x, int y, int z) {
-	return (x+fjc-1)*JX + (y+fjc-1)*JY +z+1;
+	return (x+fjc-1)*JX + (y+fjc-1)*JY +(z+fjc-1);
 }
 int Lattice::P(int x, int y) {
-	return (x+fjc-1)*JX +y+1;
+	return (x+fjc-1)*JX +(y+fjc-1);
 }
 
 int Lattice::P(int x) {
@@ -981,7 +981,9 @@ if (debug) cout << "weighted sum in lattice " << endl;
 		case 2:
 			if (geometry=="planar") {
 				Sum(sum,X,M); sum = sum/(fjc*fjc);
-			} else	Dot(sum,X,L,M);
+			} else	{
+				Dot(sum,X,L,M);
+			}
 			break;
 		case 3:
 			Sum(sum,X,M);
@@ -1016,7 +1018,7 @@ if (debug) cout << "vtk in lattice " << endl;
 			fprintf(fp,"%f\n",X[P(x,y)]);
 			break;
 		case 3:
-			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MX,MY,MZ);
+			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MZ,MY,MX);
 
 			if (writebounds) {
 				fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",(MX+2*fjc)*(MY+2*fjc)*(MZ+2*fjc));
@@ -1199,8 +1201,6 @@ if (debug) cout <<"GetValue (long)  in lattice " << endl;
 
 	return 0;
 }
-
-
 
 void Lattice::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in lattice " << endl;
@@ -1656,20 +1656,24 @@ if (debug) cout <<"remove_bounds in lattice " << endl;
 			break;
 		case 2:
 			if (fjc==1) {
-				for (x=0; x<MX+2; x++) {
-					X[x*JX+0] = 0;
-					X[x*JX+MY+1]=0;
+				for (x=0; x<MX+1; x++) {
+					//if (P(x,0) <0 || P(x,0)>M) cout <<"P(x,0) " <<P(x,0) << endl;
+					//if (P(x,MY+1) <0 || P(x,MY+1)>M) cout <<"P(x,MY+1) " <<P(x,MY+1) << endl;
+					X[P(x,0)] = 0;
+					X[P(x,MY+1)]=0;
 				}
-				for (y=0; y<MY+2; y++) {
-					X[0+y] = 0;
-					X[(MX+1)*JX+y]=0;
+				for (y=0; y<MY+1; y++) {
+					//if (P(0,y) <0 || P(0,y)>M) cout <<"P(0,y) " <<P(0,y) << endl;
+					//if (P(MX+1,y) <0 ||P(MX+1,y)>M) cout <<"P(MX+1,y) " <<P(MX+1,y) << endl;
+					X[P(0,y)] = 0;
+					X[P(MX+1,y)]=0;
 				}
 			} else {
-				for (x=1-fjc; x<MX+1+fjc; x++) {
+				for (x=1-fjc; x<MX+fjc; x++) {
 					for (k=0; k<fjc; k++) X[P(x,-k)] =0;
 					for (k=0; k<fjc; k++) X[P(x,MY+1+k)]=0;
 				}
-				for (y=1-fjc; y<MY+1+fjc; y++) {
+				for (y=1-fjc; y<MY+fjc; y++) {
 					for (k=0; k<fjc; k++) X[P(-k,y)] = 0;
 					for (k=0; k<fjc; k++) X[P(MX+1+k,y)]=0;
 				}
@@ -2336,7 +2340,6 @@ if (debug) cout <<"CreateMask for lattice " + name << endl;
 				for (int x=r[0]; x<r[3]+1; x++)
 				for (int y=r[1]; y<r[4]+1; y++){
 						H_MASK[P(x,y)]=1;
-						cout <<"mask for x: " << x << " y: " << y << " : " << P(x,y) << endl;
 					}
 						//H_MASK[x*JX+fjc-1+y]=1;
 			break;

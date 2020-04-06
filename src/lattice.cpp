@@ -1031,7 +1031,7 @@ if (debug) cout << "vtk in lattice " << endl;
 				for (int x=1; x<MX+1; x++)
 				for (int y=1; y<MY+1; y++)
 				for (int z=1; z<MZ+1; z++)
-				fprintf(fp,"%f\n",X[P(x,y,z)]);
+				fprintf(fp,"%e\n",X[P(x,y,z)]);
 			}
 			break;
 		default:

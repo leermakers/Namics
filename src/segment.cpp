@@ -19,7 +19,8 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("clamp_info");
 	KEYS.push_back("fluctuation_potentials");
 	KEYS.push_back("fluctuation_amplitude");
-	Amplitude=0;
+	KEYS.push_back("fluctuation_wavelength");
+	Amplitude=0; labda=0;
 	ns=1;
 }
 Segment::~Segment() {
@@ -143,6 +144,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	if (freedom=="tagged") {Cp(G1,MASK,M);
 	}
 	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);
+
 	if (GetValue("fluctuation_potentials").size()>0&& first_time) {
 		string s = GetValue("fluctuation_potentials");
 		vector<string> sub;
@@ -158,7 +160,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 			if (first_time){
 				if (sub[2] == "z") {
 					int MZ=Lat[0]->MZ;
-					if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..8" << endl; }
+					if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256 || MZ==512 || MZ==1024)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..10" << endl; }
 					if (success) {
 						Real shift_x,shift_y,shift_z;
 						for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
@@ -175,7 +177,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 				} else {
 					int mz=In[0]->Get_int(sub[2],0);
 					if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
-					if (success) {
+					if (success && labda ==0) {
 					cout <<"fluctutions set " << Amplitude << endl;
 						Real shift_x,shift_y;
 						for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
@@ -186,11 +188,16 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 								u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y));
 							}
 						}
+					} else {
+						if (labda>0) {
+							cout <<"fluctuation wavelength set to " << labda << " and amplitude to " << Amplitude << endl;
+							for (int x=0; x<MX; x++) for (int y=0; y<MY; y++)
+									u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x)/labda)+sin(2.0*PIE*(y)/labda));
+						}
 					}
 				}
 			}
 		}
-
 	}
 //for (int kkk=0; kkk<M; kkk++) if (u_ext[kkk] !=0) cout <<"at " << kkk << " : " << u_ext[kkk] << endl;
 	return success;
@@ -247,8 +254,8 @@ if (!debug) cout <<"PutTorusPotential" + name << endl;
 	if (R<MX/2.0) {
 		for (int x=1; x<MX+1; x++) for (int y=1; y<MY+1; y++) {
 	 		distance = sqrt((MX/2.0 -x)*(MX/2.0-x) + y*y);
-			if ((distance-R)*(distance-R)<10) {
-				u[x*JX+y]=-log(1.5)*sign; count++;
+			if ((distance-R)*(distance-R)<8) {
+				u[x*JX+y]=-log(2.8)*sign; count++;
 				//cout << "at x " << x << "and y " << y << "potential is set" << endl;
 			}
 		}
@@ -601,6 +608,15 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	}
 
 	if (GetValue("fluctuation_potentials").size()>0) {
+		if (GetValue("fluctuation_wavelength").size()>0) {
+				labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),0);
+				if (labda<1 || labda>Lat[0]->MX || labda > Lat[0]->MY || labda > Lat[0]->MZ) {
+					success = false;cout <<"fluctuation_wavelength must be a positive number smaller or equal to the 'box' size" << endl;
+				}
+				if (!(labda ==2 || labda ==4 || labda ==8 || labda ==16 || labda ==32 || labda ==64 || labda ==128 || labda ==256 || labda ==512 ||labda ==1024)) {
+					cout <<"fluctuation wavelength should be an integer 2^x, with x = 1..10" << endl;
+				}
+		}
 		if (Lat[0]->gradients<3) {
 				success=false; cout<<"fluction_potentials only allowed when 'lat: * : gradients : 3'. "<<endl;
 			} else {
@@ -612,12 +628,14 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	}
 	if (GetValue("fluctuation_amplitude").size()>0) {
 		Amplitude = In[0]->Get_Real(GetValue("fluctuation_amplitude"),1);
+		if (GetValue("fluctuation_potentials").size()==0) {
+			success = false; cout <<"fluctuation_amplitude should be combined with fluctuation_potentials and optionally with fluctuation_wavelength" << endl;
+		}
 		if (Amplitude < 0 || Amplitude > 1) {
 			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 1 (full fluctuations). " << endl;
 		}
 	}
-
-			//valence=In[0]->Get_Real(GetValue("valence"),0);
+	//valence=In[0]->Get_Real(GetValue("valence"),0);
 	return success;
 }
 
@@ -987,7 +1005,8 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	push("theta",theta);
 	push("theta_exc",theta-Lat[0]->Accesible_volume*phibulk);
 	push("phibulk",phibulk);
-	push("Fluctuation_amplitude",Amplitude);
+	push("fluctuation_amplitude",Amplitude);
+	push("fluctuation_wavelength",labda);
 	if (ns>1) {
 		state_theta.clear();
 		for (int i=0; i<ns; i++){

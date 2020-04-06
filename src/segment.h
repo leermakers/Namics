@@ -69,6 +69,7 @@ public:
 	int chi_var_state;
 	Real chi_value;
 	Real Amplitude;
+	int labda;
 
 	vector<string> ints;
 	vector<string> Reals;

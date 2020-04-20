@@ -10,6 +10,7 @@ Variate::Variate(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,
 	KEYS.push_back("scale");
 	KEYS.push_back("grand_potential");
 	KEYS.push_back("free_energy");
+	KEYS.push_back("Laplace_pressure");
 	KEYS.push_back("mu");
 	KEYS.push_back("theta");
 	KEYS.push_back("n");
@@ -105,11 +106,19 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 								cout <<"In var:" + name + ":grand_potential, target value rejected." << endl;
 							}
 						} else {dubbel=true;}
-
+					}
+					if (GetValue("Laplace_pressure").size()>0) {
+						if (R_target ==-123.0) {
+							R_target=In[0]->Get_Real(GetValue("Laplace_pressure"),0); targeting=0; target_nr=0;
+							if (!Sys[0]->PutVarInfo("target","Laplace_pressure",R_target)) {
+								success=false;
+								cout <<"In var:" + name + ":Laplace_pressure, target value rejected." << endl;
+							}
+						} else {dubbel=true;}
 					}
 					if (R_target==-123.0 || dubbel) {
 						success=false;
-						cout <<"In var:" + name + " we expect either 'free_energy' or 'grand_potential' as target a function. " << endl;
+						cout <<"In var:" + name + " we expect either 'free_energy' or 'grand_potential' or 'Laplace_pressure' as target a function. " << endl;
 					}
 				}
 				break;

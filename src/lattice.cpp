@@ -13,7 +13,8 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("lowerbound_z"); KEYS.push_back("upperbound_z");
  	KEYS.push_back("bondlength");
 	KEYS.push_back("ignore_site_fraction");
-  	KEYS.push_back("lattice_type");
+	KEYS.push_back("fcc_site_fraction");
+  KEYS.push_back("lattice_type");
 	KEYS.push_back("stencil_full");
 	//KEYS.push_back("lambda");
 	//KEYS.push_back("Z");
@@ -21,6 +22,7 @@ if (debug) cout <<"Lattice constructor" << endl;
 	sub_box_on = 0;
 	all_lattice = false;
 	ignore_sites=false;
+	fcc_sites=false;
 	stencil_full=false;
 	gradients=1;
 	fjc=1;
@@ -36,6 +38,11 @@ if (debug) cout <<"lattice destructor " << endl;
 void Lattice::DeAllocateMemory(void) {
 if (debug) cout <<"DeAllocateMemory in lattice " << endl;
 	if (all_lattice) {
+		if (fcc_sites) {
+			free(fcc_lambda_1);
+			free(fcc_lambda1);
+			free(fcc_lambda0);
+		}
 		if (fjc==1) {
 			free(lambda_1);
 			free(lambda1);
@@ -138,6 +145,11 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 				}
 			}
 	}
+	if (fcc_sites) {
+		fcc_lambda_1=(Real*)malloc(M*sizeof(Real)); Zero(fcc_lambda_1,M);
+		fcc_lambda1=(Real*)malloc(M*sizeof(Real)); Zero(fcc_lambda1,M);
+		fcc_lambda0=(Real*)malloc(M*sizeof(Real)); Zero(fcc_lambda0,M);
+	}
 
 	if (fjc==1) {
 		if (gradients<3) {
@@ -163,8 +175,28 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 				for (i=1; i<MX+1; i++) L[i]=1;
 			}
 
-			if (fjc==1) {
+			if (fcc_sites){
+				if (geometry=="cylindrical") {
+					for (i=1; i<MX+1; i++) {
+						r=offset_first_layer + i;
+						L[i]=PIE*(pow(r,2)-pow(r-1,2));
+						lambda1[i]=2.0*PIE*r/L[i]/3.0;
+						lambda_1[i]=2.0*PIE*(r-1)/L[i]/3.0;
+						lambda0[i]=1.0/3.0;
+					}
+				}
+				if (geometry=="spherical") {
+					for (i=1; i<MX+1; i++) {
+						r=offset_first_layer + i;
+						L[i]=4.0/3.0*PIE*(pow(r,3)-pow(r-1,3));
+						fcc_lambda1[i]=4.0*PIE*pow(r,2)/L[i]/3.0;
+						fcc_lambda_1[i]=4.0*PIE*pow(r-1,2)/L[i]/3.0;
+						fcc_lambda0[i]=1.0-fcc_lambda1[i]-fcc_lambda_1[i];
+					}
+				}
+			}
 
+			if (fjc==1) {
 				if (geometry=="cylindrical") {
 					for (i=1; i<MX+1; i++) {
 						r=offset_first_layer + i;
@@ -181,6 +213,7 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 						lambda1[i]=4.0*PIE*pow(r,2)/L[i]*lambda;
 						lambda_1[i]=4.0*PIE*pow(r-1,2)/L[i]*lambda;
 						lambda0[i]=1.0-lambda1[i]-lambda_1[i];
+
 					}
 				}
 			}
@@ -292,6 +325,18 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 			}
 			break;
 		case 2:
+			if (fcc_sites){
+					if (geometry=="cylindrical"){
+						for (int x=1; x<MX+1; x++)
+						for (int y=1; y<MY+1; y++) {
+							r=offset_first_layer + 1.0*x;
+							L[P(x,y)]=PIE*(pow(r,2)-pow(r-1,2));
+							fcc_lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]/3.0;
+							fcc_lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]/3.0;
+							fcc_lambda0[P(x,y)]=1.0-2.0/3.0;
+						}
+					}
+			}
 			if (fjc==1) {
 				if (geometry=="planar") {
 					for (i=0; i<M; i++) L[i]=1;
@@ -304,6 +349,11 @@ if (debug) cout <<"AllocateMemory in lattice " << endl;
 						lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]*lambda;
 						lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]*lambda;
 						lambda0[P(x,y)]=1.0-2.0*lambda;
+						if (fcc_sites) {
+							fcc_lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]/3.0;
+							fcc_lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]/3.0;
+							fcc_lambda0[P(x,y)]=1.0-2.0/3.0;
+						}
 					}
 				}
 			}
@@ -443,9 +493,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		options.push_back("simple_cubic"); options.push_back("hexagonal");
 		Value=GetValue("lattice_type");
 		if (Value.length()>0) {
-			if (!In[0]->Get_string(Value,lattice_type,options,"Input for 'lattice_type' not recognized. 'simple_cubic', 'FCC' or 'hexagonal'.")) success = false; else {
+			if (!In[0]->Get_string(Value,lattice_type,options,"Input for 'lattice_type' not recognized. 'simple_cubic' or 'hexagonal'.")) success = false; else {
 				if (lattice_type == "simple_cubic") {lambda=1.0/6.0; Z=6;}
-				//if (lattice_type == "FCC") {lambda = 1.0/3.0; Z=3;}
 				if (lattice_type == "hexagonal") {lambda=1.0/4.0; Z=4;}
 			}
 		} else {
@@ -460,7 +509,6 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					lambda=In[0]->Get_Real(GetValue("lambda"),1.0/6.0);
 					if (lambda < 0.0 || lambda > 1.0/3.0) {lattice_type="simple_cubic"; lambda = 1.0/6.0; cout <<"'lambda'-value out of bounds 0..1/3. Default 1/6 is used instead" << endl; }
 					else {
-						if (lambda>0.33 && lambda <0.34) {lattice_type="FCC"; lambda=1.0/3.0;}
 						if (lambda>0.16 && lambda < 0.167) {lattice_type="simple_cubic"; lambda = 1.0/6.0;}
 						if (lambda>0.24 && lambda < 0.26) {lattice_type="hexagonal"; lambda = 1.0/4.0;}
 					}
@@ -473,7 +521,6 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						if (Z<3 || Z>12) {lattice_type="simple_cubic"; lambda = 1.0/6.0; cout <<"coordination number 'Z' is out of bounds 3 .. 12. Default Z=6 is used instead"<<endl; }
 						else {
 							lambda = 1.0/Z;
-							if (Z==3) lattice_type="FCC";
 							if (Z==6) lattice_type="simple_cubic";
 							if (Z==4) lattice_type="hexagonal";
 						}
@@ -752,7 +799,20 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		if (gradients ==2 && fjc>2) {success = false; cout <<" When gradients is 2, FJC-choices are limited to 5 " << endl; }
 		if (gradients ==3 && fjc>1) {success = false; cout <<" When graidents is 3, FJC-choices are limited to 3 " << endl; }
 
-		if (GetValue("ignore_site_fraction").length()>0) ignore_sites=In[0]->Get_bool(GetValue("ignore_sites"),false);
+		if (GetValue("ignore_site_fraction").length()>0) {
+				ignore_sites=In[0]->Get_bool(GetValue("ignore_sites"),false);
+				if (!ignore_sites) cout <<"ignore_site_fraction is set to false. Full site fractions computed. " << endl;
+		}
+
+		if (GetValue("fcc_site_fraction").length()>0) {
+				fcc_sites=In[0]->Get_bool(GetValue("fcc_site_fraction"),false);
+				if (!fcc_sites) cout <<"fcc_site_fraction is set to false. Full site fractions computed. " << endl;
+		}
+
+		if (fcc_sites&&ignore_sites) {
+			cout <<"can't combine 'fcc_site_fraction' with 'ignore_site_fraction'" <<endl; success=false;
+		}
+
 		if (GetValue("stencil_full").length()>0) {
 			stencil_full=In[0]->Get_bool(GetValue("stencil_full"),false);
 			if (gradients<3 && !stencil_full) cout << "In calculations with 'gradients' less than 3, stencil_full is set to true. " << endl;
@@ -1005,7 +1065,7 @@ if (debug) cout << "vtk in lattice " << endl;
 			cout << "for system with one gradient there is no VTK output available " << endl;
 			break;
 		case 2:
-			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MX,MY,1);
+			fprintf(fp,"# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET STRUCTURED_POINTS\nDIMENSIONS %i %i %i\n",MY,MX,1);
 			if (writebounds) {
 				fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",(MX+2*fjc)*(MY+2*fjc));
 			} else {
@@ -1209,147 +1269,186 @@ if (debug) cout <<" Side in lattice " << endl;
 	}
 	Zero(X_side,M);set_bounds(X);
 	int j, kk;
+
 	switch(gradients) {
 		case 1:
-			if (fjc==1) {
-				if (geometry=="planar") {
-					if (lattice_type=="simple_cubic") {
-						YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
-						YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
-						YplusisCtimesX(X_side,X,4.0/6.0,M);
-					} else {
-						YplusisCtimesX(X_side+1,X,1.0/4.0,M-1);
-						YplusisCtimesX(X_side,X+1,1.0/4.0,M-1);
-						YplusisCtimesX(X_side,X,2.0/4.0,M);
-					}
+			if (fcc_sites) {
+				if (geometry=="planar"){
+					YplusisCtimesX(X_side+1,X,1.0/3.0,M-1);
+					YplusisCtimesX(X_side,X+1,1.0/3.0,M-1);
+					YplusisCtimesX(X_side,X,1.0/3.0,M);
 				} else {
-					AddTimes(X_side,X,lambda0,M);
-					AddTimes(X_side+1,X,lambda_1+1,M-1);
-					AddTimes(X_side,X+1,lambda1,M-1);
+					AddTimes(X_side,X,fcc_lambda0,M);
+					AddTimes(X_side+1,X,fcc_lambda_1+1,M-1);
+					AddTimes(X_side,X+1,fcc_lambda1,M-1);
 				}
 			} else {
+				if (fjc==1) {
+					if (geometry=="planar") {
+						if (lattice_type=="simple_cubic") {
+							YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
+							YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
+							YplusisCtimesX(X_side,X,4.0/6.0,M);
+						} else {
+							YplusisCtimesX(X_side+1,X,1.0/4.0,M-1);
+							YplusisCtimesX(X_side,X+1,1.0/4.0,M-1);
+							YplusisCtimesX(X_side,X,2.0/4.0,M);
+						}
+					} else {
+						AddTimes(X_side,X,lambda0,M);
+						AddTimes(X_side+1,X,lambda_1+1,M-1);
+						AddTimes(X_side,X+1,lambda1,M-1);
+					}
+				} else {
 
-				for (j = 0; j < FJC/2; j++) {
-					kk = (FJC-1)/2-j;
-					AddTimes(X_side+kk, X, LAMBDA+j*M+kk, M-kk);
-					AddTimes(X_side, X+kk, LAMBDA+(FJC-j-1)*M, M-kk);
+					for (j = 0; j < FJC/2; j++) {
+						kk = (FJC-1)/2-j;
+						AddTimes(X_side+kk, X, LAMBDA+j*M+kk, M-kk);
+						AddTimes(X_side, X+kk, LAMBDA+(FJC-j-1)*M, M-kk);
+					}
+					AddTimes(X_side, X, LAMBDA+(FJC-1)/2*M, M);
+
 				}
-				AddTimes(X_side, X, LAMBDA+(FJC-1)/2*M, M);
-
 			}
 			break;
 
 		case 2:
-			if (fjc==1) {
-				if (geometry=="planar") {
-					if (lattice_type=="simple_cubic") {
-						YplusisCtimesX(X_side,X,    16.0/36.0,M);
-						YplusisCtimesX(X_side+1,X,   4.0/36.0,M-1);
-						YplusisCtimesX(X_side,X+1,   4.0/36.0,M-1);
-						YplusisCtimesX(X_side+JX,X,  4.0/36.0,M-JX);
-						YplusisCtimesX(X_side,X+JX,  4.0/36.0,M-JX);
-						YplusisCtimesX(X_side+JX+1,X,1.0/36.0,M-JX-1);
-						YplusisCtimesX(X_side+JX,X+1,1.0/36.0,M-JX);
-						YplusisCtimesX(X_side+1,X+JX,1.0/36.0,M-JX);
-						YplusisCtimesX(X_side,X+JX+1,1.0/36.0,M-JX-1);
+			if (fcc_sites) {
+					if (geometry=="planar") {
+						YplusisCtimesX(X_side,X,     1.0/9.0,M);
+						YplusisCtimesX(X_side+1,X,   1.0/9.0,M-1);
+						YplusisCtimesX(X_side,X+1,   1.0/9.0,M-1);
+						YplusisCtimesX(X_side+JX,X,  1.0/9.0,M-JX);
+						YplusisCtimesX(X_side,X+JX,  1.0/9.0,M-JX);
+						YplusisCtimesX(X_side+JX+1,X,1.0/9.0,M-JX-1);
+						YplusisCtimesX(X_side+JX,X+1,1.0/9.0,M-JX);
+						YplusisCtimesX(X_side+1,X+JX,1.0/9.0,M-JX);
+						YplusisCtimesX(X_side,X+JX+1,1.0/9.0,M-JX-1);
 					} else {
-						YplusisCtimesX(X_side,X,    12.0/8.0,M);
-						YplusisCtimesX(X_side+1,X,   6.0/8.0,M-1);
-						YplusisCtimesX(X_side,X+1,   6.0/8.0,M-1);
-						YplusisCtimesX(X_side+JX,X,  6.0/8.0,M-JX);
-						YplusisCtimesX(X_side,X+JX,  6.0/8.0,M-JX);
-						YplusisCtimesX(X_side+JX+1,X,3.0/8.0,M-JX-1);
-						YplusisCtimesX(X_side+JX,X+1,3.0/8.0,M-JX);
-						YplusisCtimesX(X_side+1,X+JX,3.0/8.0,M-JX);
-						YplusisCtimesX(X_side,X+JX+1,3.0/8.0,M-JX-1);
+						YplusisCtimesX(X_side,X,1.0/3.0,M);
+						AddTimes(X_side+JX,X,fcc_lambda_1+JX,M-JX);
+						AddTimes(X_side,X+JX,fcc_lambda1,M-JX);
+						YplusisCtimesX(X_side+1,X,1.0/3.0,M-1);
+						YplusisCtimesX(X_side,X+1,1.0/3.0,M-1);
+						AddTimes(X_side+JX+1,X,fcc_lambda_1+JX+1,M-JX-1);
+						AddTimes(X_side+JX,X+1,fcc_lambda_1+JX,M-JX);
+						AddTimes(X_side+1,X+JX,fcc_lambda1+1,M-JX);
+						AddTimes(X_side,X+JX+1,fcc_lambda1,M-JX-1);
+						Norm(X_side,1.0/3.0,M);
 					}
-				} else {
-					if (lattice_type =="simple_cubic") {
-						YplusisCtimesX(X_side,X,4.0/6.0,M);
-						AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
-						AddTimes(X_side,X+JX,lambda1,M-JX);
-						YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
-						YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
-						Norm(X_side,4.0,M);
-						AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
-						AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
-						AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
-						AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
+			} else {
+				if (fjc==1) {
+					if (geometry=="planar") {
+						if (lattice_type=="simple_cubic") {
+							YplusisCtimesX(X_side,X,    16.0/36.0,M);
+							YplusisCtimesX(X_side+1,X,   4.0/36.0,M-1);
+							YplusisCtimesX(X_side,X+1,   4.0/36.0,M-1);
+							YplusisCtimesX(X_side+JX,X,  4.0/36.0,M-JX);
+							YplusisCtimesX(X_side,X+JX,  4.0/36.0,M-JX);
+							YplusisCtimesX(X_side+JX+1,X,1.0/36.0,M-JX-1);
+							YplusisCtimesX(X_side+JX,X+1,1.0/36.0,M-JX);
+							YplusisCtimesX(X_side+1,X+JX,1.0/36.0,M-JX);
+							YplusisCtimesX(X_side,X+JX+1,1.0/36.0,M-JX-1);
+						} else {
+							YplusisCtimesX(X_side,X,    12.0/48.0,M);
+							YplusisCtimesX(X_side+1,X,   6.0/48.0,M-1);
+							YplusisCtimesX(X_side,X+1,   6.0/48.0,M-1);
+							YplusisCtimesX(X_side+JX,X,  6.0/48.0,M-JX);
+							YplusisCtimesX(X_side,X+JX,  6.0/48.0,M-JX);
+							YplusisCtimesX(X_side+JX+1,X,3.0/48.0,M-JX-1);
+							YplusisCtimesX(X_side+JX,X+1,3.0/48.0,M-JX);
+							YplusisCtimesX(X_side+1,X+JX,3.0/48.0,M-JX);
+							YplusisCtimesX(X_side,X+JX+1,3.0/48.0,M-JX-1);
+						}
 					} else {
-						YplusisCtimesX(X_side,X,2.0/4.0,M);
-						AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
-						AddTimes(X_side,X+JX,lambda1,M-JX);
-						YplusisCtimesX(X_side+1,X,1.0/4.0,M-1);
-						YplusisCtimesX(X_side,X+1,1.0/4.0,M-1);
-						Norm(X_side,2.0,M);
-						AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
-						AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
-						AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
-						AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
-						Norm(X_side,6.0,M);
+						if (lattice_type =="simple_cubic") {
+							YplusisCtimesX(X_side,X,4.0/6.0,M);
+							AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
+							AddTimes(X_side,X+JX,lambda1,M-JX);
+							YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
+							YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
+							Norm(X_side,4.0,M);
+							AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
+							AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
+							AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
+							AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
+							Norm(X_side,1.0/6.0,M);
+						} else {
+							YplusisCtimesX(X_side,X,2.0/4.0,M);
+							AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
+							AddTimes(X_side,X+JX,lambda1,M-JX);
+							YplusisCtimesX(X_side+1,X,1.0/4.0,M-1);
+							YplusisCtimesX(X_side,X+1,1.0/4.0,M-1);
+							Norm(X_side,2.0,M);
+							AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
+							AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
+							AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
+							AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
+							Norm(X_side,3.0/12.0,M);
+						}
 					}
 				}
-			}
-			if (fjc==2) {
-				if (geometry=="planar") {
-					Add(X_side,X,M);
-					Add(X_side+JX,X,M-JX);
-					Add(X_side,X+JX,M-JX);
-					Add(X_side+1,X,M-1);
-					Add(X_side,X+1,M-1);
-					Add(X_side+JX+1,X,M-JX-1);
-					Add(X_side,X+JX+1,M-JX-1);
-					Add(X_side+1,X+JX,M-JX);
-					Add(X_side+JX,X+1,M-JX);
-					Norm(X_side,2.0,M);
-					Add(X_side+2*JX,X,M-2*JX);
-					Add(X_side,X+2*JX,M-2*JX);
-					Add(X_side+2*JX,X+1,M-2*JX);
-					Add(X_side+2*JX+1,X,M-2*JX-1);
-					Add(X_side+1,X+2*JX,M-2*JX);
-					Add(X_side,X+2*JX+1,M-2*JX-1);
-					Add(X_side+JX+2,X,M-JX-2);
-					Add(X_side+JX,X+2,M-JX);
-					Add(X_side,X+JX+2,M-JX-2);
-					Add(X_side+2,X+JX,M-JX);
-					Add(X_side+2,X,M-2);
-					Add(X_side,X+2,M-2);
-					Norm(X_side,2.0,M);
-					Add(X_side+2*JX+2,X,M-2*JX-2);
-					Add(X_side,X+2*JX+2,M-2*JX-2);
-					Add(X_side+2*JX,X+2,M-2*JX);
-					Add(X_side+2,X+2*JX,M-2*JX);
-					Norm(X_side,1.0/64.0,M);
-				} else {
-					Add(X_side,X,M);
-					Add(X_side+1,X,M-1);
-					Add(X_side,X+1,M-1);
-					Norm(X_side,1.0/4.0,M);
-					AddTimes(X_side+JX,X,LAMBDA+M+JX,M-JX);
-					AddTimes(X_side+JX+1,X,LAMBDA+M+JX+1,M-JX-1);
-					AddTimes(X_side+JX,X+1,LAMBDA+M+JX+1,M-JX);
-					AddTimes(X_side,X+JX,LAMBDA+3*M,M-JX);
-					AddTimes(X_side,X+JX+1,LAMBDA+3*M,M-JX-1);
-					AddTimes(X_side+1,X+JX,LAMBDA+3*M,M-JX);
-					Norm(X_side,2.0,M);
-					AddTimes(X_side+2*JX,X,LAMBDA+2*JX,M-2*JX);
-					AddTimes(X_side,X+2*JX,LAMBDA+4*M,M-2*JX);
-					AddTimes(X_side+2*JX,X+1,LAMBDA+2*JX,M-2*JX);
-					AddTimes(X_side+2*JX+1,X,LAMBDA+2*JX+1,M-2*JX-1);
-					AddTimes(X_side+1,X+2*JX,LAMBDA+4*M+1,M-2*JX);
-					AddTimes(X_side,X+2*JX+1,LAMBDA+4*M,M-2*JX-1);
-					AddTimes(X_side+JX+2,X,LAMBDA+M+JX+2,M-JX-2);
-					AddTimes(X_side+JX,X+2,LAMBDA+M+JX,M-JX);
-					AddTimes(X_side,X+JX+2,LAMBDA+3*M,M-JX-2);
-					AddTimes(X_side+2,X+JX,LAMBDA+3*M+2,M-JX);
-					AddTimes(X_side+2,X,LAMBDA+2*M+2,M-2);
-					AddTimes(X_side,X+2,LAMBDA+2*M,M-2);
-					Norm(X_side,2.0,M);
-					AddTimes(X_side+2*JX+2,X,LAMBDA+2*JX+2,M-2*JX-2);
-					AddTimes(X_side,X+2*JX+2,LAMBDA+4*M,M-2*JX-2);
-					AddTimes(X_side+2*JX,X+2,LAMBDA+2*JX,M-2*JX);
-					AddTimes(X_side+2,X+2*JX,LAMBDA+4*M+2,M-2*JX);
-					Norm(X_side,1.0/16.0,M);
+				if (fjc==2) {
+					if (geometry=="planar") {
+						Add(X_side,X,M);
+						Add(X_side+JX,X,M-JX);
+						Add(X_side,X+JX,M-JX);
+						Add(X_side+1,X,M-1);
+						Add(X_side,X+1,M-1);
+						Add(X_side+JX+1,X,M-JX-1);
+						Add(X_side,X+JX+1,M-JX-1);
+						Add(X_side+1,X+JX,M-JX);
+						Add(X_side+JX,X+1,M-JX);
+						Norm(X_side,2.0,M);
+						Add(X_side+2*JX,X,M-2*JX);
+						Add(X_side,X+2*JX,M-2*JX);
+						Add(X_side+2*JX,X+1,M-2*JX);
+						Add(X_side+2*JX+1,X,M-2*JX-1);
+						Add(X_side+1,X+2*JX,M-2*JX);
+						Add(X_side,X+2*JX+1,M-2*JX-1);
+						Add(X_side+JX+2,X,M-JX-2);
+						Add(X_side+JX,X+2,M-JX);
+						Add(X_side,X+JX+2,M-JX-2);
+						Add(X_side+2,X+JX,M-JX);
+						Add(X_side+2,X,M-2);
+						Add(X_side,X+2,M-2);
+						Norm(X_side,2.0,M);
+						Add(X_side+2*JX+2,X,M-2*JX-2);
+						Add(X_side,X+2*JX+2,M-2*JX-2);
+						Add(X_side+2*JX,X+2,M-2*JX);
+						Add(X_side+2,X+2*JX,M-2*JX);
+						Norm(X_side,1.0/64.0,M);
+					} else {
+						Add(X_side,X,M);
+						Add(X_side+1,X,M-1);
+						Add(X_side,X+1,M-1);
+						Norm(X_side,1.0/4.0,M);
+						AddTimes(X_side+JX,X,LAMBDA+M+JX,M-JX);
+						AddTimes(X_side+JX+1,X,LAMBDA+M+JX+1,M-JX-1);
+						AddTimes(X_side+JX,X+1,LAMBDA+M+JX+1,M-JX);
+						AddTimes(X_side,X+JX,LAMBDA+3*M,M-JX);
+						AddTimes(X_side,X+JX+1,LAMBDA+3*M,M-JX-1);
+						AddTimes(X_side+1,X+JX,LAMBDA+3*M,M-JX);
+						Norm(X_side,2.0,M);
+						AddTimes(X_side+2*JX,X,LAMBDA+2*JX,M-2*JX);
+						AddTimes(X_side,X+2*JX,LAMBDA+4*M,M-2*JX);
+						AddTimes(X_side+2*JX,X+1,LAMBDA+2*JX,M-2*JX);
+						AddTimes(X_side+2*JX+1,X,LAMBDA+2*JX+1,M-2*JX-1);
+						AddTimes(X_side+1,X+2*JX,LAMBDA+4*M+1,M-2*JX);
+						AddTimes(X_side,X+2*JX+1,LAMBDA+4*M,M-2*JX-1);
+						AddTimes(X_side+JX+2,X,LAMBDA+M+JX+2,M-JX-2);
+						AddTimes(X_side+JX,X+2,LAMBDA+M+JX,M-JX);
+						AddTimes(X_side,X+JX+2,LAMBDA+3*M,M-JX-2);
+						AddTimes(X_side+2,X+JX,LAMBDA+3*M+2,M-JX);
+						AddTimes(X_side+2,X,LAMBDA+2*M+2,M-2);
+						AddTimes(X_side,X+2,LAMBDA+2*M,M-2);
+						Norm(X_side,2.0,M);
+						AddTimes(X_side+2*JX+2,X,LAMBDA+2*JX+2,M-2*JX-2);
+						AddTimes(X_side,X+2*JX+2,LAMBDA+4*M,M-2*JX-2);
+						AddTimes(X_side+2*JX,X+2,LAMBDA+2*JX,M-2*JX);
+						AddTimes(X_side+2,X+2*JX,LAMBDA+4*M+2,M-2*JX);
+						Norm(X_side,1.0/16.0,M);
+					}
 				}
 			}
 			break;
@@ -1403,7 +1502,6 @@ if (debug) cout <<" Side in lattice " << endl;
 			break;
 	}
 }
-
 
 void Lattice::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in lattice " << endl;
@@ -1459,15 +1557,15 @@ if (debug) cout <<" propagate in lattice " << endl;
 						YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0,M-JX-1);
 						Times(gs,gs,G1,M);
 					} else { //hexagonal //9 point stencil
-						YplusisCtimesX(gs,gs_1,    12.0/8.0,M);
-						YplusisCtimesX(gs+1,gs_1,   6.0/8.0,M-1);
-						YplusisCtimesX(gs,gs_1+1,   6.0/8.0,M-1);
-						YplusisCtimesX(gs+JX,gs_1,  6.0/8.0,M-JX);
-						YplusisCtimesX(gs,gs_1+JX,  6.0/8.0,M-JX);
-						YplusisCtimesX(gs+JX+1,gs_1,3.0/8.0,M-JX-1);
-						YplusisCtimesX(gs+JX,gs_1+1,3.0/8.0,M-JX);
-						YplusisCtimesX(gs+1,gs_1+JX,3.0/8.0,M-JX);
-						YplusisCtimesX(gs,gs_1+JX+1,3.0/8.0,M-JX-1);
+						YplusisCtimesX(gs,gs_1,    12.0/48.0,M);
+						YplusisCtimesX(gs+1,gs_1,   6.0/48.0,M-1);
+						YplusisCtimesX(gs,gs_1+1,   6.0/48.0,M-1);
+						YplusisCtimesX(gs+JX,gs_1,  6.0/48.0,M-JX);
+						YplusisCtimesX(gs,gs_1+JX,  6.0/48.0,M-JX);
+						YplusisCtimesX(gs+JX+1,gs_1,3.0/48.0,M-JX-1);
+						YplusisCtimesX(gs+JX,gs_1+1,3.0/48.0,M-JX);
+						YplusisCtimesX(gs+1,gs_1+JX,3.0/48.0,M-JX);
+						YplusisCtimesX(gs,gs_1+JX+1,3.0/48.0,M-JX-1);
 						Times(gs,gs,G1,M);
 					}
 				} else { //geometry==cylindrical. use \lambda's.
@@ -1482,6 +1580,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 						AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
 						AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
 						AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
+						Norm(gs,1.0/6.0,M);
 						Times(gs,gs,G1,M);
 					} else {
 						YplusisCtimesX(gs,gs_1,2.0/4.0,M);
@@ -1494,7 +1593,7 @@ if (debug) cout <<" propagate in lattice " << endl;
 						AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
 						AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
 						AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
-						Norm(gs,6.0,M);
+						Norm(gs,3.0/12.0,M);
 						Times(gs,gs,G1,M);
 					}
 				}

@@ -11,6 +11,12 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("n");
 	KEYS.push_back("save_memory");
 	KEYS.push_back("restricted_range");
+	KEYS.push_back("compute_width_interface");
+	width=0;
+	phi1=0;
+	phiM=0;
+	Dphi=0;
+	pos_interface=0;
 }
 
 Molecule::~Molecule() {
@@ -1531,10 +1537,22 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	push("theta",theta);
 	Real thetaexc=theta-phibulk*Lat[0]->volume/pow(Lat[0]->fjc,Lat[0]->gradients);
 	push("theta_exc",thetaexc);
+	push("thetaexc",thetaexc);
 	push("n",n);
 	push("chainlength",chainlength);
 	push("phibulk",phibulk);
 	push("mu",Mu);
+	if (GetValue("compute_width_interface").size()>0){
+		if (!ComputeWidth()) {
+			cout <<"Computation of width of interface is rejected" <<endl;
+		}
+	}
+	push("width",width);
+	push("phi1",phi1);
+	push("phiM",phiM);
+	push("Dphi",phi1-phiM);
+	push("pos_interface",pos_interface);
+	push("phi_average",phi_av);
 	if (chainlength==1) {
 		int seg=MolMonList[0];
 		if (Seg[seg]->ns >1) {
@@ -1642,6 +1660,27 @@ if (debug) cout <<"GetValue (long) for Mol " + name << endl;
 	return 0;
 }
 
+bool Molecule::ComputeWidth() {
+	bool success=true;
+	int M=Lat[0]->M;
+	if (Lat[0]->gradients>1 || Lat[0]->geometry!= "planar") {success=false; cout <<" Compute width of interface only implemented in 1D planar" << endl; return success; }
+	if (GetValue("compute_width_interface")!="true") {
+		cout <<"Interfacial width not computed bewcause value for 'compute_width_interface' was not set to 'true'. " << endl; success=false; return success;
+	} else {
+			int fjc=Lat[0]->fjc;
+		  width=0;
+			Dphi=0;
+			phi_av=0;
+			phi1=phitot[fjc]; phiM=phitot[M-2*fjc]; Dphi=phi1-phiM;
+			if (Dphi*Dphi<1e-20) {cout << "There is no interface present. Width evaluation failed;" << endl; return success; }
+			for (int x=fjc; x<M-fjc-1; x++) {
+				if ((phitot[x]-phitot[x+1])/Dphi > width) {width = (phitot[x]-phitot[x+1])/Dphi; pos_interface=x+0.5; phi_av=(phitot[x]+phitot[x+1])/2;}
+			}
+	}
+	if (width >0) width = 1.0/width/Lat[0]->fjc;
+	return success;
+}
+
 Real Molecule::fraction(int segnr){
 if (debug) cout <<"fraction for Mol " + name << endl;
 	int Nseg=0;
@@ -1714,7 +1753,7 @@ if (debug) cout <<"ComputePhiMon for Mol " + name << endl;
 	int M=Lat[0]->M;
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
-	GN=Lat[0]->WeightedSum(phi); 
+	GN=Lat[0]->WeightedSum(phi);
 	if (compute_phi_alias)
 		for (auto& alias : Al) //For every alias in the Al vector (same as Al[i])
 			if (alias->frag[0]==1) {

@@ -32,6 +32,7 @@ public:
 	int JX,JY,JZ,M;
 	bool all_lattice;
 	bool ignore_sites;
+	bool fcc_sites;
 	bool stencil_full;
 	int sub_box_on;
 	Real volume;
@@ -46,8 +47,11 @@ public:
 	int Z;
 	Real lambda;
 	Real *lambda0;
+	Real *fcc_lambda0;
 	Real *lambda_1;
+	Real *fcc_lambda_1;
 	Real *lambda1;
+	Real *fcc_lambda1;
 	Real *LAMBDA;
 	int fjc, FJC;
 	Real *X;

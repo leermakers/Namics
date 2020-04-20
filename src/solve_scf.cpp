@@ -866,7 +866,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Real R = (Sys[0]->phi_ratio-1)/(Sys[0]->phi_ratio+1);
 				YisAplusC(g+itpos,g+itpos,R,M);
 				Times(g+itpos,g+itpos,Sys[0]->beta,M);
-			}
+		}
 		break;
 	}
 }

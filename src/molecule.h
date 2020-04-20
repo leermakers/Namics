@@ -18,7 +18,7 @@ public:
 	vector<Alias*> Al;
 	vector<int> MolMonList;
 	vector<int> MolAlList;
-	int start; 
+	int start;
 	int n_mol;
 	int mol_nr;
 	int n_box;
@@ -34,6 +34,7 @@ public:
 	Real n;
 	Real GN,GN1,GN2;
 	Real norm;
+	Real phi1,phiM,width,Dphi,pos_interface,phi_av;
 	int chainlength,N;
 	bool save_memory;
 	bool compute_phi_alias;
@@ -131,6 +132,7 @@ public:
 	Real GetError();
 	Real GetValue();
 	void PutValue(Real);
+	bool ComputeWidth();
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;

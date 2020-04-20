@@ -20,6 +20,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("delta_inputfile");
 	KEYS.push_back("delta_molecules");
 	KEYS.push_back("phi_ratio");
+	KEYS.push_back("critical_ratio");
 	KEYS.push_back("generate_guess");
 	KEYS.push_back("initial_guess");
 	KEYS.push_back("guess_inputfile");
@@ -574,8 +575,13 @@ bool System::CheckInput(int start)
 				}
 
 
-				phi_ratio=1.0;
-				if(GetValue("phi_ratio").size()>0){phi_ratio=In[0]->Get_Real(GetValue("phi_ratio"),1);}
+				phi_ratio=0.0;
+				if(GetValue("phi_ratio").size()>0) {phi_ratio=In[0]->Get_Real(GetValue("phi_ratio"),1);
+					if (phi_ratio<0) {cout <<" phi_ratio is a positive quantity" << endl; success=false;}
+				}
+				if (phi_ratio==0.0) {
+					success=false; cout <<"Please give a value for 'phi_ratio' (typically 1)" << endl;
+				}
 			}
 
 			//if (Mol[DeltaMolList[0]]->freedom=="restricted" || Mol[DeltaMolList[1]]->freedom=="restricted" ) {success =false;  cout <<"Molecule in list of delta_molecules has not freedom 'free'"<<endl; }
@@ -977,10 +983,10 @@ bool System::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_va
 	if (Var_target_ == "free_energy")
 		Var_target = 0;
 	if (Var_target_ == "grand_potential")
-	{
 		Var_target = 1;
-	}
-	if (Var_target < 0 || Var_target > 1)
+	if (Var_target_ == "Laplace_pressure")
+		Var_target = 2;
+	if (Var_target < 0 || Var_target > 2 )
 	{
 		success = false;
 		cout << "Var target " + Var_target_ + " rejected in PutVarInfo in System " << endl;
@@ -1003,6 +1009,9 @@ Real System::GetError()
 		break;
 	case 1:
 		Error = -1.0 * (GrandPotential - Var_target_value);
+		break;
+	case 2:
+		Error = GrandPotentialDensity[1]-Var_target_value;
 		break;
 	default:
 		cout << "Program error in GetVarError" << endl;
@@ -1093,8 +1102,12 @@ void System::PushOutput()
 	push("temperature", T);
 	push("free_energy", FreeEnergy);
 	push("grand_potential", GrandPotential);
-	if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar")
-	{
+	int n_seg=In[0]->MonList.size();
+	for (int i=0; i<n_seg; i++)
+	for (int j=0; j<n_seg; j++){
+		push("chi-"+Seg[i]->name+"-"+Seg[j]->name,CHI[i * n_seg + j]);
+	}
+	if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar") {
 		push("KJ0", -Lat[0]->Moment(GrandPotentialDensity, 1));
 		push("Kbar", Lat[0]->Moment(GrandPotentialDensity, 2));
 	}

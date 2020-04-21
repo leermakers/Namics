@@ -968,11 +968,21 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 
 void Solve_scf::ComputePhis(bool first_time) {
 	if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
-	PutU();
-	Sys[0]->PrepareForCalculations(first_time);
-
-	if (first_time && (Sys[0]->initial_guess=="polymer_adsorption"||Sys[0]->initial_guess=="membrane_torus")) Put_U();
-	Sys[0]->ComputePhis();
+	if (first_time && (
+											Sys[0]->initial_guess=="polymer_adsorption"||
+											Sys[0]->initial_guess=="membrane_torus" ||
+											Sys[0]->initial_guess=="membrane" ||
+											Sys[0]->initial_guess=="micelle"
+										)) {
+		PutU();
+		Sys[0]->PrepareForCalculations(first_time);
+		Put_U();
+		Sys[0]->ComputePhis();
+	} else {
+		PutU();
+		Sys[0]->PrepareForCalculations(first_time);
+		Sys[0]->ComputePhis();
+	}
 }
 
 bool Solve_scf::Put_U(){

@@ -522,7 +522,7 @@ int main(int argc, char *argv[])
 #endif
 			Cp(X, New[0]->xx, IV_new);
 			fjc_old = Lat[0]->fjc;
-			int mon_length = Sys[0]->ItMonList.size();
+			int mon_length = Sys[0]->ItMonList.size(); 
 			int state_length = Sys[0]->ItStateList.size();
 			MONLIST.clear();
 			STATELIST.clear();

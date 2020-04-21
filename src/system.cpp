@@ -286,14 +286,15 @@ bool System::PrepareForCalculations(bool first_time)
 					if (Seg[i]->epsilon != eps) grad_epsilon = true;
     	}
   	}
-  	if (initial_guess == "polymer_adsorption") {
+  	if (start==1 && initial_guess == "polymer_adsorption") {
 	  	int length=FrozenList.size();
 	  	for (int i=0; i<length; i++){
 		  	for (int j=0; j<n_mon; j++) {if (!CHI[i+n_mon*j] == 0) Seg[j]->PutAdsorptionGuess(CHI[i+n_mon*j],Seg[i]->MASK);
 		  	}
 	  	}
+			initial_guess="previous_result";
   	}
-		if (initial_guess == "membrane_torus") {
+		if (start==1 && initial_guess == "membrane_torus") {
 			bool found=false;
 			int segnr = Mol[solvent]->MolMonList[0];
 			for (int j=0; j<n_mon; j++) {
@@ -302,6 +303,18 @@ bool System::PrepareForCalculations(bool first_time)
 					} //else Seg[j]->PutTorusPotential(-1);
 			}
 			if (!found) cout <<"Unable to locate a 'solvo'phobic segment. Initial guess for membrane_torus might not work...."<< endl;
+			initial_guess="previous_result";
+		}
+		if (start==1 && (initial_guess == "membrane" || initial_guess == "micelle")) {
+			bool found=false;
+			int segnr = Mol[solvent]->MolMonList[0];
+			for (int j=0; j<n_mon; j++) {
+					if (CHI[segnr+n_mon*j]>0.8) {
+						found=true; Seg[j]->PutMembranePotential(1);
+					} //else Seg[j]->PutTorusPotential(-1);
+			}
+			if (!found) cout <<"Unable to locate a 'solvo'phobic segment. Initial guess for membrane/micelle might not work...."<< endl;
+			initial_guess="previous_result";
 		}
 	}
 
@@ -315,10 +328,11 @@ string System::GetMonName(int mon_number_I)
 	return Seg[mon_number_I]->name;
 }
 
-bool System::CheckInput(int start)
+bool System::CheckInput(int start_)
 {
 	if (debug)
 		cout << "CheckInput for system " << endl;
+	start=start_;
 	bool success = true;
 	bool solvent_found = false;
 	tag_segment = -1;
@@ -696,6 +710,8 @@ bool System::CheckInput(int start)
 			options.push_back("file");
 			options.push_back("polymer_adsorption");
 			options.push_back("membrane_torus");
+			options.push_back("membrane");
+			options.push_back("micelle");
 			In[0]->Get_string(GetValue("initial_guess"), initial_guess, options, " Info about 'initial_guess' rejected;");
 			if (initial_guess == "file")
 			{
@@ -709,10 +725,10 @@ bool System::CheckInput(int start)
 					cout << " When 'initial_guess' is set to 'file', you need to supply 'guess_inputfile', but this entry is missing. Problem terminated " << endl;
 				}
 			}
-			if (initial_guess=="polymer_adsorption"){
+			if (start==1 && initial_guess=="polymer_adsorption"){
 				//test here whether or not the system is ready for adsorption, e.g. solids must be defined....
 			}
-			if (initial_guess=="membrane_torus"){
+			if (start==1 && initial_guess=="membrane_torus"){
 				if (Lat[0]->gradients!=2) {success = false; cout <<" Option 'membrane_torus' is only possible for two gradient coordinate system."<<endl;}
 				if (Lat[0]->geometry!="cylindrical") {success = false; cout <<" Option 'membrane_torus' is only possible for two gradient cylindrical coordinate system."<<endl;}
 				int length = Mol[solvent]->MolMonList.size();
@@ -720,6 +736,24 @@ bool System::CheckInput(int start)
 					cout <<"solvent does contain more than one segment type. Initial guess membrane_torus will not work" << endl;
 					success=false;
 				}
+			}
+			if (start==1 && (initial_guess=="membrane"||initial_guess=="micelle")){
+				if (Lat[0]->gradients>1) {success = false; cout <<" Option 'membrane' is only possible for one-gradient coordinate system."<<endl;}
+				int length = Mol[solvent]->MolMonList.size();
+				if (length>1) {
+					cout <<"solvent does contain more than one segment type. Initial guess membrane_torus will not work" << endl;
+					success=false;
+				}
+			}
+		}
+		if (start>1) {
+			if (initial_guess=="polymer_adsorption" ||
+					initial_guess=="membrane_torus" ||
+					initial_guess=="membrane" ||
+					initial_guess=="micelle"
+				) {
+				initial_guess="previous_result";
+				cout <<"'initial_guess' is set to default: 'previous_result'" <<endl;
 			}
 		}
 		final_guess = "next_problem";

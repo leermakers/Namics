@@ -70,6 +70,7 @@ public:
 	Real chi_value;
 	Real Amplitude;
 	int labda;
+	int start;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -131,6 +132,7 @@ public:
 	bool PrepareForCalculations(int*,bool);
 	bool PutAdsorptionGuess(Real,int*);
 	bool PutTorusPotential(int);
+	bool PutMembranePotential(int);
 	void UpdateValence(Real*,Real*,Real*,Real*,bool);
 	bool PutVarInfo(string,string,Real);
 	int PutVarScan(Real,Real,int,string);

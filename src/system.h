@@ -85,6 +85,7 @@ public:
 	string delta_inputfile;
 	int Var_target;
 	Real Var_target_value;
+	int start;
 
 	bool prepared;
 

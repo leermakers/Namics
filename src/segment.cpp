@@ -239,7 +239,7 @@ if (debug) cout <<"PutAdsorptionGuess" + name << endl;
 }
 
 bool Segment::PutTorusPotential(int sign) {
-if (!debug) cout <<"PutTorusPotential" + name << endl;
+if (debug) cout <<"PutTorusPotential " + name << endl;
 	bool success=true;
 	Real distance=0;
 	int count=0;
@@ -288,6 +288,14 @@ if (!debug) cout <<"PutTorusPotential" + name << endl;
 	return success;
 }
 
+bool Segment::PutMembranePotential(int sign) {
+if (debug) cout <<"PutMembranePotential " + name << endl;
+	bool success=true;
+	int fjc=Lat[0]->fjc;
+	for (int x=1; x<4*fjc; x++) u[x]=-log(1.8)*sign;
+	Boltzmann(G1,u,Lat[0]->M);
+	return success;
+}
 
 void Segment::SetPhiSide(){
 if (debug) cout <<"SetPhiSide in Segment " + name << endl;
@@ -312,9 +320,10 @@ if (debug) cout <<"SetPhiSide in Segment " + name << endl;
 
 }
 
-bool Segment::CheckInput(int start) {
+bool Segment::CheckInput(int start_) {
 if (debug) cout <<"CheckInput in Segment " + name << endl;
 	bool success;
+	start=start_;
 	block=false;
 	unique=true;
 	chi_var_seg=-1;

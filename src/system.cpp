@@ -1045,7 +1045,7 @@ Real System::GetError()
 		Error = -1.0 * (GrandPotential - Var_target_value);
 		break;
 	case 2:
-		Error = GrandPotentialDensity[1]-Var_target_value;
+		Error = GrandPotentialDensity[1]+GrandPotentialDensity[Lat[0]->M-2]-Var_target_value;
 		break;
 	default:
 		cout << "Program error in GetVarError" << endl;

@@ -376,8 +376,8 @@ void Solve_scf::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 	int i,j,k;
 	int pos_i,pos_o;
 	int fjc=Lat[0]->fjc;
-	int JX=(MY+2*fjc)*(MZ+2*fjc);
-	int JY=(MZ+2*fjc);
+	int JX=(MY+2*fjc_old)*(MZ+2*fjc_old);
+	int JY=(MZ+2*fjc_old);
 
 
 	switch (Lat[0]->gradients) {
@@ -716,9 +716,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 		break;
 		case custum:
 			if (debug) cout <<"Residuals in custum mode in Solve_scf " << endl;
-			if (value_ets==-1 && value_etm==-1 && value_bm==-1) 			//guess from newton is stored in place.
+			if (value_ets==-1 && value_etm==-1 && value_bm==-1) { 			//guess from newton is stored in place.
 				Var[value_search]->PutValue(x[0]);
-			else {
+			} else {
 				if (value_ets>-1) Var[value_ets]->PutValue(x[0]);
 				if (value_etm>-1) Var[value_etm]->PutValue(x[0]);
 				if (value_bm>-1) Var[value_bm]->PutValue(x[0]);

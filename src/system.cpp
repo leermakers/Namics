@@ -1018,16 +1018,19 @@ bool System::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_va
 		Var_target = 0;
 	if (Var_target_ == "grand_potential")
 		Var_target = 1;
-	if (Var_target_ == "Laplace_pressure")
-		Var_target = 2;
+	if (Var_target_ == "Laplace_pressure"){
+			Var_target = 2;
+	}
+	//cout << Var_target_ << endl;
 	if (Var_target < 0 || Var_target > 2 )
 	{
 		success = false;
 		cout << "Var target " + Var_target_ + " rejected in PutVarInfo in System " << endl;
 	}
 	Var_target_value = Var_target_value_;
-	if (Var_target_value < -1e4 || Var_target_value > 1e4)
-		success = false;
+	if (Var_target_value < -1e4 || Var_target_value > 1e4) {
+		success =false; cout <<"Var_target_value out of range " << endl;
+	}
 	return success;
 }
 
@@ -1046,6 +1049,7 @@ Real System::GetError()
 		break;
 	case 2:
 		Error = GrandPotentialDensity[1]+GrandPotentialDensity[Lat[0]->M-2]-Var_target_value;
+		//cpush << " Error " << Error << endl;
 		break;
 	default:
 		cout << "Program error in GetVarError" << endl;
@@ -1136,6 +1140,8 @@ void System::PushOutput()
 	push("temperature", T);
 	push("free_energy", FreeEnergy);
 	push("grand_potential", GrandPotential);
+	push("start",start);
+	push("Laplace_pressure",GrandPotentialDensity[Lat[0]->fjc]);
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++)
 	for (int j=0; j<n_seg; j++){
@@ -2004,11 +2010,11 @@ Real System::GetFreeEnergy(void)
 Zero(TEMP,M);
 	if (charged) {
 		//Times(TEMP,EE,eps,M);
-cout <<"Sum EE*eps = " << Lat[0]->WeightedSum(TEMP) << endl;
-		//Norm(TEMP,1.0,M);
+//cout <<"Sum EE*eps = " << Lat[0]->WeightedSum(TEMP) << endl;
+		//Norm(TEMP,-1.0,M);
 		AddTimes(TEMP,q,psi,M);
 		Norm(TEMP,0.5,M);
-
+		Add(F,TEMP,M);
 	}
 	return FreeEnergy + Lat[0]->WeightedSum(F);
 }
@@ -2171,7 +2177,7 @@ if (charged) {
 	AddTimes(TEMP,q,psi,M);
 	Norm(TEMP,-1.0/2.0,M);
 
-cout <<"el to G " << Lat[0]->WeightedSum(TEMP) << endl;
+//out <<"el to G " << Lat[0]->WeightedSum(TEMP) << endl; my guess is that I add nothing here....
 
 	Add(GP,TEMP,M); Times(GP,GP,KSAM,M);
 	Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);

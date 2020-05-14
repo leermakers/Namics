@@ -998,7 +998,7 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	int k=0,it=0;
 
 	while ((it<iterationlimit) && (abs(res)>tolerance)) {
-		//if (it>0) cout <<"restart regular falsi" << endl;
+		if (it>0) cout <<"restart regular falsi" << endl;
 		Real x_start=x[0];
 		residuals(x,g);
 		a=1;
@@ -1012,7 +1012,7 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 		x[0]=c*x_start;
 		residuals(x,g);
 		fc=g[0]; res=fc;
-		//it=k;
+		it+=k;
 		k=0;
 
 		while((k<iterationlimit/10) && (abs(res)>tolerance)){

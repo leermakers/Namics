@@ -484,7 +484,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		bond_length=0;
 		if (GetValue("bondlength").size()>0) {
 			bond_length =  In[0]->Get_Real(GetValue("bondlength"),5e-10);
-			if (bond_length < 1e-10 || bond_length > 1e-8) {cout <<" bondlength out of range 1e-10..1e-8 " << endl; success=false;}
+			if (bond_length < 1e-11 || bond_length > 1e-8) {cout <<" bondlength out of range 1e-11..1e-8 " << endl; success=false;}
 		}
 
 
@@ -794,7 +794,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 			}
 
 			fjc=(FJC-3)/2+1;
+
 		}
+		bond_length=bond_length/fjc;
 		if ((fjc>1) && (lattice_type !="hexagonal")) {success = false; cout << "For FJC-choices >3, we need lattice_type = 'hexagonal'." << endl; }
 		if (gradients ==2 && fjc>2) {success = false; cout <<" When gradients is 2, FJC-choices are limited to 5 " << endl; }
 		if (gradients ==3 && fjc>1) {success = false; cout <<" When graidents is 3, FJC-choices are limited to 3 " << endl; }

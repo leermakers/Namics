@@ -1548,7 +1548,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		}
 	}
 	push("width",width);
-	push("phi1",phi1);
+	push("phi1",phitot[Lat[0]->fjc]);
 	push("phiM",phiM);
 	push("Dphi",phi1-phiM);
 	push("pos_interface",pos_interface);

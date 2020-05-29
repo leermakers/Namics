@@ -571,10 +571,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 250. Default value 80 used instead" << endl;
 		}
 		if (valence !=0) {
-			if (Lat[0]->bond_length <1e-10 || Lat[0]->bond_length > 1e-8) {
+			if (Lat[0]->bond_length <1e-12 || Lat[0]->bond_length > 1e-8) {
 				success=false;
-				if (Lat[0]->bond_length==0) cout << "When there are charged segments, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-10 ... 1e-8 m " << endl;
-				else cout <<"Bond length is out of range: 1e-10..1e-8 m " << endl;
+				if (Lat[0]->bond_length==0) cout << "When there are charged segments, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-102... 1e-8 m " << endl;
+				else cout <<"Bond length is out of range: 1e-12..1e-8 m " << endl;
 			}
 		}
 		if (GetValue("e.psi0/kT").size()>0) {

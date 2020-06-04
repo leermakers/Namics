@@ -1546,6 +1546,8 @@ if(debug) cout <<"ComputePhis in system" << endl;
 		{
 			norm = Mol[i]->phibulk / Mol[i]->chainlength;
 			Mol[i]->n = norm * Mol[i]->GN;
+			cout <<"norm " << norm << endl;
+			cout <<"GN " << Mol[i]->GN;
 
 			A += Mol[i]->phibulk * Mol[i]->Charge();
 			B += Mol[i]->phibulk;

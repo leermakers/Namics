@@ -95,12 +95,12 @@ if (debug) cout <<"Load in output " << endl;
 bool Output::CheckInput(int start_) {
 if (debug) cout << "CheckInput in output " << endl;
 	start=start_;
-	
+
 	bool success=true;
 	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
 		if (GetValue("append").size()>0) {
-			if (name=="ana") append=true;			
+			if (name=="ana") append=true;
 			append=In[0]->Get_bool(GetValue("append"),append);
 			if (first==0) first=start;
 		} else {
@@ -131,9 +131,9 @@ if (debug) cout << "CheckInput in output " << endl;
 			option_list.push_back("no_error");
 			option_list.push_back("never");
 			if (!In[0]->Get_string(GetValue("write_output"),write_option,option_list,"In output: 'write_output' not recognised. Use 'always', 'never', or 'no_error'. The last value is default.")){
-				cout <<"continue with write_output : no_error" << endl; 
-			} 
-		}		
+				cout <<"continue with write_output : no_error" << endl;
+			}
+		}
 	} else cout <<"Error in CheckParameters in output" << endl;
 	return success;
 }
@@ -284,7 +284,7 @@ if (debug) cout << "GetPointer in output " << endl;
 		case 5:
 			listlength=PointerVectorReal.size();
 			j=0;
-			while (j<listlength) { 
+			while (j<listlength) {
 				if (prop==strings[j]){ Size=SizeVectorReal[j];  return PointerVectorReal[j];}
 				j++;
 			}
@@ -370,7 +370,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	}
 
     string numc = to_string(subl);
-    string numcc = to_string(start); 
+    string numcc = to_string(start);
 
     if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else {
 		if (n_starts==1 && subl < 1) filename=sub[0].append(".").append(name);
@@ -466,13 +466,13 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
 				fprintf(fp,"%s\t",s.c_str());
 			}
-			fprintf(fp,"\n"); 
+			fprintf(fp,"\n");
 		} else fp=fopen(filename.c_str(),"a");
 
 		if (fp == NULL) {
 			cerr << "Error trying to open " << filename.c_str() << endl;
 			perror("Error");
-		} 
+		}
 
 
 		int length = OUT_key.size();

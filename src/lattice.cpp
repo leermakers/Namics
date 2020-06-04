@@ -1351,6 +1351,14 @@ if (debug) cout <<" Side in lattice " << endl;
 							YplusisCtimesX(X_side+JX,X+1,1.0/36.0,M-JX);
 							YplusisCtimesX(X_side+1,X+JX,1.0/36.0,M-JX);
 							YplusisCtimesX(X_side,X+JX+1,1.0/36.0,M-JX-1);
+							//6point stencil
+							//Add(X_side+JX,X,M-JX);
+							//Add(X_side,X+JX,M-JX);
+							//Add(X_side+1,X,M-1);
+							//Add(X_side,X+1,M-1);
+							//Norm(X_side,1.0/2.0,M);
+							//Add(X_side,X,M);
+							//Norm(X_side,1.0/3.0,M);
 						} else {
 							YplusisCtimesX(X_side,X,    12.0/48.0,M);
 							YplusisCtimesX(X_side+1,X,   6.0/48.0,M-1);
@@ -1558,6 +1566,15 @@ if (debug) cout <<" propagate in lattice " << endl;
 						YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0,M-JX);
 						YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0,M-JX-1);
 						Times(gs,gs,G1,M);
+						 //6point stencil ; classical!
+						//Add(gs+JX,gs_1,M-JX);
+						//Add(gs,gs_1+JX,M-JX);
+						//Add(gs+1,gs_1,M-1);
+						//Add(gs,gs_1+1,M-1);
+						//Norm(gs,1.0/2.0,M);
+						//Add(gs,gs_1,M);
+						//Norm(gs,1.0/3.0,M);
+						//Times(gs,gs,G1,M);
 					} else { //hexagonal //9 point stencil
 						YplusisCtimesX(gs,gs_1,    12.0/48.0,M);
 						YplusisCtimesX(gs+1,gs_1,   6.0/48.0,M-1);
@@ -1757,24 +1774,24 @@ if (debug) cout <<"remove_bounds in lattice " << endl;
 			break;
 		case 2:
 			if (fjc==1) {
-				for (x=0; x<MX+1; x++) {
+				for (x=0; x<MX+2; x++) {
 					//if (P(x,0) <0 || P(x,0)>M) cout <<"P(x,0) " <<P(x,0) << endl;
 					//if (P(x,MY+1) <0 || P(x,MY+1)>M) cout <<"P(x,MY+1) " <<P(x,MY+1) << endl;
 					X[P(x,0)] = 0;
 					X[P(x,MY+1)]=0;
 				}
-				for (y=0; y<MY+1; y++) {
+				for (y=0; y<MY+2; y++) {
 					//if (P(0,y) <0 || P(0,y)>M) cout <<"P(0,y) " <<P(0,y) << endl;
 					//if (P(MX+1,y) <0 ||P(MX+1,y)>M) cout <<"P(MX+1,y) " <<P(MX+1,y) << endl;
 					X[P(0,y)] = 0;
 					X[P(MX+1,y)]=0;
 				}
 			} else {
-				for (x=1-fjc; x<MX+fjc; x++) {
+				for (x=1-fjc; x<MX+fjc+1; x++) {
 					for (k=0; k<fjc; k++) X[P(x,-k)] =0;
 					for (k=0; k<fjc; k++) X[P(x,MY+1+k)]=0;
 				}
-				for (y=1-fjc; y<MY+fjc; y++) {
+				for (y=1-fjc; y<MY+fjc+1; y++) {
 					for (k=0; k<fjc; k++) X[P(-k,y)] = 0;
 					for (k=0; k<fjc; k++) X[P(MX+1+k,y)]=0;
 				}
@@ -1787,15 +1804,15 @@ if (debug) cout <<"remove_bounds in lattice " << endl;
 					RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 			} else
 				if (fjc==1) RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
-					for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
+					for (x=fjc; x<MX+fjc+1; x++) for (y=fjc; y<MY+fjc+1; y++){
 						for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = 0;
 						for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc-k]  = 0;
 					}
-					for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+					for (y=fjc; y<MY+fjc+1; y++) for (z=fjc; z<MZ+fjc+1; z++)  {
 						for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = 0;
 						for (k=0; k<fjc; k++) X[(MX+fjc-k)*JX+y*JY+z*JZ] = 0;
 					}
-					for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
+					for (z=fjc; z<MZ+fjc+1; z++) for (x=fjc; x<MX+fjc+1; x++){
 						for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = 0;
 						for (k=0; k<fjc; k++) X[x*JX+(MY+fjc-k)*JY+z*JZ] = 0;
 					}

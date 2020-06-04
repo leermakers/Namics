@@ -146,59 +146,74 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);
 
 	if (GetValue("fluctuation_potentials").size()>0&& first_time) {
-		string s = GetValue("fluctuation_potentials");
-		vector<string> sub;
-		In[0]->split(s, ',', sub);
-		if (sub.size()<3) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info, such as: x,y,5 or x,y,z "<<endl; }
-		else {
-			if (sub[0] != "x" || sub[1] != "y" ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  first two coordinates to be : x,y  "<<endl; }
-			int MX=Lat[0]->MX;
-			int JX=Lat[0]->JX;
-			int MY=Lat[0]->MY;
-			int JY=Lat[0]->JY;
-			//int M=Lat[0]->M;
-			if (first_time){
-				if (sub[2] == "z") {
-					int MZ=Lat[0]->MZ;
-					if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256 || MZ==512 || MZ==1024)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..10" << endl; }
-					if (success) {
-						Real shift_x,shift_y,shift_z;
-						for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
-						for (int lambda_y=2; lambda_y <=MY; lambda_y*=2)
-						for (int lambda_z=2; lambda_z <=MZ; lambda_z*=2){
-							shift_x = rand() % lambda_x;
-							shift_y = rand() % lambda_y;
-							shift_z = rand() % lambda_z;
-							for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) {
-								u_ext[x*JX+y*JY+MZ]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y)+sin(2.0*PIE*(z+shift_z)/lambda_z));
-							}
-						}
-					}
-				} else {
-					int mz=In[0]->Get_int(sub[2],0);
-					if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
-					if (success && labda ==0) {
-					cout <<"fluctutions set " << Amplitude << endl;
-						Real shift_x,shift_y;
-						for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
-						for (int lambda_y=2; lambda_y <=MY; lambda_y*=2){
-							shift_x = rand() % lambda_x;
-							shift_y = rand() % lambda_y;
-							for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) {
-								u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y));
+		if (Lat[0]->gradients==3) {
+			string s = GetValue("fluctuation_potentials");
+			vector<string> sub;
+			In[0]->split(s, ',', sub);
+			if (sub.size()<2) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info in 3d, such as: x,y,5 or x,y,z"<<endl; }
+			else {
+				if (sub[0] != "x" || sub[1] != "y" ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  first two coordinates to be : x,y  "<<endl; }
+				int MX=Lat[0]->MX;
+				int JX=Lat[0]->JX;
+				int MY=Lat[0]->MY;
+				int JY=Lat[0]->JY;
+				//int M=Lat[0]->M;
+				if (first_time){
+					if (sub[2] == "z") {
+						int MZ=Lat[0]->MZ;
+						if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256 || MZ==512 || MZ==1024)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..10" << endl; }
+						if (success) {
+							Real shift_x,shift_y,shift_z;
+							for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
+							for (int lambda_y=2; lambda_y <=MY; lambda_y*=2)
+							for (int lambda_z=2; lambda_z <=MZ; lambda_z*=2){
+								shift_x = rand() % lambda_x;
+								shift_y = rand() % lambda_y;
+								shift_z = rand() % lambda_z;
+								for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) {
+									u_ext[x*JX+y*JY+MZ]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y)+sin(2.0*PIE*(z+shift_z)/lambda_z));
+								}
 							}
 						}
 					} else {
-						if (labda>0) {
-							cout <<"fluctuation wavelength set to " << labda << " and amplitude to " << Amplitude << endl;
-							for (int x=0; x<MX; x++) for (int y=0; y<MY; y++)
-									u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x)/labda)+sin(2.0*PIE*(y)/labda));
+						int mz=In[0]->Get_int(sub[2],0);
+						if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
+						if (success && labda ==0) {
+							cout <<"fluctutions set " << Amplitude << endl;
+							Real shift_x,shift_y;
+							for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
+							for (int lambda_y=2; lambda_y <=MY; lambda_y*=2){
+								shift_x = rand() % lambda_x;
+								shift_y = rand() % lambda_y;
+								for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) {
+									u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y));
+								}
+							}
+						} else {
+							if (labda>0) {
+								cout <<"fluctuation wavelength set to " << labda << " and amplitude to " << Amplitude << endl;
+								for (int x=0; x<MX; x++) for (int y=0; y<MY; y++)
+										u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x)/labda)+sin(2.0*PIE*(y)/labda));
+									}
+								}
+							}
 						}
 					}
-				}
-			}
-		}
-	}
+				} else { //gradients ==2
+					if (first_time){
+						string s = GetValue("fluctuation_potentials");
+						vector<string> sub;
+						In[0]->split(s, ',', sub);
+						if (sub.size() !=2) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info in 2d, such as: x,5"<<endl; }
+						int my=In[0]->Get_int(sub[1],0);
+						if (my<0 || my>Lat[0]->MY) {success =false; cout << "in fluctuation potentials the y-coordinate is out of bounds."<< endl; }
+						int labda_y=Lat[0]->MY;
+						int MX=Lat[0]->MX;
+						int JX=Lat[0]->JX;
+						for (int x=0; x<MX; x++) u_ext[x*JX+my]+=Amplitude*(sin(2.0*PIE*x/labda_y));
+					} //first time
+				}//else
+			}//fluctuation potentials
 //for (int kkk=0; kkk<M; kkk++) if (u_ext[kkk] !=0) cout <<"at " << kkk << " : " << u_ext[kkk] << endl;
 	return success;
 }
@@ -626,9 +641,18 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					cout <<"fluctuation wavelength should be an integer 2^x, with x = 1..10" << endl;
 				}
 		}
-		if (Lat[0]->gradients<3) {
-				success=false; cout<<"fluction_potentials only allowed when 'lat: * : gradients : 3'. "<<endl;
-			} else {
+		if (Lat[0]->gradients==1) { success=false; cout <<"fluctuation_potentials not relevant in one-gradient computations" <<endl; }
+		if (Lat[0]->gradients==2) {
+			labda = Lat[0]->MY;
+			labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),labda);
+			if (labda !=Lat[0]->MY) {
+				labda=Lat[0]->MY; cout <<"fluctuation_wavelength is set to n_layers_y." << endl;
+			}
+			if (Lat[0]->geometry !="planar") {
+				success=false; cout <<"fluctuation_potentials in 2 gradient calculations only for 'planar' case." << endl;
+			}
+		}
+		if (Lat[0]->gradients==3) {
 				int MX=Lat[0]->MX;
 				int MY=Lat[0]->MY;
 				if (!(MX==2 || MX==4 || MX==8 || MX==16 ||MX==32 || MX==64 ||MX==128 || MX==256)) {success=false; cout << "Expecting n_layers_x to have a value 2^a with a = 1..8" << endl; }
@@ -663,6 +687,7 @@ if (debug) cout << "Segment::PutVarInfo " << endl;
 		Var_type="scan";
 		if (Var_target_=="valence") {Var_target=0; Var_start_value=valence;}
 		if (Var_target_=="ePsi0/kT") {Var_target=1; Var_start_value=PSI0;}
+		if (Var_target_ =="fluctuation_amplitude") {Var_target=3; Var_start_value=Amplitude;}
 		if (Var_target ==-1) {
 			vector<string>sub;
 			In[0]->split(Var_target_,'-',sub);
@@ -689,7 +714,7 @@ if (debug) cout << "Segment::PutVarInfo " << endl;
 			}
 		}
 	}
-	if (Var_target<0) {success=false; cout <<"In var: for segment you can 'scan' {valence, ePsi0/kT, or a chi-value 'chi-X' with 'X' valid mon/state : name} "<<endl; }
+	if (Var_target<0) {success=false; cout <<"In var: for segment you can 'scan' {valence, ePsi0/kT, amplitude, or a chi-value 'chi-X' with 'X' valid mon/state : name} "<<endl; }
 	return success;
 }
 
@@ -771,6 +796,13 @@ if (debug) cout << "Segment::UpdateVarInfo() " << endl;
 				//chi_value = Var_start_value+step_nr*Var_step;
 			}
 			break;
+		case 3:
+			if (scale=="exponential") {
+					Amplitude= pow(10,(1-step_nr/num_of_steps)*log10( Var_start_value)+ (step_nr/num_of_steps)*log10( Var_end_value));
+			} else {
+				Amplitude=Var_start_value+step_nr*Var_step;
+			}
+			break;
 		default:
 			break;
 	}
@@ -797,6 +829,9 @@ if (debug) cout << "Segment::ResetInitValue() " << endl;
 				chi[length+chi_var_state] =Var_start_value;
 			}
 			break;
+		case 3:
+			Amplitude=Var_start_value;
+			break;
 		default:
 			cout <<"program error in Seg:ResetInitValue "<<endl;
 			break;
@@ -822,6 +857,9 @@ if (debug) cout << "Segment::PutValue() " << endl;
 			if (chi_var_state>-1) {
 				chi[length+chi_var_state] =X;
 			}
+			break;
+		case 3:
+			Amplitude=X;
 			break;
 		default:
 			cout <<"program error in Segment:PutValue "<<endl;
@@ -850,6 +888,9 @@ if (debug) cout << "Segment::GetValue() " << endl;
 			}
 
 			break;
+		case 3:
+				X=Amplitude;
+				break;
 		default:
 			cout <<"program error in Segment:GetValue "<<endl;
 			break;
@@ -1008,7 +1049,8 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	bools_value.clear();
 	ints.clear();
 	ints_value.clear();
-
+	Reals.clear();
+	Reals_value.clear();
 	push("freedom",freedom);
 	push("valence",valence);
 	Real theta = Lat[0]->WeightedSum(phi);

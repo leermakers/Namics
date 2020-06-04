@@ -164,14 +164,12 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 						if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256 || MZ==512 || MZ==1024)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..10" << endl; }
 						if (success) {
 							Real shift_x,shift_y,shift_z;
-							for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
-							for (int lambda_y=2; lambda_y <=MY; lambda_y*=2)
-							for (int lambda_z=2; lambda_z <=MZ; lambda_z*=2){
-								shift_x = rand() % lambda_x;
-								shift_y = rand() % lambda_y;
-								shift_z = rand() % lambda_z;
+							for (int lambda=2; lambda <=MX; lambda*=2){
+								shift_x = rand() % lambda;
+								shift_y = rand() % lambda;
+								shift_z = rand() % lambda;
 								for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) {
-									u_ext[x*JX+y*JY+MZ]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y)+sin(2.0*PIE*(z+shift_z)/lambda_z));
+									u_ext[x*JX+y*JY+z]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda)+sin(2.0*PIE*(y+shift_y)/lambda)+sin(2.0*PIE*(z+shift_z)/lambda));
 								}
 							}
 						}

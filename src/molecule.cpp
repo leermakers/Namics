@@ -2074,7 +2074,6 @@ if (debug) cout <<"ComputePhiBra in Mol " << endl;
 	Real* G=ForwardBra(generation,s);
 	//Lat[0]->remove_bounds(G);
 	GN=Lat[0]->WeightedSum(G);
-//cout << "GN " << GN << endl;
 	s--;
 	if (save_memory) {Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M);} //toggle; initialize on both spots the same G1, so that we always get proper start.
 	BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);

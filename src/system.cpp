@@ -182,7 +182,7 @@ bool System::generate_mask()
 	}
 	if (FrozenList.size() + SysMonList.size() + SysTagList.size() + SysClampList.size() != In[0]->MonList.size())
 	{
-		cout << " Thera are un-used monomers in system. Remove them before starting" << endl;
+		cout << " There are un-used monomers in system. Remove them before starting" << endl;
 		success = false;
 	}
 
@@ -432,6 +432,10 @@ bool System::CheckInput(int start_)
 				//cout <<"itstatelist extended with " << j << endl;
 			}
 		}
+		if (!solvent_found && In[0]->MolList.size()==1) {
+			phibulktot=1; cout <<"WARNING: no solvent found. Expecting solvent free 'brush'" << endl;
+		}
+		else
 		if (!solvent_found || (phibulktot > 0.99999999 && phibulktot < 1.0000000001))
 		{
 			cout << "In system '" + name + "' the 'solvent' was not found, while the volume fractions of the bulk do not add up to unity. " << endl;
@@ -1195,8 +1199,8 @@ void System::PushOutput()
 	push("calculation_type", CalculationType);
 	push("guess_type", GuessType);
 	push("cuda", cuda);
-	push("solvent", Mol[solvent]->name);
 
+	if (solvent>-1) push("solvent", Mol[solvent]->name);
 	string s = "profile;0";
 	push("alpha", s);
 	s = "profile;1";
@@ -1546,8 +1550,6 @@ if(debug) cout <<"ComputePhis in system" << endl;
 		{
 			norm = Mol[i]->phibulk / Mol[i]->chainlength;
 			Mol[i]->n = norm * Mol[i]->GN;
-			cout <<"norm " << norm << endl;
-			cout <<"GN " << Mol[i]->GN;
 
 			A += Mol[i]->phibulk * Mol[i]->Charge();
 			B += Mol[i]->phibulk;
@@ -1688,36 +1690,38 @@ for (int j=0; j<n_mol; j++) {
 		Mol[neutralizer]->norm = norm;
 	}
 
-	Mol[solvent]->phibulk = 1.0 - B;
-	//cout <<"phibulk solv: " << Mol[solvent]->phibulk << endl;
-	if (Mol[solvent]->phibulk < 0)
-	{
-		cout << "WARNING: solvent has negative phibulk. outcome problematic " << endl;
-		throw - 4;
-	}
-	Real norm = Mol[solvent]->phibulk / Mol[solvent]->chainlength;
-	Mol[solvent]->n = norm * Mol[solvent]->GN;
-	Mol[solvent]->theta = Mol[solvent]->n * Mol[solvent]->chainlength;
-	Mol[solvent]->norm = norm;
-
-	int k = 0;
-	length = Mol[solvent]->MolMonList.size();
-	while (k < length)
-	{
-		Real *phi = Mol[solvent]->phi + k * M;
-		if (norm > 0)
-			Norm(phi, norm, M);
-		if (debug)
+	if (solvent>-1) {
+		Mol[solvent]->phibulk = 1.0 - B;
+		//cout <<"phibulk solv: " << Mol[solvent]->phibulk << endl;
+		if (Mol[solvent]->phibulk < 0)
 		{
-			Real sum;
-			Sum(sum, phi, M);
-			cout << "Sumphi in mol " << solvent << "for mon " << k << ":" << sum << endl;
+			cout << "WARNING: solvent has negative phibulk. outcome problematic " << endl;
+			throw - 4;
 		}
-		k++;
+
+		Real norm = Mol[solvent]->phibulk / Mol[solvent]->chainlength;
+		Mol[solvent]->n = norm * Mol[solvent]->GN;
+		Mol[solvent]->theta = Mol[solvent]->n * Mol[solvent]->chainlength;
+		Mol[solvent]->norm = norm;
+
+		int k = 0;
+		length = Mol[solvent]->MolMonList.size();
+		while (k < length) {
+			Real *phi = Mol[solvent]->phi + k * M;
+			if (norm > 0)
+				Norm(phi, norm, M);
+			if (debug)
+			{
+				Real sum;
+				Sum(sum, phi, M);
+				cout << "Sumphi in mol " << solvent << "for mon " << k << ":" << sum << endl;
+			}
+			k++;
+		}
 	}
 	if (charged && neutralizer > -1)
 	{
-		k = 0;
+		int k = 0;
 		length = Mol[neutralizer]->MolMonList.size();
 		while (k < length)
 		{

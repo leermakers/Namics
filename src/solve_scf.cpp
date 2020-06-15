@@ -802,8 +802,7 @@ void Solve_scf::residuals(Real* x, Real* g){
  			Zero(alpha,M);
 
 			for (i=0; i<itmonlistlength; i++) {
-				if (Lat[0]->gradients>1)
-					Add(g+i*M,Seg[i]->u_ext,M);
+			  Add(g+i*M,Seg[i]->u_ext,M);
 				for (k=0; k<mon_length; k++) {
 					if (Seg[k]->ns<2) {
 						chi =Seg[Sys[0]->ItMonList[i]]->chi[k];

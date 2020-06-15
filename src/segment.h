@@ -70,6 +70,7 @@ public:
 	Real chi_value;
 	Real Amplitude;
 	int labda;
+	int seed;
 	int start;
 
 	vector<string> ints;

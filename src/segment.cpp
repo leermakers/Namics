@@ -20,7 +20,8 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("fluctuation_potentials");
 	KEYS.push_back("fluctuation_amplitude");
 	KEYS.push_back("fluctuation_wavelength");
-	Amplitude=0; labda=0;
+	KEYS.push_back("seed");
+	Amplitude=0; labda=0; seed=1;
 	ns=1;
 }
 Segment::~Segment() {
@@ -38,7 +39,7 @@ if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 		 free(r);
 	}
 	free(H_u);
-	free(H_u_ext);
+	free(H_u_ext); //cout <<"H_u_ext dismissed" << endl;
 	free(H_phi);
 	free(H_MASK);
 	free(H_alpha);
@@ -141,78 +142,116 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	}
 
 	if (freedom=="pinned") Times(G1,G1,MASK,M);
-	if (freedom=="tagged") {Cp(G1,MASK,M);
+	if (freedom=="tagged") {
+		Cp(G1,MASK,M);
 	}
 	if (!(freedom ==" frozen" || freedom =="tagged")) Times(G1,G1,KSAM,M);
-
-	if (GetValue("fluctuation_potentials").size()>0&& first_time) {
-		if (Lat[0]->gradients==3) {
-			string s = GetValue("fluctuation_potentials");
-			vector<string> sub;
+	if (GetValue("seed").size()>0) {
+		seed=In[0]->Get_int(GetValue("seed"),1);
+	}
+	if (GetValue("fluctuation_potentials").size()>0&& first_time)
+	{
+		Zero(u_ext,M); srand(seed);
+		int gradients=Lat[0]->gradients;
+		vector<string> sub;
+		string s;
+		int my;
+		int labda_y;
+		int MX=Lat[0]->MX;
+		int JX=Lat[0]->JX;
+		int MY=Lat[0]->MY;
+		int JY=Lat[0]->JY;
+		Real shift_x,shift_y,shift_z;
+		switch (gradients)
+		{
+			case 1:
+				s = GetValue("fluctuation_potentials");
+				In[0]->split(s, ',', sub);
+				if (sub.size() !=1) {
+					success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info in 1d, such as: x"<<endl;
+				}
+				labda=MX;
+				cout <<"putting u_ext" << endl;
+				for (int x=1; x<MX; x++) u_ext[x]+=Amplitude*(sin(2.0*PIE*x/labda));
+				break;
+			case 2:
+				s = GetValue("fluctuation_potentials");
+				In[0]->split(s, ',', sub);
+				if (sub.size() !=2) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info in 2d, such as: x,5"<<endl; }
+				my=In[0]->Get_int(sub[1],0);
+				if (my<0 || my>Lat[0]->MY) {success =false; cout << "in fluctuation potentials the y-coordinate is out of bounds."<< endl; }
+				labda_y=Lat[0]->MY;
+				JX=Lat[0]->JX;
+				for (int x=1; x<MX; x++) u_ext[x*JX+my]+=Amplitude*(sin(2.0*PIE*x/labda_y));
+				break;
+			case 3:
+			s = GetValue("fluctuation_potentials");
 			In[0]->split(s, ',', sub);
-			if (sub.size()<2) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info in 3d, such as: x,y,5 or x,y,z"<<endl; }
-			else {
-				if (sub[0] != "x" || sub[1] != "y" ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  first two coordinates to be : x,y  "<<endl; }
-				int MX=Lat[0]->MX;
-				int JX=Lat[0]->JX;
-				int MY=Lat[0]->MY;
-				int JY=Lat[0]->JY;
-				//int M=Lat[0]->M;
-				if (first_time){
-					if (sub[2] == "z") {
-						int MZ=Lat[0]->MZ;
-						if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256 || MZ==512 || MZ==1024)) {success=false; cout << "Expecting n_layers_z to have a value 2^a with a = 1..10" << endl; }
-						if (success) {
-							Real shift_x,shift_y,shift_z;
-							for (int lambda=2; lambda <=MX; lambda*=2){
-								shift_x = rand() % lambda;
-								shift_y = rand() % lambda;
-								shift_z = rand() % lambda;
-								for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) {
-									u_ext[x*JX+y*JY+z]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda)+sin(2.0*PIE*(y+shift_y)/lambda)+sin(2.0*PIE*(z+shift_z)/lambda));
-								}
-							}
+			if (sub.size()<3)
+			{
+				success=false;
+				cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info in 3d, such as: x,y,5 or x,y,z"<<endl;
+			}	else
+			{
+				if (sub[0] != "x" || sub[1] != "y" )
+				{
+					success=false;
+					cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  first two coordinates to be : x,y  "<<endl;
+				}
+
+				if (sub[2] == "z")
+				{
+					int MZ=Lat[0]->MZ;
+					if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256 || MZ==512 || MZ==1024))
+					{
+						success=false;
+						cout << "Expecting n_layers_z to have a value 2^a with a = 1..10" << endl;
+					}
+					if (success)
+					{
+						for (int lambda=2; lambda <=MX; lambda*=2)
+						{
+							shift_x = rand() % lambda; //cout <<"setting shift_x: " << shift_x<< endl;
+							shift_y = rand() % lambda; //cout <<"setting shift_y: " << shift_y <<endl;
+							shift_z = rand() % lambda; //cout <<"setting shift_z: " << shift_z <<endl;
+							for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) for (int z=0; z<MZ; z++) u_ext[x*JX+y*JY+z]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda)+sin(2.0*PIE*(y+shift_y)/lambda)+sin(2.0*PIE*(z+shift_z)/lambda));
 						}
-					} else {
-						int mz=In[0]->Get_int(sub[2],0);
-						if (mz<1 || mz>Lat[0]->MZ) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl; }
-						if (success && labda ==0) {
+					}
+				} else
+				{
+					int mz=In[0]->Get_int(sub[2],0);
+					if (mz<1 || mz>Lat[0]->MZ)
+					{
+						success=false;
+						cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl;
+						if (success && labda ==0)
+						{
 							cout <<"fluctutions set " << Amplitude << endl;
 							Real shift_x,shift_y;
 							for (int lambda_x=2; lambda_x <=MX; lambda_x*=2)
-							for (int lambda_y=2; lambda_y <=MY; lambda_y*=2){
+							for (int lambda_y=2; lambda_y <=MY; lambda_y*=2)
+							{
 								shift_x = rand() % lambda_x;
 								shift_y = rand() % lambda_y;
-								for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) {
-									u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y));
-								}
-							}
-						} else {
-							if (labda>0) {
-								cout <<"fluctuation wavelength set to " << labda << " and amplitude to " << Amplitude << endl;
 								for (int x=0; x<MX; x++) for (int y=0; y<MY; y++)
-										u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x)/labda)+sin(2.0*PIE*(y)/labda));
-									}
-								}
+								u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x+shift_x)/lambda_x)+sin(2.0*PIE*(y+shift_y)/lambda_y));
+							}
+						} else //5
+						{
+							if (labda>0)
+							{
+								cout <<"fluctuation wavelength set to " << labda << " and amplitude to " << Amplitude << endl;
+								for (int x=0; x<MX; x++) for (int y=0; y<MY; y++) u_ext[x*JX+y*JY+mz]+=Amplitude*(sin(2.0*PIE*(x)/labda)+sin(2.0*PIE*(y)/labda));
 							}
 						}
 					}
-				} else { //gradients ==2
-					if (first_time){
-						string s = GetValue("fluctuation_potentials");
-						vector<string> sub;
-						In[0]->split(s, ',', sub);
-						if (sub.size() !=2) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info in 2d, such as: x,5"<<endl; }
-						int my=In[0]->Get_int(sub[1],0);
-						if (my<0 || my>Lat[0]->MY) {success =false; cout << "in fluctuation potentials the y-coordinate is out of bounds."<< endl; }
-						int labda_y=Lat[0]->MY;
-						int MX=Lat[0]->MX;
-						int JX=Lat[0]->JX;
-						for (int x=0; x<MX; x++) u_ext[x*JX+my]+=Amplitude*(sin(2.0*PIE*x/labda_y));
-					} //first time
-				}//else
-			}//fluctuation potentials
-//for (int kkk=0; kkk<M; kkk++) if (u_ext[kkk] !=0) cout <<"at " << kkk << " : " << u_ext[kkk] << endl;
+				}
+			}
+			break;
+			default:
+			break;
+		}
+	}
 	return success;
 }
 
@@ -639,15 +678,14 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					cout <<"fluctuation wavelength should be an integer 2^x, with x = 1..10" << endl;
 				}
 		}
-		if (Lat[0]->gradients==1) { success=false; cout <<"fluctuation_potentials not relevant in one-gradient computations" <<endl; }
-		if (Lat[0]->gradients==2) {
+		if (Lat[0]->gradients==2 || Lat[0]->gradients==1) {
 			labda = Lat[0]->MY;
 			labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),labda);
 			if (labda !=Lat[0]->MY) {
 				labda=Lat[0]->MY; cout <<"fluctuation_wavelength is set to n_layers_y." << endl;
 			}
 			if (Lat[0]->geometry !="planar") {
-				success=false; cout <<"fluctuation_potentials in 2 gradient calculations only for 'planar' case." << endl;
+				success=false; cout <<"fluctuation_potentials in 2 or 1 gradient(s) calculations only for 'planar' case." << endl;
 			}
 		}
 		if (Lat[0]->gradients==3) {
@@ -662,8 +700,8 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		if (GetValue("fluctuation_potentials").size()==0) {
 			success = false; cout <<"fluctuation_amplitude should be combined with fluctuation_potentials and optionally with fluctuation_wavelength" << endl;
 		}
-		if (Amplitude < 0 || Amplitude > 1) {
-			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 1 (full fluctuations). " << endl;
+		if (Amplitude < 0 || Amplitude > 10) {
+			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 10. " << endl;
 		}
 	}
 	//valence=In[0]->Get_Real(GetValue("valence"),0);

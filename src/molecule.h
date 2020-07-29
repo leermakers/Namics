@@ -12,6 +12,7 @@ public:
 ~Molecule();
 
 	string name;
+	bool all_molecule;
 	vector<Input*> In;
 	vector<Segment*> Seg;
 	vector<Lattice*> Lat;

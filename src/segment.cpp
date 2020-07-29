@@ -21,8 +21,11 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("fluctuation_amplitude");
 	KEYS.push_back("fluctuation_wavelength");
 	KEYS.push_back("seed");
+	KEYS.push_back("var_pos");
 	Amplitude=0; labda=0; seed=1;
+	var_pos=0;
 	ns=1;
+	all_segment=false;
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -31,20 +34,16 @@ if (debug) cout <<"Segment destructor " + name << endl;
 
 void Segment::DeAllocateMemory(void){
 if (debug) cout << "In Segment, Deallocating memory " + name << endl;
-
+if (!all_segment) return;
 //if (n_pos>0) cout <<"problem for n_pos " <<endl;
-	if(n_pos>0)
-	free(H_P);
-	if (freedom != "free"){
-		 free(r);
-	}
+	if(n_pos>0) free(H_P);
+	free(r);
 	free(H_u);
 	free(H_u_ext); //cout <<"H_u_ext dismissed" << endl;
 	free(H_phi);
 	free(H_MASK);
 	free(H_alpha);
 	free(H_phi_state);
-
 #ifdef CUDA
 	if(n_pos>0) cudaFree(P);
 	cudaFree(u);
@@ -58,23 +57,24 @@ if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 	free(G1);
 	free(phi_side);
 #endif
+	all_segment=false;
 }
 
 void Segment::AllocateMemory() {
 if (debug) cout <<"Allocate Memory in Segment " + name << endl;
+	DeAllocateMemory();
 	int M=Lat[0]->M;
 	ns=state_name.size(); if (ns==0) ns=1;
+	r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
 	H_u = (Real*) malloc(M*ns*sizeof(Real));
-	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
-	H_phi = (Real*) malloc(M*sizeof(Real));
 	H_u_ext = (Real*) malloc(M*sizeof(Real));
+	H_phi = (Real*) malloc(M*sizeof(Real));
+	H_MASK = (int*) malloc(M*sizeof(int));
 	H_alpha=(Real*) malloc(M*ns*sizeof(Real));
+	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
 	H_Zero(H_u,M*ns);
 	H_Zero(H_phi,M);
-	if (freedom=="free") {
-		H_MASK = (int*) malloc(M*sizeof(int));
-		H_Zero(H_MASK,M);
-	}
+	H_Zero(H_MASK,M);
 #ifdef CUDA
 
 	//if (n_pos>0) Px=(int*)AllIntOnDev(n_pos);
@@ -92,7 +92,6 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	phi =H_phi;
 	u = H_u;
 	u_ext=H_u_ext; Zero(u_ext,M);
-	KEYS.push_back("fluctuation_coordinates");
 	phi_state = H_phi_state;
 	alpha=H_alpha;
 	G1 = (Real*)malloc(M*sizeof(Real));
@@ -100,10 +99,213 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	Zero(G1,M);
 	Zero(phi_side,ns*M);
 #endif
+
+bool success=true;
+if (freedom =="clamp" ) {
+	n_box=0; mx=0;
+	int m_x;
+	int MX=Lat[0]->MX;
+	if (GetValue("sub_box_size").size()>0) {
+		m_x=In[0]->Get_int(GetValue("sub_box_size"),-1);
+		if (m_x <1 || m_x > MX) {success=false; cout <<"Value of sub_box_size is out of bounds: 1 ... " << MX << endl; }
+		if (mx>0) {
+			if (m_x!=mx) {
+				cout <<"values for sub_box_size of input " << m_x << " not consistent with value found in clamp_filename " << mx << " input file data is taken " << endl;
+				mx=m_x; my=m_x; mz=m_x;
+			}
+		} else { mx=m_x; my=m_x; mz=m_x; }
+	}
+	Lat[0]->PutSub_box(mx,my,mz,n_box);
+	clamp_nr = Lat[0]->m.size()-1;
+
+	if (GetValue("clamp_filename").size()>0) {
+		if (!GetClamp(GetValue("clamp_filename"))) {
+			success=false; cout <<"Failed to read 'clamp_filename'. Problem terminated" << endl;
+			cout <<"Example of structure of clamp_filename is the following:" << endl;
+			cout <<"N : 20 : subbox0 : 15 15 15 pcb:[0. 0. 0.] " << endl;
+			cout <<"-1 -6 -6 " << endl;
+			cout <<"1 1 1 "  << endl;
+			cout <<"11 1 1 " << endl;
+			cout <<" explanation: 1st line: length of chain fragment (should coinside with the composition) " << endl;
+			cout <<"              followed by subboxnr, Mx, My , Mz (sizes of subbox)" << endl;
+			cout <<" 	      followed by pcb info. Note that the spaces beween numbers is essential info " << endl ;
+			cout <<"              2nd line: lower coordinate of subbox " << endl;
+			cout <<"              3rd line: coordinates of clamp point 1 " << endl;
+			cout <<"              4th line: coordinates of clamp point 2 " << endl;
+			cout <<" repeat these 4 lines for every sub-box " << endl;
+			cout <<" note that currently all subboxes should be equal in size " << endl;
+			cout <<" note as well that the chain lengths should also be the same.(redundent information because inputfile overrules this setting" << endl;
+		}
+	} else {
+		string s;
+		if (GetValue("clamp_info").size() >0) {
+			s=GetValue("clamp_info");
+			vector<string> sub;
+			vector<string> set;
+			vector<string> coor;
+			In[0]->split(s,';',sub);
+			n_box=sub.size();
+			px1.clear();
+			py1.clear();
+			pz1.clear();
+			px2.clear();
+			py2.clear();
+			pz2.clear();
+			bx.clear();
+			by.clear();
+			bz.clear();
+			for (int i=0; i<n_box; i++) {
+				set.clear();
+				In[0]->split(sub[i],'(',set);
+				int length = set.size();
+				if (length!=3) {
+					success=false; cout <<" In 'clamp_info' for segment '"+name+"', for box number " << i << " the expected format (px1,py1,pz1)(px2,py2,pz2) was not found" << endl;
+				} else {
+					coor.clear();
+					In[0]->split(set[1],',',coor);
+					if (coor.size()!=3) {
+						success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format. " << endl;
+					} else {
+						px1.push_back(In[0]->Get_int(coor[0],-10000));
+						py1.push_back(In[0]->Get_int(coor[1],-10000));
+						pz1.push_back(In[0]->Get_int(coor[2],-10000));
+					}
+					coor.clear();
+					In[0]->split(set[2],',',coor);
+					if (coor.size()!=3) {
+						success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (px2,py2,pz2) not correct format. " << endl;
+					} else {
+						px2.push_back(In[0]->Get_int(coor[0],-10000));
+						py2.push_back(In[0]->Get_int(coor[1],-10000));
+						pz2.push_back(In[0]->Get_int(coor[2],-10000));
+					}
+					bx.push_back((px2[i]+px1[i]-mx)/2);
+					by.push_back((py2[i]+py1[i]-mx)/2);
+					bz.push_back((pz2[i]+pz1[i]-mx)/2);//box is equal in size in x y and z.
+				}
+			}
+		} else {
+			success=false;
+			cout<<"Segment " + name + " with 'freedom: clamp' expects input from 'clamp_filename' or 'clamp_info' " << endl;
+		}
+	}
+}
+
+if (freedom == "pinned") {
+	phibulk=0;
+	if (GetValue("frozen_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("frozen_filename").size()>0 || GetValue("tag_filename").size()>0) {
+	cout<< "For mon :" + name + ", you should exclusively combine freedom : pinned with pinned_range or pinned_filename" << endl;  success=false;}
+	if (GetValue("pinned_range").size()>0 && GetValue("pinned_filename").size()>0) {
+		cout<< "For mon " + name + ", you can not combine pinned_range with 'pinned_filename' " <<endl; success=false;
+	}
+	if (GetValue("pinned_range").size()==0 && GetValue("pinned_filename").size()==0) {
+		cout<< "For mon " + name + ", you should provide either pinned_range or pinned_filename " <<endl; success=false;
+	}
+	if (GetValue("pinned_range").size()>0) { s_freedom="pinned_range";
+
+		n_pos=0;
+		if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),var_pos,name,s_freedom);
+		if (n_pos>0) {
+			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),var_pos,name,s_freedom);
+		}
+	}
+	if (GetValue("pinned_filename").size()>0) { s_freedom="pinned";
+		filename=GetValue("pinned_filename");
+		n_pos=0;
+		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+		if (n_pos>0) {
+			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+		}
+	}
+}
+
+if (freedom == "frozen") {
+	phibulk=0;
+	if (GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tag_filename").size()>0) {
+	cout<< "For mon " + name + ", you should exclusively combine 'freedom : frozen' with 'frozen_range' or 'frozen_filename'" << endl;  success=false;}
+	if (GetValue("frozen_range").size()>0 && GetValue("frozen_filename").size()>0) {
+		cout<< "For mon " + name + ", you can not combine 'frozen_range' with 'frozen_filename' " <<endl; success=false;
+	}
+	if (GetValue("frozen_range").size()==0 && GetValue("frozen_filename").size()==0) {
+		cout<< "For mon " + name + ", you should provide either 'frozen_range' or 'frozen_filename' " <<endl; success=false;
+	}
+	if (GetValue("frozen_range").size()>0) { s_freedom="frozen_range";
+		n_pos=0;
+		success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),var_pos,name,s_freedom);
+		if (n_pos>0) {
+			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+			success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),var_pos,name,s_freedom);
+		}
+	}
+	if (GetValue("frozen_filename").size()>0) { s_freedom="frozen";
+		filename=GetValue("frozen_filename");
+		n_pos=0;
+		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+		if (n_pos>0) {
+			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+		}
+	}
+}
+
+if (freedom == "tagged") {
+	phibulk=0;
+	if (GetValue("pinned_range").size()>0 || GetValue("frozen_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("frozen_filename").size()>0) {
+	cout<< "For mon " + name + ", you should exclusively combine 'freedom : tagged' with 'tagged_range' or 'tagged_filename'" << endl;  success=false;}
+	if (GetValue("tagged_range").size()>0 && GetValue("tagged_filename").size()>0) {
+		cout<< "For mon " + name + ", you can not combine 'tagged_range' with 'tagged_filename' " <<endl; success=false;
+	}
+	if (GetValue("tagged_range").size()==0 && GetValue("tagged_filename").size()==0) {
+		cout<< "For mon " + name + ", you should provide either 'tagged_range' or 'tagged_filename' " <<endl; success=false;
+	}
+	if (GetValue("tagged_range").size()>0) { s_freedom="tagged_range";
+		n_pos=0;
+		if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),var_pos,name,s_freedom);
+		if (n_pos>0) {
+			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),var_pos,name,s_freedom);
+		}
+	}
+	if (GetValue("tagged_filename").size()>0) {s_freedom="tagged";
+		filename=GetValue("tagged_filename");
+		n_pos=0;
+		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+		if (n_pos>0) {
+			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+		}
+	}
+}
+if (freedom!="free") {
+	if (freedom=="clamp") {
+		int JX=Lat[0]->JX;
+		int JY=Lat[0]->JY;
+		int MX=Lat[0]->MX;
+		int MY=Lat[0]->MY;
+		int MZ=Lat[0]->MZ;
+		for (int i=0; i<n_box; i++) {
+			if (bx[i]<1) {bx[i] +=MX; px1[i] +=MX; px2[i] +=MX;}
+			if (by[i]<1) {by[i] +=MY; py1[i] +=MY; py2[i] +=MY;}
+			if (bz[i]<1) {bz[i] +=MZ; pz1[i] +=MZ; pz2[i] +=MZ;}
+			if (bx[i]<1 || bx[i]>MX) {success=false; cout <<"For cleng particle nr " << i << "the coordinate 'x' of the subbox origin is out of bounds. " << endl; }
+			if (by[i]<1 || by[i]>MY) {success=false; cout <<"For cleng particle nr " << i << "the coordinate 'y' of the subbox origin is out of bounds. " << endl; }
+			if (bz[i]<1 || bz[i]>MZ) {success=false; cout <<"For cleng particle nr " << i << "the coordinate 'z' of the subbox origin is out of bounds. " << endl; }
+			H_MASK[((px1[i]-1)%MX+1)*JX + ((py1[i]-1)%MY+1)*JY + (pz1[i]-1)%MZ+1]=1;
+			H_MASK[((px2[i]-1)%MX+1)*JX + ((py2[i]-1)%MY+1)*JY + (pz2[i]-1)%MZ+1]=1;
+		}
+
+	} else Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block);
+}
+	if (!success) cout <<"errors occurred.... progress uncertain...." << endl;
+
+	all_segment=true;
 }
 
 bool Segment::PrepareForCalculations(int* KSAM, bool first_time) {
 if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
+
 	int M=Lat[0]->M;
 #ifdef CUDA
 	if (In[0]->MesodynList.empty() or prepared == false) {
@@ -255,6 +457,145 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	return success;
 }
 
+
+bool Segment::CheckInput(int start_) {
+if (debug) cout <<"CheckInput in Segment " + name << endl;
+	bool success;
+	start=start_;
+	block=false;
+	unique=true;
+	chi_var_seg=-1;
+	chi_var_state=-1;
+	seg_nr_of_copy=-1;
+	state_nr_of_copy=-1;
+	ns=1;
+	//string s;
+	vector<string>options;
+	guess_u=0;
+	n_pos=0;
+
+	fixedPsi0=false;
+	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
+	if(success) {
+		if (GetValue("var_pos").size()>0) var_pos=In[0]->Get_int(GetValue("var_pos"),0);
+
+
+		options.push_back("free");
+		options.push_back("pinned");
+		options.push_back("frozen");
+		options.push_back("tagged");
+		options.push_back("clamp");
+		freedom = In[0]->Get_string(GetValue("freedom"),"free");
+		if (!In[0]->InSet(options,freedom)) {
+			cout << "Freedom: '"<< freedom  <<"' for mon " + name + " not recognized. "<< endl;
+			cout << "Freedom choices: free, pinned, frozen, tagged, clamp " << endl; success=false;
+		}
+
+		if (freedom =="free") {
+			if (GetValue("frozen_range").size()>0||GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 ||
+			GetValue("frozen_filename").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tagged_filename").size()>0) {
+					if (start==1) {success=false; cout <<"In mon " + name + " you should not combine 'freedom : free' with 'frozen_range' or 'pinned_range' or 'tagged_range' or corresponding filenames." << endl;
+				}
+			}
+		}
+
+
+		valence =0;
+		if (GetValue("valence").size()>0) {
+			valence=In[0]->Get_Real(GetValue("valence"),0);
+			if (valence<-10 || valence > 10) cout <<"For mon " + name + " valence value out of range -10 .. 10. Default value used instead" << endl;
+		}
+		epsilon=80;
+		if (GetValue("epsilon").size()>0) {
+			epsilon=In[0]->Get_Real(GetValue("epsilon"),80);
+			if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 250. Default value 80 used instead" << endl;
+		}
+		if (valence !=0) {
+			if (Lat[0]->bond_length <1e-12 || Lat[0]->bond_length > 1e-8) {
+				success=false;
+				if (Lat[0]->bond_length==0) cout << "When there are charged segments, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-102... 1e-8 m " << endl;
+				else cout <<"Bond length is out of range: 1e-12..1e-8 m " << endl;
+			}
+		}
+		if (GetValue("e.psi0/kT").size()>0) {
+			PSI0=0;
+			fixedPsi0=true;
+			PSI0=In[0]->Get_Real(GetValue("e.psi0/kT"),0);
+			if (PSI0!=0 && valence !=0) {
+				success=false;
+				cout <<"You can set only 'valence' or 'e.psi0/kT', but not both " << endl;
+			}
+			if (PSI0!=0 && freedom!="frozen") {
+				success=false;
+				cout <<"You can not set potential on segment that has not freedom 'frozen' " << endl;
+			}
+			if (PSI0 <-25 || PSI0 > 25) {
+				success=false;
+				cout <<"Value for dimensionless surface potentials 'e.psi0/kT' is out of range -25 .. 25. Recall the value of 1 at room temperature is equivalent to approximately 25 mV " << endl;
+			}
+		}
+	}
+
+	int length = state_name.size();
+	if (length >0 && (freedom == "frozen"||freedom=="tagged"||freedom=="clamp")) {
+		success=false;
+		cout <<" When freedom = {frozen,tagged,clamp} a 'mon' can not have multiple internal states; status violated for mon " << name << endl;
+	}
+
+	length=chi_name.size();
+
+	Real Chi;
+	for (int i=0; i<length; i++) {
+		Chi=-999;
+		if (GetValue("chi-"+chi_name[i]).size()>0) {
+			Chi=In[0]->Get_Real(GetValue("chi-"+chi_name[i]),Chi);
+			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "not valid." << endl; }
+			if (name==chi_name[i] && Chi!=0) {if (Chi!=-999) cout <<" chi value for chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "value ignored: set to zero!" << endl; Chi=0;}
+
+		}
+		chi[i]=Chi;
+	}
+
+	if (GetValue("fluctuation_potentials").size()>0) {
+		if (GetValue("fluctuation_wavelength").size()>0) {
+				labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),0);
+				if (labda<1 || labda>Lat[0]->MX || labda > Lat[0]->MY || labda > Lat[0]->MZ) {
+					success = false;cout <<"fluctuation_wavelength must be a positive number smaller or equal to the 'box' size" << endl;
+				}
+				if (!(labda ==2 || labda ==4 || labda ==8 || labda ==16 || labda ==32 || labda ==64 || labda ==128 || labda ==256 || labda ==512 ||labda ==1024)) {
+					cout <<"fluctuation wavelength should be an integer 2^x, with x = 1..10" << endl;
+				}
+		}
+		if (Lat[0]->gradients==2 || Lat[0]->gradients==1) {
+			labda = Lat[0]->MY;
+			labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),labda);
+			if (labda !=Lat[0]->MY) {
+				labda=Lat[0]->MY; cout <<"fluctuation_wavelength is set to n_layers_y." << endl;
+			}
+			if (Lat[0]->geometry !="planar") {
+				success=false; cout <<"fluctuation_potentials in 2 or 1 gradient(s) calculations only for 'planar' case." << endl;
+			}
+		}
+		if (Lat[0]->gradients==3) {
+				int MX=Lat[0]->MX;
+				int MY=Lat[0]->MY;
+				if (!(MX==2 || MX==4 || MX==8 || MX==16 ||MX==32 || MX==64 ||MX==128 || MX==256)) {success=false; cout << "Expecting n_layers_x to have a value 2^a with a = 1..8" << endl; }
+				if (!(MY==2 || MY==4 || MY==8 || MY==16 ||MY==32 || MY==64 ||MY==128 || MY==256)) {success=false; cout << "Expecting n_layers_y to have a value 2^a with a = 1..8" << endl; }
+			}
+	}
+	if (GetValue("fluctuation_amplitude").size()>0) {
+		Amplitude = In[0]->Get_Real(GetValue("fluctuation_amplitude"),1);
+		if (GetValue("fluctuation_potentials").size()==0) {
+			success = false; cout <<"fluctuation_amplitude should be combined with fluctuation_potentials and optionally with fluctuation_wavelength" << endl;
+		}
+		if (Amplitude < 0 || Amplitude > 10) {
+			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 10. " << endl;
+		}
+	}
+	//valence=In[0]->Get_Real(GetValue("valence"),0);
+	return success;
+}
+
 bool Segment::PutAdsorptionGuess(Real chi,int* Mask) {
 if (debug) cout <<"PutAdsorptionGuess" + name << endl;
 	bool success=true;
@@ -372,342 +713,6 @@ if (debug) cout <<"SetPhiSide in Segment " + name << endl;
 
 }
 
-bool Segment::CheckInput(int start_) {
-if (debug) cout <<"CheckInput in Segment " + name << endl;
-	bool success;
-	start=start_;
-	block=false;
-	unique=true;
-	chi_var_seg=-1;
-	chi_var_state=-1;
-	seg_nr_of_copy=-1;
-	state_nr_of_copy=-1;
-	ns=1;
-	string s;
-	vector<string>options;
-	guess_u=0;
-	n_pos=0;
-
-	fixedPsi0=false;
-	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
-	if(success) {
-		options.push_back("free");
-		options.push_back("pinned");
-		options.push_back("frozen");
-		options.push_back("tagged");
-		options.push_back("clamp");
-		freedom = In[0]->Get_string(GetValue("freedom"),"free");
-		if (!In[0]->InSet(options,freedom)) {
-			cout << "Freedom: '"<< freedom  <<"' for mon " + name + " not recognized. "<< endl;
-			cout << "Freedom choices: free, pinned, frozen, tagged, clamp " << endl; success=false;
-		}
-
-		if (freedom =="free") {
-			if (GetValue("frozen_range").size()>0||GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 ||
-			GetValue("frozen_filename").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tagged_filename").size()>0) {
-					if (start==1) {success=false; cout <<"In mon " + name + " you should not combine 'freedom : free' with 'frozen_range' or 'pinned_range' or 'tagged_range' or corresponding filenames." << endl;
-				}
-			}
-		} else {	KEYS.push_back("fluctuation_coordinates");
-			r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
-		}
-
-		if (freedom =="clamp" ) {
-			n_box=0; mx=0;
-			int m_x;
-			int MX=Lat[0]->MX;
-			if (GetValue("sub_box_size").size()>0) {
-				m_x=In[0]->Get_int(GetValue("sub_box_size"),-1);
-				if (m_x <1 || m_x > MX) {success=false; cout <<"Value of sub_box_size is out of bounds: 1 ... " << MX << endl; }
-				if (mx>0) {
-					if (m_x!=mx) {
-						cout <<"values for sub_box_size of input " << m_x << " not consistent with value found in clamp_filename " << mx << " input file data is taken " << endl;
-						mx=m_x; my=m_x; mz=m_x;
-					}
-				} else { mx=m_x; my=m_x; mz=m_x; }
-			}
-			Lat[0]->PutSub_box(mx,my,mz,n_box);
-			clamp_nr = Lat[0]->m.size()-1;
-
-			if (GetValue("clamp_filename").size()>0) {
-				if (!GetClamp(GetValue("clamp_filename"))) {
-					success=false; cout <<"Failed to read 'clamp_filename'. Problem terminated" << endl;
-					cout <<"Example of structure of clamp_filename is the following:" << endl;
-					cout <<"N : 20 : subbox0 : 15 15 15 pcb:[0. 0. 0.] " << endl;
-					cout <<"-1 -6 -6 " << endl;
-					cout <<"1 1 1 "  << endl;
-					cout <<"11 1 1 " << endl;
-					cout <<" explanation: 1st line: length of chain fragment (should coinside with the composition) " << endl;
-					cout <<"              followed by subboxnr, Mx, My , Mz (sizes of subbox)" << endl;
-					cout <<" 	      followed by pcb info. Note that the spaces beween numbers is essential info " << endl ;
-					cout <<"              2nd line: lower coordinate of subbox " << endl;
-					cout <<"              3rd line: coordinates of clamp point 1 " << endl;
-					cout <<"              4th line: coordinates of clamp point 2 " << endl;
-					cout <<" repeat these 4 lines for every sub-box " << endl;
-					cout <<" note that currently all subboxes should be equal in size " << endl;
-					cout <<" note as well that the chain lengths should also be the same.(redundent information because inputfile overrules this setting" << endl;
-				}
-			} else {
-				string s;
-				if (GetValue("clamp_info").size() >0) {
-					s=GetValue("clamp_info");
-					vector<string> sub;
-					vector<string> set;
-					vector<string> coor;
-					In[0]->split(s,';',sub);
-					n_box=sub.size();
-					for (int i=0; i<n_box; i++) {
-						set.clear();
-						In[0]->split(sub[i],'(',set);
-						int length = set.size();
-						if (length!=3) {
-							success=false; cout <<" In 'clamp_info' for segment '"+name+"', for box number " << i << " the expected format (px1,py1,pz1)(px2,py2,pz2) was not found" << endl;
-						} else {
-/*
-							coor.clear();
-							In[0]->split(set[1],',',coor);
-							if (coor.size()!=3) {
-								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (bx,by,bz) not correct format. " << endl;
-							} else {
-								bx.push_back(In[0]->Get_int(coor[0],-10000));
-								by.push_back(In[0]->Get_int(coor[1],-10000));
-								bz.push_back(In[0]->Get_int(coor[2],-10000));
-							}
-*/
-
-							coor.clear();
-							In[0]->split(set[1],',',coor);
-							if (coor.size()!=3) {
-								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format. " << endl;
-							} else {
-								px1.push_back(In[0]->Get_int(coor[0],-10000));
-								py1.push_back(In[0]->Get_int(coor[1],-10000));
-								pz1.push_back(In[0]->Get_int(coor[2],-10000));
-							}
-							coor.clear();
-							In[0]->split(set[2],',',coor);
-							if (coor.size()!=3) {
-								success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (px2,py2,pz2) not correct format. " << endl;
-							} else {
-								px2.push_back(In[0]->Get_int(coor[0],-10000));
-								py2.push_back(In[0]->Get_int(coor[1],-10000));
-								pz2.push_back(In[0]->Get_int(coor[2],-10000));
-							}
-							bx.push_back((px2[i]+px1[i]-mx)/2);
-							by.push_back((py2[i]+py1[i]-mx)/2);
-							bz.push_back((pz2[i]+pz1[i]-mx)/2);//box is equal in size in x y and z.
-						}
-					}
-				} else {
-					success=false;
-					cout<<"Segment " + name + " with 'freedom: clamp' expects input from 'clamp_filename' or 'clamp_info' " << endl;
-				}
-			}
-		}
-
-		if (freedom == "pinned") {
-			phibulk=0;
-			if (GetValue("frozen_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("frozen_filename").size()>0 || GetValue("tag_filename").size()>0) {
-			cout<< "For mon :" + name + ", you should exclusively combine freedom : pinned with pinned_range or pinned_filename" << endl;  success=false;}
-			if (GetValue("pinned_range").size()>0 && GetValue("pinned_filename").size()>0) {
-				cout<< "For mon " + name + ", you can not combine pinned_range with 'pinned_filename' " <<endl; success=false;
-			}
-			if (GetValue("pinned_range").size()==0 && GetValue("pinned_filename").size()==0) {
-				cout<< "For mon " + name + ", you should provide either pinned_range or pinned_filename " <<endl; success=false;
-			}
-			if (GetValue("pinned_range").size()>0) { s="pinned_range";
-				n_pos=0;
-				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
-				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),name,s);
-				}
-			}
-			if (GetValue("pinned_filename").size()>0) { s="pinned";
-				filename=GetValue("pinned_filename");
-				n_pos=0;
-				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
-				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
-				}
-			}
-		}
-
-		if (freedom == "frozen") {
-			phibulk=0;
-			if (GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tag_filename").size()>0) {
-			cout<< "For mon " + name + ", you should exclusively combine 'freedom : frozen' with 'frozen_range' or 'frozen_filename'" << endl;  success=false;}
-			if (GetValue("frozen_range").size()>0 && GetValue("frozen_filename").size()>0) {
-				cout<< "For mon " + name + ", you can not combine 'frozen_range' with 'frozen_filename' " <<endl; success=false;
-			}
-			if (GetValue("frozen_range").size()==0 && GetValue("frozen_filename").size()==0) {
-				cout<< "For mon " + name + ", you should provide either 'frozen_range' or 'frozen_filename' " <<endl; success=false;
-			}
-			if (GetValue("frozen_range").size()>0) { s="frozen_range";
-				n_pos=0;
-				success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),name,s);
-				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-					success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),name,s);
-				}
-			}
-			if (GetValue("frozen_filename").size()>0) { s="frozen";
-				filename=GetValue("frozen_filename");
-				n_pos=0;
-				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
-				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-					if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
-				}
-			}
-		}
-
-		if (freedom == "tagged") {
-			phibulk=0;
-			if (GetValue("pinned_range").size()>0 || GetValue("frozen_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("frozen_filename").size()>0) {
-			cout<< "For mon " + name + ", you should exclusively combine 'freedom : tagged' with 'tagged_range' or 'tagged_filename'" << endl;  success=false;}
-			if (GetValue("tagged_range").size()>0 && GetValue("tagged_filename").size()>0) {
-				cout<< "For mon " + name + ", you can not combine 'tagged_range' with 'tagged_filename' " <<endl; success=false;
-			}
-			if (GetValue("tagged_range").size()==0 && GetValue("tagged_filename").size()==0) {
-				cout<< "For mon " + name + ", you should provide either 'tagged_range' or 'tagged_filename' " <<endl; success=false;
-			}
-			if (GetValue("tagged_range").size()>0) { s="tagged_range";
-				n_pos=0;
-				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),name,s);
-				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-					if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),name,s);
-				}
-			}
-			if (GetValue("tagged_filename").size()>0) {s="tagged";
-				filename=GetValue("tagged_filename");
-				n_pos=0;
-			 	if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
-				if (n_pos>0) {
-					H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			 		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s);
-				}
-			}
-		}
-		if (freedom!="free") {
-			H_MASK = (int*) malloc(Lat[0]->M*sizeof(int)); std::fill(H_MASK, H_MASK+Lat[0]->M,0);
-			if (freedom=="clamp") {
-				int JX=Lat[0]->JX;
-				int JY=Lat[0]->JY;
-				int MX=Lat[0]->MX;
-				int MY=Lat[0]->MY;
-				int MZ=Lat[0]->MZ;
-				for (int i=0; i<n_box; i++) {
-					if (bx[i]<1) {bx[i] +=MX; px1[i] +=MX; px2[i] +=MX;}
-					if (by[i]<1) {by[i] +=MY; py1[i] +=MY; py2[i] +=MY;}
-					if (bz[i]<1) {bz[i] +=MZ; pz1[i] +=MZ; pz2[i] +=MZ;}
-					if (bx[i]<1 || bx[i]>MX) {success=false; cout <<"For cleng particle nr " << i << "the coordinate 'x' of the subbox origin is out of bounds. " << endl; }
-					if (by[i]<1 || by[i]>MY) {success=false; cout <<"For cleng particle nr " << i << "the coordinate 'y' of the subbox origin is out of bounds. " << endl; }
-					if (bz[i]<1 || bz[i]>MZ) {success=false; cout <<"For cleng particle nr " << i << "the coordinate 'z' of the subbox origin is out of bounds. " << endl; }
-					H_MASK[((px1[i]-1)%MX+1)*JX + ((py1[i]-1)%MY+1)*JY + (pz1[i]-1)%MZ+1]=1;
-					H_MASK[((px2[i]-1)%MX+1)*JX + ((py2[i]-1)%MY+1)*JY + (pz2[i]-1)%MZ+1]=1;
-				}
-
-			} else Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block);
-		}
-		valence =0;
-		if (GetValue("valence").size()>0) {
-			valence=In[0]->Get_Real(GetValue("valence"),0);
-			if (valence<-10 || valence > 10) cout <<"For mon " + name + " valence value out of range -10 .. 10. Default value used instead" << endl;
-		}
-		epsilon=80;
-		if (GetValue("epsilon").size()>0) {
-			epsilon=In[0]->Get_Real(GetValue("epsilon"),80);
-			if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 250. Default value 80 used instead" << endl;
-		}
-		if (valence !=0) {
-			if (Lat[0]->bond_length <1e-12 || Lat[0]->bond_length > 1e-8) {
-				success=false;
-				if (Lat[0]->bond_length==0) cout << "When there are charged segments, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-102... 1e-8 m " << endl;
-				else cout <<"Bond length is out of range: 1e-12..1e-8 m " << endl;
-			}
-		}
-		if (GetValue("e.psi0/kT").size()>0) {
-			PSI0=0;
-			fixedPsi0=true;
-			PSI0=In[0]->Get_Real(GetValue("e.psi0/kT"),0);
-			if (PSI0!=0 && valence !=0) {
-				success=false;
-				cout <<"You can set only 'valence' or 'e.psi0/kT', but not both " << endl;
-			}
-			if (PSI0!=0 && freedom!="frozen") {
-				success=false;
-				cout <<"You can not set potential on segment that has not freedom 'frozen' " << endl;
-			}
-			if (PSI0 <-25 || PSI0 > 25) {
-				success=false;
-				cout <<"Value for dimensionless surface potentials 'e.psi0/kT' is out of range -25 .. 25. Recall the value of 1 at room temperature is equivalent to approximately 25 mV " << endl;
-			}
-		}
-	}
-
-	int length = state_name.size();
-	if (length >0 && (freedom == "frozen"||freedom=="tagged"||freedom=="clamp")) {
-		success=false;
-		cout <<" When freedom = {frozen,tagged,clamp} a 'mon' can not have multiple internal states; status violated for mon " << name << endl;
-	}
-
-	length=chi_name.size();
-
-	Real Chi;
-	for (int i=0; i<length; i++) {
-		Chi=-999;
-		if (GetValue("chi-"+chi_name[i]).size()>0) {
-			Chi=In[0]->Get_Real(GetValue("chi-"+chi_name[i]),Chi);
-			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "not valid." << endl; }
-			if (name==chi_name[i] && Chi!=0) {if (Chi!=-999) cout <<" chi value for chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "value ignored: set to zero!" << endl; Chi=0;}
-
-		}
-		chi[i]=Chi;
-	}
-
-	if (GetValue("fluctuation_potentials").size()>0) {
-		if (GetValue("fluctuation_wavelength").size()>0) {
-				labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),0);
-				if (labda<1 || labda>Lat[0]->MX || labda > Lat[0]->MY || labda > Lat[0]->MZ) {
-					success = false;cout <<"fluctuation_wavelength must be a positive number smaller or equal to the 'box' size" << endl;
-				}
-				if (!(labda ==2 || labda ==4 || labda ==8 || labda ==16 || labda ==32 || labda ==64 || labda ==128 || labda ==256 || labda ==512 ||labda ==1024)) {
-					cout <<"fluctuation wavelength should be an integer 2^x, with x = 1..10" << endl;
-				}
-		}
-		if (Lat[0]->gradients==2 || Lat[0]->gradients==1) {
-			labda = Lat[0]->MY;
-			labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),labda);
-			if (labda !=Lat[0]->MY) {
-				labda=Lat[0]->MY; cout <<"fluctuation_wavelength is set to n_layers_y." << endl;
-			}
-			if (Lat[0]->geometry !="planar") {
-				success=false; cout <<"fluctuation_potentials in 2 or 1 gradient(s) calculations only for 'planar' case." << endl;
-			}
-		}
-		if (Lat[0]->gradients==3) {
-				int MX=Lat[0]->MX;
-				int MY=Lat[0]->MY;
-				if (!(MX==2 || MX==4 || MX==8 || MX==16 ||MX==32 || MX==64 ||MX==128 || MX==256)) {success=false; cout << "Expecting n_layers_x to have a value 2^a with a = 1..8" << endl; }
-				if (!(MY==2 || MY==4 || MY==8 || MY==16 ||MY==32 || MY==64 ||MY==128 || MY==256)) {success=false; cout << "Expecting n_layers_y to have a value 2^a with a = 1..8" << endl; }
-			}
-	}
-	if (GetValue("fluctuation_amplitude").size()>0) {
-		Amplitude = In[0]->Get_Real(GetValue("fluctuation_amplitude"),1);
-		if (GetValue("fluctuation_potentials").size()==0) {
-			success = false; cout <<"fluctuation_amplitude should be combined with fluctuation_potentials and optionally with fluctuation_wavelength" << endl;
-		}
-		if (Amplitude < 0 || Amplitude > 10) {
-			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 10. " << endl;
-		}
-	}
-	//valence=In[0]->Get_Real(GetValue("valence"),0);
-	return success;
-}
-
 bool Segment::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){
 if (debug) cout << "Segment::PutVarInfo " << endl;
 	bool success=true;
@@ -724,6 +729,7 @@ if (debug) cout << "Segment::PutVarInfo " << endl;
 		if (Var_target_=="valence") {Var_target=0; Var_start_value=valence;}
 		if (Var_target_=="ePsi0/kT") {Var_target=1; Var_start_value=PSI0;}
 		if (Var_target_ =="fluctuation_amplitude") {Var_target=3; Var_start_value=Amplitude;}
+		if (Var_target_=="var_pos") {Var_target=4; Var_start_value=var_pos;}
 		if (Var_target ==-1) {
 			vector<string>sub;
 			In[0]->split(Var_target_,'-',sub);
@@ -834,9 +840,16 @@ if (debug) cout << "Segment::UpdateVarInfo() " << endl;
 			break;
 		case 3:
 			if (scale=="exponential") {
-					Amplitude= pow(10,(1-step_nr/num_of_steps)*log10( Var_start_value)+ (step_nr/num_of_steps)*log10( Var_end_value));
+				Amplitude= pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
 			} else {
 				Amplitude=Var_start_value+step_nr*Var_step;
+			}
+			break;
+		case 4:
+			if (scale=="exponential") {
+				var_pos=   pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
+			} else {
+				var_pos=Var_start_value+step_nr*Var_step;
 			}
 			break;
 		default:
@@ -868,6 +881,9 @@ if (debug) cout << "Segment::ResetInitValue() " << endl;
 		case 3:
 			Amplitude=Var_start_value;
 			break;
+		case 4:
+			var_pos=Var_start_value;
+			break;
 		default:
 			cout <<"program error in Seg:ResetInitValue "<<endl;
 			break;
@@ -897,6 +913,9 @@ if (debug) cout << "Segment::PutValue() " << endl;
 		case 3:
 			Amplitude=X;
 			break;
+		case 4:
+			var_pos=X;
+			break;
 		default:
 			cout <<"program error in Segment:PutValue "<<endl;
 			break;
@@ -925,8 +944,11 @@ if (debug) cout << "Segment::GetValue() " << endl;
 
 			break;
 		case 3:
-				X=Amplitude;
-				break;
+			X=Amplitude;
+			break;
+		case 4:
+			X=var_pos;
+			break;
 		default:
 			cout <<"program error in Segment:GetValue "<<endl;
 			break;
@@ -1091,10 +1113,20 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	push("valence",valence);
 	Real theta = Lat[0]->WeightedSum(phi);
 	push("theta",theta);
-	push("theta_exc",theta-Lat[0]->Accesible_volume*phibulk);
+	Real theta_exc=theta-Lat[0]->Accesible_volume*phibulk;
+	push("theta_exc",theta_exc);
 	push("phibulk",phibulk);
 	push("fluctuation_amplitude",Amplitude);
 	push("fluctuation_wavelength",labda);
+	push("var_pos",var_pos);
+	if (theta_exc!=0) {
+		Real M1=Lat[0]->Moment(phi,phibulk,1)/theta_exc;
+		Real M2=Lat[0]->Moment(phi,phibulk,2)/theta_exc;
+		push("1st_M_phi_z",M1);
+		push("2nd_M_phi_z",M2);
+		Real Fl = (M2-M1*M1); if (Fl >0) Fl = sqrt(Fl); 
+		push("fluctuations",Fl);
+	}
 	if (ns>1) {
 		state_theta.clear();
 		for (int i=0; i<ns; i++){

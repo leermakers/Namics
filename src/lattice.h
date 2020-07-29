@@ -88,7 +88,7 @@ public:
 	int GetValue(string,int&,Real&,string&);
 	Real GetValue(Real*,string);
 	Real WeightedSum(Real*);
-	Real Moment(Real*,int);
+	Real Moment(Real*,Real,int);
 	void TimesL(Real*);
 	void DivL(Real*);
 	void vtk(string, Real*,string,bool);
@@ -111,7 +111,7 @@ public:
 	void set_bounds(T*);
 
 	void Side(Real *, Real *, int);
-	bool ReadRange(int*, int*, int&, bool&, string, string, string);
+	bool ReadRange(int*, int*, int&, bool&, string, int, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
 	bool FillMask(int*, vector<int>, vector<int>, vector<int>, string);
 	bool CreateMASK(int*, int*, int*, int, bool);

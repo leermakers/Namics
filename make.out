@@ -1,0 +1,2 @@
+g++ -Wall -Ofast -std=c++14 -march=native -I/usr/local/cuda-9.0/include -I/usr/local/include -I/usr/include -c -o obj/segment.o src/segment.cpp
+Makefile:81: recipe for target 'obj/segment.o' failed

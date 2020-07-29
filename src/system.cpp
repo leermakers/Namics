@@ -35,11 +35,18 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	constraintfields=false;
   boundaryless_volume=0;
 	grad_epsilon = false;
+	all_system=false;
 }
 System::~System()
 {
 	if (debug)
 		cout << "Destructor for system " << endl;
+	DeAllocateMemory();
+}
+void System:: DeAllocateMemory(void){
+	if (debug)
+		cout << "DeAllocateMemory in system " << endl;
+	if (!all_system) return;
 	free(H_GrandPotentialDensity);
 	free(H_FreeEnergyDensity);
 	free(H_alpha);
@@ -77,6 +84,7 @@ System::~System()
   free(TEMP);
   free(KSAM);
   free(CHI);
+
   if (charged) {
     free(EE);
     free(E);
@@ -85,12 +93,14 @@ System::~System()
   }
 
 #endif
+all_system=false;
 }
 
 void System::AllocateMemory()
 {
 	if (debug)
 		cout << "AllocateMemory in system " << endl;
+	DeAllocateMemory();
 	int M = Lat[0]->M;
 	//H_GN_A = new Real[n_box];
 	//H_GN_B = new Real[n_box];
@@ -166,10 +176,14 @@ void System::AllocateMemory()
 		Seg[i]->AllocateMemory();
 	for (int i = 0; i < n_mol; ++i)
 		Mol[i]->AllocateMemory();
+	CheckChi_values(In[0]->MonList.size());
+	all_system=true;
 }
 
 bool System::generate_mask()
 {
+	if (debug)
+		cout << "generate_mask in system " << endl;
 	int M = Lat[0]->M;
 	bool success = true;
 
@@ -1152,8 +1166,8 @@ void System::PushOutput()
 		push("chi-"+Seg[i]->name+"-"+Seg[j]->name,CHI[i * n_seg + j]);
 	}
 	if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar") {
-		push("KJ0", -Lat[0]->Moment(GrandPotentialDensity, 1));
-		push("Kbar", Lat[0]->Moment(GrandPotentialDensity, 2));
+		push("KJ0", -Lat[0]->Moment(GrandPotentialDensity,0, 1));
+		push("Kbar", Lat[0]->Moment(GrandPotentialDensity,0, 2));
 	}
 	Real X = 0;
 	if (Xn_1.size() > 0 || XmolList.size() > 0)
@@ -2029,7 +2043,7 @@ Real System::GetSpontaneousCurvature()
 {
 	Real *GP = GrandPotentialDensity;
 	//cout <<"Get spontaneous Curvature not yet inplemented in system " << endl;
-	return Lat[0]->Moment(GP, 1);
+	return Lat[0]->Moment(GP,0, 1);
 };
 
 Real System::GetGrandPotential(void)

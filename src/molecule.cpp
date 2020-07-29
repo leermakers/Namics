@@ -17,6 +17,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	phiM=0;
 	Dphi=0;
 	pos_interface=0;
+	all_molecule=false;
 }
 
 Molecule::~Molecule() {
@@ -24,8 +25,10 @@ Molecule::~Molecule() {
 }
 
 void Molecule :: DeAllocateMemory(){
-if (debug) cout <<"Destructor for Mol " + name << endl;
-	if (H_phi!=NULL) free(H_phi);
+if (debug) cout <<"DeallocateMemory for Mol " + name << endl;
+	if (!all_molecule) return;
+	//if (H_phi!=NULL)
+	free(H_phi);
 	free(H_phitot);
 	if (freedom=="clamped") {
 		free(H_Bx);
@@ -72,11 +75,12 @@ if (debug) cout <<"Destructor for Mol " + name << endl;
 		free(rho);
 		free(g1);
 	}
-	free(UNITY);
 	free(Gg_f);
 	free(Gg_b);
 	if (save_memory) free(Gs);
+	free(UNITY);
 #endif
+	all_molecule=false;
 }
 
 bool Molecule::DeleteAl() {
@@ -103,6 +107,7 @@ bool Molecule::DeleteAl() {
 
 void Molecule:: AllocateMemory() {
 if (debug) cout <<"AllocateMemory in Mol " + name << endl;
+	DeAllocateMemory();
 	int M=Lat[0]->M;
 	int m=0;
 	if (freedom=="clamped") {
@@ -132,9 +137,6 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	}
 
 	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); H_Zero(H_phi,M*MolMonList.size());
-//cout <<"molmonlist.size in mol" << MolMonList.size() << endl;
-	//H_u = (Real*) malloc(M*MolMonList.size()*sizeof(Real));
-	//Zero(H_u, M*MolMonList.size());
 	H_phitot = (Real*) malloc(M*sizeof(Real)); H_Zero(H_phitot,M);
 	if (freedom=="clamped") {
 		H_Bx=(int*) malloc(n_box*sizeof(int));
@@ -206,10 +208,10 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	UNITY = (Real*) malloc(M*sizeof(Real)); Zero(UNITY,M);
 #endif
 
-	if (save_memory) Zero(Gs,2*M);
 	int length =MolAlList.size();
 	if (freedom!="clamped") Seg[mon_nr[0]]->clamp_nr=0;
 	for (int i=0; i<length; i++) Al[i]->AllocateMemory(Seg[mon_nr[0]]->clamp_nr,n_box);
+	all_molecule=true;
 }
 
 bool Molecule:: PrepareForCalculations(int *KSAM) {
@@ -423,7 +425,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						R_mask=(int*)malloc(M*sizeof(int));
 						string s="restricted_range";
 						int *r=(int*) malloc(6*sizeof(int));
-						success=Lat[0]->ReadRange(r,HP,npos,block,GetValue("restricted_range"),name,s);
+						success=Lat[0]->ReadRange(r,HP,npos,block,GetValue("restricted_range"),0,name,s);
 						Lat[0]->CreateMASK(R_mask,r,HP,npos,block);
 						theta_range = theta;
 						n_range = theta_range/chainlength;

@@ -50,7 +50,9 @@ public:
 	vector<Real>state_theta;
 
 	string filename;
+	string s_freedom;
 	bool block;
+	bool all_segment;
 	int ns;
 
 	int n_pos;
@@ -72,6 +74,7 @@ public:
 	int labda;
 	int seed;
 	int start;
+	int var_pos;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -115,7 +118,7 @@ public:
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
-  	std::vector<string> VALUES;
+  std::vector<string> VALUES;
 	bool CheckInput(int);
 	void PutChiKEY(string);
 	string GetValue(string);

@@ -1018,14 +1018,47 @@ if (debug) cout << "DivL in lattice " << endl;
 	}
 }
 
-Real Lattice:: Moment(Real* X,int n) {
+Real Lattice:: Moment(Real* X,Real Xb, int n) {
 if (debug) cout << "Moment in lattice " << endl;
 	Real Result=0;
 	Real cor;
-	if (gradients !=1 || geometry!="planar" ) {cout << "Moments analysis is only implemented for one-gradient, planar system " << endl;  return Result; }
-	remove_bounds(X);
-	for (int i = fjc; i<M; i++) {
-		cor = (i-fjc+0.5)/fjc; Result += pow(cor,n)*X[i];
+	int x,y;
+	int zz;
+	Real Nz;
+	switch(gradients) {
+		case 1:
+			if (geometry=="planar") {
+				remove_bounds(X);
+				for (int i = fjc; i<M; i++) {
+					cor = (i-fjc+0.5)/fjc; Result += pow(cor,n)*(X[i]-Xb);
+				}
+			} else {
+				//cout <<"Moment analysis not yet implemented" << endl;
+			}
+			break;
+		case 2:
+			if (fjc==1) {
+				zz=0;
+				for (y=1; y<=MY ; y++) {
+					Nz=0;
+					for (x=1; x<=MX; x++) {
+						if (X[P(x,y)]>0) Nz+=(X[P(x,y)]-Xb)*L[P(x,y)];
+					}
+					if (Nz>0) zz++;
+					if (zz>0) Result+= pow(zz,n)*Nz;
+					//cout << "Result = " << Result << endl;
+				}
+			} else {
+				//cout <<"Moment analysis not yet implemented" << endl;
+			}
+			break;
+		case 3:
+			//cout <<"Moment analysis not implemented; " << endl;
+			break;
+		default:
+			cout <<"Moment analysis should not reach this point" << endl;
+			break;
+
 	}
 	return Result/fjc;
 }
@@ -1943,7 +1976,7 @@ if (debug) cout <<"set_bounds in lattice " << endl;
 }
 
 
-bool Lattice::ReadRange(int* r, int* H_p, int &n_pos, bool &block, string range, string seg_name, string range_type) {
+bool Lattice::ReadRange(int* r, int* H_p, int &n_pos, bool &block, string range, int var_pos, string seg_name, string range_type) {
 if (debug) cout <<"ReadRange in lattice " << endl;
 	bool success=true;
 	vector<string>set;
@@ -1964,6 +1997,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[0].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
 						recognize_keyword=false;
+						if (coor[0]=="var_pos") {recognize_keyword=true; r[0]=var_pos;}
 						if (coor[0]=="firstlayer") {recognize_keyword=true; r[0] = 1;}
 						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[0] = 0;}
 						//if (coor[0]=="upperbound") {recognize_keyword=true; r[0] = MX+1;}
@@ -1982,6 +2016,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[0].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
 						recognize_keyword=false;
+						if (coor[0]=="var_pos") {recognize_keyword=true; r[3]=var_pos;}
 						if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
 						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
 						//if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
@@ -2001,6 +2036,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[0].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
 						recognize_keyword=false;
+						if (coor[0]=="var_pos") {recognize_keyword=true; r[0]=var_pos; }
 						if (coor[0]=="firstlayer") {recognize_keyword=true; r[0] = 1;}
 						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[0] = 0;}
 						//if (coor[0]=="upperbound") {recognize_keyword=true; r[0] = MX+1;}
@@ -2014,6 +2050,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[1].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[1]=In[0]->Get_int(coor[1],0); else {
 						recognize_keyword=false;
+						if (coor[1]=="var_pos") {recognize_keyword=true; r[1]=var_pos;  }
 						if (coor[1]=="firstlayer") {recognize_keyword=true; r[1] = 1;}
 						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[1] = 0;}
 						//if (coor[1]=="upperbound") {recognize_keyword=true; r[1] = MY+1;}
@@ -2032,6 +2069,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[0].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
 						recognize_keyword=false;
+						if (coor[0]=="var_pos") {recognize_keyword=true; r[3]=var_pos; }
 						if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
 						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
 						//if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
@@ -2045,6 +2083,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[1].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[4]=In[0]->Get_int(coor[1],0); else {
 						recognize_keyword=false;
+						if (coor[1]=="var_pos") {recognize_keyword=true; r[4]=var_pos;}
 						if (coor[1]=="firstlayer") {recognize_keyword=true; r[4] = 1;}
 						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[4] = 0;}
 						//if (coor[1]=="upperbound") {recognize_keyword=true; r[4] = MY+1;}
@@ -2065,6 +2104,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[0].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
 						recognize_keyword=false;
+						if (coor[0]=="var_pos") {recognize_keyword=true; r[0]=var_pos;}
 						if (coor[0]=="firstlayer") {recognize_keyword=true; r[0] = 1;}
 						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[0] = 0;}
 						//if (coor[0]=="upperbound") {recognize_keyword=true; r[0] = MX+1;}
@@ -2078,6 +2118,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[1].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[1]=In[0]->Get_int(coor[1],0); else {
 						recognize_keyword=false;
+						if (coor[1]=="var_pos") {recognize_keyword=true; r[1]=var_pos;}
 						if (coor[1]=="firstlayer") {recognize_keyword=true; r[1] = 1;}
 						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[1] = 0;}
 						//if (coor[1]=="upperbound") {recognize_keyword=true; r[1] = MY+1;}
@@ -2091,6 +2132,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[2].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[2]=In[0]->Get_int(coor[2],0); else {
 						recognize_keyword=false;
+						if (coor[2]=="var_pos") {recognize_keyword=true; r[2]=var_pos;}
 						if (coor[2]=="firstlayer") {recognize_keyword=true; r[2] = 1;}
 						//if (coor[2]=="lowerbound") {recognize_keyword=true; r[2] = 0;}
 						//if (coor[2]=="upperbound") {recognize_keyword=true; r[2] = MZ+1;}
@@ -2110,6 +2152,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[0].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
 						recognize_keyword=false;
+						if (coor[0]=="var_pos") {recognize_keyword=true; r[3]=var_pos;}
 						if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
 						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
 						//if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
@@ -2123,6 +2166,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[1].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[4]=In[0]->Get_int(coor[1],0); else {
 						recognize_keyword=false;
+						if (coor[1]=="var_pos") {recognize_keyword=true; r[4]=var_pos;}
 						if (coor[1]=="firstlayer") {recognize_keyword=true; r[4] = 1;}
 						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[4] = 0;}
 						//if (coor[1]=="upperbound") {recognize_keyword=true; r[4] = MY+1;}
@@ -2136,6 +2180,7 @@ if (debug) cout <<"ReadRange in lattice " << endl;
 					diggit=coor[2].substr(0,1);
 					if (In[0]->IsDigit(diggit)) r[5]=In[0]->Get_int(coor[2],0); else {
 						recognize_keyword=false;
+						if (coor[2]=="var_pos") {recognize_keyword=true; r[5]=var_pos;}
 						if (coor[2]=="firstlayer") {recognize_keyword=true; r[5] = 1;}
 						//if (coor[2]=="lowerbound") {recognize_keyword=true; r[5] = 0;}
 						//if (coor[2]=="upperbound") {recognize_keyword=true; r[5] = MZ+1;}
@@ -2260,7 +2305,7 @@ if (debug) cout <<"ReadRangeFile in lattice " << endl;
 					for (i = 0 ; i < length ; ++i) {
 						if (In[0]->Get_int(lines[i],0)==1) n_pos++;
 					}
-					if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any unities." << endl;}
+					if (n_pos==0) {cout << "Warning: Input file for locations of 'particles' does not contain any elements." << endl;}
 				} else {
 					p_i=0;
 					for (x=1; x<MX+1; x++) {

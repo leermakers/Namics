@@ -14,6 +14,7 @@ public:
 ~System();
 
 	string name;
+	bool all_system;
 	vector<Input*> In;
 	Real* CHI;
 	vector<Segment*> Seg;
@@ -113,6 +114,7 @@ public:
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
+	void DeAllocateMemory();
 	bool CheckInput(int);
 	void PutParameter(string);
 	string GetValue(string);

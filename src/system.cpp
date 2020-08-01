@@ -176,7 +176,7 @@ void System::AllocateMemory()
 		Seg[i]->AllocateMemory();
 	for (int i = 0; i < n_mol; ++i)
 		Mol[i]->AllocateMemory();
-	CheckChi_values(In[0]->MonList.size());
+	CheckChi_values(In[0]->MonList.size()); //Here CHI matrix is allocated.
 	all_system=true;
 }
 

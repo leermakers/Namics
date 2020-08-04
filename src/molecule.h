@@ -176,6 +176,8 @@ public:
 	//bool ComputePhiLin();
 	bool ComputePhiBra();
 	bool ComputePhiDendrimer();
+	bool ComputePhiComb();
+	bool ComputePhiRing();
 };
 
 #endif

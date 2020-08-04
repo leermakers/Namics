@@ -922,6 +922,7 @@ if (debug) cout <<"Molecule:: Interpret" << endl;
 	int length_sub =sub.size();
 	int AlListLength=MolAlList.size();
 	int i=0;
+
 	while (i<length_sub) {
 		open.clear(); close.clear();
 		In[0]->EvenBrackets(sub[i],open,close);
@@ -941,6 +942,7 @@ if (debug) cout <<"Molecule:: Interpret" << endl;
 				// Throwing to prevent segfaults and other undefined behavior. Caught by CheckInput.
 				throw "Composition Error";
 				} else {
+
 					int length=Gnr.size();
 					if (length>0) {//fragments at branchpoint need to be just 1 segment long.
 						if (Gnr[length-1]<generation) {
@@ -1139,6 +1141,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	int length_g,length_dd,mnr,nn,arm=-1,degeneracy=1,arms=0;
 	string segname;
 	int N=0;
+	int chainlength_backbone,chainlength_arm;
 	switch(MolType) {
 		case linear:
 			first_s.push_back(-1);
@@ -1167,7 +1170,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			In[0]->split(s,';',sub_gen);
 			n_generations=sub_gen.size();
 			sym_dend=true; //default.
-			cout <<"n_generations " << n_generations << endl;
+			//cout <<"n_generations " << n_generations << endl;
 			chainlength=0; N=-1;
 			for (i=0; i<n_generations; i++) {
 				sub.clear();	arms=0;
@@ -1203,7 +1206,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 					if (Al[a]->active) Al[a]->active=false; else Al[a]->active=true;
 
 				} else mnr=GetMonNr(sub[0]);
-				if (mnr <0)  {success=false; cout <<"In composition of mol '" + name + "', segment name '" + sub_dd[0] + "' is not recognised"  << endl; success=false; }
+				if (mnr <0)  {success=false; cout <<"In composition of mol '" + name + "', segment name '" + sub_dd[0] + "' is not recognised"  << endl; }
 				for (a=0; a<AlListLength; a++) {if (Al[a]->active) Al[a]->frag.push_back(1); else Al[a]->frag.push_back(0);}
 
 				n_mon.push_back(1);
@@ -1216,9 +1219,9 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				while (k<length_g-1) {
 					arm++;
 					first_s.push_back(N+1);
-                        		last_s.push_back(-1);
-                        		first_b.push_back(-1);
-                        		last_b.push_back(-1);
+          last_s.push_back(-1);
+          first_b.push_back(-1);
+          last_b.push_back(-1);
 					if (first_a[first_a.size()-1]==-1) first_a[first_a.size()-1]=arm;
 					last_a[last_a.size()-1]=arm;
 
@@ -1228,13 +1231,12 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 					}
 					n_arm.push_back(f); arms+=f;
 
-
 					sub_dd.clear();
 					In[0]->split(sub[k],':',sub_dd);
 					dd=0; length_dd=sub_dd.size();
 					while (dd<length_dd) {
 						open.clear(); close.clear();
-               				In[0]->EvenBrackets(sub_dd[dd],open,close);
+            In[0]->EvenBrackets(sub_dd[dd],open,close);
 						if (open.size()==0) {
 							a=In[0]->Get_int(sub_dd[dd],-1);
 							if (a==-1) {
@@ -1252,8 +1254,8 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 								n_mon.push_back(nn); N+=nn;
 								d_mon.push_back(degeneracy*f);
 								chainlength +=degeneracy*nn*f;
-                                  				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
-                                  				last_b[first_b.size()-1]=mon_nr.size()-1;
+                if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
+                last_b[first_b.size()-1]=mon_nr.size()-1;
 								last_s[last_s.size()-1]=N;
 								for (a=0; a<AlListLength; a++) {if (Al[a]->active) Al[a]->frag.push_back(1); else Al[a]->frag.push_back(0);}
 								j++;
@@ -1279,7 +1281,163 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 
 			break;
 		case comb:
-			cout <<"comb polymers not implemented" << endl; 	success=false;
+			first_a.clear();
+			last_a.clear();
+			first_b.clear();
+			last_b.clear();
+			first_s.clear();
+			last_s.clear();
+			n_arm.clear();
+			mon_nr.clear();
+			n_mon.clear();
+			In[0]->split(s,';',sub_gen);
+			n_generations=sub_gen.size();
+			int j;
+			int mnr;
+			int nn;
+
+			if (n_generations != 3) {
+				success=false;
+				cout<<" ------Comb language:------ " << endl;
+				cout<<" generic example: @comb((A)5; A,(B)3,(A)6,4; (A)7 )" << endl;
+				cout<<" Backbnone has a first part of 5 A-segments, then spacers with 6 A units and a trailing of 7 A-segments. " << endl;
+				cout<<" Teeth are composed of 3 B-segments " << endl;
+				cout<<" Number of repeats (inbetween the two ';') is eqaul to 4. " << endl;
+				cout<<" Number of segments in molelecule is 5+(1+3+6)x4+7 = 52 segments" << endl;
+				cout<<" Backbone length is 5+(1+6)x4+7 = 40 segments " << endl;
+				cout<<" ------Comb language:------ " << endl;
+				return success;
+			}
+			chainlength=0; N=-1;
+			i=0;
+			//success=Interpret(sub_gen[0],i);
+
+			first_s.push_back(N+1);
+			last_s.push_back(-1);
+			first_b.push_back(-1);
+			last_b.push_back(-1);
+			open.clear(); close.clear();
+			In[0]->EvenBrackets(sub_gen[0],open,close);
+			j=0; length=open.size();
+			while (j<length) {
+				segname=sub_gen[0].substr(open[j]+1,close[j]-open[j]-1);
+				mnr=GetMonNr(segname);
+				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; this occurs at generation " << endl; success=false;}
+				mon_nr.push_back(mnr); d_mon.push_back(1);
+				nn=In[0]->Get_int(sub_gen[0].substr(close[j]+1,s.size()-close[j]-1),0);
+				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; this occurs at generation " << endl; success=false;}
+				n_mon.push_back(nn); N+=nn;
+				chainlength +=nn;
+				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
+				last_b[first_b.size()-1]=mon_nr.size()-1;
+				last_s[last_s.size()-1]=N;
+				j++;
+			}
+
+			chainlength_backbone=chainlength;
+			i=1;
+			sub.clear();
+			In[0]->split(sub_gen[1],',',sub);
+			//cout <<"sub_gen[1] " << sub_gen[1] << "size of sub : " << sub.size() << endl;
+			if (sub.size() != 4) {
+				cout << "Central part in comb definition should contain four arguments and three ',' to separare them. Use comb(? ) for details."  << endl;
+				success=false; return success;
+			}
+
+			n_arm.push_back(In[0]->Get_int(sub[3],0));
+			first_s.push_back(N+1);
+			last_s.push_back(-1);
+			first_b.push_back(-1);
+			last_b.push_back(-1);
+			open.clear(); close.clear();
+			In[0]->EvenBrackets(sub[1],open,close);
+			j=0; length=open.size();
+			while (j<length) {
+				segname=sub[1].substr(open[j]+1,close[j]-open[j]-1);
+				mnr=GetMonNr(segname);
+				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; this occurs at generation " << endl; success=false;}
+				mon_nr.push_back(mnr); d_mon.push_back(n_arm[0]);
+				nn=In[0]->Get_int(sub[1].substr(close[j]+1,s.size()-close[j]-1),0);
+				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; this occurs at generation " << endl; success=false;}
+				n_mon.push_back(nn); N+=nn;
+				chainlength +=nn;
+				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
+				last_b[first_b.size()-1]=mon_nr.size()-1;
+				last_s[last_s.size()-1]=N;
+				j++;
+			}
+
+			chainlength_arm=chainlength-chainlength_backbone;
+			chainlength=chainlength_backbone;
+
+
+
+			if (n_arm[0] <1) {
+				success=false; cout <<" Error in composition of mol "+ name + " number of arms is less than unity. Use comb(? ) for details. " << endl; return success;
+			}
+			n_generations=3;
+			for (int a=1; a<=n_arm[0]; a++) {
+				mnr=GetMonNr(sub[0]);
+				if (mnr <0)  {success=false; cout <<"In composition of mol '" + name + "', segment name '" + sub_dd[0] + "' is not recognised. For the branching point the ( ) are not needed."  << endl; return success;}
+
+
+				n_mon.push_back(1); d_mon.push_back(1);
+				mon_nr.push_back(mnr); N++;
+				chainlength +=chainlength_arm+1;
+				n_generations++;
+				//success=Interpret(sub[2],n_generations-1);
+
+				first_s.push_back(N+1);
+				last_s.push_back(-1);
+				first_b.push_back(-1);
+				last_b.push_back(-1);
+				open.clear(); close.clear();
+				In[0]->EvenBrackets(sub[2],open,close);
+				j=0; length=open.size();
+				while (j<length) {
+					segname=sub[2].substr(open[j]+1,close[j]-open[j]-1);
+					mnr=GetMonNr(segname);
+					if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; this occurs at generation " << endl; success=false;}
+					mon_nr.push_back(mnr); d_mon.push_back(1);
+					nn=In[0]->Get_int(sub[2].substr(close[j]+1,s.size()-close[j]-1),0);
+					if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; this occurs at generation "<< endl; success=false;}
+					n_mon.push_back(nn); N+=nn;
+					chainlength +=nn;
+					if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
+					last_b[first_b.size()-1]=mon_nr.size()-1;
+					last_s[last_s.size()-1]=N;
+					j++;
+				}
+
+			}
+			n_generations++;
+
+			//success=Interpret(sub_gen[2],n_generations-1);
+			first_s.push_back(N+1);
+			last_s.push_back(-1);
+			first_b.push_back(-1);
+			last_b.push_back(-1);
+			open.clear(); close.clear();
+			In[0]->EvenBrackets(sub_gen[2],open,close);
+			j=0; length=open.size();
+			while (j<length) {
+				segname=sub_gen[2].substr(open[j]+1,close[j]-open[j]-1);
+				mnr=GetMonNr(segname);
+				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; this occurs at generation " << endl; success=false;}
+				mon_nr.push_back(mnr); d_mon.push_back(1);
+				nn=In[0]->Get_int(sub_gen[2].substr(close[j]+1,s.size()-close[j]-1),0);
+				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; this occurs at generation " << endl; success=false;}
+				n_mon.push_back(nn); N+=nn;
+				chainlength +=nn;
+				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
+				last_b[first_b.size()-1]=mon_nr.size()-1;
+				last_s[last_s.size()-1]=N;
+				j++;
+			}
+
+			//length=first_b.size();
+			//for (int i=0; i<length; i++) cout <<"first_b " <<  first_b[i] << " last_b " << last_b[i] << endl;
+			//for (int i=0; i<length; i++) cout <<"first_s " <<  first_s[i] << " last_s " << last_s[i] << endl;
 			break;
 		case ring:
 			cout <<"ring polymers not implemented" << endl; 	success=false;
@@ -1343,7 +1501,7 @@ if (debug) cout <<"Molecule:: MakeMonList" << endl;
 	int pos;
 	while (i<length) {
 		if (In[0]->InSet(MolMonList,pos,mon_nr[i])) {molmon_nr.push_back(pos);
-		//	cout << "in frag i " << i << " there is segment nr " <<  mon_nr[i] << " and it is on molmon  pos " << pos << endl;
+		//cout << "in frag i " << i << " there is segment nr " <<  mon_nr[i] << " and it is on molmon  pos " << pos << endl;
 		} else {cout <<"program error in mol PrepareForCalcualations" << endl; }
 		i++;
 	}
@@ -1627,7 +1785,7 @@ if (debug) cout <<"fraction for Mol " + name << endl;
 	int length = mon_nr.size();
 	int i=0;
 	while (i<length) {
-		if (segnr==mon_nr[i]) {if (MolType==dendrimer) Nseg += n_mon[i]*d_mon[i]; else Nseg+=n_mon[i];}
+		if (segnr==mon_nr[i]) {if (MolType==dendrimer||MolType==comb) Nseg += n_mon[i]*d_mon[i]; else Nseg+=n_mon[i];}
 		i++;
 	}
 	return 1.0*Nseg/chainlength;
@@ -1664,6 +1822,9 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 			break;
 		case dendrimer:
 			success=ComputePhiDendrimer();
+			break;
+		case comb:
+			success=ComputePhiComb();
 			break;
 		default:
 			cout << "Programming error " << endl;
@@ -2071,396 +2232,163 @@ bool Molecule::ComputePhiDendrimer() {
 			}
 		}
 		if (s<slast) {
-			Cp(GS,Gg_f+first_s[bN+2]*M,M);
+			Cp(GS+2*M,UNITY,M);
+			Cp(GS,Gg_f+(s+2)*M,M);
 			Lat[0] ->propagate(GS,UNITY,0,1,M);
 			for (int k=0; k<n_arm[g+1]-1; k++) Times(GS+2*M,GS+2*M,GS+M,M);
 			Lat[0] ->propagate(Gg_b,Seg[mon_nr[bN+1]]->G1,s%2,(s+1)%2,M);
-		//cout << "s : " << s << " mon_nr: " << mon_nr[bN+1] << endl;
 			s++;
-			Times(GS,Gg_b+(s%2)*M,GS+2*M,M);
-			Times(GS, Gg_f+(s)*M, Gg_b+(s%2)*M, M); Norm(GS, d_mon[bN+1],M);
+			Times(GS, Gg_f+(s)*M, Gg_b+(s%2)*M, M);
+			Norm(GS, d_mon[bN+1],M);
 			Add(rho+molmon_nr[bN+1]*M,GS,M);
+			Times(Gg_b+(s%2)*M,Gg_b+(s%2)*M,GS+2*M,M);
 		}
 	}
 	delete [] GS;
 	return success;
 }
 
+bool Molecule::ComputePhiComb() {
+	if (debug) cout <<"ComputePhiComb for Mol " + name << endl;
+	int N;
+	int M=Lat[0]->M;
+	Real* GS = new Real[3*M];
 
+	bool success=true;
+	int slast=0,sfirst=0;
+	int s;
+	int n_arms=n_arm[0];
+	int b0,bN,g;
+
+
+	s=last_s[1]; //first do the arm;
+	slast=s;
+	b0=first_b[1]; bN=last_b[1];
+	for (int b=bN; b>=b0; b--) {
+		N= n_mon[b];
+		for (int k=0; k<N; k++) {
+			if (s<slast) {
+				Lat[0] ->propagate(Gg_f,Seg[mon_nr[b]]->G1,s+1,s,M);
+			} else {
+				Cp(Gg_f+slast*M,Seg[mon_nr[b]]->G1,M);
+			}
+			s--;
+		}
+	}
+	sfirst = s+1; //keep the reference to beginning of arm.
+
+	s=last_s[n_arms + 2]; //then start at end of backbone.
+	slast=s;
+	b0=first_b[n_arms+2]; bN=last_b[n_arms+2];
+	for (int b=bN; b>=b0; b--) {
+		N= n_mon[b];
+		for (int k=0; k<N; k++) {
+			if (s<slast) {
+				Lat[0] ->propagate(Gg_f,Seg[mon_nr[b]]->G1,s+1,s,M);
+			} else {
+				Cp(Gg_f+slast*M,Seg[mon_nr[b]]->G1,M);
+			}
+			s--;
+		}
+	}
+
+
+	for (g=n_arms+1; g>=2; g--) { //do the repeat
+		b0=first_b[g]; bN=last_b[g];
+		for (int b=bN; b>=b0; b--) {
+			N= n_mon[b];
+			for (int k=0; k<N; k++) {
+				Lat[0] ->propagate(Gg_f,Seg[mon_nr[b]]->G1,s+1,s,M);
+				s--;
+			}
+		}
+
+
+		Lat[0] ->propagate(Gg_f,Seg[mon_nr[b0-1]]->G1,s+1,s,M);
+		Cp(GS,Gg_f+sfirst*M,M);
+		Lat[0] ->propagate(GS,UNITY,0,1,M);
+		Times(Gg_f+s*M,Gg_f+s*M,GS+M,M);
+		s--;
+	}
+
+	b0=first_b[0]; bN=last_b[0];
+	Lat[0] ->propagate(Gg_f,Seg[mon_nr[bN]]->G1,s+1,last_s[0],M);
+	s= last_s[0];
+	for (int b=bN; b>=b0; b--) {
+		N= n_mon[b];
+		for (int k=0; k<N; k++) {
+			if (s<last_s[0]) {
+				Lat[0] ->propagate(Gg_f,Seg[mon_nr[b]]->G1,s+1,s,M);
+			}
+			s--;
+		}
+	}
+
+	GN=Lat[0]->WeightedSum(Gg_f);
+	Times(rho+molmon_nr[0]*M, Gg_f, Seg[mon_nr[0]]->G1, M);
+	s=-1;
+
+	b0=first_b[0]; bN=last_b[0];
+	for (int b=b0; b<=bN; b++) {
+		N= n_mon[b];
+		for (int k=0; k<N; k++) {
+			if (s>-1) {
+				Lat[0] ->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
+				AddTimes(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+			} else Cp(Gg_b,Seg[mon_nr[b]]->G1,M);
+			s++;
+		}
+	}
+
+	for (g=2; g<=n_arms+1; g++) {
+		Lat[0] ->propagate(Gg_b,Seg[mon_nr[first_b[g]-1]]->G1,s%2,(s+1)%2,M);
+		Cp(GS,Gg_b+(s+1)%2*M,M); //opslag
+		Lat[0] ->propagate(Gg_f,UNITY,first_s[g],first_s[g]-1,M);
+ 		Times(Gg_b+((sfirst-1)%2)*M,Gg_f+(first_s[g]-1)*M,GS,M);
+		b0=first_b[1]; bN=last_b[1]; s=sfirst-1;
+		for (int b=b0; b<=bN; b++) {
+			N= n_mon[b];
+			for (int k=0; k<N; k++) {
+				Lat[0] ->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
+				AddTimes(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+				s++;
+
+			}
+		}
+		Cp(GS+M,Gg_f+sfirst*M,M);
+		Lat[0] ->propagate(GS,UNITY,1,2,M);
+		Times(Gg_b+((first_s[g]-1)%2)*M,GS+2*M,GS,M);
+		Cp(GS,Gg_f+first_s[g]*M,M); Lat[0]->propagate(GS,Seg[mon_nr[first_b[g]-1]]->G1,0,1,M);
+		AddTimes(rho+molmon_nr[first_b[g]-1]*M, GS+M,Gg_b+((first_s[g]-1)%2)*M, M);
+		b0=first_b[g];
+		bN=last_b[g];
+		s=first_s[g]-1;
+		for (int b=b0; b<=bN; b++) {
+			N= n_mon[b];
+			for (int k=0; k<N; k++) {
+				Lat[0] ->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
+				AddTimes(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+				s++;
+			}
+		}
+	}
+
+	b0=first_b[n_arms+2]; bN=last_b[n_arms+2];
+	for (int b=b0; b<=bN; b++) {
+		N= n_mon[b];
+		for (int k=0; k<N; k++) {
+			Lat[0] ->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
+			AddTimes(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+			s++;
+		}
+	}
+
+	delete [] GS;
+	return success;
+}
 
 
 /*   --------------------------------trash-----------------------------------------------------
-
-
-bool Molecule::ComputePhiLin(){
-	if (debug) cout <<"ComputePhiLin for Mol " + name << endl;
-	int M=Lat[0]->M;
-	bool success=true;
-	int blocks=mon_nr.size();
-	int s=0;
-	Cp(Gg_f,Seg[mon_nr[0]]->G1,M);
-	//Cp(Gg_f,G1+molmon_nr[0]]*M,M);
-	//for (int i=0; i<blocks; i++) propagate_forward(Gg_f,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
-	for (int i=0; i<blocks; i++) propagate_forward(Gg_f,G1+molmon_nr[i]*M,s,n_mon[i],i,M);
-
-	s=chainlength-1;
-	Cp(Gg_b+(s%2)*M,Seg[mon_nr[blocks-1]]->G1,M);
-	//Cp(Gg_b+(s%2)*M,G1+molmon_nr[blocks-1]*M,M);
-	for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,Seg[mon_nr[i]]->G1,s,n_mon[i],i,M);
-	//for (int i=blocks-1; i>-1; i--) propagate_backward(Gg_f,Gg_b,G1+molmon_nr[i]*M,s,n_mon[i],i,M);
-	//Lat[0]->remove_bounds(Gg_b);
-	GN=Lat[0]->WeightedSum(Gg_b);
-	return success;
-}
-
-void Molecule::propagate_backward(Real* Gg_f, Real* Gg_b, Real* G1, int &s, int N, int block, int M) {
-if (debug) cout <<"propagate_backward for Mol " + name << endl;
-	if (save_memory) {
-		int k,k0,t0,v0,t,rk1;
-		int n=memory[block]; if (block>0) n-=memory[block-1];
-		int n0=0; if (block>0) n0=memory[block-1];
-
-		t=1;
-		v0=t0=k0=0;
-		for (k=2; k<=N; k++) {t++; if (t>n) { t0++; if (t0 == n) t0 = ++v0; t = t0 + 1; k0 = k - t0 - 1;}}
-		for (k=N; k>=1; k--) {
-			if (k==N) {
-				if (s==chainlength-1) {
-					Cp(Gg_b+(k%2)*M,G1,M);
-				} else {
-					Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
-				}
-			} else {
-				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
-			}
-			t = k - k0;
-			if (t == t0) {
-				k0 += - n + t0;
-				if (t0 == v0 ) {
-					k0 -= ((n - t0)*(n - t0 + 1))/2;
-				}
-				t0 --;
-				if (t0 < v0) {
-					v0 = t0;
-				}
-				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,M);
-				for (rk1=k0+t0+2; rk1<=k; rk1++) {
-					t++;
-					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2,M);
-					if (t == t0+1 || k0+n == k) {
-						Cp(Gg_f+(n0+t-1)*M,Gs+(t%2)*M,M);
-					}
-					if (t == n && k0+n < k) {
-						t  = ++t0;
-						k0 += n - t0;
-					}
-				}
-				t = n;
-			}
-			AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
-			if (compute_phi_alias) {
-				int length = MolAlList.size();
-				for (int i=0; i<length; i++) {
-					if (Al[i]->frag[k]==1) { //alias is not yet read for clamp
-						Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
-					}
-				}
-			}
-			s--;
-		}
-		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
-	} else {
-		for (int k=0; k<N; k++) {
-			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
-			AddTimes(rho+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M);
-			if (compute_phi_alias) {
-				int length = MolAlList.size();
-				for (int i=0; i<length; i++) {
-					if (Al[i]->frag[k]==1) { //alias is not yet ready for clamp
-						Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
-					}
-				}
-			}
-			s--;
-		}
-	}
-}
-
-
-void Molecule::propagate_forward(Real* Gg_f, Real* G1,int &s, int N, int block, int M) {
-if (debug) cout <<"propagate_forward for Mol " + name << endl;
-	//int M=Lat[0]->M;
-	if (save_memory) {
-		int k,k0,t0,v0,t;
-		int n=memory[block]; if (block>0) n-=memory[block-1];
-		int n0=0; if (block>0) n0=memory[block-1];
-		if (s==0) {
-			Cp(Gs+M,G1,M);Cp(Gg_f,Gs+M,M);
-		} else {
-			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
-			Cp(Gg_f+n0*M,Gs+M,M); s++;
-		}
-		t=1;
-		v0=t0=k0=0;
-		for (k=2; k<=N; k++) {
-			t++; s++;
-			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2,M);
-			if (t>n) {
-				t0++;
-				if (t0 == n) t0 = ++v0;
-				t = t0 + 1;
-				k0 = k - t0 - 1;
-			}
-			if ((t == t0+1 && t0 == v0)
-		  	 || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(k0+t0)))
-		  	 || (2*(n-t+k) >= N-1))
-				Cp(Gg_f+(n0+t-1)*M,Gs+(k%2)*M,M);
-
-		}
-		if ((N)%2!=0) {
-			Cp(Gs,Gs+M,M); //make sure that Gs has last end-point distribution on spot zero.
-		}
-	} else
-	for (int k=0; k<N; k++) {
-		if (s>0) Lat[0] ->propagate(Gg_f,G1,s-1,s,M); s++;
-	}
-}
-
-
-
-void ComputePhi(){
-	Lat[0]->DisG1(G1,g1,Bx,By,Bz,n_box);
-	Cp(Gg_f,mask1,M*n_box);
-	for (s=1; s<=N; s++) Propagate(Gg_f,g1,s-1,s); Propagate(Gg_f,mask2,N,N+1);
-	Cp(Gg_b+((N+1)%2)*M*n_box,mask2,M*n_box);
-	Zero(rho,M*n_box);
-	for (int s=N; s>0; s--) {
-		Propagate(Gg_b,g1,((s+1)%2),(s%2));
-		AddTimes(rho,Gg_f+s*M*n_box,Gg_b+(s%2)*M*n_box,M*n_box);
-	}
-	ComputeGN(GN,Gg_f,H_Bx,H_By,H_Bz,H_Px2,H_Py2,H_Pz2,N,M,n_box);
-	Lat[0]->ColPhi(phi,GN,rho,Bx,By,Bz,n_box);
-	Div(phi+MM,G1,MM);
-	Add(phi+MM,MASK,MM);
-}
-
-void ComputeGN(Real* GN, Real* Gg_f, int* H_Bx, int* H_By, int* H_Bz, int* H_Px2, int* H_Py2, int* H_Pz2, int N, int M, int n_box) {
-	for (int p=0; p<n_box; p++) Cp(GN+p,Gg_f+n_box*M*(N+1) +p*M+ jx*(H_Px2[p]-H_Bx[p])+jy*(H_Py2[p]-H_By[p])+(H_Pz2[p]-H_Bz[p]),1);
-
-#ifdef CUDA //this transfer can go away when all is on GPU.
-	TransferDataToHost(H_GN,GN,n_box);
-#endif
-
-}
-*/
-
-/*
-bool Molecule::ExpandAlias(vector<string> sub, string &s) {
-if (debug) cout <<"Molecule:: ExpandAlias" << endl;
-	bool success=true;
-	int correction=0;
-	vector<int> open;
-	vector<int> close;
-	int length_al=sub.size();
-	for (int i=0; i<length_al; i++) {
-		open.clear(); close.clear();
-		string sA;
-		In[0]->EvenBrackets(sub[i],open,close);
-		if (open.size() ==0) sA=sub[i]; else sA=sub[i].substr(0,open[0]);
-		if (i==0 && sA=="") { //the 'composition' does not start with an alias. This should not be a problem.
-		} else {
-
-			if (sA[sA.length()-1]==',') {sA=sA.substr(0,sA.length()-1); correction=1;}
-			if (sA[sA.length()-1]==';') {sA=sA.substr(0,sA.length()-1); correction=2;}
-
-			if (!In[0]->InSet(In[0]->AliasList,sA)) {
-				cout <<"In composition of mol '" + name + "' Alias '" + sA + "' was not found"<<endl; success=false;
-			} else {
-				int Alnr =GetAlNr(sA);
-				if (Alnr<0) {
-					Al.push_back(new Alias(In,Lat,sA));
-					Alnr=Al.size();
-					if (!Al[Alnr-1]->CheckInput(start)) {return false;}
-					MolAlList.push_back(Alnr);
-				}
-				Alnr =GetAlNr(sA);
-				int iv = Al[Alnr]->value;
-				string al_comp=Al[Alnr]->composition;
-				if (iv < 0) {
-					string si;
-					stringstream sstm;
-					sstm << Alnr;
-					si = sstm.str();
-					string ssub="";
-					if (open[0]!=0) ssub=sub[i].substr(open[0]);
-					switch(correction) {
-						case 0:
-							sub[i]=":"+si+":"+al_comp+":"+si+":"+ssub;
-							break;
-						case 1:
-							sub[i]=":"+si+":"+al_comp+",:"+si+":"+ssub;
-							break;
-						case 2:
-							sub[i]=":"+si+":"+al_comp+";:"+si+":"+ssub;
-							break;
-						default:
-							break;
-
-					}
-				} else {
-					string sss;
-					stringstream sstm;
-					sstm << iv;
-					sss = sstm.str();
-					sub[i]=sss+sub[i].substr(open[0]);
-				}
-			}
-		}
-	}
-	string ss;
-	for (int i=0; i<length_al; i++) {
-		ss=ss.append(sub[i]);
-	}
-	s=ss;
-	return success;
-}
-
-Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int arm, int M) { //for dendrimer
-if (debug) cout <<"0. propagate_forward for Molecule " + name << endl;
-	int N= n_mon[block];
-	if (save_memory) {
-		int k,k0,t0,v0,t;
-		int n=memory[block]; if (block>0) n-=memory[block-1];
-		int n0=0; if (block>0) n0=memory[block-1];
-		if (s==first_s[arm] && generation ==0) { s++;
-			Cp(Gs+M,G1,M); Cp(Gs,G1,M); Cp(Gg_f+n0*M,Gs+M,M); last_stored[block]=n0;
-		} else {
-			if (s==first_s[arm]) {
-				//Nog niet af: Cp(Gs,last_stored[last_b[last_a[generation-1]]+1]*M,M); //Cp(Gs+M,Gs,M);
-			}
-			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
-			Cp(Gg_f+n0*M,Gs+M,M); s++;
-			last_stored[block]=n0;
-		}
-		t=1;
-		v0=t0=k0=0;
-		for (k=2; k<=N; k++) {
-			t++; s++;
-			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2,M);
-			if (t>n) {
-				t0++;
-				if (t0 == n) t0 = ++v0;
-				t = t0 + 1;
-				k0 = k - t0 - 1;
-			}
-			if ((t == t0+1 && t0 == v0)
-		  	 || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(k0+t0)))
-		  	 || (2*(n-t+k) >= N-1)) {
-				Cp(Gg_f+(n0+t-1)*M,Gs+(k%2)*M,M);
-				last_stored[block]=n0+t-1;
-			}
-		}
-		if ((N)%2!=0) {
-			Cp(Gs,Gs+M,M); //make sure that Gs has last end-point distribution on spot zero.
-			//return Gs;
-		}
-	} else {
-		for (int k=0; k<N; k++) {
-
-			if (s==first_s[arm] && generation==0) {
-				Cp(Gg_f+first_s[generation]*M,G1,M);
-			} else {
-				if (s==first_s[arm])
-					Lat[0] ->propagate(Gg_f,G1,last_s[last_a[generation-1]]+1,s,M);
-				else Lat[0] ->propagate(Gg_f,G1,s-1,s,M);
-			}
-			 s++;
-		}
-	}
-	if (save_memory) {
-		return Gg_f+last_stored[block]*M;
-	} else return Gg_f+(s-1)*M;
-}
-
-
-void Molecule::propagate_backward(Real* G1, int &s, int block, int generation, int arm, int M) { //this one is for the dendrimer molecules.
-if (debug) cout <<"propagate_backward for Mol " + name << endl;
-
-	int N= n_mon[block];
-	if (save_memory) {
-		int k,k0,t0,v0,t,rk1;
-		int n=memory[block]; if (block>0) n-=memory[block-1];
-		int n0=0; if (block>0) n0=memory[block-1];
-
-		t=1;
-		v0=t0=k0=0;
-		for (k=2; k<=N; k++) {t++; if (t>n) { t0++; if (t0 == n) t0 = ++v0; t = t0 + 1; k0 = k - t0 - 1;}}
-		for (k=N; k>=1; k--) {
-			if (k==N) {
-				if (s==chainlength-1) {
-					Cp(Gg_b+(k%2)*M,G1,M);
-				} else {
-					Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
-				}
-			} else {
-				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
-			}
-			t = k - k0;
-			if (t == t0) {
-				k0 += - n + t0;
-				if (t0 == v0 ) {
-					k0 -= ((n - t0)*(n - t0 + 1))/2;
-				}
-				t0 --;
-				if (t0 < v0) {
-					v0 = t0;
-				}
-				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,M);
-				for (rk1=k0+t0+2; rk1<=k; rk1++) {
-					t++;
-					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2,M);
-					if (t == t0+1 || k0+n == k) {
-						Cp(Gg_f+(n0+t-1)*M,Gs+(t%2)*M,M);
-					}
-					if (t == n && k0+n < k) {
-						t  = ++t0;
-						k0 += n - t0;
-					}
-				}
-				t = n;
-			}
-			AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
-			if (compute_phi_alias) {
-				int length = MolAlList.size();
-				for (int i=0; i<length; i++) {
-					if (Al[i]->frag[k]==1) {
-						Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
-					}
-				}
-			}
-			s--;
-		}
-		Cp(Gg_b,Gg_b+M,M);  //make sure that on both spots the same end-point distribution is stored
-	} else {
-		for (int k=0; k<N; k++) {
-			if (s<chainlength-1) Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M); else Cp(Gg_b+(s%2)*M,G1,M);
-			AddTimes(rho+molmon_nr[block]*M,Gg_f+(s)*M,Gg_b+(s%2)*M,M);
-			if (compute_phi_alias) {
-				int length = MolAlList.size();
-				for (int i=0; i<length; i++) {
-					if (Al[i]->frag[k]==1) {
-						Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
-					}
-				}
-			}
-			s--;
-		}
-	}
-}
-
-
-
-
 
 
 

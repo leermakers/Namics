@@ -1124,7 +1124,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 		Real M2=Lat[0]->Moment(phi,phibulk,2)/theta_exc;
 		push("1st_M_phi_z",M1);
 		push("2nd_M_phi_z",M2);
-		Real Fl = (M2-M1*M1); if (Fl >0) Fl = sqrt(Fl); 
+		Real Fl = (M2-M1*M1); if (Fl >0) Fl = sqrt(Fl);
 		push("fluctuations",Fl);
 	}
 	if (ns>1) {

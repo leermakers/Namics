@@ -93,6 +93,7 @@ public:
 	void DivL(Real*);
 	void vtk(string, Real*,string,bool);
 	void PutProfiles(FILE*,vector<Real*>,bool);
+	bool PutMask(int*,vector<int>,vector<int>,vector<int>,int);
 
 	bool CheckInput(int);
 	bool PutM(void);

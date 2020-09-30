@@ -87,6 +87,7 @@ public:
 	int Var_target;
 	Real Var_target_value;
 	int start;
+	int extra_constraints;
 
 	bool prepared;
 

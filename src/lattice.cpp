@@ -1134,6 +1134,43 @@ if (debug) cout << "vtk in lattice " << endl;
 	}
 	fclose(fp);
 }
+
+bool Lattice::PutMask(int* Mask,vector<int>px,vector<int>py,vector<int>pz,int R) {
+	bool success=true;
+	if (fjc>1) cout <<"PutMask in lattice is not ready for lattice-refinement...."<< endl; 
+	int length =px.size();
+	for (int p=0;p<length; p++){
+		int x,y,z;
+		x=px[p]; y=py[p]; z=pz[p];
+		bool outofbounds=true;
+		while (outofbounds) {
+			outofbounds=false;
+			if (x<1) {x=x+MX; outofbounds=true;}
+			if (x>MX) {x=x-MX; outofbounds=true;}
+			if (y<1) {y=y+MY; outofbounds=true;}
+			if (y>MY) {y=y-MY; outofbounds=true;}
+			if (z<1) {z=z+MZ; outofbounds=true;}
+			if (z>MZ) {z=z-MZ; outofbounds=true;}
+		}
+		int ii,jj,kk; 
+		for (int i=x-R-1; i<x+R+1; i++)
+		for (int j=y-R-1; j<y+R+1; j++)
+		for (int k=z-R-1; k<z+R+1; k++) {
+			Real distance; ii=i; jj=j; kk=k; 
+			distance=pow(pow(i-x,2)+pow(j-y,2)+pow(k-z,2),0.5);
+			if (distance < 1.00001*R) {
+				if (i<1) ii=i+MX; 
+				if (i>MX) ii=i-MX; 
+				if (j<1) jj=j+MY; 
+				if (j>MY) jj=j-MY; 
+				if (k<1) kk=k+MZ; 
+				if (k>MZ) kk=k-MZ; 
+				if (Mask[P(ii,jj,kk)]==1) success=false; else { Mask[P(ii,jj,kk)]=1;  }
+			} 
+		}  
+	}
+	return success; //if success=false; overlap was detected. 
+}
 void Lattice::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds){
 if (debug) cout <<"PutProfiles in lattice " << endl;
 	int x,y,z,i;

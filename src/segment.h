@@ -22,6 +22,15 @@ public:
 	vector<int> bx;
 	vector<int> by;
 	vector<int> bz;
+	vector<int> px;
+	vector<int> py;
+	vector<int> pz;
+	int n;
+	int R;
+	vector<int> constraint_z;
+	vector<Real> constraint_phi;
+	vector<Real> constraint_beta;
+	bool constraints;
 
 	vector<string> chi_name;
 	vector<Real> chi;
@@ -33,6 +42,8 @@ public:
 	int state_nr_of_copy;
 	bool prepared;
 
+	Real theta_exc;
+	Real M1,M2,Fl;
 	Real epsilon;
 	Real valence;
 	Real PSI0;
@@ -93,6 +104,8 @@ public:
 	int* GetPointerInt(string,int&);
 	int GetValue(string,int&,Real&,string&);
 	bool SetExternalPotentials();
+	Real Get_g(int ) ;
+	void Put_beta(int, Real );
 
 
 	int* H_P;

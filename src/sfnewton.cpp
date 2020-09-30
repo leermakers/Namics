@@ -1004,8 +1004,10 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 		a=1;
 		fa=g[0];
 		x[0]=(a+delta_max)*x_start;
+
 		residuals(x,g);
 		b=x[0]/x_start;
+
 		fb=g[0];
 		if(fa==fb) cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;
 		c = a - 0.5*((fa*(a-b))/(fa-fb));

@@ -1,0 +1,30 @@
+lat : flat : n_layers_z : 100
+lat : flat : n_layers_x : 10
+lat : flat : n_layers_y : 10
+lat : flat : gradients : 3
+lat : flat : lattice_type : simple_cubic
+lat : flat : geometry : planar
+
+mon : S : freedom : frozen
+mon : S : frozen_range : 1,1,1;10,10,1
+
+mon : A : freedom : free
+mon : W : freedom : free
+
+mon : A : chi - S : -6
+
+mol : pol : composition : (A)1000
+mol : pol : freedom : free
+mol : pol : phibulk : 0.001
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+newton : isaac : method : DIIS
+newton : isaac : deltamax : 1
+sys : frans : initial_guess : polymer_adsorption
+
+output : pro : write_bounds : false 
+pro : mon : A : phi 
+
+start

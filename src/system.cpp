@@ -28,6 +28,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("guess_outputfile");
 	KEYS.push_back("GPU");
 	KEYS.push_back("X");
+
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++)
 	  KEYS.push_back("guess-" + In[0]->MonList[i]);
@@ -36,6 +37,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
   boundaryless_volume=0;
 	grad_epsilon = false;
 	all_system=false;
+	extra_constraints=0;
 }
 System::~System()
 {
@@ -186,17 +188,20 @@ bool System::generate_mask()
 		cout << "generate_mask in system " << endl;
 	int M = Lat[0]->M;
 	bool success = true;
-
+	extra_constraints=0;
 	FrozenList.clear();
 	int length = In[0]->MonList.size();
 	for (int i = 0; i < length; i++)
 	{
 		if (Seg[i]->freedom == "frozen")
 			FrozenList.push_back(i);
+		if (Seg[i]->constraints) extra_constraints+=Seg[i]->constraint_z.size();
 	}
+
+	//if (extra_constraints > 0) cout <<" Detected " << extra_constraints << " extra constraints" << endl;
 	if (FrozenList.size() + SysMonList.size() + SysTagList.size() + SysClampList.size() != In[0]->MonList.size())
 	{
-		cout << " There are un-used monomers in system. Remove them before starting" << endl;
+		cout << " There are un-used monomers in system. Remove these before starting" << endl;
 		success = false;
 	}
 
@@ -240,6 +245,8 @@ bool System::generate_mask()
 	this->boundaryless_volume = this->volume - ((2 * Lat[0]->gradients - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * Lat[0]->gradients) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, Lat[0]->gradients));
 
 	Lat[0]->Accesible_volume=volume;
+
+
 
 	return success;
 }
@@ -1066,7 +1073,7 @@ Real System::GetError()
 		Error = -1.0 * (GrandPotential - Var_target_value);
 		break;
 	case 2:
-		Error = GrandPotentialDensity[1]+GrandPotentialDensity[Lat[0]->M-2]-Var_target_value;
+		Error = GrandPotentialDensity[Lat[0]->fjc]+GrandPotentialDensity[Lat[0]->M-2*Lat[0]->fjc]-Var_target_value;
 		//cpush << " Error " << Error << endl;
 		break;
 	default:

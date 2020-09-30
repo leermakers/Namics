@@ -118,7 +118,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 					}
 					if (R_target==-123.0 || dubbel) {
 						success=false;
-						cout <<"In var:" + name + " we expect either 'free_energy' or 'grand_potential' or 'Laplace_pressure' as target a function. " << endl;
+						cout <<"In var:" + name + " we expect either 'free_energy' or 'grand_potential' or 'Laplace_pressure' as target function. " << endl;
 					}
 				}
 				break;

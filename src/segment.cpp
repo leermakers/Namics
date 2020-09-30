@@ -22,10 +22,16 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("fluctuation_wavelength");
 	KEYS.push_back("seed");
 	KEYS.push_back("var_pos");
+	KEYS.push_back("phi");
+	KEYS.push_back("n");
+	KEYS.push_back("size");
+	KEYS.push_back("pos");
+
 	Amplitude=0; labda=0; seed=1;
 	var_pos=0;
 	ns=1;
 	all_segment=false;
+	constraints=false;
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -221,15 +227,17 @@ if (freedom == "pinned") {
 	}
 }
 
+bool HMaskDone=false;
 if (freedom == "frozen") {
 	phibulk=0;
 	if (GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tag_filename").size()>0) {
-	cout<< "For mon " + name + ", you should exclusively combine 'freedom : frozen' with 'frozen_range' or 'frozen_filename'" << endl;  success=false;}
+	        cout<< "For mon " + name + ", you should exclusively combine 'freedom : frozen' with 'frozen_range' or 'frozen_filename'" << endl;  success=false;
+	}
 	if (GetValue("frozen_range").size()>0 && GetValue("frozen_filename").size()>0) {
 		cout<< "For mon " + name + ", you can not combine 'frozen_range' with 'frozen_filename' " <<endl; success=false;
 	}
-	if (GetValue("frozen_range").size()==0 && GetValue("frozen_filename").size()==0) {
-		cout<< "For mon " + name + ", you should provide either 'frozen_range' or 'frozen_filename' " <<endl; success=false;
+	if (GetValue("frozen_range").size()==0 && GetValue("frozen_filename").size()==0 && GetValue("n").size()==0) {
+		cout<< "For mon " + name + ", you should provide either 'frozen_range' or 'frozen_filename' or specify the number of particles by  'n' " <<endl; success=false;
 	}
 	if (GetValue("frozen_range").size()>0) { s_freedom="frozen_range";
 		n_pos=0;
@@ -246,6 +254,63 @@ if (freedom == "frozen") {
 		if (n_pos>0) {
 			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
 			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+		}
+	}
+	if (n_pos==0 && Lat[0]->gradients==3&& px.size()==0) {
+		n=0; R=0; //px.clear(); py.clear(); pz.clear();
+		bool found=false;
+		if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
+			success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the spherical particles in the system. " << endl; 
+		} else {
+			n=In[0]->Get_int(GetValue("n"),-1); if (n<0) {success=false; cout <<" expecting positive integer for 'n'" << endl;}
+			R=In[0]->Get_int(GetValue("size"),-1); if (R<0) {success =false ; cout <<" expecting positive integer for 'size' "<<endl; }
+			if (GetValue("pos")=="random") {
+				found=true; srand(1); 
+				for (int i=0; i<n; i++) {
+					px.push_back(1+rand()%Lat[0]->MX);
+					py.push_back(1+rand()%Lat[0]->MY);
+					pz.push_back(1+rand()%Lat[0]->MZ);
+				}
+				//cout <<"In frozen_range random positions not yet implemented" << endl; 
+			}
+			if (GetValue("pos")=="regular") {
+				found=true;
+				cout <<"In frozen_range regular positions for particles not implemented " <<endl;
+			}
+			if (!found) {
+				vector<int>open;
+				vector<int>close;
+				vector<string>sub;
+				string t=GetValue("pos");
+				if (!In[0]->EvenBrackets(t,open,close)) {cout << "Brackets in 'pos' not balanced "<<endl; success=false;};
+				int opensize=open.size();
+		        	if (opensize !=n ) {
+                                       success=false; cout <<"number of positions not equal to 'n' " << endl; 
+				} else {
+					for (int i=0; i<n; i++) {
+						sub.clear(); 
+						string tt=t.substr(open[i]+1,close[i]-open[i]-1); //cout << tt << endl; 
+						In[0]->split(tt,',',sub);
+						if (sub.size() !=3) {
+							success=false; cout <<"pos does not contain expected (x,y,z) sets for particle nr " << i << "We found: " +tt << endl; 
+						} else {
+							px.push_back(In[0]->Get_int(sub[0],-1));
+							py.push_back(In[0]->Get_int(sub[1],-1));
+							pz.push_back(In[0]->Get_int(sub[2],-1));
+							if (px[i] <0 || px[i]>Lat[0]->MX) {success=false; cout << "pos x for particle " << i << " out of bounds or not an integer: " << px[i] << endl; }
+							if (py[i] <0 || py[i]>Lat[0]->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
+							if (pz[i] <0 || pz[i]>Lat[0]->MZ) {success=false; cout << "pos z for particle " << i << " out of bounds or not an integer: " << pz[i] << endl; }
+							//cout <<"px,py,pz =" <<px[i]<<","<<py[i]","<<pz[i] << endl;
+						}
+					}
+				}
+			}
+		}
+	} 
+	if (px.size()>0) {
+		HMaskDone=true; 
+		if (success) {
+			if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl;
 		}
 	}
 }
@@ -278,7 +343,7 @@ if (freedom == "tagged") {
 		}
 	}
 }
-if (freedom!="free") {
+if (freedom!="free"&& !HMaskDone) {
 	if (freedom=="clamp") {
 		int JX=Lat[0]->JX;
 		int JY=Lat[0]->JY;
@@ -592,8 +657,71 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			success=false;  cout <<"fluctuation_amplidude sould have a value between 0 (no fluctuations) and 10. " << endl;
 		}
 	}
+
+
+
+
+	//vector<int> constraint_z;
+	//vector<Real> constraint_phi;
+	//vector<Real> constraint_beta;
+	if (GetValue("phi").size()>0){
+		constraints=true;
+		string s = GetValue("phi");
+		if (Lat[0]->gradients > 1 ) {success=false; cout <<"Constraints in phi only allowed in one-gradient calculations. (for the time being)" << endl; }
+		if (s=="?") {
+				cout <<"Expect for the argument of 'phi' a sequence of z_values and corresponding volume fractions: " << endl;
+				cout <<"(z_value_1,phi_value_1)(z_value_2,phi_value_2) ....(z_value_last,phi_value_last)" << endl;
+				cout <<"'z_value' should be in range 1 .. " + Lat[0]->MX << endl;
+				cout <<"'phi_value' should be in range 0 .. 1 " << endl;
+			  success=false;
+		}
+		vector<int> open;
+		vector<int> close;
+		vector<string>sub;
+		open.clear(); close.clear();
+		if (!In[0]->EvenBrackets(s,open,close)) {
+			cout << "s : " << s << endl;
+			cout << "In constraints for segment " + name + " the backets are not balanced. For help use: 'mon : " +name + " : phi : ?' " << endl; success=false;
+		}
+		int length=open.size();
+		int k=0;
+		while (k<length and success) {
+			string sA=s.substr(open[k]+1,close[k]-open[k]-1);
+			sub.clear();
+			In[0]->split(sA,',',sub);
+				int zz=In[0]->Get_int(sub[0],0);
+				Real RHO=In[0]->Get_Real(sub[1],-1);
+				if (zz<1 || zz>Lat[0]->MX) {
+					cout <<"In constraints for segment " + name + "failed to understand '" + sA + "' no valid integer found for first argument. For help use: 'mon : " +name + " : phi : ?' " << endl; success=false;
+				} else constraint_z.push_back(zz);
+				if (RHO<0 ||RHO>1) {
+					cout <<"In constraints for segment " + name + "failed to understand '" + sA + "' no valid Real found for second argument. For help use: 'mon : " +name + " : phi : ?' " << endl; success=false;
+				} else constraint_phi.push_back(RHO);
+				constraint_beta.push_back(0);
+			k++;
+		}
+	}
+
+	if (constraints) {
+		int length = constraint_z.size();
+		cout <<"constraints for monomer type " + name << endl;
+		for (int i=0; i<length; i++){
+			cout << "constraint z =" << constraint_z[i] << " constraint phi = " << constraint_phi[i] << endl;
+		}
+	}
+
 	//valence=In[0]->Get_Real(GetValue("valence"),0);
 	return success;
+}
+
+Real Segment::Get_g(int ii) {
+	if (debug) cout <<"Get_g" + name << endl;
+	return constraint_phi[ii]/phi[constraint_z[ii]]-1.0;
+}
+
+void Segment::Put_beta(int ii, Real BETA) {
+	constraint_beta[ii]=BETA; //just to enable it to be outputted.
+	u[constraint_z[ii]] +=BETA;
 }
 
 bool Segment::PutAdsorptionGuess(Real chi,int* Mask) {
@@ -1113,18 +1241,22 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	push("valence",valence);
 	Real theta = Lat[0]->WeightedSum(phi);
 	push("theta",theta);
-	Real theta_exc=theta-Lat[0]->Accesible_volume*phibulk;
+	theta_exc=0;
+	theta_exc=theta-Lat[0]->Accesible_volume*phibulk;
 	push("theta_exc",theta_exc);
 	push("phibulk",phibulk);
 	push("fluctuation_amplitude",Amplitude);
 	push("fluctuation_wavelength",labda);
 	push("var_pos",var_pos);
 	if (theta_exc!=0) {
-		Real M1=Lat[0]->Moment(phi,phibulk,1)/theta_exc;
-		Real M2=Lat[0]->Moment(phi,phibulk,2)/theta_exc;
+		M1=0;
+		M1=Lat[0]->Moment(phi,phibulk,1)/theta_exc;
+	 	M2=0;
+		M2=Lat[0]->Moment(phi,phibulk,2)/theta_exc;
 		push("1st_M_phi_z",M1);
 		push("2nd_M_phi_z",M2);
-		Real Fl = (M2-M1*M1); if (Fl >0) Fl = sqrt(Fl);
+		Fl = (M2-M1*M1);
+		if (Fl >0) Fl = sqrt(Fl); else Fl=0;
 		push("fluctuations",Fl);
 	}
 	if (ns>1) {

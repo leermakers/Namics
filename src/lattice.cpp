@@ -1165,9 +1165,17 @@ bool Lattice::PutMask(int* Mask,vector<int>px,vector<int>py,vector<int>pz,int R)
 				if (j>MY) jj=j-MY; 
 				if (k<1) kk=k+MZ; 
 				if (k>MZ) kk=k-MZ; 
-				if (Mask[P(ii,jj,kk)]==1) success=false; else { Mask[P(ii,jj,kk)]=1;  }
+				if (Mask[P(ii,jj,kk)]==1) {
+					success=false; 
+					//cout <<"p= " << p << endl;
+				} else { 
+					Mask[P(ii,jj,kk)]=1; 
+				}
 			} 
 		}  
+	}
+	if (!success) {
+		for (int i=0; i<length; i++) cout <<"(i,j,k)= " << px[i] << "," << py[i] << "," << pz[i] << endl;
 	}
 	return success; //if success=false; overlap was detected. 
 }
@@ -1583,7 +1591,7 @@ if (debug) cout <<" Side in lattice " << endl;
 	}
 }
 
-void Lattice::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
+void Lattice::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { 
 if (debug) cout <<" propagate in lattice " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 	int JX_=JX, JY_=JY; int kk;

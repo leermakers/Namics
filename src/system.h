@@ -78,6 +78,9 @@ public:
 	bool cuda;
 	bool charged;
 	bool internal_states;
+	bool local_solution;
+	bool do_blocks;
+	int split;
 	string initial_guess;
 	string guess_inputfile;
 	string final_guess;
@@ -88,6 +91,8 @@ public:
 	Real Var_target_value;
 	int start;
 	int extra_constraints;
+	Real old_residual;
+	int progress;
 
 	bool prepared;
 
@@ -126,7 +131,7 @@ public:
 	void AllocateMemory();
 	bool PrepareForCalculations(bool);
 	bool generate_mask();
-	bool ComputePhis();
+	bool ComputePhis(Real);
 	void DoElectrostatics(Real*,Real*);
 	bool CheckResults(bool);
 	Real GetFreeEnergy();

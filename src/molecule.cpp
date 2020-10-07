@@ -1724,7 +1724,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
-	if (theta==0) theta = Lat[0]->WeightedSum(phitot);
+	if (freedom=="free") theta = Lat[0]->WeightedSum(phitot);
+	
 	push("theta",theta);
 	Real thetaexc=theta-phibulk*Lat[0]->volume/pow(Lat[0]->fjc,Lat[0]->gradients);
 	push("theta_exc",thetaexc);
@@ -1733,6 +1734,15 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	push("chainlength",chainlength);
 	push("phibulk",phibulk);
 	push("mu",Mu);
+	if (Lat[0]->gradients==3) {
+		Real TrueVolume=Lat[0]->MX*Lat[0]->MY*Lat[0]->MZ;
+		Real Volume_particles=0;
+		int num_of_seg=In[0]->MonList.size();
+		for (int i=0; i<num_of_seg; i++) {
+			if (Seg[i]->freedom=="frozen") Volume_particles += Seg[i]->Volume_particles();
+		}
+		push("Gamma",theta-(TrueVolume-Volume_particles)*phibulk);
+	}
 	if (GetValue("compute_width_interface").size()>0){
 		if (!ComputeWidth()) {
 			cout <<"Computation of width of interface is rejected" <<endl;
@@ -1870,6 +1880,65 @@ bool Molecule::ComputeWidth() {
 	}
 	if (width >0) width = 1.0/width/Lat[0]->fjc;
 	return success;
+}
+
+void Molecule::NormPerBlock(int split) {
+	int MX=Lat[0]->MX/split;
+	int MY=Lat[0]->MY/split;
+	int MZ=Lat[0]->MZ/split;
+	int JX=Lat[0]->JX;
+	int JY=Lat[0]->JY;
+	int M = Lat[0]->M;
+	Real theta_block;
+	int blocknr=-1;
+	for(int i=0; i<split; i++)
+	for(int j=0; j<split; j++)
+	for(int k=0; k<split; k++){
+		theta_block=0;
+		blocknr++;
+		for (int x=1; x<=MX; x++)
+		for (int y=1; y<=MY; y++)
+		for (int z=1; z<=MZ; z++) {
+			theta_block+=phitot[(i*MX+x)*JX+(j*MY+y)*JY+(k*MZ+z)];
+		}
+		for (int x=1; x<=MX; x++)
+		for (int y=1; y<=MY; y++)
+		for (int z=1; z<=MZ; z++) {
+			phitot[(i*MX+x)*JX+(j*MY+y)*JY+(k*MZ+z)]*=block[blocknr]/theta_block;
+		        int length=MolMonList.size();
+			for (int kk=0; kk<length; kk++) 
+			     phi[kk*M+(i*MX+x)*JX+(j*MY+y)*JY+(k*MZ+z)]*=block[blocknr]/theta_block;
+		}
+	}
+	//cout <<"theta : " << theta << " theta_tot : " << theta_tot << endl; 
+	//int length=block.size();
+	//for (int p=0; p<length; p++) cout << "block("<<p<<")= " << block[p] << endl; 
+}
+
+void Molecule::SetThetaBlocks(int split) {
+	int MX=Lat[0]->MX/split;
+	int MY=Lat[0]->MY/split;
+	int MZ=Lat[0]->MZ/split;
+	int JX=Lat[0]->JX;
+	int JY=Lat[0]->JY;
+	Real theta_block;
+	Real theta_tot=0;
+	block.clear();
+	for(int i=0; i<split; i++)
+	for(int j=0; j<split; j++)
+	for(int k=0; k<split; k++){
+		theta_block=0;
+		for (int x=1; x<=MX; x++)
+		for (int y=1; y<=MY; y++)
+		for (int z=1; z<=MZ; z++) {
+			theta_block+=phitot[(i*MX+x)*JX+(j*MY+y)*JY+(k*MZ+z)];
+		}
+		theta_tot+=theta_block;
+		block.push_back(theta_block);
+	}
+	//cout <<"theta : " << theta << " theta_tot : " << theta_tot << endl; 
+	//int length=block.size();
+	//for (int p=0; p<length; p++) cout << "block("<<p<<")= " << block[p] << endl; 
 }
 
 Real Molecule::fraction(int segnr){

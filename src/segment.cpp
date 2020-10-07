@@ -260,22 +260,69 @@ if (freedom == "frozen") {
 		n=0; R=0; //px.clear(); py.clear(); pz.clear();
 		bool found=false;
 		if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
-			success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the spherical particles in the system. " << endl; 
+			success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the set of spherical particles in the system. " << endl; 
 		} else {
 			n=In[0]->Get_int(GetValue("n"),-1); if (n<0) {success=false; cout <<" expecting positive integer for 'n'" << endl;}
 			R=In[0]->Get_int(GetValue("size"),-1); if (R<0) {success =false ; cout <<" expecting positive integer for 'size' "<<endl; }
-			if (GetValue("pos")=="random") {
-				found=true; srand(1); 
-				for (int i=0; i<n; i++) {
-					px.push_back(1+rand()%Lat[0]->MX);
-					py.push_back(1+rand()%Lat[0]->MY);
-					pz.push_back(1+rand()%Lat[0]->MZ);
-				}
-				//cout <<"In frozen_range random positions not yet implemented" << endl; 
+			//if (GetValue("pos")=="random") {
+			//	found=true; srand(1); 
+			//	for (int i=0; i<n; i++) {
+			//		px.push_back(1+rand()%Lat[0]->MX);
+			//		py.push_back(1+rand()%Lat[0]->MY);
+			//		pz.push_back(1+rand()%Lat[0]->MZ);
+			//	}
+			//}
+			if (GetValue("pos")=="?") {
+				cout << "Info: 'pos' variable should contain either the keywords 'regular' or 'random' or a sequence of n times '(x,y,z)' coordinates" << endl; 
+			       	success=false;	
 			}
-			if (GetValue("pos")=="regular") {
+			if (GetValue("pos")=="regular"||GetValue("pos")=="random") {
 				found=true;
-				cout <<"In frozen_range regular positions for particles not implemented " <<endl;
+				int MX=Lat[0]->MX;
+				int MY=Lat[0]->MY;
+				int MZ=Lat[0]->MZ;
+				int V=MX*MY*MZ; 
+				int a = pow(V/n,1.0/3.0); 
+				if (a<2*R) { 
+					cout << "Warning: overlap can not be avoided " << endl; 
+				}
+				int n_placed=0;
+				if (a>2*R+1) a--;
+
+				for (int i=1; i<MX-a+2; i+=a)
+				for (int j=1; j<MY-a+2; j+=a)
+				for (int k=1; k<MZ-a+2; k+=a) {
+					if (n_placed < n) {
+						px.push_back(i); py.push_back(j); pz.push_back(k);
+						n_placed++;
+						//cout <<"x,y,z= " << i << "," << j << "," << k << endl;
+					}
+
+				}
+				if (n_placed < n) { cout <<"Problem: could not place all n particles in volume. Placed only  "<< n_placed << " partictles " << endl; }
+				//cout <<"In frozen_range regular positions for particles not implemented " <<endl;
+			}
+			
+			if (GetValue("pos")=="random" && success) {
+				srand(1); 
+				int num_of_moves =n*n;
+				int I;
+				int X;
+				int Y;
+				int Z;
+				int MX=Lat[0]->MX;
+				int MY=Lat[0]->MY;
+				int MZ=Lat[0]->MZ;
+				for (int i=0; i<num_of_moves; i++) { //randomise...
+					I=rand()%n;
+					X=px[I]; Y=py[I]; Z=pz[I];
+					px[I]+=rand()%3-1; if (px[I]<1) px[I]+=MX; if (px[I]>MX) px[I]-=MX;
+					py[I]+=rand()%3-1; if (py[I]<1) py[I]+=MY; if (py[I]>MY) py[I]-=MY;
+					pz[I]+=rand()%3-1; if (pz[I]<1) pz[I]+=MZ; if (pz[I]>MZ) pz[I]-=MZ;
+					if (Overlap(I,R)) {
+						px[I]=X; py[I]=Y; pz[I]=Z; 
+					}
+				}
 			}
 			if (!found) {
 				vector<int>open;
@@ -292,7 +339,9 @@ if (freedom == "frozen") {
 						string tt=t.substr(open[i]+1,close[i]-open[i]-1); //cout << tt << endl; 
 						In[0]->split(tt,',',sub);
 						if (sub.size() !=3) {
-							success=false; cout <<"pos does not contain expected (x,y,z) sets for particle nr " << i << "We found: " +tt << endl; 
+							success=false; 
+							cout <<"Format error: 'pos' did not contain the keywords 'regular' nor 'random'," << endl; 
+							cout <<"nor did 'pos'  contain expected (x,y,z) sets. Problem occurred for for particle nr " << i << "We found: " +tt << endl; 
 						} else {
 							px.push_back(In[0]->Get_int(sub[0],-1));
 							py.push_back(In[0]->Get_int(sub[1],-1));
@@ -366,6 +415,34 @@ if (freedom!="free"&& !HMaskDone) {
 	if (!success) cout <<"errors occurred.... progress uncertain...." << endl;
 
 	all_segment=true;
+}
+
+bool Segment::Overlap(int I, int R) {
+	int X=px[I]; 
+	int Y=py[I];
+	int Z=pz[I];
+	int n=px.size();
+	int RR=4*R*R;
+	int dx,dy,dz;
+	int MX=Lat[0]->MX; 
+	int MY=Lat[0]->MY;
+	int MZ=Lat[0]->MZ;
+
+	for (int i=0; i<n; i++) {
+		if (i != I) {
+			dx=px[i]-X;  
+			if (dx>MX/2)  dx-=MX; 
+			if (dx<-MX/2) dx+=MX;
+			dy=py[i]-Y; 
+			if (dy>MY/2)  dy-=MY; 
+			if (dy<-MY/2) dy+=MY;
+			dz=pz[i]-Z;
+			if (dz>MZ/2)  dz-=MZ; 
+			if (dz<-MZ/2) dz+=MZ;
+			if (dx*dx+dy*dy+dz*dz<RR+4) return true;
+		}
+	}
+	return false;
 }
 
 bool Segment::PrepareForCalculations(int* KSAM, bool first_time) {
@@ -722,6 +799,13 @@ Real Segment::Get_g(int ii) {
 void Segment::Put_beta(int ii, Real BETA) {
 	constraint_beta[ii]=BETA; //just to enable it to be outputted.
 	u[constraint_z[ii]] +=BETA;
+}
+
+Real Segment::Volume_particles() {
+	int volume=0;
+	if (freedom=="frozen") Sum(volume,H_MASK,Lat[0]->M); 
+	cout <<"volume_particles of type "+name + "= " << volume << endl; 
+	return 1.0*volume;
 }
 
 bool Segment::PutAdsorptionGuess(Real chi,int* Mask) {

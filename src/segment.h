@@ -99,6 +99,8 @@ public:
 	void push(string,int);
 	void push(string,bool);
 	void push(string,string);
+	Real Volume_particles(void);
+	bool Overlap(int,int);
 	void PushOutput();
 	Real* GetPointer(string,int&);
 	int* GetPointerInt(string,int&);

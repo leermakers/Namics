@@ -30,6 +30,7 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("super_deltamax");
 	max_g = false; // compute g based on max error
 	rescue_status = NONE;
+	
 }
 
 Solve_scf::~Solve_scf() {
@@ -982,19 +983,19 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 void Solve_scf::ComputePhis(bool first_time) {
 	if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
 	if (first_time && (
-											Sys[0]->initial_guess=="polymer_adsorption"||
-											Sys[0]->initial_guess=="membrane_torus" ||
-											Sys[0]->initial_guess=="membrane" ||
-											Sys[0]->initial_guess=="micelle"
-										)) {
+			Sys[0]->initial_guess=="polymer_adsorption"||
+			Sys[0]->initial_guess=="membrane_torus" ||
+			Sys[0]->initial_guess=="membrane" ||
+			Sys[0]->initial_guess=="micelle"
+			)) {
 		PutU();
 		Sys[0]->PrepareForCalculations(first_time);
 		Put_U();
-		Sys[0]->ComputePhis();
+		Sys[0]->ComputePhis(residual);
 	} else {
 		PutU();
 		Sys[0]->PrepareForCalculations(first_time);
-		Sys[0]->ComputePhis();
+		Sys[0]->ComputePhis(residual);
 	}
 }
 

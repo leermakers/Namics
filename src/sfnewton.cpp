@@ -815,6 +815,11 @@ void SFNewton::DIIS(Real* x, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* C
 if(debug) cout <<"DIIS in  SFNewton " << endl;
   	int posi;
 
+	//cout <<"Aij:" << endl; 
+	//for (int i=0; i<m; i++) {
+	//	for (int j=0; j<m; j++) cout <<" " << Aij[m*i+j]; cout << endl; 
+	//}
+
 	if (k_diis>m) {
     	k_diis =m;
 		for (int i=1; i<m; i++)
@@ -833,7 +838,12 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
 		// write to (compressed) matrix Apij
 		for (int j=0; j<k_diis; j++)
 		    Apij[j+k_diis*i] = Aij[j+m*i];
-  	}
+	}
+	//cout <<"Apij:" << endl; 
+	//for (int i=0; i<k_diis; i++) {
+	//	for (int j=0; j<k_diis; j++) cout <<" " << Apij[i+j*k_diis]; cout << endl; 
+	//}
+  
 
 	Ax(Apij,Ci,k_diis);
 

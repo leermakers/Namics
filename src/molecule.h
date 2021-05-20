@@ -56,6 +56,7 @@ public:
 	vector<int> memory;
 	vector<int> last_stored;
 	vector<Real> mu_state;
+	vector<Real> block;
 	int *Bx;
 	int *By;
 	int *Bz;
@@ -134,6 +135,8 @@ public:
 	Real GetValue();
 	void PutValue(Real);
 	bool ComputeWidth();
+	void SetThetaBlocks(int);
+	void NormPerBlock(int);
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;

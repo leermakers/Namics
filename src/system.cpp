@@ -27,15 +27,23 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("final_guess");
 	KEYS.push_back("guess_outputfile");
 	KEYS.push_back("GPU");
+	KEYS.push_back("find_local_solution");
+	KEYS.push_back("split");
 	KEYS.push_back("X");
+
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++)
 	  KEYS.push_back("guess-" + In[0]->MonList[i]);
 	charged=false;
 	constraintfields=false;
-  boundaryless_volume=0;
+  	boundaryless_volume=0;
 	grad_epsilon = false;
 	all_system=false;
+	extra_constraints=0;
+	local_solution=false;
+	progress=0;
+	old_residual = 10;
+	do_blocks=false;
 }
 System::~System()
 {
@@ -101,8 +109,9 @@ void System::AllocateMemory()
 	if (debug)
 		cout << "AllocateMemory in system " << endl;
 	DeAllocateMemory();
+	progress=0; old_residual=10;
 	int M = Lat[0]->M;
-	//H_GN_A = new Real[n_box];
+	//H_GN_A = 
 	//H_GN_B = new Real[n_box];
 	H_GrandPotentialDensity = (Real *)malloc(M * sizeof(Real));
 	std::fill(H_GrandPotentialDensity,H_GrandPotentialDensity+M,0);
@@ -186,17 +195,20 @@ bool System::generate_mask()
 		cout << "generate_mask in system " << endl;
 	int M = Lat[0]->M;
 	bool success = true;
-
+	extra_constraints=0;
 	FrozenList.clear();
 	int length = In[0]->MonList.size();
 	for (int i = 0; i < length; i++)
 	{
 		if (Seg[i]->freedom == "frozen")
 			FrozenList.push_back(i);
+		if (Seg[i]->constraints) extra_constraints+=Seg[i]->constraint_z.size();
 	}
+
+	//if (extra_constraints > 0) cout <<" Detected " << extra_constraints << " extra constraints" << endl;
 	if (FrozenList.size() + SysMonList.size() + SysTagList.size() + SysClampList.size() != In[0]->MonList.size())
 	{
-		cout << " There are un-used monomers in system. Remove them before starting" << endl;
+		cout << " There are un-used monomers in system. Remove these before starting" << endl;
 		success = false;
 	}
 
@@ -240,6 +252,8 @@ bool System::generate_mask()
 	this->boundaryless_volume = this->volume - ((2 * Lat[0]->gradients - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * Lat[0]->gradients) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, Lat[0]->gradients));
 
 	Lat[0]->Accesible_volume=volume;
+
+
 
 	return success;
 }
@@ -285,6 +299,8 @@ bool System::PrepareForCalculations(bool first_time)
 	}
 #endif
 	if (first_time) {
+	do_blocks=false;
+	progress=0;
   	if (charged) {
     	int length = FrozenList.size();
     	Zero(psiMask, M);
@@ -355,6 +371,37 @@ bool System::CheckInput(int start_)
 	success = In[0]->CheckParameters("sys", name, start, KEYS, PARAMETERS, VALUES);
 	if (success)
 	{
+		if (GetValue("find_local_solution").size()>0) {
+			split = 2; 
+			local_solution=In[0]->Get_bool(GetValue("find_local_solution"),false); 
+			if (local_solution) {
+				if (Lat[0]->gradients!=3) {
+					local_solution =false; cout << "find_local_solution is rejected as it requires 3 gradient system. " << endl; 
+					if (!(Lat[0]->MZ==2 || Lat[0]->MZ==4 || Lat[0]->MZ==8 || Lat[0]->MZ==16 ||Lat[0]->MZ==32 || Lat[0]->MZ==64 ||Lat[0]->MZ==128 || Lat[0]->MZ ==256)){
+					      local_solution =false; cout<<"find_local_solution requires system size in z-direction equal to 2^n with n=1..8"<< endl; 
+					}
+					if (!(Lat[0]->MY==2 || Lat[0]->MY==4 || Lat[0]->MY==8 || Lat[0]->MY==16 ||Lat[0]->MY==32 || Lat[0]->MY==64 ||Lat[0]->MY==128 || Lat[0]->MY ==256)){
+					      local_solution =false; cout<<"find_local_solution requires system size in y-direction equal to 2^n with n=1..8"<< endl; 
+					}
+					if (!(Lat[0]->MX==2 || Lat[0]->MX==4 || Lat[0]->MX==8 || Lat[0]->MX==16 ||Lat[0]->MX==32 || Lat[0]->MX==64 ||Lat[0]->MX==128 || Lat[0]->MX ==256)){
+					      local_solution =false; cout<<"find_local_solution requires system size in x-direction equal to 2^n with n=1..8"<< endl; 
+					}
+				}
+				if (GetValue("split").size()>0) {
+					split=In[0]->Get_int(GetValue("split"),2);
+					if (!(split ==2 || split ==4 || split ==8 ||split ==16 || split==32 || split==64 || split ==128) ) {
+						cout <<"Value for split should be 2^n, with n= 1,..,6. used split = 2 instead." << endl;
+						split =2; 
+					}	
+					if (split > Lat[0]->MX || split > Lat[0]->MY || split > Lat[0]->MZ) {
+						cout <<"Value for split can not exeed n_layers_x or n_layers_y or n_layers_z, value split=2 is used " << endl;
+						split = 2; 
+					}
+
+				}
+			}
+		}
+
 		success = CheckChi_values(In[0]->MonList.size());
 		GPU = In[0]->Get_bool(GetValue("GPU"), false);
 		if (GPU)
@@ -1066,7 +1113,7 @@ Real System::GetError()
 		Error = -1.0 * (GrandPotential - Var_target_value);
 		break;
 	case 2:
-		Error = GrandPotentialDensity[1]+GrandPotentialDensity[Lat[0]->M-2]-Var_target_value;
+		Error = GrandPotentialDensity[Lat[0]->fjc]+GrandPotentialDensity[Lat[0]->M-2*Lat[0]->fjc]-Var_target_value;
 		//cpush << " Error " << Error << endl;
 		break;
 	default:
@@ -1160,6 +1207,7 @@ void System::PushOutput()
 	push("grand_potential", GrandPotential);
 	push("start",start);
 	push("Laplace_pressure",GrandPotentialDensity[Lat[0]->fjc]);
+	if (GetValue("delta_range").size()>0) push("delta_range",GetValue("delta_range"));
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++)
 	for (int j=0; j<n_seg; j++){
@@ -1528,12 +1576,27 @@ void System::DoElectrostatics(Real *g, Real *x)
 	}
 }
 
-bool System::ComputePhis(){
+bool System::ComputePhis(Real residual){
 if(debug) cout <<"ComputePhis in system" << endl;
+	bool prepare_for_blocks=false; 
 	int M= Lat[0]->M;
 	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi
 	bool success=true;
 	Zero(phitot,M);
+	
+	if (local_solution) { 
+		if (residual/old_residual < 0.9) progress--; else progress++; 
+		if (progress < 0 ) progress=0;
+		if (progress > 100 ) { 
+			progress=0; 
+			if (!do_blocks) {
+			prepare_for_blocks=true;
+			cout <<"no progress: trying fo find local solution" << endl; 
+			}
+		}
+		old_residual = residual;
+	}
+
 	int length=FrozenList.size();
 	for (int i=0; i<length; i++) {
 		Real *phi_frozen=Seg[FrozenList[i]]->phi;
@@ -1784,9 +1847,41 @@ for (int j=0; j<n_mol; j++) {
 			k++;
 		}
 	}
+
 	int n_seg = In[0]->MonList.size();
+	if (do_blocks) {
+		for (int k=0; k<n_mol; k++) {
+			if (Mol[k]->freedom =="restricted") {
+				Mol[k]->NormPerBlock(split);
+				cout<<"*";
+			}
+		}
+		for (int k=0; k<n_seg; k++) {
+			if (Seg[k]->freedom =="free") Zero(Seg[k]->phi,M);
+		}
+		for (int k=0; k<n_mol; k++) {
+			int length = Mol[k]->MolMonList.size();
+			for (int i=0; i<length; i++) {
+				Real *phi_mon = Seg[Mol[k]->MolMonList[i]]->phi;
+				Real *phi_molmon = Mol[k]->phi + i * M;
+				Add(phi_mon, phi_molmon, M);
+			}
+		}
+	}
+
 	for (int i = 0; i < n_seg; i++)
 		Seg[i]->SetPhiSide();
+
+
+	if (prepare_for_blocks) {
+		do_blocks=true;
+		
+		for (int k=0; k<n_mol; k++) {
+			if (Mol[k]->freedom =="restricted") {
+				Mol[k]->SetThetaBlocks(split);
+			}
+		}			
+	}	
 	return success;
 }
 

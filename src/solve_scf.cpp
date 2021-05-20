@@ -30,6 +30,7 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("super_deltamax");
 	max_g = false; // compute g based on max error
 	rescue_status = NONE;
+	
 }
 
 Solve_scf::~Solve_scf() {
@@ -72,6 +73,8 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	if (Sys[0]->charged) iv += M;
 	if (SCF_method=="Picard") iv += M;
 	if (Sys[0]->constraintfields) iv +=M;
+	int length = In[0]->MonList.size();
+	for (int i = 0; i < length; i++) iv+=Seg[i]->constraint_z.size();
 #ifdef CUDA
 	xx  = (Real*)AllOnDev(iv); Zero(xx,iv);
 	x0  = (Real*)AllOnDev(iv); Zero(x0,iv);
@@ -865,6 +868,18 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Real R = (Sys[0]->phi_ratio-1)/(Sys[0]->phi_ratio+1);
 				YisAplusC(g+itpos,g+itpos,R,M);
 				Times(g+itpos,g+itpos,Sys[0]->beta,M);
+				itpos+=M;
+		}
+		if (Sys[0]->extra_constraints>0) {
+			int length = In[0]->MonList.size();
+			for (int i = 0; i < length; i++)
+			{
+				int constraint_size=Seg[i]->constraint_z.size();
+				for (int k=0; k<constraint_size; k++) {
+					itpos++;
+					g[itpos-1]=Seg[i]->Get_g(k);
+				}
+			}
 		}
 		break;
 	}
@@ -968,19 +983,19 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 void Solve_scf::ComputePhis(bool first_time) {
 	if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
 	if (first_time && (
-											Sys[0]->initial_guess=="polymer_adsorption"||
-											Sys[0]->initial_guess=="membrane_torus" ||
-											Sys[0]->initial_guess=="membrane" ||
-											Sys[0]->initial_guess=="micelle"
-										)) {
+			Sys[0]->initial_guess=="polymer_adsorption"||
+			Sys[0]->initial_guess=="membrane_torus" ||
+			Sys[0]->initial_guess=="membrane" ||
+			Sys[0]->initial_guess=="micelle"
+			)) {
 		PutU();
 		Sys[0]->PrepareForCalculations(first_time);
 		Put_U();
-		Sys[0]->ComputePhis();
+		Sys[0]->ComputePhis(residual);
 	} else {
 		PutU();
 		Sys[0]->PrepareForCalculations(first_time);
-		Sys[0]->ComputePhis();
+		Sys[0]->ComputePhis(residual);
 	}
 }
 
@@ -1083,7 +1098,18 @@ if(debug) cout <<"PutU in  Solve " << endl;
 		k++;
 	}
 	if (Sys[0]->charged) itpos +=M;
-	if (Sys[0]->constraintfields) Cp(Sys[0]->BETA,xx+itpos,M);
+	if (Sys[0]->constraintfields) {Cp(Sys[0]->BETA,xx+itpos,M); itpos+=M;}
+	if (Sys[0]->extra_constraints>0) { //this is only for 1D and should never go to GPU... Else we have to come up with different way to do the extra constraints.
+		int length = In[0]->MonList.size();
+		for (int i = 0; i < length; i++)
+		{
+			int constraint_size=Seg[i]->constraint_z.size();
+			for (int k=0; k<constraint_size; k++) {
+				itpos++;
+				Seg[i]->Put_beta(k,xx[itpos-1]);
+			}
+		}
+	}
 
 	return success;
 }

@@ -1039,6 +1039,9 @@ if (debug) cout << "GuessVar in Lattice " << endl;
 	}
 	return success;
 }
+void Lattice :: outputtest() {
+	cout << "lattice done" << endl;
+}
 
 
 

@@ -855,8 +855,6 @@ if (debug) cout <<"Molecule:: ExpandAlias" << endl;
 	return success;
 }
 
-
-
 bool Molecule::ExpandBrackets(string &s) {
 if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 	bool success=true;
@@ -1107,7 +1105,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			s=ss;
 		break;
 		case comb:
-			success=false;
+			//success=false;
+		break;
+		case ring:
+			//success=false;
 		break;
 		default:
 			if (!ExpandBrackets(s)) success=false;
@@ -1296,6 +1297,18 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			int mnr;
 			int nn;
 
+			sub_dd.clear();
+			In[0]->split(s,':',sub_dd);
+			length_dd=sub_dd.size();
+			if (length_dd>1) {
+				success = false;
+				cout <<"In comb the use of 'aliases' is not allowed (yet). " << endl; return success;
+			}
+			if (save_memory) {
+				success = false;
+				cout <<"In comb the use of 'save_memory' is not allowed (yet). " << endl; return success;
+			}
+
 			if (n_generations != 3) {
 				success=false;
 				cout<<" ------Comb language:------ " << endl;
@@ -1370,8 +1383,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			chainlength_arm=chainlength-chainlength_backbone;
 			chainlength=chainlength_backbone;
 
-
-
 			if (n_arm[0] <1) {
 				success=false; cout <<" Error in composition of mol "+ name + " number of arms is less than unity. Use comb(? ) for details. " << endl; return success;
 			}
@@ -1397,10 +1408,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				while (j<length) {
 					segname=sub[2].substr(open[j]+1,close[j]-open[j]-1);
 					mnr=GetMonNr(segname);
-					if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; this occurs at generation " << endl; success=false;}
+					if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; Use ring(?) for details." << endl; success=false;}
 					mon_nr.push_back(mnr); d_mon.push_back(1);
 					nn=In[0]->Get_int(sub[2].substr(close[j]+1,s.size()-close[j]-1),0);
-					if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; this occurs at generation "<< endl; success=false;}
+					if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; Use ring(? ) for details. "<< endl; success=false;}
 					n_mon.push_back(nn); N+=nn;
 					chainlength +=nn;
 					if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
@@ -1423,10 +1434,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			while (j<length) {
 				segname=sub_gen[2].substr(open[j]+1,close[j]-open[j]-1);
 				mnr=GetMonNr(segname);
-				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; this occurs at generation " << endl; success=false;}
+				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; " << endl; success=false;}
 				mon_nr.push_back(mnr); d_mon.push_back(1);
 				nn=In[0]->Get_int(sub_gen[2].substr(close[j]+1,s.size()-close[j]-1),0);
-				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; this occurs at generation " << endl; success=false;}
+				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity;  " << endl; success=false;}
 				n_mon.push_back(nn); N+=nn;
 				chainlength +=nn;
 				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
@@ -1439,8 +1450,90 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			//for (int i=0; i<length; i++) cout <<"first_b " <<  first_b[i] << " last_b " << last_b[i] << endl;
 			//for (int i=0; i<length; i++) cout <<"first_s " <<  first_s[i] << " last_s " << last_s[i] << endl;
 			break;
-		case ring:
-			cout <<"ring polymers not implemented" << endl; 	success=false;
+			case ring:
+			cout <<"ring not implemented" << endl; return false;
+			sub_dd.clear();
+			In[0]->split(s,':',sub_dd);
+			length_dd=sub_dd.size();
+			if (length_dd>1) { success = false;
+				cout <<"In ring the use of 'aliases' is not allowed (yet). " << endl; return success;
+			}
+			if (save_memory) {
+				success = false;
+				cout <<"In ting the use of 'save_memory' is not allowed (yet). " << endl; return success;
+			}
+
+			cout <<"ring with argument: " << s << endl;
+
+			sub.clear();
+			In[0]->split(s,',',sub);
+			//cout <<"sub_gen[1] " << sub_gen[1] << "size of sub : " << sub.size() << endl;
+
+			if ((s=="?") || (sub.size() !=2)) {
+				success=false;
+				cout << " .....language for ring composition.....     " << endl;
+				cout << "  Linear chain in ring configuration. Example: " << endl;
+				cout << "      ring(A,(A)10(B)5)   '" << endl;
+				cout << "  The fragment (A)10(B)5 is connected on both sides to the segment 'A' " << endl;
+				cout << "  Hence, this ring contains 11 A semgents and 5 B segments. " << endl;
+				cout <<"   Only linear chains are allowed. No 'save_memory' or 'aliases' implemented." << endl;
+				cout << ".....end language ring composition..... " << endl;
+				return success;
+			}
+			N=-1;
+			chainlength=0;
+			mnr=GetMonNr(sub[0]);
+			if (mnr <0)  {success=false; cout <<"In composition of mol '" + name + "', segment name '" + sub[0] + "' is not recognised. For the first argument the ( ) are not needed."  << endl; return success;}
+			n_mon.push_back(1);
+			mon_nr.push_back(mnr); N++;
+			chainlength++;
+
+
+			first_b.clear();
+			last_b.clear();
+			first_s.clear();
+			last_s.clear();
+
+			first_s.push_back(N+1);
+			last_s.push_back(-1);
+			first_b.push_back(-1);
+			last_b.push_back(-1);
+			open.clear(); close.clear();
+			In[0]->EvenBrackets(sub[1],open,close);
+			j=0; length=open.size();
+			while (j<length) {
+				segname=sub[1].substr(open[j]+1,close[j]-open[j]-1);
+				mnr=GetMonNr(segname);
+				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised;" << endl; success=false;}
+				mon_nr.push_back(mnr);
+				nn=In[0]->Get_int(sub[1].substr(close[j]+1,s.size()-close[j]-1),0);
+				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; "<< endl; success=false;}
+				n_mon.push_back(nn); N+=nn;
+				chainlength +=nn;
+				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
+				last_b[first_b.size()-1]=mon_nr.size()-1;
+				last_s[last_s.size()-1]=N;
+				j++;
+			}
+			//mnr=GetMonNr(sub[0]);
+			//n_mon.push_back(1);
+			//mon_nr.push_back(mnr); N++;
+			//chainlength++;
+
+
+
+			if (Lat[0]->gradients>1) {
+				success=false; cout << "For ring polymers: use 'gradients : 1'" << endl; return success;
+			}
+
+			length=first_b.size();
+			for (int i=0; i<length; i++) cout <<"i: " << i << "first_b " <<  first_b[i] << " last_b " << last_b[i] << endl;
+			for (int i=0; i<length; i++) cout <<"i: " << i << "first_s " <<  first_s[i] << " last_s " << last_s[i] << endl;
+
+
+			//cout <<"chainlength : " << chainlength << endl;
+
+			//cout <<"ring polymers not implemented" << endl; 	success=false;
 			break;
 		default:
 			break;
@@ -1631,7 +1724,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
-	if (theta==0) theta = Lat[0]->WeightedSum(phitot);
+	if (freedom=="free") theta = Lat[0]->WeightedSum(phitot);
+	
 	push("theta",theta);
 	Real thetaexc=theta-phibulk*Lat[0]->volume/pow(Lat[0]->fjc,Lat[0]->gradients);
 	push("theta_exc",thetaexc);
@@ -1640,6 +1734,15 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	push("chainlength",chainlength);
 	push("phibulk",phibulk);
 	push("mu",Mu);
+	if (Lat[0]->gradients==3) {
+		Real TrueVolume=Lat[0]->MX*Lat[0]->MY*Lat[0]->MZ;
+		Real Volume_particles=0;
+		int num_of_seg=In[0]->MonList.size();
+		for (int i=0; i<num_of_seg; i++) {
+			if (Seg[i]->freedom=="frozen") Volume_particles += Seg[i]->Volume_particles();
+		}
+		push("Gamma",theta-(TrueVolume-Volume_particles)*phibulk);
+	}
 	if (GetValue("compute_width_interface").size()>0){
 		if (!ComputeWidth()) {
 			cout <<"Computation of width of interface is rejected" <<endl;
@@ -1779,6 +1882,65 @@ bool Molecule::ComputeWidth() {
 	return success;
 }
 
+void Molecule::NormPerBlock(int split) {
+	int MX=Lat[0]->MX/split;
+	int MY=Lat[0]->MY/split;
+	int MZ=Lat[0]->MZ/split;
+	int JX=Lat[0]->JX;
+	int JY=Lat[0]->JY;
+	int M = Lat[0]->M;
+	Real theta_block;
+	int blocknr=-1;
+	for(int i=0; i<split; i++)
+	for(int j=0; j<split; j++)
+	for(int k=0; k<split; k++){
+		theta_block=0;
+		blocknr++;
+		for (int x=1; x<=MX; x++)
+		for (int y=1; y<=MY; y++)
+		for (int z=1; z<=MZ; z++) {
+			theta_block+=phitot[(i*MX+x)*JX+(j*MY+y)*JY+(k*MZ+z)];
+		}
+		for (int x=1; x<=MX; x++)
+		for (int y=1; y<=MY; y++)
+		for (int z=1; z<=MZ; z++) {
+			phitot[(i*MX+x)*JX+(j*MY+y)*JY+(k*MZ+z)]*=block[blocknr]/theta_block;
+		        int length=MolMonList.size();
+			for (int kk=0; kk<length; kk++) 
+			     phi[kk*M+(i*MX+x)*JX+(j*MY+y)*JY+(k*MZ+z)]*=block[blocknr]/theta_block;
+		}
+	}
+	//cout <<"theta : " << theta << " theta_tot : " << theta_tot << endl; 
+	//int length=block.size();
+	//for (int p=0; p<length; p++) cout << "block("<<p<<")= " << block[p] << endl; 
+}
+
+void Molecule::SetThetaBlocks(int split) {
+	int MX=Lat[0]->MX/split;
+	int MY=Lat[0]->MY/split;
+	int MZ=Lat[0]->MZ/split;
+	int JX=Lat[0]->JX;
+	int JY=Lat[0]->JY;
+	Real theta_block;
+	Real theta_tot=0;
+	block.clear();
+	for(int i=0; i<split; i++)
+	for(int j=0; j<split; j++)
+	for(int k=0; k<split; k++){
+		theta_block=0;
+		for (int x=1; x<=MX; x++)
+		for (int y=1; y<=MY; y++)
+		for (int z=1; z<=MZ; z++) {
+			theta_block+=phitot[(i*MX+x)*JX+(j*MY+y)*JY+(k*MZ+z)];
+		}
+		theta_tot+=theta_block;
+		block.push_back(theta_block);
+	}
+	//cout <<"theta : " << theta << " theta_tot : " << theta_tot << endl; 
+	//int length=block.size();
+	//for (int p=0; p<length; p++) cout << "block("<<p<<")= " << block[p] << endl; 
+}
+
 Real Molecule::fraction(int segnr){
 if (debug) cout <<"fraction for Mol " + name << endl;
 	int Nseg=0;
@@ -1825,6 +1987,11 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 			break;
 		case comb:
 			success=ComputePhiComb();
+			break;
+		case ring:
+			//success=ComputePhiRing();
+			cout <<"Ring not implemented " << endl;
+			success=false;
 			break;
 		default:
 			cout << "Programming error " << endl;
@@ -2384,6 +2551,13 @@ bool Molecule::ComputePhiComb() {
 	}
 
 	delete [] GS;
+	return success;
+}
+
+bool Molecule::ComputePhiRing() {
+	if (debug) cout <<"ComputePhiRing for Mol " + name << endl;
+	bool success=false;
+ cout <<"Ring not implemented " << endl;
 	return success;
 }
 

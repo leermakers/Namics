@@ -3,7 +3,7 @@
 #include <fstream>
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; prepared = 0;
-if (debug) cout <<"Segment constructor" + name << endl;
+if (debug) cout <<"Segment constructor" + name << endl; 
 	KEYS.push_back("freedom");
 	KEYS.push_back("valence");
 	KEYS.push_back("epsilon");
@@ -359,8 +359,7 @@ if (freedom == "frozen") {
 	if (px.size()>0) {
 		HMaskDone=true; 
 		if (success) {
-			cout <<"put mask was lost in lattice. please contact Frans" << endl; 
-			//if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl; //PutMask is gone in Lattice. need to be fixed
+			if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl; 
 		}
 	}
 }

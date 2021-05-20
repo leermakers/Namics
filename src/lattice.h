@@ -89,15 +89,17 @@ virtual ~Lattice();
 	int P(int);
 
 	int GetValue(string,int&,Real&,string&);
-	//bool PutMask(int* ,vector<int>,vector<int>,vector<int>,int);
 	Real GetValue(Real*,string);
+
 	bool ReadGuess(string, Real* ,string&, vector<string>&, vector<string>&, bool&, int&, int&, int&, int&, int);
 	bool StoreGuess(string,Real*,string, vector<string>,vector<string>, bool,int); 
 	bool PutVarInfo(string,string,Real);
 	bool UpdateVarInfo(int);
 	bool ResetInitValue();
-	bool CheckInput(int);	
+	bool CheckInput(int);
+	
 	bool PutSub_box(int,int,int,int);
+	bool PutMask(int* H_MASK,vector<int>px,vector<int>py,vector<int>pz,int R);
 	void PutParameter(string);
 	string GetValue(string);
 	int PutVarScan(int, int);
@@ -126,7 +128,6 @@ virtual ~Lattice();
 	virtual void UpdateEE(Real*, Real*,Real*) =0;
 	virtual void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool)=0;
 	virtual void UpdateQ(Real*,Real*,Real*,Real*,int*,bool)=0;
-       virtual void outputtest(); //later weghalen	
 	virtual void remove_bounds(Real*)=0;
 	virtual void set_bounds(Real*)=0;
 	virtual void remove_bounds(int*)=0;

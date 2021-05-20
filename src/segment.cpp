@@ -359,6 +359,7 @@ if (freedom == "frozen") {
 	if (px.size()>0) {
 		HMaskDone=true; 
 		if (success) {
+			cout <<"put mask was lost in lattice. please contact Frans" << endl; 
 			//if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl; //PutMask is gone in Lattice. need to be fixed
 		}
 	}

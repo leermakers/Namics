@@ -9,7 +9,7 @@ class Lattice {
 public:
 	Lattice(vector<Input*>,string);
 
-~Lattice();
+virtual ~Lattice();
 
 	string name;
 	vector<Input*> In;
@@ -53,6 +53,7 @@ public:
 	Real *lambda1;
 	Real *fcc_lambda1;
 	Real *LAMBDA;
+	Real l0,l1;
 	int fjc, FJC;
 	Real *X;
 	int VarInitValue;
@@ -60,7 +61,6 @@ public:
 	int Var_target;
 	int Var_step;
 	int Var_end_value;
-	//if you add new properties to this set, you should set the defaults or read value from input; got to CheckInput(). If the quantity has to go to output, also add it to PushOutput().
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
@@ -74,61 +74,62 @@ public:
 	vector<int> ints_value;
 	vector<bool> bools_value;
 	vector<string> strings_value;
+
+	void DeAllocateMemory(void);
+	void AllocateMemory(void);
 	void push(string,Real);
 	void push(string,int);
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	Real* GetPointer(string,int&);
+	Real* GetPointer(string,int&); 
 	int* GetPointerInt(string,int&);
-	int P(int,int,int);
+	int P(int,int,int); 
 	int P(int,int);
 	int P(int);
 
 	int GetValue(string,int&,Real&,string&);
 	Real GetValue(Real*,string);
-	Real WeightedSum(Real*);
-	Real Moment(Real*,Real,int);
-	void TimesL(Real*);
-	void DivL(Real*);
-	void vtk(string, Real*,string,bool);
-	void PutProfiles(FILE*,vector<Real*>,bool);
-
-	bool CheckInput(int);
-	bool PutM(void);
-	bool PutSub_box(int,int,int,int);
-	void PutParameter(string);
-	string GetValue(string);
-	void DeAllocateMemory(void);
-	void AllocateMemory(void);
-	bool PrepareForCalculations(void);
-	void propagate(Real*,Real*, int, int,int);
-
-	template <typename T>
-	void remove_bounds(T*);
-
-	template <typename T>
-	void set_bounds(T*);
-
-	void Side(Real *, Real *, int);
-	bool ReadRange(int*, int*, int&, bool&, string, int, string, string);
-	bool ReadRangeFile(string,int* H_p,int&, string, string);
-	bool FillMask(int*, vector<int>, vector<int>, vector<int>, string);
-	bool CreateMASK(int*, int*, int*, int, bool);
-	bool GenerateGuess(Real*, string, string, Real, Real);
-	bool GuessVar(Real*, Real, string, Real, Real);
-	void DistributeG1(Real*, Real*, int*, int*, int*, int);
-	void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int);
-	void ComputeGN(Real*, Real*, int*, int*, int*, int*, int*, int*, int, int);
-	Real ComputeTheta(Real*);
-	void UpdateEE(Real*, Real*,Real*);
-	void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
-	void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
 	bool ReadGuess(string, Real* ,string&, vector<string>&, vector<string>&, bool&, int&, int&, int&, int&, int);
-	bool StoreGuess(string,Real*,string, vector<string>,vector<string>, bool,int);
+	bool StoreGuess(string,Real*,string, vector<string>,vector<string>, bool,int); 
 	bool PutVarInfo(string,string,Real);
 	bool UpdateVarInfo(int);
 	bool ResetInitValue();
+	bool CheckInput(int);	
+	bool PutSub_box(int,int,int,int);
+	void PutParameter(string);
+	string GetValue(string);
 	int PutVarScan(int, int);
+	bool PrepareForCalculations(void);
+	void DistributeG1(Real*, Real*, int*, int*, int*, int);
+	void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int);
+	void ComputeGN(Real*, Real*, int*, int*, int*, int*, int*, int*, int, int);
+	bool GuessVar(Real*, Real, string, Real, Real);
+	bool GenerateGuess(Real*, string, string, Real, Real);
+
+	virtual void ComputeLambdas(void)=0;
+	virtual Real WeightedSum(Real*)=0;
+	virtual Real Moment(Real*,Real,int) =0;
+	virtual void TimesL(Real*) =0; 
+	virtual void DivL(Real*) =0; 
+	virtual void vtk(string, Real*,string,bool) =0;
+	virtual void PutProfiles(FILE*,vector<Real*>,bool)=0;
+	virtual bool PutM(void)=0;
+	virtual void propagate(Real*,Real*, int, int,int)=0;
+	virtual void Side(Real *, Real *, int) =0;
+	virtual bool ReadRange(int*, int*, int&, bool&, string, int, string, string)=0;
+	virtual bool ReadRangeFile(string,int* H_p,int&, string, string) =0; 
+	virtual bool FillMask(int*, vector<int>, vector<int>, vector<int>, string)=0;
+	virtual bool CreateMASK(int*, int*, int*, int, bool) =0; 
+	virtual Real ComputeTheta(Real*) =0;
+	virtual void UpdateEE(Real*, Real*,Real*) =0;
+	virtual void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool)=0;
+	virtual void UpdateQ(Real*,Real*,Real*,Real*,int*,bool)=0;
+	virtual void remove_bounds(Real*)=0;
+	virtual void set_bounds(Real*)=0;
+	virtual void remove_bounds(int*)=0;
+	virtual void set_bounds(int*)=0;
+
+
 };
 #endif

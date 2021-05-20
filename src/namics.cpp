@@ -3,6 +3,11 @@
 #include "alias.h"
 #include "input.h"
 #include "lattice.h"
+#include "lat_preview.h"
+#include "LGrad1.h"
+#include "LGrad2.h"
+#include "LGrad3.h"
+#include "LG1Planar.h"
 #include "molecule.h"
 #include "namics.h"
 #include "cleng/cleng.h"
@@ -18,7 +23,7 @@
 #include "solve_scf.h"
 #include "mesodyn.h"
 
-string version = "2.1.1.1.1.1.1";
+string version = "2.1.2.1.1.1.1";
 // meaning:
 // newton version number =2
 // system version number =1
@@ -120,6 +125,7 @@ int main(int argc, char *argv[])
 	vector<Input *> In;			// Inputs read from file
 	vector<Output *> Out;		// Outputs written to file
 	vector<Lattice *> Lat;	// Properties of the lattice
+	Lat_preview* lat_p;
 	vector<Molecule *> Mol; // Properties of entire molecule
 	vector<Segment *> Seg;	// Properties of molecule segments
 	vector<State *> Sta;
@@ -154,12 +160,41 @@ int main(int argc, char *argv[])
 		/******** Class creation starts here ********/
 
 		// Create lattice class instance and check inputs (reference above)
-		Lat.push_back(new Lattice(In, In[0]->LatList[0]));
-		if (!Lat[0]->CheckInput(start))
+		//Lat.push_back(new Lattice(In, In[0]->LatList[0]));
+		
+
+		lat_p = new Lat_preview(In, In[0]->LatList[0]);
+		//Lat[0]->outputtest(); 
+		if (!lat_p->CheckInput(start))
 		{
 			return 0;
-		}
+		} else
+		{ int gradients=lat_p->gradients; 
+		  string geometry = lat_p->geometry; 
+		  bool success; 
+			delete lat_p;  
+			switch (gradients) {
+				case 1:  
+					if (geometry=="planar") {
+						Lat.push_back(new LG1Planar(In,In[0]->LatList[0])); 
+					} else {
+						Lat.push_back(new LGrad1(In,In[0]->LatList[0])); 
+					}
+					break;
+				case 2: 
+					Lat.push_back(new LGrad2(In,In[0]->LatList[0]));
+					break;
+				case 3: 
+					Lat.push_back(new LGrad3(In,In[0]->LatList[0]));
+					break;
+				default :
+					break;
 
+			}
+			success=Lat[0]->CheckInput(start);
+			if (!success) return 0; 
+		}
+	
 		// Create segment class instance and check inputs (reference above)
 		int n_seg = In[0]->MonList.size();
 		for (int i = 0; i < n_seg; i++)

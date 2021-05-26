@@ -133,6 +133,5 @@ virtual ~Lattice();
 	virtual void remove_bounds(int*)=0;
 	virtual void set_bounds(int*)=0;
 
-
 };
 #endif

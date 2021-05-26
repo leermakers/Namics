@@ -1,0 +1,286 @@
+#include <iostream> 
+#include <string> 
+#include "lattice.h"
+#include "LG2Planar.h" 
+
+LG2Planar::LG2Planar(vector<Input*> In_,string name_): LGrad2(In_,name_) {}
+
+LG2Planar::~LG2Planar() {
+if (debug) cout <<"LG2Planar destructor " << endl;
+}
+
+
+void LG2Planar:: ComputeLambdas() {
+
+	if (fjc==1) {
+		for (int i=0; i<M; i++) L[i]=1;
+	}
+
+	if (fjc==2) {
+		for (int i=0; i<M; i++) L[i]=1.0/fjc;
+	}
+}
+
+
+void LG2Planar::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
+if (debug) cout <<" Side in LGrad2 " << endl;
+	if (ignore_sites) {
+		Cp(X_side,X,M); return;
+	}
+	Zero(X_side,M);set_bounds(X);
+
+	if (fcc_sites) {
+		YplusisCtimesX(X_side,X,     1.0/9.0,M);
+		YplusisCtimesX(X_side+1,X,   1.0/9.0,M-1);
+		YplusisCtimesX(X_side,X+1,   1.0/9.0,M-1);
+		YplusisCtimesX(X_side+JX,X,  1.0/9.0,M-JX);
+		YplusisCtimesX(X_side,X+JX,  1.0/9.0,M-JX);
+		YplusisCtimesX(X_side+JX+1,X,1.0/9.0,M-JX-1);
+		YplusisCtimesX(X_side+JX,X+1,1.0/9.0,M-JX);
+		YplusisCtimesX(X_side+1,X+JX,1.0/9.0,M-JX);
+		YplusisCtimesX(X_side,X+JX+1,1.0/9.0,M-JX-1);
+	} else {
+		if (fjc==1) {
+			if (lattice_type=="simple_cubic") {
+				YplusisCtimesX(X_side,X,    16.0/36.0,M);
+				YplusisCtimesX(X_side+1,X,   4.0/36.0,M-1);
+				YplusisCtimesX(X_side,X+1,   4.0/36.0,M-1);
+				YplusisCtimesX(X_side+JX,X,  4.0/36.0,M-JX);
+				YplusisCtimesX(X_side,X+JX,  4.0/36.0,M-JX);
+				YplusisCtimesX(X_side+JX+1,X,1.0/36.0,M-JX-1);
+				YplusisCtimesX(X_side+JX,X+1,1.0/36.0,M-JX);
+				YplusisCtimesX(X_side+1,X+JX,1.0/36.0,M-JX);
+				YplusisCtimesX(X_side,X+JX+1,1.0/36.0,M-JX-1);
+							//6point stencil
+							//Add(X_side+JX,X,M-JX);
+							//Add(X_side,X+JX,M-JX);
+							//Add(X_side+1,X,M-1);
+							//Add(X_side,X+1,M-1);
+							//Norm(X_side,1.0/2.0,M);
+							//Add(X_side,X,M);
+							//Norm(X_side,1.0/3.0,M);
+			} else {
+				YplusisCtimesX(X_side,X,    12.0/48.0,M);
+				YplusisCtimesX(X_side+1,X,   6.0/48.0,M-1);
+				YplusisCtimesX(X_side,X+1,   6.0/48.0,M-1);
+				YplusisCtimesX(X_side+JX,X,  6.0/48.0,M-JX);
+				YplusisCtimesX(X_side,X+JX,  6.0/48.0,M-JX);
+				YplusisCtimesX(X_side+JX+1,X,3.0/48.0,M-JX-1);
+				YplusisCtimesX(X_side+JX,X+1,3.0/48.0,M-JX);
+				YplusisCtimesX(X_side+1,X+JX,3.0/48.0,M-JX);
+				YplusisCtimesX(X_side,X+JX+1,3.0/48.0,M-JX-1);
+			}
+		}
+		if (fjc==2) {
+			Add(X_side,X,M);
+			Add(X_side+JX,X,M-JX);
+			Add(X_side,X+JX,M-JX);
+			Add(X_side+1,X,M-1);
+			Add(X_side,X+1,M-1);
+			Add(X_side+JX+1,X,M-JX-1);
+			Add(X_side,X+JX+1,M-JX-1);
+			Add(X_side+1,X+JX,M-JX);
+			Add(X_side+JX,X+1,M-JX);
+			Norm(X_side,2.0,M);
+			Add(X_side+2*JX,X,M-2*JX);
+			Add(X_side,X+2*JX,M-2*JX);
+			Add(X_side+2*JX,X+1,M-2*JX);
+			Add(X_side+2*JX+1,X,M-2*JX-1);
+			Add(X_side+1,X+2*JX,M-2*JX);
+			Add(X_side,X+2*JX+1,M-2*JX-1);
+			Add(X_side+JX+2,X,M-JX-2);
+			Add(X_side+JX,X+2,M-JX);
+			Add(X_side,X+JX+2,M-JX-2);
+			Add(X_side+2,X+JX,M-JX);
+			Add(X_side+2,X,M-2);
+			Add(X_side,X+2,M-2);
+			Norm(X_side,2.0,M);
+			Add(X_side+2*JX+2,X,M-2*JX-2);
+			Add(X_side,X+2*JX+2,M-2*JX-2);
+			Add(X_side+2*JX,X+2,M-2*JX);
+			Add(X_side+2,X+2*JX,M-2*JX);
+			Norm(X_side,1.0/64.0,M);
+		}
+	}
+}
+
+void LG2Planar::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
+if (debug) cout <<" propagate in LGrad2 " << endl;
+	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
+
+	Zero(gs,M); set_bounds(gs_1);
+	if (fjc==1) {
+		if (lattice_type=="simple_cubic") { //9 point stencil
+			YplusisCtimesX(gs,gs_1,    16.0/36.0,M);
+			YplusisCtimesX(gs+1,gs_1,   4.0/36.0,M-1);
+			YplusisCtimesX(gs,gs_1+1,   4.0/36.0,M-1);
+			YplusisCtimesX(gs+JX,gs_1,  4.0/36.0,M-JX);
+			YplusisCtimesX(gs,gs_1+JX,  4.0/36.0,M-JX);
+			YplusisCtimesX(gs+JX+1,gs_1,1.0/36.0,M-JX-1);
+			YplusisCtimesX(gs+JX,gs_1+1,1.0/36.0,M-JX);
+			YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0,M-JX);
+			YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0,M-JX-1);
+			Times(gs,gs,G1,M);
+						 //6point stencil ; classical!
+						//Add(gs+JX,gs_1,M-JX);
+						//Add(gs,gs_1+JX,M-JX);
+						//Add(gs+1,gs_1,M-1);
+						//Add(gs,gs_1+1,M-1);
+						//Norm(gs,1.0/2.0,M);
+						//Add(gs,gs_1,M);
+						//Norm(gs,1.0/3.0,M);
+						//Times(gs,gs,G1,M);
+		} else { //hexagonal //9 point stencil
+			YplusisCtimesX(gs,gs_1,    12.0/48.0,M);
+			YplusisCtimesX(gs+1,gs_1,   6.0/48.0,M-1);
+			YplusisCtimesX(gs,gs_1+1,   6.0/48.0,M-1);
+			YplusisCtimesX(gs+JX,gs_1,  6.0/48.0,M-JX);
+			YplusisCtimesX(gs,gs_1+JX,  6.0/48.0,M-JX);
+			YplusisCtimesX(gs+JX+1,gs_1,3.0/48.0,M-JX-1);
+			YplusisCtimesX(gs+JX,gs_1+1,3.0/48.0,M-JX);
+			YplusisCtimesX(gs+1,gs_1+JX,3.0/48.0,M-JX);
+			YplusisCtimesX(gs,gs_1+JX+1,3.0/48.0,M-JX-1);
+			Times(gs,gs,G1,M);
+		}
+	}
+	if (fjc==2) { //25 point stencil only fjc==2 implemented....
+		 //lattice_type = hexagonal
+		Add(gs,gs_1,M);
+		Add(gs+JX,gs_1,M-JX);
+		Add(gs,gs_1+JX,M-JX);
+		Add(gs+1,gs_1,M-1);
+		Add(gs,gs_1+1,M-1);
+		Add(gs+JX+1,gs_1,M-JX-1);
+		Add(gs,gs_1+JX+1,M-JX-1);
+		Add(gs+1,gs_1+JX,M-JX);
+		Add(gs+JX,gs_1+1,M-JX);
+		Norm(gs,2.0,M);
+		Add(gs+2*JX,gs_1,M-2*JX);
+		Add(gs,gs_1+2*JX,M-2*JX);
+		Add(gs+2*JX,gs_1+1,M-2*JX);
+		Add(gs+2*JX+1,gs_1,M-2*JX-1);
+		Add(gs+1,gs_1+2*JX,M-2*JX);
+		Add(gs,gs_1+2*JX+1,M-2*JX-1);
+		Add(gs+JX+2,gs_1,M-JX-2);
+		Add(gs+JX,gs_1+2,M-JX);
+		Add(gs,gs_1+JX+2,M-JX-2);
+		Add(gs+2,gs_1+JX,M-JX);
+		Add(gs+2,gs_1,M-2);
+		Add(gs,gs_1+2,M-2);
+		Norm(gs,2.0,M);
+		Add(gs+2*JX+2,gs_1,M-2*JX-2);
+		Add(gs,gs_1+2*JX+2,M-2*JX-2);
+		Add(gs+2*JX,gs_1+2,M-2*JX);
+		Add(gs+2,gs_1+2*JX,M-2*JX);
+		Norm(gs,1.0/64.0,M);
+		Times(gs,gs,G1,M);
+	}
+}
+
+
+void LG2Planar::UpdateEE(Real* EE, Real* psi, Real* E) {
+	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_BT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
+	set_bounds(psi);
+	Zero(EE,M);
+	Real Exmin,Explus,Eymin,Eyplus;
+	int x,y,z;
+
+	pf = pf/2.0;
+	for (x=fjc; x<MX+fjc; x++) {
+		for (y=fjc; y<MY+fjc; y++) {
+			z=x*JX+y;
+			Exmin=psi[z]-psi[z-JX];
+			Exmin*=Exmin;
+			Explus=psi[z]-psi[z+JX];
+			Explus*=Explus;
+			Eymin=psi[z]-psi[z-1];
+			Eymin*=Eymin;
+			Eyplus=psi[z]-psi[z+1];
+			Eyplus*=Eyplus;
+			EE[x*MX+y]=pf*(Exmin+Explus+Eymin+Eyplus);
+		}
+	}
+}
+
+
+void LG2Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
+	int x,y,i;
+
+	Real epsXplus, epsXmin, epsYplus,epsYmin;
+	set_bounds(eps);
+	Real C =e*e/(eps0*k_BT*bond_length);
+
+	if (!fixedPsi0) {
+		C=C*2.0/fjc/fjc;
+		for (x=fjc; x<MX+fjc; x++) {
+			for (y=fjc; y<MY+fjc; y++) {
+				i=x*JX+y;
+				epsXmin=eps[i]+eps[i-JX];
+				epsXplus=eps[i]+eps[i+JX];
+				epsYmin=eps[i]+eps[i-1];
+				epsYplus=eps[i]+eps[i+1];
+				X[i]= (C*q[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/
+					(epsXmin+epsXplus+epsYmin+epsYplus);
+			}
+		}
+		//Cp(psi,X,M);
+		YisAminB(g,g,X,M);
+  	} else { //fixedPsi0 is true
+		for (x=fjc; x<MX+fjc; x++) {
+			for (y=fjc; y<MY+fjc; y++){
+				if (Mask[x*JX+y] == 0)
+				X[x*JX+y]=0.25*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
+			        +psi[x*JX+y-1]  +psi[x*JX+y+1])
+				 +0.5*q[x*JX+y]*C/eps[x*JX+y];
+			}
+		}
+
+		if (grad_epsilon) {
+			for (x=fjc; x<MX+fjc; x++) {
+				for (y=fjc; y<MY+fjc; y++) {
+					if (Mask[x*JX+y] == 0) {
+						X[x*JX+y]+=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
+                                              eps[x*JX+y+1]  -eps[x*JX+y-1])  *(psi[x*JX+y+1]  -psi[x*JX+y-1])/
+					           eps[x*JX+y]*fjc*fjc;
+					}
+				}
+			}
+		}
+		for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)
+		if (Mask[x*JX+y] == 0) {
+			psi[x*JX+y]=X[x*JX+y];
+			g[x*JX+y]-=psi[x*JX+y];
+		}
+	} 
+}
+
+
+void LG2Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
+	int x,y;
+
+	Real C = -e*e/(eps0*k_BT*bond_length);
+	for (x=fjc; x<MX+fjc; x++) {
+		for (y=fjc; y<MY+fjc; y++){ //for all geometries
+			if (Mask[x*JX+y] == 1)
+			q[x*JX+y]=-0.5*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
+				        +psi[x*JX+y-1]  +psi[x*JX+y+1]
+					 -4*psi[x*JX+y])*fjc*fjc*eps[x*JX+y]/C;
+		}
+	}
+
+	if (grad_epsilon) {
+		for (x=fjc; x<MX+fjc; x++) {
+			for (y=fjc; y<MY+fjc; y++) {
+				if (Mask[x*JX+y] == 1)
+				q[x*JX+y]-=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
+                                  		   eps[x*JX+y+1]  -eps[x*JX+y-1])  *(psi[x*JX+y+1]  -psi[x*JX+y-1])*fjc*fjc/C;
+				}
+		}
+	}
+	for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)
+	if (Mask[x*JX+y] == 1) {
+		g[x*JX+y]=-q[x*JX+y];
+	}
+
+}
+

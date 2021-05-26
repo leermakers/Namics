@@ -15,25 +15,20 @@ void LGrad2:: ComputeLambdas() {
 	Real rlow, rhigh;
 
 
-	if (fcc_sites){
-			if (geometry=="cylindrical"){
-				for (int x=1; x<MX+1; x++)
-				for (int y=1; y<MY+1; y++) {
-					r=offset_first_layer + 1.0*x;
-					L[P(x,y)]=PIE*(pow(r,2)-pow(r-1,2));
-					fcc_lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]/3.0;
-					fcc_lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]/3.0;
-					fcc_lambda0[P(x,y)]=1.0-2.0/3.0;
-				}
-			}
-	}
+	//if (fcc_sites){
+	//	for (int x=1; x<MX+1; x++)
+	//	for (int y=1; y<MY+1; y++) {
+	//		r=offset_first_layer + 1.0*x;
+	//		L[P(x,y)]=PIE*(pow(r,2)-pow(r-1,2));
+	//		fcc_lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]/3.0;
+	//		fcc_lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]/3.0;
+	//		fcc_lambda0[P(x,y)]=1.0-2.0/3.0;
+	//	}
+	//		
+	//}
 	if (fjc==1) {
-		if (geometry=="planar") {
-			for (int i=0; i<M; i++) L[i]=1;
-		}
-		if (geometry=="cylindrical") {
-			for (int x=1; x<MX+1; x++)
-			for (int y=1; y<MY+1; y++) {
+		for (int x=1; x<MX+1; x++)
+		for (int y=1; y<MY+1; y++) {
 				r=offset_first_layer + 1.0*x;
 				L[P(x,y)]=PIE*(pow(r,2)-pow(r-1,2));
 				lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]*lambda;
@@ -45,57 +40,52 @@ void LGrad2:: ComputeLambdas() {
 					fcc_lambda0[P(x,y)]=1.0-2.0/3.0;
 				}
 			}
-		}
+
 	}
 	if (fjc==2) {
-		if (geometry=="planar") {
-			for (int i=0; i<M; i++) L[i]=1.0/fjc;
-		}
-		if (geometry == "cylindrical") {
-			for (int y=1-fjc; y<MY+fjc; y++) {
-				for (int x = fjc; x < MX+fjc; x++) {
-					r = offset_first_layer+1.0*(x-fjc+1.0)/fjc;
-					rlow = r - 0.5;
-					rhigh = r + 0.5;
-					L[P(x,y)] = PIE * (2.0 * r) / fjc;
-					VL = L[P(x,y)] / PIE * fjc;
-					if ((rlow - r) * 2 + r > 0.0) {
-						LAMBDA[P(x,y)] += 1.0/(1.0*FJC-1.0)*rlow/VL;
-					}
-					if ((rhigh - r) * 2 + r < 1.0*MX/fjc) {
-						LAMBDA[P(x,y)+(FJC-1)*M] += 1.0/(1.0*FJC-1.0)*rhigh/VL;
-					} else {
-						if (2*rhigh-r-1.0*MX/fjc > -0.001 && 2 * rhigh-r-1.0*MX/fjc < 0.001) {
-							LAMBDA[P(x,y)+(FJC-1)*M] += 1.0/(1.0*FJC-1.0)*rhigh/VL;
-						}
-						for (int j = 1; j <= fjc; j++) {
-							if (2*rhigh-r-1.0*MX/fjc > 0.99*j/fjc && 2*rhigh-r-1.0*MX/fjc < 1.01*j/fjc) {
-								LAMBDA[P(x,y)+(FJC-1)*M] += 1.0/(1.0*FJC-1.0)*(rhigh-1.0*j/fjc)/VL;
-							}
-						}								}
-					for (int j = 1; j < fjc; j++) {
-						rlow += 0.5/(fjc);
-						rhigh -= 0.5/(fjc);
-						if ((rlow-r)*2+r > 0.0)
-						LAMBDA[P(x,y)+j*M] += 1.0/(1.0*FJC-1.0)*2.0*rlow/VL;
-						if ((rhigh-r)*2+r < offset_first_layer+1.0*MX/fjc)
-						LAMBDA[P(x,y)+(FJC-1-j)*M] += 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
-						else {
-							if (2 * rhigh-r-1.0*MX/fjc > -0.001 && 2*rhigh-r-1.0*MX/fjc < 0.001) {
-								LAMBDA[P(x,y)+(FJC-1-j)*M] += 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
-							}
-							for (int k = 1; k <= fjc; k++) {
-								if (2 * rhigh-r-1.0*MX/fjc > 0.99*k/fjc && 2*rhigh-r-1.0*MX/fjc<1.01*k/fjc) {
-									LAMBDA[P(x,y) + (FJC-1-j)*M] += 1.0/(1.0*FJC-1.0)*2.0*(rhigh-1.0*k/fjc)/VL;
-								}
-							}
-						}
-					}
-					LS = 0;
-					for (int j = 0; j < FJC; j++)
-					LS += LAMBDA[P(x,y)+j*M];
-					LAMBDA[P(x,y)+(FJC/2)*M] += 1.0 - LS;
+		for (int y=1-fjc; y<MY+fjc; y++) {
+			for (int x = fjc; x < MX+fjc; x++) {
+				r = offset_first_layer+1.0*(x-fjc+1.0)/fjc;
+				rlow = r - 0.5;
+				rhigh = r + 0.5;
+				L[P(x,y)] = PIE * (2.0 * r) / fjc;
+				VL = L[P(x,y)] / PIE * fjc;
+				if ((rlow - r) * 2 + r > 0.0) {
+					LAMBDA[P(x,y)] += 1.0/(1.0*FJC-1.0)*rlow/VL;
 				}
+				if ((rhigh - r) * 2 + r < 1.0*MX/fjc) {
+					LAMBDA[P(x,y)+(FJC-1)*M] += 1.0/(1.0*FJC-1.0)*rhigh/VL;
+				} else {
+					if (2*rhigh-r-1.0*MX/fjc > -0.001 && 2 * rhigh-r-1.0*MX/fjc < 0.001) {
+						LAMBDA[P(x,y)+(FJC-1)*M] += 1.0/(1.0*FJC-1.0)*rhigh/VL;
+					}
+					for (int j = 1; j <= fjc; j++) {
+						if (2*rhigh-r-1.0*MX/fjc > 0.99*j/fjc && 2*rhigh-r-1.0*MX/fjc < 1.01*j/fjc) {
+							LAMBDA[P(x,y)+(FJC-1)*M] += 1.0/(1.0*FJC-1.0)*(rhigh-1.0*j/fjc)/VL;
+						}
+					}								}
+				for (int j = 1; j < fjc; j++) {
+					rlow += 0.5/(fjc);
+					rhigh -= 0.5/(fjc);
+					if ((rlow-r)*2+r > 0.0)
+					LAMBDA[P(x,y)+j*M] += 1.0/(1.0*FJC-1.0)*2.0*rlow/VL;
+					if ((rhigh-r)*2+r < offset_first_layer+1.0*MX/fjc)
+					LAMBDA[P(x,y)+(FJC-1-j)*M] += 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
+					else {
+						if (2 * rhigh-r-1.0*MX/fjc > -0.001 && 2*rhigh-r-1.0*MX/fjc < 0.001) {
+							LAMBDA[P(x,y)+(FJC-1-j)*M] += 1.0/(1.0*FJC-1.0)*2.0*rhigh/VL;
+						}
+						for (int k = 1; k <= fjc; k++) {
+							if (2 * rhigh-r-1.0*MX/fjc > 0.99*k/fjc && 2*rhigh-r-1.0*MX/fjc<1.01*k/fjc) {
+								LAMBDA[P(x,y) + (FJC-1-j)*M] += 1.0/(1.0*FJC-1.0)*2.0*(rhigh-1.0*k/fjc)/VL;
+							}
+						}
+					}
+				}
+				LS = 0;
+				for (int j = 0; j < FJC; j++)
+				LS += LAMBDA[P(x,y)+j*M];
+				LAMBDA[P(x,y)+(FJC/2)*M] += 1.0 - LS;
 			}
 		}
 	}
@@ -202,149 +192,76 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 	Zero(X_side,M);set_bounds(X);
 
 	if (fcc_sites) {
-			if (geometry=="planar") {
-				YplusisCtimesX(X_side,X,     1.0/9.0,M);
-				YplusisCtimesX(X_side+1,X,   1.0/9.0,M-1);
-				YplusisCtimesX(X_side,X+1,   1.0/9.0,M-1);
-				YplusisCtimesX(X_side+JX,X,  1.0/9.0,M-JX);
-				YplusisCtimesX(X_side,X+JX,  1.0/9.0,M-JX);
-				YplusisCtimesX(X_side+JX+1,X,1.0/9.0,M-JX-1);
-				YplusisCtimesX(X_side+JX,X+1,1.0/9.0,M-JX);
-				YplusisCtimesX(X_side+1,X+JX,1.0/9.0,M-JX);
-				YplusisCtimesX(X_side,X+JX+1,1.0/9.0,M-JX-1);
-			} else {
-				YplusisCtimesX(X_side,X,1.0/3.0,M);
-				AddTimes(X_side+JX,X,fcc_lambda_1+JX,M-JX);
-				AddTimes(X_side,X+JX,fcc_lambda1,M-JX);
-				YplusisCtimesX(X_side+1,X,1.0/3.0,M-1);
-				YplusisCtimesX(X_side,X+1,1.0/3.0,M-1);
-				AddTimes(X_side+JX+1,X,fcc_lambda_1+JX+1,M-JX-1);
-				AddTimes(X_side+JX,X+1,fcc_lambda_1+JX,M-JX);
-				AddTimes(X_side+1,X+JX,fcc_lambda1+1,M-JX);
-				AddTimes(X_side,X+JX+1,fcc_lambda1,M-JX-1);
-				Norm(X_side,1.0/3.0,M);
-			}
+		YplusisCtimesX(X_side,X,1.0/3.0,M);
+		AddTimes(X_side+JX,X,fcc_lambda_1+JX,M-JX);
+		AddTimes(X_side,X+JX,fcc_lambda1,M-JX);
+		YplusisCtimesX(X_side+1,X,1.0/3.0,M-1);
+		YplusisCtimesX(X_side,X+1,1.0/3.0,M-1);
+		AddTimes(X_side+JX+1,X,fcc_lambda_1+JX+1,M-JX-1);
+		AddTimes(X_side+JX,X+1,fcc_lambda_1+JX,M-JX);
+		AddTimes(X_side+1,X+JX,fcc_lambda1+1,M-JX);
+		AddTimes(X_side,X+JX+1,fcc_lambda1,M-JX-1);
+		Norm(X_side,1.0/3.0,M);
+			
 	} else {
 		if (fjc==1) {
-			if (geometry=="planar") {
-				if (lattice_type=="simple_cubic") {
-					YplusisCtimesX(X_side,X,    16.0/36.0,M);
-					YplusisCtimesX(X_side+1,X,   4.0/36.0,M-1);
-					YplusisCtimesX(X_side,X+1,   4.0/36.0,M-1);
-					YplusisCtimesX(X_side+JX,X,  4.0/36.0,M-JX);
-					YplusisCtimesX(X_side,X+JX,  4.0/36.0,M-JX);
-					YplusisCtimesX(X_side+JX+1,X,1.0/36.0,M-JX-1);
-					YplusisCtimesX(X_side+JX,X+1,1.0/36.0,M-JX);
-					YplusisCtimesX(X_side+1,X+JX,1.0/36.0,M-JX);
-					YplusisCtimesX(X_side,X+JX+1,1.0/36.0,M-JX-1);
-							//6point stencil
-							//Add(X_side+JX,X,M-JX);
-							//Add(X_side,X+JX,M-JX);
-							//Add(X_side+1,X,M-1);
-							//Add(X_side,X+1,M-1);
-							//Norm(X_side,1.0/2.0,M);
-							//Add(X_side,X,M);
-							//Norm(X_side,1.0/3.0,M);
-				} else {
-					YplusisCtimesX(X_side,X,    12.0/48.0,M);
-					YplusisCtimesX(X_side+1,X,   6.0/48.0,M-1);
-					YplusisCtimesX(X_side,X+1,   6.0/48.0,M-1);
-					YplusisCtimesX(X_side+JX,X,  6.0/48.0,M-JX);
-					YplusisCtimesX(X_side,X+JX,  6.0/48.0,M-JX);
-					YplusisCtimesX(X_side+JX+1,X,3.0/48.0,M-JX-1);
-					YplusisCtimesX(X_side+JX,X+1,3.0/48.0,M-JX);
-					YplusisCtimesX(X_side+1,X+JX,3.0/48.0,M-JX);
-					YplusisCtimesX(X_side,X+JX+1,3.0/48.0,M-JX-1);
-				}
+			if (lattice_type =="simple_cubic") {
+				YplusisCtimesX(X_side,X,4.0/6.0,M);
+				AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
+				AddTimes(X_side,X+JX,lambda1,M-JX);
+				YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
+				YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
+				Norm(X_side,4.0,M);
+				AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
+				AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
+				AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
+				AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
+				Norm(X_side,1.0/6.0,M);
 			} else {
-				if (lattice_type =="simple_cubic") {
-					YplusisCtimesX(X_side,X,4.0/6.0,M);
-					AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
-					AddTimes(X_side,X+JX,lambda1,M-JX);
-					YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
-					YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
-					Norm(X_side,4.0,M);
-					AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
-					AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
-					AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
-					AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
-					Norm(X_side,1.0/6.0,M);
-				} else {
-					YplusisCtimesX(X_side,X,2.0/4.0,M);
-					AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
-					AddTimes(X_side,X+JX,lambda1,M-JX);
-					YplusisCtimesX(X_side+1,X,1.0/4.0,M-1);
-					YplusisCtimesX(X_side,X+1,1.0/4.0,M-1);
-					Norm(X_side,2.0,M);
-					AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
-					AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
-					AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
-					AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
-					Norm(X_side,3.0/12.0,M);
-				}
+				YplusisCtimesX(X_side,X,2.0/4.0,M);
+				AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
+				AddTimes(X_side,X+JX,lambda1,M-JX);
+				YplusisCtimesX(X_side+1,X,1.0/4.0,M-1);
+				YplusisCtimesX(X_side,X+1,1.0/4.0,M-1);
+				Norm(X_side,2.0,M);
+				AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
+				AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
+				AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
+				AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
+				Norm(X_side,3.0/12.0,M);
 			}
 		}
+
 		if (fjc==2) {
-			if (geometry=="planar") {
-				Add(X_side,X,M);
-				Add(X_side+JX,X,M-JX);
-				Add(X_side,X+JX,M-JX);
-				Add(X_side+1,X,M-1);
-				Add(X_side,X+1,M-1);
-				Add(X_side+JX+1,X,M-JX-1);
-				Add(X_side,X+JX+1,M-JX-1);
-				Add(X_side+1,X+JX,M-JX);
-				Add(X_side+JX,X+1,M-JX);
-				Norm(X_side,2.0,M);
-				Add(X_side+2*JX,X,M-2*JX);
-				Add(X_side,X+2*JX,M-2*JX);
-				Add(X_side+2*JX,X+1,M-2*JX);
-				Add(X_side+2*JX+1,X,M-2*JX-1);
-				Add(X_side+1,X+2*JX,M-2*JX);
-				Add(X_side,X+2*JX+1,M-2*JX-1);
-				Add(X_side+JX+2,X,M-JX-2);
-				Add(X_side+JX,X+2,M-JX);
-				Add(X_side,X+JX+2,M-JX-2);
-				Add(X_side+2,X+JX,M-JX);
-				Add(X_side+2,X,M-2);
-				Add(X_side,X+2,M-2);
-				Norm(X_side,2.0,M);
-				Add(X_side+2*JX+2,X,M-2*JX-2);
-				Add(X_side,X+2*JX+2,M-2*JX-2);
-				Add(X_side+2*JX,X+2,M-2*JX);
-				Add(X_side+2,X+2*JX,M-2*JX);
-				Norm(X_side,1.0/64.0,M);
-			} else {
-				Add(X_side,X,M);
-				Add(X_side+1,X,M-1);
-				Add(X_side,X+1,M-1);
-				Norm(X_side,1.0/4.0,M);
-				AddTimes(X_side+JX,X,LAMBDA+M+JX,M-JX);
-				AddTimes(X_side+JX+1,X,LAMBDA+M+JX+1,M-JX-1);
-				AddTimes(X_side+JX,X+1,LAMBDA+M+JX+1,M-JX);
-				AddTimes(X_side,X+JX,LAMBDA+3*M,M-JX);
-				AddTimes(X_side,X+JX+1,LAMBDA+3*M,M-JX-1);
-				AddTimes(X_side+1,X+JX,LAMBDA+3*M,M-JX);
-				Norm(X_side,2.0,M);
-				AddTimes(X_side+2*JX,X,LAMBDA+2*JX,M-2*JX);
-				AddTimes(X_side,X+2*JX,LAMBDA+4*M,M-2*JX);
-				AddTimes(X_side+2*JX,X+1,LAMBDA+2*JX,M-2*JX);
-				AddTimes(X_side+2*JX+1,X,LAMBDA+2*JX+1,M-2*JX-1);
-				AddTimes(X_side+1,X+2*JX,LAMBDA+4*M+1,M-2*JX);
-				AddTimes(X_side,X+2*JX+1,LAMBDA+4*M,M-2*JX-1);
-				AddTimes(X_side+JX+2,X,LAMBDA+M+JX+2,M-JX-2);
-				AddTimes(X_side+JX,X+2,LAMBDA+M+JX,M-JX);
-				AddTimes(X_side,X+JX+2,LAMBDA+3*M,M-JX-2);
-				AddTimes(X_side+2,X+JX,LAMBDA+3*M+2,M-JX);
-				AddTimes(X_side+2,X,LAMBDA+2*M+2,M-2);
-				AddTimes(X_side,X+2,LAMBDA+2*M,M-2);
-				Norm(X_side,2.0,M);
-				AddTimes(X_side+2*JX+2,X,LAMBDA+2*JX+2,M-2*JX-2);
-				AddTimes(X_side,X+2*JX+2,LAMBDA+4*M,M-2*JX-2);
-				AddTimes(X_side+2*JX,X+2,LAMBDA+2*JX,M-2*JX);
-				AddTimes(X_side+2,X+2*JX,LAMBDA+4*M+2,M-2*JX);
-				Norm(X_side,1.0/16.0,M);
-			}
+			Add(X_side,X,M);
+			Add(X_side+1,X,M-1);
+			Add(X_side,X+1,M-1);
+			Norm(X_side,1.0/4.0,M);
+			AddTimes(X_side+JX,X,LAMBDA+M+JX,M-JX);
+			AddTimes(X_side+JX+1,X,LAMBDA+M+JX+1,M-JX-1);
+			AddTimes(X_side+JX,X+1,LAMBDA+M+JX+1,M-JX);
+			AddTimes(X_side,X+JX,LAMBDA+3*M,M-JX);
+			AddTimes(X_side,X+JX+1,LAMBDA+3*M,M-JX-1);
+			AddTimes(X_side+1,X+JX,LAMBDA+3*M,M-JX);
+			Norm(X_side,2.0,M);
+			AddTimes(X_side+2*JX,X,LAMBDA+2*JX,M-2*JX);
+			AddTimes(X_side,X+2*JX,LAMBDA+4*M,M-2*JX);
+			AddTimes(X_side+2*JX,X+1,LAMBDA+2*JX,M-2*JX);
+			AddTimes(X_side+2*JX+1,X,LAMBDA+2*JX+1,M-2*JX-1);
+			AddTimes(X_side+1,X+2*JX,LAMBDA+4*M+1,M-2*JX);
+			AddTimes(X_side,X+2*JX+1,LAMBDA+4*M,M-2*JX-1);
+			AddTimes(X_side+JX+2,X,LAMBDA+M+JX+2,M-JX-2);
+			AddTimes(X_side+JX,X+2,LAMBDA+M+JX,M-JX);
+			AddTimes(X_side,X+JX+2,LAMBDA+3*M,M-JX-2);
+			AddTimes(X_side+2,X+JX,LAMBDA+3*M+2,M-JX);
+			AddTimes(X_side+2,X,LAMBDA+2*M+2,M-2);
+			AddTimes(X_side,X+2,LAMBDA+2*M,M-2);
+			Norm(X_side,2.0,M);
+			AddTimes(X_side+2*JX+2,X,LAMBDA+2*JX+2,M-2*JX-2);
+			AddTimes(X_side,X+2*JX+2,LAMBDA+4*M,M-2*JX-2);
+			AddTimes(X_side+2*JX,X+2,LAMBDA+2*JX,M-2*JX);
+			AddTimes(X_side+2,X+2*JX,LAMBDA+4*M+2,M-2*JX);
+			Norm(X_side,1.0/16.0,M);
 		}
 	}
 }
@@ -355,132 +272,65 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 
 	Zero(gs,M); set_bounds(gs_1);
 	if (fjc==1) {
-		if (geometry=="planar") {
-			if (lattice_type=="simple_cubic") { //9 point stencil
-				YplusisCtimesX(gs,gs_1,    16.0/36.0,M);
-				YplusisCtimesX(gs+1,gs_1,   4.0/36.0,M-1);
-				YplusisCtimesX(gs,gs_1+1,   4.0/36.0,M-1);
-				YplusisCtimesX(gs+JX,gs_1,  4.0/36.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX,  4.0/36.0,M-JX);
-				YplusisCtimesX(gs+JX+1,gs_1,1.0/36.0,M-JX-1);
-				YplusisCtimesX(gs+JX,gs_1+1,1.0/36.0,M-JX);
-				YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0,M-JX-1);
-				Times(gs,gs,G1,M);
-						 //6point stencil ; classical!
-						//Add(gs+JX,gs_1,M-JX);
-						//Add(gs,gs_1+JX,M-JX);
-						//Add(gs+1,gs_1,M-1);
-						//Add(gs,gs_1+1,M-1);
-						//Norm(gs,1.0/2.0,M);
-						//Add(gs,gs_1,M);
-						//Norm(gs,1.0/3.0,M);
-						//Times(gs,gs,G1,M);
-			} else { //hexagonal //9 point stencil
-				YplusisCtimesX(gs,gs_1,    12.0/48.0,M);
-				YplusisCtimesX(gs+1,gs_1,   6.0/48.0,M-1);
-				YplusisCtimesX(gs,gs_1+1,   6.0/48.0,M-1);
-				YplusisCtimesX(gs+JX,gs_1,  6.0/48.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX,  6.0/48.0,M-JX);
-				YplusisCtimesX(gs+JX+1,gs_1,3.0/48.0,M-JX-1);
-				YplusisCtimesX(gs+JX,gs_1+1,3.0/48.0,M-JX);
-				YplusisCtimesX(gs+1,gs_1+JX,3.0/48.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX+1,3.0/48.0,M-JX-1);
-				Times(gs,gs,G1,M);
-			}
-		} else { //geometry==cylindrical. use \lambda's.
-			if (lattice_type=="simple cubic") {
-				YplusisCtimesX(gs,gs_1,4.0/6.0,M);
-				AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
-				AddTimes(gs,gs_1+JX,lambda1,M-JX);
-				YplusisCtimesX(gs+1,gs_1,1.0/6.0,M-1);
-				YplusisCtimesX(gs,gs_1+1,1.0/6.0,M-1);
-				Norm(gs,4.0,M);
-				AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
-				AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
-				AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
-				AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
-				Norm(gs,1.0/6.0,M);
-				Times(gs,gs,G1,M);
-					} else {
-				YplusisCtimesX(gs,gs_1,2.0/4.0,M);
-				AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
-				AddTimes(gs,gs_1+JX,lambda1,M-JX);
-				YplusisCtimesX(gs+1,gs_1,1.0/4.0,M-1);
-				YplusisCtimesX(gs,gs_1+1,1.0/4.0,M-1);
-				Norm(gs,2.0,M);
-				AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
-				AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
-				AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
-				AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
-				Norm(gs,3.0/12.0,M);
-				Times(gs,gs,G1,M);
-			}
+		if (lattice_type=="simple cubic") {
+			YplusisCtimesX(gs,gs_1,4.0/6.0,M);
+			AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
+			AddTimes(gs,gs_1+JX,lambda1,M-JX);
+			YplusisCtimesX(gs+1,gs_1,1.0/6.0,M-1);
+			YplusisCtimesX(gs,gs_1+1,1.0/6.0,M-1);
+			Norm(gs,4.0,M);
+			AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
+			AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
+			AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
+			AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
+			Norm(gs,1.0/6.0,M);
+			Times(gs,gs,G1,M);
+		} else {
+			YplusisCtimesX(gs,gs_1,2.0/4.0,M);
+			AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
+			AddTimes(gs,gs_1+JX,lambda1,M-JX);
+			YplusisCtimesX(gs+1,gs_1,1.0/4.0,M-1);
+			YplusisCtimesX(gs,gs_1+1,1.0/4.0,M-1);
+			Norm(gs,2.0,M);
+			AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
+			AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
+			AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
+			AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
+			Norm(gs,3.0/12.0,M);
+			Times(gs,gs,G1,M);
 		}
 	}
 	if (fjc==2) { //25 point stencil only fjc==2 implemented....
-		if (geometry=="planar") { //lattice_type = hexagonal
-			Add(gs,gs_1,M);
-			Add(gs+JX,gs_1,M-JX);
-			Add(gs,gs_1+JX,M-JX);
-			Add(gs+1,gs_1,M-1);
-			Add(gs,gs_1+1,M-1);
-			Add(gs+JX+1,gs_1,M-JX-1);
-			Add(gs,gs_1+JX+1,M-JX-1);
-			Add(gs+1,gs_1+JX,M-JX);
-			Add(gs+JX,gs_1+1,M-JX);
-			Norm(gs,2.0,M);
-			Add(gs+2*JX,gs_1,M-2*JX);
-			Add(gs,gs_1+2*JX,M-2*JX);
-			Add(gs+2*JX,gs_1+1,M-2*JX);
-			Add(gs+2*JX+1,gs_1,M-2*JX-1);
-			Add(gs+1,gs_1+2*JX,M-2*JX);
-			Add(gs,gs_1+2*JX+1,M-2*JX-1);
-			Add(gs+JX+2,gs_1,M-JX-2);
-			Add(gs+JX,gs_1+2,M-JX);
-			Add(gs,gs_1+JX+2,M-JX-2);
-			Add(gs+2,gs_1+JX,M-JX);
-			Add(gs+2,gs_1,M-2);
-			Add(gs,gs_1+2,M-2);
-			Norm(gs,2.0,M);
-			Add(gs+2*JX+2,gs_1,M-2*JX-2);
-			Add(gs,gs_1+2*JX+2,M-2*JX-2);
-			Add(gs+2*JX,gs_1+2,M-2*JX);
-			Add(gs+2,gs_1+2*JX,M-2*JX);
-			Norm(gs,1.0/64.0,M);
-			Times(gs,gs,G1,M);
-		} else { //lattice_type hexagonal.; cylindrical geometry.
-			Add(gs,gs_1,M);
-			Add(gs+1,gs_1,M-1);
-			Add(gs,gs_1+1,M-1);
-			Norm(gs,1.0/4.0,M);
-			AddTimes(gs+JX,gs_1,LAMBDA+M+JX,M-JX);
-			AddTimes(gs+JX+1,gs_1,LAMBDA+M+JX+1,M-JX-1);
-			AddTimes(gs+JX,gs_1+1,LAMBDA+M+JX,M-JX);
-			AddTimes(gs,gs_1+JX,LAMBDA+3*M,M-JX);
-			AddTimes(gs,gs_1+JX+1,LAMBDA+3*M,M-JX-1);
-			AddTimes(gs+1,gs_1+JX,LAMBDA+3*M+1,M-JX);
-			Norm(gs,2.0,M);
-			AddTimes(gs+2*JX,gs_1,LAMBDA+2*JX,M-2*JX);
-			AddTimes(gs,gs_1+2*JX,LAMBDA+4*M,M-2*JX);
-			AddTimes(gs+2*JX,gs_1+1,LAMBDA+2*JX,M-2*JX);
-			AddTimes(gs+2*JX+1,gs_1,LAMBDA+2*JX+1,M-2*JX-1);
-			AddTimes(gs+1,gs_1+2*JX,LAMBDA+4*M+1,M-2*JX);
-			AddTimes(gs,gs_1+2*JX+1,LAMBDA+4*M,M-2*JX-1);
-			AddTimes(gs+JX+2,gs_1,LAMBDA+1*M+JX+2,M-JX-2);
-			AddTimes(gs+JX,gs_1+2,LAMBDA+1*M+JX,M-JX);
-			AddTimes(gs,gs_1+JX+2,LAMBDA+3*M,M-JX-2);
-			AddTimes(gs+2,gs_1+JX,LAMBDA+3*M+2,M-JX);
-			AddTimes(gs+2,gs_1,LAMBDA+2*M+2,M-2);
-			AddTimes(gs,gs_1+2,LAMBDA+2*M,M-2);
-			Norm(gs,2.0,M);
-			AddTimes(gs+2*JX+2,gs_1,LAMBDA+2*JX+2,M-2*JX-2);
-			AddTimes(gs,gs_1+2*JX+2,LAMBDA+4*M,M-2*JX-2);
-			AddTimes(gs+2*JX,gs_1+2,LAMBDA+2*JX,M-2*JX);
-			AddTimes(gs+2,gs_1+2*JX,LAMBDA+4*M+2,M-2*JX);
-			Norm(gs,1.0/16.0,M);
-			Times(gs,gs,G1,M);
-		}
+		Add(gs,gs_1,M);
+		Add(gs+1,gs_1,M-1);
+		Add(gs,gs_1+1,M-1);
+		Norm(gs,1.0/4.0,M);
+		AddTimes(gs+JX,gs_1,LAMBDA+M+JX,M-JX);
+		AddTimes(gs+JX+1,gs_1,LAMBDA+M+JX+1,M-JX-1);
+		AddTimes(gs+JX,gs_1+1,LAMBDA+M+JX,M-JX);
+		AddTimes(gs,gs_1+JX,LAMBDA+3*M,M-JX);
+		AddTimes(gs,gs_1+JX+1,LAMBDA+3*M,M-JX-1);
+		AddTimes(gs+1,gs_1+JX,LAMBDA+3*M+1,M-JX);
+		Norm(gs,2.0,M);
+		AddTimes(gs+2*JX,gs_1,LAMBDA+2*JX,M-2*JX);
+		AddTimes(gs,gs_1+2*JX,LAMBDA+4*M,M-2*JX);
+		AddTimes(gs+2*JX,gs_1+1,LAMBDA+2*JX,M-2*JX);
+		AddTimes(gs+2*JX+1,gs_1,LAMBDA+2*JX+1,M-2*JX-1);
+		AddTimes(gs+1,gs_1+2*JX,LAMBDA+4*M+1,M-2*JX);
+		AddTimes(gs,gs_1+2*JX+1,LAMBDA+4*M,M-2*JX-1);
+		AddTimes(gs+JX+2,gs_1,LAMBDA+1*M+JX+2,M-JX-2);
+		AddTimes(gs+JX,gs_1+2,LAMBDA+1*M+JX,M-JX);
+		AddTimes(gs,gs_1+JX+2,LAMBDA+3*M,M-JX-2);
+		AddTimes(gs+2,gs_1+JX,LAMBDA+3*M+2,M-JX);
+		AddTimes(gs+2,gs_1,LAMBDA+2*M+2,M-2);
+		AddTimes(gs,gs_1+2,LAMBDA+2*M,M-2);
+		Norm(gs,2.0,M);
+		AddTimes(gs+2*JX+2,gs_1,LAMBDA+2*JX+2,M-2*JX-2);
+		AddTimes(gs,gs_1+2*JX+2,LAMBDA+4*M,M-2*JX-2);
+		AddTimes(gs+2*JX,gs_1+2,LAMBDA+2*JX,M-2*JX);
+		AddTimes(gs+2,gs_1+2*JX,LAMBDA+4*M+2,M-2*JX);
+		Norm(gs,1.0/16.0,M);
+		Times(gs,gs,G1,M);
 	}
 }
 
@@ -727,39 +577,21 @@ void LGrad2::UpdateEE(Real* EE, Real* psi, Real* E) {
 	int x,y,z;
 	int r;
 
-	if (geometry=="planar") {
-		pf = pf/2.0;
-		for (x=fjc; x<MX+fjc; x++) {
-			for (y=fjc; y<MY+fjc; y++) {
-				z=x*JX+y;
-				Exmin=psi[z]-psi[z-JX];
-				Exmin*=Exmin;
-				Explus=psi[z]-psi[z+JX];
-				Explus*=Explus;
-				Eymin=psi[z]-psi[z-1];
-				Eymin*=Eymin;
-				Eyplus=psi[z]-psi[z+1];
-				Eyplus*=Eyplus;
-				EE[x*MX+y]=pf*(Exmin+Explus+Eymin+Eyplus);
-			}
-		}
-	} else {
-		pf = pf/2;
-		r=offset_first_layer*fjc;
-		for (x=fjc; x<MX+fjc; x++) {
-			r++;
-			for (y=fjc; y<MY+fjc; y++) {
-				z=x*JX+y;
-				Exmin=psi[z]-psi[z-JX];
-				Exmin*=(r-0.5)*Exmin*2*PIE;
-				Explus=psi[z]-psi[z+JX];
-				Explus*=(r+0.5)*Explus*2*PIE;
-				Eymin=(psi[z]-psi[z-1])*fjc;
-				Eymin*=Eymin;
-				Eyplus=(psi[z]-psi[z+1])*fjc;
-				Eyplus*=Eyplus;
-				EE[z]=pf*((Exmin+Explus)/L[z]+Eymin+Eyplus);
-			}
+	pf = pf/2;
+	r=offset_first_layer*fjc;
+	for (x=fjc; x<MX+fjc; x++) {
+		r++;
+		for (y=fjc; y<MY+fjc; y++) {
+			z=x*JX+y;
+			Exmin=psi[z]-psi[z-JX];
+			Exmin*=(r-0.5)*Exmin*2*PIE;
+			Explus=psi[z]-psi[z+JX];
+			Explus*=(r+0.5)*Explus*2*PIE;
+			Eymin=(psi[z]-psi[z-1])*fjc;
+			Eymin*=Eymin;
+			Eyplus=(psi[z]-psi[z+1])*fjc;
+			Eyplus*=Eyplus;
+			EE[z]=pf*((Exmin+Explus)/L[z]+Eymin+Eyplus);
 		}
 	}
 }
@@ -768,29 +600,12 @@ void LGrad2::UpdateEE(Real* EE, Real* psi, Real* E) {
 void LGrad2::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
 	int x,y,i;
 
-
-
-
 	Real r;
 	Real epsXplus, epsXmin, epsYplus,epsYmin;
 	set_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
 
-   if (!fixedPsi0) {
-	if (geometry=="planar") {
-		C=C*2.0/fjc/fjc;
-		for (x=fjc; x<MX+fjc; x++) {
-			for (y=fjc; y<MY+fjc; y++) {
-				i=x*JX+y;
-				epsXmin=eps[i]+eps[i-JX];
-				epsXplus=eps[i]+eps[i+JX];
-				epsYmin=eps[i]+eps[i-1];
-				epsYplus=eps[i]+eps[i+1];
-				X[i]= (C*q[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/
-				(epsXmin+epsXplus+epsYmin+epsYplus);
-			}
-		}
-	} else {
+	if (!fixedPsi0) {
 		C=C/2/fjc/fjc;
 		r=offset_first_layer*fjc;
 		for (x=fjc; x<MX+fjc; x++) {
@@ -805,45 +620,42 @@ void LGrad2::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 				(epsXmin+epsXplus+epsYmin+epsYplus);
 			}
 		}
-
-	}
-	//Cp(psi,X,M);
-	YisAminB(g,g,X,M);
-   } else { //fixedPsi0 is true
-	for (x=fjc; x<MX+fjc; x++) {
-		for (y=fjc; y<MY+fjc; y++){
-			if (Mask[x*JX+y] == 0)
-			X[x*JX+y]=0.25*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
+		//Cp(psi,X,M);
+		YisAminB(g,g,X,M);
+  	 } else { //fixedPsi0 is true
+		for (x=fjc; x<MX+fjc; x++) {
+			for (y=fjc; y<MY+fjc; y++) {
+				if (Mask[x*JX+y] == 0)
+				X[x*JX+y]=0.25*(psi[(x-1)*JX+y]+psi[(x+1)*JX+y]
 			        +psi[x*JX+y-1]  +psi[x*JX+y+1])
 				 +0.5*q[x*JX+y]*C/eps[x*JX+y];
+			}
 		}
-	}
 
-	if (geometry=="cylindrical") { //radial geometry in x no radial geometry in y
+
 		for (x=fjc; x<MX+fjc; x++) {
 			for (y=fjc; y<MY+fjc; y++){
 				if (Mask[x*JX+y] == 0)
 				X[x*JX+y]+=(psi[(x+1)*JX+y]-psi[(x-1)*JX+y])/(2.0*(offset_first_layer+x-fjc+0.5))*fjc;
 			}
 		}
-	}
-	if (grad_epsilon) {
-		for (x=fjc; x<MX+fjc; x++) {
-			for (y=fjc; y<MY+fjc; y++) {
-				if (Mask[x*JX+y] == 0) {
-					X[x*JX+y]+=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
+		if (grad_epsilon) {
+			for (x=fjc; x<MX+fjc; x++) {
+				for (y=fjc; y<MY+fjc; y++) {
+					if (Mask[x*JX+y] == 0) {
+						X[x*JX+y]+=0.25*(eps[(x+1)*JX+y]-eps[(x-1)*JX+y])*(psi[(x+1)*JX+y]-psi[(x-1)*JX+y]+
                                               eps[x*JX+y+1]  -eps[x*JX+y-1])  *(psi[x*JX+y+1]  -psi[x*JX+y-1])/
 					           eps[x*JX+y]*fjc*fjc;
+					}
 				}
 			}
 		}
-	}
-	for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)
-	if (Mask[x*JX+y] == 0) {
-		psi[x*JX+y]=X[x*JX+y];
-		g[x*JX+y]-=psi[x*JX+y];
-	}
-   } 
+		for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++)
+		if (Mask[x*JX+y] == 0) {
+			psi[x*JX+y]=X[x*JX+y];
+			g[x*JX+y]-=psi[x*JX+y];
+		}
+   	} 
 }
 
 
@@ -860,12 +672,10 @@ void LGrad2::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad
 		}
 	}
 
-	if (geometry=="cylindrical") { //radial geometry in x no radial geometry in y
-		for (x=fjc; x<MX+fjc; x++) {
-			for (y=fjc; y<MY+fjc; y++){
-				if (Mask[x*JX+y] == 1)
-				q[x*JX+y]-=(psi[(x+1)*JX+y]-psi[(x-1)*JX+y])/(2.0*(offset_first_layer+x-fjc+0.5))*fjc*eps[x]/C;
-			}
+	for (x=fjc; x<MX+fjc; x++) {
+		for (y=fjc; y<MY+fjc; y++){
+			if (Mask[x*JX+y] == 1)
+			q[x*JX+y]-=(psi[(x+1)*JX+y]-psi[(x-1)*JX+y])/(2.0*(offset_first_layer+x-fjc+0.5))*fjc*eps[x]/C;
 		}
 	}
 	if (grad_epsilon) {

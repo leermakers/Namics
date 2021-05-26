@@ -4,11 +4,17 @@
 #include "input.h"
 #include "lattice.h"
 #include "lat_preview.h"
+#include "mol_preview.h"
 #include "LGrad1.h"
 #include "LGrad2.h"
 #include "LGrad3.h"
 #include "LG1Planar.h"
+#include "LG2Planar.h"
 #include "molecule.h"
+#include "mol_clamp.h"
+#include "mol_dendrimer.h"
+#include "mol_comb.h"
+#include "mol_branched.h"
 #include "namics.h"
 #include "cleng/cleng.h"
 #include "teng.h"
@@ -126,6 +132,7 @@ int main(int argc, char *argv[])
 	vector<Output *> Out;		// Outputs written to file
 	vector<Lattice *> Lat;	// Properties of the lattice
 	Lat_preview* lat_p;
+	mol_preview* mol_p;
 	vector<Molecule *> Mol; // Properties of entire molecule
 	vector<Segment *> Seg;	// Properties of molecule segments
 	vector<State *> Sta;
@@ -182,7 +189,11 @@ int main(int argc, char *argv[])
 					}
 					break;
 				case 2: 
-					Lat.push_back(new LGrad2(In,In[0]->LatList[0]));
+					if (geometry=="planar") {
+						Lat.push_back(new LG2Planar(In,In[0]->LatList[0]));
+					} else {
+						Lat.push_back(new LGrad2(In,In[0]->LatList[0]));
+					}
 					break;
 				case 3: 
 					Lat.push_back(new LGrad3(In,In[0]->LatList[0]));
@@ -245,9 +256,41 @@ int main(int argc, char *argv[])
 		int n_mol = In[0]->MolList.size();
 		for (int i = 0; i < n_mol; i++)
 		{
-			Mol.push_back(new Molecule(In, Lat, Seg, In[0]->MolList[i]));
-			if (!Mol[i]->CheckInput(start))
+			mol_p = new mol_preview(In, Lat, Seg, In[0]->MolList[i]);
+			if (!mol_p->CheckInput(start))
+			{
 				return 0;
+			} else { 
+				switch (mol_p->MolType) {
+				 	case monomer: 
+						Mol.push_back(new Molecule(In, Lat, Seg, In[0]->MolList[i]));
+						break;
+					case linear:
+						if (mol_p->freedom=="clamped") {
+							Mol.push_back(new mol_clamp(In, Lat, Seg, In[0]->MolList[i]));
+						} else  
+							Mol.push_back(new mol_branched(In, Lat, Seg, In[0]->MolList[i]));
+						break;
+					case branched:
+						Mol.push_back(new mol_branched(In, Lat, Seg, In[0]->MolList[i]));
+						break;
+					case dendrimer:
+						Mol.push_back(new mol_dend(In, Lat, Seg, In[0]->MolList[i]));
+						break;
+					case comb:
+						Mol.push_back(new mol_comb(In, Lat, Seg, In[0]->MolList[i]));
+						break;
+					case ring:
+						cout <<"ring: not implemented " << endl;
+						break;
+					default: 
+						cout <<"Unknown MolType " << endl;
+						break;
+			
+				}
+				delete mol_p; 
+				if (!Mol[i]->CheckInput(start)) return 0;
+			}
 		}
 
 		// Create system class instance and check inputs (reference above)

@@ -33,7 +33,7 @@ if (debug) cout <<" Side in LG1Planar " << endl;
 		Cp(X_side,X,M); return;
 	}
 	Zero(X_side,M);set_bounds(X);
-	int j, kk;
+	int kk;
 
 	if (fcc_sites) {
 		YplusisCtimesX(X_side+1,X,1.0/3.0,M-1);
@@ -45,7 +45,7 @@ if (debug) cout <<" Side in LG1Planar " << endl;
 			YplusisCtimesX(X_side,X+1,l1,M-1);
 			YplusisCtimesX(X_side,X,l0,M);
 		} else {
-			for (j = 0; j < FJC/2; j++) {
+			for (int j = 0; j < FJC/2; j++) {
 				kk = (FJC-1)/2-j;
 				AddTimes(X_side+kk, X, LAMBDA+j*M+kk, M-kk);
 				AddTimes(X_side, X+kk, LAMBDA+(FJC-j-1)*M, M-kk);

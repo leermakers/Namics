@@ -320,6 +320,11 @@ __global__ void yplusisctimesx(Real *Y, Real *X, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] += C*X[idx];
 }
+__global__ void yplusisctimesatimesb(Real *Y, Real *A, Real*B, Real C, int M)   {
+	int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if (idx<M) Y[idx] += C*A[idx]*B[idx];
+}
+
 __global__ void updatealpha(Real *Y, Real *X, Real C, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) Y[idx] += C*(X[idx]-1.0);
@@ -871,6 +876,12 @@ void YplusisCtimesX(Real *Y, Real *X, Real C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	yplusisctimesx<<<n_blocks,block_size>>>(Y,X,C,M);
 }
+
+void YplusisCtimesAtimesB(Real *Y, Real *A, Real *B, Real C, int M)   {
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	yplusisctimesatimesb<<<n_blocks,block_size>>>(Y,A,B,C,M);
+}
+
 
 void UpdateAlpha(Real *Y, Real *X, Real C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);

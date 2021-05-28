@@ -266,6 +266,9 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 	}
 }
 
+void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {}
+void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {}
+
 void LGrad2::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in LGrad2 " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
@@ -719,6 +722,86 @@ if (debug) cout <<"remove_bounds in LGrad2 " << endl;
 	}
 }
 
+void LGrad2::set_bounds(Real* X,Real*Y){
+if (debug) cout <<"set_bounds XY in LGrad2 " << endl;
+	int x,y;
+	int k=0;
+	if (fjc==1) {
+		for (x=1; x<MX+1; x++) {
+			X[x*JX+0] = Y[x*JX+BY1];
+			X[x*JX+MY+1]=Y[x*JX+BYM];
+			Y[x*JX+0] = X[x*JX+BY1];
+			Y[x*JX+MY+1]=X[x*JX+BYM];
+
+		}
+		for (y=1; y<MY+1; y++) {
+			X[0+y] = Y[BX1*JX+y];
+			X[(MX+1)*JX+y]=Y[BXM*JX+y];
+			Y[0+y] = X[BX1*JX+y];
+			Y[(MX+1)*JX+y]=X[BXM*JX+y];
+
+		}
+		//corners
+		for (x=0; x<1; x++) {
+			X[x*JX+0] = Y[x*JX+1];
+			X[x*JX+MY+1]=Y[x*JX+MY];
+			Y[x*JX+0] = X[x*JX+1];
+			Y[x*JX+MY+1]=X[x*JX+MY];
+
+		}
+		for (x=MX+1; x<MX+2; x++) {
+			X[x*JX+0] = Y[x*JX+1];
+			X[x*JX+MY+1]=Y[x*JX+MY];
+			Y[x*JX+0] = X[x*JX+1];
+			Y[x*JX+MY+1]=X[x*JX+MY];
+
+		}
+	} else {
+		for (x=1; x<MX+1; x++) {
+			for (k=0; k<fjc; k++) {
+				X[P(x,-k)] = Y[P(x,1+k)];
+				Y[P(x,-k)] = X[P(x,1+k)];
+			}
+			for (k=0; k<fjc; k++) {
+				X[P(x,MY+1+k)]=Y[P(x,MY-k)];
+				Y[P(x,MY+1+k)]=X[P(x,MY-k)];
+			}
+		}
+		for (y=1; y<MY+1; y++) {
+			for (k=0; k<fjc; k++) {
+				X[P(-k,y)] = Y[P(1+k,y)];
+				Y[P(-k,y)] = X[P(1+k,y)];
+			}
+			for (k=0; k<fjc; k++) {
+				X[P(MX+1+k,y)]=Y[P(MX-k,y)];
+				Y[P(MX+1+k,y)]=X[P(MX-k,y)];
+			}
+		}
+		//corners
+		for (x=1-fjc; x<1; x++) {
+			for (k=0; k<fjc; k++) {
+				X[P(x,-k)] = Y[P(x,1+k)];
+				Y[P(x,-k)] = X[P(x,1+k)];
+			}
+			for (k=0; k<fjc; k++) {
+				X[P(x,MY+1+k)]=Y[P(x,MY-k)];
+				Y[P(x,MY+1+k)]=X[P(x,MY-k)];
+			}
+		}
+		for (x=MX+1; x<MX+1+fjc; x++) {
+			for (k=0; k<fjc; k++) {
+				X[P(x,-k)] = Y[P(x,1+k)];
+				Y[P(x,-k)] = X[P(x,1+k)];
+			}
+			for (k=0; k<fjc; k++) {
+				X[P(x,MY+1+k)]=Y[P(x,MY-k)];
+				Y[P(x,MY+1+k)]=X[P(x,MY-k)];
+			}
+		}
+	}
+}
+
+
  
 void LGrad2::set_bounds(Real* X){
 if (debug) cout <<"set_bounds in LGrad2 " << endl;
@@ -863,3 +946,20 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 		}
 	}
 }
+
+Real LGrad2::ComputeGN(Real* G,int M){
+	Real GN=0;
+	cout << "computeGN not implemented " << endl; 
+	return GN;
+}
+void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
+	cout << "composition not implemented " << endl;
+}
+void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int M){
+	cout << "composition not implemented " << endl;
+}
+
+void LGrad2::Initiate(Real* G,Real* Gz,int M){
+	cout << "Initiate not implemented " << endl;
+}
+

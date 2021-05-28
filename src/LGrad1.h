@@ -20,6 +20,7 @@ class LGrad1 : public Lattice
 	Real ComputeTheta(Real*);
 	void remove_bounds(Real*);
 	void set_bounds(Real*);
+	void set_bounds(Real*,Real*);
 	void remove_bounds(int*);
 	void set_bounds(int*);
 
@@ -29,6 +30,13 @@ class LGrad1 : public Lattice
 	virtual void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
 	virtual void Side(Real *, Real *, int);
 	virtual void propagate(Real*,Real*, int, int,int);
+	virtual void propagateF(Real*,Real*,Real*, int, int,int);
+	virtual void propagateB(Real*,Real*,Real*, int, int,int);
+	virtual Real ComputeGN(Real*,int);
+	virtual void AddPhiS(Real*,Real*,Real*,int);
+	virtual void AddPhiS(Real*,Real*,Real*,Real*,Real,int);
+	virtual void Initiate(Real*,Real*,int);
+
 };
 #endif
 

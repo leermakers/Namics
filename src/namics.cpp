@@ -15,6 +15,7 @@
 #include "mol_dendrimer.h"
 #include "mol_comb.h"
 #include "mol_branched.h"
+#include "mol_linear.h"
 #include "namics.h"
 #include "cleng/cleng.h"
 #include "teng.h"
@@ -268,8 +269,9 @@ int main(int argc, char *argv[])
 					case linear:
 						if (mol_p->freedom=="clamped") {
 							Mol.push_back(new mol_clamp(In, Lat, Seg, In[0]->MolList[i]));
-						} else  
-							Mol.push_back(new mol_branched(In, Lat, Seg, In[0]->MolList[i]));
+						} else { 
+							Mol.push_back(new mol_linear(In, Lat, Seg, In[0]->MolList[i]));
+						}
 						break;
 					case branched:
 						Mol.push_back(new mol_branched(In, Lat, Seg, In[0]->MolList[i]));

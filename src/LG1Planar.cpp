@@ -26,6 +26,8 @@ void LG1Planar:: ComputeLambdas() {
 }
 
 
+
+
 void LG1Planar::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in LG1Planar " << endl;
 
@@ -55,11 +57,116 @@ if (debug) cout <<" Side in LG1Planar " << endl;
 	}
 }
 
-void LG1Planar::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
+void LG1Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+if (debug) cout <<" propagateF in LG1Planar " << endl;
+	int size=fjc*2+1; 
+	Real *gs = G+M*size*(s_to), *gs_1 = G+M*size*(s_from);
+	Real *gz0 = gs_1;
+	Real *gz1 = gs_1+M;
+	Real *gz2 = gs_1+2*M;
+	//Real *gz3 = gs_1+3*M;
+	//Real *gz4 = gs_1+4*M;
+
+
+	Real *gx0 = gs;
+	Real *gx1 = gs+M;
+	Real *gx2 = gs+2*M;
+	//Real *gx3 = gs+3*M;
+	//Real *gx4 = gs+4*M;
+
+	Real *g = G1; 	
+
+	Zero (gs,M*size);
+	for (int k=0; k<(FJC-1)/2; k++) set_bounds(gs_1+k*M,gs_1+(FJC-k-1)*M);
+	set_bounds(gs_1+(FJC-1)/2*M);
+
+	if (fjc==1) {
+		if (lattice_type =="hexagonal") {
+			YplusisCtimesX(gx0+1,gz0,P[0],M-1);
+			YplusisCtimesX(gx0+1,gz1,2*P[1],M);
+			YplusisCtimesX(gx1,gz0,P[1],M);
+			YplusisCtimesX(gx1,gz1,P[0],M);
+			YplusisCtimesX(gx1,gz2,P[1],M);
+			YplusisCtimesX(gx2,gz1+1,2*P[1],M-1);
+			YplusisCtimesX(gx2,gz2+1,P[0],M-1);
+			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);
+
+		} else { //simple cubic
+			YplusisCtimesX(gx0+1,gz0,P[0],M-1);
+			YplusisCtimesX(gx0+1,gz1,4*P[1],M);
+			YplusisCtimesX(gx1,gz0,P[1],M);
+			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
+			YplusisCtimesX(gx1,gz2,P[1],M);
+			YplusisCtimesX(gx2,gz1+1,4*P[1],M-1);
+			YplusisCtimesX(gx2,gz2+1,P[0],M-1);
+			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);
+		}
+	} else {
+		cout <<"Markov==2" not implemented for fjc>1 " << endl; 
+		if (lattice_type =="hexagonal") {
+
+		} else {
+
+		}
+	}
+}
+void LG1Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+if (debug) cout <<" propagateB in LG1Planar " << endl;
+	int size=fjc*2+1;
+	Real *gs = G+M*size*(s_to), *gs_1 = G+M*size*(s_from);
+	Real *gz0 = gs_1;
+	Real *gz1 = gs_1+M;
+	Real *gz2 = gs_1+2*M;
+	//Real *gz3 = gs_1+3*M;
+	//Real *gz4 = gs_1+4*M;
+	Real *gx0 = gs;
+	Real *gx1 = gs+M;
+	Real *gx2 = gs+2*M;
+	//Real *gx3 = gs+3*M;
+	//Real *gx4 = gs+4*M;
+	Real *g = G1; 	
+
+	Zero (gs,M*FJC); 
+	for (int k=0; k<(FJC-1)/2; k++) set_bounds(gs_1+k*M,gs_1+(FJC-k-1)*M);
+	set_bounds(gs_1+(FJC-1)/2*M);
+
+	if (fjc==1) {
+		if (lattice_type =="hexagonal") {
+			YplusisCtimesX(gx0,gz0+1,P[0],M-1);
+			YplusisCtimesX(gx0,gz1,2*P[1],M);
+			YplusisCtimesX(gx1,gz0+1,P[1],M-1);
+			YplusisCtimesX(gx1,gz1,P[0],M);
+			YplusisCtimesX(gx1+1,gz2,P[1],M);
+			YplusisCtimesX(gx2+1,gz2,P[0],M-1);
+			YplusisCtimesX(gx2,gz1,2*P[1],M);
+			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);
+
+		} else { //simple cubic
+			YplusisCtimesX(gx0,gz0+1,P[0],M-1);
+			YplusisCtimesX(gx0,gz1,4*P[1],M);
+			YplusisCtimesX(gx1,gz0+1,P[1],M-1);
+			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
+			YplusisCtimesX(gx1+1,gz2,P[1],M);
+			YplusisCtimesX(gx2+1,gz2,P[0],M-1);
+			YplusisCtimesX(gx2,gz1,4*P[1],M);
+			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);
+		}
+	} else {
+		if (lattice_type =="hexagonal") {
+
+		} else {
+
+		}
+	}
+
+}
+
+void LG1Planar::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { 
 if (debug) cout <<" propagate in LG1Planar " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 	int kk;
 	int j;
+	Zero (gs,M); set_bounds(gs_1);
 
 	if (fjc==1) {
 		YplusisCtimesX(gs+1,gs_1,l1,M-1);
@@ -159,4 +266,5 @@ void LG1Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool g
 		g[x]=-q[x];
 	}
 }
+
 

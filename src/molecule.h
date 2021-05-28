@@ -94,6 +94,10 @@ virtual ~Molecule();
 	Real *Gg_b;
 	Real *Gs;
 	Real *UNITY;
+	Real *P; 
+	int size;
+        int Markov;	
+	string lattice_type;
 	int tag_segment;
 	int Var_steps;
 	Real Var_step;
@@ -168,6 +172,8 @@ virtual ~Molecule();
 	
 	Real* propagate_forward(Real*,int&,int,int,int); 
 	void propagate_backward(Real*,int&,int,int,int); 
+	Real* propagate_forward(Real*,int&,int,Real*,int,int); 
+	void propagate_backward(Real*,int&,int,Real*,int,int); 
 	
 };
 

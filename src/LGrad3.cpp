@@ -138,6 +138,9 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 
 }
 
+void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {}
+void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {}
+
 void LGrad3::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in LGrad3 " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
@@ -779,6 +782,34 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 	}
 }
 
+void LGrad3::set_bounds(Real* X,Real* Y){
+if (debug) cout <<"set_bounds XY in LGrad3 " << endl;
+	int x,y,z;
+	int k=0;
+	if (sub_box_on!=0) {
+		int k=sub_box_on;
+		for (int i=0; i<n_box[k]; i++)
+			SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
+	} else {
+		cout <<"Error in set_bounds XY; in Markov ==2 BC in 3 gradients not yet set propperly. " << endl;
+		if (fjc==1) SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+B_Z1[k]];
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+			}
+			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+				for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
+				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
+			}
+			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
+				for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
+				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
+			}
+		}
+	}
+}
+
+
 void LGrad3::remove_bounds(int *X){
 if (debug) cout <<"remove_bounds in LGrad3 " << endl;
 	int x,y,z;
@@ -830,6 +861,24 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 			}
 		}
 	}
+}
+
+
+Real LGrad3::ComputeGN(Real* G,int M){
+	Real GN=0;
+	cout << "computeGN not implemented " << endl;
+	return GN;
+
+}
+void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
+	cout << "Composition not implemented " << endl;
+}
+void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int M){
+	cout << "Composition not implemented " << endl;
+}
+
+void LGrad3::Initiate(Real* G,Real* Gz,int M){
+	cout << "Initiate not implemented " << endl;
 }
 
 

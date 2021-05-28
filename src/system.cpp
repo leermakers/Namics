@@ -26,7 +26,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("guess_inputfile");
 	KEYS.push_back("final_guess");
 	KEYS.push_back("guess_outputfile");
-	KEYS.push_back("GPU");
+	KEYS.push_back("GPU"); 
 	KEYS.push_back("find_local_solution");
 	KEYS.push_back("split");
 	KEYS.push_back("X");

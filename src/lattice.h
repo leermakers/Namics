@@ -37,6 +37,9 @@ virtual ~Lattice();
 	int sub_box_on;
 	Real volume;
 	Real Accesible_volume;
+	int Markov;
+	Real k_stiff; 
+
 
 	int gradients;
 	string lattice_type;
@@ -119,6 +122,8 @@ virtual ~Lattice();
 	virtual void PutProfiles(FILE*,vector<Real*>,bool)=0;
 	virtual bool PutM(void)=0;
 	virtual void propagate(Real*,Real*, int, int,int)=0;
+	virtual void propagateF(Real*,Real*,Real*,int,int,int)=0;
+	virtual void propagateB(Real*,Real*,Real*,int,int,int)=0;
 	virtual void Side(Real *, Real *, int) =0;
 	virtual bool ReadRange(int*, int*, int&, bool&, string, int, string, string)=0;
 	virtual bool ReadRangeFile(string,int* H_p,int&, string, string) =0; 
@@ -130,8 +135,13 @@ virtual ~Lattice();
 	virtual void UpdateQ(Real*,Real*,Real*,Real*,int*,bool)=0;
 	virtual void remove_bounds(Real*)=0;
 	virtual void set_bounds(Real*)=0;
+	virtual void set_bounds(Real*,Real*)=0;
 	virtual void remove_bounds(int*)=0;
 	virtual void set_bounds(int*)=0;
+	virtual Real ComputeGN(Real*,int)=0;
+	virtual void AddPhiS(Real*,Real*,Real*,int) =0;
+	virtual void AddPhiS(Real*,Real*,Real*,Real*,Real,int) =0;
+	virtual void Initiate(Real*,Real*,int) =0;
 
 };
 #endif

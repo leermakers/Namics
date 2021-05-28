@@ -18,6 +18,9 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	Dphi=0;
 	pos_interface=0;
 	all_molecule=false;
+	Markov = Lat[0]->Markov;
+	if (Markov ==2) {size = Lat[0]->FJC; cout <<"size = " << size << endl; }else size = 1; 
+	lattice_type = Lat[0]->lattice_type; 
 }
 
 Molecule::~Molecule() {
@@ -30,6 +33,7 @@ if (debug) cout <<"DeallocateMemory for Mol " + name << endl;
 	//if (H_phi!=NULL)
 	free(H_phi);
 	free(H_phitot);
+	if (Markov==2) free(P); 
 	if (freedom=="clamped") {
 		free(H_Bx);
 		free(H_By);
@@ -110,6 +114,20 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	DeAllocateMemory();
 	int M=Lat[0]->M;
 	int m=0;
+	if (Markov==2) {
+		int FJC = Lat[0]->FJC;
+		P = (Real*) malloc(FJC*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
+		Real Q=0;
+		Real K=Lat[0]->k_stiff;
+		for (int k=0; k<FJC-1; k++) {
+			P[k]=exp(-0.5*K*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); Q+= P[k];  
+		} 
+		P[FJC-1]=0; if (Lat[0]->lattice_type=="hexagonal") Q=2*Q-P[0]; else Q=4*Q-3*P[0];
+		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
+			cout << "P["<<k<<"] = " << P[k] << endl; 
+		}
+	}
+	
 	if (freedom=="clamped") {
 		m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
 		n_box = Seg[mon_nr[0]]->n_box;
@@ -173,7 +191,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		phi=(Real*)AllOnDev(M*MolMonList.size()); Zero(phi,M*MolMonList.size());
 		if (save_memory) {Gs=(Real*)AllOnDev(m*n_box*2); Zero(Gs,m*n_box*2);}
 	} else {
-		Gg_f=(Real*)AllOnDev(M*N);
+		Gg_f=(Real*)AllOnDev(M*N); //not yet for Markov =2
 		Gg_b=(Real*)AllOnDev(M*2);
 		phi=(Real*)AllOnDev(M*MolMonList.size());
 		rho=phi;
@@ -196,16 +214,16 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		if (save_memory) {Gs=(Real*) malloc(m*n_box*2*sizeof(Real));Zero(Gs,m*n_box*2);}
 		phi=H_phi;
 	} else {
-		Gg_f = (Real*) malloc(M*N*sizeof(Real));
-		Gg_b = (Real*) malloc(M*2*sizeof(Real));
-		Zero(Gg_f,M*N);
-		Zero(Gg_b,2*M);
+		Gg_f = (Real*) malloc(M*N*sizeof(Real)*size);
+		Gg_b = (Real*) malloc(M*2*sizeof(Real)*size);
+		Zero(Gg_f,M*N*size);
+		Zero(Gg_b,2*M*size);
 		phi=H_phi;
 		rho=phi;
-		if (save_memory) {Gs=(Real*) malloc(2*M*sizeof(Real)); Zero(Gs,2*M);}
+		if (save_memory) {Gs=(Real*) malloc(2*M*sizeof(Real)*size); Zero(Gs,2*M*size);} 
 	}
 	phitot = H_phitot;
-	UNITY = (Real*) malloc(M*sizeof(Real)); Zero(UNITY,M);
+	UNITY = (Real*) malloc(M*sizeof(Real)*size); Zero(UNITY,M*size);
 #endif
 
 	int length =MolAlList.size();
@@ -1941,7 +1959,6 @@ void Molecule::SetThetaBlocks(int split) {
 	//for (int p=0; p<length; p++) cout << "block("<<p<<")= " << block[p] << endl; 
 }
 
-
 Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int M) {
 if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 
@@ -1952,10 +1969,15 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		int n0=0; if (block>0) n0=memory[block-1];
 		if (s==first_s[generation]) {
 			s++;
-			Cp(Gs+M,G1,M); Cp(Gs,G1,M); Cp(Gg_f+n0*M,Gs+M,M); last_stored[block]=n0;
+			//Cp(Gs+M,G1,M); Cp(Gs,G1,M); 
+			Lat[0]->Initiate(Gs+M,G1,M);
+			Lat[0]->Initiate(Gs,G1,M);
+			Cp(Gg_f+n0*M,Gs+M,M); 
+			last_stored[block]=n0;
 		} else {
 			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
-			Cp(Gg_f+n0*M,Gs+M,M); s++;
+			Cp(Gg_f+n0*M,Gs+M,M); 
+			s++;
 			last_stored[block]=n0;
 		}
 		t=1;
@@ -1984,15 +2006,16 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 			if (s>first_s[generation]) {
 				Lat[0] ->propagate(Gg_f,G1,s-1,s,M);
 			} else {
-				Cp(Gg_f+first_s[generation]*M,G1,M);
+				//Cp(Gg_f+first_s[generation]*M,G1,M);
+				Lat[0]->Initiate(Gg_f+first_s[generation]*M,G1,M); 
 			}
 			 s++;
 		}
 	}
 	if (save_memory) {
-		return Gg_f+last_stored[block]*M;
+		return Gg_f+last_stored[block]*M*size;
 	} else {
-		 return Gg_f+(s-1)*M;
+		 return Gg_f+(s-1)*M*size;
 	}
 
 }
@@ -2034,7 +2057,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 					t++;
 					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2,M);
 					if (t == t0+1 || k0+n == k) {
-						Cp(Gg_f+(n0+t-1)*M,Gs+(t%2)*M,M);
+						Cp(Gg_f+(n0+t-1)*M,Gs+(t%2)*M,M); 
 					}
 					if (t == n && k0+n < k) {
 						t  = ++t0;
@@ -2044,13 +2067,15 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				t = n;
 			}
 
-			AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
+			//AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M); 
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
-						Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
+						//Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
+						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M); 
 					}
 				}
 			}
@@ -2062,16 +2087,172 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			if (s<chainlength-1) {
 				Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
 			} else {
-				Cp(Gg_b+(s%2)*M,G1,M);
+				//Cp(Gg_b+(s%2)*M,G1,M);
+				Lat[0]->Initiate(Gg_b+(s%2)*M,G1,M);
 			}
 
-			AddTimes(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
+			//AddTimes(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
+
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
-						Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
+						//Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M); 
+						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
+					}
+				}
+			}
+			s--;
+		}
+	}
+}
+
+
+ 
+Real* Molecule::propagate_forward(Real* G1, int &s, int block, Real* P, int generation, int M) {
+if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
+
+	int N= n_mon[block];
+	if (save_memory) {
+		int k,k0,t0,v0,t;
+		int n=memory[block]; if (block>0) n-=memory[block-1];
+		int n0=0; if (block>0) n0=memory[block-1];
+		if (s==first_s[generation]) {
+			s++;
+			//Cp(Gs+M,G1,M); Cp(Gs,G1,M); //FL 
+			Lat[0]->Initiate(Gs+size*M,G1,M);
+			Lat[0]->Initiate(Gs,G1,M);
+			Cp(Gg_f+n0*M,Gs+M,M); 
+			last_stored[block]=n0;
+		} else {
+			Lat[0] ->propagateF(Gs,G1,P,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
+			Cp(Gg_f+n0*M*size,Gs+M*size,M*size); //FL
+			s++;
+			last_stored[block]=n0;
+		}
+		t=1;
+		v0=t0=k0=0;
+		for (k=2; k<=N; k++) {
+			t++; s++;
+			Lat[0]->propagateF(Gs,G1,P,(k-1)%2,k%2,M);
+			if (t>n) {
+				t0++;
+				if (t0 == n) t0 = ++v0;
+				t = t0 + 1;
+				k0 = k - t0 - 1;
+			}
+			if ((t == t0+1 && t0 == v0)
+		  	 || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(k0+t0)))
+		  	 || (2*(n-t+k) >= N-1)) {
+				Cp(Gg_f+(n0+t-1)*M,Gs+(k%2)*M,M);
+				last_stored[block]=n0+t-1;
+			}
+		}
+		if ((N)%2!=0) {
+			Cp(Gs,Gs+M,M);
+		}
+	} else {
+		for (int k=0; k<N; k++) {
+			if (s>first_s[generation]) {
+				Lat[0] ->propagateF(Gg_f,G1,P,s-1,s,M); //FL
+			} else {
+				//Cp(Gg_f+first_s[generation]*M,G1,M);
+				Lat[0]->Initiate(Gg_f+first_s[generation]*M*size,G1,M); //FL
+			}
+			 s++;
+		}
+	}
+	if (save_memory) {
+		return Gg_f+last_stored[block]*M*size;
+	} else {
+		 return Gg_f+(s-1)*M*size;
+	}
+
+}
+
+void Molecule::propagate_backward(Real* G1, int &s, int block, Real* P, int generation, int M) {
+if (debug) cout <<"propagate_backward for Mol " + name << endl;
+
+	int N= n_mon[block];
+	if (save_memory) {
+		int k,k0,t0,v0,t,rk1;
+		int n=memory[block]; if (block>0) n-=memory[block-1];
+		int n0=0; if (block>0) n0=memory[block-1];
+
+		t=1;
+		v0=t0=k0=0;
+		for (k=2; k<=N; k++) {t++; if (t>n) { t0++; if (t0 == n) t0 = ++v0; t = t0 + 1; k0 = k - t0 - 1;}}
+		for (k=N; k>=1; k--) {
+			if (k==N) {
+				if (s==chainlength-1) {
+					Cp(Gg_b+(k%2)*M,G1,M);
+				} else {
+					Lat[0]->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
+				}
+			} else {
+				Lat[0]->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
+			}
+			t = k - k0;
+			if (t == t0) {
+				k0 += - n + t0;
+				if (t0 == v0 ) {
+					k0 -= ((n - t0)*(n - t0 + 1))/2;
+				}
+				t0 --;
+				if (t0 < v0) {
+					v0 = t0;
+				}
+				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,M);
+				for (rk1=k0+t0+2; rk1<=k; rk1++) {
+					t++;
+					Lat[0]->propagateB(Gs,G1,P,(t-1)%2,t%2,M);
+					if (t == t0+1 || k0+n == k) {
+						Cp(Gg_f+(n0+t-1)*M*size,Gs+(t%2)*M*size,M*size); //FL
+					}
+					if (t == n && k0+n < k) {
+						t  = ++t0;
+						k0 += n - t0;
+					}
+				}
+				t = n;
+			}
+
+			//AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,M);  //FL
+
+			if (compute_phi_alias) {
+				int length = MolAlList.size();
+				for (int i=0; i<length; i++) {
+					if (Al[i]->frag[k]==1) {
+						//Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
+						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,G1,norm,M); //FL
+					}
+				}
+			}
+			s--;
+		}
+		Cp(Gg_b,Gg_b+M,M);
+	} else {
+		for (int k=0; k<N; k++) {
+			if (s<chainlength-1) {
+				Lat[0]->propagateB(Gg_b,G1,P,(s+1)%2,s%2,M); //FL
+			} else {
+				//Cp(Gg_b+(s%2)*M,G1,M);
+				Lat[0]->Initiate(Gg_b+(s%2)*M*size,G1,M); //FL
+			}
+
+			//AddTimes(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+(s*M*size), Gg_b+(s%2)*M*size, M); //FL
+
+
+			if (compute_phi_alias) {
+				int length = MolAlList.size();
+				for (int i=0; i<length; i++) {
+					if (Al[i]->frag[k]==1) {
+						//Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M); 
+						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+s*M*size,Gg_b+(s%2)*M*size,G1,norm,M); //FL
 					}
 				}
 			}
@@ -2103,37 +2284,6 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	} else success=ComputePhi();
 
 
-//	switch (MolType) {
-//		case monomer:
-//			success=ComputePhi();
-//			break;
-//		case linear:
-//			if (freedom == "clamped") {
-//				Lat[0]->sub_box_on=Seg[mon_nr[0]]->clamp_nr; //slecting sub_box boundary conditions.
-//				//success=ComputePhiLin();
-//				success=ComputeClampLin();
-//				Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
-//			} else success=ComputePhiBra();
-//    			break;
-//		case branched:
-//			success=ComputePhiBra();
-//			break;
-//		case dendrimer:
-//			success=ComputePhiDendrimer();
-//			break;
-//		case comb:
-//			success=ComputePhiComb();
-//			break;
-//		case ring:
-//			//success=ComputePhiRing();
-//			cout <<"Ring not implemented " << endl;
-//			success=false;
-//			break;
-//		default:
-//			cout << "Programming error " << endl;
-//			break;
-//	}
-
 	if (id !=0) {
 		int molmonlistlength=MolMonList.size();
 
@@ -2145,9 +2295,7 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 				Times(phi+i*M,phi+i*M,BETA,M);
 				Times(Seg[MolMonList[i]]->G1,Seg[MolMonList[i]]->G1,BETA,M);
 			}
-
 		}
-
 	}
 	return success;
 }

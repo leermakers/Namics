@@ -9,6 +9,8 @@ class LG1Planar : public LGrad1
 	void ComputeLambdas(void);
 	void Side(Real *, Real *, int);
 	void propagate(Real*,Real*, int, int,int);
+	void propagateF(Real*,Real*, Real*, int, int,int);
+	void propagateB(Real*,Real*, Real*, int, int,int);
 	void UpdateEE(Real*, Real*,Real*);
 	void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
 	void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);

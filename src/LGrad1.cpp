@@ -252,11 +252,22 @@ if (debug) cout <<" Side in LGrad1 " << endl;
 	}
 }
 
-void LGrad1::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
+void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+	if (Markov==1) propagate(G,G1,s_from,s_to,M);
+}
+
+void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+	if (Markov==1) propagate(G,G1,s_from,s_to,M);
+
+}
+
+	
+void LGrad1::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { 
 if (debug) cout <<" propagate in LGrad1 " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 	int kk;
 	int j;
+	Zero(gs,M); set_bounds(gs_1); 
 
 	if (fjc==1) {
 		AddTimes(gs,gs_1,lambda0,M);
@@ -669,6 +680,26 @@ if (debug) cout <<"remove_bounds in LGrad1 " << endl;
 	}
 }
 
+void LGrad1::set_bounds(Real* X, Real*Y){
+if (debug) cout <<"set_bounds in LGrad1 " << endl;
+	int k=0;
+	if (fjc==1) {
+		X[0]=Y[BX1];
+		X[MX+1]=Y[BXM];
+		Y[0]=X[BX1];
+		Y[MX+1]=X[BXM];
+
+	} else {
+		for (k=0; k<fjc; k++) {
+			X[(fjc-1)-k]=Y[B_X1[k]];
+			X[MX+fjc+k]=Y[B_XM[k]];
+			Y[(fjc-1)-k]=X[B_X1[k]];
+			Y[MX+fjc+k]=X[B_XM[k]];
+		}
+	}
+}
+
+
  
 void LGrad1::set_bounds(Real* X){
 if (debug) cout <<"set_bounds in LGrad1 " << endl;
@@ -712,3 +743,58 @@ if (debug) cout <<"set_bounds in LGrad1 " << endl;
 		}
 	}
 }
+
+Real LGrad1::ComputeGN(Real* G,int M){
+	Real GN=0;
+	if (Markov==2) {
+		GN=WeightedSum(G);
+		for (int k=1; k<FJC-1; k++) {
+			if (lattice_type == "hexagonal") GN += 2.0*WeightedSum(G+k*M); else GN +=4.0*WeightedSum(G+k*M);
+		} 
+		GN+=WeightedSum(G+(FJC-1)*M);
+		if (lattice_type == "hexagonal") GN /= 4.0; else GN /= 6.0;  //Adopt for fjc>1!!!!
+	} else GN=WeightedSum(G);
+	return GN;
+}
+
+void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){//Adopt for fjc>1!!!!
+	if (Markov==2) {
+		if (lattice_type =="hexagonal") {
+			YplusisCtimesAtimesB(phi,Gf,Gb,0.25,M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5,M);			
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25,M);
+		} else {
+			YplusisCtimesAtimesB(phi,Gf,Gb,1.0/6.0,M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,4.0/6.0,M);			
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,1.0/6.0,M);
+		}
+	} else {
+		AddTimes(phi,Gf,Gb,M);
+	}
+}
+
+void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real* G1, Real norm, int M){//Adopt for fjc>1!!!!
+	if (Markov==2) {
+		if (lattice_type =="hexagonal") {
+			Composition (phi,Gf,Gb,G1,norm*0.25,M);
+			for (int k=1; k<FJC-1; k++) Composition (phi,Gf+k*M,Gb+k*M,G1,norm*0.5,M);
+			Composition (phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,G1,norm*0.25,M);
+		} else {
+			Composition (phi,Gf,Gb,G1,norm/6.0,M);
+			for (int k=1; k<FJC-1; k++) Composition (phi,Gf+k*M,Gb+k*M,G1,norm*4.0/6.0,M);
+			Composition (phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,G1,norm/6.0,M);
+		}
+	} else {
+		Composition (phi,Gf,Gb,G1,norm,M);
+	}
+}
+
+
+void LGrad1::Initiate(Real* G,Real* Gz,int M){
+	if (Markov ==2) {
+		for (int k=0; k<FJC; k++) Cp(G+k*M,Gz,M);
+	} else {
+		Cp(G,Gz,M);
+	}
+}
+

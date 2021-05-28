@@ -288,6 +288,12 @@ void YplusisCtimesX(T *Y, T *X, T C, int M)    {
 }
 
 template<typename T>
+void YplusisCtimesAtimesB(T *Y, T *A, T *B, T C, int M)    {
+	for (int i=0; i<M; i++) Y[i] += C*A[i]*B[i];
+}
+
+
+template<typename T>
 void Xr_times_ci(int posi, int k_diis, int k, int m, int nvar, T* x, T* xR, T* Ci) {
 	YplusisCtimesX(x,xR+posi*nvar,Ci[0],nvar); //pv = Ci[0]*xR[0];
 

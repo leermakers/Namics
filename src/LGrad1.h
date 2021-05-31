@@ -5,7 +5,11 @@ class LGrad1 : public Lattice
 	public: LGrad1(vector<Input*> In_,string name_);
 	virtual ~LGrad1();
 
-	
+	Real *l1;
+	Real *l11;
+	Real *l_1;
+	Real *l_11;
+	Real *H; 
 	bool PutM();
 	void TimesL(Real*);
 	void DivL(Real*);
@@ -29,6 +33,8 @@ class LGrad1 : public Lattice
 	virtual void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
 	virtual void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
 	virtual void Side(Real *, Real *, int);
+	void LReflect(Real*,Real*,int);
+	void UReflect(Real*,Real*,int);
 	virtual void propagate(Real*,Real*, int, int,int);
 	virtual void propagateF(Real*,Real*,Real*, int, int,int);
 	virtual void propagateB(Real*,Real*,Real*, int, int,int);

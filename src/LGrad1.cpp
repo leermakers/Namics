@@ -5,13 +5,25 @@
 
 //planar geometry is in LG1Planar.cpp
 
-LGrad1::LGrad1(vector<Input*> In_,string name_): Lattice(In_,name_) {}
+
+LGrad1::LGrad1(vector<Input*> In_,string name_): Lattice(In_,name_) {
+if (debug) cout <<"LGrad1 constructor " << endl;
+}
 
 LGrad1::~LGrad1() {
 if (debug) cout <<"LGrad1 destructor " << endl;
+	if (Markov==2) {
+		free(l1); 
+		free(l11);
+		free(l_1);
+		free(l_11);
+		free(H);
+	}
 }
 
 void LGrad1:: ComputeLambdas() {
+if (debug) cout <<"LGrad1 computeLambda's " << endl;
+
 	Real r, VL, LS;
 	Real rlow, rhigh;
 
@@ -54,6 +66,18 @@ void LGrad1:: ComputeLambdas() {
 				lambda_1[i]=4.0*PIE*pow(r-1,2)/L[i]*lambda;
 				lambda0[i]=1.0-lambda1[i]-lambda_1[i];
 
+			}
+		}
+		if (Markov==2) {
+			l1=(Real*)malloc(M*sizeof(Real)); Zero(l1,M);
+			l_1=(Real*)malloc(M*sizeof(Real));  Zero(l_1,M);
+			l11=(Real*)malloc(M*sizeof(Real)); Zero(l11,M);
+			l_11=(Real*)malloc(M*sizeof(Real)); Zero(l_11,M);
+			H=(Real*)malloc(M*sizeof(Real)); 
+
+			for (int i=1; i<MX+1; i++) { 
+				l1[i]=lambda1[i]/lambda; l11[i]=1.0-l1[i];
+				l_1[i]=lambda_1[i]/lambda; l_11[i]=1.0-l_1[i];
 			}
 		}
 	}
@@ -185,9 +209,7 @@ if (debug) cout << "Moment in LGrad1 " << endl;
 		for (int i = fjc; i<M; i++) {
 			cor = (i-fjc+0.5)/fjc; Result += pow(cor,n)*(X[i]-Xb);
 		}
-	} else {
-		cout <<"Moment analysis not yet implemented in LGrad1 non-planar" << endl;
-	}
+	};
 	return Result/fjc;
 }
 
@@ -252,13 +274,79 @@ if (debug) cout <<" Side in LGrad1 " << endl;
 	}
 }
 
+void LGrad1::LReflect(Real *Pout, Real *Pin, int pos) {
+	Times(Pout,l_1+1,Pin,M-1);
+	AddTimes(Pout,l_11+1,Pin+(1-pos)*2*M+1,M-1); 
+}
+
+void LGrad1::UReflect(Real *Pout, Real *Pin, int pos) {
+	Times (Pout+1,l1,Pin+1,M-1);
+	AddTimes(Pout+1,l11,Pin+(1-pos)*2*M,M-1);
+}
+
 void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
-	if (Markov==1) propagate(G,G1,s_from,s_to,M);
+	Real *gs=G+3*M*(s_to);
+	Real *gs_1=G+3*M*(s_from);
+	Real *gz0=gs_1;
+	Real *gz1=gs_1+M;
+	Real *gz2=gs_1+2*M;
+	Real *gx0=gs;
+	Real *gx1=gs+M;
+	Real *gx2=gs+2*M;
+	Real *g =G1;
+	Zero (gs,M*FJC);
+	for (int k=0; k<(FJC-1)/2; k++) set_bounds(gs_1+k*M,gs_1+(FJC-k-1)*M);
+	set_bounds(gs_1+(FJC-1)/2*M);
+
+	if (fjc==1) {
+		if (lattice_type=="hexagonal") {
+
+		} else {
+			LReflect(H,gz0,0); YplusisCtimesX(gx0+1,H,P[0],M-1);
+			LReflect(H,gz1,1); YplusisCtimesX(gx0+1,H,4*P[1],M-1);
+			YplusisCtimesX(gx1,gz0,P[1],M);
+			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
+			YplusisCtimesX(gx1,gz2,P[1],M);
+			UReflect(H,gz1,1); YplusisCtimesX(gx2,H+1,4*P[1],M-1);
+			UReflect(H,gz2,2); YplusisCtimesX(gx2,H+1,P[0],M-1);
+			for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+		}
+	} else {
+		cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl; 
+	}
 }
 
 void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
-	if (Markov==1) propagate(G,G1,s_from,s_to,M);
+	Real *gs=G+3*M*(s_to);
+	Real *gs_1=G+3*M*(s_from);
+	Real *gz0=gs_1;
+	Real *gz1=gs_1+M;
+	Real *gz2=gs_1+2*M;
+	Real *gx0=gs;
+	Real *gx1=gs+M;
+	Real *gx2=gs+2*M;
+	Real *g =G1;
+	Zero (gs,M*FJC);
+	for (int k=0; k<(FJC-1)/2; k++) set_bounds(gs_1+k*M,gs_1+(FJC-k-1)*M);
+	set_bounds(gs_1+(FJC-1)/2*M);
+	if (fjc==1) {
+		if (lattice_type=="hexagonal") {
 
+		} else {
+			UReflect(H,gz0,0);
+			YplusisCtimesX(gx0,H+1,P[0],M-1);
+			YplusisCtimesX(gx0,gz1,4*P[1],M);
+			YplusisCtimesX(gx1,H+1,P[1],M-1);
+			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
+			LReflect(H,gz2,2);
+			YplusisCtimesX(gx1+1,H,P[1],M);
+			YplusisCtimesX(gx2+1,H,P[0],M-1);
+			YplusisCtimesX(gx2,gz1,4*P[1],M);
+			for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+		}
+	} else {
+		cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl; 
+	}
 }
 
 	

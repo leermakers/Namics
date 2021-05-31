@@ -2137,8 +2137,8 @@ Zero(TEMP,M);
 Real System::GetSpontaneousCurvature()
 {
 	Real *GP = GrandPotentialDensity;
-	//cout <<"Get spontaneous Curvature not yet inplemented in system " << endl;
-	return Lat[0]->Moment(GP,0, 1);
+	if (Lat[0]->gradients ==1 && Lat[0]->geometry=="planar")  return Lat[0]->Moment(GP,0, 1);
+	else return 0;
 };
 
 Real System::GetGrandPotential(void)

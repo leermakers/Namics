@@ -28,7 +28,7 @@ void LG1Planar:: ComputeLambdas() {
 
 
 
-void LG1Planar::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
+void LG1Planar::Side(Real *X_side, Real *X, int M) { 
 if (debug) cout <<" Side in LG1Planar " << endl;
 
 	if (ignore_sites) {
@@ -43,9 +43,9 @@ if (debug) cout <<" Side in LG1Planar " << endl;
 		YplusisCtimesX(X_side,X,1.0/3.0,M);
 	} else {
 		if (fjc==1) {
-			YplusisCtimesX(X_side+1,X,l1,M-1);
-			YplusisCtimesX(X_side,X+1,l1,M-1);
-			YplusisCtimesX(X_side,X,l0,M);
+			YplusisCtimesX(X_side+1,X,lambda,M-1);
+			YplusisCtimesX(X_side,X+1,lambda,M-1);
+			YplusisCtimesX(X_side,X,1.0-2.0*lambda,M);
 		} else {
 			for (int j = 0; j < FJC/2; j++) {
 				kk = (FJC-1)/2-j;
@@ -102,7 +102,7 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);
 		}
 	} else {
-		cout <<"Markov==2" not implemented for fjc>1 " << endl; 
+		cout <<"Markov==2 not implemented for fjc>1 " << endl; 
 		if (lattice_type =="hexagonal") {
 
 		} else {
@@ -111,7 +111,7 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 	}
 }
 void LG1Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
-if (debug) cout <<" propagateB in LG1Planar " << endl;
+if (!debug) cout <<" propagateB in LG1Planar " << endl;
 	int size=fjc*2+1;
 	Real *gs = G+M*size*(s_to), *gs_1 = G+M*size*(s_from);
 	Real *gz0 = gs_1;
@@ -169,9 +169,9 @@ if (debug) cout <<" propagate in LG1Planar " << endl;
 	Zero (gs,M); set_bounds(gs_1);
 
 	if (fjc==1) {
-		YplusisCtimesX(gs+1,gs_1,l1,M-1);
-		YplusisCtimesX(gs,gs_1,l0,M);
-		YplusisCtimesX(gs,gs_1+1,l1,M-1);
+		YplusisCtimesX(gs+1,gs_1,lambda,M-1);
+		YplusisCtimesX(gs,gs_1,1.0-2.0*lambda,M);
+		YplusisCtimesX(gs,gs_1+1,lambda,M-1);
 		Times(gs,gs,G1,M);
 	} else {
 		for (j = 0; j < FJC/2; j++) {

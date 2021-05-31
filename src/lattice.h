@@ -56,7 +56,6 @@ virtual ~Lattice();
 	Real *lambda1;
 	Real *fcc_lambda1;
 	Real *LAMBDA;
-	Real l0,l1;
 	int fjc, FJC;
 	Real *X;
 	int VarInitValue;

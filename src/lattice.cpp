@@ -552,9 +552,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		//Initialize system size and indexing
 		PutM();
 		if (lattice_type=="simple_cubic") { 
-			l1=1.0/6.0; l0=4.0*l1; 
+			lambda=1.0/6.0; //l0=4.0*l1; 
 		} else {
-			l1=1.0/4.0; l0=2.0*l1;
+			lambda=1.0/4.0; //l0=2.0*l1;
 		}
 	Markov=In[0]->Get_int(GetValue("Markov"),1);
 	if (Markov<1 || Markov>2) {

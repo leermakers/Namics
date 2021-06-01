@@ -5,11 +5,7 @@ class LGrad1 : public Lattice
 	public: LGrad1(vector<Input*> In_,string name_);
 	virtual ~LGrad1();
 
-	Real *l1;
-	Real *l11;
-	Real *l_1;
-	Real *l_11;
-	Real *H; 
+ 
 	bool PutM();
 	void TimesL(Real*);
 	void DivL(Real*);

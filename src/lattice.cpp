@@ -56,6 +56,14 @@ if (debug) cout <<"DeAllocateMemory in lat " << endl;
 			#endif
 		}
 	}
+	if (Markov==2) {
+		free(l1); 
+		free(l11);
+		free(l_1);
+		free(l_11);
+		free(H);
+	}
+
 all_lattice=false;
 }
 
@@ -158,6 +166,15 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 		L=(Real*)malloc(M*sizeof(Real)); Zero(L,M);
 		LAMBDA =(Real*)malloc(FJC*M*sizeof(Real)); Zero(LAMBDA,FJC*M);
 	}
+	if (Markov==2) {
+		l1=(Real*)malloc(M*sizeof(Real)); Zero(l1,M);
+		l_1=(Real*)malloc(M*sizeof(Real));  Zero(l_1,M);
+		l11=(Real*)malloc(M*sizeof(Real)); Zero(l11,M);
+		l_11=(Real*)malloc(M*sizeof(Real)); Zero(l_11,M);
+		H=(Real*)malloc(M*sizeof(Real)); 
+
+	}
+
 
 #ifdef CUDA
 	X=(Real*)AllOnDev(M);
@@ -569,9 +586,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 			cout <<" You may interpret 'k_stiff' as the molecular 'persistence length' " << endl;
 			cout <<" k_stiff is a 'default value'. Use molecular specific values to overrule the default when appropriate (future implementation....) " << endl;  
 		}
-		if (fjc>1 || gradients>1) {
+		if (fjc>1 ) {
 			success=false;
-			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 5 and gradients == 1 " << endl; 
+			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 5 " << endl; 
 		}
 	}	
 

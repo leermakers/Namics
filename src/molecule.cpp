@@ -19,7 +19,10 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	pos_interface=0;
 	all_molecule=false;
 	Markov = Lat[0]->Markov;
-	if (Markov ==2) {size = Lat[0]->FJC; cout <<"size = " << size << endl; }else size = 1; 
+	if (Markov ==2) {
+		if (Lat[0]->gradients==1) size = Lat[0]->FJC; else size = 6;
+	       	cout <<"size = " << size << endl; 
+	} else size = 1; 
 	lattice_type = Lat[0]->lattice_type; 
 }
 
@@ -2124,7 +2127,7 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 			//Cp(Gs+M,G1,M); Cp(Gs,G1,M); //FL 
 			Lat[0]->Initiate(Gs+size*M,G1,M);
 			Lat[0]->Initiate(Gs,G1,M);
-			Cp(Gg_f+n0*M,Gs+M,M); 
+			Cp(Gg_f+n0*M,Gs+M,size*M); 
 			last_stored[block]=n0;
 		} else {
 			Lat[0] ->propagateF(Gs,G1,P,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
@@ -2204,7 +2207,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				if (t0 < v0) {
 					v0 = t0;
 				}
-				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,M);
+				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,size*M); //FL
 				for (rk1=k0+t0+2; rk1<=k; rk1++) {
 					t++;
 					Lat[0]->propagateB(Gs,G1,P,(t-1)%2,t%2,M);
@@ -2233,7 +2236,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			}
 			s--;
 		}
-		Cp(Gg_b,Gg_b+M,M);
+		Cp(Gg_b,Gg_b+M,size*M);//FL
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) {

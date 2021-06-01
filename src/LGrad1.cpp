@@ -12,13 +12,6 @@ if (debug) cout <<"LGrad1 constructor " << endl;
 
 LGrad1::~LGrad1() {
 if (debug) cout <<"LGrad1 destructor " << endl;
-	if (Markov==2) {
-		free(l1); 
-		free(l11);
-		free(l_1);
-		free(l_11);
-		free(H);
-	}
 }
 
 void LGrad1:: ComputeLambdas() {
@@ -69,17 +62,12 @@ if (debug) cout <<"LGrad1 computeLambda's " << endl;
 			}
 		}
 		if (Markov==2) {
-			l1=(Real*)malloc(M*sizeof(Real)); Zero(l1,M);
-			l_1=(Real*)malloc(M*sizeof(Real));  Zero(l_1,M);
-			l11=(Real*)malloc(M*sizeof(Real)); Zero(l11,M);
-			l_11=(Real*)malloc(M*sizeof(Real)); Zero(l_11,M);
-			H=(Real*)malloc(M*sizeof(Real)); 
-
 			for (int i=1; i<MX+1; i++) { 
 				l1[i]=lambda1[i]/lambda; l11[i]=1.0-l1[i];
 				l_1[i]=lambda_1[i]/lambda; l_11[i]=1.0-l_1[i];
 			}
 		}
+
 	}
 
 	if (fjc>1) {

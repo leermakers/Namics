@@ -27,14 +27,16 @@ class LGrad2 : public Lattice
 	void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
 	void remove_bounds(Real*);
 	void set_bounds(Real*);
-	void set_bounds(Real*,Real*);
 	void remove_bounds(int*);
 	void set_bounds(int*);
 	Real ComputeGN(Real*, int);
 	void AddPhiS(Real*,Real*,Real*,int);
 	void AddPhiS(Real*,Real*,Real*,Real*, Real, int);
 	void Initiate(Real*,Real*,int);
-
+	void set_bounds_x(Real*,Real*);
+	void set_bounds_y(Real*,Real*);
+	void set_bounds_x(Real*);
+	void set_bounds_y(Real*);
 };
 #endif
 

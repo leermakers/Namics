@@ -256,7 +256,7 @@ if (freedom == "frozen") {
 			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 		}
 	}
-	if (n_pos==0 && Lat[0]->gradients==3&& px.size()==0) {
+	if (n_pos<0 && Lat[0]->gradients==3&& px.size()==0) {
 		n=0; R=0; //px.clear(); py.clear(); pz.clear();
 		bool found=false;
 		if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
@@ -364,7 +364,9 @@ if (freedom == "frozen") {
 	}
 }
 
+n_pos=-1;
 if (freedom == "tagged") {
+	
 	phibulk=0;
 	if (GetValue("pinned_range").size()>0 || GetValue("frozen_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("frozen_filename").size()>0) {
 	cout<< "For mon " + name + ", you should exclusively combine 'freedom : tagged' with 'tagged_range' or 'tagged_filename'" << endl;  success=false;}
@@ -804,7 +806,7 @@ void Segment::Put_beta(int ii, Real BETA) {
 Real Segment::Volume_particles() {
 	int volume=0;
 	if (freedom=="frozen") Sum(volume,H_MASK,Lat[0]->M); 
-	cout <<"volume_particles of type "+name + "= " << volume << endl; 
+	//cout <<"volume_particles of type "+name + "= " << volume << endl; 
 	return 1.0*volume;
 }
 

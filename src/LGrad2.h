@@ -15,6 +15,8 @@ class LGrad2 : public Lattice
 	void PutProfiles(FILE*,vector<Real*>,bool);
 	void Side(Real *, Real *, int);
 	void propagate(Real*,Real*, int, int,int);
+	void LReflect(Real*,Real*,Real*);
+	void UReflect(Real*,Real*,Real*);
 	virtual void propagateF(Real*,Real*,Real*, int, int,int);
 	virtual void propagateB(Real*,Real*,Real*, int, int,int);
 	bool ReadRange(int*, int*, int&, bool&, string, int, string, string);

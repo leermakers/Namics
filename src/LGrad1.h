@@ -29,8 +29,10 @@ class LGrad1 : public Lattice
 	virtual void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
 	virtual void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
 	virtual void Side(Real *, Real *, int);
-	void LReflect(Real*,Real*,int);
-	void UReflect(Real*,Real*,int);
+	//void LReflect(Real*,Real*,int);
+	//void UReflect(Real*,Real*,int);
+	void LReflect(Real*,Real*,Real*);
+	void UReflect(Real*,Real*,Real*);
 	virtual void propagate(Real*,Real*, int, int,int);
 	virtual void propagateF(Real*,Real*,Real*, int, int,int);
 	virtual void propagateB(Real*,Real*,Real*, int, int,int);

@@ -29,17 +29,23 @@ void LGrad2:: ComputeLambdas() {
 	if (fjc==1) {
 		for (int x=1; x<MX+1; x++)
 		for (int y=1; y<MY+1; y++) {
-				r=offset_first_layer + 1.0*x;
-				L[P(x,y)]=PIE*(pow(r,2)-pow(r-1,2));
-				lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]*lambda;
-				lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]*lambda;
-				lambda0[P(x,y)]=1.0-2.0*lambda;
-				if (fcc_sites) {
-					fcc_lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]/3.0;
-					fcc_lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]/3.0;
-					fcc_lambda0[P(x,y)]=1.0-2.0/3.0;
-				}
+			r=offset_first_layer + 1.0*x;
+			L[P(x,y)]=PIE*(pow(r,2)-pow(r-1,2));
+			lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]*lambda;
+			lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]*lambda;
+			lambda0[P(x,y)]=1.0-2.0*lambda;
+			if (fcc_sites) {
+				fcc_lambda1[P(x,y)]=2.0*PIE*r/L[P(x,y)]/3.0;
+				fcc_lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]/3.0;
+				fcc_lambda0[P(x,y)]=1.0-2.0/3.0;
 			}
+		}
+		if (Markov ==2) {
+			for (int i=0; i<M; i++) {
+				l1[i]=lambda1[i]/lambda; l11[i]=1.0-l1[i];
+				l_1[i]=lambda_1[i]/lambda; l_11[i]=1.0-l_1[i];
+			}
+		}
 
 	}
 	if (fjc==2) {
@@ -266,9 +272,115 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 	}
 }
 
+void LGrad2::LReflect(Real *H, Real *P, Real *Q) {
+	Times(H,l_1+JX,P,M-JX);
+	AddTimes(H,l_11+JX,Q+JX,M-JX); 
+}
+
+void LGrad2::UReflect(Real *H, Real *P, Real *Q) {
+	Times (H+JX,l1,P+JX,M-JX);
+	AddTimes(H+JX,l11,Q,M-JX);
+}
+
+
 void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+
+	Real *gs=G+M*5*s_to;
+	Real *gs_1=G+M*5*s_from;
+	Real *gz0=gs_1;
+	Real *gz1=gs_1+M;
+	Real *gz2=gs_1+2*M;
+	Real *gz3=gs_1+3*M;
+	Real *gz4=gs_1+4*M;
+	set_bounds_x(gz0,gz4); set_bounds_x(gz1); set_bounds_x(gz2); set_bounds_x(gz3); 
+	set_bounds_y(gz1,gz3); set_bounds_y(gz0); set_bounds_y(gz2); set_bounds_y(gz4); 	
+	Real *gx0=gs;
+	Real *gx1=gs+M;
+	Real *gx2=gs+2*M;
+	Real *gx3=gs+3*M;
+	Real *gx4=gs+4*M;
+	Real *g=G1;
+
+	Zero(gs,5*M);
+	LReflect(H,gz0,gz4); YplusisCtimesX(gx0+JX,H,P[0],M-JX);
+	LReflect(H,gz1,gz3); YplusisCtimesX(gx0+JX,H,P[1],M-JX);
+	LReflect(H,gz2,gz2); YplusisCtimesX(gx0+JX,H,2*P[1],M-JX);
+	LReflect(H,gz3,gz1); YplusisCtimesX(gx0+JX,H,P[1],M-JX);
+
+	YplusisCtimesX(gx1+JY,gz0,P[1],M-JY);
+	YplusisCtimesX(gx1+JY,gz1,P[0],M-JY);
+	YplusisCtimesX(gx1+JY,gz2,2*P[1],M-JY);
+	YplusisCtimesX(gx1+JY,gz4,P[1],M-JY);
+
+	YplusisCtimesX(gx2,gz0,P[1],M);
+	YplusisCtimesX(gx2,gz1,P[1],M);
+	YplusisCtimesX(gx2,gz2,P[0],M);
+	YplusisCtimesX(gx2,gz3,P[1],M);
+	YplusisCtimesX(gx2,gz4,P[1],M);
+
+	YplusisCtimesX(gx3,gz0+JY,P[1],M-JY);
+	YplusisCtimesX(gx3,gz2+JY,2*P[1],M-JY);
+	YplusisCtimesX(gx3,gz3+JY,P[0],M-JY);
+	YplusisCtimesX(gx3,gz4+JY,P[1],M-JY);
+
+	UReflect(H,gz1,gz3); YplusisCtimesX(gx4,H+JX,P[1],M-JX);
+	UReflect(H,gz2,gz2); YplusisCtimesX(gx4,H+JX,2*P[1],M-JX);
+	UReflect(H,gz3,gz1); YplusisCtimesX(gx4,H+JX,P[1],M-JX);
+	UReflect(H,gz4,gz0); YplusisCtimesX(gx4,H+JX,P[0],M-JX);
+
+	for (int k=0; k<5; k++) Times(gs+k*M,gs+k*M,g,M);
+
 }
 void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+	Real *gs=G+M*5*s_to;
+	Real *gs_1=G+M*5*s_from;
+	Real *gz0=gs_1;
+	Real *gz1=gs_1+M;
+	Real *gz2=gs_1+2*M;
+	Real *gz3=gs_1+3*M;
+	Real *gz4=gs_1+4*M;
+	set_bounds_x(gz0,gz4); set_bounds_x(gz1); set_bounds_x(gz2); set_bounds_x(gz3); 
+	set_bounds_y(gz1,gz3); set_bounds_y(gz0); set_bounds_y(gz2); set_bounds_y(gz4);
+	Real *gx0=gs;
+	Real *gx1=gs+M;
+	Real *gx2=gs+2*M;
+	Real *gx3=gs+3*M;
+	Real *gx4=gs+4*M;
+	Real *g=G1;
+
+	Zero(gs,5*M);
+
+	LReflect(H,gz4,gz0);
+	YplusisCtimesX(gx1+JX,H,P[1],M-JX);
+	YplusisCtimesX(gx2+JX,H,P[1],M-JX);
+	YplusisCtimesX(gx3+JX,H,P[1],M-JX);
+	YplusisCtimesX(gx4+JX,H,P[0],M-JX);
+
+	YplusisCtimesX(gx0+JY,gz3,P[1],M-JY);
+	YplusisCtimesX(gx2+JY,gz3,P[1],M-JY);
+	YplusisCtimesX(gx3+JY,gz3,P[0],M-JY);
+	YplusisCtimesX(gx4+JY,gz3,P[1],M-JY);
+
+	YplusisCtimesX(gx0,gz2,2*P[1],M);
+	YplusisCtimesX(gx1,gz2,2*P[1],M);
+	YplusisCtimesX(gx2,gz2,P[0],M);
+	YplusisCtimesX(gx3,gz2,2*P[1],M);
+	YplusisCtimesX(gx4,gz2,2*P[1],M);
+
+	YplusisCtimesX(gx0,gz1+JY,P[1],M-JY);
+	YplusisCtimesX(gx1,gz1+JY,P[0],M-JY);
+	YplusisCtimesX(gx2,gz1+JY,P[1],M-JY);
+	YplusisCtimesX(gx4,gz1+JY,P[1],M-JY);
+
+	UReflect(H,gz0,gz4);
+	YplusisCtimesX(gx0,H+JX,P[0],M-JX);
+	YplusisCtimesX(gx1,H+JX,P[1],M-JX);
+	YplusisCtimesX(gx2,H+JX,P[1],M-JX);
+	YplusisCtimesX(gx3,H+JX,P[1],M-JX);
+
+
+	for (int k=0; k<5; k++) Times(gs+k*M,gs+k*M,g,M);
+
 }
 
 void LGrad2::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.

@@ -262,15 +262,26 @@ if (debug) cout <<" Side in LGrad1 " << endl;
 	}
 }
 
-void LGrad1::LReflect(Real *Pout, Real *Pin, int pos) {
-	Times(Pout,l_1+1,Pin,M-1);
-	AddTimes(Pout,l_11+1,Pin+(1-pos)*2*M+1,M-1); 
+//void LGrad1::LReflect(Real *Pout, Real *Pin, int pos) {
+//	Times(Pout,l_1+1,Pin,M-1);
+//	AddTimes(Pout,l_11+1,Pin+(1-pos)*2*M+1,M-1); 
+//}
+
+//void LGrad1::UReflect(Real *Pout, Real *Pin, int pos) {
+//	Times (Pout+1,l1,Pin+1,M-1);
+//	AddTimes(Pout+1,l11,Pin+(1-pos)*2*M,M-1);
+//}
+
+void LGrad1::LReflect(Real *H, Real *P, Real *Q) {
+	Times(H,l_1+1,P,M-1);
+	AddTimes(H,l_11+1,Q+1,M-1); 
 }
 
-void LGrad1::UReflect(Real *Pout, Real *Pin, int pos) {
-	Times (Pout+1,l1,Pin+1,M-1);
-	AddTimes(Pout+1,l11,Pin+(1-pos)*2*M,M-1);
+void LGrad1::UReflect(Real *H, Real *P, Real* Q) {
+	Times (H+1,l1,P+1,M-1);
+	AddTimes(H+1,l11,Q,M-1);
 }
+
 
 void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
 	Real *gs=G+3*M*(s_to);
@@ -287,16 +298,30 @@ void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	set_bounds(gs_1+(FJC-1)/2*M);
 
 	if (fjc==1) {
-		if (lattice_type=="hexagonal") {
+		if (lattice_type=="hexagonal") { cout <<"Lgrad1 propagateF for hexagonal lattice_type not implemented yet " << endl;
 
-		} else {
-			LReflect(H,gz0,0); YplusisCtimesX(gx0+1,H,P[0],M-1);
-			LReflect(H,gz1,1); YplusisCtimesX(gx0+1,H,4*P[1],M-1);
+		} else { //simple cubic 6point stencil.
+			//LReflect(H,gz0,0); YplusisCtimesX(gx0+1,H,P[0],M-1);
+			//LReflect(H,gz1,1); YplusisCtimesX(gx0+1,H,4*P[1],M-1);
+
+			//YplusisCtimesX(gx1,gz0,P[1],M);
+			//YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
+			//YplusisCtimesX(gx1,gz2,P[1],M);
+
+			//UReflect(H,gz1,1); YplusisCtimesX(gx2,H+1,4*P[1],M-1);
+			//UReflect(H,gz2,2); YplusisCtimesX(gx2,H+1,P[0],M-1);
+
+			LReflect(H,gz0,gz2); YplusisCtimesX(gx0+1,H,P[0],M-1);
+			LReflect(H,gz1,gz1); YplusisCtimesX(gx0+1,H,4*P[1],M-1);
+
 			YplusisCtimesX(gx1,gz0,P[1],M);
 			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
 			YplusisCtimesX(gx1,gz2,P[1],M);
-			UReflect(H,gz1,1); YplusisCtimesX(gx2,H+1,4*P[1],M-1);
-			UReflect(H,gz2,2); YplusisCtimesX(gx2,H+1,P[0],M-1);
+
+			UReflect(H,gz1,gz1); YplusisCtimesX(gx2,H+1,4*P[1],M-1);
+			UReflect(H,gz2,gz0); YplusisCtimesX(gx2,H+1,P[0],M-1);
+
+
 			for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 		}
 	} else {
@@ -318,18 +343,23 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	for (int k=0; k<(FJC-1)/2; k++) set_bounds(gs_1+k*M,gs_1+(FJC-k-1)*M);
 	set_bounds(gs_1+(FJC-1)/2*M);
 	if (fjc==1) {
-		if (lattice_type=="hexagonal") {
+		if (lattice_type=="hexagonal") { cout <<"Lgrad1 propagateB for hexagonal lattice_type not implemented yet " << endl; 
 
 		} else {
-			UReflect(H,gz0,0);
-			YplusisCtimesX(gx0,H+1,P[0],M-1);
-			YplusisCtimesX(gx0,gz1,4*P[1],M);
-			YplusisCtimesX(gx1,H+1,P[1],M-1);
-			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
-			LReflect(H,gz2,2);
+			//LReflect(H,gz2,2);
+			LReflect(H,gz2,gz0);
 			YplusisCtimesX(gx1+1,H,P[1],M);
 			YplusisCtimesX(gx2+1,H,P[0],M-1);
+
+			YplusisCtimesX(gx0,gz1,4*P[1],M);
+			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
 			YplusisCtimesX(gx2,gz1,4*P[1],M);
+
+
+			//UReflect(H,gz0,0);
+			UReflect(H,gz0,gz2);
+			YplusisCtimesX(gx0,H+1,P[0],M-1);
+			YplusisCtimesX(gx1,H+1,P[1],M-1);
 			for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 		}
 	} else {

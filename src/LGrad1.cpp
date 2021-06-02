@@ -867,7 +867,7 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real* G1, Real norm, int M){//A
 
 
 void LGrad1::Initiate(Real* G,Real* Gz,int M){
-	if (Markov ==2) {
+	if (Markov==2) {
 		for (int k=0; k<FJC; k++) Cp(G+k*M,Gz,M);
 	} else {
 		Cp(G,Gz,M);

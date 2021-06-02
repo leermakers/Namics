@@ -1084,19 +1084,27 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 
 Real LGrad3::ComputeGN(Real* G,int M){
 	Real GN=0;
-	for (int k=0; k<6; k++) GN+=WeightedSum(G+k*M);
-	return GN/6.0;
+	if (Markov==2) {
+		for (int k=0; k<6; k++) GN+=WeightedSum(G+k*M);
+		GN/=6.0;
+	} else GN=WeightedSum(G);
+	return GN;
 
 }
 void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
-	for (int k=0; k<6; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M); 
+	if (Markov ==2) {
+	for (int k=0; k<6; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
+	} else AddTimes(phi,Gf,Gb,M);
+
 }
 void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int M){
 	cout << "Composition phi Alias not implemented in LGrad3 " << endl;
 }
 
 void LGrad3::Initiate(Real* G,Real* Gz,int M){
-	for (int k=0; k<6; k++) Cp(G+k*M,Gz,M);
+	if (Markov==2)
+		for (int k=0; k<6; k++) Cp(G+k*M,Gz,M);
+	else Cp(G,Gz,M);
 }
 
 

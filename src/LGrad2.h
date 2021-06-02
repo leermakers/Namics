@@ -15,8 +15,8 @@ class LGrad2 : public Lattice
 	void PutProfiles(FILE*,vector<Real*>,bool);
 	void Side(Real *, Real *, int);
 	void propagate(Real*,Real*, int, int,int);
-	void propagateF(Real*,Real*,Real*, int, int,int);
-	void propagateB(Real*,Real*,Real*, int, int,int);
+	virtual void propagateF(Real*,Real*,Real*, int, int,int);
+	virtual void propagateB(Real*,Real*,Real*, int, int,int);
 	bool ReadRange(int*, int*, int&, bool&, string, int, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
 	bool FillMask(int*, vector<int>, vector<int>, vector<int>, string);

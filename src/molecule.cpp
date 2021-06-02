@@ -20,7 +20,9 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	all_molecule=false;
 	Markov = Lat[0]->Markov;
 	if (Markov ==2) {
-		if (Lat[0]->gradients==1) size = Lat[0]->FJC; else size = 6;
+		if (Lat[0]->gradients==1) size = Lat[0]->FJC; 
+		if (Lat[0]->gradients==2) size =5;
+		if (Lat[0]->gradients==3) size =6; 
 	       	cout <<"size = " << size << endl; 
 	} else size = 1; 
 	lattice_type = Lat[0]->lattice_type; 

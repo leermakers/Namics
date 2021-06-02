@@ -266,8 +266,10 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 	}
 }
 
-void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {}
-void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {}
+void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+}
+void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+}
 
 void LGrad2::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in LGrad2 " << endl;
@@ -968,17 +970,35 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 
 Real LGrad2::ComputeGN(Real* G,int M){
 	Real GN=0;
-	cout << "computeGN not implemented " << endl; 
+	if (Markov==2) { //only simple_cubic for the time being
+		for (int k=0; k<5; k++) {
+			if (k== 2)  
+				GN += 2*WeightedSum(G+k*M); 
+			else 
+				GN+=WeightedSum(G+k*M);
+		}
+		GN /=6.0;
+	} else GN = WeightedSum(G);
 	return GN;
 }
 void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
-	cout << "composition not implemented " << endl;
+	if (Markov==2) {
+		for (int k=0; k<5; k++) {
+			if (k==2) 
+				YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/3.0,M); 
+			else
+				YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
+		}
+ 
+	} else AddTimes(phi,Gf,Gb,M);
 }
 void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int M){
-	cout << "composition not implemented " << endl;
+	cout << "composition not (yet) implemented for alias in LGrad2 " << endl;
 }
 
 void LGrad2::Initiate(Real* G,Real* Gz,int M){
-	cout << "Initiate not implemented " << endl;
+	if (Markov==2) { //simple cubic only
+		for (int k=0; k<5; k++) Cp(G+k*M,Gz,M);
+	} else Cp(G,Gz,M);
 }
 

@@ -3,7 +3,9 @@
 #include "lattice.h"
 #include "LG2Planar.h" 
 
-LG2Planar::LG2Planar(vector<Input*> In_,string name_): LGrad2(In_,name_) {}
+LG2Planar::LG2Planar(vector<Input*> In_,string name_): LGrad2(In_,name_) {
+	JY=1;
+}
 
 LG2Planar::~LG2Planar() {
 if (debug) cout <<"LG2Planar destructor " << endl;
@@ -41,7 +43,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 		YplusisCtimesX(X_side,X+JX+1,1.0/9.0,M-JX-1);
 	} else {
 		if (fjc==1) {
-			if (lattice_type=="simple_cubic") {
+			if (lattice_type=="simple_cubic") { //9 point stencil
 				YplusisCtimesX(X_side,X,    16.0/36.0,M);
 				YplusisCtimesX(X_side+1,X,   4.0/36.0,M-1);
 				YplusisCtimesX(X_side,X+1,   4.0/36.0,M-1);
@@ -103,6 +105,103 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 		}
 	}
 }
+
+
+void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+	Real *gs=G+M*5*s_to;
+	Real *gs_1=G+M*5*s_from;
+	Real *gz0=gs_1;
+	Real *gz1=gs_1+M;
+	Real *gz2=gs_1+2*M;
+	Real *gz3=gs_1+3*M;
+	Real *gz4=gs_1+4*M;
+	set_bounds_x(gz0,gz4); set_bounds_x(gz1); set_bounds_x(gz2); set_bounds_x(gz3); 
+	set_bounds_y(gz1,gz3); set_bounds_y(gz0); set_bounds_y(gz2); set_bounds_y(gz4); 	
+	Real *gx0=gs;
+	Real *gx1=gs+M;
+	Real *gx2=gs+2*M;
+	Real *gx3=gs+3*M;
+	Real *gx4=gs+4*M;
+	Real *g=G1;
+
+	Zero(gs,5*M);
+	YplusisCtimesX(gx0+JX,gz0,P[0],M-JX);
+	YplusisCtimesX(gx0+JX,gz1,P[1],M-JX);
+	YplusisCtimesX(gx0+JX,gz2,2*P[1],M-JX);
+	YplusisCtimesX(gx0+JX,gz3,P[1],M-JX);
+
+	YplusisCtimesX(gx1+JY,gz0,P[1],M-JY);
+	YplusisCtimesX(gx1+JY,gz1,P[0],M-JY);
+	YplusisCtimesX(gx1+JY,gz2,2*P[1],M-JY);
+	YplusisCtimesX(gx1+JY,gz4,P[1],M-JY);
+
+	YplusisCtimesX(gx2,gz0,P[1],M);
+	YplusisCtimesX(gx2,gz1,P[1],M);
+	YplusisCtimesX(gx2,gz2,P[0],M);
+	YplusisCtimesX(gx2,gz3,P[1],M);
+	YplusisCtimesX(gx2,gz4,P[1],M);
+
+	YplusisCtimesX(gx3,gz0+JY,P[1],M-JY);
+	YplusisCtimesX(gx3,gz2+JY,2*P[1],M-JY);
+	YplusisCtimesX(gx3,gz3+JY,P[0],M-JY);
+	YplusisCtimesX(gx3,gz4+JY,P[1],M-JY);
+
+	YplusisCtimesX(gx4,gz1+JX,P[1],M-JX);
+	YplusisCtimesX(gx4,gz2+JX,2*P[1],M-JX);
+	YplusisCtimesX(gx4,gz3+JX,P[1],M-JX);
+	YplusisCtimesX(gx4,gz4+JX,P[0],M-JX);
+
+	for (int k=0; k<5; k++) Times(gs+k*M,gs+k*M,g,M);
+	 
+}
+void LG2Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
+	Real *gs=G+M*5*s_to;
+	Real *gs_1=G+M*5*s_from;
+	Real *gz0=gs_1;
+	Real *gz1=gs_1+M;
+	Real *gz2=gs_1+2*M;
+	Real *gz3=gs_1+3*M;
+	Real *gz4=gs_1+4*M;
+	set_bounds_x(gz0,gz4); set_bounds_x(gz1); set_bounds_x(gz2); set_bounds_x(gz3); 
+	set_bounds_y(gz1,gz3); set_bounds_y(gz0); set_bounds_y(gz2); set_bounds_y(gz4);
+	Real *gx0=gs;
+	Real *gx1=gs+M;
+	Real *gx2=gs+2*M;
+	Real *gx3=gs+3*M;
+	Real *gx4=gs+4*M;
+	Real *g=G1;
+
+	Zero(gs,5*M);
+	YplusisCtimesX(gx1+JX,gz4,P[1],M-JX);
+	YplusisCtimesX(gx2+JX,gz4,P[1],M-JX);
+	YplusisCtimesX(gx3+JX,gz4,P[1],M-JX);
+	YplusisCtimesX(gx4+JX,gz4,P[0],M-JX);
+
+	YplusisCtimesX(gx0+JY,gz3,P[1],M-JY);
+	YplusisCtimesX(gx2+JY,gz3,P[1],M-JY);
+	YplusisCtimesX(gx3+JY,gz3,P[0],M-JY);
+	YplusisCtimesX(gx4+JY,gz3,P[1],M-JY);
+
+	YplusisCtimesX(gx0,gz2,2*P[1],M);
+	YplusisCtimesX(gx1,gz2,2*P[1],M);
+	YplusisCtimesX(gx2,gz2,P[0],M);
+	YplusisCtimesX(gx3,gz2,2*P[1],M);
+	YplusisCtimesX(gx4,gz2,2*P[1],M);
+
+	YplusisCtimesX(gx0,gz1+JY,P[1],M-JY);
+	YplusisCtimesX(gx1,gz1+JY,P[0],M-JY);
+	YplusisCtimesX(gx2,gz1+JY,P[1],M-JY);
+	YplusisCtimesX(gx4,gz1+JY,P[1],M-JY);
+
+	YplusisCtimesX(gx0,gz0+JX,P[0],M-JX);
+	YplusisCtimesX(gx1,gz0+JX,P[1],M-JX);
+	YplusisCtimesX(gx2,gz0+JX,P[1],M-JX);
+	YplusisCtimesX(gx3,gz0+JX,P[1],M-JX);
+
+
+	for (int k=0; k<5; k++) Times(gs+k*M,gs+k*M,g,M);
+}
+
 
 void LG2Planar::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in LGrad2 " << endl;

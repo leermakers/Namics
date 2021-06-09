@@ -329,8 +329,8 @@ void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	UReflect(H,gz4,gz0); YplusisCtimesX(gx4,H+JX,P[0],M-JX);
 
 	for (int k=0; k<5; k++) Times(gs+k*M,gs+k*M,g,M);
-
 }
+
 void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
 	Real *gs=G+M*5*s_to;
 	Real *gs_1=G+M*5*s_from;

@@ -19,13 +19,15 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	pos_interface=0;
 	all_molecule=false;
 	Markov = Lat[0]->Markov;
+	lattice_type = Lat[0]->lattice_type;
 	if (Markov ==2) {
 		if (Lat[0]->gradients==1) size = Lat[0]->FJC; 
 		if (Lat[0]->gradients==2) size =5;
-		if (Lat[0]->gradients==3) size =6; 
-	       	cout <<"size = " << size << endl; 
+		if (Lat[0]->gradients==3) { 
+			if (lattice_type=="hexagonal") size =12; else size=6; 
+		}
+	       cout <<"size = " << size << endl; 
 	} else size = 1; 
-	lattice_type = Lat[0]->lattice_type; 
 }
 
 Molecule::~Molecule() {
@@ -119,7 +121,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	DeAllocateMemory();
 	int M=Lat[0]->M;
 	int m=0;
-	if (Markov==2) {
+	if (Markov==2 && lattice_type == "simple_cubic") {
 		int FJC = Lat[0]->FJC;
 		P = (Real*) malloc(FJC*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
 		Real Q=0;
@@ -132,6 +134,20 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 			cout << "P["<<k<<"] = " << P[k] << endl; 
 		}
 	}
+
+	if (Markov==2 && lattice_type == "hexagonal") {
+		int FJC = Lat[0]->FJC;
+		P = (Real*) malloc(2*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
+		Real Q=0;
+		Real K_stiff=Lat[0]->k_stiff;
+		P[0]=exp(-0.5*K_stiff*(PIE/3.0)*(PIE/3.0) ); Q+= 3*P[0];  
+		P[1]=exp(-0.5*K_stiff*(2.0*PIE/3.0)*(2.0*PIE/3.0) ); Q+= 6*P[1];
+		P[FJC-1]=0; 
+		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
+			cout << "P["<<k<<"] = " << P[k] << endl; 
+		}
+	}
+
 	
 	if (freedom=="clamped") {
 		m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];

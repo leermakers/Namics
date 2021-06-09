@@ -33,12 +33,12 @@ class LGrad3 : public Lattice
 	void AddPhiS(Real*,Real*,Real*,int);
 	void AddPhiS(Real*,Real*,Real*,Real*,Real,int);
 	void Initiate(Real*,Real*,int);
-	void set_bounds_x(Real*,Real*);
-	void set_bounds_y(Real*,Real*);
-	void set_bounds_z(Real*,Real*);
-	void set_bounds_x(Real*);
-	void set_bounds_y(Real*);
-	void set_bounds_z(Real*);
+	void set_bounds_x(Real*,Real*,int,int);
+	void set_bounds_y(Real*,Real*,int,int);
+	void set_bounds_z(Real*,Real*,int,int);
+	void set_bounds_x(Real*,int,int);
+	void set_bounds_y(Real*,int,int);
+	void set_bounds_z(Real*,int,int);
 };
 #endif
 

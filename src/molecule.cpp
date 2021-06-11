@@ -22,9 +22,11 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	lattice_type = Lat[0]->lattice_type;
 	if (Markov ==2) {
 		if (Lat[0]->gradients==1) size = Lat[0]->FJC; 
-		if (Lat[0]->gradients==2) size =5;
+		if (Lat[0]->gradients==2) {
+			if (lattice_type=="hexagonal") size = 7; else size = 5;
+		}
 		if (Lat[0]->gradients==3) { 
-			if (lattice_type=="hexagonal") size =12; else size=6; 
+			if (lattice_type=="hexagonal") size = 12; else size = 6; 
 		}
 	       cout <<"size = " << size << endl; 
 	} else size = 1; 

@@ -1411,7 +1411,7 @@ void LGrad3::set_bounds_x(Real* X, int shifty, int shiftz){
 if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
 	int y,z;
 	int k=0;
-	if (BX1>BXM) {shifty=0; shiftz=0;} //periodic
+	//if (BX1>BXM) {shifty=0; shiftz=0;} //periodic
 	if (fjc==1) {
 		 for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++)  {
 			X[0        +y*JY+z*JZ] = X[BX1*JX+(y+shifty)*JY+(z+shiftz)*JZ];
@@ -1441,7 +1441,7 @@ void LGrad3::set_bounds_y(Real* X,int shiftx, int shiftz){
 if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
 	int x,z;
 	int k=0;
-	if (BY1>BYM) {shiftx=0; shiftz=0;} //periodic
+	//if (BY1>BYM) {shiftx=0; shiftz=0;} //periodic
 	if (fjc==1) {
 		for (z=1; z<MZ+1; z++) for (x=1; x<MX+1; x++){
 			X[x*JX+    0    +z*JZ] = X[(x+shiftx)*JX+BY1*JY+(z+shiftz)*JZ];
@@ -1471,7 +1471,7 @@ void LGrad3::set_bounds_z(Real* X,int shiftx, int shifty){
 if (debug) cout <<"set_bounds_z in LGrad3 " << endl;
 	int x,y;
 	int k=0;
-	if (BZ1>BZM) {shiftx=0; shifty=0;} //periodic.
+	//if (BZ1>BZM) {shiftx=0; shifty=0;} //periodic.
 	if (fjc==1) {
 		for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++) {
 			X[x*JX+y*JY+   0] = X[(x+shiftx)*JX+(y+shifty)*JY+BZ1];

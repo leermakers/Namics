@@ -1,7 +1,7 @@
 #include <iostream> 
 #include <string> 
 #include "lattice.h"
-#include "LGrad1.h" 
+#include "LGrad1.h"  
 
 //planar geometry is in LG1Planar.cpp
 
@@ -298,7 +298,7 @@ void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	set_bounds(gs_1+(FJC-1)/2*M);
 
 	if (fjc==1) {
-		if (lattice_type=="hexagonal") { cout <<"Lgrad1 propagateF for hexagonal lattice_type not implemented yet " << endl;
+		if (lattice_type==hexagonal) { cout <<"Lgrad1 propagateF for hexagonal lattice_type not implemented yet " << endl;
 
 		} else { //simple cubic 6point stencil.
 			//LReflect(H,gz0,0); YplusisCtimesX(gx0+1,H,P[0],M-1);
@@ -343,7 +343,7 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	for (int k=0; k<(FJC-1)/2; k++) set_bounds(gs_1+k*M,gs_1+(FJC-k-1)*M);
 	set_bounds(gs_1+(FJC-1)/2*M);
 	if (fjc==1) {
-		if (lattice_type=="hexagonal") { cout <<"Lgrad1 propagateB for hexagonal lattice_type not implemented yet " << endl; 
+		if (lattice_type==hexagonal) { cout <<"Lgrad1 propagateB for hexagonal lattice_type not implemented yet " << endl; 
 
 		} else {
 			//LReflect(H,gz2,2);
@@ -855,17 +855,17 @@ Real LGrad1::ComputeGN(Real* G,int M){
 	if (Markov==2) {
 		GN=WeightedSum(G);
 		for (int k=1; k<FJC-1; k++) {
-			if (lattice_type == "hexagonal") GN += 2.0*WeightedSum(G+k*M); else GN +=4.0*WeightedSum(G+k*M);
+			if (lattice_type == hexagonal) GN += 2.0*WeightedSum(G+k*M); else GN +=4.0*WeightedSum(G+k*M);
 		} 
 		GN+=WeightedSum(G+(FJC-1)*M);
-		if (lattice_type == "hexagonal") GN /= 4.0; else GN /= 6.0;  //Adopt for fjc>1!!!!
+		if (lattice_type == hexagonal) GN /= 4.0; else GN /= 6.0;  //Adopt for fjc>1!!!!
 	} else GN=WeightedSum(G);
 	return GN;
 }
 
 void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){//Adopt for fjc>1!!!!
 	if (Markov==2) {
-		if (lattice_type =="hexagonal") {
+		if (lattice_type ==hexagonal) {
 			YplusisCtimesAtimesB(phi,Gf,Gb,0.25,M);
 			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5,M);			
 			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25,M);
@@ -881,7 +881,7 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){//Adopt for fjc>1!!!!
 
 void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real* G1, Real norm, int M){//Adopt for fjc>1!!!!
 	if (Markov==2) {
-		if (lattice_type =="hexagonal") {
+		if (lattice_type ==hexagonal) {
 			Composition (phi,Gf,Gb,G1,norm*0.25,M);
 			for (int k=1; k<FJC-1; k++) Composition (phi,Gf+k*M,Gb+k*M,G1,norm*0.5,M);
 			Composition (phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,G1,norm*0.25,M);
@@ -903,4 +903,15 @@ void LGrad1::Initiate(Real* G,Real* Gz,int M){
 		Cp(G,Gz,M);
 	}
 }
+
+void LGrad1::Terminate(Real* Gz ,Real* G,int M){
+	if (Markov==2) {
+		Zero(Gz,M);
+		for (int k=0; k<FJC; k++) Add(Gz,G+k*M,M);
+		Norm(Gz,FJC);
+	} else {
+		Cp(Gz,G,M);
+	}
+}
+
 

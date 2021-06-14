@@ -814,7 +814,7 @@ bool Segment::PutAdsorptionGuess(Real chi,int* Mask) {
 if (debug) cout <<"PutAdsorptionGuess" + name << endl;
 	bool success=true;
 	Real lambda;
-	if (Lat[0]->lattice_type=="hexagonal") lambda=0.25; else lambda=1.0/6.0;
+	if (Lat[0]->lattice_type==hexagonal) lambda=0.25; else lambda=1.0/6.0;
 	int gradients=Lat[0]->gradients;
 	int M=Lat[0]->M;
 	int MX=Lat[0]->MX;

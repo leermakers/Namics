@@ -1,6 +1,6 @@
 #include <iostream> 
 #include "lattice.h"
-#include "LG1Planar.h" 
+#include "LG1Planar.h"  
 
 LG1Planar::LG1Planar(vector<Input*> In_,string name_): LGrad1(In_,name_) {}
 
@@ -81,7 +81,7 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 	set_bounds(gs_1+(FJC-1)/2*M);
 
 	if (fjc==1) {
-		if (lattice_type =="hexagonal") {
+		if (lattice_type ==hexagonal) {
 			YplusisCtimesX(gx0+1,gz0,P[0],M-1);
 			YplusisCtimesX(gx0+1,gz1,2*P[1],M);
 			YplusisCtimesX(gx1,gz0,P[1],M);
@@ -106,7 +106,7 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 		}
 	} else {
 		cout <<"Markov==2 not implemented for fjc>1 " << endl; 
-		if (lattice_type =="hexagonal") {
+		if (lattice_type ==hexagonal) {
 
 		} else {
 
@@ -134,7 +134,7 @@ if (!debug) cout <<" propagateB in LG1Planar " << endl;
 	set_bounds(gs_1+(FJC-1)/2*M);
 
 	if (fjc==1) {
-		if (lattice_type =="hexagonal") {
+		if (lattice_type ==hexagonal) {
 			YplusisCtimesX(gx0,gz0+1,P[0],M-1);
 			YplusisCtimesX(gx0,gz1,2*P[1],M);
 			YplusisCtimesX(gx1,gz0+1,P[1],M-1);
@@ -161,7 +161,7 @@ if (!debug) cout <<" propagateB in LG1Planar " << endl;
 			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);
 		}
 	} else {
-		if (lattice_type =="hexagonal") {
+		if (lattice_type ==hexagonal) {
 
 		} else {
 

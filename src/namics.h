@@ -46,6 +46,7 @@ extern bool debug;
 enum MoleculeType {monomer, linear, branched, dendrimer, comb, ring};
 enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};
 enum EngineType {SCF, CLENG, MESODYN, TENG};
+enum LatticeType {simple_cubic, hexagonal};
 
 
 template<typename T>

@@ -234,15 +234,15 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 			if (bond_length < 1e-11 || bond_length > 1e-8) {cout <<" bondlength out of range 1e-11..1e-8 " << endl; success=false;}
 		}
 
-
-		lattice_type="simple_cubic"; lambda=1.0/6.0; Z=6;
+		string lat_type;
+		lat_type="simple_cubic"; lattice_type=simple_cubic; lambda=1.0/6.0; Z=6;
 
 		options.push_back("simple_cubic"); options.push_back("hexagonal");
 		Value=GetValue("lattice_type");
 		if (Value.length()>0) {
-			if (!In[0]->Get_string(Value,lattice_type,options,"Input for 'lattice_type' not recognized. 'simple_cubic' or 'hexagonal'.")) success = false; else {
-				if (lattice_type == "simple_cubic") {lambda=1.0/6.0; Z=6;}
-				if (lattice_type == "hexagonal") {lambda=1.0/4.0; Z=4;}
+			if (!In[0]->Get_string(Value,lat_type,options,"Input for 'lattice_type' not recognized. 'simple_cubic' or 'hexagonal'.")) success = false; else {
+				if (lattice_type == simple_cubic) {lambda=1.0/6.0; Z=6;}
+				if (lattice_type == hexagonal) {lambda=1.0/4.0; Z=4;}
 			}
 		} else {
 			success=false; cout <<"Namics can not run without input for 'lattice_type'" << endl;
@@ -254,28 +254,28 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 			} else {
 				if (GetValue("lambda").size()>0) {
 					lambda=In[0]->Get_Real(GetValue("lambda"),1.0/6.0);
-					if (lambda < 0.0 || lambda > 1.0/3.0) {lattice_type="simple_cubic"; lambda = 1.0/6.0; cout <<"'lambda'-value out of bounds 0..1/3. Default 1/6 is used instead" << endl; }
+					if (lambda < 0.0 || lambda > 1.0/3.0) {lattice_type=simple_cubic; lambda = 1.0/6.0; cout <<"'lambda'-value out of bounds 0..1/3. Default 1/6 is used instead" << endl; }
 					else {
-						if (lambda>0.16 && lambda < 0.167) {lattice_type="simple_cubic"; lambda = 1.0/6.0;}
-						if (lambda>0.24 && lambda < 0.26) {lattice_type="hexagonal"; lambda = 1.0/4.0;}
+						if (lambda>0.16 && lambda < 0.167) {lattice_type=simple_cubic; lambda = 1.0/6.0;}
+						if (lambda>0.24 && lambda < 0.26) {lattice_type=hexagonal; lambda = 1.0/4.0;}
 					}
 					Z=In[0]->Get_int(GetValue("Z"),6);
-					if (Z<3 || Z>12) {lattice_type="simple_cubic"; lambda = 1.0/6.0; cout <<"coordination number 'Z' is out of bounds 3 .. 12. Default Z=6 is used instead"<<endl; }
+					if (Z<3 || Z>12) {lattice_type=simple_cubic; lambda = 1.0/6.0; cout <<"coordination number 'Z' is out of bounds 3 .. 12. Default Z=6 is used instead"<<endl; }
 				}
 				if (lambda>0) {
 					if (GetValue("Z").size()>0) {
 						Z=In[0]->Get_int(GetValue("Z"),6);
-						if (Z<3 || Z>12) {lattice_type="simple_cubic"; lambda = 1.0/6.0; cout <<"coordination number 'Z' is out of bounds 3 .. 12. Default Z=6 is used instead"<<endl; }
+						if (Z<3 || Z>12) {lattice_type=simple_cubic; lambda = 1.0/6.0; cout <<"coordination number 'Z' is out of bounds 3 .. 12. Default Z=6 is used instead"<<endl; }
 						else {
 							lambda = 1.0/Z;
-							if (Z==6) lattice_type="simple_cubic";
-							if (Z==4) lattice_type="hexagonal";
+							if (Z==6) lattice_type=simple_cubic;
+							if (Z==4) lattice_type=hexagonal;
 						}
 					}
 				}
 				if (lambda==0) {
 					cout<<"'lattice_type'-info is missing. 'lambda'-info is missing. 'Z'-info is missing. Default values; lambda=1/6, Z=6, lattice_type='simple cubic' used instead. " << endl;
-					lattice_type  = "simple_cubic"; lambda=1.0/6.0; Z=0;
+					lattice_type  = simple_cubic; lambda=1.0/6.0; Z=0;
 				}
 			}
 		}
@@ -544,7 +544,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 		}
 		bond_length=bond_length/fjc;
-		if ((fjc>1) && (lattice_type !="hexagonal")) {success = false; cout << "For FJC-choices >3, we need lattice_type = 'hexagonal'." << endl; }
+		if ((fjc>1) && (lattice_type ==hexagonal)) {success = false; cout << "For FJC-choices >3, we need lattice_type = 'hexagonal'." << endl; }
 		if (gradients ==2 && fjc>2) {success = false; cout <<" When gradients is 2, FJC-choices are limited to 5 " << endl; }
 		if (gradients ==3 && fjc>1) {success = false; cout <<" When graidents is 3, FJC-choices are limited to 3 " << endl; }
 
@@ -568,7 +568,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		}
 		//Initialize system size and indexing
 		PutM();
-		if (lattice_type=="simple_cubic") { 
+		if (lattice_type==simple_cubic) { 
 			lambda=1.0/6.0; //l0=4.0*l1; 
 		} else {
 			lambda=1.0/4.0; //l0=2.0*l1;
@@ -855,7 +855,7 @@ if (debug) cout <<"PushOutput in lat " << endl;
 	if (offset_first_layer>0) push("offset_first_layer",offset_first_layer);
 	push("volume",volume);
 	push("accessible volume",Accesible_volume);
-	push("lattice_type",lattice_type);
+	if (lattice_type == simple_cubic) push("lattice_type",simple_cubic); else push("lattice_type",hexagonal);
 	push("bond_length",bond_length);
 	push("FJC_choices",FJC);
 	string s="profile;0"; push("L",s);

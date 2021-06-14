@@ -46,9 +46,8 @@ virtual ~Lattice();
 	int Markov;
 	Real k_stiff; 
 
-
+	LatticeType lattice_type;
 	int gradients;
-	string lattice_type;
 	string geometry;
 	Real offset_first_layer;
 	Real bond_length;

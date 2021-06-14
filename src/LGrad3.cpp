@@ -1,6 +1,6 @@
 #include <iostream> 
 #include <string> 
-#include "lattice.h" 
+#include "lattice.h"  
 #include "LGrad3.h" 
 
 LGrad3::LGrad3(vector<Input*> In_,string name_): Lattice(In_,name_) {}
@@ -99,7 +99,7 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 		Add(X_side+1 ,X   ,M-1);
 		Add(X_side   ,X+1 ,M-1);
 
-		if (lattice_type == "simple_cubic") {
+		if (lattice_type == simple_cubic) {
 			Norm(X_side,4.0,M);
 		} else {
 			Norm(X_side,2.0,M);
@@ -116,7 +116,7 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 		Add(X_side,       X+JY+1,  M-JX-1);
 		Add(X_side+JY,    X+1,     M-JY);
 		Add(X_side+1,     X+JY,    M-JY);
-		if (lattice_type == "simple_cubic") {
+		if (lattice_type == simple_cubic) {
 			Norm(X_side,4.0,M);
 		} else {
 			Norm(X_side,2.0,M);
@@ -129,13 +129,13 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 		Add(X_side+JY,       X+JX+1,    M-JX-JY-1);
 		Add(X_side+JY+1,     X+JX,      M-JX-JY-1);
 		Add(X_side+JX,       X+JY+1,    M-JX-JY-1);
-		if (lattice_type == "simple_cubic") {
+		if (lattice_type == simple_cubic) {
 			Norm(X_side,1.0/152.0,M);
 		} else {
 			Norm(X_side,1.0/56.0,M);
 		}
 	} else {
-		if (lattice_type=="simple_cubic") {
+		if (lattice_type==simple_cubic) {
 			Add(X_side+JX,X   ,M-JX);
 			Add(X_side   ,X+JX,M-JX);
 			Add(X_side+JY,X   ,M-JY);
@@ -162,7 +162,7 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 }
 
 void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
-	if (lattice_type == "hexagonal" ) {
+	if (lattice_type == hexagonal ) {
 		Real *gs=G+M*12*s_to;
 		Real *gs_1=G+M*12*s_from;
 
@@ -397,7 +397,7 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	}
 }
 void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
-	if (lattice_type == "hexagonal") {
+	if (lattice_type == hexagonal) {
 		Real *gs=G+M*12*s_to;
 		Real *gs_1=G+M*12*s_from;
 
@@ -655,7 +655,7 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 		Add(gs,gs_1+JY_,M-JY_);
 		Add(gs+1,gs_1,M-1);
 		Add(gs,gs_1+1, M-1);
-		if (lattice_type == "simple_cubic") {
+		if (lattice_type == simple_cubic) {
 			Norm(gs,4.0,M);
 		} else {
 			Norm(gs,2.0,M);
@@ -672,7 +672,7 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 		Add(gs,gs_1+JY_+1,M-JX_-1);
 		Add(gs+JY_,gs_1+1,M-JY_);
 		Add(gs+1,gs_1+JY_,M-JY_);
-		if (lattice_type == "simple_cubic") {
+		if (lattice_type == simple_cubic) {
 			Norm(gs,4.0,M);
 		} else {
 			Norm(gs,2.0,M);
@@ -685,14 +685,14 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 		Add(gs+JY_,gs_1+JX_+1,M-JX_-JY_-1);
 		Add(gs+JY_+1,gs_1+JX_,M-JX_-JY_-1);
 		Add(gs+JX_,gs_1+JY_+1,M-JX_-JY_-1);
-		if (lattice_type == "simple_cubic") {
+		if (lattice_type == simple_cubic) {
 			Norm(gs,1.0/152.0,M);
 		} else {
 			Norm(gs,1.0/56.0,M);
 		}
 		Times(gs,gs,G1,M);
 	} else {
-		if (lattice_type=="simple_cubic") {
+		if (lattice_type==simple_cubic) {
 #ifdef CUDA
 			Propagate_gs_locality(gs, gs_1, G1, JX, JY, JZ, M);
 #else
@@ -1624,8 +1624,8 @@ Real LGrad3::ComputeGN(Real* G,int M){
 	int size;
 
 	if (Markov==2) {
-		if (lattice_type=="simple_cubic") size =6;
-		if (lattice_type=="hexagonal") size =12;
+		if (lattice_type==simple_cubic) size =6;
+		if (lattice_type==hexagonal) size =12;
 
 		for (int k=0; k<size; k++) GN+=WeightedSum(G+k*M);
 		GN/=(1.0*size);
@@ -1635,7 +1635,7 @@ Real LGrad3::ComputeGN(Real* G,int M){
 }
 void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
 	if (Markov ==2) {
-		if (lattice_type=="hexagonal") {
+		if (lattice_type==hexagonal) {
 			for (int k=0; k<12; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/12.0,M);
 		} else {
 			for (int k=0; k<6; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
@@ -1650,13 +1650,27 @@ void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int M){
 void LGrad3::Initiate(Real* G,Real* Gz,int M){
 	int size;
 	if (Markov==2){
-		if (lattice_type=="simple_cubic") size =6;
-		if (lattice_type=="hexagonal") {
+		if (lattice_type==simple_cubic) size =6;
+		if (lattice_type==hexagonal) {
 			size =12;
 			//cout <<"BC in Markov==2 and hexagonal lattice-type is not implemented correctly yet. , do not proceed .." <<endl; 
 		}
 		for (int k=0; k<size; k++) Cp(G+k*M,Gz,M);
 	} else Cp(G,Gz,M);
+}
+
+void LGrad3::Terminate(Real* Gz,Real* G,int M){
+	int size;
+	if (Markov==2){
+		Zero(Gz,M);
+		if (lattice_type==simple_cubic) size =6;
+		if (lattice_type==hexagonal) {
+			size =12;
+			//cout <<"BC in Markov==2 and hexagonal lattice-type is not implemented correctly yet. , do not proceed .." <<endl; 
+		}
+		for (int k=0; k<size; k++) Add(Gz,G+k*M,M);
+		Norm(Gz,1.0/size);
+	} else Cp(Gz,G,M);
 }
 
 

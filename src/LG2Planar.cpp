@@ -1,5 +1,5 @@
 #include <iostream> 
-#include <string> 
+#include <string>   
 #include "lattice.h"
 #include "LG2Planar.h" 
 
@@ -44,7 +44,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 	} else {
 		if (fjc==1) {
 			if (stencil_full) {
-				if (lattice_type=="simple_cubic") { //9 point stencil
+				if (lattice_type==simple_cubic) { //9 point stencil
 					YplusisCtimesX(X_side,X,    16.0/36.0,M);
 					YplusisCtimesX(X_side+1,X,   4.0/36.0,M-1);
 					YplusisCtimesX(X_side,X+1,   4.0/36.0,M-1);
@@ -66,7 +66,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 					YplusisCtimesX(X_side,X+JX+1,3.0/48.0,M-JX-1);
 				}
 			} else {
-				if (lattice_type=="simple_cubic") {//classical
+				if (lattice_type==simple_cubic) {//classical
 					Add(X_side+JX,X,M-JX);
 					Add(X_side,X+JX,M-JX);
 					Add(X_side+1,X,M-1);
@@ -75,6 +75,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 					Add(X_side,X,M);
 					Norm(X_side,1.0/3.0,M);
 				} else { //not fully tested...
+					cout <<" in side fractions the bc are not fully tested yet..." << endl; 
 					Add(X_side+JX,X,   M-JX);
 					Add(X_side,   X+JX,M-JX);	
 					Add(X_side+JY,X   ,M-JY);
@@ -126,7 +127,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 
 
 void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
-	if (lattice_type=="hexagonal") {
+	if (lattice_type==hexagonal) {
 		Real *gs=G+M*7*s_to;
 		Real *gs_1=G+M*7*s_from;
 
@@ -191,17 +192,14 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 		YplusisCtimesX(gx3,gz6,2*P[1],M);
 
 		set_bounds_y(gz0,-1); set_bounds_y(gz1,-1);set_bounds_y(gz2,-1);set_bounds_y(gz4,-1);set_bounds_y(gz3,-1); 
-		//set_bounds_y(gz5,-1);set_bounds_y(gz6,-1);
 		YplusisCtimesX(gx1+JX,gz0+JY,2*P[0],M-JX-JY);
 		YplusisCtimesX(gx1+JX,gz1+JY,  P[0],M-JX-JY);
 		YplusisCtimesX(gx1+JX,gz2+JY,2*P[1],M-JX-JY);
 		YplusisCtimesX(gx1+JX,gz3+JY,2*P[1],M-JX-JY);
 		YplusisCtimesX(gx1+JX,gz4+JY,2*P[1],M-JX-JY);
 
-		//remove_bounds(gz0);remove_bounds(gz1);
 		remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);
 		set_bounds_x(gz6,-1);set_bounds_x(gz5,-1);set_bounds_x(gz2,-1);set_bounds_x(gz4,-1);set_bounds_x(gz3,-1); 
-		//set_bounds_x(gz0,-1);set_bounds_x(gz1,-1);
 		YplusisCtimesX(gx5+JY,gz2+JX,2*P[1],M-JX-JY);
 		YplusisCtimesX(gx5+JY,gz3+JX,2*P[1],M-JX-JY);
 		YplusisCtimesX(gx5+JY,gz4+JX,2*P[1],M-JX-JY);
@@ -257,7 +255,7 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 	}
 }
 void LG2Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
-	if (lattice_type=="hexagonal") {
+	if (lattice_type==hexagonal) {
 		Real *gs=G+M*7*s_to;
 		Real *gs_1=G+M*7*s_from;
 
@@ -398,7 +396,7 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 	Zero(gs,M); set_bounds(gs_1);
 	if (fjc==1) {
 		if (stencil_full) {
-			if (lattice_type=="simple_cubic") { //9 point stencil
+			if (lattice_type==simple_cubic) { //9 point stencil
 				YplusisCtimesX(gs,gs_1,    16.0/36.0,M);
 				YplusisCtimesX(gs+1,gs_1,   4.0/36.0,M-1);
 				YplusisCtimesX(gs,gs_1+1,   4.0/36.0,M-1);
@@ -422,7 +420,7 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 				Times(gs,gs,G1,M);
 			}
 		} else { // classical!
-			if (lattice_type=="simple_cubic") {
+			if (lattice_type==simple_cubic) {
 				Add(gs+JX,gs_1,M-JX);
 				Add(gs,gs_1+JX,M-JX);
 				Add(gs+JY,gs_1,M-1);

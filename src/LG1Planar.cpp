@@ -114,7 +114,7 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 	}
 }
 void LG1Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
-if (!debug) cout <<" propagateB in LG1Planar " << endl;
+if (debug) cout <<" propagateB in LG1Planar " << endl;
 	int size=fjc*2+1;
 	Real *gs = G+M*size*(s_to), *gs_1 = G+M*size*(s_from);
 	Real *gz0 = gs_1;

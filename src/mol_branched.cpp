@@ -5,7 +5,7 @@
 mol_branched::mol_branched(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) : Molecule(In_,Lat_,Seg_,name_) {}
 
 
-mol_branched::~mol_branched() {
+mol_branched::~mol_branched() { }
 
 void mol_branched::BackwardBra2ndO(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU
 	int b0 = first_b[generation];
@@ -22,9 +22,9 @@ void mol_branched::BackwardBra2ndO(Real* G_start, int generation, int &s){//not 
 				while (Gnr[k] != generation){
 					Br.push_back(Gnr[k]);
 					if (save_memory) {
-						Gb.push_back(Gg_f+last_stored[k]*M);
+						Gb.push_back(Gg_f+last_stored[k]*M*size);
 					} else {
-						Gb.push_back(Gg_f+last_s[Gnr[k]]*M);
+						Gb.push_back(Gg_f+last_s[Gnr[k]]*M*size);
 					}
 
 					ss=first_s[Gnr[k]];
@@ -32,25 +32,31 @@ void mol_branched::BackwardBra2ndO(Real* G_start, int generation, int &s){//not 
 				}
 				Br.push_back(generation); ss--;
 				if (save_memory) {
-					Gb.push_back(Gg_f+last_stored[k]*M); 
+					Gb.push_back(Gg_f+last_stored[k]*M*size); 
 				} else {
-					Gb.push_back(Gg_f+ss*M); 
+					Gb.push_back(Gg_f+ss*M*size); 
 				}
 				int length = Br.size();
 				Real* GX= (Real*) malloc(length*M*sizeof(Real));
-				for (int i=0; i<length; i++) Cp(GX+i*M,Gb[i],M); 
-				Cp(GS+3*M,Gg_b+((s+1)%2)*M,M);
+				for (int i=0; i<length; i++) {
+					Lat[0]->Terminate(GX+i*M,Gb[i],M);
+					//Cp(GX+i*M,Gb[i],M);
+				} 
+				Lat[0]->Terminate(GS+3*M,Gg_b+((s+1)%2)*M*size,M);
+				//Cp(GS+3*M,Gg_b+((s+1)%2)*M,M);
 				for (int i=0; i<length; i++) {
 					Cp(GS+2*M,GS+3*M,M); 
 					for (int j=0; j<length; j++) {
 						if (i !=j) {
 							Cp(GS,GX+j*M,M); 
-							Lat[0]->propagateB(GS,UNITY,P,0,1,M); //propagate is only M long...
+							Lat[0]->propagate(GS,UNITY,0,1,M); 
 							Times(GS+2*M,GS+2*M,GS+M,M); 
 						}
 					}
-					Cp(Gg_b,GS+2*M,M);
-					Cp(Gg_b+M,GS+2*M,M); 
+					Lat[0]->Initiate(Gg_b,GS+2*M,M);
+					//Cp(Gg_b,GS+2*M,M);
+					Lat[0]->Initiate(Gg_b+M*size,GS+2*M,M);
+					//Cp(Gg_b+M,GS+2*M,M); 
 					if (i<length-1) {
 						BackwardBra2ndO(Gg_b,Br[i],s);
 					}
@@ -62,7 +68,7 @@ void mol_branched::BackwardBra2ndO(Real* G_start, int generation, int &s){//not 
 			}
 
 		} else {
-			propagate_backward(Seg[mon_nr[k]]->G1,s,k,P,generation,P,M);
+			propagate_backward(Seg[mon_nr[k]]->G1,s,k,P,generation,M);
 		}
 	}
 	free(GS);
@@ -84,7 +90,7 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,P,generation,M);
 			} else {
 				Br.clear(); Gb.clear();
-				Terminate(GS,Glast,M); //FL: because GS is only size M
+				Lat[0]->Terminate(GS,Glast,M); //FL
 				//Cp(GS,Glast,M);   //FL    
 				while (Gnr[k] !=generation) {
 					Br.push_back(Gnr[k]);
@@ -95,20 +101,20 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 				Lat[0]->propagate(GS,Seg[mon_nr[k]]->G1,0,2,M); //GS is just M long
 
 				for (int i=0; i<length; i++) {
-					Terminate(GS,Gb[i],M);
+					Lat[0]->Terminate(GS,Gb[i],M);
 					//Cp(GS,Gb[i],M);
 					Lat[0]->propagate(GS,UNITY,0,1,M);
 					Times(GS+2*M,GS+2*M,GS+M,M); 
 				}
 				if (save_memory) {
-					Initiate(Gs,GS+2*M,M);
-					Initiate(Gs+size*M,GS+2*M,M);
+					Lat[0]->Initiate(Gs,GS+2*M,M);
+					Lat[0]->Initiate(Gs+size*M,GS+2*M,M);
 					//Cp(Gs,GS+2*M,M); Cp(Gs+M,GS+2*M,M); 
-					Initiate(Gg_f+(memory[k]-1)*size*M,GS+2*M,M);
+					Lat[0]->Initiate(Gg_f+(memory[k]-1)*size*M,GS+2*M,M);
 					//Cp(Gg_f+(memory[k]-1)*M,GS+2*M,M); //correct because in this block there is just one segment.
 				} else {
-					Initiate(Gg_f+s*size*M,GS+2*M,M);
-					Cp(Gg_f+s*M,GS+2*M,M); 
+					Lat[0]->Initiate(Gg_f+s*size*M,GS+2*M,M);
+					//Cp(Gg_f+s*M,GS+2*M,M); 
 				}
 				s++;
 			}
@@ -121,9 +127,9 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 }
 
 
-}
-
 void mol_branched::BackwardBra(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU
+if (debug) cout <<"BackwardBr in mol_branched " << endl;
+
 	int b0 = first_b[generation];
 	int bN = last_b[generation];
 	vector<int> Br;
@@ -161,7 +167,7 @@ void mol_branched::BackwardBra(Real* G_start, int generation, int &s){//not yet 
 					for (int j=0; j<length; j++) {
 						if (i !=j) {
 							Cp(GS,GX+j*M,M); 
-							Lat[0]->propagateB(GS,UNITY,P,0,1,M); 
+							Lat[0]->propagate(GS,UNITY,0,1,M); 
 							Times(GS+2*M,GS+2*M,GS+M,M); 
 						}
 					}
@@ -239,6 +245,7 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 	int generation=0;
 	int s=0;
 	Real* G;
+
 	if (Markov == 2) {
 		G=ForwardBra2ndO(generation,s);
 	} else {
@@ -251,9 +258,9 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 		//Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); //FL
 		Lat[0]->Initiate(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M);
 		//Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M); //FL
-		Lat[0]->Initiate(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M); 
+		Lat[0]->Initiate(Gg_b+M*size,Seg[mon_nr[last_b[0]]]->G1,M); 
 	} //toggle; initialize on both spots the same G1, so that we always get proper start.
-		if (Markov == 2) {
+	if (Markov == 2) {
 		BackwardBra2ndO(Seg[mon_nr[last_b[0]]]->G1,generation,s);
 	} else {
 		BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);

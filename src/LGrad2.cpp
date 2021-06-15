@@ -1391,13 +1391,13 @@ void LGrad2::Terminate(Real* Gz,Real* G,int M){
 	if (Markov==2) { 
 		Zero(Gz,M);
 		if (lattice_type == hexagonal) {
-			Add(Gz,G,M);Add(Gz,G+2*M,M);Add(Gz,G+3*M,M);Add(Gz,G+4*M,M);Add(Gz,G+6*M,M)
-			Norm(Gz,2);
-			Add(Gz,G+M); Add(Gz,G+5*M);
-			Norm(Gz,1.0/12.0);
+			Add(Gz,G,M); Add(Gz,G+2*M,M); Add(Gz,G+3*M,M); Add(Gz,G+4*M,M); Add(Gz,G+6*M,M);
+			Norm(Gz,2,M);
+			Add(Gz,G+M,M); Add(Gz,G+5*M,M);
+			Norm(Gz,1.0/12.0,M);
 		} else {
 			for (int k=0; k<5; k++) Add(Gz,G+k*M,M);
-			Norm(Gz,1.0/6.0);
+			Norm(Gz,1.0/6.0,M);
 		}
 	} else Cp(Gz,G,M);
 }

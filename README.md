@@ -34,13 +34,13 @@ Set the ccbin value in the NVCC flags in the makefile to the correct g++ version
 	- [ ] Multiple states  
 - [ ] Layer analysis (first moments, second moment) (available in sfbox)  
 - [ ] SOT evaluation Gibbs plane etcetera (partial available in sfbox)  
-- [ ] Dendrimers (symmetric) (available in sfbox)  
+- [x] Dendrimers (symmetric) (available in sfbox)  
 - [ ] Dendrimers (asymmetric) (partially available insfbox)  
-- [ ] Comb (available in sfbox)  
+- [x] Comb (available in sfbox)  
 - [ ] Rings (with tether) (partial available in sfbox)  
-- [ ] Semi-flexibility (partially available in sfbox)  
+- [x] Semi-flexibility (partially available in sfbox)  
 - [ ] Force ensemble (partially available in sfbox)  
-- [ ] Grid refinement in 2D and 3D  
+- [x] Grid refinement in 2D and 3D  
 - [ ] LBFGS implementation in newton (available in sfbox)  
 - [ ] MGRES implementation in newton  
 - [ ] Trunctated newton  (available in sfbox)  
@@ -53,3 +53,57 @@ Set the ccbin value in the NVCC flags in the makefile to the correct g++ version
 - [ ] Teng (with MC) is underway by Ram  
 	- [ ] Dynamics  
 - [ ] Steady states  
+
+Funtionalities SCF module summer 2021. 
+Gradients: 	
+	one, (classical)
+	two  (cylindrical and spherical geometry)
+	treee (limited system sizes due to storage of large arrays)
+Geometries: planar (in 1, 2, 3 gradients)
+	    cylindrical (in 1 and 2 gradients)
+	    spherical (in 1 gradient only).
+Markov chains: first order (direct backfolding allowed; Freely jointed chains)
+	       second order (semi flexible chains @ branch points chains are usually freely jointed)
+Chain architecture
+	linear chains
+	branched chains (parts in [ ] are side chains)
+	regular dendrimer (symmetric)
+	combs
+Interations
+	Flory Huggins nearest neighbour interactions
+	electrostatic interactions
+		weak 
+		strong
+	fixed surface potential
+	fixed surface charge
+	Incompressible limit
+Constraints
+	Pinning constraints 
+	Frozen (spectator segments with local density unity)
+	Clamping (constrained at both ends)
+	beta constraint (extra constraint to e.g. fix the position of an interface). 
+Output	
+	Density profiles
+	Free energy 
+		Grand potential
+		chemical potentials
+Lattice type 
+	simple_cubic
+	hexagonal 
+
+Lattice discretisation
+	FJC-choices 3: segment size equal to lattice side (classical)
+	In one-gradient calculations the FJC value can be increased to 5, 7, 9, etc (lattice refinement, quasi lattice-free)
+	In two-gradient calculations FJC = 5 can be set.
+	When Markov =2, FJC must be FJC =3. 
+
+Newton iterations
+	Quasi Newton with storage of (large) Jacobian (Hessian) matrix
+	DIIS wich is Hessian free storage
+	Line search is a mix of strategies to prevent too large steps.
+	
+Computatial tricks
+	memory saving (only part of the end-point distributions is stored, when needed others are recomuted...)
+	local solutions (in 3d box to find solutions)
+		
+	

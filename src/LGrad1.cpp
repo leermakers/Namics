@@ -908,7 +908,7 @@ void LGrad1::Terminate(Real* Gz ,Real* G,int M){
 	if (Markov==2) {
 		Zero(Gz,M);
 		for (int k=0; k<FJC; k++) Add(Gz,G+k*M,M);
-		Norm(Gz,FJC);
+		Norm(Gz,FJC,M);
 	} else {
 		Cp(Gz,G,M);
 	}

@@ -145,6 +145,7 @@ virtual ~Lattice();
 	virtual void AddPhiS(Real*,Real*,Real*,int) =0;
 	virtual void AddPhiS(Real*,Real*,Real*,Real*,Real,int) =0;
 	virtual void Initiate(Real*,Real*,int) =0;
+	virtual void Terminate(Real*,Real*,int) =0;
 
 };
 #endif

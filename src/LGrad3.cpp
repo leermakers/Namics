@@ -1669,7 +1669,7 @@ void LGrad3::Terminate(Real* Gz,Real* G,int M){
 			//cout <<"BC in Markov==2 and hexagonal lattice-type is not implemented correctly yet. , do not proceed .." <<endl; 
 		}
 		for (int k=0; k<size; k++) Add(Gz,G+k*M,M);
-		Norm(Gz,1.0/size);
+		Norm(Gz,1.0/size,M);
 	} else Cp(Gz,G,M);
 }
 

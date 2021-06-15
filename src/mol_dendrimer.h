@@ -13,6 +13,8 @@ class mol_dend : public Molecule
 
 	Real fraction(int);
 	bool ComputePhi();
+	bool BackAndForth();
+	bool BackAndForth2ndO();
 };
 
 #endif

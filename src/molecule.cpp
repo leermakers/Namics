@@ -41,7 +41,7 @@ if (debug) cout <<"DeallocateMemory for Mol " + name << endl;
 	//if (H_phi!=NULL)
 	free(H_phi);
 	free(H_phitot);
-	if (Markov==2) free(P); 
+	if (Markov==2) { free(P);}
 	if (freedom=="clamped") {
 		free(H_Bx);
 		free(H_By);
@@ -128,7 +128,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Real Q=0;
 		Real K=Lat[0]->k_stiff;
 		for (int k=0; k<FJC-1; k++) {
-			P[k]=exp(-0.5*K*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); Q+= P[k];  
+			P[k]=exp(-0.5*K*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); Q+= P[k]; 
 		} 
 		P[FJC-1]=0; if (Lat[0]->lattice_type==hexagonal) Q=2*Q-P[0]; else Q=4*Q-3*P[0];
 		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
@@ -141,7 +141,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		P = (Real*) malloc(2*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
 		Real Q=0;
 		Real K_stiff=Lat[0]->k_stiff;
-		P[0]=exp(-0.5*K_stiff*(PIE/3.0)*(PIE/3.0) ); Q+= 3*P[0];  
+		P[0]=exp(-0.5*K_stiff*(PIE/3.0)*(PIE/3.0) ); Q+= 3*P[0];
 		P[1]=exp(-0.5*K_stiff*(2.0*PIE/3.0)*(2.0*PIE/3.0) ); Q+= 6*P[1];
 		P[FJC-1]=0; 
 		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;

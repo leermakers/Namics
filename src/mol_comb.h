@@ -13,6 +13,8 @@ class mol_comb : public Molecule
 
 	Real fraction(int);
 	bool ComputePhi();
+	bool GoBackAndForth2ndO();
+	bool GoBackAndForth();
 };
 
 #endif

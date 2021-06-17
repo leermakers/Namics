@@ -907,8 +907,16 @@ void LGrad1::Initiate(Real* G,Real* Gz,int M){
 void LGrad1::Terminate(Real* Gz ,Real* G,int M){
 	if (Markov==2) {
 		Zero(Gz,M);
-		for (int k=0; k<FJC; k++) Add(Gz,G+k*M,M);
-		Norm(Gz,FJC,M);
+		if (lattice_type == simple_cubic) {
+			Add(Gz,G+M,M); Norm(Gz,4.0,M);
+			Add(Gz,G,M); Add(Gz,G+2*M,M);
+			Norm(Gz,1.0/6.0,M);
+		} else {
+			Add(Gz,G+M,M); Norm(Gz,2.0,M);
+			Add(Gz,G,M); Add(Gz,G+2*M,M);
+			Norm(Gz,1.0/4.0,M);
+
+		}
 	} else {
 		Cp(Gz,G,M);
 	}

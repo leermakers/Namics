@@ -2179,9 +2179,11 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		for (int k=0; k<N; k++) {
 			if (s>first_s[generation]) {
 				Lat[0] ->propagateF(Gg_f,G1,P,s-1,s,M); //FL
+//cout <<"fs " << s << endl; 
 			} else {
 				//Cp(Gg_f+first_s[generation]*M,G1,M);
 				Lat[0]->Initiate(Gg_f+first_s[generation]*M*size,G1,M); //FL
+//cout <<"fs " << first_s[generation] << endl;
 			}
 			 s++;
 		}
@@ -2194,7 +2196,7 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 
 }
 
-void Molecule::propagate_backward(Real* G1, int &s, int block, Real* P, int generation, int M) {
+void Molecule::propagate_backward(Real* G1, int &s, int block, Real* P, int unity, int M) {
 if (debug) cout <<"propagate_backward for Mol " + name << endl;
 
 	int N= n_mon[block];
@@ -2259,7 +2261,16 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) {
-				Lat[0]->propagateB(Gg_b,G1,P,(s+1)%2,s%2,M); //FL
+				if (unity==-1) {
+					unity=0;
+					Real* GB= (Real*) malloc(2*M*sizeof(Real)); //must be adjusted for cuda
+					Lat[0]->Terminate(GB,Gg_b+((s+1)%2)*M*size,M);
+					Lat[0]->propagate(GB,G1,0,1,M); //first step is freely joined
+					Lat[0]->Initiate(Gg_b+(s%2)*M*size,GB+M,M);  
+					free(GB);					
+				} else {
+					Lat[0]->propagateB(Gg_b,G1,P,(s+1)%2,s%2,M); //FL
+				}
 			} else {
 				//Cp(Gg_b+(s%2)*M,G1,M);
 				Lat[0]->Initiate(Gg_b+(s%2)*M*size,G1,M); //FL

@@ -2,10 +2,142 @@
 #include "mol_branched.h"
 
 
-mol_branched::mol_branched(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) : Molecule(In_,Lat_,Seg_,name_) {}
+mol_branched::mol_branched(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) : Molecule(In_,Lat_,Seg_,name_) {
+
+}
 
 
 mol_branched::~mol_branched() { }
+
+void mol_branched::BackwardBra2ndO(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU
+if (debug) cout <<"BackwardBra2ndO in mol_branched " << endl;
+
+	int b0 = first_b[generation];
+	int bN = last_b[generation];
+	vector<int> Br;
+	vector<Real*> Gb;
+	int M=Lat[0]->M;
+	Real* GS= (Real*) malloc(3*M*sizeof(Real)); 
+	Real* GB= (Real*) malloc(2*size*M*sizeof(Real));
+	int ss=0;
+	for (int k = bN ; k >= b0 ; k--){
+		if (Gnr[k]!=generation) {
+			Br.clear(); Gb.clear();
+			while (Gnr[k] != generation){
+				Br.push_back(Gnr[k]);
+				if (save_memory) {
+					Gb.push_back(Gg_f+last_stored[k]*M*size);
+				} else {
+					Gb.push_back(Gg_f+last_s[Gnr[k]]*M*size);
+				}
+
+				ss=first_s[Gnr[k]];
+				k-=(last_b[Gnr[k]]-first_b[Gnr[k]]+1) ;
+			}
+			Br.push_back(generation); ss--;
+			if (save_memory) {
+				Gb.push_back(Gg_f+last_stored[k]*M*size);
+			} else {
+				Gb.push_back(Gg_f+ss*M*size); //backbone last before branch point.
+			}
+			int length = Br.size();
+			Real* GX= (Real*) malloc(length*M*sizeof(Real));
+			
+			for (int i=0; i<length; i++) {
+				Lat[0]->Terminate(GX+i*M,Gb[i],M);
+			} 
+
+			Cp(GB,Gg_b+((s+1)%2)*M*size,M*size); //Upto the branch point; no sides connected
+
+			for (int i=0; i<length; i++) {
+				Cp(GS+2*M,UNITY,M); 
+				for (int j=0; j<length; j++) {
+					if (i !=j) {
+						if (j==length-1) { //linking main chain
+							Cp(Gg_b,Gb[j],M*size);
+							Lat[0]->propagateF(Gg_b,UNITY,P,0,1,M); //connect main chain including semiflexibility
+							Times(GB+M*size,GB,Gg_b+M*size,M*size);
+						} else { //linking sides
+							Cp(GS,GX+j*M,M); 
+							Lat[0]->propagate(GS,UNITY,0,1,M);  
+							Times(GS+2*M,GS+2*M,GS+M,M);
+						} 
+					}
+				}
+				if (i<length-1) {
+					for (int t=0; t<size; t++) Times(Gg_b + t*M,GB +M*size + t*M,GS+2*M,M); //freely jointed onto branch 
+					Cp(Gg_b+M*size,Gg_b,M*size);
+					BackwardBra2ndO(Gg_b,Br[i],s);
+				} else { //prepare for main chain propagation
+					for (int t=0; t<size; t++) Times(Gg_b + t*M,GB + t*M,GS+2*M,M); //freely jointed onto branch 
+					Cp(Gg_b+M*size,Gg_b,M*size);
+				}	 
+			}
+			free(GX);
+			k++;
+		} else {			 
+			if (k==bN ) {
+				propagate_backward(Seg[mon_nr[k]]->G1,s,k,P,-1,M);
+			} else {
+				propagate_backward(Seg[mon_nr[k]]->G1,s,k,P,0,M);
+			}
+		}
+	}
+	free(GS); free(GB);
+}
+
+
+Real* mol_branched::ForwardBra2ndO(int generation, int &s) {
+if (debug) cout <<"ForwardBra2nd0 in mol_branched " << endl;
+	int b0 = first_b[generation];
+	int bN = last_b[generation];
+	vector<int> Br;
+	vector<Real*> Gb;
+	int M=Lat[0]->M;
+	Real* GS= (Real*) malloc(3*M*sizeof(Real)); 
+	Real* GB= (Real*) malloc(2*size*M*sizeof(Real)); 
+
+	Real* Glast=NULL;
+	for (int k = b0; k<=bN ; ++k) {
+		if (b0<k && k<bN) {
+			if (Gnr[k]==generation ){
+				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,P,generation,M);
+			} else {
+				Br.clear(); Gb.clear();
+				Cp(GB,Glast,M*size);
+				while (Gnr[k] !=generation) { //collect information from branches.
+					Br.push_back(Gnr[k]);
+					Gb.push_back(ForwardBra2ndO(Gnr[k],s));
+					k+=(last_b[Gnr[k]]-first_b[Gnr[k]]+1);
+				}
+				int length=Br.size();
+
+				Lat[0]->propagateF(GB,Seg[mon_nr[k]]->G1,P,0,1,M); //propagate main chain to branch point; keep semiflexibility
+					
+				Cp(GS+2*M,UNITY,M); 
+				for (int i=0; i<length; i++) {
+					Lat[0]->Terminate(GS,Gb[i],M);
+					Lat[0]->propagate(GS,UNITY,0,1,M);
+					Times(GS+2*M,GS+2*M,GS+M,M); 
+				}
+				for (int t=0; t<size; t++) Times(GB+M*size+t*M,GB+M*size+t*M,GS+2*M,M); //all side freely jointed
+				if (save_memory) {
+					Cp(Gs,GB+M*size,M*size); Cp(Gs+M,GB+M*size,M*size); 
+					Cp(Gg_f+(memory[k]-1)*M*size,GB+M*size,M*size); //correct because in this block there is just one segment.
+				} else {
+					Cp(Gg_f+s*M*size,GB+M*size,M*size);
+				}
+				s++;
+			}
+		} else {
+			Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,P,generation,M);
+		}
+	}
+	free(GS); free(GB);
+	return Glast;
+}
+
+/*
 
 void mol_branched::BackwardBra2ndO(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU
 	int b0 = first_b[generation];
@@ -16,7 +148,7 @@ void mol_branched::BackwardBra2ndO(Real* G_start, int generation, int &s){//not 
 	Real* GS= (Real*) malloc(4*M*sizeof(Real)); 
 	int ss=0;
 	for (int k = bN ; k >= b0 ; k--){
-		if (k>b0 && k<bN) {
+		!!if (k>b0 && k<bN) {
 			if (Gnr[k]!=generation) {
 				Br.clear(); Gb.clear();
 				while (Gnr[k] != generation){
@@ -67,12 +199,13 @@ void mol_branched::BackwardBra2ndO(Real* G_start, int generation, int &s){//not 
 				propagate_backward(Seg[mon_nr[k]]->G1,s,k,P,generation,M);
 			}
 
-		} else {
-			propagate_backward(Seg[mon_nr[k]]->G1,s,k,P,generation,M);
-		}
+		//} else {
+		//	propagate_backward(Seg[mon_nr[k]]->G1,s,k,P,generation,M);
+		//}
 	}
 	free(GS);
 }
+
 
 Real* mol_branched::ForwardBra2ndO(int generation, int &s) {
 if (debug) cout <<"ForwardBra in mol_branched " << endl;
@@ -125,7 +258,7 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 	free(GS);
 	return Glast;
 }
-
+*/
 
 void mol_branched::BackwardBra(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU
 if (debug) cout <<"BackwardBr in mol_branched " << endl;
@@ -138,7 +271,7 @@ if (debug) cout <<"BackwardBr in mol_branched " << endl;
 	Real* GS= (Real*) malloc(4*M*sizeof(Real)); 
 	int ss=0;
 	for (int k = bN ; k >= b0 ; k--){
-		if (k>b0 && k<bN) {
+		//if (k>b0 && k<bN) {
 			if (Gnr[k]!=generation) {
 				Br.clear(); Gb.clear();
 				while (Gnr[k] != generation){
@@ -183,9 +316,9 @@ if (debug) cout <<"BackwardBr in mol_branched " << endl;
 				propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
 			}
 
-		} else {
-			propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
-		}
+		//} else {
+		//	propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+		//}
 	}
 	free(GS);
 }

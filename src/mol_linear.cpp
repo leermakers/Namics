@@ -15,6 +15,7 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 	int bN = last_b[0];
 	int M=Lat[0]->M; 
 	bool success=true;
+	int unity=0;
 	int s=0;
 	Real* Glast=NULL;
 	if (Markov ==2) 
@@ -26,13 +27,11 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
  
 	s--;
 	if (save_memory) {
-		//Cp(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M); //FL
 		Lat[0]->Initiate(Gg_b,Seg[mon_nr[last_b[0]]]->G1,M);
-		//Cp(Gg_b+M,Seg[mon_nr[last_b[0]]]->G1,M); //FL
 		Lat[0]->Initiate(Gg_b+M*size,Seg[mon_nr[last_b[0]]]->G1,M); 
 	} 
 	if (Markov==2) 	
-		for (int k = bN ; k >= b0 ; k--) propagate_backward(Seg[mon_nr[k]]->G1,s,k,P,0,M);
+		for (int k = bN ; k >= b0 ; k--) propagate_backward(Seg[mon_nr[k]]->G1,s,k,P,unity,M);
 	else 
 		for (int k = bN ; k >= b0 ; k--) propagate_backward(Seg[mon_nr[k]]->G1,s,k,0,M);
  

@@ -14,7 +14,7 @@ class mol_branched : public Molecule
 	Real* ForwardBra(int generation, int &s);
 	void BackwardBra(Real*, int, int&);
 	Real* ForwardBra2ndO(int generation, int &s);
-	void BackwardBra2ndO(Real*, int, int&);
+	void BackwardBra2ndO(Real*, int, int&, int&);
 
 	bool ComputePhi();
 

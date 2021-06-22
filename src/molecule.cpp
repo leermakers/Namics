@@ -126,9 +126,9 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		int FJC = Lat[0]->FJC;
 		P = (Real*) malloc(FJC*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
 		Real Q=0;
-		Real K=Lat[0]->k_stiff;
+		KStiff=Lat[0]->k_stiff;
 		for (int k=0; k<FJC-1; k++) {
-			P[k]=exp(-0.5*K*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); Q+= P[k]; 
+			P[k]=exp(-0.5*KStiff*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); Q+= P[k]; 
 		} 
 		P[FJC-1]=0; if (Lat[0]->lattice_type==hexagonal) Q=2*Q-P[0]; else Q=4*Q-3*P[0];
 		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
@@ -140,9 +140,9 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		int FJC = Lat[0]->FJC;
 		P = (Real*) malloc(2*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
 		Real Q=0;
-		Real K_stiff=Lat[0]->k_stiff;
-		P[0]=exp(-0.5*K_stiff*(PIE/3.0)*(PIE/3.0) ); Q+= 3*P[0];
-		P[1]=exp(-0.5*K_stiff*(2.0*PIE/3.0)*(2.0*PIE/3.0) ); Q+= 6*P[1];
+		KStiff=Lat[0]->k_stiff;
+		P[0]=exp(-0.5*KStiff*(PIE/3.0)*(PIE/3.0) ); Q+= 3*P[0];
+		P[1]=exp(-0.5*KStiff*(2.0*PIE/3.0)*(2.0*PIE/3.0) ); Q+= 6*P[1];
 		P[FJC-1]=0; 
 		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
 			cout << "P["<<k<<"] = " << P[k] << endl; 
@@ -159,11 +159,12 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		int length_ = mon_nr.size();
 		for (int i=0; i<length_; i++) last_stored.push_back(0);
 		for (int i=0; i<length_; i++) {
-			int n=int(pow(n_mon[i]*6,1.0/3)+0.5);
-			if (n_mon[i]<120) n++;
-			if (n_mon[i]<60) n++;
+			int n=int(pow(n_mon[i]*2,1.0/2.0)+0.5); //in sfbox apparently the pow 1/3 is reached. Here it fails for unknown reasons.
+			//if (n_mon[i]<120) n++;
+			//if (n_mon[i]<60) n++;
 			if (n>n_mon[i]) n=n_mon[i]; //This seems to me to be enough...needs a check though..
 			if (i==0) memory.push_back(n); else memory.push_back(n+memory[i-1]);
+			//cout <<"n " << n << endl; 
 		}
 	}
 	N=0;
@@ -172,8 +173,6 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	} else {
 		int length_ = mon_nr.size();
 		for (int i=0; i<length_; i++) {N+=n_mon[i];}
-		//cout <<"allocate memory for " << N << " EPD" << endl;
-		//N=chainlength; //in case of dendrimers this is not correct. Way fewer EDF needed in this case.
 	}
 
 	H_phi = (Real*) malloc(M*MolMonList.size()*sizeof(Real)); H_Zero(H_phi,M*MolMonList.size());
@@ -1197,6 +1196,11 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			first_b.push_back(-1);
 			last_b.push_back(-1);
 			success = GenerateTree(s,generation,pos,open,close);
+			//if (save_memory) {
+			//	success = false;
+			//	cout <<"In branched the use of 'save_memory' is not allowed (yet). " << endl; return success;
+			//}
+
 			break;
 		case dendrimer:
 			first_a.clear();
@@ -1211,6 +1215,12 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			In[0]->split(s,';',sub_gen);
 			n_generations=sub_gen.size();
 			sym_dend=true; //default.
+			if (save_memory) {
+				success = false;
+				cout <<"In dendrimer the use of 'save_memory' is not allowed (yet). " << endl; return success;
+			}
+
+
 			//cout <<"n_generations " << n_generations << endl;
 			chainlength=0; N=-1;
 			for (i=0; i<n_generations; i++) {
@@ -1765,7 +1775,17 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
 	if (freedom=="free") theta = Lat[0]->WeightedSum(phitot);
-	
+	push("Markov",Markov);
+	if (Markov==2) {
+		push("k_stiff",KStiff);
+		for (int k=0; k<size; k++){ 
+			if (k==0) push("P[0]",P[0]);
+			if (k==1) push("P[1]",P[1]);
+			if (k==2) push("P[2]",P[2]);
+			if (k==3) push("P[3]",P[3]);
+			if (k==4) push("P[4]",P[4]);
+		}
+	}
 	push("theta",theta);
 	Real thetaexc=theta-phibulk*Lat[0]->volume/pow(Lat[0]->fjc,Lat[0]->gradients);
 	push("theta_exc",thetaexc);
@@ -1985,23 +2005,25 @@ Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, i
 if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 
 	int N= n_mon[block];
+
 	if (save_memory) {
 		int k,k0,t0,v0,t;
-		int n=memory[block]; if (block>0) n-=memory[block-1];
+		int n=memory[block]; if (block>0) n-=memory[block-1]; 
 		int n0=0; if (block>0) n0=memory[block-1];
+
+		t=1;
+		v0=t0=k0=0;
+
 		if (s==first_s[generation]) {
-			s++;
+			
 			//Cp(Gs+M,G1,M); Cp(Gs,G1,M); 
 			Lat[0]->Initiate(Gs+M,G1,M);
-			Lat[0]->Initiate(Gs,G1,M);
-			Cp(Gg_f+n0*M,Gs+M,M); 
-			last_stored[block]=n0;
+			Lat[0]->Initiate(Gs,G1,M); //not sure why this is done....
 		} else {
 			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
-			Cp(Gg_f+n0*M,Gs+M,M); 
-			s++;
-			last_stored[block]=n0;
 		}
+		Cp(Gg_f+n0*M,Gs+M,M); last_stored[block]=n0;
+		s++;
 		t=1;
 		v0=t0=k0=0;
 		for (k=2; k<=N; k++) {
@@ -2013,6 +2035,7 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 				t = t0 + 1;
 				k0 = k - t0 - 1;
 			}
+
 			if ((t == t0+1 && t0 == v0)
 		  	 || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(k0+t0)))
 		  	 || (2*(n-t+k) >= N-1)) {
@@ -2035,21 +2058,21 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		}
 	}
 	if (save_memory) {
-		return Gg_f+last_stored[block]*M*size;
+		return Gg_f+last_stored[block]*M; 
 	} else {
-		 return Gg_f+(s-1)*M*size;
+		 return Gg_f+(s-1)*M;
 	}
 
 }
 
-void Molecule::propagate_backward(Real* G1, int &s, int block, int generation, int M) {
+void Molecule::propagate_backward(Real* G1, int &s, int block, int unity, int M) {
 if (debug) cout <<"propagate_backward for Mol " + name << endl;
 
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t,rk1;
-		int n=memory[block]; if (block>0) n-=memory[block-1];
-		int n0=0; if (block>0) n0=memory[block-1];
+		int n=memory[block]; if (block>0) n-=memory[block-1]; 
+		int n0=0; if (block>0) n0=memory[block-1]; 
 
 		t=1;
 		v0=t0=k0=0;
@@ -2065,6 +2088,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
 			}
 			t = k - k0;
+
 			if (t == t0) {
 				k0 += - n + t0;
 				if (t0 == v0 ) {
@@ -2088,15 +2112,12 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				}
 				t = n;
 			}
-
-			//AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M); 
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
-						//Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
 						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M); 
 					}
 				}
@@ -2109,19 +2130,16 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			if (s<chainlength-1) {
 				Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
 			} else {
-				//Cp(Gg_b+(s%2)*M,G1,M);
 				Lat[0]->Initiate(Gg_b+(s%2)*M,G1,M);
 			}
 
-			//AddTimes(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
 			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
-
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
-						//Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M); 
+						//  Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M); 
 						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
 					}
 				}
@@ -2142,18 +2160,17 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		int n=memory[block]; if (block>0) n-=memory[block-1];
 		int n0=0; if (block>0) n0=memory[block-1];
 		if (s==first_s[generation]) {
-			s++;
-			//Cp(Gs+M,G1,M); Cp(Gs,G1,M); //FL 
+
 			Lat[0]->Initiate(Gs+size*M,G1,M);
-			Lat[0]->Initiate(Gs,G1,M);
-			Cp(Gg_f+n0*M,Gs+M,size*M); 
-			last_stored[block]=n0;
+			//Lat[0]->Initiate(Gs,G1,M); //not necessary.
 		} else {
 			Lat[0] ->propagateF(Gs,G1,P,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
-			Cp(Gg_f+n0*M*size,Gs+M*size,M*size); //FL
-			s++;
-			last_stored[block]=n0;
+
 		}
+		s++;
+		Cp(Gg_f+n0*M*size,Gs+M*size,M*size);
+		last_stored[block]=n0;
+
 		t=1;
 		v0=t0=k0=0;
 		for (k=2; k<=N; k++) {
@@ -2161,29 +2178,27 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 			Lat[0]->propagateF(Gs,G1,P,(k-1)%2,k%2,M);
 			if (t>n) {
 				t0++;
-				if (t0 == n) t0 = ++v0;
+				if (t0 == n) { t0 = ++v0; cout <<"v0 >0 .... save memory may fail!" << endl; }
 				t = t0 + 1;
 				k0 = k - t0 - 1;
 			}
 			if ((t == t0+1 && t0 == v0)
 		  	 || (t == t0+1 && ((n-t0)*(n-t0+1) >= N-1-2*(k0+t0)))
 		  	 || (2*(n-t+k) >= N-1)) {
-				Cp(Gg_f+(n0+t-1)*M,Gs+(k%2)*M,M);
+				Cp(Gg_f+(n0+t-1)*M*size,Gs+(k%2)*M*size,M*size);
 				last_stored[block]=n0+t-1;
 			}
 		}
 		if ((N)%2!=0) {
-			Cp(Gs,Gs+M,M);
+			Cp(Gs,Gs+M*size,M*size); //FL
 		}
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s>first_s[generation]) {
-				Lat[0] ->propagateF(Gg_f,G1,P,s-1,s,M); //FL
-//cout <<"fs " << s << endl; 
+				Lat[0] ->propagateF(Gg_f,G1,P,s-1,s,M); 
 			} else {
 				//Cp(Gg_f+first_s[generation]*M,G1,M);
-				Lat[0]->Initiate(Gg_f+first_s[generation]*M*size,G1,M); //FL
-//cout <<"fs " << first_s[generation] << endl;
+				Lat[0]->Initiate(Gg_f+first_s[generation]*M*size,G1,M); 
 			}
 			 s++;
 		}
@@ -2196,9 +2211,8 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 
 }
 
-void Molecule::propagate_backward(Real* G1, int &s, int block, Real* P, int unity, int M) {
+void Molecule::propagate_backward(Real* G1, int &s, int block, Real* P, int& unity, int M) {
 if (debug) cout <<"propagate_backward for Mol " + name << endl;
-
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t,rk1;
@@ -2211,9 +2225,20 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 		for (k=N; k>=1; k--) {
 			if (k==N) {
 				if (s==chainlength-1) {
-					Cp(Gg_b+(k%2)*M,G1,M);
+					Lat[0]->Initiate(Gg_b+(k%2)*M*size,G1,M);
+					//Cp(Gg_b+(k%2)*M,G1,M);
 				} else {
-					Lat[0]->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
+					if (unity==-1) {
+						unity=0;
+						//cout <<"SM unity " << s << endl; 
+						Real* GB= (Real*) malloc(2*M*sizeof(Real)); //must be adjusted for cuda
+						Lat[0]->Terminate(GB,Gg_b+((k+1)%2)*M*size,M);
+						Lat[0]->propagate(GB,G1,0,1,M); //first step is freely joined
+						Lat[0]->Initiate(Gg_b+(k%2)*M*size,GB+M,M);  
+						free(GB);					
+					} else {
+						Lat[0]->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
+					}
 				}
 			} else {
 				Lat[0]->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
@@ -2228,10 +2253,10 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				if (t0 < v0) {
 					v0 = t0;
 				}
-				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,size*M); //FL
+				Cp(Gs+(t%2)*M*size,Gg_f+(n0+t-1)*M*size,M*size); //FL
 				for (rk1=k0+t0+2; rk1<=k; rk1++) {
 					t++;
-					Lat[0]->propagateB(Gs,G1,P,(t-1)%2,t%2,M);
+					Lat[0]->propagateF(Gs,G1,P,(t-1)%2,t%2,M);
 					if (t == t0+1 || k0+n == k) {
 						Cp(Gg_f+(n0+t-1)*M*size,Gs+(t%2)*M*size,M*size); //FL
 					}
@@ -2257,12 +2282,13 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			}
 			s--;
 		}
-		Cp(Gg_b,Gg_b+M,size*M);//FL
+		Cp(Gg_b,Gg_b+M*size,size*M);//FL
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) {
 				if (unity==-1) {
 					unity=0;
+					//cout <<"unity " << s << endl; 
 					Real* GB= (Real*) malloc(2*M*sizeof(Real)); //must be adjusted for cuda
 					Lat[0]->Terminate(GB,Gg_b+((s+1)%2)*M*size,M);
 					Lat[0]->propagate(GB,G1,0,1,M); //first step is freely joined
@@ -2272,12 +2298,10 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 					Lat[0]->propagateB(Gg_b,G1,P,(s+1)%2,s%2,M); //FL
 				}
 			} else {
-				//Cp(Gg_b+(s%2)*M,G1,M);
 				Lat[0]->Initiate(Gg_b+(s%2)*M*size,G1,M); //FL
 			}
 
-			//AddTimes(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+(s*M*size), Gg_b+(s%2)*M*size, M); //FL
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size, M); //FL
 
 
 			if (compute_phi_alias) {

@@ -24,6 +24,7 @@ virtual ~Molecule();
 	int mol_nr;
 	int n_box;
 	int var_al_nr;
+	Real KStiff; 
 	Real Mu;
 	Real theta;
 	Real theta_range,n_range;
@@ -172,7 +173,7 @@ virtual ~Molecule();
 	Real* propagate_forward(Real*,int&,int,int,int); 
 	void propagate_backward(Real*,int&,int,int,int); 
 	Real* propagate_forward(Real*,int&,int,Real*,int,int); 
-	void propagate_backward(Real*,int&,int,Real*,int,int); 
+	void propagate_backward(Real*,int&,int,Real*,int&,int); 
 	
 };
 

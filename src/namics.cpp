@@ -30,12 +30,12 @@
 #include "solve_scf.h"
 #include "mesodyn.h"
 
-string version = "2.1.2.1.1.1.1";
+string version = "2.1.2.2.1.1.1";
 // meaning:
 // newton version number =2
 // system version number =1
-// lattice version number =1
-// molecule version number =1
+// lattice version number =2
+// molecule version number =2
 // segment version number =1
 // alias version number =1
 // output version number =1

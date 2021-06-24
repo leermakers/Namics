@@ -14,7 +14,7 @@ if (debug) cout <<"Lattice constructor" << endl;
  	KEYS.push_back("bondlength");
 	KEYS.push_back("ignore_site_fraction");
 	KEYS.push_back("fcc_site_fraction");
-  KEYS.push_back("lattice_type");
+  	KEYS.push_back("lattice_type");
 	KEYS.push_back("stencil_full");
 	//KEYS.push_back("lambda");
 	//KEYS.push_back("Z");

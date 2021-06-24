@@ -13,6 +13,7 @@
 #include "molecule.h"
 #include "mol_clamp.h"
 #include "mol_dendrimer.h"
+#include "mol_asym_dendrimer.h"
 #include "mol_comb.h"
 #include "mol_branched.h"
 #include "mol_linear.h"
@@ -131,19 +132,19 @@ int main(int argc, char *argv[])
 	// All class instances are stored in the following vectors
 	vector<Input *> In;			// Inputs read from file
 	vector<Output *> Out;		// Outputs written to file
-	vector<Lattice *> Lat;	// Properties of the lattice
+	vector<Lattice *> Lat;		// Properties of the lattice
 	Lat_preview* lat_p;
 	mol_preview* mol_p;
-	vector<Molecule *> Mol; // Properties of entire molecule
-	vector<Segment *> Seg;	// Properties of molecule segments
+	vector<Molecule *> Mol; 		// Properties of entire molecule
+	vector<Segment *> Seg;		// Properties of molecule segments
 	vector<State *> Sta;
 	vector<Reaction *> Rea;
-	vector<Solve_scf *> New; // Solvers and iteration schemes
+	vector<Solve_scf *> New;		// Solvers and iteration schemes
 	vector<System *> Sys;
 	vector<Variate *> Var;
 	vector<Mesodyn *> Mes;
-	vector<Cleng *> Cle; //enginge for clampled molecules
-	vector<Teng *> Ten;	//enginge for clampled molecules
+	vector<Cleng *> Cle; 		//enginge for clampled molecules
+	vector<Teng *> Ten;			//enginge for pinned molecules
 
 	// Create input class instance and handle errors(reference above)
 	In.push_back(new Input(filename.str()));
@@ -279,11 +280,11 @@ int main(int argc, char *argv[])
 					case dendrimer:
 						Mol.push_back(new mol_dend(In, Lat, Seg, In[0]->MolList[i]));
 						break;
+					case asym_dendrimer:
+						Mol.push_back(new mol_asym_dend(In, Lat, Seg, In[0]->MolList[i]));
+						break;
 					case comb:
 						Mol.push_back(new mol_comb(In, Lat, Seg, In[0]->MolList[i]));
-						break;
-					case ring:
-						cout <<"ring: not implemented " << endl;
 						break;
 					default: 
 						cout <<"Unknown MolType " << endl;

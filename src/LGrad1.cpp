@@ -879,6 +879,23 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){//Adopt for fjc>1!!!!
 	}
 }
 
+void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real degeneracy, int M){//Adopt for fjc>1!!!!
+	if (Markov==2) {
+		if (lattice_type ==hexagonal) {
+			YplusisCtimesAtimesB(phi,Gf,Gb,0.25*degeneracy,M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5*degeneracy,M);			
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25*degeneracy,M);
+		} else {
+			YplusisCtimesAtimesB(phi,Gf,Gb,degeneracy/6.0,M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy*4.0/6.0,M);			
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,degeneracy/6.0,M);
+		}
+	} else {
+		YplusisCtimesAtimesB(phi,Gf,Gb,degeneracy,M);
+	}
+}
+
+
 void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real* G1, Real norm, int M){//Adopt for fjc>1!!!!
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {

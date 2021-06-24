@@ -1373,6 +1373,28 @@ void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
 		}
 	} else AddTimes(phi,Gf,Gb,M);
 }
+void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real degeneracy, int M){
+	if (Markov==2) {
+		if (lattice_type == hexagonal) {
+			for (int k=0; k<7; k++) {
+				if (k==1 || k==5) 
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/12.0,M); 
+				else
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/6.0,M);
+			}
+
+		} else {
+			for (int k=0; k<5; k++) {
+				if (k==2) 
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/3.0,M); 
+				else
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/6.0,M);
+			}
+		}
+	} else YplusisCtimesAtimesB(phi,Gf,Gb,degeneracy,M);
+}
+
+
 void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int M){
 	cout << "composition not (yet) implemented for alias in LGrad2 " << endl;
 }

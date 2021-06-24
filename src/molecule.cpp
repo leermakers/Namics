@@ -27,7 +27,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 		if (Lat[0]->gradients==3) { 
 			if (Lat[0]->lattice_type==hexagonal) size = 12; else size = 6; 
 		}
-	       cout <<"size = " << size << endl; 
+	       //cout <<"size = " << size << endl; 
 	} else size = 1; 
 }
 
@@ -131,9 +131,9 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 			P[k]=exp(-0.5*KStiff*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); Q+= P[k]; 
 		} 
 		P[FJC-1]=0; if (Lat[0]->lattice_type==hexagonal) Q=2*Q-P[0]; else Q=4*Q-3*P[0];
-		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
-			cout << "P["<<k<<"] = " << P[k] << endl; 
-		}
+		//for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
+		//	cout << "P["<<k<<"] = " << P[k] << endl; 
+		//}
 	}
 
 	if (Markov==2 && Lat[0]->lattice_type == hexagonal) {
@@ -1091,18 +1091,15 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		if (SUB[0]=="dend") {
 			MolType=dendrimer; keyfound=true;
 			s=s.substr(6,s.length()-7);
-			if (save_memory) {success=false; cout <<"In dendrimer no save_memory implemented yet. Can be done relatively easily....." << endl; return success;}
+			if (save_memory) {success=false; cout <<"In dendrimer no save_memory implemented yet. contact frans.leermakers@wur.nl....." << endl; return success;}
 			//if (aliases) {success=false; cout <<"In dendrimer no aliases are not implemented yet. Can be done relatively easily....." << endl; return success;}
 		}
 		if (SUB[0]=="comb") {
+			if (save_memory) {success=false; cout <<"In comb no save_memory implemented yet. contact frans.leermakers@wur.nl ....." << endl; return success;}
 			MolType=comb; keyfound=true;
 			s=s.substr(6,s.length()-7);
 		}
-		if (SUB[0]=="ring") {
-			MolType=ring; keyfound=true;
-			s=s.substr(6,s.length()-7);
-		}
-		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb, @ring. Problem terminated "<< endl ;
+		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb. Problem terminated "<< endl ;
 			return false;
 		 }
 	}
@@ -1131,10 +1128,11 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				open.clear(); close.clear();
 				In[0]->EvenBrackets(sub[i],open,close);
 				length_open=open.size();
-				//if (sub[i].substr(0,1)=="(") {
 				if (length_open>0) {
-					if (!ExpandBrackets(sub[i])) cout <<"brackets '(' ')' not well positioned in "+sub[i] << endl;
-          success=false;
+					if (!ExpandBrackets(sub[i])) {
+						cout <<"brackets '(' ')' not well positioned in "+sub[i] << endl;
+          					success=false;
+					}
 				}
 			}
 			for (i=0; i<length; i++) {
@@ -1144,9 +1142,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			s=ss;
 		break;
 		case comb:
-			//success=false;
-		break;
-		case ring:
 			//success=false;
 		break;
 		default:
@@ -1166,7 +1161,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			MolType=branched;
 		} else {
 			success=false;
-			cout <<" In 'composition' you can not combine special keywords such as 'dend, comb or ring' with branched compositions. This implies that square brackets are not allowed. " <<endl ;
+			cout <<" In 'composition' you can not combine special keywords such as 'dend, or comb' with branched compositions. This implies that square brackets are not allowed. " <<endl ;
 			return success;
 		}
 	}
@@ -1226,20 +1221,22 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			for (i=0; i<n_generations; i++) {
 				sub.clear();	arms=0;
 				In[0]->split(sub_gen[i],',',sub);
-				if (sub.size()!=3) {success=false; cout << "In composition of dend for generation " << i << " that is, in " + sub_gen[i] + " the number of arguments is not 3; use @dend(?) for help. " << endl; }
-				if (sub.size()<2) { success=false;
+				int sublength=sub.size();  
+				if ((sublength-1)%2 >0) {success=false; cout << "In composition of dend for generation " << i << " that is, in " + sub_gen[i] + " the number of arguments is not a multiple of (1+ multiple of 2); use @dend(?) for help. " << endl; }
+				if (sublength>3) MolType=asym_dendrimer; 
+				if (sublength<2) { success=false;
 
 					cout<<" ------Dendrimer language:------ " << endl;
 					cout<<" example 1: consider segment name 'A' for the branch points and spacers (B)2 with functionality 3 and 4 generations: " << endl;
 					cout<<" @dend(A,(B)2,3; A,(B)2,3; A,(B)2,3; A,(B)2,3)  " << endl;
 					cout<<" hence generations are seperated by ';', branch points are 'monomer_names' without '(', ')'. Each generation can have unique numbers and structures. " << endl;
-					//cout<<" expample 2: asymmetric dendrimers, with asymmetry in branches of first generation:" << endl;
-					//cout <<" @dend(A,(B)2,3,(B)4,1; A,(B)2,3,(B)2,2; A,(B)2,3; A,(B)2,3)  " << endl;
+					cout<<" expample 2: asymmetric dendrimers, with asymmetry in branches of first generation:" << endl;
+					cout <<" @dend(A,(B)2,3,(B)4,1; A,(B)2,3,(B)2,2; A,(B)2,3; A,(B)2,3)  " << endl;
 					cout <<" example 2: star with 10 arms " << endl;
 					cout <<" @dend(A,(B)100,10) " << endl;
 					cout <<" Note that in the 'standard' dendrimer the branches are symmetric -all are equal- " << endl;
-					//cout <<" example 4: 10 arm star end-grafted by one arm to a surface by way of segment 'X' " << endl;
-					//cout <<" @dend(A,(B)100,9,(B)99(X)1,1)" << endl;
+					cout <<" example 4: 10 arm star end-grafted by one arm to a surface by way of segment 'X' " << endl;
+					cout <<" @dend(A,(B)100,9,(B)99(X)1,1)" << endl;
 					cout<<" ------Dendrimer language:------ " << endl;
 				}
 
@@ -1250,6 +1247,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				if (sub_dd.size()>1) {
 					cout <<"In dendrimer alias not yet implemented" << endl; success=false; return success;
 				}
+
 
 				if (length_dd==4) {
 					mnr=GetMonNr(sub_dd[2]);
@@ -1500,92 +1498,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			//for (int i=0; i<length; i++) cout <<"first_b " <<  first_b[i] << " last_b " << last_b[i] << endl;
 			//for (int i=0; i<length; i++) cout <<"first_s " <<  first_s[i] << " last_s " << last_s[i] << endl;
 			break;
-			case ring:
-			cout <<"ring not implemented" << endl; return false;
-			sub_dd.clear();
-			In[0]->split(s,':',sub_dd);
-			length_dd=sub_dd.size();
-			if (length_dd>1) { success = false;
-				cout <<"In ring the use of 'aliases' is not allowed (yet). " << endl; return success;
-			}
-			if (save_memory) {
-				success = false;
-				cout <<"In ting the use of 'save_memory' is not allowed (yet). " << endl; return success;
-			}
-
-			cout <<"ring with argument: " << s << endl;
-
-			sub.clear();
-			In[0]->split(s,',',sub);
-			//cout <<"sub_gen[1] " << sub_gen[1] << "size of sub : " << sub.size() << endl;
-
-			if ((s=="?") || (sub.size() !=2)) {
-				success=false;
-				cout << " .....language for ring composition.....     " << endl;
-				cout << "  Linear chain in ring configuration. Example: " << endl;
-				cout << "      ring(A,(A)10(B)5)   '" << endl;
-				cout << "  The fragment (A)10(B)5 is connected on both sides to the segment 'A' " << endl;
-				cout << "  Hence, this ring contains 11 A semgents and 5 B segments. " << endl;
-				cout <<"   Only linear chains are allowed. No 'save_memory' or 'aliases' implemented." << endl;
-				cout << ".....end language ring composition..... " << endl;
-				return success;
-			}
-			N=-1;
-			chainlength=0;
-			mnr=GetMonNr(sub[0]);
-			if (mnr <0)  {success=false; cout <<"In composition of mol '" + name + "', segment name '" + sub[0] + "' is not recognised. For the first argument the ( ) are not needed."  << endl; return success;}
-			n_mon.push_back(1);
-			mon_nr.push_back(mnr); N++;
-			chainlength++;
-
-
-			first_b.clear();
-			last_b.clear();
-			first_s.clear();
-			last_s.clear();
-
-			first_s.push_back(N+1);
-			last_s.push_back(-1);
-			first_b.push_back(-1);
-			last_b.push_back(-1);
-			open.clear(); close.clear();
-			In[0]->EvenBrackets(sub[1],open,close);
-			j=0; length=open.size();
-			while (j<length) {
-				segname=sub[1].substr(open[j]+1,close[j]-open[j]-1);
-				mnr=GetMonNr(segname);
-				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised;" << endl; success=false;}
-				mon_nr.push_back(mnr);
-				nn=In[0]->Get_int(sub[1].substr(close[j]+1,s.size()-close[j]-1),0);
-				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; "<< endl; success=false;}
-				n_mon.push_back(nn); N+=nn;
-				chainlength +=nn;
-				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
-				last_b[first_b.size()-1]=mon_nr.size()-1;
-				last_s[last_s.size()-1]=N;
-				j++;
-			}
-			//mnr=GetMonNr(sub[0]);
-			//n_mon.push_back(1);
-			//mon_nr.push_back(mnr); N++;
-			//chainlength++;
-
-
-
-			if (Lat[0]->gradients>1) {
-				success=false; cout << "For ring polymers: use 'gradients : 1'" << endl; return success;
-			}
-
-			length=first_b.size();
-			for (int i=0; i<length; i++) cout <<"i: " << i << "first_b " <<  first_b[i] << " last_b " << last_b[i] << endl;
-			for (int i=0; i<length; i++) cout <<"i: " << i << "first_s " <<  first_s[i] << " last_s " << last_s[i] << endl;
-
-
-			//cout <<"chainlength : " << chainlength << endl;
-
-			//cout <<"ring polymers not implemented" << endl; 	success=false;
-			break;
-		default:
+					default:
 			break;
 	}
 

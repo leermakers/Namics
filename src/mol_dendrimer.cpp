@@ -87,7 +87,7 @@ if (debug) cout <<"BackAndForth2ndO for mol_dend " + name << endl;
 					Lat[0] ->propagateB(Gg_b,Seg[mon_nr[b]]->G1,P,s%2,(s+1)%2,M);
 				}
 				s++;
-				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size,UNITY,d_mon[b], M); 
+				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size,d_mon[b], M); 
 			}
 		}
 		if (s<slast) {
@@ -99,7 +99,7 @@ if (debug) cout <<"BackAndForth2ndO for mol_dend " + name << endl;
 			Lat[0]->propagate(GS,Seg[mon_nr[bN+1]]->G1,0,1,M);
 			Lat[0]->Initiate(Gg_b+((s+1)%2)*M*size,GS+M,M);
 			s++;
-			Lat[0]->AddPhiS(rho+molmon_nr[bN+1]*M, Gg_f+(s)*M*size, Gg_b+(s%2)*M*size, UNITY,d_mon[bN+1], M);
+			Lat[0]->AddPhiS(rho+molmon_nr[bN+1]*M, Gg_f+(s)*M*size, Gg_b+(s%2)*M*size,d_mon[bN+1], M);
 			//Lat[0]->Terminate(GS,Gg_b+(s%2)*M*size,M);
 			Times(GS+M,GS+M,GS+2*M,M);
 			Lat[0]->Initiate(Gg_b+(s%2)*M,GS+M,M);
@@ -164,8 +164,7 @@ if (debug) cout <<"BackAndForth for mol_dend " + name << endl;
 			for (int k=0; k<N; k++) {
 				Lat[0] ->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
 				s++, 
-				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size,UNITY,d_mon[b],M); //may be improved by deleting UNITY....
-			}
+				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size,d_mon[b],M); 			}
 		}
 		if (s<slast) {
 			Cp(GS+2*M,UNITY,M);
@@ -174,7 +173,7 @@ if (debug) cout <<"BackAndForth for mol_dend " + name << endl;
 			for (int k=0; k<n_arm[g+1]-1; k++) Times(GS+2*M,GS+2*M,GS+M,M);
 			Lat[0] ->propagate(Gg_b,Seg[mon_nr[bN+1]]->G1,s%2,(s+1)%2,M);
 			s++;
-			Lat[0]->AddPhiS(rho+molmon_nr[bN+1]*M, Gg_f+(s)*M*size, Gg_b+(s%2)*M*size, UNITY,d_mon[bN+1], M);
+			Lat[0]->AddPhiS(rho+molmon_nr[bN+1]*M, Gg_f+(s)*M*size, Gg_b+(s%2)*M*size,d_mon[bN+1], M);
 			Lat[0]->Terminate(GS,Gg_b+(s%2)*M*size,M);
 			Times(GS,GS,GS+2*M,M);
 			Lat[0]->Initiate(Gg_b+(s%2)*M,GS,M);

@@ -6,6 +6,7 @@ mol_preview::mol_preview(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment
 if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("freedom");
 	KEYS.push_back("composition");
+	KEYS.push_back("ring"); 
 	KEYS.push_back("theta");
 	KEYS.push_back("phibulk");
 	KEYS.push_back("n");

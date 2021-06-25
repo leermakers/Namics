@@ -112,6 +112,7 @@ virtual ~Molecule();
 	string scale;
 	Real Var_target_value;
 	int n_generations;
+	bool ring; 
 
 	vector<string> ints;
 	vector<string> Reals;

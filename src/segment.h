@@ -162,5 +162,6 @@ public:
 	int AddState(int,Real,Real,bool);
 	void SetPhiSide();
 	int PutAlpha(Real*,int);
+	bool CanBeReached(int, int, int, int);
 };
 #endif

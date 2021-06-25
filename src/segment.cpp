@@ -1562,3 +1562,28 @@ int Segment::PutAlpha(Real* x,int xi){
 	}
 	return xxi;
 }
+
+bool Segment::CanBeReached(int x0, int y0, int z0, int Ds) {
+	int gradients=Lat[0]->gradients;
+	int MX = Lat[0]->MX;
+	int MY = Lat[0]->MY;
+	int MZ = Lat[0]->MZ;
+	int JX = Lat[0]->JX;
+	int JY = Lat[0]->JY;
+	int JZ = Lat[0]->JZ;
+	int x=0,y=0,z=0;
+	switch (gradients) {
+		case 3:
+			for (z=1; z<MZ+1; z++)
+		case 2:
+			for (y=1; y<MY+1; y++)
+		case 1:
+			for (x=1; x<MX+1; x++){
+				if (MASK[x*JX+y*JY+z*JZ]==1) {
+					if (abs(x-x0)+abs(y-y0)+abs(z-z0) < Ds) return true; 
+				}		
+			
+			}
+	}
+	return false; 
+}

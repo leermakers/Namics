@@ -14,6 +14,7 @@ if (debug) cout <<"fraction for mol_comb " + name << endl;
 	int Nseg=0;
 	int length = mon_nr.size();
 	int i=0;
+	if (ring) i++; 
 	while (i<length) {
 		if (segnr==mon_nr[i]) Nseg += n_mon[i]*d_mon[i]; 
 		i++;

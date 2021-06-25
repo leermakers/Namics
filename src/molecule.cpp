@@ -6,6 +6,7 @@ Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg
 if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("freedom");
 	KEYS.push_back("composition");
+	KEYS.push_back("ring");
 	KEYS.push_back("theta");
 	KEYS.push_back("phibulk");
 	KEYS.push_back("n");
@@ -17,6 +18,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	phiM=0;
 	Dphi=0;
 	pos_interface=0;
+	ring=false; 
 	all_molecule=false;
 	Markov = Lat[0]->Markov;
 	if (Markov ==2) {
@@ -479,6 +481,47 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				if (GetValue("theta").size() >0 || GetValue("n").size() > 0 || GetValue("phibulk").size() >0 || GetValue("freedom").size() > 0) cout <<"Warning. In mol " + name + " tagged segment(s) were detected. In this case no value for 'freedom' is needed, and also 'theta', 'n' and 'phibulk' values are ignored. " << endl;
 			}
 		}
+		if (GetValue("ring").size() > 0) {
+			In[0]->Get_bool(GetValue("ring"),ring,"Input for ring is either 'true' or 'false'. Moreover, first and last segments of the backbone will be put on top of each other (chain length gets shorter by one). ");
+			if (ring) {
+				int length; 
+				switch (MolType) {
+					case dendrimer:
+					case asym_dendrimer:
+						cout << "Do not know how to connect ends for dendrimer or asym_dendrimers; ring option is ignored " << endl;
+						ring=false; 
+					break;
+					case monomer:
+						cout << "Can not make a ring from a molecule type monomer; ring option is ignored" << endl; 
+						ring=false;
+					break;
+					case linear:
+					case branched:  
+					case comb:
+						length=mon_nr.size();
+						if (mon_nr[0]==mon_nr[length-1]) {
+							if (n_mon[0] !=1 || n_mon[length-1] !=1) {
+								cout <<"Fist and last block of main chain should consist of just one segment: e.g. (A)1(B)99(A)1 is a ring of 100 segments (one A only)."  << endl;
+								ring =false;
+							} else  {
+								cout <<"ring can be implemented " << endl;
+								cout <<"chain length reduced by one" << endl;  
+								chainlength--;
+							}
+						} else {
+							ring =false;
+							cout <<"first and last segment of the main chain should be of the same type, as these two are 'merged'. Chain length is reduced by one." << endl;
+							cout <<"make sure to start the main chain and end the main chain by a block with length 1: for example '(B)1(B)99(B)1' will be a ring of 100 segments." << endl; 
+						}
+					break;
+					default:
+						ring=false;
+					break;
+				
+				}
+			}
+		}
+
 	}
 	return success;
 }
@@ -2292,6 +2335,7 @@ if (debug) cout <<"fraction for mol_test " + name << endl; //default for monomer
 	int Nseg=0;
 	int length = mon_nr.size();
 	int i=0;
+	if (ring) i++; //first segment is not counted in fraction; 
 	while (i<length) {
 		if (segnr==mon_nr[i]) {Nseg+=n_mon[i];}
 		i++;

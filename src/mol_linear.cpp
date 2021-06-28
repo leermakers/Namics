@@ -90,7 +90,6 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 					for (int k=0; k<size; k++) Times(Glast+k*M,Glast+k*M,Mask,M);
 					GN+=Lat[0]->ComputeGN(Glast,M);
   					s=chainlength; 
-					G0[i]=Seg[mon_nr[0]]->G1[i];
 					Lat[0]->Initiate(Gg_b+(s%2)*M*size,G0,M);
 					Lat[0]->AddPhiS(rho+molmon_nr[0]*M,Gg_b+(s%2)*M*size,Gg_f+s*M*size,M);
 					s--;

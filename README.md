@@ -62,9 +62,9 @@ Geometries: planar (in 1, 2, 3 gradients)
 Markov chains: first order (direct backfolding allowed; Freely jointed chains)
 	       second order (semi flexible chains @ branch points chains are usually freely jointed)
 Chain architecture
-	linear chains
-	branched chains (parts in [ ] are side chains)
-	regular dendrimer (symmetric)
+	linear chains 'including ' ring.
+	branched chains (composition rules: parts in [ ] are side chains)
+	dendrimer (symmetric and aymmetric ) use @dend(?) for help
 	combs
 Interations
 	Flory Huggins nearest neighbour interactions

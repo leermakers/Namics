@@ -2005,9 +2005,9 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s>first_s[generation]) {
+ 
 				Lat[0] ->propagate(Gg_f,G1,s-1,s,M);
 			} else {
-				//Cp(Gg_f+first_s[generation]*M,G1,M);
 				Lat[0]->Initiate(Gg_f+first_s[generation]*M,G1,M); 
 			}
 			 s++;

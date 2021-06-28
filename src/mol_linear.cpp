@@ -18,7 +18,6 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 	int unity=0;
 	int s=0;
 	int N; 
-	Real* G0 = new Real[M]; Zero(G0,M);
 	Real* Mask = new Real[M]; Zero(Mask,M);
 	int gradients=Lat[0]->gradients;
 	int MX=Lat[0]->MX;
@@ -34,6 +33,7 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 	bool doit; 
 
 	if (ring) {
+		Real* G0 = new Real[M]; Zero(G0,M);
 
 		if (IsPinned()) {
 			
@@ -109,7 +109,7 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 				} 
 			}
 		}
-
+		delete [] G0; delete [] Mask;
 	} else {
 
 		if (Markov ==2) 
@@ -129,7 +129,7 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 		else 
 			for (int b = bN ; b >= b0 ; b--) propagate_backward(Seg[mon_nr[b]]->G1,s,b,0,M);
 	}
- 	delete [] G0; delete [] Mask;
+
 	return success;
 }
 

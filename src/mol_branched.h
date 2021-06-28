@@ -11,10 +11,13 @@ class mol_branched : public Molecule
 	public: mol_branched(vector<Input*>,vector<Lattice*>,vector<Segment*>,string);
 	~mol_branched();
 
-	Real* ForwardBra(int generation, int &s);
+	Real* ForwardBra(Real*, int generation, int &s);
 	void BackwardBra(Real*, int, int&);
-	Real* ForwardBra2ndO(int generation, int &s);
+	Real* ForwardBra2ndO(Real*,int generation, int &s);
 	void BackwardBra2ndO(Real*, int, int&, int&);
+
+
+
 
 	bool ComputePhi();
 

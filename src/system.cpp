@@ -104,7 +104,7 @@ void System:: DeAllocateMemory(void){
 all_system=false;
 }
 
-void System::AllocateMemory()
+void System::AllocateMemory() 
 {
 	if (debug)
 		cout << "AllocateMemory in system " << endl;
@@ -1776,24 +1776,37 @@ for (int j=0; j<n_mol; j++) {
 			throw - 4;
 		}
 
-		Real norm = Mol[solvent]->phibulk / Mol[solvent]->chainlength;
-		Mol[solvent]->n = norm * Mol[solvent]->GN;
-		Mol[solvent]->theta = Mol[solvent]->n * Mol[solvent]->chainlength;
-		Mol[solvent]->norm = norm;
+		if (Mol[solvent]->MolType==water) { 
 
-		int k = 0;
-		length = Mol[solvent]->MolMonList.size();
-		while (k < length) {
-			Real *phi = Mol[solvent]->phi + k * M;
-			if (norm > 0)
-				Norm(phi, norm, M);
-			if (debug)
-			{
-				Real sum;
-				Sum(sum, phi, M);
-				cout << "Sumphi in mol " << solvent << "for mon " << k << ":" << sum << endl;
+			Mol[solvent]->GetPhib1();
+			Mol[solvent]->ComputePhi();
+			Mol[solvent]->chainlength=1;
+			Mol[solvent]->n = Lat[0]->ComputeGN(Mol[solvent]->phi,M);
+			Mol[solvent]->theta=Mol[solvent]->n;
+			Mol[solvent]->norm=1.0;
+ 
+		} else {
+
+			Real norm = Mol[solvent]->phibulk / Mol[solvent]->chainlength;
+			Mol[solvent]->n = norm * Mol[solvent]->GN;
+			Mol[solvent]->theta = Mol[solvent]->n * Mol[solvent]->chainlength;
+			Mol[solvent]->norm = norm;
+
+			int k = 0;		
+
+			length = Mol[solvent]->MolMonList.size();
+			while (k < length) {
+				Real *phi = Mol[solvent]->phi + k * M;
+				if (norm > 0)
+					Norm(phi, norm, M);
+				if (debug)
+				{
+					Real sum;
+					Sum(sum, phi, M);
+					cout << "Sumphi in mol " << solvent << "for mon " << k << ":" << sum << endl;
+				}
+				k++;
 			}
-			k++;
 		}
 	}
 	if (charged && neutralizer > -1)
@@ -2006,6 +2019,7 @@ Real System::GetFreeEnergy(void)
 			Add(F, TEMP, M);
 		}
 	}
+if (Mol[solvent]->MolType==water) Mol[solvent]->AddToF(F);
 	Real *phi;
 	Real *phi_side;
 	Real *g;
@@ -2172,6 +2186,8 @@ Real System::GetGrandPotential(void)
 		Add(GP, TEMP, M);
 	}
 
+if (Mol[solvent]->MolType==water) {Mol[solvent]->AddToGP(GP); }
+
 	Add(GP,alpha,M);
 	Real phibulkA;
 	Real phibulkB;
@@ -2320,6 +2336,7 @@ bool System::CreateMu()
 	{
 		Real Mu = 0;
 		Real NA = Mol[i]->chainlength;
+		
 		if (Mol[i]->IsTagged())
 			NA = NA - 1;
 		if (Mol[i]->IsClamped())
@@ -2359,6 +2376,7 @@ bool System::CreateMu()
 			constant += phibulkB / NB;
 		}
 		Mu = Mu - NA * constant;
+		Mu+= NA*(Mol[solvent]->phib1/(1-Mol[solvent]->Kw*Mol[solvent]->phib1)-Mol[solvent]->phibulk);
 
 		//Real theta;
 		Real phibulkA;

@@ -13,6 +13,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("save_memory");
 	KEYS.push_back("restricted_range");
 	KEYS.push_back("compute_width_interface");
+	KEYS.push_back("Kw");
 	width=0;
 	phi1=0;
 	phiM=0;
@@ -412,6 +413,26 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				if (!In[0]->Get_string(GetValue("freedom"),freedom,free_list,"In mol " + name + " the value for 'freedom' is not recognised ")) success=false;
 				if (freedom == "solvent") {
 					if (IsPinned()) {success=false; cout << "Mol '" + name + "' is 'pinned' and therefore this molecule can not be the solvent" << endl; }
+					
+				}
+				if (MolType == water && freedom!="solvent" ) {
+					cout <<"MolType 'water' can only be used for the component with freedom 'solvent'. Job terminated." << endl; success=false; 
+				} 
+				if (MolType == water && freedom=="solvent" ) {
+					Kw=50;
+					if (GetValue("Kw").size()>0) {
+						Kw=In[0]->Get_Real(GetValue("Kw"),-1);
+						if (Kw < 0) {
+								cout << "Value for assosication constant Kw (used in the water model) should be positive." << endl; 
+								cout << "In mol " + name + ", the value of 'Kw' serves in the 'association' water model. " << endl;
+								cout << "A value of  K~50 is advised " << endl; 
+								cout << "X + X --Kw--> X_2; X_2 + X --Kw--> X_3; etc." << endl;
+								cout << "See Phys REv E 67, 011910 (2003) for more information. " << endl; 
+								success=false;
+							}
+					} else {
+						cout << "A default value for the value of 'Kw = 50' is used, because I failed to find an input for this quantity " << endl; 
+					}
 				}
 				if (freedom == "neutralizer") {
 					if (IsPinned()) {success=false; cout << "Mol '" + name + "' is 'pinned' and therefore this molecule can not be the neutralizer" << endl; }
@@ -1130,6 +1151,18 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		bool keyfound=false;
 		vector<string>SUB;
 		In[0]->split(sub[1],'(',SUB);
+		if (SUB[0]=="water"){
+			MolType=water; keyfound=true;
+			s=s.substr(7,s.length()-8);
+			int mnr=GetMonNr(s);
+			if (mnr<0) {
+				cout <<"Language for MolType 'water' is as follows: @water(mon_name) wherein mon_name is a valid monomer name with freedom free" << endl; 
+				success=false;
+			} else { 
+				mon_nr.push_back(mnr);
+				n_mon.push_back(1);
+			}
+		}
 
 		if (SUB[0]=="dend") {
 			MolType=dendrimer; keyfound=true;
@@ -1142,7 +1175,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			MolType=comb; keyfound=true;
 			s=s.substr(6,s.length()-7);
 		}
-		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb. Problem terminated "<< endl ;
+		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb. @water Problem terminated "<< endl ;
 			return false;
 		 }
 	}
@@ -1166,6 +1199,9 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	int i,j,k,a,f,dd;
 	string ss;
 	switch(MolType) {
+		case water:
+			
+			break;
 		case dendrimer:
 			for (i=0; i<length; i++) {
 				open.clear(); close.clear();
@@ -1221,6 +1257,8 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	int N=0;
 	int chainlength_backbone,chainlength_arm;
 	switch(MolType) {
+		case water: 
+			break;
 		case linear:
 			first_s.push_back(-1);
 			last_s.push_back(-1);
@@ -1571,7 +1609,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	}
 
 	success=MakeMonList();
-	if (chainlength==1) MolType=monomer;
+	if (chainlength==1 && MolType!=water) MolType=monomer;
 	return success;
 }
 
@@ -1749,6 +1787,10 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	push("n",n);
 	push("chainlength",chainlength);
 	push("phibulk",phibulk);
+	if (MolType == water) {
+		push("phib1",phib1);
+		push("Kw",Kw);
+	}
 	push("mu",Mu);
 	if (Lat[0]->gradients==3) {
 		Real TrueVolume=Lat[0]->MX*Lat[0]->MY*Lat[0]->MZ;
@@ -2288,13 +2330,15 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 			Div(Seg[MolMonList[i]]->G1,BETA,M);
 		}
 	}
-
+	if (MolType==water) phib1=0;
 	if (freedom == "clamped") {
 		Lat[0]->sub_box_on=Seg[mon_nr[0]]->clamp_nr; //slecting sub_box boundary conditions.
 				//success=ComputePhiLin();
 		success=ComputePhi();
 		Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
-	} else success=ComputePhi();
+	} else {
+		success=ComputePhi();
+	}
 
 
 	if (id !=0) {
@@ -2312,6 +2356,17 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	}
 	return success;
 }
+
+Real Molecule::GetPhib1() {
+	return 0; 
+}
+
+void Molecule::AddToGP(Real*) {	
+}
+
+void Molecule::AddToF(Real*) {	
+}
+
 
 bool Molecule::ComputePhi(){
 if (debug) cout <<"ComputePhi for Molecule " + name << endl; //default computation for monomer only....

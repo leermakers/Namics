@@ -13,6 +13,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("save_memory");
 	KEYS.push_back("restricted_range");
 	KEYS.push_back("compute_width_interface");
+	KEYS.push_back("Kw");
 }
 
 mol_preview::~mol_preview() {
@@ -133,7 +134,6 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 	while (!done) { done = true;
 		open.clear(); close.clear();
 		if (!In[0]->EvenBrackets(s,open,close)) {
-			cout << "s : " << s << endl;
 			cout << "In composition of mol '" + name + "' the backets are not balanced."<<endl; success=false;
 		 }
 		int length=open.size();
@@ -311,7 +311,18 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		bool keyfound=false;
 		vector<string>SUB;
 		In[0]->split(sub[1],'(',SUB);
-
+		if (SUB[0]=="water") {
+			MolType=water; keyfound=true;
+			s=s.substr(7,s.length()-8);
+			int mnr=GetMonNr(s);
+			if (mnr<0) {
+				cout <<"Language for MolType 'water' is as follows: @water(mon_name) wherein mon_name is a valid monomer name with freedom free" << endl; 
+				success=false;
+			} else { 
+				mon_nr.push_back(mnr);
+				n_mon.push_back(1);
+			}
+		}
 		if (SUB[0]=="dend") {
 			MolType=dendrimer; keyfound=true;
 			s=s.substr(6,s.length()-7);
@@ -322,7 +333,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			MolType=comb; keyfound=true;
 			s=s.substr(6,s.length()-7);
 		}
-		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb. Problem terminated "<< endl ;
+		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb.@water Problem terminated "<< endl ;
 			return false;
 		 }
 	}
@@ -346,6 +357,8 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	int i,j,k,a,f,dd;
 	string ss;
 	switch(MolType) {
+		case water:
+			break; 
 		case dendrimer:
 			for (i=0; i<length; i++) {
 				open.clear(); close.clear();
@@ -354,7 +367,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				//if (sub[i].substr(0,1)=="(") {
 				if (length_open>0) {
 					if (!ExpandBrackets(sub[i])) cout <<"brackets '(' ')' not well positioned in "+sub[i] << endl;
-          success=false;
+          				success=false;
 				}
 			}
 			for (i=0; i<length; i++) {
@@ -400,6 +413,8 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	int N=0;
 	int chainlength_backbone,chainlength_arm;
 	switch(MolType) {
+		case water:
+			break;
 		case linear:
 			first_s.push_back(-1);
 			last_s.push_back(-1);
@@ -478,9 +493,9 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				while (k<length_g-1) {
 					arm++;
 					first_s.push_back(N+1);
-          last_s.push_back(-1);
-          first_b.push_back(-1);
-          last_b.push_back(-1);
+          				last_s.push_back(-1);
+        				first_b.push_back(-1);
+         				last_b.push_back(-1);
 					if (first_a[first_a.size()-1]==-1) first_a[first_a.size()-1]=arm;
 					last_a[last_a.size()-1]=arm;
 
@@ -495,7 +510,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 					dd=0; length_dd=sub_dd.size();
 					while (dd<length_dd) {
 						open.clear(); close.clear();
-            In[0]->EvenBrackets(sub_dd[dd],open,close);
+            					In[0]->EvenBrackets(sub_dd[dd],open,close);
 						if (open.size()==0) {
 							a=In[0]->Get_int(sub_dd[dd],-1);
 							if (a==-1) {
@@ -738,7 +753,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	}
 
 	success=MakeMonList();
-	if (chainlength==1) MolType=monomer;
+	if (chainlength==1 && MolType!=water) MolType=monomer;
 	return success;
 }
 

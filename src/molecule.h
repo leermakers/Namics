@@ -25,11 +25,13 @@ virtual ~Molecule();
 	int n_box;
 	int var_al_nr;
 	Real KStiff; 
+	Real Kw;
 	Real Mu;
 	Real theta;
 	Real theta_range,n_range;
 	Real thata_in_range;
 	Real phibulk;
+	Real phib1;
 	string freedom;
 	MoleculeType MolType;
 	Real n;
@@ -169,6 +171,11 @@ virtual ~Molecule();
 	bool PrepareForCalculations(int*);
 	bool ComputePhi(Real*,int);
 	virtual bool ComputePhi();
+	virtual Real GetPhib1();
+	virtual void AddToGP(Real*);
+	virtual void AddToF(Real*);
+
+
 	virtual Real fraction(int);
 	
 	Real* propagate_forward(Real*,int&,int,int,int); 

@@ -43,7 +43,7 @@ extern bool debug;
 //extern Real factor;
 #endif
 
-enum MoleculeType {monomer, linear, branched, dendrimer, asym_dendrimer, comb,};
+enum MoleculeType {monomer, linear, branched, dendrimer, asym_dendrimer, comb, water};
 enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};
 enum EngineType {SCF, CLENG, MESODYN, TENG};
 enum LatticeType {simple_cubic, hexagonal};

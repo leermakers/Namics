@@ -11,6 +11,7 @@
 #include "LG1Planar.h"
 #include "LG2Planar.h"
 #include "molecule.h"
+#include "mol_water.h"
 #include "mol_clamp.h"
 #include "mol_dendrimer.h"
 #include "mol_asym_dendrimer.h"
@@ -264,8 +265,12 @@ int main(int argc, char *argv[])
 				return 0;
 			} else { 
 				switch (mol_p->MolType) {
+					
 				 	case monomer: 
 						Mol.push_back(new Molecule(In, Lat, Seg, In[0]->MolList[i]));
+						break;
+					case water:
+						Mol.push_back(new mol_water(In, Lat, Seg, In[0]->MolList[i]));
 						break;
 					case linear:
 						if (mol_p->freedom=="clamped") {

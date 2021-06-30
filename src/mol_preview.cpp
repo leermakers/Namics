@@ -30,18 +30,8 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 	} else {
 		if (GetValue("composition").size()==0) {cout << "For mol '" + name + "' the definition of 'composition' is required" << endl; success = false;
 		} else {
-			try {
-				// The chain of success bools seems to be broken and handled incorrectly..
-				// This is the result of calling the same function (interpret(), probably) multiple times with different results,
-				// causing only the last success to transfer correctly.
-				// Throw - catch for safety. Thrown by Interpret() and Decomposition() itself;
 			if (!Decomposition(GetValue("composition")))
-				// This error message is not even displayed.
-				{cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false;}
-			} catch (const char* error) {
-				cerr << error << endl;
-				success = false;
-			}
+				{cout << "For mol '" + name + "' the composition is rejected. " << endl; success=false; return success;}
 		}
  	}
 	if ( Seg[mon_nr[0]]->freedom == "clamp") freedom="clamped";
@@ -317,7 +307,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			int mnr=GetMonNr(s);
 			if (mnr<0) {
 				cout <<"Language for MolType 'water' is as follows: @water(mon_name) wherein mon_name is a valid monomer name with freedom free" << endl; 
-				success=false;
+				success=false; return false; 
 			} else { 
 				mon_nr.push_back(mnr);
 				n_mon.push_back(1);
@@ -334,7 +324,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			s=s.substr(6,s.length()-7);
 		}
 		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb.@water Problem terminated "<< endl ;
-			return false;
+			return false; 
 		 }
 	}
 
@@ -344,10 +334,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		In[0]->split(s,'#',sub);
 		if (sub.size()%2!=1) {cout << " Alias in composition should be bracketed on both sides by '#'. For example, (A)10#alias_name#(B)3, when e.g., 'alias : alias_name : value : (X)5' is defined, so that you oubtain (A)10(X)5(B)3 " << endl; success=false; }
 		aliases=(s!=sub[0]);
-		if (aliases) ExpandAlias(sub,s);
+		if (aliases) if (!ExpandAlias(sub,s)) {cout <<"alias not properly processed" <<endl; success=false; return false;};
 		if (loopnr == 20) {
 			cout << "Nesting nr 20 reached in aliases for mol " + name + " -composition. It is decided that this is too deep to continue; Possible, you have defined an alias-A inside alias-B which itself refers to alias-A. This is not allowed. Problem terminated. " << endl;
-			success=false;
+			success=false; return 0; 
 		}
 	}
 	sub.clear();

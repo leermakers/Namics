@@ -1186,7 +1186,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		In[0]->split(s,'#',sub);
 		if (sub.size()%2!=1) {cout << " Alias in composition should be bracketed on both sides by '#'. For example, (A)10#alias_name#(B)3, when e.g., 'alias : alias_name : value : (X)5' is defined, so that you oubtain (A)10(X)5(B)3 " << endl; success=false; }
 		aliases=(s!=sub[0]);
-		if (aliases) ExpandAlias(sub,s);
+		if (aliases) {if (!ExpandAlias(sub,s)) {cout << "expand alias failed. " << endl; success=false; return false; }}
 		if (loopnr == 20) {
 			cout << "Nesting nr 20 reached in aliases for mol " + name + " -composition. It is decided that this is too deep to continue; Possible, you have defined an alias-A inside alias-B which itself refers to alias-A. This is not allowed. Problem terminated. " << endl;
 			success=false;

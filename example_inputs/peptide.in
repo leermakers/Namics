@@ -1,0 +1,44 @@
+include : aa.inc
+lat : flat : n_layers : 100
+lat : flat : gradients : 1
+lat : flat : geometry : planar
+lat : flat : lattice_type : simple_cubic
+lat : flat : bondlength : 3e-10
+
+mon : Si : freedom : frozen
+mon : Si : frozen_range : 1;1
+
+mon : Si : chi-W : 2
+mon : Np3 : valence : 1
+mon : On : valence : -1
+
+mon : Na : valence : 1
+mon : Cl : valence : -1
+mol : Na : composition : (Na)1
+mol : Na : freedom : free
+mol : Na : phibulk : 0.1
+
+mol : Cl : composition : (Cl)1
+mol : Cl : freedom : neutralizer
+
+
+mol : peptide : composition : (Np3)1(#G#)5(On)1
+mol : peptide : freedom : restricted
+mol : peptide : theta : 1
+
+//output : pro : append : false
+//pro : mol : peptide : phi
+//pro : mol : water : phi
+output : kal : append : false
+kal : mol : peptide : phibulk 
+kal : mol : peptide : theta
+kal : mol : peptide : theta_exc
+
+var : mol-peptide : scan : theta
+var : mol-peptide : step : 0.1
+var : mol-peptide : end_value : 10
+
+newton : isaac : i_info : 100
+
+start
+

@@ -12,6 +12,7 @@ public:
 
 	string name;
 	ifstream in_file;
+	ifstream inc_file;
 
 
 	std::string In_buffer;

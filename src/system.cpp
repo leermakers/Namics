@@ -208,8 +208,8 @@ bool System::generate_mask()
 	//if (extra_constraints > 0) cout <<" Detected " << extra_constraints << " extra constraints" << endl;
 	if (FrozenList.size() + SysMonList.size() + SysTagList.size() + SysClampList.size() != In[0]->MonList.size())
 	{
-		cout << " There are un-used monomers in system. Remove these before starting" << endl;
-		success = false;
+		//cout << " There are un-used monomers in system. Remove these before starting" << endl;
+		//return false; 
 	}
 
 	Zero(KSAM, M);

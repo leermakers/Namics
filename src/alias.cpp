@@ -74,6 +74,9 @@ if (debug) cout <<"CheckInput in Alias " + name << endl;
 			else {
 				if (value < 0|| value >1e7 ) {cout <<"In alias " + name + " the numerical value of 'value' out of range 0 ... 1e7" << endl; success=false; }
 			}
+		} else {
+			success=false;
+			cout << "In alias " << name << " the property 'value' is not found. Enter a valid molecular 'fragment' or a positive integer." << endl;
 		}
 	}
 	return success;

@@ -30,8 +30,30 @@ Input::Input(string name_) {
 			In_line.erase(std::remove(In_line.begin(), In_line.end(), ' '), In_line.end());
 			In_line.erase(std::remove(In_line.begin(), In_line.end(), '\t'), In_line.end());
 			if (In_line.length()==0) add = false;
-			if (In_line.length()>2) {if (In_line.substr(0,2) == "//") {add = false;}}
-//			if (add) elems.push_back(SSTR(line_nr).append(":").append(In_line)); else add=true;
+			if (In_line.length()>2) {if (In_line.substr(0,2) == "//") add = false;}
+			if (In_line.length()>7) {if (In_line.substr(0,7) == "include") {
+				add = false;
+				string filename_inc=In_line.substr(8,In_line.size()-1);
+				inc_file.open(filename_inc);
+				if (inc_file.is_open()) {
+					int line_nr_inc=0;
+					while (inc_file) {
+						line_nr_inc++;
+						bool add_also=true;
+						std::getline(inc_file,In_line);
+						In_line.erase(std::remove(In_line.begin(), In_line.end(), ' '), In_line.end());
+						In_line.erase(std::remove(In_line.begin(), In_line.end(), '\t'), In_line.end());
+						if (In_line.length()==0) add_also = false;
+						if (In_line.length()>2) {if (In_line.substr(0,2) == "//") add_also = false;}
+						if (add_also) elems.push_back(std::to_string(line_nr).append("-").append(std::to_string(line_nr_inc)).append(":").append(In_line)); else add_also=true;
+					}
+					
+					inc_file.close();
+				} else {
+					cout <<"'include : " << filename_inc <<"' not working because file is not found " << endl; Input_error=true; 
+				}
+				
+			}}
 			if (add) elems.push_back(std::to_string(line_nr).append(":").append(In_line)); else add=true;
 		}
 		in_file.close();

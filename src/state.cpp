@@ -280,8 +280,9 @@ if (debug) cout << "State::PutVarScan " << endl;
 			cout <<"In var scan: the product end_value*start_value < 0. This is not allowed. " << endl;
 			return -1;
 		}
-		if (Var_end_value > Var_start_value)
+		if (Var_end_value > Var_start_value) 
 			num_of_steps= steps* log10 (Var_end_value/Var_start_value);
+
 		else
 			num_of_steps= steps* log10 (Var_start_value/Var_end_value);
 
@@ -309,7 +310,7 @@ if (debug) cout << "State::UpdateVarInfo " << endl;
 	switch(Var_target) {
 		case 0:
 			if (scale=="exponential") {
-				alphabulk= pow(10,(1-step_nr/num_of_steps)*log10( Var_start_value)+ (step_nr/num_of_steps)*log10( Var_end_value));
+				alphabulk= pow(10,(1.0-1.0*step_nr/num_of_steps)*log10( Var_start_value)+ (1.0*step_nr/num_of_steps)*log10( Var_end_value));
 				Seg[mon_nr]->state_alphabulk[state_nr]=alphabulk;
 			} else {
 				alphabulk=Var_start_value+step_nr*Var_step;

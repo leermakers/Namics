@@ -2,7 +2,9 @@
 #include "mol_water.h"
 
 //Leermakers, Rabinovich, Balabaev, Phys Rev. E 67, 011910
-mol_water::mol_water(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) : Molecule(In_,Lat_,Seg_,name_) {}
+mol_water::mol_water(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) : Molecule(In_,Lat_,Seg_,name_) {
+phib1=0;
+}
 
 
 mol_water::~mol_water() {

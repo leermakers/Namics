@@ -22,7 +22,7 @@ mol : Cl : composition : (Cl)1
 mol : Cl : freedom : neutralizer
 
 
-mol : peptide : composition : (Np3)1(#G#)5(On)1
+mol : peptide : composition : (Np3)1#G_#(#G#)4(On)1
 mol : peptide : freedom : restricted
 mol : peptide : theta : 1
 

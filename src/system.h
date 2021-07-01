@@ -68,6 +68,7 @@ public:
 	int* H_beta;
 	int* beta;
 	bool GPU;
+	bool first_pass;
 	int n_mol;
 	int solvent;
 	int neutralizer;

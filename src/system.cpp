@@ -44,6 +44,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	progress=0;
 	old_residual = 10;
 	do_blocks=false;
+	first_pass=true; 
 }
 System::~System()
 {
@@ -1912,7 +1913,7 @@ bool System::CheckResults(bool e_info_)
 
 	if (e_info)
 		cout << endl;
-	if (e_info)
+	if (e_info&& first_pass)
 	{
 		cout << "free energy                 = " << FreeEnergy << endl;
 		cout << "grand potential             = " << GrandPotential << endl;
@@ -1926,10 +1927,10 @@ bool System::CheckResults(bool e_info_)
 			n = Mol[i]->n_box;
 		n_times_mu += n * Mu;
 	}
-	if (e_info)
+	if (e_info && first_pass)
 	{
 		cout << "free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
-		cout << "Grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl;
+		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl;
 		//	}
 
 		//for (int i=0; i<n_mol; i++) { //NEED FIX . densities are not yet computed correctly that is why it is turned off.....!!!
@@ -1957,6 +1958,7 @@ bool System::CheckResults(bool e_info_)
 		}
 		cout << endl;
 	}
+	first_pass=false; 
 	return success;
 }
 
@@ -2019,7 +2021,7 @@ Real System::GetFreeEnergy(void)
 			Add(F, TEMP, M);
 		}
 	}
-if (Mol[solvent]->MolType==water) Mol[solvent]->AddToF(F);
+	if (Mol[solvent]->MolType==water) Mol[solvent]->AddToF(F);
 	Real *phi;
 	Real *phi_side;
 	Real *g;
@@ -2186,7 +2188,7 @@ Real System::GetGrandPotential(void)
 		Add(GP, TEMP, M);
 	}
 
-if (Mol[solvent]->MolType==water) {Mol[solvent]->AddToGP(GP); }
+	if (Mol[solvent]->MolType==water) {Mol[solvent]->AddToGP(GP); }
 
 	Add(GP,alpha,M);
 	Real phibulkA;
@@ -2376,7 +2378,7 @@ bool System::CreateMu()
 			constant += phibulkB / NB;
 		}
 		Mu = Mu - NA * constant;
-		Mu+= NA*(Mol[solvent]->phib1/(1-Mol[solvent]->Kw*Mol[solvent]->phib1)-Mol[solvent]->phibulk);
+		if (Mol[solvent]->MolType==water) Mu+= NA*(Mol[solvent]->phib1/(1-Mol[solvent]->Kw*Mol[solvent]->phib1)-Mol[solvent]->phibulk);
 
 		//Real theta;
 		Real phibulkA;

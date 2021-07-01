@@ -21,8 +21,11 @@ mol : water : freedom : solvent
 mol : water : Kw : 50
 
 mon : W : chi-C : 0.8
-mon : W : chi-N : 0
-mon : W : chi-O : 0
+//estimated from lipid solubilities (cmc vs tail length)
+mon : W : chi-N : 0.1 
+//estimate by solubility of oligoglycine data
+
+mon : W : chi-O : 0.1
 mon : W : chi-On : 0
 mon : W : chi-NP1 : 0
 mon : W : chi-NP2 : 0

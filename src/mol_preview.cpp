@@ -21,7 +21,7 @@ mol_preview::~mol_preview() {
 
 
 bool mol_preview::CheckInput(int start_) {
-if (debug) cout <<"Molecule:: CheckInput" << endl;
+if (!debug) cout <<"In Preview Molecule:: CheckInput" << endl;
 start=start_;
 if (debug) cout <<"CheckInput for Mol " + name << endl;
 	bool success=true;

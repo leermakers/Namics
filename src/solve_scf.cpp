@@ -493,6 +493,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	bool report_errors=report_errors_;
 	int niv = In[0]->ReactionList.size();
 	if (niv>0) {
+cout <<"niv " << niv << endl; 
 		int i_solver=0;
 		if (solver==HESSIAN) i_solver=1;
 		if (solver==PSEUDOHESSIAN) i_solver=2;
@@ -503,6 +504,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		gradient = WEAK;
 		control= super;
 		Real* yy=(Real*) malloc((iv)*sizeof(Real)); Cp(yy,xx,iv);
+cout <<"iv " << iv << endl; 
 		SIGN=(int*) malloc((niv)*sizeof(int)); for (int i=0; i<niv; i++) SIGN[i]=1.0;
 		pseudohessian=false;  hessian =true;
 		Zero(xx,niv);
@@ -675,9 +677,11 @@ void Solve_scf::residuals(Real* x, Real* g){
 
 			for (i=0; i<sysmon_length; i++) {
 				xi=Seg[Sys[0]->SysMonList[i]]->PutAlpha(x,xi);
+cout <<"xi " << xi << endl; 
 			}
 
 			for (size_t i = 0; i<In[0]->ReactionList.size(); i++) {
+cout <<"i " << i << endl; 
 				g[i]=SIGN[i]*Rea[i]->Residual_value();
 			}
 

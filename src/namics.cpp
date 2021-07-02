@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			while (subloop < substart)
+			while (subloop <= substart)
 			{
 				if (scan_nr > -1)
 					Var[scan_nr]->PutVarScan(subloop);

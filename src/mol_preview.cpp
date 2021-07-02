@@ -14,6 +14,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("restricted_range");
 	KEYS.push_back("compute_width_interface");
 	KEYS.push_back("Kw");
+	save_memory=false; 
 }
 
 mol_preview::~mol_preview() {
@@ -21,9 +22,8 @@ mol_preview::~mol_preview() {
 
 
 bool mol_preview::CheckInput(int start_) {
-if (!debug) cout <<"In Preview Molecule:: CheckInput" << endl;
+if (debug) cout <<"In Preview Molecule:: CheckInput  for Mol " + name << endl;
 start=start_;
-if (debug) cout <<"CheckInput for Mol " + name << endl;
 	bool success=true;
 	if (!In[0]->CheckParameters("mol",name,start,KEYS,PARAMETERS,VALUES)) {
 		success=false;

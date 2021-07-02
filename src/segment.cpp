@@ -1008,6 +1008,7 @@ if (debug) cout << "Segment::PutVarScan " << endl;
 		}
 	}
 
+
 	return num_of_steps;
 }
 
@@ -1019,9 +1020,9 @@ if (debug) cout << "Segment::UpdateVarInfo() " << endl;
 		case 0:
 			if (scale=="exponential") {
 				if (valence <0)	{
-					valence=-pow(10,(1-step_nr/num_of_steps)*log10(-Var_start_value)+ (step_nr/num_of_steps)*log10(-Var_end_value));
+					valence=-pow(10,(1-1.0*step_nr/num_of_steps)*log10(-Var_start_value)+ (1.0*step_nr/num_of_steps)*log10(-Var_end_value));
 				} else {
-					valence= pow(10,(1-step_nr/num_of_steps)*log10( Var_start_value)+ (step_nr/num_of_steps)*log10( Var_end_value));
+					valence= pow(10,(1-1.0*step_nr/num_of_steps)*log10( Var_start_value)+ (1.0*step_nr/num_of_steps)*log10( Var_end_value));
 				}
 			} else {
 				valence=Var_start_value+step_nr*Var_step;
@@ -1030,9 +1031,9 @@ if (debug) cout << "Segment::UpdateVarInfo() " << endl;
 		case 1:
 			if (scale=="exponential") {
 				if (PSI0 <0)	{
-					PSI0=-pow(10,(1-step_nr/num_of_steps)*log10(-Var_start_value)+ (step_nr/num_of_steps)*log10(-Var_end_value));
+					PSI0=-pow(10,(1-1.0*step_nr/num_of_steps)*log10(-Var_start_value)+ (1.0*step_nr/num_of_steps)*log10(-Var_end_value));
 				} else {
-					PSI0= pow(10,(1-step_nr/num_of_steps)*log10( Var_start_value)+ (step_nr/num_of_steps)*log10( Var_end_value));
+					PSI0= pow(10,(1-1.0*step_nr/num_of_steps)*log10( Var_start_value)+ (1.0*step_nr/num_of_steps)*log10( Var_end_value));
 				}
 			} else {
 				PSI0=Var_start_value+step_nr*Var_step;
@@ -1054,14 +1055,14 @@ if (debug) cout << "Segment::UpdateVarInfo() " << endl;
 			break;
 		case 3:
 			if (scale=="exponential") {
-				Amplitude= pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
+				Amplitude= pow(10,(1-1.0*step_nr/num_of_steps)*log10(Var_start_value)+(1.0*step_nr/num_of_steps)*log10(Var_end_value));
 			} else {
 				Amplitude=Var_start_value+step_nr*Var_step;
 			}
 			break;
 		case 4:
 			if (scale=="exponential") {
-				var_pos=   pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
+				var_pos=   pow(10,(1-1.0*step_nr/num_of_steps)*log10(Var_start_value)+(1.0*step_nr/num_of_steps)*log10(Var_end_value));
 			} else {
 				var_pos=Var_start_value+step_nr*Var_step;
 			}
@@ -1538,11 +1539,12 @@ if (debug) cout <<"AddState " << id_ <<" to seg " << name << endl;
 
 	return state_number;
 }
-int Segment::PutAlpha(Real* x,int xi){
-	int xxi=xi;
+void Segment::PutAlpha(Real* x,int &xi){
+if (debug) cout <<"PutAlpha " << name << endl;
+
 	int n_s;
 	if (ns==1) n_s=0; else n_s=ns;
-	if (n_s==0) return xxi;
+	if (n_s==0) return ;
 	Real sum_alpha=0;
 	Real fixed_value=0;
 	int niv=1;
@@ -1553,14 +1555,13 @@ int Segment::PutAlpha(Real* x,int xi){
 
 	for (int i=0; i<n_s; i++) {
 		if (state_change[i] && niv>0 && n_free>0) {
-			state_alphabulk[i]=0.5*(1.0+tanh(10*(x[xxi])))*(1.0-fixed_value); xxi++; niv--;
+			state_alphabulk[i]=0.5*(1.0+tanh(1.0*x[xi]))*(1.0-fixed_value); xi++; niv--;
 		}
 		sum_alpha+=state_alphabulk[i];
 	}
 	for (int i=0; i<n_s; i++) {
 		if (state_alphabulk[i]==0) state_alphabulk[i]=1.0-sum_alpha;
 	}
-	return xxi;
 }
 
 bool Segment::CanBeReached(int x0, int y0, int z0, int Ds) {

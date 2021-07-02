@@ -68,9 +68,9 @@ mol : Na : freedom : neutralizer
 
 mol : Cl : composition : (cl)1
 mol : Cl : freedom : free
-mol : Cl : phibulk : 0.001
+mol : Cl : phibulk : 0.01
 
-output : kal : append : false
+output : kal : append : true
 kal : mon : water : alphabulk-H3O
 kal : mon : SiO : theta-SIO 
 kal : mon : SiO : theta-SIOH
@@ -86,7 +86,7 @@ newton : isaac : i_info : 1000
 start
 mol : Cl : freedom : neutralizer
 mol : Na : freedom : free
-mol : Na : phibulk : 0.001
+mol : Na : phibulk : 0.01
 
 state : H3O : alphabulk : 1e-7
 var : state-H3O : end_value : 1e-3

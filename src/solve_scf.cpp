@@ -493,7 +493,6 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	bool report_errors=report_errors_;
 	int niv = In[0]->ReactionList.size();
 	if (niv>0) {
-cout <<"niv " << niv << endl; 
 		int i_solver=0;
 		if (solver==HESSIAN) i_solver=1;
 		if (solver==PSEUDOHESSIAN) i_solver=2;
@@ -504,11 +503,10 @@ cout <<"niv " << niv << endl;
 		gradient = WEAK;
 		control= super;
 		Real* yy=(Real*) malloc((iv)*sizeof(Real)); Cp(yy,xx,iv);
-cout <<"iv " << iv << endl; 
 		SIGN=(int*) malloc((niv)*sizeof(int)); for (int i=0; i<niv; i++) SIGN[i]=1.0;
 		pseudohessian=false;  hessian =true;
 		Zero(xx,niv);
-		success=iterate(xx,niv,100,1e-8,0.5,deltamin,true);
+		success=iterate(xx,niv,100,1e-8,0.05,0.01,true);
 		if (!success) cout <<"iteration for alphabuk values for internal states failed. Check eqns. " << endl;
 		e_info=ee_info;
 		s_info=ss_info;
@@ -563,7 +561,7 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 	//iv should have been set at AllocateMemory.
 	mesodyn_flux = flux_callback;
 	mesodyn_load_alpha = alpha_callback;
-  mesodyn =true;
+ 	mesodyn =true;
 	gradient=MESODYN;
 
 	bool success=true;
@@ -663,7 +661,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 	//Real valence;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size(); //also frozen segments
-	int i,k,xi;
+	int i,k,xi=0;
 
 	switch(gradient) {
 		case WEAK:
@@ -671,17 +669,12 @@ void Solve_scf::residuals(Real* x, Real* g){
 
 			xi=0;
 			Zero(g,In[0]->ReactionList.size());
-			//for (i=0; i<In[0]->ReactionList.size(); i++) {
-			//	x[i]=0.5*(1.0+tanh(x[i]));
-			//}
 
 			for (i=0; i<sysmon_length; i++) {
-				xi=Seg[Sys[0]->SysMonList[i]]->PutAlpha(x,xi);
-cout <<"xi " << xi << endl; 
+				Seg[Sys[0]->SysMonList[i]]->PutAlpha(x,xi);
 			}
 
 			for (size_t i = 0; i<In[0]->ReactionList.size(); i++) {
-cout <<"i " << i << endl; 
 				g[i]=SIGN[i]*Rea[i]->Residual_value();
 			}
 

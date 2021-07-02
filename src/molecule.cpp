@@ -682,7 +682,7 @@ if (debug) cout <<"Molecule:: PutVarScan" << endl;
 		}
 
 	}
-	return num_of_steps;
+	return num_of_steps+1;
 }
 
 bool Molecule::ResetInitValue() {
@@ -757,7 +757,7 @@ if (debug) cout <<"Molecule:: UpdateVarInfo" << endl;
 	switch(Var_scan_value) {
 		case 0:
 			if (scale=="exponential") {
-				theta=pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
+				theta=pow(10,(1-1.0*step_nr/num_of_steps)*log10(Var_start_value)+(1.0*step_nr/num_of_steps)*log10(Var_end_value));
 			} else {
 				theta=Var_start_value+step_nr*Var_step;
 			}
@@ -766,7 +766,7 @@ if (debug) cout <<"Molecule:: UpdateVarInfo" << endl;
 			break;
 		case 1:
 			if (scale=="exponential") {
-				n=pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
+				n=pow(10,(1-1.0*step_nr/num_of_steps)*log10(Var_start_value)+(1.0*step_nr/num_of_steps)*log10(Var_end_value));
 			} else {
 				n=Var_start_value+step_nr*Var_step;
 			}
@@ -775,7 +775,7 @@ if (debug) cout <<"Molecule:: UpdateVarInfo" << endl;
 			break;
 		case 2:
 			if (scale=="exponential") {
-				phibulk=pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value)+(step_nr/num_of_steps)*log10(Var_end_value));
+				phibulk=pow(10,(1-1.0*step_nr/num_of_steps)*log10(Var_start_value)+(1.0*step_nr/num_of_steps)*log10(Var_end_value));
 			} else {
 				phibulk=Var_start_value+step_nr*Var_step;
 			}
@@ -783,7 +783,7 @@ if (debug) cout <<"Molecule:: UpdateVarInfo" << endl;
 			break;
 		case 3:
 			if (scale=="exponential") {
-				Al[var_al_nr]->value =(int)pow(10,(1-step_nr/num_of_steps)*log10(Var_start_value) + (step_nr/num_of_steps)*log10(Var_end_value));
+				Al[var_al_nr]->value =(int)pow(10,(1-1.0*step_nr/num_of_steps)*log10(Var_start_value) + (1.0*step_nr/num_of_steps)*log10(Var_end_value));
 			} else {
 				Gnr.clear();
 				first_s.clear();

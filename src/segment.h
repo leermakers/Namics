@@ -133,7 +133,7 @@ public:
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
-  std::vector<string> VALUES;
+ 	 std::vector<string> VALUES;
 	bool CheckInput(int);
 	void PutChiKEY(string);
 	string GetValue(string);
@@ -161,7 +161,7 @@ public:
 	Real GetValue();
 	int AddState(int,Real,Real,bool);
 	void SetPhiSide();
-	int PutAlpha(Real*,int);
+	void PutAlpha(Real*,int&);
 	bool CanBeReached(int, int, int, int);
 };
 #endif

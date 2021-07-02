@@ -1,0 +1,36 @@
+lat : flat : n_layers : 500
+lat : flat : lattice_type : simple_cubic
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+
+mon : S : freedom : frozen
+mon : S : frozen_range : 1;1
+
+mon : W : freedom : free
+mon : A : freedom : free
+mon : G : freedom : free
+mon : X : freedom : pinned
+mon : X : pinned_range : 2;2
+
+mol : pol : composition  : (X)1(A)#N#(G)1
+mol : pol : freedom : restricted
+mol : pol : n : 0.01
+
+mol : water : freedom : solvent
+mol : water : composition : (W)1
+
+alias : N : value : 100
+
+output : kal : append : false
+kal : mol : pol : N-value
+kal : mon : X : 1st_M_phi_z
+kal : mon : G : 1st_M_phi_z
+kal : mon : G : 2nd_M_phi_z
+kal : mon : G : fluctuations
+
+//output : ana : append : false 
+
+var : mol-pol : scan : N-value
+var : mol-pol : step : 10
+var : mol-pol : end_value : 500
+ 

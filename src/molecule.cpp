@@ -674,7 +674,7 @@ if (debug) cout <<"Molecule:: PutVarScan" << endl;
 		if (step==0) {
 			cout <<"In var san: of molecule variable, the value of step can not be zero" << endl; return -1;
 		}
-		num_of_steps=(Var_end_value-Var_start_value)/step+1;
+		num_of_steps=(Var_end_value-Var_start_value)/step;
 
 		if (num_of_steps<0) {
 			cout <<"In var scan : (end_value-start_value)/step is negative. This is not allowed. Try changing the sign of 'step'. " << endl;
@@ -682,7 +682,7 @@ if (debug) cout <<"Molecule:: PutVarScan" << endl;
 		}
 
 	}
-	return num_of_steps+1;
+	return num_of_steps;
 }
 
 bool Molecule::ResetInitValue() {
@@ -1831,8 +1831,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		s= "profile;"+str; push("phi-"+Seg[MolMonList[i]]->name,s);
 	}
 	for (int i=0; i<length_al; i++) {
-		push(Al[i]->name+"value",Al[i]->value);
-		push(Al[i]->name+"composition",Al[i]->composition);
+		push(Al[i]->name+"-value",Al[i]->value);
+		push(Al[i]->name+"-composition",Al[i]->composition);
 		stringstream ss; ss<<i+length; string str=ss.str();
 		s="profile;"+str; push(Al[i]->name+"-phi",s);
 	}

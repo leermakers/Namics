@@ -292,7 +292,7 @@ if (debug) cout << "State::PutVarScan " << endl;
 			cout <<"In var scan : of segment variable, the value of step can not be zero" << endl;
 			return -1;
 		}
-		num_of_steps=(Var_end_value-Var_start_value)/step+1;
+		num_of_steps=(Var_end_value-Var_start_value)/step;
 
 		if (num_of_steps<0) {
 			cout<<"In var scan : (end_value-start_value)/step is negative. This is not allowed. Try changing the sign of the 'step'." << endl;

@@ -125,6 +125,8 @@ if (debug) cout <<"PushOutput in Alias " + name << endl;
 	Reals_value.clear();
 	ints.clear();
 	ints_value.clear();
+
+	push("value",value);
 #ifdef CUDA
 	TransferDataToHost(H_phi,phi,Lat[0]->M);
 #endif

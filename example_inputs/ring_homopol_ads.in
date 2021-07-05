@@ -1,0 +1,31 @@
+lat : flat : n_layers : 200
+lat : flat : lattice_type : simple_cubic
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+
+mon : Si : freedom : frozen
+mon : Si : frozen_range : 1;1
+mon : A : freedom : free
+mon : W : freedom : free
+mon : A : chi - Si : -6
+mon : H : freedom : free
+mon : H : chi - Si : -6
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : pol : composition : (H)1(A)1000(H)1
+mol : pol : freedom : free
+mol : pol : phibulk : 1e-4
+mol : pol : ring : true
+//'ring' option also possible for comb and branched macromolecules, i.e. for all compositions which have a main chain. 
+
+output : pro : append : true
+pro : mol : pol : phi
+pro : mol : water : phi
+
+newton : isaac : deltamax : 0.1
+newton : isaac : method : pseudohessian
+newton : isaac : iterationlimit : 1000
+
+start 

@@ -83,11 +83,12 @@ if (debug) cout <<"BackAndForth2ndO for mol_dend " + name << endl;
 					Lat[0]->Terminate(GS,Gg_b+(s%2)*M*size,M);
 					Lat[0]->propagate(GS,Seg[mon_nr[b]]->G1,0,1,M);
 					Lat[0]->Initiate(Gg_b+((s+1)%2)*M*size,GS+M,M);
+
 				} else {
 					Lat[0] ->propagateB(Gg_b,Seg[mon_nr[b]]->G1,P,s%2,(s+1)%2,M);
 				}
 				s++;
-				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size,d_mon[b], M); 
+				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size,d_mon[b], M);
 			}
 		}
 		if (s<slast) {
@@ -100,9 +101,8 @@ if (debug) cout <<"BackAndForth2ndO for mol_dend " + name << endl;
 			Lat[0]->Initiate(Gg_b+((s+1)%2)*M*size,GS+M,M);
 			s++;
 			Lat[0]->AddPhiS(rho+molmon_nr[bN+1]*M, Gg_f+(s)*M*size, Gg_b+(s%2)*M*size,d_mon[bN+1], M);
-			//Lat[0]->Terminate(GS,Gg_b+(s%2)*M*size,M);
 			Times(GS+M,GS+M,GS+2*M,M);
-			Lat[0]->Initiate(Gg_b+(s%2)*M,GS+M,M);
+			Lat[0]->Initiate(Gg_b+(s%2)*M*size,GS+M,M);
 		}
 	}
 	delete [] GS;
@@ -177,7 +177,6 @@ if (debug) cout <<"BackAndForth for mol_dend " + name << endl;
 			Lat[0]->Terminate(GS,Gg_b+(s%2)*M*size,M);
 			Times(GS,GS,GS+2*M,M);
 			Lat[0]->Initiate(Gg_b+(s%2)*M,GS,M);
-			//Times(Gg_b+(s%2)*M,Gg_b+(s%2)*M,GS+2*M,M);
 		}
 	}
 	delete [] GS;

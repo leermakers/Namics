@@ -341,7 +341,7 @@ int M=Lat[0]->M;
 }
 
 bool Molecule::CheckInput(int start_) {
-if (!debug) cout <<"Molecule:: CheckInput" << endl;
+if (debug) cout <<"Molecule:: CheckInput" << endl;
 start=start_;
 phibulk=0;
 n=0;
@@ -1134,7 +1134,7 @@ return true;
 }
 
 bool Molecule::Decomposition(string s){
-if (!debug) cout <<"Decomposition for Mol " + name << endl;
+if (debug) cout <<"Decomposition for Mol " + name << endl;
 	bool success = true;
 	bool aliases = true;
 	MolType=linear;//default;

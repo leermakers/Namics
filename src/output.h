@@ -34,6 +34,7 @@ public:
 	int output_nr;
 	bool write_bounds;
 	bool append;
+	bool write; 
 	bool input_error;
 	int first;
 	string output_folder;

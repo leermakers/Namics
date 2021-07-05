@@ -152,13 +152,11 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 									success=false; cout <<"In var:"+name+":mu, Target value rejected" << endl;
 								}
 							} else {
-//cout <<"punt 1 "<< endl;
 								target_nr = pos; R_target=12345.0;
 								if (sub_[0]!="mol") {success=false; cout <<"in var:"+name+":mu, target should be specified as mol-'name'. " << endl; }
 								if (!In[0]->InSet(In[0]->MolList,eq_to_mu,sub_[1])) { success=false; cout <<"In 'var:"+name+":mu: mol-'name', 'name' is not valid mol-name. " << endl; }
 								if (success) Mol[pos]->PutVarInfo("target","mu",R_target);
 							}
-//cout <<"punt 2 " << endl;
 						}
 						if (GetValue("theta").size()>0) {
 							if (R_target ==-123.0) {
@@ -323,7 +321,8 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						cout <<"progamming error in variate " << endl;
 						break;
 				}
-				success=num_of_cals>0;
+				
+				success=num_of_cals>=0;
 				cout <<"num of calculations " << num_of_cals << endl;
 
 			}

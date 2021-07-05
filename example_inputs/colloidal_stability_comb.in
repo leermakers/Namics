@@ -1,0 +1,57 @@
+lat : flat : n_layers : 100
+lat : flat : gradients : 1
+lat : flat : geometry : planar
+lat : flat : lattice_type : simple_cubic
+lat : flat : Markov : 1
+lat : flat : k_stiff : 1
+
+
+mon : Si : freedom : frozen
+mon : Si : frozen_range : 1;1
+
+mon : Si : chi - B : -6
+mon : A : chi - W : 0.5
+//mon : S : chi - A : 6
+
+mon : W : freedom : free
+mon : A : freedom : free
+mon : B : freedom : free
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : pol : composition : @comb((B)10;B,(A)25,(B)9,100;(B)1)
+mol : pol : freedom : free
+mol : pol : phibulk : 0.001
+
+output : pro : append : false
+pro : mol : pol : phi 
+pro : mon : A : phi
+pro : mon : B : phi
+newton : isaac : method : pseudohessian
+newton : isaac : deltamax : 0.01
+newton : isaac : i_info : 1000
+
+start
+output : pro : write : false
+//suppress pro output 
+output : kal : append : false
+kal : newton : isaac : iterations
+kal : newton : isaac : residual
+kal : lat : flat : n_layers
+kal : sys : noname : grand_potential
+
+lat : flat : n_layers : 100
+var : lat-flat : scan : n_layers
+var : lat-flat : step : -5
+var : lat-flat : end_value : 30
+start
+output : kal : append : true
+lat : flat : n_layers : 30
+output : pro : write : true
+start
+output : pro : write : false
+var : lat-flat : step  :-1
+var : lat-flat : end_value : 3
+start
+

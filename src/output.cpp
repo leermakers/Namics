@@ -9,6 +9,8 @@ if (debug) cout <<"constructor in Output "<< endl;
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");
+	KEYS.push_back("write");
+	KEYS.push_back("clear"); 
 	input_error=false;
 	bin_folder = "bin"; // folder in Namics where the binary is located
 	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
@@ -109,10 +111,11 @@ if (debug) cout << "CheckInput in output " << endl;
 			if (name=="pro") append=false;
 			if (name=="vtk") append=false;
 			if (name=="vec") append=true;
-			if (name=="pro") append=true;
 		}
 
 		write_bounds = In[0]->Get_bool(GetValue("write_bounds"),false);
+		write  = In[0]->Get_bool(GetValue("write"),true);
+
 
 		if (GetValue("use_output_folder").size()>0) {
 			use_output_folder = In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
@@ -341,6 +344,7 @@ if (debug) cout << "GetValue (long) in output " << endl;
 
 void Output::WriteOutput(int subl) {
 if (debug) cout << "WriteOutput in output " + name << endl;
+	if (!write) return; 
 	int length;
 	int Size=0;
 	string s;
@@ -455,7 +459,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	}
 
 	if (name=="kal") {
-		if (start >first || subl>1) append=true;
+		if (start>first|| subl>0) append=true;
 		ifstream my_file(filename.c_str());
 		FILE *fp;
 		if (!(my_file && append)) {

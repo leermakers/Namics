@@ -1,0 +1,31 @@
+lat : flat : n_layers : 200
+lat : flat : lattice_type : simple_cubic
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+
+mon : Si : freedom : frozen
+mon : Si : frozen_range : 1;1
+mon : A : freedom : free
+mon : W : freedom : free
+mon : A : chi - Si : -6
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : pol : composition : (A)10000
+mol : pol : freedom : free
+mol : pol : phibulk : 1e-4
+//mol : pol : save_memory : true
+//When storage needs to be reduced you can always try save_memory. It will reduce storage of end point distibutions, but only for linear and branched chain architectures.
+
+output : pro : append : true
+pro : mol : pol : phi
+pro : mol : water : phi
+
+newton : isaac : deltamax : 0.1
+newton : isaac : method : pseudohessian
+newton : isaac : iterationlimit : 1000
+
+sys : polad : initial_guess : polymer_adsorption
+
+start 

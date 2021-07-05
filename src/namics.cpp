@@ -463,10 +463,11 @@ int main(int argc, char *argv[])
 		int subloop = 0;
 		if (scan_nr < 0)
 			substart = 0;
-		else
+		else {
 			substart = Var[scan_nr]->num_of_cals;
+		}
 		if (substart < 1)
-			substart = 1; // Default to 1 substart
+			substart = 0; // Default to 1 substart
 
 		EngineType TheEngine;
 		TheEngine = SCF;

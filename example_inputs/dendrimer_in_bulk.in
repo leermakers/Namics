@@ -1,0 +1,33 @@
+lat : flat : geometry : flat 
+lat : flat : n_layers : 100
+lat : flat : gradients : 1
+lat : flat : lattice_type : simple_cubic
+lat : flat : Markov : 2
+lat : flat : k_stiff : 1
+
+mon : X : freedom : pinned
+mon : X : pinned_range : 1;1
+
+mon : W : freedom : free
+mon : A : freedom : free
+mon : B : freedom : free
+mon : C : freedom : free
+mon : D : freedom : free
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : pol : composition : @dend(X,(A)24,2;A,(B)24,2;B,(D)25(D)5,2)
+mol : pol : freedom : restricted
+mol : pol : n : 0.01
+
+output : pro : append : false
+pro : mol : pol : phi 
+pro : mon : A : phi
+pro : mon : B : phi
+pro : mon : C : phi
+
+newton : isaac : tolerance : 1e-9
+start
+lat : flat : Markov : 1
+

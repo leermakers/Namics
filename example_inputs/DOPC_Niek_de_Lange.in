@@ -1,0 +1,79 @@
+lat : vlak : n_layers : 400
+lat : vlak : lattice_type : hexagonal
+lat : vlak : geometry : flat
+lat : vlak : bondlength : 3e-10
+lat : vlak : FJC_choices : 5
+
+mon : C : chi - W : 1.2000000000000000
+mon : C : chi - O : 2.0000000000000000
+mon : C : chi - P : 2.0000000000000000
+mon : C : chi - N : 2.0000000000000000
+mon : C : chi - C2 : 0.5000000000000000
+
+mon : W : chi - O : -0.2000000000000000
+mon : W : chi - P : -0.2000000000000000
+mon : W : chi - N : -0.2000000000000000
+mon : W : chi - C2 : 0.5000000000000000
+
+mon : O : chi - P : 0.0000000000000000
+mon : O : chi - N : 0.0000000000000000
+mon : O : chi - C2 : 1.0000000000000000
+
+mon : P : chi - N : -0.5000000000000000
+mon : P : chi - C2 : 1.0000000000000000
+
+mon : N : chi - C2 : 1.0000000000000000
+
+mon : C2 : freedom : free
+
+mol : Lipid : composition : (C)18 [(O)1](O)1(C)2[(O)1(C)1[(O)1](C)17](C)1(P)2[(P)1][(P)1](P)1(C)2(N)1[(C2)1][(C2)1](C2)1
+mol : Lipid : freedom : restricted
+mol : Lipid : theta : 4
+
+mol : Solvent : composition : (W)2[(W)1][(W)1](W)1
+mol : Solvent : freedom : solvent
+
+newton : isaac : method : pseudohessian
+newton : isaac : m : 4
+newton : isaac : iterationlimit : 10000
+newton : isaac : tolerance : 1e-8
+newton : isaac : deltamax : 0.2
+newton : isaac : e_info : true
+newton : isaac : s_info : true
+newton : isaac : i_info : true
+newton : isaac : super_e_info : false
+newton : isaac : super_i_info : false
+
+//when initial_guess : membrane does not work, we can always use the classical pinning 'trick' to generate initial guess.
+sys : Niek : initial_guess : membrane
+//sys : Niek : initial_guess : previous_result
+//mon : C : freedom : pinned
+//mon : C : pinned_range : 1;14
+//start
+//mon : C : freedom : free
+
+newton : isaac : super_tolerance : 1e-6
+var : mol-Lipid : search : theta
+var : sys-Niek : grand_potential : 0
+
+output : pro : append : false
+pro : sys : noname : GrandPotentialDensity
+pro : mol : * : phi
+pro : mon : * : phi
+pro : mol : Lipid : phi-C
+pro : mol : Lipid : phi-O
+
+output : kal : append : false
+kal : lat : vlak : n_layers
+kal : mon : C : chi-W
+kal : sys : noname : Kbar
+kal : mol : * : mu
+kal : mol : * : phibulk
+kal : sys : noname : grand_potential
+kal : mol : * : theta
+kal : mol : * : phibulk
+kal : mol : * : n
+
+start
+//sys: niek : initial_guess : previous_result
+

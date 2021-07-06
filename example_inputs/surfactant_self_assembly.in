@@ -1,0 +1,82 @@
+lat : sph : geometry  : spherical
+lat : sph : n_layers : 50
+lat : sph : gradients : 1
+lat : sph : lattice_type : hexagonal
+lat : sph : bondlength : 3e-10
+lat : sph : FJC_choices : 5
+
+mon : W : freedom : free
+mon : C : freedom : free
+mon : N : valence : 0.25
+mon : Na : valence : 1
+mon : Cl : valence : -1
+
+mon : C : epsilon : 2
+mon : W : epsilon : 80
+mon : N  : epsilon : 10
+mon : Na : epsilon : 10
+mon : Cl : epsilon : 10
+
+mon : W : chi - C : 1.2
+mon : W : chi - N : 0
+mon : N : chi - C : 2
+mon : Na : chi - C : 2
+mon : Cl : chi - C : 2
+
+mol : water : composition : (W)5
+mol : water : freedom : solvent
+
+mol : CTA : composition : (C)16(N)1[(N)1][(N)1](N)1
+mol : CTA : freedom : restricted
+mol : CTA : theta : 6000
+
+mol : Na : composition : (Na)1
+mol : Na : freedom : free
+mol : Na : phibulk : 0.01
+
+mol : Cl : composition : (Cl)1
+mol : Cl : freedom : neutralizer
+
+//output : pro : append : false
+//pro : mol : CTA : phi
+//pro : mon : * : phi
+
+newton : isaac : i_info : 100
+newton : isaac : iterationlimit : 5000
+newton : isaac : deltamax : 0.01
+
+sys : micelle : initial_guess : micelle
+start
+sys : micelle : initial_guess : previous_result
+mol : Na : phibulk : 0.001
+lat : sph : n_layers : 60
+start
+lat : sph : n_layers : 80
+start
+lat : sph : n_layers : 100
+start
+lat : sph : n_layers : 120
+start
+lat : sph : n_layers : 140
+start
+lat : sph : n_layers : 160
+start
+lat : sph : n_layers : 180
+start
+lat : sph : n_layers : 200
+
+var : mol-CTA : scan : theta
+var : mol-CTA : step : -500
+var : mol-CTA : end_value : 4000
+start
+output : kal : append : false
+kal : sys : micelle : grand_potential 
+kal : mol : CTA : theta
+kal : mol : CTA : theta_exc
+kal : mol : CTA : phibulk
+mol : CTA : theta : 4000
+var : mol-CTA : step : -25
+var : mol-CTA : end_value : 100
+ 
+start
+

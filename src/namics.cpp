@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 	{
 
 		start++;
-		In[0]->MakeLists(start);
+		if (!In[0]->MakeLists(start)) return 0;
 		cout << "Problem nr " << start << " out of " << n_starts << endl;
 
 		/******** Class creation starts here ********/
@@ -426,24 +426,24 @@ int main(int argc, char *argv[])
 			int m;
 			if (MY == 0)
 			{
-				m = MX + 2;
+				m = MX + 2*fjc_old;
 			}
 			else
 			{
 				if (MZ == 0)
 				{
-					m = (MX + 2) * (MY + 2);
+					m = (MX + 2*fjc_old) * (MY + 2*fjc_old);
 				}
 				else
 				{
-					m = (MX + 2) * (MY + 2) * (MZ + 2);
+					m = (MX + 2*fjc_old) * (MY + 2*fjc_old) * (MZ + 2*fjc_old);
 				}
 			}
 			int IV = (nummon + numstate) * m;
 
 			if (CHARGED)
 				IV += m;
-			if (start > 1)
+			if (start > 0)
 			{
 #ifdef CUDA
 				cudaFree(X);

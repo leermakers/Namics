@@ -950,7 +950,6 @@ if (debug) cout <<"ReadGuess in output" << endl;
 	string s_charge;
 	int num_1,num_2;
 	string name;
- 	if (fjc>1) cout <<"ReadGuess is not  yet prepared for working with FJC-choices > 3 " << endl;
 	in_file.open(filename.c_str());
 	if (in_file.is_open()) {
 		while (in_file && readx>-1) {
@@ -959,20 +958,23 @@ if (debug) cout <<"ReadGuess in output" << endl;
 			in_file>>s_charge;
 			if (s_charge=="true") charged=true; else charged=false;
 			in_file>>num_1;
-			for (int i=0; i<num_1; i++) {in_file >> name;
-				 monlist.push_back(name);
+			for (int i=0; i<num_1; i++) {
+				in_file >> name;
+				monlist.push_back(name);
 			}
 			in_file>>num_2;
-			for (int i=0; i<num_2; i++) {in_file>> name;
+			for (int i=0; i<num_2; i++) {
+				in_file>> name;
 				statelist.push_back(name);
 			}
 			if (readx==0) readx=-2; else {
 				int m;
-				if (my==0) {m=(mx+2);} else {if (mz==0) m=(mx+2)*(my+2); else {m=(mx+2)*(my+2)*(mz+2);}}
+				if (my==0) {m=(mx+2*fjc);} else {if (mz==0) m=(mx+2*fjc)*(my+2*fjc); else {m=(mx+2*fjc)*(my+2*fjc)*(mz+2*fjc);}}
 				int iv=(num_1+num_2)*m;
 				if (charged) iv +=m;
 				for (int i=0; i<iv; i++) {
-					in_file >> x[i];  //cout <<"R i " << i << " " << x[i] << endl;
+					in_file >> x[i];  
+					//cout <<"R i " << i << " " << x[i] << endl;
 				}
 				readx=-3;
 			}
@@ -988,7 +990,6 @@ if (debug) cout <<"ReadGuess in output" << endl;
 bool Lattice::StoreGuess(string Filename,Real *x,string method, vector<string> monlist,vector<string>statelist, bool charged, int start) {
 if (debug) cout <<"StoreGuess in output" << endl;
 	bool success=true;
- 	if (fjc>1) cout <<"StoreGuess is not  yet prepared for working with FJC-choices > 3 " << endl;
 	string s;
 	int mon_length = monlist.size();
 	int state_length = statelist.size();

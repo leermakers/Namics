@@ -1781,7 +1781,9 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		}
 	}
 	push("theta",theta);
-	Real thetaexc=theta-phibulk*Lat[0]->volume/pow(Lat[0]->fjc,Lat[0]->gradients);
+	YisAplusC(phitot,phitot,-1.0*phibulk,Lat[0]->M);
+	Real thetaexc=Lat[0]->ComputeGN(phitot,Lat[0]->M);
+	YisAplusC(phitot,phitot,phibulk,Lat[0]->M);
 	push("theta_exc",thetaexc);
 	push("thetaexc",thetaexc);
 	push("n",n);

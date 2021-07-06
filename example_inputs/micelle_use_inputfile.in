@@ -1,0 +1,71 @@
+lat : sph : geometry  : spherical
+lat : sph : n_layers : 200
+lat : sph : gradients : 1
+lat : sph : lattice_type : hexagonal
+lat : sph : bondlength : 3e-10
+lat : sph : FJC_choices : 5
+
+mon : W : freedom : free
+mon : C : freedom : free
+mon : N : valence : 0.25
+mon : Na : valence : 1
+mon : Cl : valence : -1
+
+mon : C : epsilon : 2
+mon : W : epsilon : 80
+mon : N  : epsilon : 10
+mon : Na : epsilon : 10
+mon : Cl : epsilon : 10
+
+mon : W : chi - C : 1.2
+mon : W : chi - N : 0
+mon : N : chi - C : 2
+mon : Na : chi - C : 2
+mon : Cl : chi - C : 2
+
+mol : water : composition : (W)5
+mol : water : freedom : solvent
+
+mol : CTA : composition : (C)16(N)1[(N)1][(N)1](N)1
+mol : CTA : freedom : restricted
+mol : CTA : theta : 6000
+
+mol : Na : composition : (Na)1
+mol : Na : freedom : free
+mol : Na : phibulk : 0.01
+
+mol : Cl : composition : (Cl)1
+mol : Cl : freedom : neutralizer
+
+//output : pro : append : false
+//pro : mol : CTA : phi
+//pro : mon : * : phi
+
+newton : isaac : i_info : 1000
+newton : isaac : iterationlimit : 10000
+newton : isaac : deltamax : 0.1
+newton : isaac : hs_info : false
+
+sys : micelle : initial_guess : file
+sys : micelle : guess_inputfile : micelle.outi
+start
+mol : Na : phibulk : 0.001
+sys : micelle : initial_guess : previous_result
+start
+mol : Na : phibulk : 0.001
+
+output : kal : append : false
+kal : sys : micelle : grand_potential 
+kal : mol : CTA : theta
+kal : mol : CTA : theta_exc
+kal : mol : CTA : phibulk
+mol : CTA : theta : 3000
+var : mol-CTA : scan : theta
+var : mol-CTA : step : -100
+var : mol-CTA : end_value : 2000
+ 
+start
+mol : CTA : theta : 2000
+var : mol-CTA : step : -10
+var : mol-CTA : end_value : 100
+

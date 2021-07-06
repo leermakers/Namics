@@ -363,7 +363,7 @@ if(debug) cout <<"newhessian in Newton" << endl;
 			theta = py/(10*dmin+ALPHA*php);
 
 			if ( nvar>=1 && theta>0 && iterations==resetiteration+1 && accuracy > max_accuracy_for_hessian_scaling) {
-				if (e_info ) {
+				if (e_info && hs_info) {
 					cout << "hessian scaling: " << theta << endl;
 				}
 				ALPHA *= theta;

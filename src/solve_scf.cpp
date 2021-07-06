@@ -7,7 +7,7 @@ Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> S
 if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("method");
 	KEYS.push_back("gradient_type");
-	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");
+	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");KEYS.push_back("hs_info"); 
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance");
 	KEYS.push_back("stop_criterion");
 	KEYS.push_back("deltamin");KEYS.push_back("deltamax");
@@ -100,6 +100,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 	s_info=false;
 	e_info=false;
 	t_info=false;
+	hs_info=true;
 	i_info=1;
 	hessian =false;
 	bool success=true;
@@ -117,6 +118,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		if (iterationlimit < 0 || iterationlimit>1e6) {iterationlimit = 1000;}
 
 		e_info=In[0]->Get_bool(GetValue("e_info"),true); value_e_info=e_info;
+		hs_info=In[0]->Get_bool(GetValue("hs_info"),true); 
 		s_info=In[0]->Get_bool(GetValue("s_info"),false); value_s_info =s_info;
 		t_info=In[0]->Get_bool(GetValue("t_info"),false);
 		i_info=In[0]->Get_int(GetValue("i_info"),1);

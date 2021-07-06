@@ -45,6 +45,7 @@ public:
 	bool d_info;
 	bool g_info;
 	bool h_info;
+	bool hs_info;
 	bool x_info;
 	bool s_info;
 	bool t_info;

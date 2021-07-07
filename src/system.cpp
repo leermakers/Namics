@@ -1207,7 +1207,7 @@ void System::PushOutput()
 	push("free_energy", FreeEnergy);
 	push("grand_potential", GrandPotential);
 	push("start",start);
-	push("Laplace_pressure",GrandPotentialDensity[Lat[0]->fjc]);
+	push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->fjc]);
 	if (GetValue("delta_range").size()>0) push("delta_range",GetValue("delta_range"));
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++)

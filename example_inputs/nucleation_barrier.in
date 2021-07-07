@@ -1,0 +1,274 @@
+lat : sphere : geometry : spherical
+lat : sphere : gradients : 1
+lat : sphere : n_layers : 200
+lat : sphere : lattice_type : hexagonal
+lat : sphere : FJC_choices : 5
+
+mon : A : freedom : pinned
+mon : A : pinned_range : 1;150
+
+mon : B : freedom : free
+
+mol : A : composition : (A)4
+mol : A : freedom : restricted
+mol : A : theta : 700000
+mol : A : compute_width_interface : true
+
+mol : B : composition : (B)4
+mol : B : freedom : solvent
+
+mon : A : chi - B : 0.8
+start
+
+mon : A : freedom : free
+output : pro : append : false
+pro : mol : * : phi
+start
+output : kal : append : false
+kal : sys : noname : Laplace_pressure
+kal : sys : noname : grand_potential 
+kal : mol : A : Dphi
+kal : mol : A : pos_interface
+kal : mol : A : width
+kal : mol : A : phibulk 
+kal : mol : A : theta
+newton : isaac : i_info : 1000
+sys : noname : constraint : delta
+sys : noname : delta_molecules : A;B
+sys : noname : delta_range : (121)
+sys : noname : phi_ratio : 1
+//ratio should be preferably sqrt(N_A/N_B) which is the ratio between the two critical densities.
+mol : A : freedom : free
+mol : A : phibulk : 5.74596414792e-2
+//normalising by phibulk possible because of beta-constraint which fixes the position of the interface. 
+start
+output : pro : write : false
+output : kal : append : true
+sys : noname : delta_range : (120)
+start
+sys : noname : delta_range : (119)
+start
+sys : noname : delta_range : (118)
+start
+sys : noname : delta_range : (117)
+start
+sys : noname : delta_range : (116)
+start
+sys : noname : delta_range : (115)
+start
+sys : noname : delta_range : (114)
+start
+sys : noname : delta_range : (113)
+start
+sys : noname : delta_range : (112)
+start
+sys : noname : delta_range : (111)
+start
+sys : noname : delta_range : (110)
+start
+sys : noname : delta_range : (109)
+start
+sys : noname : delta_range : (108)
+start
+sys : noname : delta_range : (107)
+start
+sys : noname : delta_range : (106)
+start
+sys : noname : delta_range : (105)
+start
+sys : noname : delta_range : (104)
+start
+sys : noname : delta_range : (103)
+start
+sys : noname : delta_range : (102)
+start
+sys : noname : delta_range : (101)
+start
+sys : noname : delta_range : (100)
+start
+sys : noname : delta_range : (99)
+start
+sys : noname : delta_range : (98)
+start
+sys : noname : delta_range : (97)
+start
+sys : noname : delta_range : (96)
+start
+sys : noname : delta_range : (95)
+start
+sys : noname : delta_range : (94)
+start
+sys : noname : delta_range : (93)
+start
+sys : noname : delta_range : (92)
+start
+sys : noname : delta_range : (91)
+start
+sys : noname : delta_range : (90)
+start
+sys : noname : delta_range : (89)
+start
+sys : noname : delta_range : (88)
+start
+sys : noname : delta_range : (87)
+start
+sys : noname : delta_range : (86)
+start
+sys : noname : delta_range : (85)
+start
+sys : noname : delta_range : (84)
+start
+sys : noname : delta_range : (83)
+start
+sys : noname : delta_range : (82)
+start
+sys : noname : delta_range : (81)
+start
+sys : noname : delta_range : (80)
+start
+sys : noname : delta_range : (79)
+start
+sys : noname : delta_range : (78)
+start
+sys : noname : delta_range : (77)
+start
+sys : noname : delta_range : (76)
+start
+sys : noname : delta_range : (75)
+start
+sys : noname : delta_range : (74)
+start
+sys : noname : delta_range : (73)
+start
+sys : noname : delta_range : (72)
+start
+sys : noname : delta_range : (71)
+start
+sys : noname : delta_range : (70)
+start
+sys : noname : delta_range : (69)
+start
+sys : noname : delta_range : (68)
+start
+sys : noname : delta_range : (67)
+start
+sys : noname : delta_range : (66)
+start
+sys : noname : delta_range : (65)
+start
+sys : noname : delta_range : (64)
+start
+sys : noname : delta_range : (63)
+start
+sys : noname : delta_range : (62)
+start
+sys : noname : delta_range : (61)
+start
+sys : noname : delta_range : (60)
+start
+sys : noname : delta_range : (59)
+start
+sys : noname : delta_range : (58)
+start
+sys : noname : delta_range : (57)
+start
+sys : noname : delta_range : (56)
+start
+sys : noname : delta_range : (55)
+start
+sys : noname : delta_range : (54)
+start
+sys : noname : delta_range : (53)
+start
+sys : noname : delta_range : (52)
+start
+sys : noname : delta_range : (51)
+start
+sys : noname : delta_range : (50)
+start
+sys : noname : delta_range : (49)
+start
+sys : noname : delta_range : (48)
+start
+sys : noname : delta_range : (47)
+start
+sys : noname : delta_range : (46)
+start
+sys : noname : delta_range : (45)
+start
+sys : noname : delta_range : (44)
+start
+sys : noname : delta_range : (43)
+start
+sys : noname : delta_range : (42)
+start
+sys : noname : delta_range : (41)
+start
+sys : noname : delta_range : (40)
+start
+sys : noname : delta_range : (39)
+start
+sys : noname : delta_range : (38)
+start
+sys : noname : delta_range : (37)
+start
+sys : noname : delta_range : (36)
+start
+sys : noname : delta_range : (35)
+start
+sys : noname : delta_range : (34)
+start
+sys : noname : delta_range : (33)
+start
+sys : noname : delta_range : (32)
+start
+sys : noname : delta_range : (31)
+start
+sys : noname : delta_range : (30)
+start
+sys : noname : delta_range : (29)
+start
+sys : noname : delta_range : (28)
+start
+sys : noname : delta_range : (27)
+start
+sys : noname : delta_range : (26)
+start
+sys : noname : delta_range : (25)
+start
+sys : noname : delta_range : (24)
+start
+sys : noname : delta_range : (23)
+start
+sys : noname : delta_range : (22)
+start
+sys : noname : delta_range : (21)
+start
+sys : noname : delta_range : (20)
+start
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

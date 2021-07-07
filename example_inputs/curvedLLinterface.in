@@ -1,0 +1,39 @@
+lat : sphere : geometry : spherical
+lat : sphere : gradients : 1
+lat : sphere : n_layers : 200
+lat : sphere : lattice_type : hexagonal
+lat : sphere : FJC_choices : 5
+
+mon : A : freedom : pinned
+mon : A : pinned_range : 1;120
+
+mon : B : freedom : free
+
+mol : A : composition : (A)4
+mol : A : freedom : restricted
+mol : A : theta : 400000
+mol : A : compute_width_interface : true
+
+mol : B : composition : (B)4
+mol : B : freedom : solvent
+
+mon : A : chi - B : 0.8
+start
+mon : A : freedom : free
+//output : pro : append : false
+//pro : mol : * : phi
+output : kal : append : false
+kal : sys : noname : Laplace_pressure
+kal : sys : noname : grand_potential 
+kal : mol : A : Dphi
+kal : mol : A : pos_interface
+kal : mol : A : width
+kal : mol : A : phibulk 
+kal : mol : A : theta
+start 
+output : kal : append : true
+var : mol-A : scan : theta
+var : mol-A : step : 1000
+var : mol-A : end_value : 600000
+newton : isaac : i_info : 1000
+

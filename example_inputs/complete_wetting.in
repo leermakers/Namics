@@ -1,0 +1,42 @@
+lat : flat : n_layers : 200
+lat : flat : lattice_type : hexagonal
+lat : flat : gradients : 1
+lat : flat : geometry : planar
+lat : flat : FJC_choices : 5
+
+mon : S : freedom : frozen
+mon : S : frozen_range : 1;1
+
+mon : A : freedom : free
+mon : W : freedom : free
+
+mon : S : chi - A : -2
+mon : S : chi - W : 0
+
+mon : A : chi - W : 1
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : pol : composition : (A)25
+mol : pol : freedom : restricted
+
+newton : isaac : i_info : 100
+newton : isaac : hs_info : false
+
+output : kal : append : false
+kal : mol : pol : theta_exc
+kal : mol : pol : phibulk
+kal : sys : noname : grand_potential
+
+mol : pol : theta : 0.1
+var : mol-pol : scan : theta
+var : mol-pol : step : 0.1
+var : mol-pol : end_value : 1
+
+start
+output : kal : append : true
+mol : pol : theta : 1
+var : mol-pol : step : 0.5
+var : mol-pol : end_value : 20
+

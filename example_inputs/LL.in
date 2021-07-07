@@ -1,0 +1,42 @@
+lat : flat : n_layers : 100
+lat : flat : geometry : planar
+lat : flat : lattice_type : hexagonal
+//lat : flat : FJC_choices : 5
+
+mon : A : freedom : pinned
+mon : A : pinned_range : 1;60
+
+mon : B : freedom : free
+mon : A : chi-B : 0.8
+
+mol : A : composition : (A)4
+mol : A : freedom : restricted
+mol : A : theta : 50
+
+mol : B : composition : (B)4
+mol : B : freedom : solvent
+
+start
+mon : A : freedom : free
+newton : isaac : method : pseudohessian
+newton : isaac : deltamax : 0.5
+start
+
+output : pro : append : false
+pro : mon : A : phi
+pro : mon : B : phi
+
+sys : L : constraint : delta
+sys : L : delta_molecules : A;B
+sys : L : delta_range : (50)
+sys : L : phi_ratio : 1
+
+var : mol-A : search : theta
+var : sys-L : Laplace_pressure : 0
+
+output : kal : append : false
+kal : sys : L : grand_potential
+newton : isaac : tolerance : 1e-10
+newton : isaac : super_deltamax : 0.00001
+
+start

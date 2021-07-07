@@ -1,0 +1,87 @@
+lat : sphere : geometry : spherical
+lat : sphere : gradients : 1
+lat : sphere : n_layers : 100
+lat : sphere : lattice_type : hexagonal
+//lat : sphere : FJC_choices : 5
+
+mon : A : freedom : pinned
+mon : A : pinned_range : 1;75
+
+mon : B : freedom : free
+
+mol : A : composition : (A)4
+mol : A : freedom : restricted
+mol : A : theta : 800000
+mol : A : compute_width_interface : true
+
+mol : B : composition : (B)4
+mol : B : freedom : solvent
+
+mon : A : chi - B : 0.8
+start
+
+mon : A : freedom : free
+start
+output : kal : append : false
+kal : sys : noname : Laplace_pressure
+kal : sys : noname : grand_potential 
+kal : mol : A : Dphi
+kal : mol : A : pos_interface
+kal : mol : A : width
+kal : mol : A : phibulk 
+kal : mol : A : theta
+
+newton : isaac : i_info : 1000
+newton : isaac : tolerance : 1e-10
+newton : isaac : deltamax : 0.1
+newton : isaac : super_deltamax : 1e-5
+newton : isaac : super_tolerance : 1e-8
+ 
+sys : L : constraint : delta
+sys : L : delta_molecules : A;B
+sys : L : delta_range : (56)
+sys : L : phi_ratio : 1
+
+var : mol-A : search : theta
+var : sys-L : Laplace_pressure : 0
+output : pro : append : false
+pro : sys : L : GrandPotentialDensity
+pro : mol : * : phi
+start
+output : pro : write : false
+output : kal : append : true
+sys : L : delta_range : (55)
+start
+sys : L : delta_range : (54)
+start
+sys : L : delta_range : (53)
+start
+sys : L : delta_range : (52)
+start
+sys : L : delta_range : (51)
+start
+sys : L : delta_range : (50)
+start
+sys : L : delta_range : (49)
+start
+sys : L : delta_range : (48)
+start
+sys : L : delta_range : (47)
+start
+mol : A : theta : 700000
+sys : L : delta_range : (46)
+start
+sys : L : delta_range : (45)
+start
+sys : L : delta_range : (44)
+start
+sys : L : delta_range : (43)
+start
+sys : L : delta_range : (42)
+start
+mol : A : theta : 600000
+sys : L : delta_range : (41)
+start
+sys : L : delta_range : (40)
+start
+

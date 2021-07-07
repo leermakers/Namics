@@ -22,7 +22,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("fluctuation_wavelength");
 	KEYS.push_back("seed");
 	KEYS.push_back("var_pos");
-	KEYS.push_back("phi");
+	KEYS.push_back("phi"); 
 	KEYS.push_back("n");
 	KEYS.push_back("size");
 	KEYS.push_back("pos");
@@ -229,6 +229,7 @@ if (freedom == "pinned") {
 
 bool HMaskDone=false;
 if (freedom == "frozen") {
+
 	phibulk=0;
 	if (GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tag_filename").size()>0) {
 	        cout<< "For mon " + name + ", you should exclusively combine 'freedom : frozen' with 'frozen_range' or 'frozen_filename'" << endl;  success=false;
@@ -256,7 +257,7 @@ if (freedom == "frozen") {
 			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 		}
 	}
-	if (n_pos<0 && Lat[0]->gradients==3&& px.size()==0) {
+	if (n_pos<1 && Lat[0]->gradients==3&& px.size()==0) {
 		n=0; R=0; //px.clear(); py.clear(); pz.clear();
 		bool found=false;
 		if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {

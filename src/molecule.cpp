@@ -1924,21 +1924,22 @@ if (debug) cout <<"GetValue (long) for Mol " + name << endl;
 bool Molecule::ComputeWidth() {
 	bool success=true;
 	int M=Lat[0]->M;
-	if (Lat[0]->gradients>1 || Lat[0]->geometry!= "planar") {success=false; cout <<" Compute width of interface only implemented in 1D planar" << endl; return success; }
+	if (Lat[0]->gradients>1) {success=false; cout <<" Compute width of interface only in system with 'one-gradient'" << endl; return success; }
 	if (GetValue("compute_width_interface")!="true") {
-		cout <<"Interfacial width not computed bewcause value for 'compute_width_interface' was not set to 'true'. " << endl; success=false; return success;
+		cout <<"Interfacial width not computed because value for 'compute_width_interface' was not set to 'true'. " << endl; success=false; return success;
 	} else {
-			int fjc=Lat[0]->fjc;
-		  width=0;
-			Dphi=0;
-			phi_av=0;
-			phi1=phitot[fjc]; phiM=phitot[M-2*fjc]; Dphi=phi1-phiM;
-			if (Dphi*Dphi<1e-20) {cout << "There is no interface present. Width evaluation failed;" << endl; return success; }
-			for (int x=fjc; x<M-fjc-1; x++) {
-				if ((phitot[x]-phitot[x+1])/Dphi > width) {width = (phitot[x]-phitot[x+1])/Dphi; pos_interface=x+0.5; phi_av=(phitot[x]+phitot[x+1])/2;}
+		int fjc=Lat[0]->fjc;
+		width=0;
+		Dphi=0;
+		phi_av=0;
+		phi1=phitot[fjc]; phiM=phitot[M-2*fjc]; Dphi=phi1-phiM;
+		if (Dphi*Dphi<1e-20) {cout << "There is no interface present. Width evaluation failed;" << endl; return success; }
+		for (int x=fjc; x<M-fjc-1; x++) {
+			if ((phitot[x]-phitot[x+1])/Dphi > width) {width = (phitot[x]-phitot[x+1])/Dphi; pos_interface=x-0.5; phi_av=(phitot[x]+phitot[x+1])/2;}
 			}
 	}
 	if (width >0) width = 1.0/width/Lat[0]->fjc;
+	pos_interface = (pos_interface)/Lat[0]->fjc; 
 	return success;
 }
 

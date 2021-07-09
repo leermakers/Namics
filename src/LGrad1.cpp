@@ -192,12 +192,11 @@ Real LGrad1:: Moment(Real* X,Real Xb, int n) {
 if (debug) cout << "Moment in LGrad1 " << endl;
 	Real Result=0;
 	Real cor;
-	if (geometry=="planar") {
-		remove_bounds(X);
-		for (int i = fjc; i<M; i++) {
-			cor = (i-fjc+0.5)/fjc; Result += pow(cor,n)*(X[i]-Xb);
-		}
-	};
+	remove_bounds(X);
+	for (int i = fjc; i<M; i++) {
+		cor = (i-fjc+0.5)/fjc; 
+		Result += pow(cor,n)*(X[i]-Xb)*L[i];
+	}
 	return Result/fjc;
 }
 

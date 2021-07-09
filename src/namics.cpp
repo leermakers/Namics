@@ -605,7 +605,7 @@ int main(int argc, char *argv[])
 #ifdef CUDA
 			X = (Real *)AllOnDev(IV_new);
 #else
-			X = (Real *)malloc(IV_new * sizeof(Real));
+			X = (Real *)malloc(IV_new * sizeof(Real)); 
 #endif
 			Cp(X, New[0]->xx, IV_new);
 			fjc_old = Lat[0]->fjc;

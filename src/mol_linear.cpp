@@ -109,7 +109,7 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 				} 
 			}
 		}
-		delete [] G0; delete [] Mask;
+		delete [] G0; 
 	} else {
 
 		if (Markov ==2) 
@@ -130,6 +130,7 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 			for (int b = bN ; b >= b0 ; b--) propagate_backward(Seg[mon_nr[b]]->G1,s,b,0,M);
 	}
 
+	delete [] Mask;
 	return success;
 }
 

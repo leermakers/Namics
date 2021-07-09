@@ -799,6 +799,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 
 
 			Cp(g,xx,iv);
+
 			ComputePhis(iterations==0);
 
  			Zero(alpha,M);

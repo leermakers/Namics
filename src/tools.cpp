@@ -1343,6 +1343,7 @@ int svdcmp(Real** a, int m, int n, Real *w, Real** v)
             w[k] = (Real)x;
         }
     }
-    free((void*) rv1);
+    //free((void*) rv1);
+    free (rv1);
     return(1);
 }

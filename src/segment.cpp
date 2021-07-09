@@ -41,7 +41,7 @@ if (debug) cout <<"Segment destructor " + name << endl;
 void Segment::DeAllocateMemory(void){
 if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 if (!all_segment) return;
-//if (n_pos>0) cout <<"problem for n_pos " <<endl;
+if (n_pos>0) cout <<"problem for n_pos " <<endl;
 	if(n_pos>0) free(H_P);
 	free(r);
 	free(H_u);
@@ -302,11 +302,14 @@ if (freedom == "frozen") {
 				}
 				if (n_placed < n) { cout <<"Problem: could not place all n particles in volume. Placed only  "<< n_placed << " partictles " << endl; }
 				//cout <<"In frozen_range regular positions for particles not implemented " <<endl;
+			} else {
+				cout <<"pos should be 'regular' or 'random' " << endl; success = false;
+
 			}
 			
 			if (GetValue("pos")=="random" && success) {
 				srand(1); 
-				int num_of_moves =n*n;
+				int num_of_moves =100*n*n;
 				int I;
 				int X;
 				int Y;

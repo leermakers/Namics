@@ -720,7 +720,13 @@ if(debug) cout <<"iterate in SFNewton" << endl;
   #ifdef CUDA
   cudaFree(x0);cudaFree(g);cudaFree(p);cudaFree(p0);cudaFree(g0);cudaFree(h);cudaFree(mask);
   #else
-  free(x0);free(g);free(p);free(p0);free(g0);free(h);free(mask);
+ 	free(x0);
+	free(g);
+	free(p);
+	free(p0);
+	free(g0);
+	free(h);
+	free(mask);
   #endif
 
   mask = NULL;
@@ -815,11 +821,6 @@ void SFNewton::DIIS(Real* x, Real* x_x0, Real* xR, Real* Aij, Real* Apij,Real* C
 if(debug) cout <<"DIIS in  SFNewton " << endl;
   	int posi;
 
-	//cout <<"Aij:" << endl; 
-	//for (int i=0; i<m; i++) {
-	//	for (int j=0; j<m; j++) cout <<" " << Aij[m*i+j]; cout << endl; 
-	//}
-
 	if (k_diis>m) {
     	k_diis =m;
 		for (int i=1; i<m; i++)
@@ -839,10 +840,6 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
 		for (int j=0; j<k_diis; j++)
 		    Apij[j+k_diis*i] = Aij[j+m*i];
 	}
-	//cout <<"Apij:" << endl; 
-	//for (int i=0; i<k_diis; i++) {
-	//	for (int j=0; j<k_diis; j++) cout <<" " << Apij[i+j*k_diis]; cout << endl; 
-	//}
   
 
 	Ax(Apij,Ci,k_diis);
@@ -957,7 +954,7 @@ int nvar=nvar_;
 			Cp(xR+k*nvar,x,nvar);
 			YisAminB(x_x0+k*nvar,x,x0,nvar);
 			DIIS(x,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,nvar);
-    		residual = computeresidual(g, nvar);
+    			residual = computeresidual(g, nvar);
 			if(e_info && iterations%i_info == 0){
 				printf("iterations = %i g = %1e \n",iterations,residual);
 			}
@@ -966,6 +963,7 @@ int nvar=nvar_;
 		success=Message(e_info,s_info,iterations,iterationlimit,residual,tolerance,"");
 
 	} catch (int error) {
+
 		if (error == -1)
 			cerr << "Detected GN not larger than 0." << endl;
 		if (error == -2)
@@ -983,11 +981,16 @@ int nvar=nvar_;
 
 		throw error;
 	}
-  free(Aij);free(Apij); free(Ci);
+  	free(Aij);
+	free(Apij); 
+	free(Ci);
   #ifdef CUDA
   cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g); cudaFree(d_Ci);
   #else
-  free(xR);free(x_x0);free(x0);free(g);
+  	free(xR);
+	free(x_x0);
+	free(x0);
+	free(g);
   #endif
 	return success;
 }

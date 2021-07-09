@@ -94,6 +94,7 @@ if (debug) cout <<"DeallocateMemory for Mol " + name << endl;
 	free(Gg_b);
 	if (save_memory) free(Gs);
 	free(UNITY);
+	
 #endif
 	all_molecule=false;
 }

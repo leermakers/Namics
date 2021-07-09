@@ -1,4 +1,4 @@
-#include "lattice.h"
+#include "lattice.h" 
 Lattice::Lattice(vector<Input*> In_,string name_) :
 	BC(6) // resize the boundary condition vector to 6 for Mesodyn
 { //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
@@ -36,16 +36,19 @@ if (debug) cout <<"Lattice constructor" << endl;
 void Lattice::DeAllocateMemory(void) {
 if (debug) cout <<"DeAllocateMemory in lat " << endl;
 	if (all_lattice) {
+		all_lattice=false;
 		if (fcc_sites) {
 			free(fcc_lambda_1);
 			free(fcc_lambda1);
 			free(fcc_lambda0);
 		}
 		if (fjc==1) {
-			free(lambda_1);
-			free(lambda1);
-			free(lambda0);
-			free(L);
+			if (gradients<3) {
+				free(lambda_1);
+				free(lambda1);
+				free(lambda0);
+				free(L);
+			}
 		} else {
 			free(B_X1);free(B_Y1);free(B_Z1);free(B_XM);free(B_YM);free(B_ZM);
 			free(L); free(LAMBDA);
@@ -55,16 +58,14 @@ if (debug) cout <<"DeAllocateMemory in lat " << endl;
 			free(X);
 			#endif
 		}
+		if (Markov==2) {
+			free(l1); 
+			free(l11);
+			free(l_1);
+			free(l_11);
+			free(H);
+		}
 	}
-	if (Markov==2) {
-		free(l1); 
-		free(l11);
-		free(l_1);
-		free(l_11);
-		free(H);
-	}
-
-all_lattice=false;
 }
 
 	
@@ -72,6 +73,7 @@ void Lattice::AllocateMemory(void) {
 if (debug) cout <<"AllocateMemory in lat " << endl;
 
 	DeAllocateMemory();
+	all_lattice=true;
 	PutM();
 	if (fjc>1) {
 		B_X1=(int*)malloc(fjc*sizeof(int));
@@ -182,8 +184,6 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 	X=(Real*)malloc(M*sizeof(Real));
 #endif
 	ComputeLambdas();
-
-	all_lattice=(gradients<3 && geometry!="planar");
 }
 
 

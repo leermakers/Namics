@@ -13,6 +13,15 @@
 #include "variate.h"
 #include "sfnewton.h"
 #include <functional>
+#include <Eigen/Core>
+#include "LBFGS.h"
+
+//using Eigen::VectorXf;
+//using Eigen::MatrixXf;
+typedef Eigen::Matrix<Real,Eigen::Dynamic,1> Vector;
+typedef Eigen::Matrix<Real,Eigen::Dynamic,Eigen::Dynamic> Matrix;
+using namespace LBFGSpp;
+
 
 class Solve_scf : public SFNewton {
 public:
@@ -76,7 +85,7 @@ public:
 	void push(string,string);
 	void PushOutput();
 	int GetValue(string,int&,Real&,string&);
-	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis,conjugate_gradient};
+	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis,conjugate_gradient,LBFGS};
 	enum inner_iteration_method {super,proceed};
 	enum gradient_method {classical, MESODYN, Picard, custum, WEAK};
 	iteration_method solver;
@@ -91,6 +100,7 @@ public:
 	Real *x_x0;
 #endif
 	Real *xx;
+	Vector x;
 	int *SIGN;
 	Real* alpha;
 	bool mesodyn;

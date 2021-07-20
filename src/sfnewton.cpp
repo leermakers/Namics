@@ -267,16 +267,16 @@ if(debug) cout <<"gausb in Newton " << endl;
 	}
 }
 
-Real SFNewton::residue(Real *g, Real *p, Real *x, int nvar, Real alpha) {//done
+Real SFNewton::residue(Real *g, Real *p, Real *x, int nvar, Real alpha) {
 if(debug) cout <<"residue in Newton " << endl;
 	return sqrt(norm2(p,nvar)*norm2(g,nvar)/(1+norm2(x,nvar)));
 }
 
-Real SFNewton::linecriterion(Real *g, Real *g0, Real *p, Real *p0, int nvar) { //done
+Real SFNewton::linecriterion(Real *g, Real *g0, Real *p, Real *p0, int nvar) { 
 if(debug) cout <<"linecriterion in Newton " << endl;
 	Real normg,gg0;
 	normg = norm2(g0,nvar);
-  Dot(gg0,g,g0,nvar);
+  	Dot(gg0,g,g0,nvar);
 
 	gg0=gg0/normg/normg;
 	normg = pow(norm2(g,nvar)/normg,2);
@@ -292,7 +292,7 @@ if(debug) cout <<"linecriterion in Newton " << endl;
 	}
 }
 
-Real SFNewton::newfunction(Real *g, Real *x, int nvar) { //done
+Real SFNewton::newfunction(Real *g, Real *x, int nvar) { 
 if(debug) cout <<"newfunction in Newton " << endl;
 	return pow(norm2(g,nvar),2);
 }

@@ -25,6 +25,7 @@ OBJEXT      := o
 CFLAGS      := -Wall -Ofast -std=c++14 -march=native
 LIB         := -lm -lpthread
 INC         := -I/usr/local/cuda-9.0/include -I/usr/local/include -I/usr/include
+# put 'Eigen' directory in /usr/include, or inlude path to Eigen in the line above
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
 	LIB        += -L/usr/local/cuda/lib64 -lcuda -lcudart -lcurand

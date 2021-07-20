@@ -1,0 +1,266 @@
+lat : S : geometry : spherical
+lat : S : n_layers : 150
+lat : S : gradients : 1
+lat : S : lattice_type : hexagonal
+//lat : S : FJC_choices : 5
+
+mon : A : freedom : free
+mon : W : freedom : pinned
+mon : W : pinned_range : 1;100
+mon : B : freedom : free
+mon : G : freedom : free
+
+mon : W : chi - B : 2.2
+mon : W : chi - A : 0
+mon : W : chi - G : 0
+mon : A : chi - B : 1
+mon : G : chi - B : 1
+mon : X : freedom : pinned
+mon : X : pinned_range : 1;1
+
+mol : poor : composition : (B)1
+mol : poor : freedom : solvent
+mol : good : compute_width_interface : true
+mol : good : composition : (W)1
+mol : good : freedom : restricted
+mol : good : theta  : 4500000
+
+newton : isaac : method : pseudohessian
+newton : isaac : tolerance : 1e-7
+newton : isaac : deltamax : 0.01
+newton : isaac : iterationlimit : 10000
+newton : isaac : i_info : 100
+start
+mon : W : freedom : free
+output : pro : append : false
+pro : mol : poor  : phi
+pro : mol : good  : phi
+start
+
+mol : pol : freedom : restricted
+mol : pol : n : 1
+mol : pol : composition : @dend(X,(A)10(G)1,3)
+start 
+mol : pol : composition : @dend(X,(A)200(G)1,5)
+mol : pol : n : 1
+
+start
+
+output : pro : write : false
+output : kal : append : false
+kal : newton : isaac : residual
+kal : mol : good : theta_exc
+kal : mon : G : 1st_M_phi_z
+kal : mol : good : phibulk
+kal : mol : good : pos_interface
+start
+output : kal : append : true
+
+//var : mol-good : scan : theta
+//var : mol-good : step : -1000
+//var : mol-good : end_value : 1000
+mol : good : freedom : range_restricted
+//mol : good : restricted_range : 75;75
+//mol : good : theta :  35340
+
+mon : X : freedom : pinned
+mol : good : restricted_range : 	75	;	75	
+mol : good : theta : 	35342.91735	
+start
+mol : good : restricted_range : 	74	;	74	
+mol : good : theta : 	34406.72274	
+start
+mol : good : restricted_range : 	73	;	73	
+mol : good : theta : 	33483.0945	
+start
+mol : good : restricted_range : 	72	;	72	
+mol : good : theta : 	32572.03263	
+start
+mol : good : restricted_range : 	71	;	71	
+mol : good : theta : 	31673.53713	
+start
+mol : good : restricted_range : 	70	;	70	
+mol : good : theta : 	30787.60801	
+start
+mol : good : restricted_range : 	69	;	69	
+mol : good : theta : 	29914.24525	
+start
+mol : good : restricted_range : 	68	;	68	
+mol : good : theta : 	29053.44886	
+start
+mol : good : restricted_range : 	67	;	67	
+mol : good : theta : 	28205.21884	
+start
+mol : good : restricted_range : 	66	;	66	
+mol : good : theta : 	27369.5552	
+start
+mol : good : restricted_range : 	65	;	65	
+mol : good : theta : 	26546.45792	
+start
+mol : good : restricted_range : 	64	;	64	
+mol : good : theta : 	25735.92702	
+start
+mol : good : restricted_range : 	63	;	63	
+mol : good : theta : 	24937.96248	
+start
+mol : good : restricted_range : 	62	;	62	
+mol : good : theta : 	24152.56432	
+start
+mol : good : restricted_range : 	61	;	61	
+mol : good : theta : 	23379.73253	
+start
+mol : good : restricted_range : 	60	;	60	
+mol : good : theta : 	22619.46711	
+start
+mol : good : restricted_range : 	59	;	59	
+mol : good : theta : 	21871.76805	
+start
+mol : good : restricted_range : 	58	;	58	
+mol : good : theta : 	21136.63537	
+start
+mol : good : restricted_range : 	57	;	57	
+mol : good : theta : 	20414.06906	
+start
+mol : good : restricted_range : 	56	;	56	
+mol : good : theta : 	19704.06912	
+start
+mol : good : restricted_range : 	55	;	55	
+mol : good : theta : 	19006.63555	
+start
+mol : good : restricted_range : 	54	;	54	
+mol : good : theta : 	18321.76836	
+start
+mol : good : restricted_range : 	53	;	53	
+mol : good : theta : 	17649.46753	
+start
+mol : good : restricted_range : 	52	;	52	
+mol : good : theta : 	16989.73307	
+start
+mol : good : restricted_range : 	51	;	51	
+mol : good : theta : 	16342.56498	
+start
+mol : good : restricted_range : 	50	;	50	
+mol : good : theta : 	15707.96327	
+start
+mol : good : restricted_range : 	49	;	49	
+mol : good : theta : 	15085.92792	
+start
+mol : good : restricted_range : 	48	;	48	
+mol : good : theta : 	14476.45895	
+start
+mol : good : restricted_range : 	47	;	47	
+mol : good : theta : 	13879.55634	
+start
+mol : good : restricted_range : 	46	;	46	
+mol : good : theta : 	13295.22011	
+start
+mol : good : restricted_range : 	45	;	45	
+mol : good : theta : 	12723.45025	
+start
+mol : good : restricted_range : 	44	;	44	
+mol : good : theta : 	12164.24675	
+start
+mol : good : restricted_range : 	43	;	43	
+mol : good : theta : 	11617.60963	
+start
+mol : good : restricted_range : 	42	;	42	
+mol : good : theta : 	11083.53888	
+start
+mol : good : restricted_range : 	41	;	41	
+mol : good : theta : 	10562.0345	
+start
+mol : good : restricted_range : 	40	;	40	
+mol : good : theta : 	10053.09649	
+start
+mol : good : restricted_range : 	39	;	39	
+mol : good : theta : 	9556.724852	
+start
+mol : good : restricted_range : 	38	;	38	
+mol : good : theta : 	9072.919584	
+start
+mol : good : restricted_range : 	37	;	37	
+mol : good : theta : 	8601.680686	
+start
+mol : good : restricted_range : 	36	;	36	
+mol : good : theta : 	8143.008158	
+start
+mol : good : restricted_range : 	35	;	35	
+mol : good : theta : 	7696.902001
+start
+mol : good : restricted_range : 	34	;	34	
+mol : good : theta : 	7263.362215
+start
+mol : good : restricted_range : 	33	;	33	
+mol : good : theta : 	6842.3888	
+start
+mol : good : restricted_range : 	32	;	32	
+mol : good : theta : 	6433.981755	
+start
+mol : good : restricted_range : 	31	;	31	
+mol : good : theta : 	6038.14108	
+start
+mol : good : restricted_range : 	30	;	30	
+mol : good : theta : 	5654.866776	
+start
+mol : good : restricted_range : 	29	;	29	
+mol : good : theta : 	5284.158843	
+start
+mol : good : restricted_range : 	28	;	28	
+mol : good : theta : 	4926.017281	
+start
+mol : good : restricted_range : 	27	;	27	
+mol : good : theta : 	4580.442089	
+start
+mol : good : restricted_range : 	26	;	26	
+mol : good : theta : 	4247.433268	
+start
+mol : good : restricted_range : 	25	;	25	
+mol : good : theta : 	3926.990817	
+start
+mol : good : restricted_range : 	24	;	24	
+mol : good : theta : 	3619.114737	
+start
+mol : good : restricted_range : 	23	;	23	
+mol : good : theta : 	3323.805027	
+start
+mol : good : restricted_range : 	22	;	22	
+mol : good : theta : 	3041.061689	
+start
+mol : good : restricted_range : 	21	;	21	
+mol : good : theta : 	2770.88472	
+start
+mol : good : restricted_range : 	20	;	20	
+mol : good : theta : 	2513.274123	
+start
+mol : good : restricted_range : 	19	;	19	
+mol : good : theta : 	2268.229896	
+start
+mol : good : restricted_range : 	18	;	18	
+mol : good : theta : 	2035.75204	
+start
+mol : good : restricted_range : 	17	;	17	
+mol : good : theta : 	1815.840554	
+start
+mol : good : restricted_range : 	16	;	16	
+mol : good : theta : 	1608.495439	
+start
+mol : good : restricted_range : 	15	;	15	
+mol : good : theta : 	1413.716694	
+start
+mol : good : restricted_range : 	14	;	14	
+mol : good : theta : 	1231.50432	
+start
+mol : good : restricted_range : 	13	;	13	
+mol : good : theta : 	1061.858317	
+start
+mol : good : restricted_range : 	12	;	12	
+mol : good : theta : 	904.7786842	
+start
+mol : good : restricted_range : 	11	;	11	
+mol : good : theta : 	760.2654222	
+start
+mol : good : restricted_range : 	10	;	10	
+mol : good : theta : 	628.3185307	
+start
+
+

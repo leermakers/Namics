@@ -1,0 +1,95 @@
+lat : S : geometry : cylindrical
+lat : S : n_layers_x : 30
+lat : S : n_layers_y : 25
+lat : S : gradients : 2
+lat : S : lattice_type : hexagonal
+//lat : S : FJC_choices : 5
+
+mon : A : freedom : free
+mon : W : freedom : free
+mon : B : freedom : free
+mon : G : freedom : free
+
+mon : W : chi - B : 2.2
+mon : W : chi - A : 0
+mon : W : chi - G : 0
+mon : A : chi - B : 1
+mon : G : chi - B : 1
+mon : X : freedom : pinned
+mon : X : pinned_range : 1,1;1,1
+
+mol : poor : composition : (B)1
+mol : poor : freedom : solvent
+mol : good : composition : (W)1
+mol : good : freedom : free
+mol : good : phibulk : 0.2485297
+
+newton : isaac : method : pseudohessian
+newton : isaac : tolerance : 1e-7
+newton : isaac : deltamax : 0.01
+newton : isaac : iterationlimit : 100000
+newton : isaac : i_info : 100
+
+mol : pol : freedom : restricted
+mol : pol : composition : @dend(X,(A)10,1;A,(A)10,2;A,(A)10,2;A,(A)10,2;A,(A)10,2;A,(A)9(G)1,2)
+mol : pol : n : 1
+
+output : kal : append : false
+kal : newton : isaac : residual
+kal : lat : S : n_layers_y
+kal : sys : noname : grand_potential
+kal : mol : good : theta_exc
+kal : mon : G : 1st_M_phi_z
+kal : mol : good : phibulk
+kal : mol : good : pos_interface
+
+//output : pro : append : false
+//pro : mol : poor  : phi
+//pro : mol : good  : phi
+//pro : mol : pol : phi
+//pro : mon : G : phi
+
+output : vtk : append : false
+vtk : mol : pol : phi
+start
+output : kal : append : true
+lat : S : n_layers_y : 24
+start
+lat : S : n_layers_y : 23
+start
+lat : S : n_layers_y : 22
+start
+lat : S : n_layers_y : 21
+start
+lat : S : n_layers_y : 20
+start
+lat : S : n_layers_y : 19
+start
+lat : S : n_layers_y : 18
+start
+lat : S : n_layers_y : 17
+start
+lat : S : n_layers_y : 16
+start
+lat : S : n_layers_y : 15
+start
+lat : S : n_layers_y : 14
+start
+lat : S : n_layers_y : 13
+start
+lat : S : n_layers_y : 12
+start
+lat : S : n_layers_y : 11
+start
+lat : S : n_layers_y : 10
+start
+lat : S : n_layers_y : 9
+start
+lat : S : n_layers_y : 8
+start
+lat : S : n_layers_y : 7
+start
+lat : S : n_layers_y : 6
+
+
+

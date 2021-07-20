@@ -670,94 +670,92 @@ void ComputePhis(Real* x,bool first_time) {
 			
 	if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
 	int itmonlistlength=Sys[0]->ItMonList.size();
-			int state_length = In[0]->StateList.size();
-			int itstatelistlength=Sys[0]->ItStateList.size();
+	int state_length = In[0]->StateList.size();
+	int itstatelistlength=Sys[0]->ItStateList.size();
 
+	Cp(g,xx,iv);
 
+	ComputePhis(xx,iterations==0); iterations++;
 
-			Cp(g,xx,iv);
+ 	Zero(alpha,M);
 
-			ComputePhis(xx,iterations==0); iterations++;
-
- 			Zero(alpha,M);
-
-			for (i=0; i<itmonlistlength; i++) {
-			  Add(g+i*M,Seg[i]->u_ext,M);
-				for (k=0; k<mon_length; k++) {
-					if (Seg[k]->ns<2) {
-						chi =Seg[Sys[0]->ItMonList[i]]->chi[k];
-						if (chi!=0)
-							PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
-					}
-				}
-			 	for (k=0; k<state_length; k++) {
-					chi =Seg[Sys[0]->ItMonList[i]]->chi[mon_length+k];
-					if (chi!=0) {
-						PutAlpha(g+i*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
-					}
-				}
-			}
-			for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
-
-			for (i=0; i<itstatelistlength; i++) {
-				for (k=0; k<mon_length; k++) {
-					if (Seg[k]->ns<2) {
-						chi =Sta[Sys[0]->ItStateList[i]]->chi[k];
-						if (chi!=0)
-							PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
-					}
-				}
-
-
-				for (k=0; k<state_length; k++) {
-					chi =Sta[Sys[0]->ItStateList[i]]->chi[mon_length+k];
-					if (chi!=0)
-						PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
-
-				}
-			}
-			for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
-			Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);
-			for (i=0; i<itmonlistlength; i++) {
-				AddG(g+i*M,Sys[0]->phitot,alpha,M);
-				Lat[0]->remove_bounds(g+i*M);
-				Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
-			}
-			for (i=0; i<itstatelistlength; i++) {
-				AddG(g+(itmonlistlength+i)*M,Sys[0]->phitot,alpha,M);
-				Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
-				Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,Sys[0]->KSAM,M);
-			}
-
-			int itpos=(itmonlistlength+itstatelistlength)*M;
-
-			if (Sys[0]->charged) {
-				Cp(g+itpos,xx+itpos,M);
-				Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
-				Lat[0]->set_bounds(Sys[0]->psi);
-				Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
-				Lat[0]->remove_bounds(g+itpos);
-				itpos+=M;
-			}
-			if (Sys[0]->constraintfields) {
-				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
-				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
-				Real R = (Sys[0]->phi_ratio-1)/(Sys[0]->phi_ratio+1);
-				YisAplusC(g+itpos,g+itpos,R,M);
-				Times(g+itpos,g+itpos,Sys[0]->beta,M);
-				itpos+=M;
-		}
-		if (Sys[0]->extra_constraints>0) {
-			int length = In[0]->MonList.size();
-			for (int i = 0; i < length; i++)
-			{
-				int constraint_size=Seg[i]->constraint_z.size();
-				for (int k=0; k<constraint_size; k++) {
-					itpos++;
-					g[itpos-1]=Seg[i]->Get_g(k);
-				}
+	for (i=0; i<itmonlistlength; i++) {
+		Add(g+i*M,Seg[i]->u_ext,M);
+		for (k=0; k<mon_length; k++) {
+			if (Seg[k]->ns<2) {
+				chi =Seg[Sys[0]->ItMonList[i]]->chi[k];
+				if (chi!=0)
+					PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 			}
 		}
+		for (k=0; k<state_length; k++) {
+			chi =Seg[Sys[0]->ItMonList[i]]->chi[mon_length+k];
+			if (chi!=0) {
+				PutAlpha(g+i*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
+			}
+		}
+	}
+	for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
+
+	for (i=0; i<itstatelistlength; i++) {
+		for (k=0; k<mon_length; k++) {
+			if (Seg[k]->ns<2) {
+				chi =Sta[Sys[0]->ItStateList[i]]->chi[k];
+				if (chi!=0)
+					PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+			}
+		}
+
+
+		for (k=0; k<state_length; k++) {
+			chi =Sta[Sys[0]->ItStateList[i]]->chi[mon_length+k];
+			if (chi!=0)
+				PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
+
+		}
+	}
+	for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
+	Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);
+	for (i=0; i<itmonlistlength; i++) {
+		AddG(g+i*M,Sys[0]->phitot,alpha,M);
+		Lat[0]->remove_bounds(g+i*M);
+		Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
+	}
+	for (i=0; i<itstatelistlength; i++) {
+		AddG(g+(itmonlistlength+i)*M,Sys[0]->phitot,alpha,M);
+		Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
+		Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,Sys[0]->KSAM,M);
+	}
+
+	int itpos=(itmonlistlength+itstatelistlength)*M;
+
+	if (Sys[0]->charged) {
+		Cp(g+itpos,xx+itpos,M);
+		Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
+		Lat[0]->set_bounds(Sys[0]->psi);
+		Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
+		Lat[0]->remove_bounds(g+itpos);
+		itpos+=M;
+	}
+	if (Sys[0]->constraintfields) {
+		Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
+		YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
+		Real R = (Sys[0]->phi_ratio-1)/(Sys[0]->phi_ratio+1);
+		YisAplusC(g+itpos,g+itpos,R,M);
+		Times(g+itpos,g+itpos,Sys[0]->beta,M);
+		itpos+=M;
+	}
+	if (Sys[0]->extra_constraints>0) {
+		int length = In[0]->MonList.size();
+		for (int i = 0; i < length; i++)
+		{
+			int constraint_size=Seg[i]->constraint_z.size();
+			for (int k=0; k<constraint_size; k++) {
+				itpos++;
+				g[itpos-1]=Seg[i]->Get_g(k);
+			}
+		}
+	}
 	residual=g_.norm();
        return residual;
     }
@@ -846,7 +844,8 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 			param.e_info =e_info;
 			param.i_info =i_info;
 			niter =mysolver.minimize(fun,x,res);
-			cout <<"total iterations used" << niter << endl; 
+	
+			cout <<endl <<"Problem solved" << endl; 
 		break;
 		default:
 			cout <<"Solve is lost" << endl; success=false;

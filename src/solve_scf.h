@@ -59,6 +59,7 @@ public:
 	string stop_criterion;
 	int iv;
 	int m;
+	SolverType SolType;
 
 	Real super_tolerance,tolerance;
 	Real super_deltamax,deltamax;
@@ -121,6 +122,7 @@ public:
 	bool Guess(Real*,string,vector<string>,vector<string>,bool,int,int,int,int);
 
 	bool Solve(bool);
+
 	bool SolveMesodyn(function< void(Real*, size_t) >, function< Real*() >); //first argument should contain rho
 	function< Real*() > mesodyn_flux;
 

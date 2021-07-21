@@ -835,7 +835,7 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
 		}
 	  	Real Dvalue;
     	Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
-		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue;
+		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue + 1e-9;
 		// write to (compressed) matrix Apij
 		for (int j=0; j<k_diis; j++)
 		    Apij[j+k_diis*i] = Aij[j+m*i];

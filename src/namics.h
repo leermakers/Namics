@@ -19,9 +19,11 @@
 
 #include <iomanip>
 
+
 using namespace std;
 //these are our options.
 typedef double Real;
+
 
 
 //nvcc Open.cu -lm -lcuda -lcudart -llapack -lblas -lf2c -lcublas -arch=sm_20 -o box
@@ -47,6 +49,7 @@ enum MoleculeType {monomer, linear, branched, dendrimer, asym_dendrimer, comb, w
 enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};
 enum EngineType {SCF, CLENG, MESODYN, TENG};
 enum LatticeType {simple_cubic, hexagonal};
+enum SolverType {Pseudohessian,Lbfgs};
 
 template<typename T>
   auto load_argument_value(vector<string> args, string argument, T t) -> decltype(t) {

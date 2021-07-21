@@ -133,6 +133,11 @@ public:
 	bool PrepareForCalculations(bool);
 	bool generate_mask();
 	bool ComputePhis(Real);
+	void ComputePhis(Real*,bool,Real);
+	bool Put_U(Real*);
+	bool PutU(Real*);
+	void Classical_residual(Real* ,Real*,Real,int,int);
+
 	void DoElectrostatics(Real*,Real*);
 	bool CheckResults(bool);
 	Real GetFreeEnergy();

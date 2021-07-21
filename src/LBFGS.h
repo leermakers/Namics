@@ -85,7 +85,10 @@ public:
 	   
         gnorm = residuals(x, m_grad);
 
-        if(gnorm <= m_param.epsilon) {cout <<"You hit the nail on its head" <<endl; return 1;}
+        if(gnorm <= m_param.epsilon) {
+		cout <<"You hit the nail on its head" <<endl; 
+	   	return 1;
+	 }
 
         m_drt.noalias() = -m_grad;
         int k = 1;
@@ -104,6 +107,7 @@ public:
 
 	     trustfactor *=stepchange(m_grad,m_gradp,n);
 	     trustfactor *=ALPHA/alphabound;
+            if (ALPHA < m_param.epsilon) ALPHA *=2;
 	     if (m_param.e_info) {
 		if (k==1) cout <<"Your Guess: "<<gnorm << endl;
 		if (k%m_param.i_info==0 && k>1) {

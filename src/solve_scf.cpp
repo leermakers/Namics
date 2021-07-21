@@ -2,10 +2,10 @@
 #include <iostream>
 
 Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) :
-	name{name_}, In{In_}, Sys{Sys_}, Seg{Seg_}, Lat{Lat_}, Mol{Mol_}, Var{Var_}, Sta{Sta_}, Rea{Rea_}
+	name{name_}, In{In_}, Sys{Sys_}, Seg{Seg_}, Lat{Lat_}, Mol{Mol_}, Var{Var_}, Sta{Sta_}, Rea{Rea_} 
 {
-if(debug) cout <<"Constructor in Solve_scf " << endl;
-
+if(debug) cout <<"Constructor in Solve_scf " << endl; 
+ 
 	KEYS.push_back("method");
 	KEYS.push_back("gradient_type");
 	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");KEYS.push_back("hs_info"); 
@@ -514,252 +514,24 @@ private:
     vector<System*> Sys;
     vector<Variate*> Var;
     int iterations =0;
-    Real* alpha;
-    Real residual=1;
+     Real residual=1;
 public:
     SCF_LBFGS(vector<Input*> In_,vector<Lattice*>Lat_,vector<Segment*>Seg_,vector<State*>Sta_,vector<Reaction*>Rea_,vector<Molecule*>Mol_,vector<System*> Sys_,vector<Variate*> Var_) : 
       In(In_),Lat(Lat_),Seg(Seg_),Sta(Sta_),Rea(Rea_),Mol(Mol_),Sys(Sys_),Var(Var_)  {
 	
 	}
 
-bool Put_U(Real* xx){
-	if (debug) cout << "Put_U in Solve" << endl;
-	bool success=true;
-	int M=Lat[0]->M;
-	int itmonlistlength=Sys[0]->ItMonList.size();
-	for (int i=0; i<itmonlistlength; i++) {
-		int IM=Sys[0]->ItMonList[i];
-	 	Real *u=Seg[IM]->u;
-		Cp(xx+i*M,u,M);
-	}
-	return success;
-}
-
-bool PutU(Real* xx) {
-if(debug) cout <<"PutU in  Solve " << endl;
-	int M=Lat[0]->M;
-	int itmonlistlength=Sys[0]->ItMonList.size();
-	int itstatelistlength=Sys[0]->ItStateList.size();
-	int monlistlength =In[0]->MonList.size();
-	int statelistlength=In[0]->StateList.size();
-	int k=0;
-
-	int itpos=(itmonlistlength+itstatelistlength)*M;
-	Real valence;
-	Real *u;
-	bool success=true;
-	alpha=Sys[0]->alpha;
-
-	if (Sys[0]->charged) {
-		Cp(Sys[0]->psi,xx+itpos,M);
-		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
-	}
-
-
-	for (int i=0; i<itmonlistlength; i++) {
-		int IM=Sys[0]->ItMonList[i];
-		u=Seg[IM]->u;
-		Cp(u,xx+k*M,M);
-		if (Sys[0]->charged){
-			YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[IM]->epsilon,M);
-			valence=Seg[IM]->valence;
-			if (valence !=0)
-				YplusisCtimesX(u,Sys[0]->psi,valence,M);
-		}
-		for (int j=0; j<monlistlength; j++) {
-			if (Seg[j]->seg_nr_of_copy==IM && Seg[j]->ns<2) {
-				u=Seg[j]->u;
-				Cp(u,xx+k*M,M);
-				if (Sys[0]->charged){
-					YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[j]->epsilon,M);
-					valence=Seg[j]->valence;
-					if (valence !=0)
-						YplusisCtimesX(u,Sys[0]->psi,valence,M);
-				}
-			}
-
-		}
-		for (int j=0; j<statelistlength; j++) {
-			if (Sta[j]->seg_nr_of_copy==IM) {
-				u=Seg[Sta[j]->mon_nr]->u+Sta[j]->state_nr*M;
-				Cp(u,xx+k*M,M);
-				if (Sys[0]->charged){
-					YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[Sta[j]->mon_nr]->epsilon,M);
-					valence=Sta[j]->valence;
-					if (valence !=0)
-						YplusisCtimesX(u,Sys[0]->psi,valence,M);
-
-				}
-			}
-		}
-		k++;
-	}
-
-	for (int i=0; i<itstatelistlength; i++) {
-		int IS=Sys[0]->ItStateList[i];
-		u=Seg[Sta[IS]->mon_nr]->u+(Sta[IS]->state_nr)*M;
-		Cp(u,xx+k*M,M);
-		if (Sys[0]->charged){
-			YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[Sta[IS]->mon_nr]->epsilon,M);
-			valence=Sta[IS]->valence;
-			if (valence !=0)
-				YplusisCtimesX(u,Sys[0]->psi,valence,M);
-		}
-		for (int j=0; j<statelistlength; j++) {
-			if (Sta[j]->state_nr_of_copy==IS) {
-				u=Seg[Sta[j]->mon_nr]->u+Sta[j]->state_nr*M;
-				Cp(u,xx+k*M,M);
-				if (Sys[0]->charged){
-					YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[Sta[j]->mon_nr]->epsilon,M);
-					valence=Sta[j]->valence;
-					if (valence !=0)
-						YplusisCtimesX(u,Sys[0]->psi,valence,M);
-				}
-			}
-		}
-		k++;
-	}
-	if (Sys[0]->charged) itpos +=M;
-	if (Sys[0]->constraintfields) {Cp(Sys[0]->BETA,xx+itpos,M); itpos+=M;}
-	if (Sys[0]->extra_constraints>0) { //this is only for 1D and should never go to GPU... Else we have to come up with different way to do the extra constraints.
-		int length = In[0]->MonList.size();
-		for (int i = 0; i < length; i++)
-		{
-			int constraint_size=Seg[i]->constraint_z.size();
-			for (int k=0; k<constraint_size; k++) {
-				itpos++;
-				Seg[i]->Put_beta(k,xx[itpos-1]);
-			}
-		}
-	}
-
-	return success;
-}
-void ComputePhis(Real* x,bool first_time) {
-	if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
-	if (first_time && (
-			Sys[0]->initial_guess=="polymer_adsorption"||
-			Sys[0]->initial_guess=="membrane_torus" ||
-			Sys[0]->initial_guess=="membrane" ||
-			Sys[0]->initial_guess=="micelle"
-			)) {
-		PutU(x);
-		Sys[0]->PrepareForCalculations(first_time);
-		Put_U(x);
-		Sys[0]->ComputePhis(residual);
-	} else {
-		PutU(x);
-		Sys[0]->PrepareForCalculations(first_time);
-		Sys[0]->ComputePhis(residual);
-	}
-}
-
-
-    Real operator()(Vector& x_, Vector& g_)
+    Real operator()(Vector& x_, Vector& g_) //checkout LBFGS.h; this way of computing residuals is the same as below procedure used by default in pseudohessian. 
     {	
 	Real* xx=&x_[0];
 	Real* g=&g_[0];
-	int M=Lat[0]->M;
 	int iv=x_.size();
-	Real chi;
-	//Real valence;
-	//int sysmon_length = Sys[0]->SysMonList.size();
-	int mon_length = In[0]->MonList.size(); //also frozen segments
-	int i,k;
-	alpha=Sys[0]->alpha; 
-			
-	if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
-	int itmonlistlength=Sys[0]->ItMonList.size();
-	int state_length = In[0]->StateList.size();
-	int itstatelistlength=Sys[0]->ItStateList.size();
 
-	Cp(g,xx,iv);
-
-	ComputePhis(xx,iterations==0); iterations++;
-
- 	Zero(alpha,M);
-
-	for (i=0; i<itmonlistlength; i++) {
-		Add(g+i*M,Seg[i]->u_ext,M);
-		for (k=0; k<mon_length; k++) {
-			if (Seg[k]->ns<2) {
-				chi =Seg[Sys[0]->ItMonList[i]]->chi[k];
-				if (chi!=0)
-					PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
-			}
-		}
-		for (k=0; k<state_length; k++) {
-			chi =Seg[Sys[0]->ItMonList[i]]->chi[mon_length+k];
-			if (chi!=0) {
-				PutAlpha(g+i*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
-			}
-		}
-	}
-	for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
-
-	for (i=0; i<itstatelistlength; i++) {
-		for (k=0; k<mon_length; k++) {
-			if (Seg[k]->ns<2) {
-				chi =Sta[Sys[0]->ItStateList[i]]->chi[k];
-				if (chi!=0)
-					PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
-			}
-		}
-
-
-		for (k=0; k<state_length; k++) {
-			chi =Sta[Sys[0]->ItStateList[i]]->chi[mon_length+k];
-			if (chi!=0)
-				PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
-
-		}
-	}
-	for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
-	Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);
-	for (i=0; i<itmonlistlength; i++) {
-		AddG(g+i*M,Sys[0]->phitot,alpha,M);
-		Lat[0]->remove_bounds(g+i*M);
-		Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
-	}
-	for (i=0; i<itstatelistlength; i++) {
-		AddG(g+(itmonlistlength+i)*M,Sys[0]->phitot,alpha,M);
-		Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
-		Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,Sys[0]->KSAM,M);
-	}
-
-	int itpos=(itmonlistlength+itstatelistlength)*M;
-
-	if (Sys[0]->charged) {
-		Cp(g+itpos,xx+itpos,M);
-		Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
-		Lat[0]->set_bounds(Sys[0]->psi);
-		Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
-		Lat[0]->remove_bounds(g+itpos);
-		itpos+=M;
-	}
-	if (Sys[0]->constraintfields) {
-		Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
-		YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
-		Real R = (Sys[0]->phi_ratio-1)/(Sys[0]->phi_ratio+1);
-		YisAplusC(g+itpos,g+itpos,R,M);
-		Times(g+itpos,g+itpos,Sys[0]->beta,M);
-		itpos+=M;
-	}
-	if (Sys[0]->extra_constraints>0) {
-		int length = In[0]->MonList.size();
-		for (int i = 0; i < length; i++)
-		{
-			int constraint_size=Seg[i]->constraint_z.size();
-			for (int k=0; k<constraint_size; k++) {
-				itpos++;
-				g[itpos-1]=Seg[i]->Get_g(k);
-			}
-		}
-	}
+	Sys[0]->Classical_residual(xx,g,residual,iterations, iv);
+	iterations++;
 	residual=g_.norm();
        return residual;
     }
-
 };
 
 bool Solve_scf::Solve(bool report_errors_) { //going SCF here
@@ -810,9 +582,8 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	}
 	//gradient=classical;
 	//control=proceed;
-	int niter;
 	Real res;
-	SCF_LBFGS fun(In,Lat,Seg,Sta,Rea,Mol,Sys,Var);
+	SCF_LBFGS fun(In,Lat,Seg,Sta,Rea,Mol,Sys,Var); //in the spirit of LBFGS module;
 	LBFGSParam<Real> param;
 	LBFGSSolver<Real> mysolver(param);
 
@@ -835,7 +606,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		break;
 		case LBFGS:
 			success=true;
-			res=-1;
+			res=0;
 			param.epsilon=tolerance;
 			param.m=m;
 			param.delta_max = deltamax;
@@ -843,9 +614,10 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 			param.max_iterations =iterationlimit;
 			param.e_info =e_info;
 			param.i_info =i_info;
-			niter =mysolver.minimize(fun,x,res);
+			cout <<endl <<"LBFGS has been notified" << endl; 
+			iterations =mysolver.minimize(fun,x,res);
 	
-			cout <<endl <<"Problem solved" << endl; 
+			cout <<endl <<"Problem solved: " << iterations << " iterations,  |g|: " << res <<  endl; 
 		break;
 		default:
 			cout <<"Solve is lost" << endl; success=false;
@@ -854,7 +626,6 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 	success=Sys[0]->CheckResults(report_errors);
 	return success;
 }
-
 
 
 bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, function< Real*() > flux_callback) {
@@ -984,7 +755,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 		{
 			if (debug) cout << "Residuals for mesodyn in Solve_scf " << endl;
 
-			ComputePhis(false);
+			Sys[0]->ComputePhis(x,false,residual);
 
 			for (size_t i = 0; i < Sys[0]->SysMolMonList.size() ; i++) {
 					Cp(temp_alpha, &xx[i*M] , M);
@@ -1064,7 +835,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 			int jump=sysmon_length;
 			if (Sys[0]->charged) jump++;
 			Cp(alpha,xx+jump*M,M);
-			ComputePhis(iterations==0);
+			Sys[0]->ComputePhis(x,iterations==0,residual);
 			if (Sys[0]->charged) {
 				Sys[0]->DoElectrostatics(g+sysmon_length*M,xx+sysmon_length*M);
 				Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
@@ -1091,95 +862,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 		}
 		default:
 			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
-			int itmonlistlength=Sys[0]->ItMonList.size();
-			int state_length = In[0]->StateList.size();
-			int itstatelistlength=Sys[0]->ItStateList.size();
-
-
-
-			Cp(g,xx,iv);
-
-			ComputePhis(iterations==0);
-
- 			Zero(alpha,M);
-
-			for (i=0; i<itmonlistlength; i++) {
-			  Add(g+i*M,Seg[i]->u_ext,M);
-				for (k=0; k<mon_length; k++) {
-					if (Seg[k]->ns<2) {
-						chi =Seg[Sys[0]->ItMonList[i]]->chi[k];
-						if (chi!=0)
-							PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
-					}
-				}
-			 	for (k=0; k<state_length; k++) {
-					chi =Seg[Sys[0]->ItMonList[i]]->chi[mon_length+k];
-					if (chi!=0) {
-						PutAlpha(g+i*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
-					}
-				}
-			}
-			for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
-
-			for (i=0; i<itstatelistlength; i++) {
-				for (k=0; k<mon_length; k++) {
-					if (Seg[k]->ns<2) {
-						chi =Sta[Sys[0]->ItStateList[i]]->chi[k];
-						if (chi!=0)
-							PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
-					}
-				}
-
-
-				for (k=0; k<state_length; k++) {
-					chi =Sta[Sys[0]->ItStateList[i]]->chi[mon_length+k];
-					if (chi!=0)
-						PutAlpha(g+(itmonlistlength+i)*M,Sys[0]->phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
-
-				}
-			}
-			for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
-			Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);
-			for (i=0; i<itmonlistlength; i++) {
-				AddG(g+i*M,Sys[0]->phitot,alpha,M);
-				Lat[0]->remove_bounds(g+i*M);
-				Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
-			}
-			for (i=0; i<itstatelistlength; i++) {
-				AddG(g+(itmonlistlength+i)*M,Sys[0]->phitot,alpha,M);
-				Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
-				Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,Sys[0]->KSAM,M);
-			}
-
-			int itpos=(itmonlistlength+itstatelistlength)*M;
-
-			if (Sys[0]->charged) {
-				Cp(g+itpos,xx+itpos,M);
-				Sys[0]->DoElectrostatics(g+itpos,xx+itpos);
-				Lat[0]->set_bounds(Sys[0]->psi);
-				Lat[0]->UpdatePsi(g+itpos,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
-				Lat[0]->remove_bounds(g+itpos);
-				itpos+=M;
-			}
-			if (Sys[0]->constraintfields) {
-				Cp(g+itpos,Mol[Sys[0]->DeltaMolList[1]]->phitot,M);
-				YisAminB(g+itpos,g+itpos,Mol[Sys[0]->DeltaMolList[0]]->phitot,M);
-				Real R = (Sys[0]->phi_ratio-1)/(Sys[0]->phi_ratio+1);
-				YisAplusC(g+itpos,g+itpos,R,M);
-				Times(g+itpos,g+itpos,Sys[0]->beta,M);
-				itpos+=M;
-		}
-		if (Sys[0]->extra_constraints>0) {
-			int length = In[0]->MonList.size();
-			for (int i = 0; i < length; i++)
-			{
-				int constraint_size=Seg[i]->constraint_z.size();
-				for (int k=0; k<constraint_size; k++) {
-					itpos++;
-					g[itpos-1]=Seg[i]->Get_g(k);
-				}
-			}
-		}
+			Sys[0]->Classical_residual(xx,g,residual,iterations, iv);
 		break;
 	}
 }
@@ -1279,139 +962,6 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 	}
 }
 
-void Solve_scf::ComputePhis(bool first_time) {
-	if(debug) cout <<"ComputPhis in  Solve_scf " << endl;
-	if (first_time && (
-			Sys[0]->initial_guess=="polymer_adsorption"||
-			Sys[0]->initial_guess=="membrane_torus" ||
-			Sys[0]->initial_guess=="membrane" ||
-			Sys[0]->initial_guess=="micelle"
-			)) {
-		PutU();
-		Sys[0]->PrepareForCalculations(first_time);
-		Put_U();
-		Sys[0]->ComputePhis(residual);
-	} else {
-		PutU();
-		Sys[0]->PrepareForCalculations(first_time);
-		Sys[0]->ComputePhis(residual);
-	}
-}
-
-bool Solve_scf::Put_U(){
-	if (debug) cout << "Put_U in Solve" << endl;
-	bool success=true;
-	int M=Lat[0]->M;
-	int itmonlistlength=Sys[0]->ItMonList.size();
-	for (int i=0; i<itmonlistlength; i++) {
-		int IM=Sys[0]->ItMonList[i];
-	 	Real *u=Seg[IM]->u;
-		Cp(xx+i*M,u,M);
-	}
-	return success;
-}
-
-bool Solve_scf::PutU() {
-if(debug) cout <<"PutU in  Solve " << endl;
-	int M=Lat[0]->M;
-	int itmonlistlength=Sys[0]->ItMonList.size();
-	int itstatelistlength=Sys[0]->ItStateList.size();
-	int monlistlength =In[0]->MonList.size();
-	int statelistlength=In[0]->StateList.size();
-	int k=0;
-
-	int itpos=(itmonlistlength+itstatelistlength)*M;
-	Real valence;
-	Real *u;
-	if (SCF_method == "Picard") {cout << " Picard not implemented properly " << endl; }
-	bool success=true;
-	alpha=Sys[0]->alpha;
-
-	if (Sys[0]->charged) {
-		Cp(Sys[0]->psi,xx+itpos,M);
-		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
-	}
-
-
-	for (int i=0; i<itmonlistlength; i++) {
-		int IM=Sys[0]->ItMonList[i];
-		u=Seg[IM]->u;
-		Cp(u,xx+k*M,M);
-		if (Sys[0]->charged){
-			YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[IM]->epsilon,M);
-			valence=Seg[IM]->valence;
-			if (valence !=0)
-				YplusisCtimesX(u,Sys[0]->psi,valence,M);
-		}
-		for (int j=0; j<monlistlength; j++) {
-			if (Seg[j]->seg_nr_of_copy==IM && Seg[j]->ns<2) {
-				u=Seg[j]->u;
-				Cp(u,xx+k*M,M);
-				if (Sys[0]->charged){
-					YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[j]->epsilon,M);
-					valence=Seg[j]->valence;
-					if (valence !=0)
-						YplusisCtimesX(u,Sys[0]->psi,valence,M);
-				}
-			}
-
-		}
-		for (int j=0; j<statelistlength; j++) {
-			if (Sta[j]->seg_nr_of_copy==IM) {
-				u=Seg[Sta[j]->mon_nr]->u+Sta[j]->state_nr*M;
-				Cp(u,xx+k*M,M);
-				if (Sys[0]->charged){
-					YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[Sta[j]->mon_nr]->epsilon,M);
-					valence=Sta[j]->valence;
-					if (valence !=0)
-						YplusisCtimesX(u,Sys[0]->psi,valence,M);
-
-				}
-			}
-		}
-		k++;
-	}
-
-	for (int i=0; i<itstatelistlength; i++) {
-		int IS=Sys[0]->ItStateList[i];
-		u=Seg[Sta[IS]->mon_nr]->u+(Sta[IS]->state_nr)*M;
-		Cp(u,xx+k*M,M);
-		if (Sys[0]->charged){
-			YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[Sta[IS]->mon_nr]->epsilon,M);
-			valence=Sta[IS]->valence;
-			if (valence !=0)
-				YplusisCtimesX(u,Sys[0]->psi,valence,M);
-		}
-		for (int j=0; j<statelistlength; j++) {
-			if (Sta[j]->state_nr_of_copy==IS) {
-				u=Seg[Sta[j]->mon_nr]->u+Sta[j]->state_nr*M;
-				Cp(u,xx+k*M,M);
-				if (Sys[0]->charged){
-					YplusisCtimesX(u,Sys[0]->EE,-1.0*Seg[Sta[j]->mon_nr]->epsilon,M);
-					valence=Sta[j]->valence;
-					if (valence !=0)
-						YplusisCtimesX(u,Sys[0]->psi,valence,M);
-				}
-			}
-		}
-		k++;
-	}
-	if (Sys[0]->charged) itpos +=M;
-	if (Sys[0]->constraintfields) {Cp(Sys[0]->BETA,xx+itpos,M); itpos+=M;}
-	if (Sys[0]->extra_constraints>0) { //this is only for 1D and should never go to GPU... Else we have to come up with different way to do the extra constraints.
-		int length = In[0]->MonList.size();
-		for (int i = 0; i < length; i++)
-		{
-			int constraint_size=Seg[i]->constraint_z.size();
-			for (int k=0; k<constraint_size; k++) {
-				itpos++;
-				Seg[i]->Put_beta(k,xx[itpos-1]);
-			}
-		}
-	}
-
-	return success;
-}
 
 /*---------------------------------------------to be saved for a while--------------------
 

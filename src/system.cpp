@@ -1577,6 +1577,235 @@ void System::DoElectrostatics(Real *g, Real *x)
 	}
 }
 
+void System:: ComputePhis(Real* x,bool first_time, Real residual) {
+	if(debug) cout <<"ComputPhis in  system " << endl;
+	if (first_time && (
+			initial_guess=="polymer_adsorption"||
+			initial_guess=="membrane_torus" ||
+			initial_guess=="membrane" ||
+			initial_guess=="micelle"
+			)) {
+		PutU(x);
+		PrepareForCalculations(first_time);
+		Put_U(x);
+		ComputePhis(residual);
+	} else {
+		PutU(x);
+		PrepareForCalculations(first_time);
+		ComputePhis(residual);
+	}
+}
+
+bool System:: Put_U(Real* xx){
+	if (debug) cout << "Put_U in System" << endl;
+	bool success=true;
+	int M=Lat[0]->M;
+	int itmonlistlength=ItMonList.size();
+	for (int i=0; i<itmonlistlength; i++) {
+		int IM=ItMonList[i];
+	 	Real *u=Seg[IM]->u;
+		Cp(xx+i*M,u,M);
+	}
+	return success;
+}
+
+bool System:: PutU(Real* xx) {
+if(debug) cout <<"PutU in  Solve " << endl;
+	int M=Lat[0]->M;
+	int itmonlistlength=ItMonList.size();
+	int itstatelistlength=ItStateList.size();
+	int monlistlength =In[0]->MonList.size();
+	int statelistlength=In[0]->StateList.size();
+	int k=0;
+
+	int itpos=(itmonlistlength+itstatelistlength)*M;
+	Real valence;
+	Real *u;
+	bool success=true;
+
+	if (charged) {
+		Cp(psi,xx+itpos,M);
+		Lat[0]->UpdateEE(EE,psi,E);
+	}
+
+
+	for (int i=0; i<itmonlistlength; i++) {
+		int IM=ItMonList[i];
+		u=Seg[IM]->u;
+		Cp(u,xx+k*M,M);
+		if (charged){
+			YplusisCtimesX(u,EE,-1.0*Seg[IM]->epsilon,M);
+			valence=Seg[IM]->valence;
+			if (valence !=0)
+				YplusisCtimesX(u,psi,valence,M);
+		}
+		for (int j=0; j<monlistlength; j++) {
+			if (Seg[j]->seg_nr_of_copy==IM && Seg[j]->ns<2) {
+				u=Seg[j]->u;
+				Cp(u,xx+k*M,M);
+				if (charged){
+					YplusisCtimesX(u,EE,-1.0*Seg[j]->epsilon,M);
+					valence=Seg[j]->valence;
+					if (valence !=0)
+						YplusisCtimesX(u,psi,valence,M);
+				}
+			}
+
+		}
+		for (int j=0; j<statelistlength; j++) {
+			if (Sta[j]->seg_nr_of_copy==IM) {
+				u=Seg[Sta[j]->mon_nr]->u+Sta[j]->state_nr*M;
+				Cp(u,xx+k*M,M);
+				if (charged){
+					YplusisCtimesX(u,EE,-1.0*Seg[Sta[j]->mon_nr]->epsilon,M);
+					valence=Sta[j]->valence;
+					if (valence !=0)
+						YplusisCtimesX(u,psi,valence,M);
+
+				}
+			}
+		}
+		k++;
+	}
+
+	for (int i=0; i<itstatelistlength; i++) {
+		int IS=ItStateList[i];
+		u=Seg[Sta[IS]->mon_nr]->u+(Sta[IS]->state_nr)*M;
+		Cp(u,xx+k*M,M);
+		if (charged){
+			YplusisCtimesX(u,EE,-1.0*Seg[Sta[IS]->mon_nr]->epsilon,M);
+			valence=Sta[IS]->valence;
+			if (valence !=0)
+				YplusisCtimesX(u,psi,valence,M);
+		}
+		for (int j=0; j<statelistlength; j++) {
+			if (Sta[j]->state_nr_of_copy==IS) {
+				u=Seg[Sta[j]->mon_nr]->u+Sta[j]->state_nr*M;
+				Cp(u,xx+k*M,M);
+				if (charged){
+					YplusisCtimesX(u,EE,-1.0*Seg[Sta[j]->mon_nr]->epsilon,M);
+					valence=Sta[j]->valence;
+					if (valence !=0)
+						YplusisCtimesX(u,psi,valence,M);
+				}
+			}
+		}
+		k++;
+	}
+	if (charged) itpos +=M;
+	if (constraintfields) {Cp(BETA,xx+itpos,M); itpos+=M;}
+	if (extra_constraints>0) { //this is only for 1D and should never go to GPU... Else we have to come up with different way to do the extra constraints.
+		int length = In[0]->MonList.size();
+		for (int i = 0; i < length; i++)
+		{
+			int constraint_size=Seg[i]->constraint_z.size();
+			for (int k=0; k<constraint_size; k++) {
+				itpos++;
+				Seg[i]->Put_beta(k,xx[itpos-1]);
+			}
+		}
+	}
+
+	return success;
+}
+
+void System::Classical_residual(Real* x,Real*g,Real residual, int iterations, int iv){
+if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
+	int M=Lat[0]->M;
+	Real chi;
+	int mon_length = In[0]->MonList.size(); //also frozen segments
+	int i,k;
+			
+	
+	int itmonlistlength=ItMonList.size();
+	int state_length = In[0]->StateList.size();
+	int itstatelistlength=ItStateList.size();
+
+	Cp(g,x,iv);
+
+	ComputePhis(x,iterations==0,residual);
+ 	Zero(alpha,M);
+
+	for (i=0; i<itmonlistlength; i++) {
+		Add(g+i*M,Seg[i]->u_ext,M);
+		for (k=0; k<mon_length; k++) {
+			if (Seg[k]->ns<2) {
+				chi =Seg[ItMonList[i]]->chi[k];
+				if (chi!=0)
+					PutAlpha(g+i*M,phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+			}
+		}
+		for (k=0; k<state_length; k++) {
+			chi =Seg[ItMonList[i]]->chi[mon_length+k];
+			if (chi!=0) {
+				PutAlpha(g+i*M,phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
+			}
+		}
+	}
+	for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
+
+	for (i=0; i<itstatelistlength; i++) {
+		for (k=0; k<mon_length; k++) {
+			if (Seg[k]->ns<2) {
+				chi =Sta[ItStateList[i]]->chi[k];
+				if (chi!=0)
+					PutAlpha(g+(itmonlistlength+i)*M,phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+			}
+		}
+
+
+		for (k=0; k<state_length; k++) {
+			chi =Sta[ItStateList[i]]->chi[mon_length+k];
+			if (chi!=0)
+				PutAlpha(g+(itmonlistlength+i)*M,phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
+
+		}
+	}
+	for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
+	Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);
+	for (i=0; i<itmonlistlength; i++) {
+		AddG(g+i*M,phitot,alpha,M);
+		Lat[0]->remove_bounds(g+i*M);
+		Times(g+i*M,g+i*M,KSAM,M);
+	}
+	for (i=0; i<itstatelistlength; i++) {
+		AddG(g+(itmonlistlength+i)*M,phitot,alpha,M);
+		Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
+		Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,KSAM,M);
+	}
+
+	int itpos=(itmonlistlength+itstatelistlength)*M;
+
+	if (charged) {
+		Cp(g+itpos,x+itpos,M);
+		DoElectrostatics(g+itpos,x+itpos);
+		Lat[0]->set_bounds(psi);
+		Lat[0]->UpdatePsi(g+itpos,psi,q,eps,psiMask,grad_epsilon,fixedPsi0);
+		Lat[0]->remove_bounds(g+itpos);
+		itpos+=M;
+	}
+	if (constraintfields) {
+		Cp(g+itpos,Mol[DeltaMolList[1]]->phitot,M);
+		YisAminB(g+itpos,g+itpos,Mol[DeltaMolList[0]]->phitot,M);
+		Real R = (phi_ratio-1)/(phi_ratio+1);
+		YisAplusC(g+itpos,g+itpos,R,M);
+		Times(g+itpos,g+itpos,beta,M);
+		itpos+=M;
+	}
+	if (extra_constraints>0) {
+		int length = In[0]->MonList.size();
+		for (int i = 0; i < length; i++)
+		{
+			int constraint_size=Seg[i]->constraint_z.size();
+			for (int k=0; k<constraint_size; k++) {
+				itpos++;
+				g[itpos-1]=Seg[i]->Get_g(k);
+			}
+		}
+	}
+}
+
+
 bool System::ComputePhis(Real residual){
 if(debug) cout <<"ComputePhis in system" << endl;
 	bool prepare_for_blocks=false; 
@@ -1911,8 +2140,8 @@ bool System::CheckResults(bool e_info_)
 	GrandPotential = GetGrandPotential();
 	CreateMu();
 
-	if (e_info)
-		cout << endl;
+	//if (e_info)
+	//	cout << endl;
 	if (e_info&& first_pass)
 	{
 		cout << "free energy                 = " << FreeEnergy << endl;
@@ -1930,7 +2159,7 @@ bool System::CheckResults(bool e_info_)
 	if (e_info && first_pass)
 	{
 		cout << "free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
-		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl;
+		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl<<endl;;
 		//	}
 
 		//for (int i=0; i<n_mol; i++) { //NEED FIX . densities are not yet computed correctly that is why it is turned off.....!!!
@@ -1940,7 +2169,7 @@ bool System::CheckResults(bool e_info_)
 		//}
 		//ComputePhis();
 		//}
-		cout << endl;
+		//if (e_info) cout << endl;
 		int M = Lat[0]->M;
 		for (int i = 0; i < n_mol; i++)
 		{
@@ -1956,7 +2185,7 @@ bool System::CheckResults(bool e_info_)
 				}
 			}
 		}
-		cout << endl;
+		//if (e_info) cout << endl;
 	}
 	first_pass=false; 
 	return success;

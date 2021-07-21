@@ -178,7 +178,6 @@ void System::AllocateMemory()
     Zero(EE, M);
     Zero(E,M);
   }
-
 	n_mol = In[0]->MolList.size();
 	Lat[0]->AllocateMemory();
 	int n_mon = In[0]->MonList.size();

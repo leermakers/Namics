@@ -60,6 +60,7 @@ public:
 	int iv;
 	int m;
 	SolverType SolType;
+	bool all; 
 
 	Real super_tolerance,tolerance;
 	Real super_deltamax,deltamax;

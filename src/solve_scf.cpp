@@ -31,7 +31,7 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("super_deltamax");
 	max_g = false; // compute g based on max error
 	rescue_status = NONE;
-	
+	all=false; 	
 }
 
 Solve_scf::~Solve_scf() {
@@ -39,7 +39,7 @@ Solve_scf::~Solve_scf() {
 }
 
 void Solve_scf :: DeAllocateMemory(){
-if (debug) cout <<"Destructor in Solve " << endl;
+if (debug) cout <<"DeAllocateMemory in Solve " << endl;
 
 #ifdef CUDA
 	cudaFree(xx);
@@ -50,17 +50,18 @@ if (debug) cout <<"Destructor in Solve " << endl;
 	cudaFree(temp_alpha);
 #else
 	if (mesodyn) delete [] temp_alpha;
+	
 	//delete [] xx;
 	//free(xx);
 #endif
+all=false;
 if (debug) cout <<"exit for 'destructor' in Solve " << endl;
 
 }
 
 void Solve_scf::AllocateMemory() {
-
 if(debug) cout <<"AllocateMemeory in Solve " << endl;
-
+	if (all) DeAllocateMemory(); 
 	int M=Lat[0]->M;
 	if (mesodyn) {
 		iv = Sys[0]->SysMolMonList.size()*M;
@@ -84,10 +85,12 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	xR  = (Real*)AllOnDev(m*iv); Zero(xR,m*iv);
 	x_x0= (Real*)AllOnDev(m*iv); Zero(x_x0,m*iv);
 #else
+	
 	x=Vector::Zero(iv); //voor LBFGS;
 	xx=&x[0]; //voor newton etc.
 	//xx=(Real*) malloc(iv*sizeof(Real)); Zero(xx,iv);
 #endif
+	all=true;
 	Sys[0]->AllocateMemory();
 }
 

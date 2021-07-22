@@ -127,6 +127,7 @@ public:
 	string GetValue(string);
 	string GetMonName(int );
 	bool CheckChi_values(int);
+	bool MakeItsLists();
 	bool IsCharged();
 	bool IsUnique(int,int);
 	void AllocateMemory();

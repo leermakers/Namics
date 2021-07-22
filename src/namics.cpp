@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
 			Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old, 1);
 			// last argument 1 is to read guess in X.
 		}
-
+		int IV_new=0;
 		int substart = 0;
 		int subloop = 0;
 		if (scan_nr < 0)
@@ -486,6 +486,7 @@ int main(int argc, char *argv[])
 
 		int ii;
 		int n_out = 0;
+		bool use_previous=false; 
 		switch (TheEngine)
 		{
 		case SCF:
@@ -505,16 +506,35 @@ int main(int argc, char *argv[])
 				}
 			}
 
+			
+
 			while (subloop <= substart)
 			{
 				if (scan_nr > -1)
 					Var[scan_nr]->PutVarScan(subloop);
-				New[0]->AllocateMemory();
-				New[0]->Guess(X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old);
+				 
+				Sys[0]->MakeItsLists();
+				 
+				New[0]->AllocateMemory();				
+				if (use_previous) {
+					Cp(New[0]->xx,X,IV_new);
+				} else New[0]->Guess(X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old);
+				
 				if (search_nr < 0 && ets_nr < 0 && etm_nr < 0)
 				{
 					//bool print=true;
 					New[0]->Solve(true);
+					if (Sys[0]->initial_guess == "previous_result") {
+						use_previous=true;
+						if (New[0]->iv == IV_new) {
+							Cp(X,New[0]->xx,IV_new);
+						} else {
+							if (X!=NULL) free(X);
+							IV_new=New[0]->iv;
+							X = (Real *)malloc(IV_new * sizeof(Real));
+							Cp (X,New[0]->xx,IV_new);
+						}
+					}
 				}
 				else
 				{
@@ -595,7 +615,7 @@ int main(int argc, char *argv[])
 			MY = Lat[0]->MY;
 			MZ = Lat[0]->MZ;
 			CHARGED = Sys[0]->charged;
-			int IV_new = New[0]->iv; //check this
+			IV_new = New[0]->iv; //check this
 			if (start > 1 || (start == 1 && Sys[0]->initial_guess == "file"))
 #ifdef CUDA
 				cudaFree(X);

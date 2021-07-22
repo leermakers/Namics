@@ -253,8 +253,6 @@ bool System::generate_mask()
 
 	Lat[0]->Accesible_volume=volume;
 
-
-
 	return success;
 }
 
@@ -299,39 +297,39 @@ bool System::PrepareForCalculations(bool first_time)
 	}
 #endif
 	if (first_time) {
-	do_blocks=false;
-	progress=0;
-  	if (charged) {
-    	int length = FrozenList.size();
-    	Zero(psiMask, M);
-    	fixedPsi0 = false;
-    	for (int i = 0; i < length; ++i) {
-      	if (Seg[FrozenList[i]]->fixedPsi0) {
-        	fixedPsi0 = true;
-        	Add(psiMask, Seg[FrozenList[i]]->MASK, M);
-      	}
-    	}
-    	Real eps=Seg[0]->epsilon;
-    	for (int i=1; i<n_mon; i++) {
-					if (Seg[i]->epsilon != eps) grad_epsilon = true;
-    	}
-  	}
-  	if (start==1 && initial_guess == "polymer_adsorption") {
-	  	int length=FrozenList.size();
-	  	for (int i=0; i<length; i++){
-		  	for (int j=0; j<n_mon; j++) {if (!CHI[i+n_mon*j] == 0) Seg[j]->PutAdsorptionGuess(CHI[i+n_mon*j],Seg[i]->MASK);
-		  	}
-	  	}
-			initial_guess="previous_result";
-  	}
-		if (start==1 && initial_guess == "membrane_torus") {
-			bool found=false;
-			int segnr = Mol[solvent]->MolMonList[0];
-			for (int j=0; j<n_mon; j++) {
-					if (CHI[segnr+n_mon*j]>0.8) {
-						found=true; Seg[j]->PutTorusPotential(1);
-					} //else Seg[j]->PutTorusPotential(-1);
+		do_blocks=false;
+		progress=0;
+  		if (charged) {
+    			int length = FrozenList.size();
+    			Zero(psiMask, M);
+    			fixedPsi0 = false;
+    			for (int i = 0; i < length; ++i) {
+      				if (Seg[FrozenList[i]]->fixedPsi0) {
+        				fixedPsi0 = true;
+        				Add(psiMask, Seg[FrozenList[i]]->MASK, M);
+      				}
+    			}
+    			Real eps=Seg[0]->epsilon;
+    			for (int i=1; i<n_mon; i++) {
+				if (Seg[i]->epsilon != eps) grad_epsilon = true;
+    			}
+  		}
+  		if (start==1 && initial_guess == "polymer_adsorption") {
+	  		int length=FrozenList.size();
+	  		for (int i=0; i<length; i++){
+		  		for (int j=0; j<n_mon; j++) {if (!CHI[i+n_mon*j] == 0) Seg[j]->PutAdsorptionGuess(CHI[i+n_mon*j],Seg[i]->MASK);
 			}
+		}
+		initial_guess="previous_result";
+  	}
+	if (start==1 && initial_guess == "membrane_torus") {
+		bool found=false;
+		int segnr = Mol[solvent]->MolMonList[0];
+		for (int j=0; j<n_mon; j++) {
+			if (CHI[segnr+n_mon*j]>0.8) {
+				found=true; Seg[j]->PutTorusPotential(1);
+			} //else Seg[j]->PutTorusPotential(-1);
+		}
 			if (!found) cout <<"Unable to locate a 'solvo'phobic segment. Initial guess for membrane_torus might not work...."<< endl;
 			initial_guess="previous_result";
 		}
@@ -339,9 +337,9 @@ bool System::PrepareForCalculations(bool first_time)
 			bool found=false;
 			int segnr = Mol[solvent]->MolMonList[0];
 			for (int j=0; j<n_mon; j++) {
-					if (CHI[segnr+n_mon*j]>0.8) {
-						found=true; Seg[j]->PutMembranePotential(1);
-					} //else Seg[j]->PutTorusPotential(-1);
+				if (CHI[segnr+n_mon*j]>0.8) {
+					found=true; Seg[j]->PutMembranePotential(1);
+				} //else Seg[j]->PutTorusPotential(-1);
 			}
 			if (!found) cout <<"Unable to locate a 'solvo'phobic segment. Initial guess for membrane/micelle might not work...."<< endl;
 			initial_guess="previous_result";
@@ -349,6 +347,78 @@ bool System::PrepareForCalculations(bool first_time)
 	}
 
   return success;
+}
+
+bool System::MakeItsLists(void) {
+	bool changed=false;
+	int length = In[0]->MonList.size();
+	StatelessMonList.clear();
+	SysMolMonList.clear();
+	SysMonList.clear();
+	int ItMonListLength=ItMonList.size();
+	ItMonList.clear();
+	SysTagList.clear();
+	SysClampList.clear();
+	int ItStateListLength=ItStateList.size();
+	ItStateList.clear();
+
+	for (int i = 0; i < length; i++)
+		if (Seg[i]->state_name.size() == 0)
+			StatelessMonList.push_back(i);
+	length = In[0]->MolList.size();
+	int statelength = In[0]->StateList.size();
+	int i = 0;
+	while (i < length)
+	{
+		int j = 0;
+		int LENGTH = Mol[i]->MolMonList.size();
+		while (j < LENGTH)
+		{
+			SysMolMonList.push_back(Mol[i]->MolMonList[j]);
+			if (!In[0]->InSet(SysMonList, Mol[i]->MolMonList[j]))
+			{
+				if (Seg[Mol[i]->MolMonList[j]]->freedom != "tagged" && Seg[Mol[i]->MolMonList[j]]->freedom != "clamp")
+				{
+				SysMonList.push_back(Mol[i]->MolMonList[j]);
+				if (Seg[Mol[i]->MolMonList[j]]->state_name.size() < 1 && IsUnique(Mol[i]->MolMonList[j], -1))
+				{
+					ItMonList.push_back(Mol[i]->MolMonList[j]);
+					}
+				}
+			}
+			if (Seg[Mol[i]->MolMonList[j]]->freedom == "tagged")
+			{
+				if (In[0]->InSet(SysTagList, Mol[i]->MolMonList[j]))
+				{
+					//cout <<"You can not use the 'tag monomer' " + GetMonName(Mol[i]->MolMonList[j]) + " in more than one molecule." << endl; success=false;
+				}
+				else
+					SysTagList.push_back(Mol[i]->MolMonList[j]);
+			}
+			if (Seg[Mol[i]->MolMonList[j]]->freedom == "clamp")
+				{
+				if (In[0]->InSet(SysClampList, Mol[i]->MolMonList[j]))
+				{
+					//cout <<"You can not use the 'clamp monomer' " + GetMonName(Mol[i]->MolMonList[j]) + " in more than one molecule." << endl; success=false;
+				}
+				else
+					SysClampList.push_back(Mol[i]->MolMonList[j]);
+			}
+			j++;
+		}
+		i++;
+	}
+	for (int j = 0; j < statelength; j++)
+	{
+		if (IsUnique(-1, j))
+		{
+			ItStateList.push_back(j);
+			//cout <<"itstatelist extended with " << j << endl;
+		}
+	}
+
+	if ((ItMonListLength-ItMonList.size()==0 && ItStateListLength-ItStateList.size()==0) || ItMonListLength+ItStateListLength==0) changed = false; else changed = true;
+	return changed;
 }
 
 string System::GetMonName(int mon_number_I)
@@ -423,7 +493,29 @@ bool System::CheckInput(int start_)
 				success = false;
 			}
 		}
+		MakeItsLists(); 
 
+		int length = In[0]->MolList.size();
+		int i = 0;
+		while (i < length)
+		{
+			if (Mol[i]->freedom == "free")
+				phibulktot += Mol[i]->phibulk;
+			if (Mol[i]->freedom == "solvent")
+			{
+				solvent_found = true;
+				solvent = i;
+			}
+			if (Mol[i]->IsTagged())
+			{
+				tag_segment = Mol[i]->tag_segment;
+				Mol[i]->n = 1.0 * Seg[tag_segment]->n_pos;
+				Mol[i]->theta = Mol[i]->n * Mol[i]->chainlength;
+			} 
+			i++;
+		}
+ 
+/*
 		int length = In[0]->MonList.size();
 		for (int i = 0; i < length; i++)
 			if (Seg[i]->state_name.size() == 0)
@@ -493,6 +585,7 @@ bool System::CheckInput(int start_)
 				//cout <<"itstatelist extended with " << j << endl;
 			}
 		}
+*/
 		if (!solvent_found && In[0]->MolList.size()==1) {
 			phibulktot=1; cout <<"WARNING: no solvent found. Expecting solvent free 'brush'" << endl;
 		}

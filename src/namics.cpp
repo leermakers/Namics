@@ -171,34 +171,34 @@ int main(int argc, char *argv[])
 
 		// Create lattice class instance and check inputs (reference above)
 		//Lat.push_back(new Lattice(In, In[0]->LatList[0]));
-		
+
 
 		lat_p = new Lat_preview(In, In[0]->LatList[0]);
-		//Lat[0]->outputtest(); 
+		//Lat[0]->outputtest();
 		if (!lat_p->CheckInput(start))
 		{
 			return 0;
 		} else
-		{ int gradients=lat_p->gradients; 
-		  string geometry = lat_p->geometry; 
-		  bool success; 
-			delete lat_p;  
+		{ int gradients=lat_p->gradients;
+		  string geometry = lat_p->geometry;
+		  bool success;
+			delete lat_p;
 			switch (gradients) {
-				case 1:  
+				case 1:
 					if (geometry=="planar") {
-						Lat.push_back(new LG1Planar(In,In[0]->LatList[0])); 
+						Lat.push_back(new LG1Planar(In,In[0]->LatList[0]));
 					} else {
-						Lat.push_back(new LGrad1(In,In[0]->LatList[0])); 
+						Lat.push_back(new LGrad1(In,In[0]->LatList[0]));
 					}
 					break;
-				case 2: 
+				case 2:
 					if (geometry=="planar") {
 						Lat.push_back(new LG2Planar(In,In[0]->LatList[0]));
 					} else {
 						Lat.push_back(new LGrad2(In,In[0]->LatList[0]));
 					}
 					break;
-				case 3: 
+				case 3:
 					Lat.push_back(new LGrad3(In,In[0]->LatList[0]));
 					break;
 				default :
@@ -206,9 +206,9 @@ int main(int argc, char *argv[])
 
 			}
 			success=Lat[0]->CheckInput(start);
-			if (!success) return 0; 
+			if (!success) return 0;
 		}
-	
+
 		// Create segment class instance and check inputs (reference above)
 		int n_seg = In[0]->MonList.size();
 		for (int i = 0; i < n_seg; i++)
@@ -263,10 +263,10 @@ int main(int argc, char *argv[])
 			if (!mol_p->CheckInput(start))
 			{
 				return 0;
-			} else { 
+			} else {
 				switch (mol_p->MolType) {
-					
-				 	case monomer: 
+
+				 	case monomer:
 						Mol.push_back(new Molecule(In, Lat, Seg, In[0]->MolList[i]));
 						break;
 					case water:
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 					case linear:
 						if (mol_p->freedom=="clamped") {
 							Mol.push_back(new mol_clamp(In, Lat, Seg, In[0]->MolList[i]));
-						} else { 
+						} else {
 							Mol.push_back(new mol_linear(In, Lat, Seg, In[0]->MolList[i]));
 						}
 						break;
@@ -291,12 +291,12 @@ int main(int argc, char *argv[])
 					case comb:
 						Mol.push_back(new mol_comb(In, Lat, Seg, In[0]->MolList[i]));
 						break;
-					default: 
+					default:
 						cout <<"Unknown MolType " << endl;
 						break;
-			
+
 				}
-				delete mol_p; 
+				delete mol_p;
 				if (!Mol[i]->CheckInput(start)) return 0;
 			}
 		}
@@ -467,7 +467,7 @@ int main(int argc, char *argv[])
 			substart = Var[scan_nr]->num_of_cals;
 		}
 		if (substart < 1)
-			substart = 0; // Default to 1 substart
+			substart = 0; // Default to 1 substar
 
 		EngineType TheEngine;
 		TheEngine = SCF;
@@ -486,7 +486,8 @@ int main(int argc, char *argv[])
 
 		int ii;
 		int n_out = 0;
-		bool use_previous=false; 
+		int mon_length;
+		int state_length;
 		switch (TheEngine)
 		{
 		case SCF:
@@ -506,26 +507,23 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			
+
 
 			while (subloop <= substart)
 			{
 				if (scan_nr > -1)
 					Var[scan_nr]->PutVarScan(subloop);
-				 
+
 				Sys[0]->MakeItsLists();
-				 
-				New[0]->AllocateMemory();				
-				if (use_previous) {
-					Cp(New[0]->xx,X,IV_new);
-				} else New[0]->Guess(X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old);
-				
+
+				New[0]->AllocateMemory();
+			    New[0]->Guess(X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old);
+
 				if (search_nr < 0 && ets_nr < 0 && etm_nr < 0)
 				{
 					//bool print=true;
 					New[0]->Solve(true);
 					if (Sys[0]->initial_guess == "previous_result") {
-						use_previous=true;
 						if (New[0]->iv == IV_new) {
 							Cp(X,New[0]->xx,IV_new);
 						} else {
@@ -533,6 +531,22 @@ int main(int argc, char *argv[])
 							IV_new=New[0]->iv;
 							X = (Real *)malloc(IV_new * sizeof(Real));
 							Cp (X,New[0]->xx,IV_new);
+							MX=Lat[0]->MX;
+							MY=Lat[0]->MY;
+							MZ=Lat[0]->MZ;
+							fjc_old=Lat[0]->fjc;
+							mon_length = Sys[0]->ItMonList.size();
+							state_length = Sys[0]->ItStateList.size();
+							MONLIST.clear();
+							STATELIST.clear();
+							for (int i = 0; i < mon_length; i++)
+							{
+								MONLIST.push_back(Seg[Sys[0]->ItMonList[i]]->name);
+							}
+							for (int i = 0; i < state_length; i++)
+							{
+								STATELIST.push_back(Sta[Sys[0]->ItStateList[i]]->name);
+							}
 						}
 					}
 				}
@@ -625,12 +639,12 @@ int main(int argc, char *argv[])
 #ifdef CUDA
 			X = (Real *)AllOnDev(IV_new);
 #else
-			X = (Real *)malloc(IV_new * sizeof(Real)); 
+			X = (Real *)malloc(IV_new * sizeof(Real));
 #endif
 			Cp(X, New[0]->xx, IV_new);
 			fjc_old = Lat[0]->fjc;
-			int mon_length = Sys[0]->ItMonList.size(); 
-			int state_length = Sys[0]->ItStateList.size();
+			mon_length = Sys[0]->ItMonList.size();
+			state_length = Sys[0]->ItStateList.size();
 			MONLIST.clear();
 			STATELIST.clear();
 			for (int i = 0; i < mon_length; i++)

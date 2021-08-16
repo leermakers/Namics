@@ -50,7 +50,6 @@ if (debug) cout <<"DeAllocateMemory in Solve " << endl;
 	cudaFree(temp_alpha);
 #else
 	if (mesodyn) delete [] temp_alpha;
-	
 	//delete [] xx;
 	//free(xx);
 #endif
@@ -85,10 +84,10 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	xR  = (Real*)AllOnDev(m*iv); Zero(xR,m*iv);
 	x_x0= (Real*)AllOnDev(m*iv); Zero(x_x0,m*iv);
 #else
-	
 	x=Vector::Zero(iv); //voor LBFGS;
 	xx=&x[0]; //voor newton etc.
-	//xx=(Real*) malloc(iv*sizeof(Real)); Zero(xx,iv);
+	//xx=(Real*) malloc(iv*sizeof(Real)); 
+	//Zero(xx,iv);
 #endif
 	all=true;
 	Sys[0]->AllocateMemory();

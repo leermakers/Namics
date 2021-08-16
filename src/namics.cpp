@@ -517,7 +517,8 @@ int main(int argc, char *argv[])
 				 
 				New[0]->AllocateMemory();				
 				if (use_previous) {
-					Cp(New[0]->xx,X,IV_new);
+					Real iv_=New[0]->iv;
+					if (iv_<IV_new) Cp(New[0]->xx,X,iv_); else Cp(New[0]->xx,X,IV_new);
 				} else New[0]->Guess(X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old);
 				
 				if (search_nr < 0 && ets_nr < 0 && etm_nr < 0)

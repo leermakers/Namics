@@ -86,6 +86,7 @@ public:
 	int seed;
 	int start;
 	int var_pos;
+	int frozen_at_bound;
 
 	vector<string> ints;
 	vector<string> Reals;

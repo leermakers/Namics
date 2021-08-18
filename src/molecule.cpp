@@ -1755,6 +1755,9 @@ if (debug) cout <<"push (string) for Mol " + name << endl;
 	strings.push_back(s);
 	strings_value.push_back(X);
 }
+
+
+
 void Molecule::PushOutput() {
 if (debug) cout <<"PushOutput for Mol " + name << endl;
 	int length_al=MolAlList.size();
@@ -1811,7 +1814,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	}
 	push("width",width);
 	push("phi1",phitot[Lat[0]->fjc]);
-	push("phiM",phiM);
+	push("phiM",phitot[Lat[0]->M-2*Lat[0]->fjc]);
 	push("Dphi",phi1-phiM);
 	push("pos_interface",pos_interface);
 	push("phi_average",phi_av);
@@ -1825,6 +1828,20 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 			}
 		}
 	}
+//
+	int M=Lat[0]->M;
+	int fjc=Lat[0]->fjc;
+	Real phimax=0;
+	Real phiold=0;
+	Real phinew=phitot[fjc];
+	for (int i=fjc; i< M-2*fjc; i++){
+		phiold=phinew;
+		phinew=phitot[i];
+		if (phinew > phiold && phinew<phimax) phimax=phinew;
+		if (phimax>0 && phinew < phiold) i=M; 
+	}
+	push("phiMax",phimax);
+//
 	push("GN",GN);
 	push("norm",norm);
 	string s="profile;0"; push("phi",s);

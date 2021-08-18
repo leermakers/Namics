@@ -517,7 +517,7 @@ int main(int argc, char *argv[])
 				Sys[0]->MakeItsLists();
 				 
 				New[0]->AllocateMemory();				
-				if (use_previous) {
+				if (Sys[0]->initial_guess == "previous_result") {
 					Real iv_=New[0]->iv;
 					if (iv_<IV_new) Cp(New[0]->xx,X,iv_); else Cp(New[0]->xx,X,IV_new);
 				} else New[0]->Guess(X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old);

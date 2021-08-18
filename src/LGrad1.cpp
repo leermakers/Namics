@@ -399,94 +399,29 @@ if (debug) cout <<"ReadRange in LGrad1 " << endl;
 	vector<string>coor;
 	vector<string>xyz;
 	string diggit;
-	bool recognize_keyword;
-	//int a; if (range_type=="frozen_range") a=1; else a=0;
-	int a=0;
 	In[0]->split(range,';',set);
-	if (set.size()==2) {
-		coor.clear();
-		block=true; In[0]->split(set[0],',',coor);
-		if (coor.size()!=1) {cout << "In mon " + seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come as a single coordinate 'x'" << endl; success=false;}
-		else {
-			diggit=coor[0].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
-				recognize_keyword=false;
-				if (coor[0]=="var_pos") {recognize_keyword=true; r[0]=var_pos;}
-				if (coor[0]=="firstlayer") {recognize_keyword=true; r[0] = 1;}
-				//if (coor[0]=="lowerbound") {recognize_keyword=true; r[0] = 0;}
-				//if (coor[0]=="upperbound") {recognize_keyword=true; r[0] = MX+1;}
-				if (coor[0]=="lastlayer")  {recognize_keyword=true; r[0] = MX;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[0] < 1-a || r[0] > MX+a) {cout << "In mon " + seg_name + ", for 'pos 1', the x-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .." << MX+a << endl; success =false;}
-		}
-		coor.clear(); In[0]->split(set[1],',',coor);
 
-		if (coor.size()!=1) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "' the coordinates do not come as a single coordinate 'x'" << endl; success=false;}
-		else {
-			diggit=coor[0].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
-				recognize_keyword=false;
-				if (coor[0]=="var_pos") {recognize_keyword=true; r[3]=var_pos;}
-				if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
-				//if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
-				//if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
-				if (coor[0]=="lastlayer")  {recognize_keyword=true; r[3] = MX;}
-				if (!recognize_keyword) {
-				cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer'" << endl;
-					success=false;
-				}
-			}
-			if (r[3] < 1-a || r[3] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .." << MX+a << endl; success =false;}
-			if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-		}
-	} else {
-		string s;
-		In[0]->split(set[0],')',coor);
-		s=coor[0].substr(0,1);
-		if (s!="(") { //now expect one of the keywords
-			block=true;
-			recognize_keyword=false;
-			if (coor[0]=="firstlayer")         {recognize_keyword=true; r[0] = r[3] = 1; }
-				//if (coor[0]=="lowerbound" && a==1) {recognize_keyword=true; r[0] = r[3] = 0; }
-				//if (coor[0]=="upperbound" && a==1) {recognize_keyword=true; r[0] = r[3] = MX+1; }
-			if (coor[0]=="lastlayer")          {recognize_keyword=true; r[0] = r[3] = MX;}
-			if (!recognize_keyword) {
-				cout << "In mon " + seg_name + " and  range_type " + range_type + ", the input: 'firstlayer' or 'lastlayer' ";
-				if (a==1) cout << "or 'upperbound' or 'lowerbound'";
-				cout <<" is expected. " << endl;
-				success=false;
-			}
-		} else {
-			int px{0};
-			string s;
-
-			if (coor.size()==0)
-				block=false;
-			else {
-				for (size_t i = 0 ; i < coor.size() ; ++i) {
-					s=coor[i].substr(1,coor[i].size()-1);
-					In[0]->split(s,',',xyz);
-					if (xyz.size()!=1) {
-						cout << "In mon " + seg_name+ " pinned_range  the expected 'single coordinate' -with brackets- structure '(x)' was not found. " << endl;  success = false;
-					} else {
-						px=In[0]->Get_int(xyz[0],0);
-						if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 0.." << MX+1 << endl; success =false;}
-					}
-					H_p[i]=fjc-1+px;
-				}
-			}
-
-		}
-	}
+	coor.clear();
+	block=true; 
+	In[0]->split(set[0],',',coor);
+	if (coor.size()!=1) {cout << "In mon " + seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes must come as a single coordinate 'x'" << endl; r[0]=0; success=false;}
+	else r[0]=In[0]->Get_int(coor[0],-1) ; 
+					
+	coor.clear(); In[0]->split(set[1],',',coor);
+	
+	if (coor.size()!=1) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "' the coordinates must come as a single coordinate 'x'" << endl; r[3]=0; success=false;}
+	else r[3]=In[0]->Get_int(coor[0],-1);
+ 
+	block=true;
 	return success;
 }
 
 bool LGrad1::ReadRangeFile(string filename,int* H_p, int &n_pos, string seg_name, string range_type) {
 if (debug) cout <<"ReadRangeFile in LGrad1 " << endl;
+	if (fjc>1) {
+		cout << "Rangefile is not implemented for FJC-choices >3; contact FL. " << endl; 
+		return false;
+	}
 	bool success=true;
 	string content;
 	vector<string> lines;
@@ -515,7 +450,7 @@ if (debug) cout <<"ReadRangeFile in LGrad1 " << endl;
 		} else {
 			p_i=0;
 			for (x=1; x<MX+1; x++) {
-				if (In[0]->Get_int(lines[x-1],0)==1) {H_p[p_i]=fjc-1+x; p_i++;}
+				if (In[0]->Get_int(lines[x-1],0)==1) {H_p[p_i]=x; p_i++;}
 			}
 		}
 	} else { //expect to read x only
@@ -532,7 +467,7 @@ if (debug) cout <<"ReadRangeFile in LGrad1 " << endl;
 					px=In[0]->Get_int(xyz[0],0);
 					if (px < 1 || px > MX) {cout << "In mon " + seg_name + ", for 'pos' "<< i << ", the x-coordinate in "+range_type+"_filename out of bounds: 1.." << MX << endl; success =false;}
 				}
-				H_p[i]=fjc-1+px;
+				H_p[i]=px;
 				i++;
 			}
 		}
@@ -577,8 +512,9 @@ if (debug) cout <<"CreateMask for LGrad1 " + name << endl;
 	bool success=true;
 	H_Zero(H_MASK,M);
 	if (block) {
-		for (int x=r[0]; x<r[3]+1; x++)
-				H_MASK[fjc-1+x]=1;
+		for (int x=r[0]; x<r[3]+1; x++) {
+			H_MASK[x]=1;
+		}
 	} else {
 		for (int i = 0; i<n_pos; i++) H_MASK[H_P[i]]=1;
 	}
@@ -775,8 +711,8 @@ void LGrad1::remove_bounds(Real *X){
 if (debug) cout <<"remove_bounds in LGrad1 " << endl;
 	int k;
 	if (fjc==1) {
-		X[0]=0;
-		X[MX+1]=0;
+		if (BX1!=0) X[0]=0;
+		if (BXM!=MX+1) X[MX+1]=0;
 	} else {
 		for (k=0; k<fjc; k++) {
 			X[(fjc-1)-k]=0;
@@ -824,8 +760,8 @@ void LGrad1::remove_bounds(int *X){
 if (debug) cout <<"remove_bounds in LGrad1 " << endl;	
 int k;
 	if (fjc==1) {
-		X[0]=0;
-		X[MX+1]=0;
+		if (BX1!=0) X[0]=0;
+		if (BXM!=MX+1) X[MX+1]=0;
 	} else {
 		for (k=0; k<fjc; k++) {
 			X[(fjc-1)-k]=0;

@@ -86,16 +86,22 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 
 	switch (gradients) {
 		case 3:
-			if (BC[4]=="mirror") {
+			if (BC[2]=="mirror") {
 				if (fjc==1) BZ1=1; else {
 					for (int k=0; k<fjc; k++) B_Z1[k]=fjc+k;
 				}
 			}
-			if (BC[4]=="periodic") {
+			if (BC[2]=="periodic") {
 				if (fjc==1) BZ1=MZ; else {
 					for (int k=0; k<fjc; k++) B_Z1[k]=MZ+fjc-k-1;
 				}
 			}
+			if (BC[2]=="surface") {
+				if (fjc==1) BZ1=0; else {
+					for (int k=0; k<fjc; k++) B_Z1[k]=k;
+				}
+			}
+
 			if (BC[5]=="mirror") {
 				if (fjc==1) BZM=MZ; else {
 					for (int k=0; k<fjc; k++) B_ZM[k]=MZ+fjc-k-1;
@@ -106,28 +112,46 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 					for (int k=0; k<fjc; k++) B_ZM[k]=fjc+k;
 				}
 			}
-			//Fall through
-		case 2:
-			if (BC[2]=="mirror") {
-				if (fjc==1) BY1=1; else {
-					for (int k=0; k<fjc; k++) B_Y1[k]=fjc+k-1;
+			if (BC[5]=="surface") {
+				if (fjc==1) BZM=MZ+1; else {
+					for (int k=0; k<fjc; k++) B_ZM[k]=MZ+fjc+k;
 				}
 			}
-			if (BC[2]=="periodic") {
+
+			//Fall through
+		case 2:
+			if (BC[1]=="mirror") {
+				if (fjc==1) BY1=1; else {
+					for (int k=0; k<fjc; k++) B_Y1[k]=fjc+k;
+				}
+			}
+			if (BC[1]=="periodic") {
 				if (fjc==1) BY1=MY; else {
 					for (int k=0; k<fjc; k++) B_Y1[k]=MY+fjc-k-1;
 				}
 			}
-			if (BC[3]=="mirror") {
-				if (fjc==1) BYM=MY; else {
-					for (int k=0; k<fjc; k++) B_YM[k]=MY+fjc-k;
+			if (BC[1]=="surface") {
+				if (fjc==1) BY1=0; else {
+					for (int k=0; k<fjc; k++) B_Y1[k]=k;
 				}
 			}
-			if (BC[3]=="periodic") {
+
+			if (BC[4]=="mirror") {
+				if (fjc==1) BYM=MY; else {
+					for (int k=0; k<fjc; k++) B_YM[k]=MY+fjc-k-1;
+				}
+			}
+			if (BC[4]=="periodic") {
 				if (fjc==1) BYM=1; else {
 					for (int k=0; k<fjc; k++) B_YM[k]=fjc+k;
 				}
 			}
+			if (BC[4]=="surface") {
+				if (fjc==1) BYM=MY+1; else {
+					for (int k=0; k<fjc; k++) B_YM[k]=MY+fjc+k;
+				}
+			}
+
 			//Fall through
 		case 1:
 			if (BC[0]=="mirror") {
@@ -140,16 +164,28 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 					for (int k=0; k<fjc; k++) B_X1[k]=MX+fjc-k-1;
 				}
 			}
-			if (BC[1]=="mirror") {
+			if (BC[0]=="surface") {
+				if (fjc==1) BX1=0; else {
+					for (int k=0; k<fjc; k++) B_X1[k]=k;
+				}
+			}
+
+			if (BC[3]=="mirror") {
 				if (fjc==1) BXM=MX;else {
 					for (int k=0; k<fjc; k++) B_XM[k]=MX+fjc-k-1;
 				}
 			}
-			if (BC[1]=="periodic") {
+			if (BC[3]=="periodic") {
 				if (fjc==1) BXM=1; else {
 					for (int k=0; k<fjc; k++) B_XM[k]=fjc+k;
 				}
 			}
+			if (BC[3]=="surface") {
+				if (fjc==1) BXM=MX+1; else {
+					for (int k=0; k<fjc; k++) B_XM[k]=MX+fjc+k;
+				}
+			}
+
 	}
 	if (fcc_sites) {
 		fcc_lambda_1=(Real*)malloc(M*sizeof(Real)); Zero(fcc_lambda_1,M);
@@ -228,14 +264,29 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 	vector<string> options;
 
+		FJC=3;	fjc=1;
+		if (success && GetValue("FJC_choices").length()>0) {
+			if (!In[0]->Get_int(GetValue("FJC_choices"),FJC,"FJC_choices can adopt only few integer values: 3 + i*2, with i = 0, 1, 2, 3, ..."))
+				success=false;
+			else if ((FJC-3) %2 != 0) {
+				cout << "FJC_choices can adopt only few integer values: 3 + i*2, with i = 0, 1, 2, 3, ...." <<endl;
+				success=false;
+			}
+
+			fjc=(FJC-3)/2+1;
+
+		}
+
+
 		bond_length=0;
 		if (GetValue("bondlength").size()>0) {
 			bond_length =  In[0]->Get_Real(GetValue("bondlength"),5e-10);
 			if (bond_length < 1e-11 || bond_length > 1e-8) {cout <<" bondlength out of range 1e-11..1e-8 " << endl; success=false;}
 		}
+		bond_length/=fjc;
 
 		string lat_type;
-		lat_type="simple_cubic"; lattice_type=simple_cubic; lambda=1.0/6.0; Z=6;
+		//lat_type="simple_cubic"; lattice_type=simple_cubic; lambda=1.0/6.0; Z=6;
 
 		options.push_back("simple_cubic"); options.push_back("hexagonal");
 		Value=GetValue("lattice_type");
@@ -247,39 +298,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		} else {
 			success=false; cout <<"Namics can not run without input for 'lattice_type'" << endl;
 		}
-/*			else {
-			if (lambda>0) {
-				if (GetValue("lambda").size()>0) cout <<"'lattice_type' has been set: 'lambda'-value is ignored" << endl;
-				if (GetValue("Z").size()>0) cout <<"'lattice_type' has been set: 'Z' (coordination number) is ignored" << endl;
-			} else {
-				if (GetValue("lambda").size()>0) {
-					lambda=In[0]->Get_Real(GetValue("lambda"),1.0/6.0);
-					if (lambda < 0.0 || lambda > 1.0/3.0) {lattice_type=simple_cubic; lambda = 1.0/6.0; cout <<"'lambda'-value out of bounds 0..1/3. Default 1/6 is used instead" << endl; }
-					else {
-						if (lambda>0.16 && lambda < 0.167) {lattice_type=simple_cubic; lambda = 1.0/6.0;}
-						if (lambda>0.24 && lambda < 0.26) {lattice_type=hexagonal; lambda = 1.0/4.0;}
-					}
-					Z=In[0]->Get_int(GetValue("Z"),6);
-					if (Z<3 || Z>12) {lattice_type=simple_cubic; lambda = 1.0/6.0; cout <<"coordination number 'Z' is out of bounds 3 .. 12. Default Z=6 is used instead"<<endl; }
-				}
-				if (lambda>0) {
-					if (GetValue("Z").size()>0) {
-						Z=In[0]->Get_int(GetValue("Z"),6);
-						if (Z<3 || Z>12) {lattice_type=simple_cubic; lambda = 1.0/6.0; cout <<"coordination number 'Z' is out of bounds 3 .. 12. Default Z=6 is used instead"<<endl; }
-						else {
-							lambda = 1.0/Z;
-							if (Z==6) lattice_type=simple_cubic;
-							if (Z==4) lattice_type=hexagonal;
-						}
-					}
-				}
-				if (lambda==0) {
-					cout<<"'lattice_type'-info is missing. 'lambda'-info is missing. 'Z'-info is missing. Default values; lambda=1/6, Z=6, lattice_type='simple cubic' used instead. " << endl;
-					lattice_type  = simple_cubic; lambda=1.0/6.0; Z=0;
-				}
-			}
-		}
-*/
+
 		offset_first_layer =0;
 		gradients=In[0]->Get_int(GetValue("gradients"),1);
 		if (gradients<0||gradients>3) {cout << "value of gradients out of bounds 1..3; default value '1' is used instead " << endl; gradients=1;}
@@ -294,6 +313,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						cout <<"n_layers out of bounds, currently: 0..1e6; Problem terminated" << endl;
 					}
 				}
+				MX=fjc*(MX+1)-1;
 
 				options.clear();
 				options.push_back("spherical");
@@ -312,10 +332,11 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						offset_first_layer=0;
 					}
 				}
+				offset_first_layer *=fjc; 
 
 				options.clear();
-				options.push_back("mirror"); //options.push_back("mirror_2");
-				//options.push_back("surface");
+				options.push_back("mirror");
+				options.push_back("surface");
 				if (GetValue("lowerbound_x").size()>0) {success=false; cout << "lowerbound_x is not allowed in 1-gradient calculations" << endl;}
 				if (GetValue("lowerbound_y").size()>0) {success=false; cout << "lowerbound_y is not allowed in 1-gradient calculations" << endl;}
 				if (GetValue("lowerbound_z").size()>0) {success=false; cout << "lowerbound_z is not allowed in 1-gradient calculations" << endl;}
@@ -323,30 +344,19 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (GetValue("upperbound_y").size()>0) {success=false; cout << "upperbound_y is not allowed in 1-gradient calculations" << endl;}
 				if (GetValue("upperbound_z").size()>0) {success=false; cout << "upperbound_z is not allowed in 1-gradient calculations" << endl;}
 
-				Value.clear();
-				Value=GetValue("lowerbound");
-				if (Value.length() > 0 && !In[0]->Get_string(Value,BC[0],options,"for 'lowerbound' boundary condition not recognized."))
-					success = false;
-				else //default to
-					BC[0]="mirror";
 
-				Value.clear();
-				Value=GetValue("upperbound");
-				if (Value.length()>0 && !In[0]->Get_string(Value,BC[1],options,"for 'upperbound' boundary condition not recognized."))
+				if (GetValue("lowerbound").size()==0) BC[0]="mirror";
+				else if (!In[0]->Get_string(GetValue("lowerbound"),BC[0],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
+
+				if (GetValue("upperbound").size()==0) BC[3]="mirror";
+				if (!In[0]->Get_string(GetValue("upperbound"),BC[3],options,"for 'upperbound' boundary condition not recognized."))
 					success = false;
-				else //default to
-					BC[1] = "mirror";
+
 				break;
 			case 2:
-				//if (lattice_type == "") {
-				//	success=false;
-				//	cout <<" in two gradient calculations, you should set lattice type to either 'simple_cubic' or 'FCC'"<<endl;
-				//}
-				//if (Z==0) {
-				//	lattice_type  = "FCC";
-				//	lambda=1.0/3.0; Z=3;
-				//	cout <<"Correction: in two-gradient case the default of the lattice is 'FCC'. " << endl;
-				//}
+				if (GetValue("upperbound").size()>0) {success=false; cout << "upperbound is only allowed in 1-gradient calculations" << endl;}
+				if (GetValue("lowerbound").size()>0) {success=false; cout << "lowerbound is only allowed in 1-gradient calculations" << endl;}
+
 				MX = In[0]->Get_int(GetValue("n_layers_x"),-123);
 				if (MX==-123) {
 					success=false;
@@ -358,6 +368,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						cout <<"n_layers_x out of bounds, currently: 0.. 1e6; Problem terminated" << endl;
 					}
 				}
+				MX=fjc*(MX+1)-1;
 				MY = In[0]->Get_int(GetValue("n_layers_y"),-123);
 				if (MY==-123) {
 					success=false;
@@ -369,6 +380,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						cout <<"n_layers_y out of bounds, currently: 0.. 1e6; Problem terminated" << endl;
 					}
 				}
+				MY=fjc*(MY+1)-1;
 				options.clear();
 				options.push_back("cylindrical");
 				options.push_back("flat");options.push_back("planar");
@@ -388,8 +400,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				}
 
 				options.clear();
-				options.push_back("mirror"); //options.push_back("mirror_2");
-				//options.push_back("surface");
+				options.push_back("mirror"); 
+				options.push_back("surface");
 				if (geometry=="planar")
 					options.push_back("periodic");
 				if (GetValue("lowerbound_z").size()>0) {
@@ -401,38 +413,17 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					success=false;
 				}
 
-				Value.clear();
-				Value=GetValue("lowerbound_x");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[0],options,"for 'lowerbound_y' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[0]="mirror";
+				if (GetValue("lowerbound_x").size()==0) BC[0]="mirror";
+				else if (!In[0]->Get_string(GetValue("lowerbound_x"),BC[0],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
 
+				if (GetValue("upperbound").size()==0) BC[3]="mirror";
+				else if (!In[0]->Get_string(GetValue("upperbound"),BC[3],options,"for 'upperbound' boundary condition not recognized.")) success = false;
 
-				Value.clear();
-				Value=GetValue("upperbound_x");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[1],options,"for 'upperbound_x' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[1]="mirror";
+				if (GetValue("lowerbound_y").size()==0) BC[1]="mirror";
+				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
 
-				Value.clear();
-				Value=GetValue("lowerbound_y");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[2],options,"for 'lowerbound_y' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[2]="mirror";
-
-				Value.clear();
-				Value=GetValue("upperbound_y");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[3],options,"for 'upperbound_y' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[3]="mirror";
+				if (GetValue("upperbound_y").size()==0) BC[4]="mirror";
+				if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound' boundary condition not recognized.")) success = false;
 
 
 				if (BC[0]=="periodic" || BC[1]=="periodic") {
@@ -446,73 +437,43 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				}
 				break;
 			case 3:
+				if (GetValue("upperbound").size()>0) {success=false; cout << "upperbound is only allowed in 1-gradient calculations" << endl;}
+				if (GetValue("lowerbound").size()>0) {success=false; cout << "lowerbound is only allowed in 1-gradient calculations" << endl;}
+
 				if (!In[0]->Get_int(GetValue("n_layers_x"),MX,1,1e6,"In 'lat' the parameter 'n_layers_x' is required"))
 					success=false;
 				if (!In[0]->Get_int(GetValue("n_layers_y"),MY,1,1e6,"In 'lat' the parameter 'n_layers_y' is required"))
 					success=false;
 				if (!In[0]->Get_int(GetValue("n_layers_z"),MZ,1,1e6,"In 'lat' the parameter 'n_layers_z' is required"))
 					success=false;
-
+				MX=fjc*(MX+1)-1;
+				MY=fjc*(MY+1)-1;
+				MZ=fjc*(MZ+1)-1;
 				options.clear();
 				options.push_back("mirror"); //options.push_back("mirror_2");
 				options.push_back("periodic");
+				options.push_back("surface");
 				//options.push_back("shifted_mirror");
 
-				Value.clear();
-				Value=GetValue("lowerbound_x");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[0],options,"for 'lowerbound_y' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[0]="mirror";
 
+				if (GetValue("lowerbound_x").size()==0) BC[0]="mirror";
+				else if (!In[0]->Get_string(GetValue("lowerbound_x"),BC[0],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
 
-				Value.clear();
-				Value=GetValue("upperbound_x");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[1],options,"for 'upperbound_x' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[1]="mirror";
+				if (GetValue("upperbound").size()==0) BC[3]="mirror";
+				else if (!In[0]->Get_string(GetValue("upperbound"),BC[3],options,"for 'upperbound' boundary condition not recognized.")) success = false;
 
-				Value.clear();
-				Value=GetValue("lowerbound_y");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[2],options,"for 'lowerbound_y' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[2]="mirror";
+				if (GetValue("lowerbound_y").size()==0) BC[1]="mirror";
+				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
 
-				Value.clear();
-				Value=GetValue("upperbound_y");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[3],options,"for 'upperbound_y' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[3]="mirror";
+				if (GetValue("upperbound_y").size()==0) BC[4]="mirror";
+				if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound' boundary condition not recognized.")) success = false;
 
-				Value.clear();
-				Value=GetValue("lowerbound_z");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[4],options,"for 'lowerbound_z' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[4]="mirror";
+				if (GetValue("lowerbound_z").size()==0) BC[2]="mirror";
+				else if (!In[0]->Get_string(GetValue("lowerbound_z"),BC[2],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
 
-				Value.clear();
-				Value=GetValue("upperbound_z");
-				if (Value.length()>0) {
-					if (!In[0]->Get_string(Value,BC[5],options,"for 'upperbound_z' boundary condition not recognized."))
-						success=false;
-				} else
-					BC[5]="mirror";
+				if (GetValue("upperbound_z").size()==0) BC[5]="mirror";
+				if (!In[0]->Get_string(GetValue("upperbound_z"),BC[5],options,"for 'upperbound' boundary condition not recognized.")) success = false;
 
-				if (BC[0]=="periodic" || BC[1]=="periodic") {
-					if (BC[0] != BC[1]) {
-						cout <<"In x-direction the boundary conditions do not match:" + BC[0] << " and " <<  BC[1] << endl;
-						success=false;
-					}
-				}
 				if (BC[2]=="periodic" || BC[3]=="periodic") {
 					if (BC[2] != BC[3]) {
 					cout <<"In y-direction the boundary conditions do not match:" + BC[2] << " and " <<  BC[3] << endl;
@@ -531,22 +492,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				cout << "gradients out of bounds " << endl;
 				break;
 		}
-		FJC=3;	fjc=1;
-		if (success && GetValue("FJC_choices").length()>0) {
-			if (!In[0]->Get_int(GetValue("FJC_choices"),FJC,"FJC_choices can adopt only few integer values: 3 + i*2, with i = 0, 1, 2, 3, ..."))
-				success=false;
-			else if ((FJC-3) %2 != 0) {
-				cout << "FJC_choices can adopt only few integer values: 3 + i*2, with i = 0, 1, 2, 3, ...." <<endl;
-				success=false;
-			}
-
-			fjc=(FJC-3)/2+1;
-
-		}
-		bond_length=bond_length/fjc;
 		if ((fjc>1) && (lattice_type ==hexagonal)) {success = false; cout << "For FJC-choices >3, we need lattice_type = 'hexagonal'." << endl; }
 		if (gradients ==2 && fjc>2) {success = false; cout <<" When gradients is 2, FJC-choices are limited to 5 " << endl; }
-		if (gradients ==3 && fjc>1) {success = false; cout <<" When graidents is 3, FJC-choices are limited to 3 " << endl; }
+		if (gradients ==3 && fjc>1) {success = false; cout <<" When gradients is 3, FJC-choices are limited to 3 " << endl; }
 
 		if (GetValue("ignore_site_fraction").length()>0) {
 				ignore_sites=In[0]->Get_bool(GetValue("ignore_sites"),false);

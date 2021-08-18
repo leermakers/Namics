@@ -1,6 +1,7 @@
 #include "segment.h"
 #include <random>
 #include <fstream>
+
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; prepared = 0;
 if (debug) cout <<"Segment constructor" + name << endl; 
@@ -196,6 +197,7 @@ if (freedom =="clamp" ) {
 		}
 	}
 }
+bool HMaskDone=false;
 
 if (freedom == "pinned") {
 	phibulk=0;
@@ -208,12 +210,58 @@ if (freedom == "pinned") {
 		cout<< "For mon " + name + ", you should provide either pinned_range or pinned_filename " <<endl; success=false;
 	}
 	if (GetValue("pinned_range").size()>0) { s_freedom="pinned_range";
+		string p_range=GetValue("pinned_range"); 
+		vector<string>sub;
+		In[0]->split(p_range,';',sub);
+		p_range.clear();
+		vector<string>xyz;
+		int Lsub=sub.size();
+		if (Lsub!=2) {
+			cout <<"For mon " + name + ", the parsing of 'pinned_range' failed. Use x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, or x1;x2 for 3, 2, or 1  gradient computations, respectively. x, y and z can also be  keys: 'firstlayer', 'lastlayer'" << endl; 
+			success=false;
+			return;
+		}
 
+		int n_layers_x=(Lat[0]->MX+1)/Lat[0]->fjc-1;
+		int n_layers_y=(Lat[0]->MY+1)/Lat[0]->fjc-1;
+		int n_layers_z=(Lat[0]->MZ+1)/Lat[0]->fjc-1;
+		for (int k=0; k<Lsub; k++) {
+			xyz.clear();
+			In[0]->split(sub[k],',',xyz);
+			int Lxyz=xyz.size();
+			if (Lxyz<1 || Lxyz>3){
+				cout <<"For mon " + name + ", the parsing of 'pinned_range' failed. Number of coordinates should be 1, 2 or 3: e.g., x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, x1;x2 for 1, 2 or 3 gradients, respectively.  " << endl; 
+				success=false; 
+				return;
+			}
+			for (int kk=0; kk<Lxyz; kk++) {
+				if (xyz[kk]=="firstlayer") {
+					p_range.append("1"); 
+				} else if (xyz[kk]=="lastlayer") {
+					if (kk==0) p_range.append(to_string(n_layers_x));
+					if (kk==1) p_range.append(to_string(n_layers_y));
+					if (kk==2) p_range.append(to_string(n_layers_z));
+				} else if (xyz[kk]=="var_pos") p_range.append(to_string(var_pos)); // check to see if var_pos is in range not implemented....
+				else {
+					int cor=In[0]->Get_int(xyz[kk],-1);
+					if ((kk==0 && (cor <1 || cor > n_layers_x)) || (kk==1 && (cor <1 || cor > n_layers_y))  ||(kk==2 && (cor <1 || cor > n_layers_z))) {
+						cout <<" For mon " + name+ ", the 'pinned_range' is not parsed properly! Coordinates either out of bounds or keywords 'var_pos', 'firstlayer', 'lastlayer' were not found" << endl;   
+						success=false;
+						return; 
+					} else p_range.append(xyz[kk]);
+				}
+				if (kk<Lxyz-1) p_range.append(","); 
+			}
+			if (k<Lsub-1) p_range.append(";");
+		}
+		
+cout <<"p_range = " << p_range << endl; 
+				
 		n_pos=0;
-		if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),var_pos,name,s_freedom);
+		if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
 		if (n_pos>0) {
 			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("pinned_range"),var_pos,name,s_freedom);
+			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
 		}
 	}
 	if (GetValue("pinned_filename").size()>0) { s_freedom="pinned";
@@ -227,9 +275,12 @@ if (freedom == "pinned") {
 	}
 }
 
-bool HMaskDone=false;
 if (freedom == "frozen") {
+	int n_layers_x=(Lat[0]->MX+1)/Lat[0]->fjc-1;
+	int n_layers_y=(Lat[0]->MY+1)/Lat[0]->fjc-1;
+	int n_layers_z=(Lat[0]->MZ+1)/Lat[0]->fjc-1;
 
+	frozen_at_bound=-1; 
 	phibulk=0;
 	if (GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tag_filename").size()>0) {
 	        cout<< "For mon " + name + ", you should exclusively combine 'freedom : frozen' with 'frozen_range' or 'frozen_filename'" << endl;  success=false;
@@ -240,12 +291,129 @@ if (freedom == "frozen") {
 	if (GetValue("frozen_range").size()==0 && GetValue("frozen_filename").size()==0 && GetValue("n").size()==0) {
 		cout<< "For mon " + name + ", you should provide either 'frozen_range' or 'frozen_filename' or specify the number of particles by  'n' " <<endl; success=false;
 	}
-	if (GetValue("frozen_range").size()>0) { s_freedom="frozen_range";
+	if (GetValue("frozen_range").size()>0) { 
+		s_freedom="frozen_range";
+		string f_range=GetValue("frozen_range");
+		vector<string>sub;
+		In[0]->split(f_range,';',sub);
+		int Lsub=sub.size();
+		vector<string>xyz;
+		for (int k=0; k<Lsub; k++) {
+			xyz.clear();
+			In[0]->split(sub[k],',',xyz);
+			int Lxyz=xyz.size();
+			for (int kk=0; kk<Lxyz; kk++){
+				if (xyz[kk]=="lowerbound") {
+					if (kk==0) f_range ="lowerbound_x";
+					if (kk==1) f_range ="lowerbound_y";
+					if (kk==2) f_range ="lowerbound_z";
+				}
+				if (xyz[kk]=="upperbound") {
+					if (kk==0) f_range ="upperbound_x";
+					if (kk==1) f_range ="upperbound_y";
+					if (kk==2) f_range ="upperbound_z";
+				}
+			}
+		}
+
+		if (f_range=="lowerbound_x") {
+			if (Lat[0]->gradients==1) {f_range = "lowerbound;lowerbound"; frozen_at_bound=0;}
+			if (Lat[0]->gradients==2) {f_range = "lowerbound,1;lowerbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=0;} 
+			if (Lat[0]->gradients==3) {f_range = "lowerbound,1,1;lowerbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=0;} 	
+		} 
+		if (f_range=="upperbound_x") {
+			if (Lat[0]->gradients==1) {f_range = "upperbound;upperbound";frozen_at_bound=3;}
+			if (Lat[0]->gradients==2) {f_range = "upperbound,1;upperbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=3;}
+			if (Lat[0]->gradients==3) {f_range = "upperbound,1,1;upperbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=3;}
+		}
+		if (f_range=="lowerbound_y") {
+			if (Lat[0]->gradients==2) {f_range = "1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",lowerbound"); frozen_at_bound=1;}
+			if (Lat[0]->gradients==3) {f_range = "1,lowerbound,1;";f_range.append(to_string(n_layers_x)).append(",lowerbound,").append(to_string(n_layers_z)); frozen_at_bound=1;} 	
+		} 
+		if (f_range=="upperbound_y") {
+			if (Lat[0]->gradients==2) {f_range = "1,upperbound;";f_range.append(to_string(n_layers_x)).append(",upperbound");  frozen_at_bound=4;}
+			if (Lat[0]->gradients==3) {f_range = "1,upperbound,1;";f_range.append(to_string(n_layers_x)).append(",upperbound,").append(to_string(n_layers_z)); frozen_at_bound=4;}
+		}
+
+		if (f_range=="lowerbound_z") {
+			if (Lat[0]->gradients==3) {f_range = "1,1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",lowerbound"); frozen_at_bound=2; }	
+		} 
+		if (f_range=="upperbound_z") {
+			if (Lat[0]->gradients==3) {f_range = "1,1,upperbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",upperbound"); frozen_at_bound=5;} 	
+		}
+
+		sub.clear();
+		In[0]->split(f_range,';',sub);
+		f_range.clear();
+		
+		Lsub=sub.size();
+		if (Lsub!=2) {
+			cout <<"For mon " + name + ", the parsing of 'frozen_range' failed. Use x1,y1,z1;x2,y2,z2 in 3 gradients, x1,y1;x2,y2 in two gradients x1;x2 for one gradient computations. x, y and z can also be  keys: 'firstlayer', 'lastlayer', 'lowerbound', or 'upperbound'." << endl; 
+			cout <<"Alternatively - you can try a single keyword such as 'lowerbound', 'lowerbound_x', 'lowerbound_y', 'lowerbound_z', 'upperbound', 'upperbound_x', 'upperbound_y', 'upperbound_z'" << endl; 
+			success=false;
+			return;
+		}
+		for (int k=0; k<Lsub; k++) {
+			xyz.clear();
+			In[0]->split(sub[k],',',xyz);
+			int Lxyz=xyz.size();
+			if (Lxyz<1 || Lxyz>3){
+				cout <<"For mon " + name + ", the parsing of 'frozen_range' failed. Number of coordinates should be 1, 2 or 3: e.g., x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, x1;x2 for 1, 2 or 3 gradients, respectively.  " << endl; 
+				success=false; 
+				return;
+			}
+
+			for (int kk=0; kk<Lxyz; kk++) {
+				if (xyz[kk]=="firstlayer") 
+					f_range.append("1");  
+				if (xyz[kk]=="lastlayer") {
+					if (kk==0) f_range.append(to_string(n_layers_x));
+					if (kk==1) f_range.append(to_string(n_layers_y));
+					if (kk==2) f_range.append(to_string(n_layers_z));
+				} 
+
+
+				if (xyz[kk]=="lowerbound") {
+					if ( (kk==0 && Lat[0]->BC[0] !="surface") ||(kk==1 && Lat[0]->BC[1] !="surface") ||(kk==2 && Lat[0]->BC[2] !="surface") ) {
+						cout<<"In lattice you need boundary condition 'surface' in combination with frozen_range containing 'lowerbound' " << endl; success=false;
+						return;  
+					}
+					f_range.append("0"); 
+				}
+				if (xyz[kk]=="upperbound") {
+					if ( (kk==0 && Lat[0]->BC[3] !="surface") ||(kk==1 && Lat[0]->BC[4] !="surface") ||(kk==2 && Lat[0]->BC[5] !="surface") ) {
+						cout<<"In lattice you need boundary condition 'surface' in combination with frozen_range containing 'upperbound' " << endl; success=false;
+						return;  
+					}
+					if (kk==0) f_range.append(to_string(n_layers_x+1));
+					if (kk==1) f_range.append(to_string(n_layers_y+1));
+					if (kk==2) f_range.append(to_string(n_layers_z+1));
+				}
+				if (xyz[kk]=="var_pos") {
+					f_range.append(to_string(var_pos)); //check if var_pos is within lattice-range not implemented.
+				}
+ 
+				if (xyz[kk]!="firstlayer" && xyz[kk]!="lastlayer" && xyz[kk]!="lowerbound" && xyz[kk]!="upperbound" && xyz[kk]!="var_pos") {
+					int cor=In[0]->Get_int(xyz[kk],-1);
+					if ((kk==0 && (cor <0 || cor > n_layers_x+1)) || (kk==1 && (cor <0 || cor > n_layers_y+1))  ||(kk==2 && (cor <0 || cor > n_layers_z+1))) {
+						cout <<" For mon " + name+ ", the 'pinned_range' is not parsed properly! Coordinates either out of bounds or keywords  'var_pos', 'firstlayer', 'lastlayer', 'lowerbound', 'upperbound' were not found" << endl;   
+						success=false;
+						return;
+					} else f_range.append(xyz[kk]);
+				}
+				if (kk<Lxyz-1) f_range.append(","); 
+			}
+			if (k<Lsub-1) f_range.append(";");
+		}
+
+
+cout <<"f_range = " << f_range << endl;
+
 		n_pos=0;
-		success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),var_pos,name,s_freedom);
+		success=Lat[0]->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
 		if (n_pos>0) {
 			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("frozen_range"),var_pos,name,s_freedom);
+			success=Lat[0]->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
 		}
 	}
 	if (GetValue("frozen_filename").size()>0) { s_freedom="frozen";
@@ -381,14 +549,61 @@ if (freedom == "tagged") {
 		cout<< "For mon " + name + ", you should provide either 'tagged_range' or 'tagged_filename' " <<endl; success=false;
 	}
 	if (GetValue("tagged_range").size()>0) { s_freedom="tagged_range";
+		string t_range=GetValue("tagged_range"); 
+		vector<string>sub;
+		In[0]->split(t_range,';',sub);
+		t_range.clear();
+		vector<string>xyz;
+		int Lsub=sub.size();
+		if (Lsub!=2) {
+			cout <<"For mon " + name + ", the parsing of 'tagged_range' failed. Use x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, or x1;x2 for 3, 2, or 1  gradient computations, respectively. x, y and z can also be  keys: 'firstlayer', 'lastlayer'" << endl; 
+			success=false;
+			return;
+		}
+
+		int n_layers_x=(Lat[0]->MX+1)/Lat[0]->fjc;
+		int n_layers_y=(Lat[0]->MY+1)/Lat[0]->fjc;
+		int n_layers_z=(Lat[0]->MZ+1)/Lat[0]->fjc;
+		for (int k=0; k<Lsub; k++) {
+			xyz.clear();
+			In[0]->split(sub[k],',',xyz);
+			int Lxyz=xyz.size();
+			if (Lxyz<1 || Lxyz>3){
+				cout <<"For mon " + name + ", the parsing of 'tagged_range' failed. Number of coordinates should be 1, 2 or 3: e.g., x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, x1;x2 for 1, 2 or 3 gradients, respectively.  " << endl; 
+				success=false; 
+				return;
+			}
+			for (int kk=0; kk<Lxyz; kk++) {
+				if (xyz[kk]=="firstlayer") {
+					t_range.append("1"); 
+				} else if (xyz[kk]=="lastlayer") {
+					if (kk==0) t_range.append(to_string(n_layers_x));
+					if (kk==1) t_range.append(to_string(n_layers_y));
+					if (kk==2) t_range.append(to_string(n_layers_z));
+				} else {
+					int cor=In[0]->Get_int(xyz[kk],-1);
+					if ((kk==0 && (cor <1 || cor > n_layers_x)) || (kk==1 && (cor <1 || cor > n_layers_y))  ||(kk==2 && (cor <1 || cor > n_layers_z))) {
+						cout <<" For mon " + name+ ", the 'tagged_range' is not parsed properly! Coordinates either out of bounds or keywords 'firstlayer', 'lastlayer' were not found" << endl;   
+						success=false;
+						return; 
+					} else t_range.append(xyz[kk]);
+				}
+				if (kk<Lxyz-1) t_range.append(","); 
+			}
+			if (k<Lsub-1) t_range.append(";");
+		}
+		
+cout <<"t_range = " << t_range << endl; 
+				
 		n_pos=0;
-		if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),var_pos,name,s_freedom);
+		if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
 		if (n_pos>0) {
 			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, GetValue("tagged_range"),var_pos,name,s_freedom);
+			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
 		}
 	}
-	if (GetValue("tagged_filename").size()>0) {s_freedom="tagged";
+	if (GetValue("tagged_filename").size()>0) {
+		s_freedom="tagged";
 		filename=GetValue("tagged_filename");
 		n_pos=0;
 		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
@@ -398,6 +613,7 @@ if (freedom == "tagged") {
 		}
 	}
 }
+
 if (freedom!="free"&& !HMaskDone) {
 	if (freedom=="clamp") {
 		int JX=Lat[0]->JX;

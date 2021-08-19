@@ -629,117 +629,34 @@ if (debug) cout <<"ReadRange in LGrad2 " << endl;
 	vector<string>set;
 	vector<string>coor;
 	vector<string>xyz;
-	string diggit;
-	bool recognize_keyword;
-	//int a; if (range_type=="frozen_range") a=1; else a=0;
-	int a=0;
 	In[0]->split(range,';',set);
-	if (set.size()==2) {
-		coor.clear();
-		block=true; In[0]->split(set[0],',',coor);
-		if (coor.size()!=2) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in set of two: 'x,y'" << endl; success=false;}
-		else {
-			diggit=coor[0].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
-				recognize_keyword=false;
-				if (coor[0]=="var_pos") {recognize_keyword=true; r[0]=var_pos; }
-				if (coor[0]=="firstlayer") {recognize_keyword=true; r[0] = 1;}
-						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[0] = 0;}
-						//if (coor[0]=="upperbound") {recognize_keyword=true; r[0] = MX+1;}
-				if (coor[0]=="lastlayer")  {recognize_keyword=true; r[0] = MX;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[0] < 1-a || r[0] > MX+a) {cout << "In mon " + seg_name + ", for 'pos 1', the x-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .." << MX+a << endl; success =false;}
-			diggit=coor[1].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[1]=In[0]->Get_int(coor[1],0); else {
-				recognize_keyword=false;
-				if (coor[1]=="var_pos") {recognize_keyword=true; r[1]=var_pos;  }
-				if (coor[1]=="firstlayer") {recognize_keyword=true; r[1] = 1;}
-						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[1] = 0;}
-						//if (coor[1]=="upperbound") {recognize_keyword=true; r[1] = MY+1;}
-				if (coor[1]=="lastlayer")  {recognize_keyword=true; r[1] = MY;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[1] < 1-a || r[1] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .."<< MY+a << endl; success =false;}
-		}
-		coor.clear(); In[0]->split(set[1],',',coor);
-
-		if (coor.size()!=2) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of two: 'x,y'" << endl; success=false;}
-		else {
-			diggit=coor[0].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
-				recognize_keyword=false;
-				if (coor[0]=="var_pos") {recognize_keyword=true; r[3]=var_pos; }
-				if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
-						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
-						//if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
-				if (coor[0]=="lastlayer")  {recognize_keyword=true; r[3] = MX;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[3] <1-a || r[3] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds: " << 1-a << " .. " << MX+a<< endl; success=false;}
-			diggit=coor[1].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[4]=In[0]->Get_int(coor[1],0); else {
-				recognize_keyword=false;
-				if (coor[1]=="var_pos") {recognize_keyword=true; r[4]=var_pos;}
-				if (coor[1]=="firstlayer") {recognize_keyword=true; r[4] = 1;}
-						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[4] = 0;}
-						//if (coor[1]=="upperbound") {recognize_keyword=true; r[4] = MY+1;}
-				if (coor[1]=="lastlayer")  {recognize_keyword=true; r[4] = MY;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[4] < 1-a || r[4] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MY+a << endl; success =false;}
-			if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-			if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-		}
-	} else {
-		string s;
-		In[0]->split(set[0],')',coor);
-		s=coor[0].substr(0,1);
-		if (s!="(") { //now expect one of the keywords
-			block=true;
-			cout << "In mon " + seg_name + " and  range_type " + range_type + ", the info was not recognised because when 'gradients>1' the lonely keywords 'firstlayer' 'lastlayers' do not work." << endl;
-			success=false;
-		} else {
-			int px{0},py{0};
-			string s;
-
-			if (coor.size()==0)
-				block=false;
-			else {
-				for (size_t i = 0 ; i < coor.size() ; ++i) {
-					s=coor[i].substr(1,coor[i].size()-1);
-					In[0]->split(s,',',xyz);
-					if (xyz.size()!=2) {
-						cout << "In mon " + seg_name+ " pinned_range  the expected 'pair of coordinate' -with brackets- structure '(x,y)' was not found. " << endl;  success = false;
-					} else {
-						px=In[0]->Get_int(xyz[0],0);
-						if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 0.." << MX+1 << endl; success =false;}
-						py=In[0]->Get_int(xyz[1],0);
-						if (py < 1 || py > MY) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 0.." << MY+1 << endl; success =false;}
-					}
-					H_p[i]=px*JX+fjc-1+py;
-				}
-			}
-
-		}
+	coor.clear();
+	block=true; In[0]->split(set[0],',',coor);
+	if (coor.size()!=2) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in set of two: 'x,y'" << endl; success=false;}
+	else {
+		r[0]=In[0]->Get_int(coor[0],0); 			
+		r[1]=In[0]->Get_int(coor[1],0); 		
 	}
+	coor.clear(); In[0]->split(set[1],',',coor);
+
+	if (coor.size()!=2) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of two: 'x,y'" << endl; success=false;}
+	else {
+		r[3]=In[0]->Get_int(coor[0],0);
+		r[4]=In[0]->Get_int(coor[1],0); 
+	}
+	if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+	if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+ 
 	return success;
 }
 
 bool LGrad2::ReadRangeFile(string filename,int* H_p, int &n_pos, string seg_name, string range_type) {
 if (debug) cout <<"ReadRangeFile in LGrad2 " << endl;
+	if (fjc>1) {
+		cout << "Rangefile is not implemented for FJC-choices >3; contact FL. " << endl; 
+		return false;
+	}
+
 	bool success=true;
 	string content;
 	vector<string> lines;
@@ -988,21 +905,21 @@ if (debug) cout <<"remove_bounds in LGrad2 " << endl;
 	int k;
 	if (fjc==1) {
 		for (x=0; x<MX+2; x++) {
-			X[P(x,0)] = 0;
-			X[P(x,MY+1)]=0;
+			if (BX1!=0) X[P(x,0)] = 0;
+			if (BXM!=MX+1) X[P(x,MY+1)]=0;
 		}
 		for (y=0; y<MY+2; y++) {
-			X[P(0,y)] = 0;
-			X[P(MX+1,y)]=0;
+			if (BY1!=0) X[P(0,y)] = 0;
+			if (BYM!=MY+1) X[P(MX+1,y)]=0;
 		}
 	} else {
-		for (x=1-fjc; x<MX+fjc+1; x++) {
-			for (k=0; k<fjc; k++) X[P(x,-k)] =0;
-			for (k=0; k<fjc; k++) X[P(x,MY+1+k)]=0;
+		for (x=0; x<MX+fjc+1; x++) {
+			for (k=0; k<fjc; k++) if (B_Y1[k]!=k) X[P(x,k)] =0;
+			for (k=0; k<fjc; k++) if (B_YM[k]!=MY+1+k) X[P(x,MY+1+k)]=0;
 		}
-		for (y=1-fjc; y<MY+fjc+1; y++) {
-			for (k=0; k<fjc; k++) X[P(-k,y)] = 0;
-			for (k=0; k<fjc; k++) X[P(MX+1+k,y)]=0;
+		for (y=0; y<MY+fjc+1; y++) {
+			for (k=0; k<fjc; k++) if (B_X1[k]!=k) X[P(k,y)] = 0;
+			for (k=0; k<fjc; k++) if (B_XM[k]!=MX+1+k) X[P(MX+1+k,y)]=0;
 		}
 	}
 }
@@ -1021,10 +938,10 @@ if (debug) cout <<"set_bounds XY in LGrad2 " << endl;
 	} else {
 		for (y=1; y<MY+1; y++) {
 			for (k=0; k<fjc; k++) {
-				X[P(-k,y)] = X[P(1+k,y)];
+				X[P(k,y)] = X[P(B_X1[k],y)];
 			}
 			for (k=0; k<fjc; k++) {
-				X[P(MX+1+k,y)]=X[P(MX-k,y)];
+				X[P(MX+1+k,y)]=X[P(B_XM[k],y)];
 			}
 		}
 	}
@@ -1037,12 +954,7 @@ if (debug) cout <<"set_bounds_x XY in LGrad2 " << endl;
 	int y;
 	int k=0;
 	if (BX1>BXM)  {
-		if (shifty==0) {
-			set_bounds_x(X,shifty); set_bounds_x(Y,shifty);
-		} else {
-			set_bounds_y(X,shifty);set_bounds_y(Y,shifty);
-		}
-
+		set_bounds_x(X,0); set_bounds_x(Y,0);
 	} else  {
 		if (fjc==1) {
 			for (y=1; y<MY+1; y++) {
@@ -1055,12 +967,10 @@ if (debug) cout <<"set_bounds_x XY in LGrad2 " << endl;
 		} else {
 			for (y=1; y<MY+1; y++) {
 				for (k=0; k<fjc; k++) {
-					X[P(-k,y)] = Y[P(1+k,y)];
-					Y[P(-k,y)] = X[P(1+k,y)];
-				}
-				for (k=0; k<fjc; k++) {
-					X[P(MX+1+k,y)]=Y[P(MX-k,y)];
-					Y[P(MX+1+k,y)]=X[P(MX-k,y)];
+					X[P(k,y)] = Y[P(B_X1[k],(y+shifty))];
+					Y[P(k,y)] = X[P(B_X1[k],(y+shifty))];
+					X[P(MX+1+k,y)]=Y[P(B_XM[k],(y-shifty))];
+					Y[P(MX+1+k,y)]=X[P(B_XM[k],(y-shifty))];
 				}
 			}
 		}
@@ -1072,11 +982,7 @@ if (debug) cout <<"set_bounds_y XY in LGrad2 " << endl;
 	int x;
 	int k=0;
 	if (BY1>BYM) {
-		if (shiftx==0) {
-			set_bounds_y(X,0); set_bounds_y(Y,0);
-		} else { 
-			set_bounds_x(X,shiftx); set_bounds_x(Y,shiftx);
-		}
+		set_bounds_y(X,0); set_bounds_y(Y,0);
 		
 	} else {
 		if (fjc==1) {
@@ -1090,12 +996,10 @@ if (debug) cout <<"set_bounds_y XY in LGrad2 " << endl;
 		} else {
 			for (x=1; x<MX+1; x++) {
 				for (k=0; k<fjc; k++) {
-					X[P(x,-k)] = Y[P(x,1+k)];
-					Y[P(x,-k)] = X[P(x,1+k)];
-				}
-				for (k=0; k<fjc; k++) {
-					X[P(x,MY+1+k)]=Y[P(x,MY-k)];
-					Y[P(x,MY+1+k)]=X[P(x,MY-k)];
+					X[P(x,k)] = Y[P((x+shiftx),B_Y1[k])];
+					Y[P(x,k)] = X[P((x+shiftx),B_Y1[k])];
+					X[P(x,MY+1+k)]=Y[P((x-shiftx),B_YM[k])];
+					Y[P(x,MY+1+k)]=X[P((x-shiftx),B_YM[k])];
 				}
 			}
 		}
@@ -1104,12 +1008,12 @@ if (debug) cout <<"set_bounds_y XY in LGrad2 " << endl;
 
 void LGrad2::set_bounds_x(Real* X,int shifty){
 if (debug) cout <<"set_bounds_x X in LGrad2 " << endl;
-	int x,y;
+	int y;
 	int k=0;
 	//if (BX1>BXM) shifty=0; //periodic
 
 	if (fjc==1) {
-		for (y=1; y<MY+1; y++) {
+		for (y=1; y<MY+1; y++) { //not yet 0 and MY+1....
 			X[0        +y] = X[BX1*JX+(y+shifty)];
 			X[(MX+1)*JX+y] = X[BXM*JX+(y-shifty)];
 		}
@@ -1122,40 +1026,30 @@ if (debug) cout <<"set_bounds_x X in LGrad2 " << endl;
 		//	X[x*JX+0] = X[x*JX+1];
 		//	X[x*JX+MY+1]=X[x*JX+MY];
 		//}
-	} else {//not yet implemented.
-		for (x=1; x<MX+1; x++) {
+	} else {
+		for (y=0; y<MY+fjc+1; y++) { //including upper and lower bound in y... testing...
 			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
-			}
-		}
-		for (y=1; y<MY+1; y++) {
-			for (k=0; k<fjc; k++) {
-				X[P(-k,y)] = X[P(1+k,y)];
-			}
-			for (k=0; k<fjc; k++) {
-				X[P(MX+1+k,y)]=X[P(MX-k,y)];
+				X[P(k,y)] = X[P(B_X1[k],(y+shifty))];
+				X[P(MX+1+k,y)]=X[P(B_XM[k],(y-shifty))];
 			}
 		}
 		//corners
-		for (x=1-fjc; x<1; x++) {
-			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
-			}
-		}
-		for (x=MX+1; x<MX+1+fjc; x++) {
-			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
-			}
-		}
+		//for (x=1-fjc; x<1; x++) {
+		//	for (k=0; k<fjc; k++) {
+		//		X[P(x,k)] = X[P(x,1+k)];
+		//	}
+		//	for (k=0; k<fjc; k++) {
+		//		X[P(x,MY+1+k)]=X[P(x,MY-k)];
+		//	}
+		//}
+		//for (x=MX+1; x<MX+1+fjc; x++) {
+		//	for (k=0; k<fjc; k++) {
+		//		X[P(x,k)] = X[P(x,1+k)];
+		//	}
+		//	for (k=0; k<fjc; k++) {
+		//		X[P(x,MY+1+k)]=X[P(x,MY-k)];
+		//	}
+		//}
 	}
 }
 
@@ -1174,10 +1068,8 @@ if (debug) cout <<"set_bounds_y X in LGrad2 " << endl;
 	} else {
 		for (x=1; x<MX+1; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
+				X[P(x,k)] = X[P((x+shiftx),B_Y1[k])];
+				X[P(x,MY+1+k)]=X[P((x-shiftx),B_YM[k])];
 			}
 		}
 	}
@@ -1210,34 +1102,26 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 	} else {
 		for (x=1; x<MX+1; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
+				X[P(x,k)] = X[P(x,B_Y1[k])];
+				X[P(x,MY+1+k)]=X[P(x,B_YM[k])];
 			}
 		}
 		for (y=1; y<MY+1; y++) {
 			for (k=0; k<fjc; k++) {
-				X[P(-k,y)] = X[P(1+k,y)];
-			}
-			for (k=0; k<fjc; k++) {
-				X[P(MX+1+k,y)]=X[P(MX-k,y)];
+				X[P(k,y)] = X[P(B_X1[k],y)];
+				X[P(MX+1+k,y)]=X[P(B_XM[k],y)];
 			}
 		}
 		//corners
-		for (x=1-fjc; x<1; x++) {
+		for (x=0; x<fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
+				X[P(x,k)] = X[P(x,2*fjc-k-1)];
 				X[P(x,MY+1+k)]=X[P(x,MY-k)];
 			}
 		}
 		for (x=MX+1; x<MX+1+fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
+				X[P(x,k)] = X[P(x,2*fjc-k-1)];
 				X[P(x,MY+1+k)]=X[P(x,MY-k)];
 			}
 		}
@@ -1250,7 +1134,7 @@ if (debug) cout <<"remove_bounds in LGrad2 " << endl;
 	int k;
 	if (fjc==1) {
 		for (x=0; x<MX+2; x++) {
-			X[P(x,0)] = 0;
+			X[P(x,0)] = 0;  //needs testing if this is okay to put to zero in case of surface...
 			X[P(x,MY+1)]=0;
 		}
 		for (y=0; y<MY+2; y++) {
@@ -1258,12 +1142,12 @@ if (debug) cout <<"remove_bounds in LGrad2 " << endl;
 			X[P(MX+1,y)]=0;
 		}
 	} else {
-		for (x=1-fjc; x<MX+fjc+1; x++) {
-			for (k=0; k<fjc; k++) X[P(x,-k)] =0;
+		for (x=0; x<MX+fjc+1; x++) {
+			for (k=0; k<fjc; k++) X[P(x,k)] =0;
 			for (k=0; k<fjc; k++) X[P(x,MY+1+k)]=0;
 		}
-		for (y=1-fjc; y<MY+fjc+1; y++) {
-			for (k=0; k<fjc; k++) X[P(-k,y)] = 0;
+		for (y=0; y<MY+fjc+1; y++) {
+			for (k=0; k<fjc; k++) X[P(k,y)] = 0;
 			for (k=0; k<fjc; k++) X[P(MX+1+k,y)]=0;
 		}
 	}
@@ -1293,36 +1177,28 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 			X[x*JX+MY+1]=X[x*JX+MY];
 		}
 	} else {
-		for (x=1; x<MX+1; x++) {
+		for (x=fjc; x<MX+1; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
+				X[P(x,k)] = X[P(x,B_Y1[k])];
+				X[P(x,MY+1+k)]=X[P(x,B_YM[k])];
 			}
 		}
 		for (y=1; y<MY+1; y++) {
 			for (k=0; k<fjc; k++) {
-				X[P(-k,y)] = X[P(1+k,y)];
-			}
-			for (k=0; k<fjc; k++) {
-				X[P(MX+1+k,y)]=X[P(MX-k,y)];
+				X[P(k,y)] = X[P(B_X1[k],y)];
+				X[P(MX+1+k,y)]=X[P(B_XM[k],y)];
 			}
 		}
-		//corners
-		for (x=1-fjc; x<1; x++) {
+		//corners....needs a test
+		for (x=0; x<fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
+				X[P(x,k)] = X[P(x,2*fjc-k-1)];
 				X[P(x,MY+1+k)]=X[P(x,MY-k)];
 			}
 		}
 		for (x=MX+1; x<MX+1+fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,-k)] = X[P(x,1+k)];
-			}
-			for (k=0; k<fjc; k++) {
+				X[P(x,k)] = X[P(x,2*fjc-k-1)];
 				X[P(x,MY+1+k)]=X[P(x,MY-k)];
 			}
 		}

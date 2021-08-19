@@ -398,7 +398,6 @@ if (debug) cout <<"ReadRange in LGrad1 " << endl;
 	vector<string>set;
 	vector<string>coor;
 	vector<string>xyz;
-	string diggit;
 	In[0]->split(range,';',set);
 
 	coor.clear();
@@ -411,8 +410,8 @@ if (debug) cout <<"ReadRange in LGrad1 " << endl;
 	
 	if (coor.size()!=1) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "' the coordinates must come as a single coordinate 'x'" << endl; r[3]=0; success=false;}
 	else r[3]=In[0]->Get_int(coor[0],-1);
+	if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
  
-	block=true;
 	return success;
 }
 
@@ -715,8 +714,8 @@ if (debug) cout <<"remove_bounds in LGrad1 " << endl;
 		if (BXM!=MX+1) X[MX+1]=0;
 	} else {
 		for (k=0; k<fjc; k++) {
-			X[(fjc-1)-k]=0;
-			X[MX+fjc+k]=0;
+			if (B_X1[k]!=k) X[(fjc-1)-k]=0;
+			if (B_XM[k]!=MX+fjc+k) X[MX+fjc+k]=0;
 		}
 	}
 }
@@ -764,8 +763,8 @@ int k;
 		if (BXM!=MX+1) X[MX+1]=0;
 	} else {
 		for (k=0; k<fjc; k++) {
-			X[(fjc-1)-k]=0;
-			X[MX+fjc+k]=0;
+			if (B_X1[k]!=k) X[k]=0;
+			if (B_XM[k]!=MX+fjc+k) X[MX+fjc+k]=0;
 		}
 	}
 }

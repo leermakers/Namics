@@ -17,10 +17,10 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
   KEYS.push_back("calculation_type");
 	KEYS.push_back("constraint");
 	KEYS.push_back("delta_range");
+	KEYS.push_back("delta_range_units");
 	KEYS.push_back("delta_inputfile");
 	KEYS.push_back("delta_molecules");
 	KEYS.push_back("phi_ratio");
-	KEYS.push_back("critical_ratio");
 	KEYS.push_back("generate_guess");
 	KEYS.push_back("initial_guess");
 	KEYS.push_back("guess_inputfile");
@@ -200,8 +200,11 @@ bool System::generate_mask()
 	int length = In[0]->MonList.size();
 	for (int i = 0; i < length; i++)
 	{
-		if (Seg[i]->freedom == "frozen")
+		
+		if (Seg[i]->freedom == "frozen") {
 			FrozenList.push_back(i);
+		}
+
 		if (Seg[i]->constraints) extra_constraints+=Seg[i]->constraint_z.size();
 	}
 
@@ -641,7 +644,32 @@ bool System::CheckInput(int start_)
 			if (ConstraintType == "delta")
 			{
 				if (GetValue("delta_range").size() > 0)
-				{
+				{	int units=1; 
+					if (Lat[0]->fjc>1) {
+						if (GetValue("delta_range_units").size() == 0) {
+							cout <<"Because you have FJC-choices>3, you also need to specify the 'delta_range_units'. You can select 'bondlength' or 'gritsize'. " << endl;
+							cout <<"Using bondlength units allows delta_range from 0 ... n_layers" << endl; 
+							cout <<"Using gritsize and e.g. FJC-choices=5 gives fjc=2 allows delta_range from fjc .. fjc (n_layers+1)-1, etc."  << endl; success=false;  
+						} else {
+							vector<string> options;
+							string bond_range_units;
+							options.push_back("bondlength");
+							options.push_back("gritsize");
+							bond_range_units = GetValue("delta_range_units");
+							if (bond_range_units=="bondlength") units = Lat[0]->fjc; 
+							else if (bond_range_units=="gritsize") units =1;  
+							else {
+								cout << "Value for 'delta_range_units' not recognized. Use 'bondlength' or 'gritsize'. Depending on FJC-choices the delta_range can be larger for 'gritsize' than for 'bondlength'."<< endl; 
+								success=false; units =Lat[0]->fjc; 
+							}
+						}
+					} else {
+ 						units=1;
+						if (GetValue("delta_range_units").size() > 0) {
+							string delta_range_units=GetValue("delta_range_units");
+							if (delta_range_units != "bondlength") cout << "Delta_range_units set to 'bondlength' because FJC-choices =3" << endl;  
+						}
+					}
 					string s = GetValue("delta_range");
 					vector<string> sub;
 					vector<string> set;
@@ -691,11 +719,20 @@ bool System::CheckInput(int start_)
 							}
 							else
 							{
-								px.push_back(In[0]->Get_int(coor[0], -1));
-								if (grad > 1)
-									py.push_back(In[0]->Get_int(coor[1], -1));
-								if (grad > 2)
-									pz.push_back(In[0]->Get_int(coor[2], -1));
+								int rr;
+								rr=In[0]->Get_int(coor[0], -1)*units;
+								if (rr<0 || rr>Lat[0]->MX) {cout << "Coordinate x for delta_range is out of bonds. " << endl; success=false; }
+								else px.push_back(rr);
+								if (grad > 1) {
+									rr=In[0]->Get_int(coor[1], -1)*units; 
+									if (rr<0 || rr>Lat[0]->MY) {cout << "Coordinate y for delta_range is out of bonds. " << endl; success=false; }
+									else py.push_back(rr);
+								}
+								if (grad > 2){
+									rr=In[0]->Get_int(coor[2], -1)*units; 
+									if (rr<0 || rr>Lat[0]->MZ) {cout << "Coordinate z for delta_range is out of bonds. " << endl; success=false; }
+									pz.push_back(rr);
+								}
 							}
 						}
 					}
@@ -747,12 +784,16 @@ bool System::CheckInput(int start_)
 				}
 
 
-				phi_ratio=0.0;
-				if(GetValue("phi_ratio").size()>0) {phi_ratio=In[0]->Get_Real(GetValue("phi_ratio"),1);
-					if (phi_ratio<0) {cout <<" phi_ratio is a positive quantity" << endl; success=false;}
-				}
-				if (phi_ratio==0.0) {
-					success=false; cout <<"Please give a value for 'phi_ratio' (typically 1)" << endl;
+				phi_ratio=-1.0;
+				if(GetValue("phi_ratio").size()>0) {
+					if (GetValue("phi_ratio")=="critical_ratio") {
+						phi_ratio=1.0*Mol[DeltaMolList[0]]->chainlength/Mol[DeltaMolList[1]]->chainlength; 
+						if (phi_ratio>0) phi_ratio=sqrt(phi_ratio);
+					}
+					else phi_ratio=In[0]->Get_Real(GetValue("phi_ratio"),-1);
+					if (phi_ratio<0) {cout <<" phi_ratio shoud contain keyword 'critical_ratio' or a positive real number, typically 1. " << endl; success=false;}
+				} else {
+					success=false; cout <<"Please give a value for 'phi_ratio' (typically 1 or specify the keyword 'critical_ratio')" << endl; 
 				}
 			}
 
@@ -1087,6 +1128,34 @@ bool System::CheckInput(int start_)
 			//for (int i=0; i<length_2; i++) cout <<XstateList_1[i] <<" " <<XstateList_2[i]<< " " << Xn_1[i] << endl;
 		}
 	}
+
+	int length = In[0]->MonList.size();
+
+	int *bc =(int*) malloc(6*sizeof(int)); std::fill(bc,bc+6,0);
+	for (int i = 0; i < length; i++) {
+		if (Seg[i]->freedom == "frozen") {
+			if (Seg[i]->frozen_at_bound>-1) {
+				if (Seg[i]->valence != 0) { 
+					cout <<"Currently it is not allowed to put a charged frozen segment in boundary. Put this frozen segment inside the system instead. " << endl;  success=false;
+				}
+				bc[Seg[i]->frozen_at_bound]++;
+			}
+		}
+	}
+	if (Lat[0]->BC[0]=="surface" && bc[0] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in x" << endl; success=false;} 
+	if (Lat[0]->BC[1]=="surface" && bc[1] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in y" << endl; success=false;} 
+	if (Lat[0]->BC[2]=="surface" && bc[2] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in z" << endl; success=false;} 
+	if (Lat[0]->BC[3]=="surface" && bc[3] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in x" << endl; success=false;} 
+	if (Lat[0]->BC[4]=="surface" && bc[4] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in y" << endl; success=false;} 
+	if (Lat[0]->BC[5]=="surface" && bc[5] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in z" << endl; success=false;} 
+	if (Lat[0]->BC[0]=="surface" && bc[0] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in x" << endl; success=false;} 
+	if (Lat[0]->BC[1]=="surface" && bc[1] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in y" << endl; success=false;} 
+	if (Lat[0]->BC[2]=="surface" && bc[2] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in z" << endl; success=false;} 
+	if (Lat[0]->BC[3]=="surface" && bc[3] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in x" << endl; success=false;} 
+	if (Lat[0]->BC[4]=="surface" && bc[4] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in y" << endl; success=false;} 
+	if (Lat[0]->BC[5]=="surface" && bc[5] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in z" << endl; success=false;} 
+	free(bc);
+
 	return success;
 }
 

@@ -346,10 +346,10 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 
 				if (GetValue("lowerbound").size()==0) BC[0]="mirror";
-				else if (!In[0]->Get_string(GetValue("lowerbound"),BC[0],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
+				else if (!In[0]->Get_string(GetValue("lowerbound"),BC[0],options,"For 'lowerbound' boundary condition not recognized.")) success=false;
 
 				if (GetValue("upperbound").size()==0) BC[3]="mirror";
-				if (!In[0]->Get_string(GetValue("upperbound"),BC[3],options,"for 'upperbound' boundary condition not recognized."))
+				else if (!In[0]->Get_string(GetValue("upperbound"),BC[3],options,"For 'upperbound' boundary condition not recognized."))
 					success = false;
 
 				break;
@@ -423,7 +423,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
 
 				if (GetValue("upperbound_y").size()==0) BC[4]="mirror";
-				if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound' boundary condition not recognized.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound' boundary condition not recognized.")) success = false;
 
 
 				if (BC[0]=="periodic" || BC[1]=="periodic") {
@@ -466,13 +466,13 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
 
 				if (GetValue("upperbound_y").size()==0) BC[4]="mirror";
-				if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound' boundary condition not recognized.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound' boundary condition not recognized.")) success = false;
 
 				if (GetValue("lowerbound_z").size()==0) BC[2]="mirror";
 				else if (!In[0]->Get_string(GetValue("lowerbound_z"),BC[2],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
 
 				if (GetValue("upperbound_z").size()==0) BC[5]="mirror";
-				if (!In[0]->Get_string(GetValue("upperbound_z"),BC[5],options,"for 'upperbound' boundary condition not recognized.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound_z"),BC[5],options,"for 'upperbound' boundary condition not recognized.")) success = false;
 
 				if (BC[2]=="periodic" || BC[3]=="periodic") {
 					if (BC[2] != BC[3]) {
@@ -497,13 +497,13 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		if (gradients ==3 && fjc>1) {success = false; cout <<" When gradients is 3, FJC-choices are limited to 3 " << endl; }
 
 		if (GetValue("ignore_site_fraction").length()>0) {
-				ignore_sites=In[0]->Get_bool(GetValue("ignore_sites"),false);
-				if (!ignore_sites) cout <<"ignore_site_fraction is set to false. Full site fractions computed. " << endl;
+			ignore_sites=In[0]->Get_bool(GetValue("ignore_sites"),false);
+			if (!ignore_sites) cout <<"ignore_site_fraction is set to false. Full site fractions computed. " << endl;
 		}
 
 		if (GetValue("fcc_site_fraction").length()>0) {
-				fcc_sites=In[0]->Get_bool(GetValue("fcc_site_fraction"),false);
-				if (!fcc_sites) cout <<"fcc_site_fraction is set to false. Full site fractions computed. " << endl;
+			fcc_sites=In[0]->Get_bool(GetValue("fcc_site_fraction"),false);
+			if (!fcc_sites) cout <<"fcc_site_fraction is set to false. Full site fractions computed. " << endl;
 		}
 
 		if (fcc_sites&&ignore_sites) {

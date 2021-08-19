@@ -742,150 +742,37 @@ if (debug) cout <<"ReadRange in LGrad3 " << endl;
 	vector<string>set;
 	vector<string>coor;
 	vector<string>xyz;
-	string diggit;
-	bool recognize_keyword;
-	//int a; if (range_type=="frozen_range") a=1; else a=0;
-	int a=0;
 	In[0]->split(range,';',set);
-	if (set.size()==2) {
-		coor.clear();
-		block=true; In[0]->split(set[0],',',coor);
+	coor.clear();
+	block=true; In[0]->split(set[0],',',coor);
 
-		if (coor.size()!=3) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in set of three: 'x,y,z'" << endl; success=false;}
-		else {
-			diggit=coor[0].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[0]=In[0]->Get_int(coor[0],0); else {
-				recognize_keyword=false;
-				if (coor[0]=="var_pos") {recognize_keyword=true; r[0]=var_pos;}
-				if (coor[0]=="firstlayer") {recognize_keyword=true; r[0] = 1;}
-						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[0] = 0;}
-						//if (coor[0]=="upperbound") {recognize_keyword=true; r[0] = MX+1;}
-				if (coor[0]=="lastlayer")  {recognize_keyword=true; r[0] = MX;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[0] < 1-a || r[0] > MX+a) {cout << "In mon " + seg_name + ", for 'pos 1', the x-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .."<< MX+a << endl; success =false;}
-			diggit=coor[1].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[1]=In[0]->Get_int(coor[1],0); else {
-				recognize_keyword=false;
-				if (coor[1]=="var_pos") {recognize_keyword=true; r[1]=var_pos;}
-				if (coor[1]=="firstlayer") {recognize_keyword=true; r[1] = 1;}
-						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[1] = 0;}
-						//if (coor[1]=="upperbound") {recognize_keyword=true; r[1] = MY+1;}
-				if (coor[1]=="lastlayer")  {recognize_keyword=true; r[1] = MY;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[1] < 1-a || r[1] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .." << MY+a << endl; success =false;}
-			diggit=coor[2].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[2]=In[0]->Get_int(coor[2],0); else {
-				recognize_keyword=false;
-				if (coor[2]=="var_pos") {recognize_keyword=true; r[2]=var_pos;}
-				if (coor[2]=="firstlayer") {recognize_keyword=true; r[2] = 1;}
-						//if (coor[2]=="lowerbound") {recognize_keyword=true; r[2] = 0;}
-						//if (coor[2]=="upperbound") {recognize_keyword=true; r[2] = MZ+1;}
-				if (coor[2]=="lastlayer")  {recognize_keyword=true; r[2] = MZ;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer'" << endl;
-					success=false;
-				}
-			}
-
-			if (r[2] < 1-a || r[2] > MZ+a) {cout << "In mon " + seg_name+ ", for 'pos 1', the z-coordinate in '" + range_type + "' is out of bounds: "<< 1-a <<" .." << MZ+a << endl; success =false;}
-		}
-		coor.clear(); In[0]->split(set[1],',',coor);
-
-		if (coor.size()!=3) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of three: 'x,y,z'" << endl; success=false;}
-		else {
-			diggit=coor[0].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[3]=In[0]->Get_int(coor[0],0); else {
-				recognize_keyword=false;
-				if (coor[0]=="var_pos") {recognize_keyword=true; r[3]=var_pos;}
-				if (coor[0]=="firstlayer") {recognize_keyword=true; r[3] = 1;}
-						//if (coor[0]=="lowerbound") {recognize_keyword=true; r[3] = 0;}
-						//if (coor[0]=="upperbound") {recognize_keyword=true; r[3] = MX+1;}
-				if (coor[0]=="lastlayer")  {recognize_keyword=true; r[3] = MX;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[3] < 1-a || r[3] > MX+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the x-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .."<< MX+a << endl; success =false;}
-			diggit=coor[1].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[4]=In[0]->Get_int(coor[1],0); else {
-				recognize_keyword=false;
-				if (coor[1]=="var_pos") {recognize_keyword=true; r[4]=var_pos;}
-				if (coor[1]=="firstlayer") {recognize_keyword=true; r[4] = 1;}
-						//if (coor[1]=="lowerbound") {recognize_keyword=true; r[4] = 0;}
-						//if (coor[1]=="upperbound") {recognize_keyword=true; r[4] = MY+1;}
-				if (coor[1]=="lastlayer")  {recognize_keyword=true; r[4] = MY;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[4] < 1-a || r[4] > MY+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the y-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .." << MY+a << endl; success =false;}
-			diggit=coor[2].substr(0,1);
-			if (In[0]->IsDigit(diggit)) r[5]=In[0]->Get_int(coor[2],0); else {
-				recognize_keyword=false;
-				if (coor[2]=="var_pos") {recognize_keyword=true; r[5]=var_pos;}
-				if (coor[2]=="firstlayer") {recognize_keyword=true; r[5] = 1;}
-						//if (coor[2]=="lowerbound") {recognize_keyword=true; r[5] = 0;}
-						//if (coor[2]=="upperbound") {recognize_keyword=true; r[5] = MZ+1;}
-				if (coor[2]=="lastlayer")  {recognize_keyword=true; r[5] = MZ;}
-				if (!recognize_keyword) {
-					cout << "In mon " + seg_name + " and  range_type " + range_type + ", the first 'pos' of x-coordinate is not a number or does not contain the keywords: 'firstlayer' 'lastlayer' " << endl;
-					success=false;
-				}
-			}
-			if (r[5] < 1-a || r[5] > MZ+a) {cout << "In mon " + seg_name+ ", for 'pos 2', the z-coordinate in '" + range_type + "' is out of bounds; "<< 1-a <<" .." << MZ+a << endl; success =false;}
-			if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-			if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
-			if (r[2] > r[5]) {cout << "In mon " + seg_name+ ", for 'pos 1', the z-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+	if (coor.size()!=3) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in set of three: 'x,y,z'" << endl; success=false;}
+	else {
+		r[0]=In[0]->Get_int(coor[0],0); 			
+		r[1]=In[0]->Get_int(coor[1],0); 
+		r[2]=In[0]->Get_int(coor[2],0); 
 	}
-	} else {
-		string s;
-		In[0]->split(set[0],')',coor);
-		s=coor[0].substr(0,1);
-		if (s!="(") { //now expect one of the keywords
-			block=true;
-			cout << "In mon " + seg_name + " and  range_type " + range_type + ", the info was not recognised because when 'gradients>1' the lonely keywords 'firstlayer' 'lastlayers' do not work." << endl;
-			success=false;
-		} else {
-			int px{0},py{0},pz{0};
-			string s;
+	coor.clear(); In[0]->split(set[1],',',coor);
 
-			if (coor.size()==0)
-				block=false;
-			else {
-				for (size_t i = 0 ; i < coor.size() ; ++i) {
-					s=coor[i].substr(1,coor[i].size()-1);
-					In[0]->split(s,',',xyz);
-					if (xyz.size()!=3) {
-						cout << "In mon " + seg_name+ " pinned_range  the expected 'triple coordinate' -with brackets- structure '(x,y,z)' was not found. " << endl;  success = false;
-					} else {
-						px=In[0]->Get_int(xyz[0],0);
-						if (px < 1 || px > MX) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the x-coordinate in pinned_range out of bounds: 1.." << MX << endl; success =false;}
-						py=In[0]->Get_int(xyz[1],0);
-						if (py < 1 || py > MY) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MY << endl; success =false;}
-						pz=In[0]->Get_int(xyz[2],0);
-						if (pz < 1 || pz > MZ) {cout << "In mon " + seg_name+ ", for 'pos' "<< i << ", the y-coordinate in pinned_range out of bounds: 1.." << MZ << endl; success =false;}
-						H_p[i]=px*JX+py*JY+fjc-1+pz;
-					}
-				}
-			}
-
-		}
+	if (coor.size()!=3) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of three: 'x,y,z'" << endl; success=false;}
+	else {
+		r[3]=In[0]->Get_int(coor[0],0); 
+		r[4]=In[0]->Get_int(coor[1],0); 
+		r[5]=In[0]->Get_int(coor[2],0); 
 	}
+	if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+	if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
+	if (r[2] > r[5]) {cout << "In mon " + seg_name+ ", for 'pos 1', the z-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
 	return success;
 }
 
 bool LGrad3::ReadRangeFile(string filename,int* H_p, int &n_pos, string seg_name, string range_type) {
 if (debug) cout <<"ReadRangeFile in LGrad3 " << endl;
+	if (fjc>1) {
+		cout << "Rangefile is not implemented for FJC-choices >3; contact FL. " << endl; 
+		return false;
+	}
+
 	bool success=true;
 	string content;
 	vector<string> lines;
@@ -992,7 +879,7 @@ if (debug) cout <<"CreateMask for LGrad3 " + name << endl;
 		for (int x=r[0]; x<r[3]+1; x++)
 		for (int y=r[1]; y<r[4]+1; y++)
 		for (int z=r[2]; z<r[5]+1; z++)
-			H_MASK[x*JX+y*JY+fjc-1+z]=1;
+			H_MASK[P(x,y,z)]=1;
 	} else {
 		for (int i = 0; i<n_pos; i++) H_MASK[H_P[i]]=1;
 	}

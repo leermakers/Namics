@@ -150,6 +150,7 @@ public:
 	void DeAllocateMemory();
 	void AllocateMemory();
 	bool PrepareForCalculations(int*,bool);
+	bool ParseFreedoms(bool&);
 	bool PutAdsorptionGuess(Real,int*);
 	bool PutTorusPotential(int);
 	bool PutMembranePotential(int);

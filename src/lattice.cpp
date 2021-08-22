@@ -1,4 +1,4 @@
-#include "lattice.h" 
+#include "lattice.h"
 Lattice::Lattice(vector<Input*> In_,string name_) :
 	BC(6) // resize the boundary condition vector to 6 for Mesodyn
 { //this file contains switch (gradients). In this way we keep all the lattice issues in one file!
@@ -19,8 +19,9 @@ if (debug) cout <<"Lattice constructor" << endl;
 	//KEYS.push_back("lambda");
 	//KEYS.push_back("Z");
 	KEYS.push_back("FJC_choices");
+	KEYS.push_back("b/l");
 	KEYS.push_back("Markov");
-	KEYS.push_back("k_stiff"); 
+	KEYS.push_back("k_stiff");
 	sub_box_on = 0;
 	all_lattice = false;
 	ignore_sites=false;
@@ -59,7 +60,7 @@ if (debug) cout <<"DeAllocateMemory in lat " << endl;
 			#endif
 		}
 		if (Markov==2) {
-			free(l1); 
+			free(l1);
 			free(l11);
 			free(l_1);
 			free(l_11);
@@ -68,7 +69,7 @@ if (debug) cout <<"DeAllocateMemory in lat " << endl;
 	}
 }
 
-	
+
 void Lattice::AllocateMemory(void) {
 if (debug) cout <<"AllocateMemory in lat " << endl;
 
@@ -209,7 +210,7 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 		l_1=(Real*)malloc(M*sizeof(Real));  Zero(l_1,M);
 		l11=(Real*)malloc(M*sizeof(Real)); Zero(l11,M);
 		l_11=(Real*)malloc(M*sizeof(Real)); Zero(l_11,M);
-		H=(Real*)malloc(M*sizeof(Real)); 
+		H=(Real*)malloc(M*sizeof(Real));
 
 	}
 
@@ -274,9 +275,31 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 			}
 
 			fjc=(FJC-3)/2+1;
-
 		}
 
+		if (success && GetValue("b/l").length()>0) {
+			int fjc_new;
+			if (!In[0]->Get_int(GetValue("b/l"),fjc_new,"b/l can adopt only few integer values: 1, 2, 3, ..."))
+				success=false;
+			else {
+				if (fjc_new <1 ) {
+					cout << "b/l should be a positive integer: 1, 2, 3, ...." <<endl;
+					success=false;
+				}
+				if (GetValue("FJC_choices").length()>0 && fjc_new !=fjc) {
+					cout <<"You have set both 'FJC_choices' and 'b/l', but their values are not consistent with each other."<<endl;
+					if (fjc_new<fjc && fjc_new >0) {
+							cout <<"The value of 'b/l' is used, and that of FJC_choices is rejected." << endl;
+					} else {
+							if (fjc_new<1) success=true;
+							cout <<"The value of 'FJC_choices' is used, and that of b/l is rejected." << endl;
+							fjc_new=fjc;
+					}
+				}
+			}
+			fjc=fjc_new;
+			FJC=3+(fjc-1)*2;
+		}
 
 		bond_length=0;
 		if (GetValue("bondlength").size()>0) {
@@ -313,8 +336,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						cout <<"n_layers out of bounds, currently: 0..1e6; Problem terminated" << endl;
 					}
 				}
-				MX=fjc*(MX+1)-1;
-
+				MX=fjc*(MX);
+cout <<"MX = " << MX << endl;
 				options.clear();
 				options.push_back("spherical");
 				options.push_back("cylindrical");
@@ -332,7 +355,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						offset_first_layer=0;
 					}
 				}
-				offset_first_layer *=fjc; 
+				offset_first_layer *=fjc;
 
 				options.clear();
 				options.push_back("mirror");
@@ -368,7 +391,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						cout <<"n_layers_x out of bounds, currently: 0.. 1e6; Problem terminated" << endl;
 					}
 				}
-				MX=fjc*(MX+1)-1;
+				MX=fjc*(MX);
 				MY = In[0]->Get_int(GetValue("n_layers_y"),-123);
 				if (MY==-123) {
 					success=false;
@@ -380,7 +403,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						cout <<"n_layers_y out of bounds, currently: 0.. 1e6; Problem terminated" << endl;
 					}
 				}
-				MY=fjc*(MY+1)-1;
+				MY=fjc*(MY);
 				options.clear();
 				options.push_back("cylindrical");
 				options.push_back("flat");options.push_back("planar");
@@ -400,7 +423,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				}
 
 				options.clear();
-				options.push_back("mirror"); 
+				options.push_back("mirror");
 				options.push_back("surface");
 				if (geometry=="planar")
 					options.push_back("periodic");
@@ -446,9 +469,9 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					success=false;
 				if (!In[0]->Get_int(GetValue("n_layers_z"),MZ,1,1e6,"In 'lat' the parameter 'n_layers_z' is required"))
 					success=false;
-				MX=fjc*(MX+1)-1;
-				MY=fjc*(MY+1)-1;
-				MZ=fjc*(MZ+1)-1;
+				MX=fjc*(MX);
+				MY=fjc*(MY);
+				MZ=fjc*(MZ);
 				options.clear();
 				options.push_back("mirror"); //options.push_back("mirror_2");
 				options.push_back("periodic");
@@ -516,8 +539,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		}
 		//Initialize system size and indexing
 		PutM();
-		if (lattice_type==simple_cubic) { 
-			lambda=1.0/6.0; //l0=4.0*l1; 
+		if (lattice_type==simple_cubic) {
+			lambda=1.0/6.0; //l0=4.0*l1;
 		} else {
 			lambda=1.0/4.0; //l0=2.0*l1;
 		}
@@ -529,16 +552,16 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		k_stiff=In[0]->Get_Real(GetValue("k_stiff"),0);
 		if (k_stiff<0 || k_stiff>10) {
 			success =false;
-			cout <<" Real value for 'k_stiff' out of bounds (0 < k_stiff < 10). " << endl;  
+			cout <<" Real value for 'k_stiff' out of bounds (0 < k_stiff < 10). " << endl;
 			cout <<" For Markov == 2: u_bend (theta) = 0.5 k_stiff theta^2, where 'theta' is angle for bond direction deviating from the straight direction. " <<endl;
 			cout <<" You may interpret 'k_stiff' as the molecular 'persistence length' " << endl;
-			cout <<" k_stiff is a 'default value'. Use molecular specific values to overrule the default when appropriate (future implementation....) " << endl;  
+			cout <<" k_stiff is a 'default value'. Use molecular specific values to overrule the default when appropriate (future implementation....) " << endl;
 		}
 		if (fjc>1 ) {
 			success=false;
-			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 5 " << endl; 
+			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 5 " << endl;
 		}
-	}	
+	}
 
 	return success;
 }
@@ -732,10 +755,10 @@ bool Lattice:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R
 		for (int x=1; x<MX; x++)
 		for (int y=1; y<MY; y++)
 		for (int z=1; z<MZ; z++)
-		if (MASK[P(x,y,z)]>1) success=false; 
+		if (MASK[P(x,y,z)]>1) success=false;
 	}
 
-	return success; 
+	return success;
 }
 
 bool Lattice::PrepareForCalculations(void) {
@@ -921,7 +944,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 				int iv=(num_1+num_2)*m;
 				if (charged) iv +=m;
 				for (int i=0; i<iv; i++) {
-					in_file >> x[i];  
+					in_file >> x[i];
 					//cout <<"R i " << i << " " << x[i] << endl;
 				}
 				readx=-3;

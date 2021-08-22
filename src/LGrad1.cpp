@@ -1,7 +1,7 @@
-#include <iostream> 
-#include <string> 
+#include <iostream>
+#include <string>
 #include "lattice.h"
-#include "LGrad1.h"  
+#include "LGrad1.h"
 
 //planar geometry is in LG1Planar.cpp
 
@@ -62,7 +62,7 @@ if (debug) cout <<"LGrad1 computeLambda's " << endl;
 			}
 		}
 		if (Markov==2) {
-			for (int i=1; i<MX+1; i++) { 
+			for (int i=1; i<MX+1; i++) {
 				l1[i]=lambda1[i]/lambda; l11[i]=1.0-l1[i];
 				l_1[i]=lambda_1[i]/lambda; l_11[i]=1.0-l_1[i];
 			}
@@ -169,7 +169,7 @@ bool LGrad1::PutM() {
 if (debug) cout << "PutM in LGrad1 " << endl;
 	bool success=true;
 
-	JX=fjc; JY=0; JZ=0; M=MX+2*fjc;
+	JX=1; JY=0; JZ=0; M=MX+2*fjc;
 	if (geometry=="planar") {volume = MX; }
 	if (geometry=="spherical") {volume = 4/3*PIE*(pow(MX+offset_first_layer,3)-pow(offset_first_layer,3));}
 	if (geometry=="cylindrical") {volume = PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));}
@@ -194,7 +194,7 @@ if (debug) cout << "Moment in LGrad1 " << endl;
 	Real cor;
 	remove_bounds(X);
 	for (int i = fjc; i<M; i++) {
-		cor = (i-fjc+0.5)/fjc; 
+		cor = (i-fjc+0.5)/fjc;
 		Result += pow(cor,n)*(X[i]-Xb)*L[i];
 	}
 	return Result/fjc;
@@ -220,14 +220,15 @@ if (debug) cout <<"PutProfiles in LGrad1 " << endl;
 	int x,i;
 	int length=X.size();
 	int a;
-	if (writebounds) a=fjc; else a = 0;
-	for (x=1-a; x<MX+1+a; x++){
-		fprintf(pf,"%e\t",offset_first_layer+1.0*x/fjc-1/(2.0*fjc));
-		for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][fjc-1+x]);
+	if (writebounds) a=0; else a = fjc;
+
+	for (x=a; x<MX+2*fjc-a; x++){
+		//fprintf(pf,"%e\t",offset_first_layer+1.0*x/fjc-1/(2.0*fjc));
+		fprintf(pf,"%e\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc);
+		for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][x]);
 		fprintf(pf,"\n");
 	}
 }
-
 
 void LGrad1::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in LGrad1 " << endl;
@@ -263,7 +264,7 @@ if (debug) cout <<" Side in LGrad1 " << endl;
 
 //void LGrad1::LReflect(Real *Pout, Real *Pin, int pos) {
 //	Times(Pout,l_1+1,Pin,M-1);
-//	AddTimes(Pout,l_11+1,Pin+(1-pos)*2*M+1,M-1); 
+//	AddTimes(Pout,l_11+1,Pin+(1-pos)*2*M+1,M-1);
 //}
 
 //void LGrad1::UReflect(Real *Pout, Real *Pin, int pos) {
@@ -273,7 +274,7 @@ if (debug) cout <<" Side in LGrad1 " << endl;
 
 void LGrad1::LReflect(Real *H, Real *P, Real *Q) {
 	Times(H,l_1+1,P,M-1);
-	AddTimes(H,l_11+1,Q+1,M-1); 
+	AddTimes(H,l_11+1,Q+1,M-1);
 }
 
 void LGrad1::UReflect(Real *H, Real *P, Real* Q) {
@@ -324,7 +325,7 @@ void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 			for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 		}
 	} else {
-		cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl; 
+		cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl;
 	}
 }
 
@@ -342,7 +343,7 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	for (int k=0; k<(FJC-1)/2; k++) set_bounds(gs_1+k*M,gs_1+(FJC-k-1)*M);
 	set_bounds(gs_1+(FJC-1)/2*M);
 	if (fjc==1) {
-		if (lattice_type==hexagonal) { cout <<"Lgrad1 propagateB for hexagonal lattice_type not implemented yet " << endl; 
+		if (lattice_type==hexagonal) { cout <<"Lgrad1 propagateB for hexagonal lattice_type not implemented yet " << endl;
 
 		} else {
 			//LReflect(H,gz2,2);
@@ -362,17 +363,17 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 			for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 		}
 	} else {
-		cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl; 
+		cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl;
 	}
 }
 
-	
-void LGrad1::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { 
+
+void LGrad1::propagate(Real *G, Real *G1, int s_from, int s_to,int M) {
 if (debug) cout <<" propagate in LGrad1 " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 	int kk;
 	int j;
-	Zero(gs,M); set_bounds(gs_1); 
+	Zero(gs,M); set_bounds(gs_1);
 
 	if (fjc==1) {
 		AddTimes(gs,gs_1,lambda0,M);
@@ -401,24 +402,24 @@ if (debug) cout <<"ReadRange in LGrad1 " << endl;
 	In[0]->split(range,';',set);
 
 	coor.clear();
-	block=true; 
+	block=true;
 	In[0]->split(set[0],',',coor);
 	if (coor.size()!=1) {cout << "In mon " + seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes must come as a single coordinate 'x'" << endl; r[0]=0; success=false;}
-	else r[0]=In[0]->Get_int(coor[0],-1) ; 
-					
+	else r[0]=In[0]->Get_int(coor[0],-1) ;
+
 	coor.clear(); In[0]->split(set[1],',',coor);
-	
+
 	if (coor.size()!=1) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "' the coordinates must come as a single coordinate 'x'" << endl; r[3]=0; success=false;}
 	else r[3]=In[0]->Get_int(coor[0],-1);
 	if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
- 
+
 	return success;
 }
 
 bool LGrad1::ReadRangeFile(string filename,int* H_p, int &n_pos, string seg_name, string range_type) {
 if (debug) cout <<"ReadRangeFile in LGrad1 " << endl;
 	if (fjc>1) {
-		cout << "Rangefile is not implemented for FJC-choices >3; contact FL. " << endl; 
+		cout << "Rangefile is not implemented for FJC-choices >3; contact FL. " << endl;
 		return false;
 	}
 	bool success=true;
@@ -523,9 +524,9 @@ if (debug) cout <<"CreateMask for LGrad1 " + name << endl;
 
 Real LGrad1::ComputeTheta(Real* phi) {
 	Real result=0; remove_bounds(phi);
-	if (geometry !="planar") Dot(result,phi,L,M); 
+	if (geometry !="planar") Dot(result,phi,L,M);
 	else {if (fjc==1) Sum(result,phi,M); else  Dot(result,phi,L,M);}
-	return result;
+	return result/fjc;
 }
 
 void LGrad1::UpdateEE(Real* EE, Real* psi, Real* E) {
@@ -663,7 +664,7 @@ void LGrad1::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 	if (Mask[x] == 0) {
 		g[x]-=psi[x];
 	}
-   } 
+   }
 }
 
 
@@ -710,12 +711,12 @@ void LGrad1::remove_bounds(Real *X){
 if (debug) cout <<"remove_bounds in LGrad1 " << endl;
 	int k;
 	if (fjc==1) {
-		if (BX1!=0) X[0]=0;
-		if (BXM!=MX+1) X[MX+1]=0;
+		X[0]=0;
+		X[MX+1]=0;
 	} else {
 		for (k=0; k<fjc; k++) {
-			if (B_X1[k]!=k) X[(fjc-1)-k]=0;
-			if (B_XM[k]!=MX+fjc+k) X[MX+fjc+k]=0;
+			X[k]=0;
+			X[MX+fjc+k]=0;
 		}
 	}
 }
@@ -731,16 +732,14 @@ if (debug) cout <<"set_bounds in LGrad1 " << endl;
 
 	} else {
 		for (k=0; k<fjc; k++) {
-			X[(fjc-1)-k]=Y[B_X1[k]];
+			X[k]=Y[B_X1[k]];
 			X[MX+fjc+k]=Y[B_XM[k]];
-			Y[(fjc-1)-k]=X[B_X1[k]];
+			Y[k]=X[B_X1[k]];
 			Y[MX+fjc+k]=X[B_XM[k]];
 		}
 	}
 }
 
-
- 
 void LGrad1::set_bounds(Real* X){
 if (debug) cout <<"set_bounds in LGrad1 " << endl;
 	int k=0;
@@ -749,27 +748,26 @@ if (debug) cout <<"set_bounds in LGrad1 " << endl;
 		X[MX+1]=X[BXM];
 	} else {
 		for (k=0; k<fjc; k++) {
-			X[(fjc-1)-k]=X[B_X1[k]];
+			X[k]=X[B_X1[k]];
 			X[MX+fjc+k]=X[B_XM[k]];
 		}
 	}
 }
 
 void LGrad1::remove_bounds(int *X){
-if (debug) cout <<"remove_bounds in LGrad1 " << endl;	
+if (debug) cout <<"remove_bounds in LGrad1 " << endl;
 int k;
 	if (fjc==1) {
-		if (BX1!=0) X[0]=0;
-		if (BXM!=MX+1) X[MX+1]=0;
+		X[0]=0;
+		X[MX+1]=0;
 	} else {
 		for (k=0; k<fjc; k++) {
-			if (B_X1[k]!=k) X[k]=0;
-			if (B_XM[k]!=MX+fjc+k) X[MX+fjc+k]=0;
+			X[k]=0;
+			X[MX+fjc+k]=0;
 		}
 	}
 }
 
- 
 void LGrad1::set_bounds(int* X){
 if (debug) cout <<"set_bounds in LGrad1 " << endl;
 	int k=0;
@@ -778,7 +776,7 @@ if (debug) cout <<"set_bounds in LGrad1 " << endl;
 		X[MX+1]=X[BXM];
 	} else {
 		for (k=0; k<fjc; k++) {
-			X[(fjc-1)-k]=X[B_X1[k]];
+			X[k]=X[B_X1[k]];
 			X[MX+fjc+k]=X[B_XM[k]];
 		}
 	}
@@ -790,7 +788,7 @@ Real LGrad1::ComputeGN(Real* G,int M){
 		GN=WeightedSum(G);
 		for (int k=1; k<FJC-1; k++) {
 			if (lattice_type == hexagonal) GN += 2.0*WeightedSum(G+k*M); else GN +=4.0*WeightedSum(G+k*M);
-		} 
+		}
 		GN+=WeightedSum(G+(FJC-1)*M);
 		if (lattice_type == hexagonal) GN /= 4.0; else GN /= 6.0;  //Adopt for fjc>1!!!!
 	} else GN=WeightedSum(G);
@@ -801,11 +799,11 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){//Adopt for fjc>1!!!!
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
 			YplusisCtimesAtimesB(phi,Gf,Gb,0.25,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5,M);			
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5,M);
 			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25,M);
 		} else {
 			YplusisCtimesAtimesB(phi,Gf,Gb,1.0/6.0,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,4.0/6.0,M);			
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,4.0/6.0,M);
 			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,1.0/6.0,M);
 		}
 	} else {
@@ -817,11 +815,11 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real degeneracy, int M){//Adop
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
 			YplusisCtimesAtimesB(phi,Gf,Gb,0.25*degeneracy,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5*degeneracy,M);			
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5*degeneracy,M);
 			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25*degeneracy,M);
 		} else {
 			YplusisCtimesAtimesB(phi,Gf,Gb,degeneracy/6.0,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy*4.0/6.0,M);			
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy*4.0/6.0,M);
 			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,degeneracy/6.0,M);
 		}
 	} else {

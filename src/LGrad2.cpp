@@ -1,7 +1,7 @@
-#include <iostream> 
-#include <string> 
+#include <iostream>
+#include <string>
 #include "lattice.h"
-#include "LGrad2.h"   
+#include "LGrad2.h"
 
 LGrad2::LGrad2(vector<Input*> In_,string name_): Lattice(In_,name_) {}
 
@@ -24,7 +24,7 @@ void LGrad2:: ComputeLambdas() {
 	//		fcc_lambda_1[P(x,y)]=2.0*PIE*(r-1)/L[P(x,y)]/3.0;
 	//		fcc_lambda0[P(x,y)]=1.0-2.0/3.0;
 	//	}
-	//		
+	//
 	//}
 	if (fjc==1) {
 		for (int x=1; x<MX+1; x++)
@@ -169,8 +169,8 @@ if (debug) cout << "vtk in LGrad2 " << endl;
 	}
 	fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
 	if (writebounds) for (i=0; i<M; i++) fprintf(fp,"%f\n",X[i]);
-	for (int x=1; x<MX+1; x++)
-	for (int y=1; y<MY+1; y++)
+	for (int x=fjc; x<MX+fjc; x++)
+	for (int y=fjc; y<MY+fjc; y++)
 	fprintf(fp,"%f\n",X[P(x,y)]);
 	fclose(fp);
 }
@@ -180,10 +180,10 @@ if (debug) cout <<"PutProfiles in LGrad2 " << endl;
 	int x,y,i;
 	int length=X.size();
 	int a;
-	if (writebounds) a=fjc; else a = 0;
-	for (x=1-a; x<MX+1+a; x++)
-	for (y=1-a; y<MY+1+a; y++){
-		fprintf(pf,"%e\t%e\t",offset_first_layer+1.0*x/fjc-1/(2.0*fjc),1.0*y/fjc-1/(2.0*fjc));
+	if (writebounds) a=0; else a = fjc;
+	for (x=a; x<MX+2*fjc-a; x++)
+	for (y=a; y<MY+2*fjc-a; y++){
+		fprintf(pf,"%e\t%e\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc,1.0*(y-fjc+1)/fjc-0.5/fjc);
 		for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][P(x,y)]);
 		fprintf(pf,"\n");
 	}
@@ -208,7 +208,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 		AddTimes(X_side+1,X+JX,fcc_lambda1+1,M-JX);
 		AddTimes(X_side,X+JX+1,fcc_lambda1,M-JX-1);
 		Norm(X_side,1.0/3.0,M);
-			
+
 	} else {
 		if (fjc==1) {
 			if (lattice_type ==simple_cubic) {
@@ -274,7 +274,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 
 void LGrad2::LReflect(Real *H, Real *P, Real *Q) {
 	Times(H,l_1+JX,P,M-JX);
-	AddTimes(H,l_11+JX,Q+JX,M-JX); 
+	AddTimes(H,l_11+JX,Q+JX,M-JX);
 }
 
 void LGrad2::UReflect(Real *H, Real *P, Real *Q) {
@@ -295,7 +295,7 @@ void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		Real *gz4=gs_1+4*M;
 		Real *gz5=gs_1+5*M;
 		Real *gz6=gs_1+6*M;
-		
+
 		Real *gx0=gs;
 		Real *gx1=gs+M;
 		Real *gx2=gs+2*M;
@@ -308,7 +308,7 @@ void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 
 		Zero(gs,7*M);
 		remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);
-		set_bounds_x(gz0,gz6,0);set_bounds_x(gz1,gz5,0);set_bounds_x(gz2,gz4,0);set_bounds_x(gz3,0); 
+		set_bounds_x(gz0,gz6,0);set_bounds_x(gz1,gz5,0);set_bounds_x(gz2,gz4,0);set_bounds_x(gz3,0);
 
 		LReflect(H,gz0,gz6); YplusisCtimesX(gx0+JX,H,2*P[0],M-JX);
 		LReflect(H,gz1,gz5); YplusisCtimesX(gx0+JX,H,  P[0],M-JX);
@@ -349,7 +349,7 @@ void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx3,gz5,P[1],M);
 		YplusisCtimesX(gx3,gz6,2*P[1],M);
 
-		set_bounds_y(gz0,-1); set_bounds_y(gz1,-1);set_bounds_y(gz2,-1);set_bounds_y(gz4,-1);set_bounds_y(gz3,-1); 
+		set_bounds_y(gz0,-1); set_bounds_y(gz1,-1);set_bounds_y(gz2,-1);set_bounds_y(gz4,-1);set_bounds_y(gz3,-1);
 		LReflect(H,gz0,gz6); YplusisCtimesX(gx1+JX,H+JY,2*P[0],M-JX-JY);
 		LReflect(H,gz1,gz5); YplusisCtimesX(gx1+JX,H+JY,  P[0],M-JX-JY);
 		LReflect(H,gz2,gz4); YplusisCtimesX(gx1+JX,H+JY,2*P[1],M-JX-JY);
@@ -357,7 +357,7 @@ void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		LReflect(H,gz4,gz2); YplusisCtimesX(gx1+JX,H+JY,2*P[1],M-JX-JY);
 
 		remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);
-		set_bounds_x(gz6,-1);set_bounds_x(gz5,-1);set_bounds_x(gz2,-1);set_bounds_x(gz4,-1);set_bounds_x(gz3,-1); 
+		set_bounds_x(gz6,-1);set_bounds_x(gz5,-1);set_bounds_x(gz2,-1);set_bounds_x(gz4,-1);set_bounds_x(gz3,-1);
 		UReflect(H,gz2,gz4); YplusisCtimesX(gx5+JY,H+JX,2*P[1],M-JX-JY);
 		UReflect(H,gz3,gz3); YplusisCtimesX(gx5+JY,H+JX,2*P[1],M-JX-JY);
 		UReflect(H,gz4,gz2); YplusisCtimesX(gx5+JY,H+JX,2*P[1],M-JX-JY);
@@ -374,8 +374,8 @@ void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		Real *gz2=gs_1+2*M;
 		Real *gz3=gs_1+3*M;
 		Real *gz4=gs_1+4*M;
-		set_bounds_x(gz0,gz4,0); set_bounds_x(gz1,0); set_bounds_x(gz2,0); set_bounds_x(gz3,0); 
-		set_bounds_y(gz1,gz3,0); set_bounds_y(gz0,0); set_bounds_y(gz2,0); set_bounds_y(gz4,0); 	
+		set_bounds_x(gz0,gz4,0); set_bounds_x(gz1,0); set_bounds_x(gz2,0); set_bounds_x(gz3,0);
+		set_bounds_y(gz1,gz3,0); set_bounds_y(gz0,0); set_bounds_y(gz2,0); set_bounds_y(gz4,0);
 		Real *gx0=gs;
 		Real *gx1=gs+M;
 		Real *gx2=gs+2*M;
@@ -410,7 +410,7 @@ void LGrad2::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		UReflect(H,gz3,gz1); YplusisCtimesX(gx4,H+JX,P[1],M-JX);
 		UReflect(H,gz4,gz0); YplusisCtimesX(gx4,H+JX,P[0],M-JX);
 
-		for (int k=0; k<5; k++) Times(gs+k*M,gs+k*M,g,M);	
+		for (int k=0; k<5; k++) Times(gs+k*M,gs+k*M,g,M);
 	}
 }
 
@@ -426,7 +426,7 @@ void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		Real *gz4=gs_1+4*M;
 		Real *gz5=gs_1+5*M;
 		Real *gz6=gs_1+6*M;
-		
+
 		Real *gx0=gs;
 		Real *gx1=gs+M;
 		Real *gx2=gs+2*M;
@@ -440,7 +440,7 @@ void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);
 
 		set_bounds_x(gz0,gz6,0);
-			
+
 		LReflect(H,gz6,gz0);
 		YplusisCtimesX(gx2+JX,H,2*P[1],M-JX);
 		YplusisCtimesX(gx3+JX,H,2*P[1],M-JX);
@@ -454,7 +454,7 @@ void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx2,H+JX,2*P[1],M-JX);
 		YplusisCtimesX(gx3,H+JX,2*P[1],M-JX);
 		YplusisCtimesX(gx4,H+JX,2*P[1],M-JX);
-	
+
 		set_bounds_y(gz2,gz4,0);
 
 		YplusisCtimesX(gx0+JY,gz4,2*P[1],M-JY);
@@ -480,7 +480,7 @@ void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx5,gz3,2*P[1],M);
 		YplusisCtimesX(gx6,gz3,2*P[1],M);
 
-		set_bounds_y(gz1,gz5,-1); 
+		set_bounds_y(gz1,gz5,-1);
 		//set_bounds_y(gz1,-1);set_bounds_y(gz5,-1);
 
 		LReflect(H,gz5,gz1);
@@ -511,7 +511,7 @@ void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		Real *gz2=gs_1+2*M;
 		Real *gz3=gs_1+3*M;
 		Real *gz4=gs_1+4*M;
-		set_bounds_x(gz0,gz4,0); set_bounds_x(gz1,0); set_bounds_x(gz2,0); set_bounds_x(gz3,0); 
+		set_bounds_x(gz0,gz4,0); set_bounds_x(gz1,0); set_bounds_x(gz2,0); set_bounds_x(gz3,0);
 		set_bounds_y(gz1,gz3,0); set_bounds_y(gz0,0); set_bounds_y(gz2,0); set_bounds_y(gz4,0);
 		Real *gx0=gs;
 		Real *gx1=gs+M;
@@ -634,26 +634,26 @@ if (debug) cout <<"ReadRange in LGrad2 " << endl;
 	block=true; In[0]->split(set[0],',',coor);
 	if (coor.size()!=2) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in set of two: 'x,y'" << endl; success=false;}
 	else {
-		r[0]=In[0]->Get_int(coor[0],0); 			
-		r[1]=In[0]->Get_int(coor[1],0); 		
+		r[0]=In[0]->Get_int(coor[0],0);
+		r[1]=In[0]->Get_int(coor[1],0);
 	}
 	coor.clear(); In[0]->split(set[1],',',coor);
 
 	if (coor.size()!=2) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of two: 'x,y'" << endl; success=false;}
 	else {
 		r[3]=In[0]->Get_int(coor[0],0);
-		r[4]=In[0]->Get_int(coor[1],0); 
+		r[4]=In[0]->Get_int(coor[1],0);
 	}
 	if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
 	if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
- 
+
 	return success;
 }
 
 bool LGrad2::ReadRangeFile(string filename,int* H_p, int &n_pos, string seg_name, string range_type) {
 if (debug) cout <<"ReadRangeFile in LGrad2 " << endl;
 	if (fjc>1) {
-		cout << "Rangefile is not implemented for FJC-choices >3; contact FL. " << endl; 
+		cout << "Rangefile is not implemented for FJC-choices >3; contact FL. " << endl;
 		return false;
 	}
 
@@ -769,7 +769,7 @@ if (debug) cout <<"CreateMask for LGrad2 " + name << endl;
 
 Real LGrad2::ComputeTheta(Real* phi) {
 	Real result=0; remove_bounds(phi);
-	if (geometry !="planar") Dot(result,phi,L,M); 
+	if (geometry !="planar") Dot(result,phi,L,M);
 	else {if (fjc==1) Sum(result,phi,M); else  Dot(result,phi,L,M);}
 	return result;
 }
@@ -860,7 +860,7 @@ void LGrad2::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 			psi[x*JX+y]=X[x*JX+y];
 			g[x*JX+y]-=psi[x*JX+y];
 		}
-   	} 
+   	}
 }
 
 
@@ -983,7 +983,7 @@ if (debug) cout <<"set_bounds_y XY in LGrad2 " << endl;
 	int k=0;
 	if (BY1>BYM) {
 		set_bounds_y(X,0); set_bounds_y(Y,0);
-		
+
 	} else {
 		if (fjc==1) {
 			for (x=1; x<MX+1; x++) {
@@ -1056,7 +1056,7 @@ if (debug) cout <<"set_bounds_x X in LGrad2 " << endl;
 void LGrad2::set_bounds_y(Real* X,int shiftx){
 if (debug) cout <<"set_bounds_y X in LGrad2 " << endl;
 	int x;
-	int k=0;	
+	int k=0;
 	//if (BY1>BYM) shiftx=0;
 
 	if (fjc==1) {
@@ -1076,7 +1076,7 @@ if (debug) cout <<"set_bounds_y X in LGrad2 " << endl;
 }
 
 
- 
+
 void LGrad2::set_bounds(Real* X){
 if (debug) cout <<"set_bounds in LGrad2 " << endl;
 	int x,y;
@@ -1153,7 +1153,7 @@ if (debug) cout <<"remove_bounds in LGrad2 " << endl;
 	}
 }
 
- 
+
 void LGrad2::set_bounds(int* X){
 if (debug) cout <<"set_bounds in LGrad2 " << endl;
 	int x,y;
@@ -1207,42 +1207,42 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 
 Real LGrad2::ComputeGN(Real* G,int M){
 	Real GN=0;
-	if (Markov==2) { 
+	if (Markov==2) {
 		if (lattice_type == hexagonal) {
 			for (int k=0; k<7; k++) {
-				if (k==1 || k==5)  
-					GN += WeightedSum(G+k*M); 
-				else 
+				if (k==1 || k==5)
+					GN += WeightedSum(G+k*M);
+				else
 					GN += 2*WeightedSum(G+k*M);
 			}
 			GN /=12.0;
 
 		} else {
 			for (int k=0; k<5; k++) {
-				if (k== 2)  
-					GN += 2*WeightedSum(G+k*M); 
-				else 
+				if (k== 2)
+					GN += 2*WeightedSum(G+k*M);
+				else
 					GN += WeightedSum(G+k*M);
 			}
 			GN /=6.0;
 		}
 	} else GN = WeightedSum(G);
-	return GN; 
+	return GN;
 }
 void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
 	if (Markov==2) {
 		if (lattice_type == hexagonal) {
 			for (int k=0; k<7; k++) {
-				if (k==1 || k==5) 
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/12.0,M); 
+				if (k==1 || k==5)
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/12.0,M);
 				else
 					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
 			}
 
 		} else {
 			for (int k=0; k<5; k++) {
-				if (k==2) 
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/3.0,M); 
+				if (k==2)
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/3.0,M);
 				else
 					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
 			}
@@ -1253,16 +1253,16 @@ void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real degeneracy, int M){
 	if (Markov==2) {
 		if (lattice_type == hexagonal) {
 			for (int k=0; k<7; k++) {
-				if (k==1 || k==5) 
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/12.0,M); 
+				if (k==1 || k==5)
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/12.0,M);
 				else
 					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/6.0,M);
 			}
 
 		} else {
 			for (int k=0; k<5; k++) {
-				if (k==2) 
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/3.0,M); 
+				if (k==2)
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/3.0,M);
 				else
 					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/6.0,M);
 			}
@@ -1276,7 +1276,7 @@ void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int M){
 }
 
 void LGrad2::Initiate(Real* G,Real* Gz,int M){
-	if (Markov==2) { 
+	if (Markov==2) {
 		if (lattice_type == hexagonal) {
 			for (int k=0; k<7; k++) Cp(G+k*M,Gz,M);
 		} else {
@@ -1286,7 +1286,7 @@ void LGrad2::Initiate(Real* G,Real* Gz,int M){
 }
 
 void LGrad2::Terminate(Real* Gz,Real* G,int M){
-	if (Markov==2) { 
+	if (Markov==2) {
 		Zero(Gz,M);
 		if (lattice_type == hexagonal) {
 			Add(Gz,G,M); Add(Gz,G+2*M,M); Add(Gz,G+3*M,M); Add(Gz,G+4*M,M); Add(Gz,G+6*M,M);

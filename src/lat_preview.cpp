@@ -2,20 +2,20 @@
 Lat_preview::Lat_preview(vector<Input*> In_,string name_) {
 if (debug) cout <<"Lattice constructor" << endl;
 	In=In_; name=name_;
-	KEYS.push_back("gradients"); 
-	KEYS.push_back("n_layers"); 
+	KEYS.push_back("gradients");
+	KEYS.push_back("n_layers");
 	KEYS.push_back("offset_first_layer");
 	KEYS.push_back("geometry");
-	KEYS.push_back("n_layers_x");   
-	KEYS.push_back("n_layers_y"); 
+	KEYS.push_back("n_layers_x");
+	KEYS.push_back("n_layers_y");
 	KEYS.push_back("n_layers_z");
-	KEYS.push_back("lowerbound"); 
+	KEYS.push_back("lowerbound");
 	KEYS.push_back("upperbound");
-	KEYS.push_back("lowerbound_x"); 
+	KEYS.push_back("lowerbound_x");
 	KEYS.push_back("upperbound_x");
-	KEYS.push_back("lowerbound_y"); 
+	KEYS.push_back("lowerbound_y");
 	KEYS.push_back("upperbound_y");
-	KEYS.push_back("lowerbound_z"); 
+	KEYS.push_back("lowerbound_z");
 	KEYS.push_back("upperbound_z");
  	KEYS.push_back("bondlength");
 	KEYS.push_back("ignore_site_fraction");
@@ -23,6 +23,7 @@ if (debug) cout <<"Lattice constructor" << endl;
   	KEYS.push_back("lattice_type");
 	KEYS.push_back("stencil_full");
 	KEYS.push_back("FJC_choices");
+	KEYS.push_back("b/l");
 	KEYS.push_back("Markov");
 	KEYS.push_back("k_stiff");
 }

@@ -1,7 +1,7 @@
-#include <iostream> 
-#include <string> 
-#include "lattice.h"  
-#include "LGrad3.h" 
+#include <iostream>
+#include <string>
+#include "lattice.h"
+#include "LGrad3.h"
 
 LGrad3::LGrad3(vector<Input*> In_,string name_): Lattice(In_,name_) {}
 
@@ -60,9 +60,9 @@ if (debug) cout << "vtk in LGrad3 " << endl;
 	fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
 	if (writebounds) for(i=0; i<M; i++) fprintf(fp,"%f\n",X[i]);
 	else {
-		for (int x=1; x<MX+1; x++)
-		for (int y=1; y<MY+1; y++)
-		for (int z=1; z<MZ+1; z++)
+		for (int x=fjc; x<MX+fjc; x++)
+		for (int y=fjc; y<MY+fjc; y++)
+		for (int z=fjc; z<MZ+fjc; z++)
 		fprintf(fp,"%e\n",X[P(x,y,z)]);
 	}
 	fclose(fp);
@@ -73,16 +73,15 @@ if (debug) cout <<"PutProfiles in LGrad3 " << endl;
 	int x,y,z,i;
 	int length=X.size();
 	int a;
-	if (writebounds) a=fjc; else a = 0;
-	for (x=1-a; x<MX+1+a; x++)
-	for (y=1-a; y<MY+1+a; y++)
-	for (z=1-a; z<MZ+1+a; z++) {
-		fprintf(pf,"%e\t%e\t%e\t",1.0*x*fjc-1/(2.0*fjc),1.0*y*fjc-1/(2.0*fjc),1.0*z*fjc-1/(2.0*fjc));
-		for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][x*JX+y*JY+fjc-1+z]);
+	if (writebounds) a=0; else a = fjc;
+	for (x=a; x<MX+2*fjc-a; x++)
+	for (y=a; y<MY+2*fjc-a; y++)
+	for (z=a; z<MZ+2*fjc-a; z++) {
+		fprintf(pf,"%e\t%e\t%e\t",1.0*(x-fjc+1)/fjc-0.5/fjc,1.0*(y-fjc+1)/fjc-0.5/fjc,1.0*(z-fjc+1)/fjc-0.5/fjc);
+		for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][P(x,y,z)]);
 		fprintf(pf,"\n");
 	}
 }
-
 
 void LGrad3::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in LGrad3 " << endl;
@@ -178,7 +177,7 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		Real *gz9=gs_1+9*M;
 		Real *gz10=gs_1+10*M;
 		Real *gz11=gs_1+11*M;
-		
+
 		Real *gx0=gs;
 		Real *gx1=gs+M;
 		Real *gx2=gs+2*M;
@@ -195,7 +194,7 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 
 		Zero(gs,12*M);
 		remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
-		set_bounds_x(gz0,gz11,0,0); set_bounds_x(gz1,gz10,0,0);set_bounds_x(gz2,gz9,0,0); set_bounds_x(gz3,gz8,0,0); set_bounds_x(gz4,gz7,0,0); set_bounds_x(gz5,gz6,0,0); 
+		set_bounds_x(gz0,gz11,0,0); set_bounds_x(gz1,gz10,0,0);set_bounds_x(gz2,gz9,0,0); set_bounds_x(gz3,gz8,0,0); set_bounds_x(gz4,gz7,0,0); set_bounds_x(gz5,gz6,0,0);
 
 		YplusisCtimesX(gx0+JX,gz0,P[0],M-JX);
 		YplusisCtimesX(gx0+JX,gz1,P[0],M-JX);
@@ -205,7 +204,7 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx0+JX,gz5,P[1],M-JX);
 		YplusisCtimesX(gx0+JX,gz6,P[1],M-JX);
 		YplusisCtimesX(gx0+JX,gz7,P[1],M-JX);
-		YplusisCtimesX(gx0+JX,gz8,P[1],M-JX);		
+		YplusisCtimesX(gx0+JX,gz8,P[1],M-JX);
 
 		YplusisCtimesX(gx11,gz3+JX,P[1],M-JX);
 		YplusisCtimesX(gx11,gz4+JX,P[1],M-JX);
@@ -218,7 +217,7 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx11,gz11+JX,P[0],M-JX);
 
 		remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
-		set_bounds_y(gz2,gz9,0,0);  set_bounds_y(gz3,gz8,0,0); set_bounds_y(gz4,gz7,0,0); set_bounds_y(gz0,gz11,0,0); set_bounds_y(gz1,gz10,0,0); set_bounds_y(gz5,gz6,0,0); 
+		set_bounds_y(gz2,gz9,0,0);  set_bounds_y(gz3,gz8,0,0); set_bounds_y(gz4,gz7,0,0); set_bounds_y(gz0,gz11,0,0); set_bounds_y(gz1,gz10,0,0); set_bounds_y(gz5,gz6,0,0);
 
 		YplusisCtimesX(gx3+JY,gz0,P[1],M-JY);
 		YplusisCtimesX(gx3+JY,gz1,P[1],M-JY);
@@ -264,7 +263,7 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx6,gz11+JZ,P[1],M-JZ);
 
 		remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
-		set_bounds_x(gz0,gz11,0,-1); set_bounds_x(gz1,gz10,0,-1);set_bounds_x(gz2,gz9,0,-1); set_bounds_x(gz3,gz8,0,-1); set_bounds_x(gz4,gz7,0,-1); set_bounds_x(gz5,gz6,0,-1); 
+		set_bounds_x(gz0,gz11,0,-1); set_bounds_x(gz1,gz10,0,-1);set_bounds_x(gz2,gz9,0,-1); set_bounds_x(gz3,gz8,0,-1); set_bounds_x(gz4,gz7,0,-1); set_bounds_x(gz5,gz6,0,-1);
 
 		YplusisCtimesX(gx1+JX,gz0+JZ,P[0],M-JX-JZ);
 		YplusisCtimesX(gx1+JX,gz1+JZ,P[0],M-JX-JZ);
@@ -287,7 +286,7 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx10+JZ,gz11+JX,P[0],M-JX-JZ);
 
 		remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
-		set_bounds_y(gz2,gz9,-1,0);  set_bounds_y(gz3,gz8,-1,0); set_bounds_y(gz4,gz7,-1,0); set_bounds_y(gz0,gz11,-1,0); set_bounds_y(gz1,gz10,-1,0); set_bounds_y(gz5,gz6,-1,0); 
+		set_bounds_y(gz2,gz9,-1,0);  set_bounds_y(gz3,gz8,-1,0); set_bounds_y(gz4,gz7,-1,0); set_bounds_y(gz0,gz11,-1,0); set_bounds_y(gz1,gz10,-1,0); set_bounds_y(gz5,gz6,-1,0);
 
 		YplusisCtimesX(gx2+JX,gz0+JY,P[0],M-JX-JY);
 		YplusisCtimesX(gx2+JX,gz1+JY,P[0],M-JX-JY);
@@ -413,7 +412,7 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		Real *gz9=gs_1+9*M;
 		Real *gz10=gs_1+10*M;
 		Real *gz11=gs_1+11*M;
-		
+
 		Real *gx0=gs;
 		Real *gx1=gs+M;
 		Real *gx2=gs+2*M;
@@ -440,7 +439,7 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx8+JX,gz11,P[1],M-JX);
 		YplusisCtimesX(gx9+JX,gz11,P[0],M-JX);
 		YplusisCtimesX(gx10+JX,gz11,P[0],M-JX);
-		YplusisCtimesX(gx11+JX,gz11,P[0],M-JX);		
+		YplusisCtimesX(gx11+JX,gz11,P[0],M-JX);
 
 		YplusisCtimesX(gx0,gz0+JX,P[0],M-JX);
 		YplusisCtimesX(gx1,gz0+JX,P[0],M-JX);
@@ -464,7 +463,7 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx9+JY,gz8,P[1],M-JY);
 		YplusisCtimesX(gx10+JY,gz8,P[1],M-JY);
 		YplusisCtimesX(gx11+JY,gz8,P[1],M-JY);
-		
+
 		YplusisCtimesX(gx0,gz3+JY,P[1],M-JY);
 		YplusisCtimesX(gx1,gz3+JY,P[1],M-JY);
 		YplusisCtimesX(gx2,gz3+JY,P[1],M-JY);
@@ -500,7 +499,7 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 
 		remove_bounds(gz5); remove_bounds(gz6);
 		set_bounds_x(gz1,gz10,0,-1);
-	
+
 		YplusisCtimesX(gx3+JX,gz10+JZ,P[1],M-JX-JZ);
 		YplusisCtimesX(gx4+JX,gz10+JZ,P[1],M-JX-JZ);
 		YplusisCtimesX(gx5+JX,gz10+JZ,P[1],M-JX-JZ);
@@ -521,7 +520,7 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx7+JZ,gz1+JX,P[1],M-JZ-JX);
 		YplusisCtimesX(gx8+JZ,gz1+JX,P[1],M-JZ-JX);
 
-		remove_bounds(gz1);remove_bounds(gz10);		
+		remove_bounds(gz1);remove_bounds(gz10);
 		set_bounds_y(gz2,gz9,-1,0);
 
 		YplusisCtimesX(gx3+JX,gz9+JY,P[1],M-JX-JY);
@@ -533,7 +532,7 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx9+JX,gz9+JY,P[0],M-JX-JY);
 		YplusisCtimesX(gx10+JX,gz9+JY,P[0],M-JX-JY);
 		YplusisCtimesX(gx11+JX,gz9+JY,P[0],M-JX-JY);
-	
+
 		YplusisCtimesX(gx0+JY,gz2+JX,P[0],M-JY-JX);
 		YplusisCtimesX(gx1+JY,gz2+JX,P[0],M-JY-JX);
 		YplusisCtimesX(gx2+JY,gz2+JX,P[0],M-JY-JX);
@@ -544,7 +543,7 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx7+JY,gz2+JX,P[1],M-JY-JX);
 		YplusisCtimesX(gx8+JY,gz2+JX,P[1],M-JY-JX);
 
-		remove_bounds(gz2);remove_bounds(gz9); 
+		remove_bounds(gz2);remove_bounds(gz9);
 		set_bounds_z(gz4,gz7,0,-1);
 
 		YplusisCtimesX(gx0+JY,gz7+JZ,P[1],M-JY-JZ);
@@ -605,13 +604,13 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 		YplusisCtimesX(gx5+JY,gz4,P[1],M-JY);
 
 		set_bounds_z(gz2,gz3,0,0);
-	
+
 		YplusisCtimesX(gx0+JZ,gz3,P[1],M-JZ);
 		YplusisCtimesX(gx1+JZ,gz3,P[1],M-JZ);
 		YplusisCtimesX(gx3+JZ,gz3,P[0],M-JZ);
 		YplusisCtimesX(gx4+JZ,gz3,P[1],M-JZ);
 		YplusisCtimesX(gx5+JZ,gz3,P[1],M-JZ);
-	
+
 		YplusisCtimesX(gx0,gz2+JZ,P[1],M-JZ);
 		YplusisCtimesX(gx1,gz2+JZ,P[1],M-JZ);
 		YplusisCtimesX(gx2,gz2+JZ,P[0],M-JZ);
@@ -637,10 +636,10 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 void LGrad3::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in LGrad3 " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
-	int JX_=JX, JY_=JY; 
+	int JX_=JX, JY_=JY;
 	int k=sub_box_on;
 
-	Zero(gs,M);  
+	Zero(gs,M);
 	set_bounds(gs_1);
 
 	if (k>0) {
@@ -713,24 +712,24 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 			Add(gs+JZ, gs_1    ,M-JZ);
 			Add(gs,    gs_1+JZ ,M-JZ);
 
-			remove_bounds(gs_1); 
+			remove_bounds(gs_1);
 			set_bounds_x(gs_1,-1,0);
 			Add(gs+JX_,gs_1+JY_,M-JX_-JY_);
 			Add(gs+JY_,gs_1+JX_,M-JX_-JY_);
 
 			remove_bounds(gs_1);
-			set_bounds_x(gs_1,0,-1); 
+			set_bounds_x(gs_1,0,-1);
 			Add(gs+JX_,gs_1+JZ ,M-JX_-JZ);
 			Add(gs+JZ, gs_1+JX_,M-JX_-JZ);
 
-			remove_bounds(gs_1); 
+			remove_bounds(gs_1);
 			set_bounds_y(gs_1,0,-1);
 			Add(gs+JY_,gs_1+JZ ,M-JY_-JZ);
 			Add(gs+JZ, gs_1+JY_,M-JY_-JZ);
 
 			Norm(gs,1.0/12.0,M);
 			Times(gs,gs,G1,M);
- 
+
 		}
 	}
 }
@@ -748,17 +747,17 @@ if (debug) cout <<"ReadRange in LGrad3 " << endl;
 
 	if (coor.size()!=3) {cout << "In mon " + 	seg_name + ", for 'pos 1', in '" + range_type + "' the coordiantes do not come in set of three: 'x,y,z'" << endl; success=false;}
 	else {
-		r[0]=In[0]->Get_int(coor[0],0); 			
-		r[1]=In[0]->Get_int(coor[1],0); 
-		r[2]=In[0]->Get_int(coor[2],0); 
+		r[0]=In[0]->Get_int(coor[0],0);
+		r[1]=In[0]->Get_int(coor[1],0);
+		r[2]=In[0]->Get_int(coor[2],0);
 	}
 	coor.clear(); In[0]->split(set[1],',',coor);
 
 	if (coor.size()!=3) {cout << "In mon " + seg_name+ ", for 'pos 2', in '" + range_type + "', the coordinates do not come in set of three: 'x,y,z'" << endl; success=false;}
 	else {
-		r[3]=In[0]->Get_int(coor[0],0); 
-		r[4]=In[0]->Get_int(coor[1],0); 
-		r[5]=In[0]->Get_int(coor[2],0); 
+		r[3]=In[0]->Get_int(coor[0],0);
+		r[4]=In[0]->Get_int(coor[1],0);
+		r[5]=In[0]->Get_int(coor[2],0);
 	}
 	if (r[0] > r[3]) {cout << "In mon " + seg_name+ ", for 'pos 1', the x-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
 	if (r[1] > r[4]) {cout << "In mon " + seg_name+ ", for 'pos 1', the y-coordinate in '" + range_type + "' should be less than that of 'pos 2'" << endl; success =false;}
@@ -769,7 +768,7 @@ if (debug) cout <<"ReadRange in LGrad3 " << endl;
 bool LGrad3::ReadRangeFile(string filename,int* H_p, int &n_pos, string seg_name, string range_type) {
 if (debug) cout <<"ReadRangeFile in LGrad3 " << endl;
 	if (fjc>1) {
-		cout << "Rangefile is not implemented for FJC-choices >3; contact FL. " << endl; 
+		cout << "Rangefile is not implemented for FJC-choices >3; contact FL. " << endl;
 		return false;
 	}
 
@@ -1072,7 +1071,7 @@ void LGrad3::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 */
 
 #endif
-   } 
+   }
 }
 
 
@@ -1155,27 +1154,27 @@ if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
 			Y[0        +y*JY+z*JZ] = X[BX1*JX+(y+shifty)*JY+(z+shiftz)*JZ];
 			Y[(MX+1)*JX+y*JY+z*JZ] = X[BXM*JX+(y-shifty)*JY+(z-shiftz)*JZ];
 		}
-		//X[P(0,   0,0)]=X[P(BX1,0,0)]; 
+		//X[P(0,   0,0)]=X[P(BX1,0,0)];
 		//Y[P(0,   0,0)]=Y[P(BX1,0,0)];
-		//X[P(MX+1,0,0)]=X[P(BXM,0,0)]; 
+		//X[P(MX+1,0,0)]=X[P(BXM,0,0)];
 		//Y[P(MX+1,0,0)]=Y[P(BXM,0,0)];
 
-		//X[P(0,   0,MZ+1)]=X[P(BX1,0,MZ+1)]; 
+		//X[P(0,   0,MZ+1)]=X[P(BX1,0,MZ+1)];
 		//Y[P(0,   0,MZ+1)]=Y[P(BX1,0,MZ+1)];
-		//X[P(MX+1,0,MZ+1)]=X[P(BXM,0,MZ+1)]; 
+		//X[P(MX+1,0,MZ+1)]=X[P(BXM,0,MZ+1)];
 		//Y[P(MX+1,0,MZ+1)]=Y[P(BXM,0,MZ+1)];
 
-		//X[P(0,   MY+1,0)]=X[P(BX1,MY+1,0)]; 
+		//X[P(0,   MY+1,0)]=X[P(BX1,MY+1,0)];
 		//Y[P(0,   MY+1,0)]=Y[P(BX1,MY+1,0)];
-		//X[P(MX+1,MY+1,0)]=X[P(BXM,MY+1,0)]; 
+		//X[P(MX+1,MY+1,0)]=X[P(BXM,MY+1,0)];
 		//Y[P(MX+1,MY+1,0)]=Y[P(BXM,MY+1,0)];
 
-		//X[P(0,   MY+1,MZ+1)]=X[P(BX1,MY+1,MZ+1)]; 
+		//X[P(0,   MY+1,MZ+1)]=X[P(BX1,MY+1,MZ+1)];
 		//Y[P(0,   MY+1,MZ+1)]=Y[P(BX1,MY+1,MZ+1)];
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(BXM,MY+1,MZ+1)]; 
+		//X[P(MX+1,MY+1,MZ+1)]=X[P(BXM,MY+1,MZ+1)];
 		//Y[P(MX+1,MY+1,MZ+1)]=Y[P(BXM,MY+1,MZ+1)];
 
- 
+
 	} else {
 		for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
 			for (k=0; k<fjc; k++) {
@@ -1207,24 +1206,24 @@ if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
 			Y[x*JX+0+        z*JZ] = X[(x+shiftx)*JX+BY1*JY+(z+shiftz)*JZ];
 			Y[x*JX+(MY+1)*JY+z*JZ] = X[(x-shiftx)*JX+BYM*JY+(z-shiftz)*JZ];
 		}
-		//X[P(0,0,   0)]=X[P(0,BY1,0)]; 
+		//X[P(0,0,   0)]=X[P(0,BY1,0)];
 		//Y[P(0,0,   0)]=Y[P(0,BY1,0)];
-		//X[P(0,MY+1,0)]=X[P(0,BYM,0)]; 
+		//X[P(0,MY+1,0)]=X[P(0,BYM,0)];
 		//Y[P(0,MY+1,0)]=Y[P(0,BYM,0)];
 
-		//X[P(0,0   ,MZ+1)]=X[P(0,BY1,MZ+1)]; 
+		//X[P(0,0   ,MZ+1)]=X[P(0,BY1,MZ+1)];
 		//Y[P(0,0,   MZ+1)]=Y[P(0,BY1,MZ+1)];
-		//X[P(0,MY+1,MZ+1)]=X[P(0,BYM,MZ+1)]; 
+		//X[P(0,MY+1,MZ+1)]=X[P(0,BYM,MZ+1)];
 		//Y[P(0,MY+1,MZ+1)]=Y[P(0,BYM,MZ+1)];
 
-		//X[P(MX+1,0   ,0)]=X[P(MX+1,BY1,0)]; 
+		//X[P(MX+1,0   ,0)]=X[P(MX+1,BY1,0)];
 		//Y[P(MX+1,0,   0)]=Y[P(MX+1,BY1,0)];
-		//X[P(MX+1,MY+1,0)]=X[P(MX+1,BYM,0)]; 
+		//X[P(MX+1,MY+1,0)]=X[P(MX+1,BYM,0)];
 		//Y[P(MX+1,MY+1,0)]=Y[P(MX+1,BYM,0)];
 
-		//X[P(MX+1,0,   MZ+1)]=X[P(MX+1,BY1,MZ+1)]; 
+		//X[P(MX+1,0,   MZ+1)]=X[P(MX+1,BY1,MZ+1)];
 		//Y[P(MX+1,0,   MZ+1)]=Y[P(MX+1,BY1,MZ+1)];
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,BYM,MZ+1)]; 
+		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,BYM,MZ+1)];
 		//Y[P(MX+1,MY+1,MZ+1)]=Y[P(MX+1,BYM,MZ+1)];
 
 	} else {
@@ -1240,7 +1239,7 @@ if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
 		}
 	}
 	}
-	
+
 }
 
 void LGrad3::set_bounds_z(Real* X,Real* Y,int shiftx,int shifty){
@@ -1258,24 +1257,24 @@ if (debug) cout <<"set_bounds_z (x,y) in LGrad3 " << endl;
 			Y[x*JX+y*JY+   0] = X[(x+shiftx)*JX+(y+shifty)*JY+BZ1];
 			Y[x*JX+y*JY+MZ+1] = X[(x-shiftx)*JX+(y-shifty)*JY+BZM];
 		}
-		//X[P(0,0,   0)]=X[P(0,0,BZ1)]; 
+		//X[P(0,0,   0)]=X[P(0,0,BZ1)];
 		//Y[P(0,0,   0)]=Y[P(0,0,BZ1)];
-		//X[P(0,0,MZ+1)]=X[P(0,0,BZM)]; 
+		//X[P(0,0,MZ+1)]=X[P(0,0,BZM)];
 		//Y[P(0,0,MZ+1)]=Y[P(0,0,BZM)];
 
-		//X[P(0,MY+1,   0)]=X[P(0,MY+1,BZ1)]; 
+		//X[P(0,MY+1,   0)]=X[P(0,MY+1,BZ1)];
 		//Y[P(0,MY+1,   0)]=Y[P(0,MY+1,BZ1)];
-		//X[P(0,MY+1,MZ+1)]=X[P(0,MY+1,BZM)]; 
+		//X[P(0,MY+1,MZ+1)]=X[P(0,MY+1,BZM)];
 		//Y[P(0,MY+1,MZ+1)]=Y[P(0,MY+1,BZM)];
 
-		//X[P(MX+1,0,   0)]=X[P(MX+1,0,BZ1)]; 
+		//X[P(MX+1,0,   0)]=X[P(MX+1,0,BZ1)];
 		//Y[P(MX+1,0,   0)]=Y[P(MX+1,0,BZ1)];
-		//X[P(MX+1,0,MZ+1)]=X[P(MX+1,0,BZM)]; 
+		//X[P(MX+1,0,MZ+1)]=X[P(MX+1,0,BZM)];
 		//Y[P(MX+1,0,MZ+1)]=Y[P(MX+1,0,BZM)];
 
-		//X[P(MX+1,MY+1,   0)]=X[P(MX+1,MY+1,BZ1)]; 
+		//X[P(MX+1,MY+1,   0)]=X[P(MX+1,MY+1,BZ1)];
 		//Y[P(MX+1,MY+1,   0)]=Y[P(MX+1,MY+1,BZ1)];
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,MY+1,BZM)]; 
+		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,MY+1,BZM)];
 		//Y[P(MX+1,MY+1,MZ+1)]=Y[P(MX+1,MY+1,BZM)];
 
 	} else {
@@ -1304,18 +1303,18 @@ if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
 			X[0        +y*JY+z*JZ] = X[BX1*JX+(y+shifty)*JY+(z+shiftz)*JZ];
 			X[(MX+1)*JX+y*JY+z*JZ] = X[BXM*JX+(y-shifty)*JY+(z-shiftz)*JZ];
 		}
-		//X[P(0,   0,0)]=X[P(BX1,0,0)]; 
-		//X[P(MX+1,0,0)]=X[P(BXM,0,0)]; 
+		//X[P(0,   0,0)]=X[P(BX1,0,0)];
+		//X[P(MX+1,0,0)]=X[P(BXM,0,0)];
 
-		//X[P(0,   0,MZ+1)]=X[P(BX1,0,MZ+1)]; 
-		//X[P(MX+1,0,MZ+1)]=X[P(BXM,0,MZ+1)]; 
+		//X[P(0,   0,MZ+1)]=X[P(BX1,0,MZ+1)];
+		//X[P(MX+1,0,MZ+1)]=X[P(BXM,0,MZ+1)];
 
-		//X[P(0,   MY+1,0)]=X[P(BX1,MY+1,0)]; 
-		//X[P(MX+1,MY+1,0)]=X[P(BXM,MY+1,0)]; 
+		//X[P(0,   MY+1,0)]=X[P(BX1,MY+1,0)];
+		//X[P(MX+1,MY+1,0)]=X[P(BXM,MY+1,0)];
 
-		//X[P(0,   MY+1,MZ+1)]=X[P(BX1,MY+1,MZ+1)]; 
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(BXM,MY+1,MZ+1)]; 
-	
+		//X[P(0,   MY+1,MZ+1)]=X[P(BX1,MY+1,MZ+1)];
+		//X[P(MX+1,MY+1,MZ+1)]=X[P(BXM,MY+1,MZ+1)];
+
 	} else {//shfits for hexagonal lattice not put in the fjc>1 case...
 		for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
 			for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
@@ -1334,17 +1333,17 @@ if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
 			X[x*JX+    0    +z*JZ] = X[(x+shiftx)*JX+BY1*JY+(z+shiftz)*JZ];
 			X[x*JX+(MY+1)*JY+z*JZ] = X[(x-shiftx)*JX+BYM*JY+(z-shiftz)*JZ];
 		}
-		//X[P(0,0,   0)]=X[P(0,BY1,0)]; 
-		//X[P(0,MY+1,0)]=X[P(0,BYM,0)]; 
+		//X[P(0,0,   0)]=X[P(0,BY1,0)];
+		//X[P(0,MY+1,0)]=X[P(0,BYM,0)];
 
-		//X[P(0,0   ,MZ+1)]=X[P(0,BY1,MZ+1)]; 
-		//X[P(0,MY+1,MZ+1)]=X[P(0,BYM,MZ+1)]; 
+		//X[P(0,0   ,MZ+1)]=X[P(0,BY1,MZ+1)];
+		//X[P(0,MY+1,MZ+1)]=X[P(0,BYM,MZ+1)];
 
-		//X[P(MX+1,0   ,0)]=X[P(MX+1,BY1,0)]; 
-		//X[P(MX+1,MY+1,0)]=X[P(MX+1,BYM,0)]; 
+		//X[P(MX+1,0   ,0)]=X[P(MX+1,BY1,0)];
+		//X[P(MX+1,MY+1,0)]=X[P(MX+1,BYM,0)];
 
-		//X[P(MX+1,0,   MZ+1)]=X[P(MX+1,BY1,MZ+1)]; 
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,BYM,MZ+1)]; 
+		//X[P(MX+1,0,   MZ+1)]=X[P(MX+1,BY1,MZ+1)];
+		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,BYM,MZ+1)];
 
 	} else {
 		for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
@@ -1364,17 +1363,17 @@ if (debug) cout <<"set_bounds_z in LGrad3 " << endl;
 			X[x*JX+y*JY+   0] = X[(x+shiftx)*JX+(y+shifty)*JY+BZ1];
 			X[x*JX+y*JY+MZ+1] = X[(x-shiftx)*JX+(y-shifty)*JY+BZM];
 		}
-		//X[P(0,0,   0)]=X[P(0,0,BZ1)]; 
-		//X[P(0,0,MZ+1)]=X[P(0,0,BZM)]; 
+		//X[P(0,0,   0)]=X[P(0,0,BZ1)];
+		//X[P(0,0,MZ+1)]=X[P(0,0,BZM)];
 
-		//X[P(0,MY+1,   0)]=X[P(0,MY+1,BZ1)]; 
-		//X[P(0,MY+1,MZ+1)]=X[P(0,MY+1,BZM)]; 
+		//X[P(0,MY+1,   0)]=X[P(0,MY+1,BZ1)];
+		//X[P(0,MY+1,MZ+1)]=X[P(0,MY+1,BZM)];
 
-		//X[P(MX+1,0,   0)]=X[P(MX+1,0,BZ1)]; 
-		//X[P(MX+1,0,MZ+1)]=X[P(MX+1,0,BZM)]; 
+		//X[P(MX+1,0,   0)]=X[P(MX+1,0,BZ1)];
+		//X[P(MX+1,0,MZ+1)]=X[P(MX+1,0,BZM)];
 
-		//X[P(MX+1,MY+1,   0)]=X[P(MX+1,MY+1,BZ1)]; 
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,MY+1,BZM)]; 
+		//X[P(MX+1,MY+1,   0)]=X[P(MX+1,MY+1,BZ1)];
+		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,MY+1,BZM)];
 
 	} else {
 		for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
@@ -1409,7 +1408,7 @@ if (debug) cout <<"remove_bounds in LGrad3 " << endl;
 		}
 	}
 }
- 
+
 void LGrad3::set_bounds(Real* X){
 if (debug) cout <<"set_bounds in LGrad3 " << endl;
 	int x,y,z;
@@ -1478,7 +1477,7 @@ if (debug) cout <<"remove_bounds in LGrad3 " << endl;
 	}
 }
 
- 
+
 void LGrad3::set_bounds(int* X){
 if (debug) cout <<"set_bounds in LGrad3 " << endl;
 	int x,y,z;
@@ -1553,7 +1552,7 @@ void LGrad3::Initiate(Real* G,Real* Gz,int M){
 		if (lattice_type==simple_cubic) size =6;
 		if (lattice_type==hexagonal) {
 			size =12;
-			//cout <<"BC in Markov==2 and hexagonal lattice-type is not implemented correctly yet. , do not proceed .." <<endl; 
+			//cout <<"BC in Markov==2 and hexagonal lattice-type is not implemented correctly yet. , do not proceed .." <<endl;
 		}
 		for (int k=0; k<size; k++) Cp(G+k*M,Gz,M);
 	} else Cp(G,Gz,M);
@@ -1566,7 +1565,7 @@ void LGrad3::Terminate(Real* Gz,Real* G,int M){
 		if (lattice_type==simple_cubic) size =6;
 		if (lattice_type==hexagonal) {
 			size =12;
-			//cout <<"BC in Markov==2 and hexagonal lattice-type is not implemented correctly yet. , do not proceed .." <<endl; 
+			//cout <<"BC in Markov==2 and hexagonal lattice-type is not implemented correctly yet. , do not proceed .." <<endl;
 		}
 		for (int k=0; k<size; k++) Add(Gz,G+k*M,M);
 		Norm(Gz,1.0/size,M);

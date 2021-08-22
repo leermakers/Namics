@@ -4,7 +4,7 @@
 
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; prepared = 0;
-if (debug) cout <<"Segment constructor" + name << endl; 
+if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("freedom");
 	KEYS.push_back("valence");
 	KEYS.push_back("epsilon");
@@ -23,7 +23,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("fluctuation_wavelength");
 	KEYS.push_back("seed");
 	KEYS.push_back("var_pos");
-	KEYS.push_back("phi"); 
+	KEYS.push_back("phi");
 	KEYS.push_back("n");
 	KEYS.push_back("size");
 	KEYS.push_back("pos");
@@ -129,582 +129,630 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 				H_MASK[((px2[i]-1)%MX+1)*JX + ((py2[i]-1)%MY+1)*JY + (pz2[i]-1)%MZ+1]=1;
 			}
 
-		} else Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block);
+		} else {
+			r[0]*=Lat[0]->fjc; r[1]*=Lat[0]->fjc; r[2]*=Lat[0]->fjc;
+			r[3]=(r[3]+1)*Lat[0]->fjc-1;r[4]=(r[4]+1)*Lat[0]->fjc-1;r[5]=(r[5]+1)*Lat[0]->fjc-1;
+			Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block);
+		}
+
 	}
 	if (!success) cout <<"errors occurred.... progress uncertain...." << endl;
 
 	all_segment=true;
 }
 
-
 bool Segment::ParseFreedoms(bool& HMaskDone) {
-if (debug) cout <<"ParseFreedoms " << endl; 
-bool success=true;
-if (freedom =="clamp" ) {
-	n_box=0; mx=0;
-	int m_x;
-	int MX=Lat[0]->MX;
-	if (GetValue("sub_box_size").size()>0) {
-		m_x=In[0]->Get_int(GetValue("sub_box_size"),-1);
-		if (m_x <1 || m_x > MX) {success=false; cout <<"Value of sub_box_size is out of bounds: 1 ... " << MX << endl; }
-		if (mx>0) {
-			if (m_x!=mx) {
-				cout <<"values for sub_box_size of input " << m_x << " not consistent with value found in clamp_filename " << mx << " input file data is taken " << endl;
-				mx=m_x; my=m_x; mz=m_x;
-			}
-		} else { mx=m_x; my=m_x; mz=m_x; }
-	}
-	Lat[0]->PutSub_box(mx,my,mz,n_box);
-	clamp_nr = Lat[0]->m.size()-1;
-
-	if (GetValue("clamp_filename").size()>0) {
-		if (!GetClamp(GetValue("clamp_filename"))) {
-			success=false; cout <<"Failed to read 'clamp_filename'. Problem terminated" << endl;
-			cout <<"Example of structure of clamp_filename is the following:" << endl;
-			cout <<"N : 20 : subbox0 : 15 15 15 pcb:[0. 0. 0.] " << endl;
-			cout <<"-1 -6 -6 " << endl;
-			cout <<"1 1 1 "  << endl;
-			cout <<"11 1 1 " << endl;
-			cout <<" explanation: 1st line: length of chain fragment (should coinside with the composition) " << endl;
-			cout <<"              followed by subboxnr, Mx, My , Mz (sizes of subbox)" << endl;
-			cout <<" 	      followed by pcb info. Note that the spaces beween numbers is essential info " << endl ;
-			cout <<"              2nd line: lower coordinate of subbox " << endl;
-			cout <<"              3rd line: coordinates of clamp point 1 " << endl;
-			cout <<"              4th line: coordinates of clamp point 2 " << endl;
-			cout <<" repeat these 4 lines for every sub-box " << endl;
-			cout <<" note that currently all subboxes should be equal in size " << endl;
-			cout <<" note as well that the chain lengths should also be the same.(redundent information because inputfile overrules this setting" << endl;
-		}
-	} else {
-		string s;
-		if (GetValue("clamp_info").size() >0) {
-			s=GetValue("clamp_info");
-			vector<string> sub;
-			vector<string> set;
-			vector<string> coor;
-			In[0]->split(s,';',sub);
-			n_box=sub.size();
-			px1.clear();
-			py1.clear();
-			pz1.clear();
-			px2.clear();
-			py2.clear();
-			pz2.clear();
-			bx.clear();
-			by.clear();
-			bz.clear();
-			for (int i=0; i<n_box; i++) {
-				set.clear();
-				In[0]->split(sub[i],'(',set);
-				int length = set.size();
-				if (length!=3) {
-					success=false; cout <<" In 'clamp_info' for segment '"+name+"', for box number " << i << " the expected format (px1,py1,pz1)(px2,py2,pz2) was not found" << endl;
-				} else {
-					coor.clear();
-					In[0]->split(set[1],',',coor);
-					if (coor.size()!=3) {
-						success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format. " << endl;
-					} else {
-						px1.push_back(In[0]->Get_int(coor[0],-10000));
-						py1.push_back(In[0]->Get_int(coor[1],-10000));
-						pz1.push_back(In[0]->Get_int(coor[2],-10000));
-					}
-					coor.clear();
-					In[0]->split(set[2],',',coor);
-					if (coor.size()!=3) {
-						success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (px2,py2,pz2) not correct format. " << endl;
-					} else {
-						px2.push_back(In[0]->Get_int(coor[0],-10000));
-						py2.push_back(In[0]->Get_int(coor[1],-10000));
-						pz2.push_back(In[0]->Get_int(coor[2],-10000));
-					}
-					bx.push_back((px2[i]+px1[i]-mx)/2);
-					by.push_back((py2[i]+py1[i]-mx)/2);
-					bz.push_back((pz2[i]+pz1[i]-mx)/2);//box is equal in size in x y and z.
+if (debug) cout <<"ParseFreedoms " << endl;
+	bool success=true;
+	if (freedom =="clamp" ) {
+		n_box=0; mx=0;
+		int m_x;
+		int MX=Lat[0]->MX;
+		if (GetValue("sub_box_size").size()>0) {
+			m_x=In[0]->Get_int(GetValue("sub_box_size"),-1);
+			if (m_x <1 || m_x > MX) {success=false; cout <<"Value of sub_box_size is out of bounds: 1 ... " << MX << endl; }
+			if (mx>0) {
+				if (m_x!=mx) {
+					cout <<"values for sub_box_size of input " << m_x << " not consistent with value found in clamp_filename " << mx << " input file data is taken " << endl;
+					mx=m_x; my=m_x; mz=m_x;
 				}
+			} else { mx=m_x; my=m_x; mz=m_x; }
+		}
+		Lat[0]->PutSub_box(mx,my,mz,n_box);
+		clamp_nr = Lat[0]->m.size()-1;
+
+		if (GetValue("clamp_filename").size()>0) {
+			if (!GetClamp(GetValue("clamp_filename"))) {
+				success=false; cout <<"Failed to read 'clamp_filename'. Problem terminated" << endl;
+				cout <<"Example of structure of clamp_filename is the following:" << endl;
+				cout <<"N : 20 : subbox0 : 15 15 15 pcb:[0. 0. 0.] " << endl;					cout <<"-1 -6 -6 " << endl;
+				cout <<"1 1 1 "  << endl;
+				cout <<"11 1 1 " << endl;
+				cout <<" explanation: 1st line: length of chain fragment (should coinside with the composition) " << endl;
+				cout <<"              followed by subboxnr, Mx, My , Mz (sizes of subbox)" << endl;
+				cout <<" 	      followed by pcb info. Note that the spaces beween numbers is essential info " << endl ;
+				cout <<"              2nd line: lower coordinate of subbox " << endl;
+				cout <<"              3rd line: coordinates of clamp point 1 " << endl;
+				cout <<"              4th line: coordinates of clamp point 2 " << endl;
+				cout <<" repeat these 4 lines for every sub-box " << endl;
+				cout <<" note that currently all subboxes should be equal in size " << endl;
+				cout <<" note as well that the chain lengths should also be the same.(redundent information because inputfile overrules this setting" << endl;
 			}
 		} else {
-			success=false;
-			cout<<"Segment " + name + " with 'freedom: clamp' expects input from 'clamp_filename' or 'clamp_info' " << endl;
-		}
-	}
-}
-
-
-if (freedom == "pinned") {
-	phibulk=0;
-	if (GetValue("frozen_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("frozen_filename").size()>0 || GetValue("tag_filename").size()>0) {
-	cout<< "For mon :" + name + ", you should exclusively combine freedom : pinned with pinned_range or pinned_filename" << endl;  success=false;}
-	if (GetValue("pinned_range").size()>0 && GetValue("pinned_filename").size()>0) {
-		cout<< "For mon " + name + ", you can not combine pinned_range with 'pinned_filename' " <<endl; success=false;
-	}
-	if (GetValue("pinned_range").size()==0 && GetValue("pinned_filename").size()==0) {
-		cout<< "For mon " + name + ", you should provide either pinned_range or pinned_filename " <<endl; success=false;
-	}
-	if (GetValue("pinned_range").size()>0) { s_freedom="pinned_range";
-		string p_range=GetValue("pinned_range"); 
-		vector<string>sub;
-		In[0]->split(p_range,';',sub);
-		p_range.clear();
-		vector<string>xyz;
-		int Lsub=sub.size();
-		if (Lsub!=2) {
-			cout <<"For mon " + name + ", the parsing of 'pinned_range' failed. Use x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, or x1;x2 for 3, 2, or 1  gradient computations, respectively. x, y and z can also be  keys: 'firstlayer', 'lastlayer'" << endl; 
-			success=false;
-			return success;
-		}
-
-		int n_layers_x=(Lat[0]->MX+1)/Lat[0]->fjc-1;
-		int n_layers_y=(Lat[0]->MY+1)/Lat[0]->fjc-1;
-		int n_layers_z=(Lat[0]->MZ+1)/Lat[0]->fjc-1;
-		for (int k=0; k<Lsub; k++) {
-			xyz.clear();
-			In[0]->split(sub[k],',',xyz);
-			int Lxyz=xyz.size();
-			if (Lxyz<1 || Lxyz>3){
-				cout <<"For mon " + name + ", the parsing of 'pinned_range' failed. Number of coordinates should be 1, 2 or 3: e.g., x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, x1;x2 for 1, 2 or 3 gradients, respectively.  " << endl; 
-				success=false; 
-				return success;
-			}
-			for (int kk=0; kk<Lxyz; kk++) {
-				if (xyz[kk]=="firstlayer") {
-					p_range.append("1"); 
-				} else if (xyz[kk]=="lastlayer") {
-					if (kk==0) p_range.append(to_string(n_layers_x));
-					if (kk==1) p_range.append(to_string(n_layers_y));
-					if (kk==2) p_range.append(to_string(n_layers_z));
-				} else if (xyz[kk]=="var_pos") {
-					if (((kk==0) && (var_pos<1 || var_pos> n_layers_x)) || ((kk==1) && (var_pos<1 || var_pos> n_layers_y))  ||((kk==2) && (var_pos<1 || var_pos> n_layers_z))) {
-						cout <<"In pinned_range, 'var_pos' entry is out of bounds..." << endl; success=false; return success;  
-					} 
-					p_range.append(to_string(var_pos)); 
-				
-				} else {
-					int cor=In[0]->Get_int(xyz[kk],-1);
-					if (((kk==0) && (cor <1 || cor > n_layers_x)) || ((kk==1) && (cor <1 || cor > n_layers_y))  ||((kk==2) && (cor <1 || cor > n_layers_z))) {
-						cout <<" For mon " + name+ ", the 'pinned_range' is not parsed properly! Coordinates either out of bounds or keywords 'var_pos', 'firstlayer', 'lastlayer' were not found" << endl;   
-						success=false;
-						return success; 
-					} else p_range.append(xyz[kk]);
-				}
-				if (kk<Lxyz-1) p_range.append(","); 
-			}
-			if (k<Lsub-1) p_range.append(";");
-		}
-		
-//cout <<"p_range = " << p_range << endl; 
-				
-		n_pos=0;
-		if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
-		if (n_pos>0) {
-			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
-		}
-	}
-	if (GetValue("pinned_filename").size()>0) { s_freedom="pinned";
-		filename=GetValue("pinned_filename");
-		n_pos=0;
-		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
-		if (n_pos>0) {
-			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
-		}
-	}
-}
-
-if (freedom == "frozen") {
-	int n_layers_x=(Lat[0]->MX+1)/Lat[0]->fjc-1;
-	int n_layers_y=(Lat[0]->MY+1)/Lat[0]->fjc-1;
-	int n_layers_z=(Lat[0]->MZ+1)/Lat[0]->fjc-1;
-
-	frozen_at_bound=-1; 
-	phibulk=0;
-	if (GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tag_filename").size()>0) {
-	        cout<< "For mon " + name + ", you should exclusively combine 'freedom : frozen' with 'frozen_range' or 'frozen_filename'" << endl;  success=false;
-	}
-	if (GetValue("frozen_range").size()>0 && GetValue("frozen_filename").size()>0) {
-		cout<< "For mon " + name + ", you can not combine 'frozen_range' with 'frozen_filename' " <<endl; success=false;
-	}
-	if (GetValue("frozen_range").size()==0 && GetValue("frozen_filename").size()==0 && GetValue("n").size()==0) {
-		cout<< "For mon " + name + ", you should provide either 'frozen_range' or 'frozen_filename' or specify the number of particles by  'n' " <<endl; success=false;
-	}
-	if (GetValue("frozen_range").size()>0) { 
-		s_freedom="frozen_range";
-		string f_range=GetValue("frozen_range");
-		vector<string>sub;
-		In[0]->split(f_range,';',sub);
-		int Lsub=sub.size();
-		vector<string>xyz;
-		for (int k=0; k<Lsub; k++) {
-			xyz.clear();
-			In[0]->split(sub[k],',',xyz);
-			int Lxyz=xyz.size();
-			for (int kk=0; kk<Lxyz; kk++){
-				if (xyz[kk]=="lowerbound") {
-					if (kk==0) f_range ="lowerbound_x";
-					if (kk==1) f_range ="lowerbound_y";
-					if (kk==2) f_range ="lowerbound_z";
-				}
-				if (xyz[kk]=="upperbound") {
-					if (kk==0) f_range ="upperbound_x";
-					if (kk==1) f_range ="upperbound_y";
-					if (kk==2) f_range ="upperbound_z";
-				}
-			}
-		}
-
-		if (f_range=="lowerbound_x") {
-			if (Lat[0]->gradients==1) {f_range = "lowerbound;lowerbound"; frozen_at_bound=0;}
-			if (Lat[0]->gradients==2) {f_range = "lowerbound,1;lowerbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=0;} 
-			if (Lat[0]->gradients==3) {f_range = "lowerbound,1,1;lowerbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=0;} 	
-		} 
-		if (f_range=="upperbound_x") {
-			if (Lat[0]->gradients==1) {f_range = "upperbound;upperbound";frozen_at_bound=3;}
-			if (Lat[0]->gradients==2) {f_range = "upperbound,1;upperbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=3;}
-			if (Lat[0]->gradients==3) {f_range = "upperbound,1,1;upperbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=3;}
-		}
-		if (f_range=="lowerbound_y") {
-			if (Lat[0]->gradients==2) {f_range = "1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",lowerbound"); frozen_at_bound=1;}
-			if (Lat[0]->gradients==3) {f_range = "1,lowerbound,1;";f_range.append(to_string(n_layers_x)).append(",lowerbound,").append(to_string(n_layers_z)); frozen_at_bound=1;} 	
-		} 
-		if (f_range=="upperbound_y") {
-			if (Lat[0]->gradients==2) {f_range = "1,upperbound;";f_range.append(to_string(n_layers_x)).append(",upperbound");  frozen_at_bound=4;}
-			if (Lat[0]->gradients==3) {f_range = "1,upperbound,1;";f_range.append(to_string(n_layers_x)).append(",upperbound,").append(to_string(n_layers_z)); frozen_at_bound=4;}
-		}
-
-		if (f_range=="lowerbound_z") {
-			if (Lat[0]->gradients==3) {f_range = "1,1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",lowerbound"); frozen_at_bound=2; }	
-		} 
-		if (f_range=="upperbound_z") {
-			if (Lat[0]->gradients==3) {f_range = "1,1,upperbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",upperbound"); frozen_at_bound=5;} 	
-		}
-
-		sub.clear();
-		In[0]->split(f_range,';',sub);
-		f_range.clear();
-		
-		Lsub=sub.size();
-		if (Lsub!=2) {
-			cout <<"For mon " + name + ", the parsing of 'frozen_range' failed. Use x1,y1,z1;x2,y2,z2 in 3 gradients, x1,y1;x2,y2 in two gradients x1;x2 for one gradient computations. x, y and z can also be  keys: 'firstlayer', 'lastlayer', 'lowerbound', or 'upperbound'." << endl; 
-			cout <<"Alternatively - you can try a single keyword such as 'lowerbound', 'lowerbound_x', 'lowerbound_y', 'lowerbound_z', 'upperbound', 'upperbound_x', 'upperbound_y', 'upperbound_z'" << endl; 
-			success=false;
-			return success;
-		}
-		for (int k=0; k<Lsub; k++) {
-			xyz.clear();
-			In[0]->split(sub[k],',',xyz);
-			int Lxyz=xyz.size();
-			if (Lxyz<1 || Lxyz>3){
-				cout <<"For mon " + name + ", the parsing of 'frozen_range' failed. Number of coordinates should be 1, 2 or 3: e.g., x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, x1;x2 for 1, 2 or 3 gradients, respectively.  " << endl; 
-				success=false; 
-				return success;
-			}
-
-			for (int kk=0; kk<Lxyz; kk++) {
-				if (xyz[kk]=="firstlayer") 
-					f_range.append("1");  
-				if (xyz[kk]=="lastlayer") {
-					if (kk==0) f_range.append(to_string(n_layers_x));
-					if (kk==1) f_range.append(to_string(n_layers_y));
-					if (kk==2) f_range.append(to_string(n_layers_z));
-				} 
-
-
-				if (xyz[kk]=="lowerbound") {
-					if ( (kk==0 && Lat[0]->BC[0] !="surface") ||(kk==1 && Lat[0]->BC[1] !="surface") ||(kk==2 && Lat[0]->BC[2] !="surface") ) {
-						cout<<"In lattice you need boundary condition 'surface' in combination with frozen_range containing 'lowerbound' " << endl; success=false;
-						return success;  
-					}
-					f_range.append("0"); 
-				}
-				if (xyz[kk]=="upperbound") {
-					if ( (kk==0 && Lat[0]->BC[3] !="surface") ||(kk==1 && Lat[0]->BC[4] !="surface") ||(kk==2 && Lat[0]->BC[5] !="surface") ) {
-						cout<<"In lattice you need boundary condition 'surface' in combination with frozen_range containing 'upperbound' " << endl; success=false;
-						return success;  
-					}
-					if (kk==0) f_range.append(to_string(n_layers_x+1));
-					if (kk==1) f_range.append(to_string(n_layers_y+1));
-					if (kk==2) f_range.append(to_string(n_layers_z+1));
-				}
-				if (xyz[kk]=="var_pos") {
-					if (((kk==0) && (var_pos<0 || var_pos> n_layers_x+1)) || ((kk==1) && (var_pos<0 || var_pos> n_layers_y+1))  ||((kk==2) && (var_pos<0 || var_pos> n_layers_z+1))) {
-						cout <<"In frozen_range, 'var_pos' entry is out of bounds..." << endl; success=false; return success;  
-					} 
-
-					f_range.append(to_string(var_pos)); //check if var_pos is within lattice-range not implemented.
-				}
- 
-				if (xyz[kk]!="firstlayer" && xyz[kk]!="lastlayer" && xyz[kk]!="lowerbound" && xyz[kk]!="upperbound" && xyz[kk]!="var_pos") {
-					int cor=In[0]->Get_int(xyz[kk],-1);
-					if ((kk==0 && (cor <0 || cor > n_layers_x+1)) || (kk==1 && (cor <0 || cor > n_layers_y+1))  ||(kk==2 && (cor <0 || cor > n_layers_z+1))) {
-						cout <<" For mon " + name+ ", the 'frozen_range' is not parsed properly! Coordinates either out of bounds or keywords  'var_pos', 'firstlayer', 'lastlayer', 'lowerbound', 'upperbound' were not found" << endl;   
-						success=false;
-						return success;
+			string s;
+			if (GetValue("clamp_info").size() >0) {
+				s=GetValue("clamp_info");
+				vector<string> sub;
+				vector<string> set;
+				vector<string> coor;
+				In[0]->split(s,';',sub);
+				n_box=sub.size();
+				px1.clear();
+				py1.clear();
+				pz1.clear();
+				px2.clear();
+				py2.clear();
+				pz2.clear();
+				bx.clear();
+				by.clear();
+				bz.clear();
+				for (int i=0; i<n_box; i++) {
+					set.clear();
+					In[0]->split(sub[i],'(',set);
+					int length = set.size();
+					if (length!=3) {
+						success=false; cout <<" In 'clamp_info' for segment '"+name+"', for box number " << i << " the expected format (px1,py1,pz1)(px2,py2,pz2) was not found" << endl;
 					} else {
-						if (kk==0 && cor ==0 ) { 
-							if (Lat[0]->BC[0] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
-							frozen_at_bound=0;
-						}
-						if (kk==0 && cor == n_layers_x+1 ) {
-							if (Lat[0]->BC[3] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
-							frozen_at_bound=3;
-						}
-						if (kk==1 && cor ==0 ) {
-							if (Lat[0]->BC[1] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
-							frozen_at_bound=1;
-						}
-						if (kk==1 && cor == n_layers_y+1 ) {
-							if (Lat[0]->BC[4] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
-							frozen_at_bound=4;
-						}
-						if (kk==2 && cor ==0 ) {
-							if (Lat[0]->BC[2] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
-							frozen_at_bound=2;
-						}
-						if (kk==2 && cor == n_layers_z+1 ) {
-							if (Lat[0]->BC[5] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
-							frozen_at_bound=5;
-						}
-						f_range.append(xyz[kk]);
-					}
-				}
-				if (kk<Lxyz-1) f_range.append(","); 
-			}
-			if (k<Lsub-1) f_range.append(";");
-		}
-
-
-//cout <<"f_range = " << f_range << endl;
-
-		n_pos=0;
-		success=Lat[0]->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
-		if (n_pos>0) {
-			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			success=Lat[0]->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
-		}
-	}
-	if (GetValue("frozen_filename").size()>0) { s_freedom="frozen";
-		filename=GetValue("frozen_filename");
-		n_pos=0;
-		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
-		if (n_pos>0) {
-			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
-		}
-	}
-	if (n_pos<1 && Lat[0]->gradients==3&& px.size()==0) {
-		n=0; R=0; //px.clear(); py.clear(); pz.clear();
-		bool found=false;
-		if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
-			success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the set of spherical particles in the system. " << endl; 
-		} else {
-			n=In[0]->Get_int(GetValue("n"),-1); if (n<0) {success=false; cout <<" expecting positive integer for 'n'" << endl;}
-			R=In[0]->Get_int(GetValue("size"),-1); if (R<0) {success =false ; cout <<" expecting positive integer for 'size' "<<endl; }
-			//if (GetValue("pos")=="random") {
-			//	found=true; srand(1); 
-			//	for (int i=0; i<n; i++) {
-			//		px.push_back(1+rand()%Lat[0]->MX);
-			//		py.push_back(1+rand()%Lat[0]->MY);
-			//		pz.push_back(1+rand()%Lat[0]->MZ);
-			//	}
-			//}
-			if (GetValue("pos")=="?") {
-				cout << "Info: 'pos' variable should contain either the keywords 'regular' or 'random' or a sequence of n times '(x,y,z)' coordinates" << endl; 
-			       	success=false;	
-			}
-			if (GetValue("pos")=="regular"||GetValue("pos")=="random") {
-				found=true;
-				int MX=Lat[0]->MX;
-				int MY=Lat[0]->MY;
-				int MZ=Lat[0]->MZ;
-				int V=MX*MY*MZ; 
-				int a = pow(V/n,1.0/3.0); 
-				if (a<2*R) { 
-					cout << "Warning: overlap can not be avoided " << endl; 
-				}
-				int n_placed=0;
-				if (a>2*R+1) a--;
-
-				for (int i=1; i<MX-a+2; i+=a)
-				for (int j=1; j<MY-a+2; j+=a)
-				for (int k=1; k<MZ-a+2; k+=a) {
-					if (n_placed < n) {
-						px.push_back(i); py.push_back(j); pz.push_back(k);
-						n_placed++;
-						//cout <<"x,y,z= " << i << "," << j << "," << k << endl;
-					}
-
-				}
-				if (n_placed < n) { cout <<"Problem: could not place all n particles in volume. Placed only  "<< n_placed << " partictles " << endl; }
-				//cout <<"In frozen_range regular positions for particles not implemented " <<endl;
-			} else {
-				cout <<"pos should be 'regular' or 'random' " << endl; success = false;
-
-			}
-			
-			if (GetValue("pos")=="random" && success) {
-				srand(1); 
-				int num_of_moves =100*n*n;
-				int I;
-				int X;
-				int Y;
-				int Z;
-				int MX=Lat[0]->MX;
-				int MY=Lat[0]->MY;
-				int MZ=Lat[0]->MZ;
-				for (int i=0; i<num_of_moves; i++) { //randomise...
-					I=rand()%n;
-					X=px[I]; Y=py[I]; Z=pz[I];
-					px[I]+=rand()%3-1; if (px[I]<1) px[I]+=MX; if (px[I]>MX) px[I]-=MX;
-					py[I]+=rand()%3-1; if (py[I]<1) py[I]+=MY; if (py[I]>MY) py[I]-=MY;
-					pz[I]+=rand()%3-1; if (pz[I]<1) pz[I]+=MZ; if (pz[I]>MZ) pz[I]-=MZ;
-					if (Overlap(I,R)) {
-						px[I]=X; py[I]=Y; pz[I]=Z; 
-					}
-				}
-			}
-			if (!found) {
-				vector<int>open;
-				vector<int>close;
-				vector<string>sub;
-				string t=GetValue("pos");
-				if (!In[0]->EvenBrackets(t,open,close)) {cout << "Brackets in 'pos' not balanced "<<endl; success=false;};
-				int opensize=open.size();
-		        	if (opensize !=n ) {
-                                       success=false; cout <<"number of positions not equal to 'n' " << endl; 
-				} else {
-					for (int i=0; i<n; i++) {
-						sub.clear(); 
-						string tt=t.substr(open[i]+1,close[i]-open[i]-1); //cout << tt << endl; 
-						In[0]->split(tt,',',sub);
-						if (sub.size() !=3) {
-							success=false; 
-							cout <<"Format error: 'pos' did not contain the keywords 'regular' nor 'random'," << endl; 
-							cout <<"nor did 'pos'  contain expected (x,y,z) sets. Problem occurred for for particle nr " << i << "We found: " +tt << endl; 
+						coor.clear();
+						In[0]->split(set[1],',',coor);
+						if (coor.size()!=3) {
+							success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format. " << endl;
 						} else {
-							px.push_back(In[0]->Get_int(sub[0],-1));
-							py.push_back(In[0]->Get_int(sub[1],-1));
-							pz.push_back(In[0]->Get_int(sub[2],-1));
-							if (px[i] <0 || px[i]>Lat[0]->MX) {success=false; cout << "pos x for particle " << i << " out of bounds or not an integer: " << px[i] << endl; }
-							if (py[i] <0 || py[i]>Lat[0]->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
-							if (pz[i] <0 || pz[i]>Lat[0]->MZ) {success=false; cout << "pos z for particle " << i << " out of bounds or not an integer: " << pz[i] << endl; }
-							//cout <<"px,py,pz =" <<px[i]<<","<<py[i]","<<pz[i] << endl;
+							px1.push_back(In[0]->Get_int(coor[0],-10000));
+							py1.push_back(In[0]->Get_int(coor[1],-10000));
+							pz1.push_back(In[0]->Get_int(coor[2],-10000));
 						}
+						coor.clear();
+						In[0]->split(set[2],',',coor);
+						if (coor.size()!=3) {
+							success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the box position (px2,py2,pz2) not correct format. " << endl;
+						} else {
+							px2.push_back(In[0]->Get_int(coor[0],-10000));
+							py2.push_back(In[0]->Get_int(coor[1],-10000));
+							pz2.push_back(In[0]->Get_int(coor[2],-10000));
+						}
+						bx.push_back((px2[i]+px1[i]-mx)/2);
+						by.push_back((py2[i]+py1[i]-mx)/2);
+						bz.push_back((pz2[i]+pz1[i]-mx)/2);//box is equal in size in x y and z.
+					}
+				}
+			} else {
+				success=false;
+				cout<<"Segment " + name + " with 'freedom: clamp' expects input from 'clamp_filename' or 'clamp_info' " << endl;
+			}
+		}
+	}
+
+	if (freedom == "pinned") {
+		int fjc = Lat[0]->fjc;
+		int n_layers_x=(Lat[0]->MX)/fjc;
+		int n_layers_y=(Lat[0]->MY)/fjc;
+		int n_layers_z=(Lat[0]->MZ)/fjc;
+
+
+		if (GetValue("pinned_range").size()>0) {
+			s_freedom="pinned_range";
+			string p_range=GetValue("pinned_range");
+			vector<string>sub;
+			In[0]->split(p_range,';',sub);
+			int Lsub=sub.size();
+			vector<string>xyz;
+			for (int k=0; k<Lsub; k++) {
+				xyz.clear();
+				In[0]->split(sub[k],',',xyz);
+				int Lxyz=xyz.size();
+				for (int kk=0; kk<Lxyz; kk++){
+					if (xyz[kk]=="firstlayer") {
+						if (kk==0) p_range ="firstlayer_x";
+						if (kk==1) p_range ="firstlayer_y";
+						if (kk==2) p_range ="firstlayer_z";
+					}
+					if (xyz[kk]=="lastlayer") {
+						if (kk==0) p_range ="lastlayer_x";
+						if (kk==1) p_range ="lastlayer_y";
+						if (kk==2) p_range ="lastlayer_z";
 					}
 				}
 			}
-		}
-	} 
-	if (px.size()>0) {
-		HMaskDone=true; 
-		if (success) {
-			if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl; 
-		}
-	}
-}
+			if (p_range=="firstlayer_x") {
+				if (Lat[0]->gradients==1) {p_range = "firstlayer;firstlayer"; }
+				if (Lat[0]->gradients==2) {p_range = "firstlayer,1;firstlayer,";p_range.append(to_string(n_layers_y)); }
+				if (Lat[0]->gradients==3) {p_range = "firstlayer,1,1;firstlayer,"; p_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); }
+			}
+			if (p_range=="lastlayer_x") {
+				if (Lat[0]->gradients==1) {p_range = "lastlayer;lastlayer";}
+				if (Lat[0]->gradients==2) {p_range = "lastlayer,1;lastlayer,"; p_range.append(to_string(n_layers_y)); }
+				if (Lat[0]->gradients==3) {p_range = "lastlayer,1,1;lastlayer,"; p_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); }
+			}
+			if (p_range=="firstlayer_y") {
+				if (Lat[0]->gradients==2) {p_range = "1,firstlayer;";p_range.append(to_string(n_layers_x)).append(",firstlayer"); }
+				if (Lat[0]->gradients==3) {p_range = "1,firstlayer,1;";p_range.append(to_string(n_layers_x)).append(",firstlayer,").append(to_string(n_layers_z)); }
+			}
+			if (p_range=="lastlayer_y") {
+				if (Lat[0]->gradients==2) {p_range = "1,lastlayer;";p_range.append(to_string(n_layers_x)).append(",lastlayer"); }
+				if (Lat[0]->gradients==3) {p_range = "1,lastlayer,1;";p_range.append(to_string(n_layers_x)).append(",lastlayer,").append(to_string(n_layers_z)); }
+			}
+			if (p_range=="firstlayer_z") {
+				if (Lat[0]->gradients==3) {p_range = "1,1,firstlayer;";p_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",firstlayer"); }
+			}
+			if (p_range=="lastlayer_z") {
+				if (Lat[0]->gradients==3) {p_range = "1,1,lastlayer;";p_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",lastlayer"); }
+			}
+			phibulk=0;
+			if (GetValue("frozen_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("frozen_filename").size()>0 || GetValue("tag_filename").size()>0) {
+			cout<< "For mon :" + name + ", you should exclusively combine freedom : pinned with pinned_range or pinned_filename" << endl;  success=false;}
+			if (GetValue("pinned_range").size()>0 && GetValue("pinned_filename").size()>0) {
+				cout<< "For mon " + name + ", you can not combine pinned_range with 'pinned_filename' " <<endl; success=false;
+			}
+			if (GetValue("pinned_range").size()==0 && GetValue("pinned_filename").size()==0) {
+				cout<< "For mon " + name + ", you should provide either pinned_range or pinned_filename " <<endl; success=false;
+			}
+			sub.clear();
+			In[0]->split(p_range,';',sub);
+			p_range.clear();
+			Lsub=sub.size();
 
-n_pos=-1;
-if (freedom == "tagged") {
-	
-	phibulk=0;
-	if (GetValue("pinned_range").size()>0 || GetValue("frozen_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("frozen_filename").size()>0) {
-	cout<< "For mon " + name + ", you should exclusively combine 'freedom : tagged' with 'tagged_range' or 'tagged_filename'" << endl;  success=false;}
-	if (GetValue("tagged_range").size()>0 && GetValue("tagged_filename").size()>0) {
-		cout<< "For mon " + name + ", you can not combine 'tagged_range' with 'tagged_filename' " <<endl; success=false;
-	}
-	if (GetValue("tagged_range").size()==0 && GetValue("tagged_filename").size()==0) {
-		cout<< "For mon " + name + ", you should provide either 'tagged_range' or 'tagged_filename' " <<endl; success=false;
-	}
-	if (GetValue("tagged_range").size()>0) { s_freedom="tagged_range";
-		string t_range=GetValue("tagged_range"); 
-		vector<string>sub;
-		In[0]->split(t_range,';',sub);
-		t_range.clear();
-		vector<string>xyz;
-		int Lsub=sub.size();
-		if (Lsub!=2) {
-			cout <<"For mon " + name + ", the parsing of 'tagged_range' failed. Use x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, or x1;x2 for 3, 2, or 1  gradient computations, respectively. x, y and z can also be  keys: 'firstlayer', 'lastlayer'" << endl; 
-			success=false;
-			return success;
-		}
+			if (Lsub!=2) {
+				cout <<"For mon " + name + ", the parsing of 'pinned_range' failed. Use x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, or x1;x2 for 3, 2, or 1  gradient computations, respectively. x, y and z can also be  keys: 'firstlayer', 'lastlayer'" << endl;
+				success=false;
+				return success;
+			}
 
+			for (int k=0; k<Lsub; k++) {
+				xyz.clear();
+				In[0]->split(sub[k],',',xyz);
+				int Lxyz=xyz.size();
+				if (Lxyz<1 || Lxyz>3){
+					cout <<"For mon " + name + ", the parsing of 'pinned_range' failed. Number of coordinates should be 1, 2 or 3: e.g., x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, x1;x2 for 1, 2 or 3 gradients, respectively.  " << endl;
+					success=false;
+					return success;
+				}
+				for (int kk=0; kk<Lxyz; kk++) {
+					if (xyz[kk]=="firstlayer") {
+						p_range.append("1");
+					} else if (xyz[kk]=="lastlayer") {
+						if (kk==0) p_range.append(to_string(n_layers_x));
+						if (kk==1) p_range.append(to_string(n_layers_y));
+						if (kk==2) p_range.append(to_string(n_layers_z));
+					} else if (xyz[kk]=="var_pos") {
+						if (((kk==0) && (var_pos<1 || var_pos> n_layers_x)) || ((kk==1) && (var_pos<1 || var_pos> n_layers_y))  ||((kk==2) && (var_pos<1 || var_pos> n_layers_z))) {
+							cout <<"In pinned_range, 'var_pos' entry is out of bounds..." << endl; success=false; return success;
+						}
+						p_range.append(to_string(var_pos));
+
+					} else {
+						int cor=In[0]->Get_int(xyz[kk],-1);
+						if (((kk==0) && (cor <1 || cor > n_layers_x)) || ((kk==1) && (cor <1 || cor > n_layers_y))  ||((kk==2) && (cor <1 || cor > n_layers_z))) {
+							cout <<" For mon " + name+ ", the 'pinned_range' is not parsed properly! Coordinates either out of bounds or keywords 'var_pos', 'firstlayer', 'lastlayer' were not found" << endl;
+							success=false;
+							return success;
+						} else p_range.append(xyz[kk]);
+					}
+					if (kk<Lxyz-1) p_range.append(",");
+				}
+				if (k<Lsub-1) p_range.append(";");
+			}
+
+//cout <<"p_range = " << p_range << endl;
+
+			n_pos=0;
+			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
+			if (n_pos>0) {
+				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
+			}
+		}
+		if (GetValue("pinned_filename").size()>0) { s_freedom="pinned";
+			filename=GetValue("pinned_filename");
+			n_pos=0;
+			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+			if (n_pos>0) {
+				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+			}
+		}
+	}
+
+	if (freedom == "frozen") {
 		int n_layers_x=(Lat[0]->MX+1)/Lat[0]->fjc;
 		int n_layers_y=(Lat[0]->MY+1)/Lat[0]->fjc;
 		int n_layers_z=(Lat[0]->MZ+1)/Lat[0]->fjc;
-		for (int k=0; k<Lsub; k++) {
-			xyz.clear();
-			In[0]->split(sub[k],',',xyz);
-			int Lxyz=xyz.size();
-			if (Lxyz<1 || Lxyz>3){
-				cout <<"For mon " + name + ", the parsing of 'tagged_range' failed. Number of coordinates should be 1, 2 or 3: e.g., x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, x1;x2 for 1, 2 or 3 gradients, respectively.  " << endl; 
-				success=false; 
+
+		frozen_at_bound=-1;
+		phibulk=0;
+		if (GetValue("pinned_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("tag_filename").size()>0) {
+		        cout<< "For mon " + name + ", you should exclusively combine 'freedom : frozen' with 'frozen_range' or 'frozen_filename'" << endl;  success=false;
+		}
+		if (GetValue("frozen_range").size()>0 && GetValue("frozen_filename").size()>0) {
+			cout<< "For mon " + name + ", you can not combine 'frozen_range' with 'frozen_filename' " <<endl; success=false;
+		}
+		if (GetValue("frozen_range").size()==0 && GetValue("frozen_filename").size()==0 && GetValue("n").size()==0) {
+			cout<< "For mon " + name + ", you should provide either 'frozen_range' or 'frozen_filename' or specify the number of particles by  'n' " <<endl; success=false;
+		}
+		if (GetValue("frozen_range").size()>0) {
+			s_freedom="frozen_range";
+			string f_range=GetValue("frozen_range");
+			vector<string>sub;
+			In[0]->split(f_range,';',sub);
+			int Lsub=sub.size();
+			vector<string>xyz;
+			for (int k=0; k<Lsub; k++) {
+				xyz.clear();
+				In[0]->split(sub[k],',',xyz);
+				int Lxyz=xyz.size();
+				for (int kk=0; kk<Lxyz; kk++){
+					if (xyz[kk]=="lowerbound") {
+						if (kk==0) f_range ="lowerbound_x";
+						if (kk==1) f_range ="lowerbound_y";
+						if (kk==2) f_range ="lowerbound_z";
+					}
+					if (xyz[kk]=="upperbound") {
+						if (kk==0) f_range ="upperbound_x";
+						if (kk==1) f_range ="upperbound_y";
+						if (kk==2) f_range ="upperbound_z";
+					}
+				}
+			}
+
+			if (f_range=="lowerbound_x") {
+				if (Lat[0]->gradients==1) {f_range = "lowerbound;lowerbound"; frozen_at_bound=0;}
+				if (Lat[0]->gradients==2) {f_range = "lowerbound,1;lowerbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=0;}
+				if (Lat[0]->gradients==3) {f_range = "lowerbound,1,1;lowerbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=0;}
+			}
+			if (f_range=="upperbound_x") {
+				if (Lat[0]->gradients==1) {f_range = "upperbound;upperbound";frozen_at_bound=3;}
+				if (Lat[0]->gradients==2) {f_range = "upperbound,1;upperbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=3;}
+				if (Lat[0]->gradients==3) {f_range = "upperbound,1,1;upperbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=3;}
+			}
+			if (f_range=="lowerbound_y") {
+				if (Lat[0]->gradients==2) {f_range = "1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",lowerbound"); frozen_at_bound=1;}
+				if (Lat[0]->gradients==3) {f_range = "1,lowerbound,1;";f_range.append(to_string(n_layers_x)).append(",lowerbound,").append(to_string(n_layers_z)); frozen_at_bound=1;}
+			}
+			if (f_range=="upperbound_y") {
+				if (Lat[0]->gradients==2) {f_range = "1,upperbound;";f_range.append(to_string(n_layers_x)).append(",upperbound");  frozen_at_bound=4;}
+				if (Lat[0]->gradients==3) {f_range = "1,upperbound,1;";f_range.append(to_string(n_layers_x)).append(",upperbound,").append(to_string(n_layers_z)); frozen_at_bound=4;}
+			}
+
+			if (f_range=="lowerbound_z") {
+				if (Lat[0]->gradients==3) {f_range = "1,1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",lowerbound"); frozen_at_bound=2; }
+			}
+			if (f_range=="upperbound_z") {
+				if (Lat[0]->gradients==3) {f_range = "1,1,upperbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",upperbound"); frozen_at_bound=5;}
+			}
+
+			sub.clear();
+			In[0]->split(f_range,';',sub);
+			f_range.clear();
+
+			Lsub=sub.size();
+			if (Lsub!=2) {
+				cout <<"For mon " + name + ", the parsing of 'frozen_range' failed. Use x1,y1,z1;x2,y2,z2 in 3 gradients, x1,y1;x2,y2 in two gradients x1;x2 for one gradient computations. x, y and z can also be  keys: 'firstlayer', 'lastlayer', 'lowerbound', or 'upperbound'." << endl;
+				cout <<"Alternatively - you can try a single keyword such as 'lowerbound', 'lowerbound_x', 'lowerbound_y', 'lowerbound_z', 'upperbound', 'upperbound_x', 'upperbound_y', 'upperbound_z'" << endl;
+				success=false;
 				return success;
 			}
-			for (int kk=0; kk<Lxyz; kk++) {
-				if (xyz[kk]=="firstlayer") {
-					t_range.append("1"); 
-				} else if (xyz[kk]=="lastlayer") {
-					if (kk==0) t_range.append(to_string(n_layers_x));
-					if (kk==1) t_range.append(to_string(n_layers_y));
-					if (kk==2) t_range.append(to_string(n_layers_z));
-				} else {
-					int cor=In[0]->Get_int(xyz[kk],-1);
-					if ((kk==0 && (cor <1 || cor > n_layers_x)) || (kk==1 && (cor <1 || cor > n_layers_y))  ||(kk==2 && (cor <1 || cor > n_layers_z))) {
-						cout <<" For mon " + name+ ", the 'tagged_range' is not parsed properly! Coordinates either out of bounds or keywords 'firstlayer', 'lastlayer' were not found" << endl;   
-						success=false;
-						return success; 
-					} else t_range.append(xyz[kk]);
+			for (int k=0; k<Lsub; k++) {
+				xyz.clear();
+				In[0]->split(sub[k],',',xyz);
+				int Lxyz=xyz.size();
+				if (Lxyz<1 || Lxyz>3){
+					cout <<"For mon " + name + ", the parsing of 'frozen_range' failed. Number of coordinates should be 1, 2 or 3: e.g., x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, x1;x2 for 1, 2 or 3 gradients, respectively.  " << endl;
+					success=false;
+					return success;
 				}
-				if (kk<Lxyz-1) t_range.append(","); 
-			}
-			if (k<Lsub-1) t_range.append(";");
-		}
-		
-//cout <<"t_range = " << t_range << endl; 
-				
-		n_pos=0;
-		if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
-		if (n_pos>0) {
-			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
-		}
-	}
-	if (GetValue("tagged_filename").size()>0) {
-		s_freedom="tagged";
-		filename=GetValue("tagged_filename");
-		n_pos=0;
-		if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
-		if (n_pos>0) {
-			H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
-		}
-	}
-}
-return success; 
 
+				for (int kk=0; kk<Lxyz; kk++) {
+					if (xyz[kk]=="firstlayer")
+						f_range.append("1");
+					if (xyz[kk]=="lastlayer") {
+						if (kk==0) f_range.append(to_string(n_layers_x));
+						if (kk==1) f_range.append(to_string(n_layers_y));
+						if (kk==2) f_range.append(to_string(n_layers_z));
+					}
+
+					if (xyz[kk]=="lowerbound") {
+						if ( (kk==0 && Lat[0]->BC[0] !="surface") ||(kk==1 && Lat[0]->BC[1] !="surface") ||(kk==2 && Lat[0]->BC[2] !="surface") ) {
+							cout<<"In lattice you need boundary condition 'surface' in combination with frozen_range containing 'lowerbound' " << endl; success=false;
+							return success;
+						}
+						f_range.append("0");
+					}
+					if (xyz[kk]=="upperbound") {
+						if ( (kk==0 && Lat[0]->BC[3] !="surface") ||(kk==1 && Lat[0]->BC[4] !="surface") ||(kk==2 && Lat[0]->BC[5] !="surface") ) {
+							cout<<"In lattice you need boundary condition 'surface' in combination with frozen_range containing 'upperbound' " << endl; success=false;
+							return success;
+						}
+						if (kk==0) f_range.append(to_string(n_layers_x+1));
+						if (kk==1) f_range.append(to_string(n_layers_y+1));
+						if (kk==2) f_range.append(to_string(n_layers_z+1));
+					}
+					if (xyz[kk]=="var_pos") {
+						if (((kk==0) && (var_pos<0 || var_pos> n_layers_x+1)) || ((kk==1) && (var_pos<0 || var_pos> n_layers_y+1))  ||((kk==2) && (var_pos<0 || var_pos> n_layers_z+1))) {
+							cout <<"In frozen_range, 'var_pos' entry is out of bounds..." << endl; success=false; return success;
+						}
+
+						f_range.append(to_string(var_pos)); //check if var_pos is within lattice-range not implemented.
+					}
+
+					if (xyz[kk]!="firstlayer" && xyz[kk]!="lastlayer" && xyz[kk]!="lowerbound" && xyz[kk]!="upperbound" && xyz[kk]!="var_pos") {
+						int cor=In[0]->Get_int(xyz[kk],-1);
+						if ((kk==0 && (cor <0 || cor > n_layers_x+1)) || (kk==1 && (cor <0 || cor > n_layers_y+1))  ||(kk==2 && (cor <0 || cor > n_layers_z+1))) {
+							cout <<" For mon " + name+ ", the 'frozen_range' is not parsed properly! Coordinates either out of bounds or keywords  'var_pos', 'firstlayer', 'lastlayer', 'lowerbound', 'upperbound' were not found" << endl;
+							success=false;
+							return success;
+						} else {
+							if (kk==0 && cor ==0 ) {
+								if (Lat[0]->BC[0] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								frozen_at_bound=0;
+							}
+							if (kk==0 && cor == n_layers_x+1 ) {
+								if (Lat[0]->BC[3] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								frozen_at_bound=3;
+							}
+							if (kk==1 && cor ==0 ) {
+								if (Lat[0]->BC[1] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								frozen_at_bound=1;
+							}
+							if (kk==1 && cor == n_layers_y+1 ) {
+								if (Lat[0]->BC[4] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								frozen_at_bound=4;
+							}
+							if (kk==2 && cor ==0 ) {
+								if (Lat[0]->BC[2] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								frozen_at_bound=2;
+							}
+							if (kk==2 && cor == n_layers_z+1 ) {
+								if (Lat[0]->BC[5] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								frozen_at_bound=5;
+							}
+							f_range.append(xyz[kk]);
+						}
+					}
+					if (kk<Lxyz-1) f_range.append(",");
+				}
+				if (k<Lsub-1) f_range.append(";");
+			}
+
+//cout <<"f_range = " << f_range << endl;
+
+			n_pos=0;
+			success=Lat[0]->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
+			if (n_pos>0) {
+				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+				success=Lat[0]->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
+			}
+		}
+		if (GetValue("frozen_filename").size()>0) { s_freedom="frozen";
+			filename=GetValue("frozen_filename");
+			n_pos=0;
+			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+			if (n_pos>0) {
+				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+			}
+		}
+		if (n_pos<1 && Lat[0]->gradients==3&& px.size()==0) {
+			n=0; R=0; //px.clear(); py.clear(); pz.clear();
+			bool found=false;
+			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
+				success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the set of spherical particles in the system. " << endl;
+			} else {
+				n=In[0]->Get_int(GetValue("n"),-1); if (n<0) {success=false; cout <<" expecting positive integer for 'n'" << endl;}
+				R=In[0]->Get_int(GetValue("size"),-1); if (R<0) {success =false ; cout <<" expecting positive integer for 'size' "<<endl; }
+				//if (GetValue("pos")=="random") {
+				//	found=true; srand(1);
+				//	for (int i=0; i<n; i++) {
+				//		px.push_back(1+rand()%Lat[0]->MX);
+				//		py.push_back(1+rand()%Lat[0]->MY);
+				//		pz.push_back(1+rand()%Lat[0]->MZ);
+				//	}
+				//}
+				if (GetValue("pos")=="?") {
+					cout << "Info: 'pos' variable should contain either the keywords 'regular' or 'random' or a sequence of n times '(x,y,z)' coordinates" << endl;
+				       	success=false;
+				}
+				if (GetValue("pos")=="regular"||GetValue("pos")=="random") {
+					found=true;
+					int MX=Lat[0]->MX;
+					int MY=Lat[0]->MY;
+					int MZ=Lat[0]->MZ;
+					int V=MX*MY*MZ;
+					int a = pow(V/n,1.0/3.0);
+					if (a<2*R) {
+						cout << "Warning: overlap can not be avoided " << endl;
+					}
+					int n_placed=0;
+					if (a>2*R+1) a--;
+
+					for (int i=1; i<MX-a+2; i+=a)
+					for (int j=1; j<MY-a+2; j+=a)
+					for (int k=1; k<MZ-a+2; k+=a) {
+						if (n_placed < n) {
+							px.push_back(i); py.push_back(j); pz.push_back(k);
+							n_placed++;
+							//cout <<"x,y,z= " << i << "," << j << "," << k << endl;
+						}
+
+					}
+					if (n_placed < n) { cout <<"Problem: could not place all n particles in volume. Placed only  "<< n_placed << " partictles " << endl; }
+					//cout <<"In frozen_range regular positions for particles not implemented " <<endl;
+				} else {
+					cout <<"pos should be 'regular' or 'random' " << endl; success = false;
+
+				}
+
+				if (GetValue("pos")=="random" && success) {
+					srand(1);
+					int num_of_moves =100*n*n;
+					int I;
+					int X;
+					int Y;
+					int Z;
+					int MX=Lat[0]->MX;
+					int MY=Lat[0]->MY;
+					int MZ=Lat[0]->MZ;
+					for (int i=0; i<num_of_moves; i++) { //randomise...
+						I=rand()%n;
+						X=px[I]; Y=py[I]; Z=pz[I];
+						px[I]+=rand()%3-1; if (px[I]<1) px[I]+=MX; if (px[I]>MX) px[I]-=MX;
+						py[I]+=rand()%3-1; if (py[I]<1) py[I]+=MY; if (py[I]>MY) py[I]-=MY;
+						pz[I]+=rand()%3-1; if (pz[I]<1) pz[I]+=MZ; if (pz[I]>MZ) pz[I]-=MZ;
+						if (Overlap(I,R)) {
+							px[I]=X; py[I]=Y; pz[I]=Z;
+						}
+					}
+				}
+				if (!found) {
+					vector<int>open;
+					vector<int>close;
+					vector<string>sub;
+					string t=GetValue("pos");
+					if (!In[0]->EvenBrackets(t,open,close)) {cout << "Brackets in 'pos' not balanced "<<endl; success=false;};
+					int opensize=open.size();
+			        	if (opensize !=n ) {
+							success=false; cout <<"number of positions not equal to 'n' " << endl;
+						} else {
+							for (int i=0; i<n; i++) {
+								sub.clear();
+							string tt=t.substr(open[i]+1,close[i]-open[i]-1); //cout << tt << endl;
+							In[0]->split(tt,',',sub);
+							if (sub.size() !=3) {
+								success=false;
+								cout <<"Format error: 'pos' did not contain the keywords 'regular' nor 'random'," << endl;
+								cout <<"nor did 'pos'  contain expected (x,y,z) sets. Problem occurred for for particle nr " << i << "We found: " +tt << endl;
+							} else {
+								px.push_back(In[0]->Get_int(sub[0],-1));
+								py.push_back(In[0]->Get_int(sub[1],-1));
+								pz.push_back(In[0]->Get_int(sub[2],-1));
+								if (px[i] <0 || px[i]>Lat[0]->MX) {success=false; cout << "pos x for particle " << i << " out of bounds or not an integer: " << px[i] << endl; }
+								if (py[i] <0 || py[i]>Lat[0]->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
+								if (pz[i] <0 || pz[i]>Lat[0]->MZ) {success=false; cout << "pos z for particle " << i << " out of bounds or not an integer: " << pz[i] << endl; }
+								//cout <<"px,py,pz =" <<px[i]<<","<<py[i]","<<pz[i] << endl;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (px.size()>0) {
+			HMaskDone=true;
+			if (success) {
+				if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl;
+			}
+		}
+	}
+
+	n_pos=-1;
+	if (freedom == "tagged") {
+
+		phibulk=0;
+		if (GetValue("pinned_range").size()>0 || GetValue("frozen_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("frozen_filename").size()>0) {
+		cout<< "For mon " + name + ", you should exclusively combine 'freedom : tagged' with 'tagged_range' or 'tagged_filename'" << endl;  success=false;}
+		if (GetValue("tagged_range").size()>0 && GetValue("tagged_filename").size()>0) {
+			cout<< "For mon " + name + ", you can not combine 'tagged_range' with 'tagged_filename' " <<endl; success=false;
+		}
+		if (GetValue("tagged_range").size()==0 && GetValue("tagged_filename").size()==0) {
+			cout<< "For mon " + name + ", you should provide either 'tagged_range' or 'tagged_filename' " <<endl; success=false;
+		}
+		if (GetValue("tagged_range").size()>0) { s_freedom="tagged_range";
+			string t_range=GetValue("tagged_range");
+			vector<string>sub;
+			In[0]->split(t_range,';',sub);
+			t_range.clear();
+			vector<string>xyz;
+			int Lsub=sub.size();
+			if (Lsub!=2) {
+				cout <<"For mon " + name + ", the parsing of 'tagged_range' failed. Use x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, or x1;x2 for 3, 2, or 1  gradient computations, respectively. x, y and z can also be  keys: 'firstlayer', 'lastlayer'" << endl;
+				success=false;
+				return success;
+			}
+
+			int n_layers_x=(Lat[0]->MX+1)/Lat[0]->fjc;
+			int n_layers_y=(Lat[0]->MY+1)/Lat[0]->fjc;
+			int n_layers_z=(Lat[0]->MZ+1)/Lat[0]->fjc;
+			for (int k=0; k<Lsub; k++) {
+				xyz.clear();
+				In[0]->split(sub[k],',',xyz);
+				int Lxyz=xyz.size();
+				if (Lxyz<1 || Lxyz>3){
+					cout <<"For mon " + name + ", the parsing of 'tagged_range' failed. Number of coordinates should be 1, 2 or 3: e.g., x1,y1,z1;x2,y2,z2, x1,y1;x2,y2, x1;x2 for 1, 2 or 3 gradients, respectively.  " << endl;
+					success=false;
+					return success;
+				}
+				for (int kk=0; kk<Lxyz; kk++) {
+					if (xyz[kk]=="firstlayer") {
+						t_range.append("1");
+					} else if (xyz[kk]=="lastlayer") {
+						if (kk==0) t_range.append(to_string(n_layers_x));
+						if (kk==1) t_range.append(to_string(n_layers_y));
+						if (kk==2) t_range.append(to_string(n_layers_z));
+					} else {
+						int cor=In[0]->Get_int(xyz[kk],-1);
+						if ((kk==0 && (cor <1 || cor > n_layers_x)) || (kk==1 && (cor <1 || cor > n_layers_y))  ||(kk==2 && (cor <1 || cor > n_layers_z))) {
+							cout <<" For mon " + name+ ", the 'tagged_range' is not parsed properly! Coordinates either out of bounds or keywords 'firstlayer', 'lastlayer' were not found" << endl;
+							success=false;
+							return success;
+						} else t_range.append(xyz[kk]);
+					}
+					if (kk<Lxyz-1) t_range.append(",");
+				}
+				if (k<Lsub-1) t_range.append(";");
+			}
+
+//cout <<"t_range = " << t_range << endl;
+
+			n_pos=0;
+			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
+			if (n_pos>0) {
+				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
+			}
+		}
+		if (GetValue("tagged_filename").size()>0) {
+			s_freedom="tagged";
+			filename=GetValue("tagged_filename");
+			n_pos=0;
+			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+			if (n_pos>0) {
+				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
+				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+			}
+		}
+	}
+	return success;
 }
 
 bool Segment::Overlap(int I, int R) {
-	int X=px[I]; 
+	int X=px[I];
 	int Y=py[I];
 	int Z=pz[I];
 	int n=px.size();
 	int RR=4*R*R;
 	int dx,dy,dz;
-	int MX=Lat[0]->MX; 
+	int MX=Lat[0]->MX;
 	int MY=Lat[0]->MY;
 	int MZ=Lat[0]->MZ;
 
 	for (int i=0; i<n; i++) {
 		if (i != I) {
-			dx=px[i]-X;  
-			if (dx>MX/2)  dx-=MX; 
+			dx=px[i]-X;
+			if (dx>MX/2)  dx-=MX;
 			if (dx<-MX/2) dx+=MX;
-			dy=py[i]-Y; 
-			if (dy>MY/2)  dy-=MY; 
+			dy=py[i]-Y;
+			if (dy>MY/2)  dy-=MY;
 			if (dy<-MY/2) dy+=MY;
 			dz=pz[i]-Z;
-			if (dz>MZ/2)  dz-=MZ; 
+			if (dz>MZ/2)  dz-=MZ;
 			if (dz<-MZ/2) dz+=MZ;
 			if (dx*dx+dy*dy+dz*dz<RR+4) return true;
 		}
@@ -1055,7 +1103,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	}
 
 	//valence=In[0]->Get_Real(GetValue("valence"),0);
-	bool HMD=false; 
+	bool HMD=false;
 	r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
 	if (success) success=ParseFreedoms(HMD);
 	if(n_pos>0) free(H_P);
@@ -1075,8 +1123,8 @@ void Segment::Put_beta(int ii, Real BETA) {
 
 Real Segment::Volume_particles() {
 	int volume=0;
-	if (freedom=="frozen") Sum(volume,H_MASK,Lat[0]->M); 
-	//cout <<"volume_particles of type "+name + "= " << volume << endl; 
+	if (freedom=="frozen") Sum(volume,H_MASK,Lat[0]->M);
+	//cout <<"volume_particles of type "+name + "= " << volume << endl;
 	return 1.0*volume;
 }
 
@@ -1674,7 +1722,12 @@ if (debug) cout <<"Get Pointer for segment " + name << endl;
 	In[0]->split(s,';',sub);
 	if (sub[0]=="profile") {
 
-	if (sub[1]=="0") return phi;
+	if (sub[1]=="0") {
+		if (freedom=="frozen") {
+			Cp(phi,MASK,M);
+		} else Lat[0]->set_bounds(phi);
+		return phi;
+	}
 	if (sub[1]=="1") return G1;
         if (sub[1]=="2") {
 		int MX=Lat[0]->MX;
@@ -1851,10 +1904,10 @@ bool Segment::CanBeReached(int x0, int y0, int z0, int Ds) {
 		case 1:
 			for (x=1; x<MX+1; x++){
 				if (MASK[x*JX+y*JY+z*JZ]==1) {
-					if (abs(x-x0)+abs(y-y0)+abs(z-z0) < Ds) return true; 
-				}		
-			
+					if (abs(x-x0)+abs(y-y0)+abs(z-z0) < Ds) return true;
+				}
+
 			}
 	}
-	return false; 
+	return false;
 }

@@ -26,7 +26,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("guess_inputfile");
 	KEYS.push_back("final_guess");
 	KEYS.push_back("guess_outputfile");
-	KEYS.push_back("GPU"); 
+	KEYS.push_back("GPU");
 	KEYS.push_back("find_local_solution");
 	KEYS.push_back("split");
 	KEYS.push_back("X");
@@ -44,7 +44,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	progress=0;
 	old_residual = 10;
 	do_blocks=false;
-	first_pass=true; 
+	first_pass=true;
 }
 System::~System()
 {
@@ -105,14 +105,14 @@ void System:: DeAllocateMemory(void){
 all_system=false;
 }
 
-void System::AllocateMemory() 
+void System::AllocateMemory()
 {
 	if (debug)
 		cout << "AllocateMemory in system " << endl;
 	DeAllocateMemory();
 	progress=0; old_residual=10;
 	int M = Lat[0]->M;
-	//H_GN_A = 
+	//H_GN_A =
 	//H_GN_B = new Real[n_box];
 	H_GrandPotentialDensity = (Real *)malloc(M * sizeof(Real));
 	std::fill(H_GrandPotentialDensity,H_GrandPotentialDensity+M,0);
@@ -200,7 +200,7 @@ bool System::generate_mask()
 	int length = In[0]->MonList.size();
 	for (int i = 0; i < length; i++)
 	{
-		
+
 		if (Seg[i]->freedom == "frozen") {
 			FrozenList.push_back(i);
 		}
@@ -212,7 +212,7 @@ bool System::generate_mask()
 	if (FrozenList.size() + SysMonList.size() + SysTagList.size() + SysClampList.size() != In[0]->MonList.size())
 	{
 		//cout << " There are un-used monomers in system. Remove these before starting" << endl;
-		//return false; 
+		//return false;
 	}
 
 	Zero(KSAM, M);
@@ -445,30 +445,30 @@ bool System::CheckInput(int start_)
 	if (success)
 	{
 		if (GetValue("find_local_solution").size()>0) {
-			split = 2; 
-			local_solution=In[0]->Get_bool(GetValue("find_local_solution"),false); 
+			split = 2;
+			local_solution=In[0]->Get_bool(GetValue("find_local_solution"),false);
 			if (local_solution) {
 				if (Lat[0]->gradients!=3) {
-					local_solution =false; cout << "find_local_solution is rejected as it requires 3 gradient system. " << endl; 
+					local_solution =false; cout << "find_local_solution is rejected as it requires 3 gradient system. " << endl;
 					if (!(Lat[0]->MZ==2 || Lat[0]->MZ==4 || Lat[0]->MZ==8 || Lat[0]->MZ==16 ||Lat[0]->MZ==32 || Lat[0]->MZ==64 ||Lat[0]->MZ==128 || Lat[0]->MZ ==256)){
-					      local_solution =false; cout<<"find_local_solution requires system size in z-direction equal to 2^n with n=1..8"<< endl; 
+					      local_solution =false; cout<<"find_local_solution requires system size in z-direction equal to 2^n with n=1..8"<< endl;
 					}
 					if (!(Lat[0]->MY==2 || Lat[0]->MY==4 || Lat[0]->MY==8 || Lat[0]->MY==16 ||Lat[0]->MY==32 || Lat[0]->MY==64 ||Lat[0]->MY==128 || Lat[0]->MY ==256)){
-					      local_solution =false; cout<<"find_local_solution requires system size in y-direction equal to 2^n with n=1..8"<< endl; 
+					      local_solution =false; cout<<"find_local_solution requires system size in y-direction equal to 2^n with n=1..8"<< endl;
 					}
 					if (!(Lat[0]->MX==2 || Lat[0]->MX==4 || Lat[0]->MX==8 || Lat[0]->MX==16 ||Lat[0]->MX==32 || Lat[0]->MX==64 ||Lat[0]->MX==128 || Lat[0]->MX ==256)){
-					      local_solution =false; cout<<"find_local_solution requires system size in x-direction equal to 2^n with n=1..8"<< endl; 
+					      local_solution =false; cout<<"find_local_solution requires system size in x-direction equal to 2^n with n=1..8"<< endl;
 					}
 				}
 				if (GetValue("split").size()>0) {
 					split=In[0]->Get_int(GetValue("split"),2);
 					if (!(split ==2 || split ==4 || split ==8 ||split ==16 || split==32 || split==64 || split ==128) ) {
 						cout <<"Value for split should be 2^n, with n= 1,..,6. used split = 2 instead." << endl;
-						split =2; 
-					}	
+						split =2;
+					}
 					if (split > Lat[0]->MX || split > Lat[0]->MY || split > Lat[0]->MZ) {
 						cout <<"Value for split can not exeed n_layers_x or n_layers_y or n_layers_z, value split=2 is used " << endl;
-						split = 2; 
+						split = 2;
 					}
 
 				}
@@ -496,7 +496,7 @@ bool System::CheckInput(int start_)
 				success = false;
 			}
 		}
-		MakeItsLists(); 
+		MakeItsLists();
 
 		int length = In[0]->MolList.size();
 		int i = 0;
@@ -514,10 +514,10 @@ bool System::CheckInput(int start_)
 				tag_segment = Mol[i]->tag_segment;
 				Mol[i]->n = 1.0 * Seg[tag_segment]->n_pos;
 				Mol[i]->theta = Mol[i]->n * Mol[i]->chainlength;
-			} 
+			}
 			i++;
 		}
- 
+
 /*
 		int length = In[0]->MonList.size();
 		for (int i = 0; i < length; i++)
@@ -644,30 +644,30 @@ bool System::CheckInput(int start_)
 			if (ConstraintType == "delta")
 			{
 				if (GetValue("delta_range").size() > 0)
-				{	int units=1; 
+				{	int units=1;
 					if (Lat[0]->fjc>1) {
 						if (GetValue("delta_range_units").size() == 0) {
 							cout <<"Because you have FJC-choices>3, you also need to specify the 'delta_range_units'. You can select 'bondlength' or 'gritsize'. " << endl;
-							cout <<"Using bondlength units allows delta_range from 0 ... n_layers" << endl; 
-							cout <<"Using gritsize and e.g. FJC-choices=5 gives fjc=2 allows delta_range from fjc .. fjc (n_layers+1)-1, etc."  << endl; success=false;  
+							cout <<"Using bondlength units allows delta_range from 0 ... n_layers" << endl;
+							cout <<"Using gritsize and e.g. FJC-choices=5 gives fjc=2 allows delta_range from fjc .. fjc (n_layers+1)-1, etc."  << endl; success=false;
 						} else {
 							vector<string> options;
 							string bond_range_units;
 							options.push_back("bondlength");
 							options.push_back("gritsize");
 							bond_range_units = GetValue("delta_range_units");
-							if (bond_range_units=="bondlength") units = Lat[0]->fjc; 
-							else if (bond_range_units=="gritsize") units =1;  
+							if (bond_range_units=="bondlength") units = Lat[0]->fjc;
+							else if (bond_range_units=="gritsize") units =1;
 							else {
-								cout << "Value for 'delta_range_units' not recognized. Use 'bondlength' or 'gritsize'. Depending on FJC-choices the delta_range can be larger for 'gritsize' than for 'bondlength'."<< endl; 
-								success=false; units =Lat[0]->fjc; 
+								cout << "Value for 'delta_range_units' not recognized. Use 'bondlength' or 'gritsize'. Depending on FJC-choices the delta_range can be larger for 'gritsize' than for 'bondlength'."<< endl;
+								success=false; units =Lat[0]->fjc;
 							}
 						}
 					} else {
  						units=1;
 						if (GetValue("delta_range_units").size() > 0) {
 							string delta_range_units=GetValue("delta_range_units");
-							if (delta_range_units != "bondlength") cout << "Delta_range_units set to 'bondlength' because FJC-choices =3" << endl;  
+							if (delta_range_units != "bondlength") cout << "Delta_range_units set to 'bondlength' because FJC-choices =3" << endl;
 						}
 					}
 					string s = GetValue("delta_range");
@@ -724,12 +724,12 @@ bool System::CheckInput(int start_)
 								if (rr<0 || rr>Lat[0]->MX) {cout << "Coordinate x for delta_range is out of bonds. " << endl; success=false; }
 								else px.push_back(rr);
 								if (grad > 1) {
-									rr=In[0]->Get_int(coor[1], -1)*units; 
+									rr=In[0]->Get_int(coor[1], -1)*units;
 									if (rr<0 || rr>Lat[0]->MY) {cout << "Coordinate y for delta_range is out of bonds. " << endl; success=false; }
 									else py.push_back(rr);
 								}
 								if (grad > 2){
-									rr=In[0]->Get_int(coor[2], -1)*units; 
+									rr=In[0]->Get_int(coor[2], -1)*units;
 									if (rr<0 || rr>Lat[0]->MZ) {cout << "Coordinate z for delta_range is out of bonds. " << endl; success=false; }
 									pz.push_back(rr);
 								}
@@ -787,13 +787,13 @@ bool System::CheckInput(int start_)
 				phi_ratio=-1.0;
 				if(GetValue("phi_ratio").size()>0) {
 					if (GetValue("phi_ratio")=="critical_ratio") {
-						phi_ratio=1.0*Mol[DeltaMolList[0]]->chainlength/Mol[DeltaMolList[1]]->chainlength; 
+						phi_ratio=1.0*Mol[DeltaMolList[0]]->chainlength/Mol[DeltaMolList[1]]->chainlength;
 						if (phi_ratio>0) phi_ratio=sqrt(phi_ratio);
 					}
 					else phi_ratio=In[0]->Get_Real(GetValue("phi_ratio"),-1);
 					if (phi_ratio<0) {cout <<" phi_ratio shoud contain keyword 'critical_ratio' or a positive real number, typically 1. " << endl; success=false;}
 				} else {
-					success=false; cout <<"Please give a value for 'phi_ratio' (typically 1 or specify the keyword 'critical_ratio')" << endl; 
+					success=false; cout <<"Please give a value for 'phi_ratio' (typically 1 or specify the keyword 'critical_ratio')" << endl;
 				}
 			}
 
@@ -1135,25 +1135,25 @@ bool System::CheckInput(int start_)
 	for (int i = 0; i < length; i++) {
 		if (Seg[i]->freedom == "frozen") {
 			if (Seg[i]->frozen_at_bound>-1) {
-				if (Seg[i]->valence != 0) { 
+				if (Seg[i]->valence != 0) {
 					cout <<"Currently it is not allowed to put a charged frozen segment in boundary. Put this frozen segment inside the system instead. " << endl;  success=false;
 				}
 				bc[Seg[i]->frozen_at_bound]++;
 			}
 		}
 	}
-	if (Lat[0]->BC[0]=="surface" && bc[0] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in x" << endl; success=false;} 
-	if (Lat[0]->BC[1]=="surface" && bc[1] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in y" << endl; success=false;} 
-	if (Lat[0]->BC[2]=="surface" && bc[2] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in z" << endl; success=false;} 
-	if (Lat[0]->BC[3]=="surface" && bc[3] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in x" << endl; success=false;} 
-	if (Lat[0]->BC[4]=="surface" && bc[4] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in y" << endl; success=false;} 
-	if (Lat[0]->BC[5]=="surface" && bc[5] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in z" << endl; success=false;} 
-	if (Lat[0]->BC[0]=="surface" && bc[0] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in x" << endl; success=false;} 
-	if (Lat[0]->BC[1]=="surface" && bc[1] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in y" << endl; success=false;} 
-	if (Lat[0]->BC[2]=="surface" && bc[2] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in z" << endl; success=false;} 
-	if (Lat[0]->BC[3]=="surface" && bc[3] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in x" << endl; success=false;} 
-	if (Lat[0]->BC[4]=="surface" && bc[4] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in y" << endl; success=false;} 
-	if (Lat[0]->BC[5]=="surface" && bc[5] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in z" << endl; success=false;} 
+	if (Lat[0]->BC[0]=="surface" && bc[0] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in x" << endl; success=false;}
+	if (Lat[0]->BC[1]=="surface" && bc[1] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in y" << endl; success=false;}
+	if (Lat[0]->BC[2]=="surface" && bc[2] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in z" << endl; success=false;}
+	if (Lat[0]->BC[3]=="surface" && bc[3] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in x" << endl; success=false;}
+	if (Lat[0]->BC[4]=="surface" && bc[4] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in y" << endl; success=false;}
+	if (Lat[0]->BC[5]=="surface" && bc[5] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in z" << endl; success=false;}
+	if (Lat[0]->BC[0]=="surface" && bc[0] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in x" << endl; success=false;}
+	if (Lat[0]->BC[1]=="surface" && bc[1] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in y" << endl; success=false;}
+	if (Lat[0]->BC[2]=="surface" && bc[2] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in z" << endl; success=false;}
+	if (Lat[0]->BC[3]=="surface" && bc[3] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in x" << endl; success=false;}
+	if (Lat[0]->BC[4]=="surface" && bc[4] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in y" << endl; success=false;}
+	if (Lat[0]->BC[5]=="surface" && bc[5] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in z" << endl; success=false;}
 	free(bc);
 
 	return success;
@@ -1876,8 +1876,8 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 	Real chi;
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 	int i,k;
-			
-	
+
+
 	int itmonlistlength=ItMonList.size();
 	int state_length = In[0]->StateList.size();
 	int itstatelistlength=ItStateList.size();
@@ -1919,7 +1919,6 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 			chi =Sta[ItStateList[i]]->chi[mon_length+k];
 			if (chi!=0)
 				PutAlpha(g+(itmonlistlength+i)*M,phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
-
 		}
 	}
 	for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
@@ -1969,20 +1968,20 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 
 bool System::ComputePhis(Real residual){
 if(debug) cout <<"ComputePhis in system" << endl;
-	bool prepare_for_blocks=false; 
+	bool prepare_for_blocks=false;
 	int M= Lat[0]->M;
 	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi
 	bool success=true;
 	Zero(phitot,M);
-	
-	if (local_solution) { 
-		if (residual/old_residual < 0.9) progress--; else progress++; 
+
+	if (local_solution) {
+		if (residual/old_residual < 0.9) progress--; else progress++;
 		if (progress < 0 ) progress=0;
-		if (progress > 100 ) { 
-			progress=0; 
+		if (progress > 100 ) {
+			progress=0;
 			if (!do_blocks) {
 			prepare_for_blocks=true;
-			cout <<"no progress: trying fo find local solution" << endl; 
+			cout <<"no progress: trying fo find local solution" << endl;
 			}
 		}
 		old_residual = residual;
@@ -2167,7 +2166,7 @@ for (int j=0; j<n_mol; j++) {
 			throw - 4;
 		}
 
-		if (Mol[solvent]->MolType==water) { 
+		if (Mol[solvent]->MolType==water) {
 
 			Mol[solvent]->GetPhib1();
 			Mol[solvent]->ComputePhi();
@@ -2175,7 +2174,7 @@ for (int j=0; j<n_mol; j++) {
 			Mol[solvent]->n = Lat[0]->ComputeGN(Mol[solvent]->phi,M);
 			Mol[solvent]->theta=Mol[solvent]->n;
 			Mol[solvent]->norm=1.0;
- 
+
 		} else {
 
 			Real norm = Mol[solvent]->phibulk / Mol[solvent]->chainlength;
@@ -2183,7 +2182,7 @@ for (int j=0; j<n_mol; j++) {
 			Mol[solvent]->theta = Mol[solvent]->n * Mol[solvent]->chainlength;
 			Mol[solvent]->norm = norm;
 
-			int k = 0;		
+			int k = 0;
 
 			length = Mol[solvent]->MolMonList.size();
 			while (k < length) {
@@ -2279,13 +2278,13 @@ for (int j=0; j<n_mol; j++) {
 
 	if (prepare_for_blocks) {
 		do_blocks=true;
-		
+
 		for (int k=0; k<n_mol; k++) {
 			if (Mol[k]->freedom =="restricted") {
 				Mol[k]->SetThetaBlocks(split);
 			}
-		}			
-	}	
+		}
+	}
 	return success;
 }
 
@@ -2348,7 +2347,7 @@ bool System::CheckResults(bool e_info_)
 		}
 		//if (e_info) cout << endl;
 	}
-	first_pass=false; 
+	first_pass=false;
 	return success;
 }
 
@@ -2363,7 +2362,9 @@ Real System::GetFreeEnergy(void)
 	int n_seg = In[0]->MonList.size();
 	int n_mol = In[0]->MolList.size();
 	int n_states = In[0]->StateList.size();
-	//for (int i=0; i<n_mol; i++) Lat[0]->remove_bounds(Mol[i]->phitot);
+	for (int i=0; i<n_mol; i++) {
+		Lat[0]->remove_bounds(Mol[i]->phitot);
+	}
 	int n_mon = In[0]->MonList.size();
 	for (int i = 0; i < n_mon; i++)
 	{
@@ -2728,7 +2729,7 @@ bool System::CreateMu()
 	{
 		Real Mu = 0;
 		Real NA = Mol[i]->chainlength;
-		
+
 		if (Mol[i]->IsTagged())
 			NA = NA - 1;
 		if (Mol[i]->IsClamped())

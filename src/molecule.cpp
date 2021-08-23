@@ -1826,20 +1826,23 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 			}
 		}
 	}
-//
 	int M=Lat[0]->M;
-	int fjc=Lat[0]->fjc;
-	Real phimax=0;
-	Real phiold=0;
-	Real phinew=phitot[fjc];
-	for (int i=fjc; i< M-2*fjc; i++){
-		phiold=phinew;
-		phinew=phitot[i];
-		if (phinew > phiold && phinew<phimax) phimax=phinew;
-		if (phimax>0 && phinew < phiold) i=M;
+	Real phimax=phitot[M/2];
+	bool maxfound=false;
+	int i=M/2; 
+	while (!maxfound) {
+		i++;
+		if (phitot[i]> phimax ) phimax =phitot[i]; else maxfound=true;
 	}
+	maxfound=false;
+	i=M/2;
+	while (!maxfound) {
+		i--;
+		if (phitot[i]> phimax ) phimax =phitot[i]; else maxfound=true;
+	}
+
 	push("phiMax",phimax);
-//
+
 	push("GN",GN);
 	push("norm",norm);
 

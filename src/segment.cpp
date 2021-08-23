@@ -364,9 +364,9 @@ if (debug) cout <<"ParseFreedoms " << endl;
 	}
 
 	if (freedom == "frozen") {
-		int n_layers_x=(Lat[0]->MX+1)/Lat[0]->fjc;
-		int n_layers_y=(Lat[0]->MY+1)/Lat[0]->fjc;
-		int n_layers_z=(Lat[0]->MZ+1)/Lat[0]->fjc;
+		int n_layers_x=(Lat[0]->MX)/Lat[0]->fjc;
+		int n_layers_y=(Lat[0]->MY)/Lat[0]->fjc;
+		int n_layers_z=(Lat[0]->MZ)/Lat[0]->fjc;
 
 		frozen_at_bound=-1;
 		phibulk=0;

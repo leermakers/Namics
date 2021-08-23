@@ -337,7 +337,6 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 					}
 				}
 				MX=fjc*(MX);
-cout <<"MX = " << MX << endl;
 				options.clear();
 				options.push_back("spherical");
 				options.push_back("cylindrical");

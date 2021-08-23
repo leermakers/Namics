@@ -3,6 +3,7 @@ lat : flat : n_layers : 100
 lat : flat : geometry : planar
 lat : flat : gradients : 1
 lat : flat : bondlength : 3e-10
+lat : flat : lowerbound : surface
 
 mon : W : valence : 0
 mon : S : valence : 0
@@ -17,14 +18,14 @@ reaction : weak : equation: 1(SIOH)+1(H2O)=1(SIO)+1(H3O)
 reaction: weak : pK : 7.5
 
 mon : SiO : freedom : pinned
-mon : SiO : pinned_range : 2;2
+mon : SiO : pinned_range : 1;1
 
 mon : Si : valence : 0
 mon : Si : freedom : pinned
-mon : Si : pinned_range : 2;2
+mon : Si : pinned_range : 1;1
 
 mon : S : freedom : frozen
-mon : S : frozen_range : 1;1
+mon : S : frozen_range : lowerbound
 
 mon : water : freedom : free
 

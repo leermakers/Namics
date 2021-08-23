@@ -2,9 +2,10 @@ lat : flat : n_layers : 200
 lat : flat : lattice_type : simple_cubic
 lat : flat : geometry : planar
 lat : flat : gradients : 1
+lat : flat : lowerbound : surface
 
 mon : Si : freedom : frozen
-mon : Si : frozen_range : 1;1
+mon : Si : frozen_range : lowerbound
 mon : A : freedom : free
 mon : W : freedom : free
 mon : A : chi - Si : -6

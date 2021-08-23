@@ -1,4 +1,4 @@
-lat : vlak : n_layers : 400
+lat : vlak : n_layers : 200
 lat : vlak : lattice_type : hexagonal
 lat : vlak : geometry : flat
 lat : vlak : bondlength : 3e-10

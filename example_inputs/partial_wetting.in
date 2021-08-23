@@ -2,10 +2,11 @@ lat : flat : n_layers : 200
 lat : flat : lattice_type : hexagonal
 lat : flat : gradients : 1
 lat : flat : geometry : planar
-lat : flat : FJC_choices : 5
-
+//lat : flat : FJC_choices : 5
+lat : flat : b/l : 2
+lat : flat : lowerbound : surface
 mon : S : freedom : frozen
-mon : S : frozen_range : 1;1
+mon : S : frozen_range : lowerbound
 
 mon : A : freedom : free
 mon : W : freedom : free

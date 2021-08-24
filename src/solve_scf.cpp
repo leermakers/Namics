@@ -4,7 +4,7 @@
 Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) :
 	name{name_}, In{In_}, Sys{Sys_}, Seg{Seg_}, Lat{Lat_}, Mol{Mol_}, Var{Var_}, Sta{Sta_}, Rea{Rea_} 
 {
-if(debug) cout <<"Constructor in Solve_scf " << endl; 
+if(debug) cout <<"Constructor in Solve_scf " << endl;  
  
 	KEYS.push_back("method");
 	KEYS.push_back("gradient_type");
@@ -49,6 +49,12 @@ if (debug) cout <<"DeAllocateMemory in Solve " << endl;
 	cudaFree(x_x0);
 	cudaFree(temp_alpha);
 #else
+	int niv = In[0]->ReactionList.size();
+	if (niv>0) {
+		free(yy);
+		free(SIGN);
+	}
+
 	if (mesodyn) delete [] temp_alpha;
 	//delete [] xx;
 	//free(xx);
@@ -90,6 +96,12 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	//Zero(xx,iv);
 #endif
 	all=true;
+	int niv = In[0]->ReactionList.size();
+	if (niv>0) {
+		yy=(Real*) malloc(niv*sizeof(Real)); Zero(yy,niv);
+		SIGN=(int*) malloc((niv)*sizeof(int)); for (int i=0; i<niv; i++) SIGN[i]=1.0;
+	}
+
 	Sys[0]->AllocateMemory();
 }
 
@@ -525,11 +537,11 @@ public:
 
     Real operator()(Vector& x_, Vector& g_) //checkout LBFGS.h; this way of computing residuals is the same as below procedure used by default in pseudohessian. 
     {	
-	Real* xx=&x_[0];
+	Real* x=&x_[0];
 	Real* g=&g_[0];
 	int iv=x_.size();
 
-	Sys[0]->Classical_residual(xx,g,residual,iterations, iv);
+	Sys[0]->Classical_residual(x,g,residual,iterations, iv);
 	iterations++;
 	residual=g_.norm();
        return residual;
@@ -552,11 +564,10 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		if (s_info) ss_info=true; else ss_info=false; s_info=false;
 		gradient = WEAK;
 		control= super;
-		Real* yy=(Real*) malloc((iv)*sizeof(Real)); Cp(yy,xx,iv);
-		SIGN=(int*) malloc((niv)*sizeof(int)); for (int i=0; i<niv; i++) SIGN[i]=1.0;
-		pseudohessian=false;  hessian =true;
-		Zero(xx,niv);
-		success=iterate(xx,niv,100,1e-8,0.05,0.001,true);
+		pseudohessian=false; hessian =true;
+		//Zero(yy,niv);
+		
+		success=iterate(yy,niv,200,1e-7,0.05,0.0000001,true);
 		if (!success) cout <<"iteration for alphabulk values for internal states failed. Check eqns. " << endl;
 		e_info=ee_info;
 		s_info=ss_info;
@@ -568,7 +579,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		if (i_solver==4) solver=LBFGS;
 		gradient = classical;
 		control = proceed;
-		Cp(xx,yy,iv);
+
 /*
 		int n_segments=In[0]->MonList.size();
 		for (int i=0; i<n_segments; i++) {
@@ -579,8 +590,6 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 			}
 		}
 */
-		free(yy);
-		free(SIGN);
 	}
 	//gradient=classical;
 	//control=proceed;
@@ -750,6 +759,8 @@ void Solve_scf::residuals(Real* x, Real* g){
 
 			for (size_t i = 0; i<In[0]->ReactionList.size(); i++) {
 				g[i]=SIGN[i]*Rea[i]->Residual_value();
+				//g[i]=Rea[i]->Residual_value();
+
 			}
 
 		break;
@@ -864,7 +875,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 		}
 		default:
 			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
-			Sys[0]->Classical_residual(xx,g,residual,iterations, iv);
+			Sys[0]->Classical_residual(x,g,residual,iterations, iv);
 		break;
 	}
 }

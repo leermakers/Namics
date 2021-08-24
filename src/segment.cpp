@@ -1836,7 +1836,7 @@ if (debug) cout <<"AddState " << id_ <<" to seg " << name << endl;
 			state_name[k]=In[0]->StateList[ID];
 			found=true;
 			state_alphabulk[k]=alphabulk;
-			state_valence[k]=valence;
+			state_valence[k]=valence;  
 			if (fixed) state_change[k]=false; else state_change[k]=true;
 			state_number=k;
 		}
@@ -1877,8 +1877,9 @@ if (debug) cout <<"PutAlpha " << name << endl;
 		if (!state_change[i]) {fixed_value+=state_alphabulk[i]; n_free--;} else state_alphabulk[i]=0; 	}
 
 	for (int i=0; i<n_s; i++) {
+
 		if (state_change[i] && niv>0 && n_free>0) {
-			state_alphabulk[i]=0.5*(1.0+tanh(1.0*x[xi]))*(1.0-fixed_value); xi++; niv--;
+			state_alphabulk[i]=0.5*(1.0+tanh(2.0*x[xi]))*(1.0-fixed_value); xi++; niv--;
 		}
 		sum_alpha+=state_alphabulk[i];
 	}

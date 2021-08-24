@@ -271,9 +271,13 @@ Real Reaction::Residual_value() { //only working when chi are not state dependen
 	Real alphab=0;
 	int length=Sto.size();
 	for (int i=0; i<length; i++) {
-		//cout << "Seg_nr[i]" << Seg_nr[i] << " State_in_seg_nr [i] " << State_in_seg_nr[i] << endl; 
+//cout << "Seg_nr[i]" << Seg_nr[i] << " State_in_seg_nr [i] " << State_in_seg_nr[i] << endl; 
 		alphab=Seg[Seg_nr[i]]->state_alphabulk[State_in_seg_nr[i]];
-		res_value+=Sto[i]*log10(alphab); 
+		if (alphab>0) res_value+=Sto[i]*log10(alphab); else {
+			
+			//cout <<"alphabulk =0 " <<  endl; 
+			//cout << "Seg " << Seg[Seg_nr[i]]->name << " State_in_seg_nr [i] " << State_in_seg_nr[i] << endl;
+		}
 	}
 	return -1.0+res_value/pKeff();
 }

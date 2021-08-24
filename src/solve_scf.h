@@ -102,6 +102,7 @@ public:
 	Real *x_x0;
 #endif
 	Real *xx;
+	Real *yy;
 	Vector x;
 	int *SIGN;
 	Real* alpha;

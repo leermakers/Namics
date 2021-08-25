@@ -567,7 +567,8 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		pseudohessian=false; hessian =true;
 		//Zero(yy,niv);
 		
-		success=iterate(yy,niv,200,1e-7,0.05,0.0000001,true);
+		success=iterate(yy,niv,200,1e-8,0.05,0.0000001,true);
+		cout << iterations << " iterations to find alphabulk values. " <<endl; 
 		if (!success) cout <<"iteration for alphabulk values for internal states failed. Check eqns. " << endl;
 		e_info=ee_info;
 		s_info=ss_info;
@@ -744,20 +745,32 @@ void Solve_scf::residuals(Real* x, Real* g){
 	//Real valence;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size(); //also frozen segments
-	int i,k,xi=0;
+	int i,k;//xi=0;
 
 	switch(gradient) {
 		case WEAK:
 			if (debug) cout <<"Residuals for weak iteration " << endl;
-
-			xi=0;
-			Zero(g,In[0]->ReactionList.size());
-
-			for (i=0; i<sysmon_length; i++) {
-				Seg[Sys[0]->SysMonList[i]]->PutAlpha(x,xi);
+			for (size_t i = 0; i<In[0]->ReactionList.size(); i++) {
+				if (Rea[i]->Sto.size()==3) Rea[i]->GuessAlpha();
+			}
+			for (size_t i = 0; i<In[0]->ReactionList.size(); i++) {
+				if (Rea[i]->Sto.size()!=3) Rea[i]->GuessAlpha();
+			}
+			for (size_t i = 0; i<In[0]->ReactionList.size(); i++) {
+				Rea[i]->PutAlpha(exp(x[i]));
 			}
 
+
+			//xi=0;
+			Zero(g,In[0]->ReactionList.size());
+
+			//for (i=0; i<sysmon_length; i++) {
+			//	Seg[Sys[0]->SysMonList[i]]->PutAlpha(x,xi);
+
+			//}
+
 			for (size_t i = 0; i<In[0]->ReactionList.size(); i++) {
+
 				g[i]=SIGN[i]*Rea[i]->Residual_value();
 				//g[i]=Rea[i]->Residual_value();
 

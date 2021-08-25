@@ -67,6 +67,8 @@ public:
 	Real ChemIntBulk(State*);
 	Real pKeff();
 	Real Residual_value();
+	bool GuessAlpha();
+	bool PutAlpha(Real);
 
 	bool PutVarInfo(string,string,Real);
 	int PutVarScan(Real,Real,int,string);

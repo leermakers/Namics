@@ -110,7 +110,7 @@ if (debug) cout <<"CheckInput in Reaction " + name << endl;
 								cout << " reaction : " << name << " equation : " << equation << " has negative stocheometry number " << endl; 
 								success=false; 
 							}
-							if (k>0) sto*=-1;
+							if (k==0) sto*=-1; //lhs terms get negative stocheometry numbers.
 							Sto.push_back(sto);
 						}
 					}
@@ -271,15 +271,117 @@ Real Reaction::Residual_value() { //only working when chi are not state dependen
 	Real alphab=0;
 	int length=Sto.size();
 	for (int i=0; i<length; i++) {
-//cout << "Seg_nr[i]" << Seg_nr[i] << " State_in_seg_nr [i] " << State_in_seg_nr[i] << endl; 
+//cout << "Seg_nr[i]" << Seg[Seg_nr[i]]->name << " State_in_seg_nr [i] " << State_in_seg_nr[i] << endl; 
 		alphab=Seg[Seg_nr[i]]->state_alphabulk[State_in_seg_nr[i]];
-		if (alphab>0) res_value+=Sto[i]*log10(alphab); else {
+		if (alphab>0) res_value-=Sto[i]*log10(alphab); else {
 			
-			//cout <<"alphabulk =0 " <<  endl; 
-			//cout << "Seg " << Seg[Seg_nr[i]]->name << " State_in_seg_nr [i] " << State_in_seg_nr[i] << endl;
+			cout <<"alphabulk =0 " <<  endl; 
+			cout << "Seg " << Seg[Seg_nr[i]]->name << " State_in_seg_nr [i] " << State_in_seg_nr[i] << endl;
 		}
 	}
 	return -1.0+res_value/pKeff();
+}
+
+bool Reaction::PutAlpha(Real alpha) {
+//cout <<"guess for alpha " << alpha << endl; 
+	bool success=true;
+	int water=-1;
+	int other=-1;
+	int length=Sto.size();
+	for (int i=0; i<length; i++) {
+		if (!Seg[Seg_nr[i]]->state_change[State_in_seg_nr[i]]) water=Seg_nr[i]; 
+	}
+	for (int i=0; i<length; i++) {
+		if (Seg_nr[i]!=water) other =Seg_nr[i];
+	}
+	if (other>-1) Seg[other]->PutAlpha(alpha); else Seg[water]->PutAlpha(alpha);
+
+	return success; 
+}
+
+bool Reaction::GuessAlpha() {
+	bool success=true;
+	Real alpha_f=-1;
+	//Real alpha=0;
+	int length=Sto.size();
+	Real k=pow(10,-pKeff());
+	int water=-1;
+	int other=-1;
+	int ns; 
+	Real sum_alpha=0;	
+	int state1=-1,state2=-1;
+		
+
+	if (length==3) {
+		for (int i=0; i<length; i++) {
+			if (!Seg[Seg_nr[i]]->state_change[State_in_seg_nr[i]]) {
+				water =Seg_nr[i];
+				alpha_f = Seg[Seg_nr[i]]->state_alphabulk[State_in_seg_nr[i]];
+			}
+		}
+
+		ns=Seg[water]->ns; 
+		if (ns!=3) {
+			cout <<"Please fix alphabulk of a (charged) state of 'water'" << endl;
+			success=false;
+		}	
+	
+		for (int i=0; i<ns; i++) {
+			if (Seg[water]->state_change[i]) {
+				if(Seg[water]->state_valence[i]==0) Seg[water]->state_alphabulk[i]=0; else {
+					Seg[water]->state_alphabulk[i]=k/alpha_f;
+					Seg[water]->ItState=i; 
+				}
+			}
+			sum_alpha+=Seg[water]->state_alphabulk[i]; 
+		}
+		for (int i=0; i<ns; i++) {
+			if (Seg[water]->state_change[i]) {
+				if(Seg[water]->state_valence[i]==0) {
+					Seg[water]->state_alphabulk[i]=1-sum_alpha; 
+				}
+			}
+		}
+//cout << endl; 
+//cout <<"Seg " << Seg[water]->name << endl;
+//for (int i=0; i<Seg[water]->ns; i++) cout << "state[" << i << "].alpha_bulk = " << Seg[water]->state_alphabulk[i] << endl;  
+
+
+	} else {
+		for (int i=0; i<length; i++) {
+			if (!Seg[Seg_nr[i]]->state_change[State_in_seg_nr[i]]) water =Seg_nr[i]; 
+		}
+		
+		for (int i=0; i<length; i++) {
+			if (Seg_nr[i]!=water) other =Seg_nr[i]; 
+		}
+
+
+		for (int i=0; i<length; i++) {
+			if (Seg_nr[i]==water) {
+				k=k/pow(Seg[water]->state_alphabulk[State_in_seg_nr[i]],Sto[i]);
+			} else  {
+				if (state1<0) { 
+					state1=State_in_seg_nr[i];
+				} else {
+					if (state2<0) state2=State_in_seg_nr[i];
+					else {cout <<"more than 2 states found...." << endl; }
+					if (Sto[i]>0) Seg[other]->ItState=State_in_seg_nr[i]; else
+					cout <<"expected positive sto number for state2 " << endl;
+				}	
+			}
+		}
+		Seg[other]->state_alphabulk[state2]=k/(k+1);
+		Seg[other]->state_alphabulk[state1]=1/(k+1); 
+
+//cout << endl; 
+//cout <<"Seg " << Seg[other]->name << endl;
+//for (int i=0; i<Seg[other]->ns; i++) cout << "state[" << i << "].alpha_bulk = " << Seg[other]->state_alphabulk[i] << endl;  
+
+
+	}
+
+ 	return success;
 }
 
 bool Reaction::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_){

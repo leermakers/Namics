@@ -1862,6 +1862,8 @@ if (debug) cout <<"AddState " << id_ <<" to seg " << name << endl;
 
 	return state_number;
 }
+
+/*
 void Segment::PutAlpha(Real* x,int &xi){
 if (debug) cout <<"PutAlpha " << name << endl;
 
@@ -1879,13 +1881,51 @@ if (debug) cout <<"PutAlpha " << name << endl;
 	for (int i=0; i<n_s; i++) {
 
 		if (state_change[i] && niv>0 && n_free>0) {
-			state_alphabulk[i]=0.5*(1.0+tanh(2.0*x[xi]))*(1.0-fixed_value); xi++; niv--;
+			state_alphabulk[i]=0.5*(1.0+tanh(2.0*x[xi]))*(1.0-fixed_value);
+//cout <<"iv : "<< xi <<" for "<< name << endl;  
+			xi++; niv--;
 		}
 		sum_alpha+=state_alphabulk[i];
 	}
 	for (int i=0; i<n_s; i++) {
 		if (state_alphabulk[i]==0) state_alphabulk[i]=1.0-sum_alpha;
 	}
+}
+*/
+
+bool Segment::PutAlpha(Real alpha) { //expected to replace other method with same name.
+	bool success=true;
+	Real fixed_value=0;
+	Real sum_alpha=0;
+	int n_s;
+	if (ns==1) n_s=0; else n_s=ns;
+	if (n_s==0) return false;
+ 
+
+	for (int i=0; i<n_s; i++) {
+		if (!state_change[i]) fixed_value+=state_alphabulk[i];} 
+	for (int i=0; i<n_s; i++) {
+		if (ItState !=i && state_change[i]) state_alphabulk[i]=0; 
+	}
+
+
+	state_alphabulk[ItState]*=alpha; 
+
+	for (int i=0; i<n_s; i++) {
+		sum_alpha+=state_alphabulk[i];
+	}
+	for (int i=0; i<n_s; i++) {
+		if (state_alphabulk[i]==0) state_alphabulk[i]=1.0-sum_alpha;
+		if (state_alphabulk[i]<0 || state_alphabulk[i]>1) {
+			success=false; cout <<"In Segment::PutAlpha, alphabulk out of bounds " << endl; 
+		}
+	}
+
+	//cout << endl; 
+	//cout <<"Seg " << name << endl;
+	//for (int i=0; i<n_s; i++) cout << "state[" << i << "].alpha_bulk = " << state_alphabulk[i] << endl;  
+
+	return success;	
 }
 
 bool Segment::CanBeReached(int x0, int y0, int z0, int Ds) {

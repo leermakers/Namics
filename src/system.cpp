@@ -2416,16 +2416,29 @@ Real System::GetFreeEnergy(void)
 	Real *phi;
 	Real *phi_side;
 	Real *g;
+	//Real *u;
 	Real chi;
 	int n_sysmon = SysMonList.size();
 	for (int j = 0; j < n_sysmon; j++)
 	{
-		phi = Seg[SysMonList[j]]->phi;
-		g = Seg[SysMonList[j]]->G1;
-		MinLog(TEMP, g, M);
-		Times(TEMP, phi, TEMP, M);
-		Norm(TEMP, -1, M);
-		Add(F, TEMP, M);
+		int n_states=Seg[SysMonList[j]]->ns; 
+
+		if (n_states==1) {
+			phi = Seg[SysMonList[j]]->phi;
+			g = Seg[SysMonList[j]]->G1;
+			MinLog(TEMP, g, M);
+			Times(TEMP, phi, TEMP, M);
+			Norm(TEMP, -1, M);
+			Add(F, TEMP, M);
+		} else {
+			for (int k=0; k<n_states; k++) {
+				phi = Seg[SysMonList[j]]->phi_state + k* M;
+				Cp(TEMP,Seg[SysMonList[j]]->u+k*M,M);
+				Times(TEMP,phi,TEMP,M);
+				Norm(TEMP,-1,M);
+				Add(F,TEMP,M);
+			}
+		}
 	}
 
 	for (int j = 0; j < n_seg; j++)
@@ -2492,6 +2505,7 @@ Real System::GetFreeEnergy(void)
 				Add(F, TEMP, M);
 			}
 		}
+		//FL
 		//Cp(TEMP,phi,M); Norm(TEMP,log(Seg[Sta[j]->mon_nr]->state_alphabulk[Sta[j]->state_nr]),M); Add(F,TEMP,M);
 	}
 
@@ -2582,6 +2596,7 @@ Real System::GetGrandPotential(void)
 	if (Mol[solvent]->MolType==water) {Mol[solvent]->AddToGP(GP); }
 
 	Add(GP,alpha,M);
+
 	Real phibulkA;
 	Real phibulkB;
 	Real chi;
@@ -2601,8 +2616,8 @@ Real System::GetGrandPotential(void)
 				for (int k = 0; k < n_seg; k++)
 					if (!(Seg[k]->freedom == "tagged" || Seg[k]->freedom == "clamp" || Seg[k]->freedom == "frozen"))
 					{
-						if (Seg[k]->ns < 2)
-						{
+						//if (Seg[k]->ns < 2)
+						//{
 							chi = Seg[j]->chi[k] / 2;
 							phi_side = Seg[k]->phi_side;
 							phibulkB = Seg[k]->phibulk;
@@ -2613,23 +2628,23 @@ Real System::GetGrandPotential(void)
 								Norm(TEMP, chi, M);
 								Add(GP, TEMP, M);
 							}
-						}
-						else
-						{
-							for (int k = 0; k < n_states; k++)
-							{
-								chi = Seg[j]->chi[n_seg + k] / 2; //not double counte;
-								phi_side = Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr;
-								phibulkB = Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
-								if (chi != 0)
-								{
-									Times(TEMP, phi, phi_side, M);
-									YisAplusC(TEMP, TEMP, -phibulkA * phibulkB, M);
-									Norm(TEMP, chi, M);
-									Add(GP, TEMP, M);
-								}
-							}
-						}
+						//}
+						//else
+						//{
+						//	for (int k = 0; k < n_states; k++)
+						//	{
+						//		chi = Seg[j]->chi[n_seg + k] / 2; //not double counte;
+						//		phi_side = Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr;
+						//		phibulkB = Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
+						//		if (chi != 0)
+						//		{
+						//			Times(TEMP, phi, phi_side, M);
+						//			YisAplusC(TEMP, TEMP, -phibulkA * phibulkB, M);
+						//			Norm(TEMP, chi, M);
+						//			Add(GP, TEMP, M);
+						//		}
+						//	}
+						//}
 					}
 			}
 		}
@@ -2855,7 +2870,13 @@ bool System::CreateMu()
 				Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
 			}
 		}
-		/*
+		 /*
+		int n_seg = Mol[i]->MolMonList.size();
+		Real *phi;
+		int n_states;
+		Real theta;
+		int M=Lat[0]->M;
+
 		for (int j=0; j<n_seg; j++) {
 			phi=Mol[i]->phi+j*M;
 			n_states=Seg[Mol[i]->MolMonList[j]]->ns;
@@ -2867,7 +2888,8 @@ bool System::CreateMu()
 					Mu+=theta*log(Seg[Mol[i]->MolMonList[j]]->state_alphabulk[k])/n;
 				}
 			}
-		}*/
+		}
+		 */
 
 		Mol[i]->Mu = Mu;
 	}

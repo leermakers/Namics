@@ -567,7 +567,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		pseudohessian=false; hessian =true;
 		//Zero(yy,niv);
 		
-		success=iterate(yy,niv,200,1e-8,0.05,0.0000001,true);
+		success=iterate(yy,niv,100,1e-8,1,0.0000001,true);
 		cout << iterations << " iterations to find alphabulk values. " <<endl; 
 		if (!success) cout <<"iteration for alphabulk values for internal states failed. Check eqns. " << endl;
 		e_info=ee_info;

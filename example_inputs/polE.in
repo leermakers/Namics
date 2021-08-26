@@ -1,0 +1,78 @@
+lat : flat : geometry : planar
+lat : flat : n_layers : 30
+lat : flat : gradients : 1
+lat : flat : lattice_type : simple_cubic
+lat : flat : lowerbound : surface
+lat : flat : bondlength : 3e-10
+
+mon : S : freedom : frozen
+mon : S : frozen_range : lowerbound;
+
+mon : W : freedom : free
+mon : A : freedom : free
+mon : A : valence : -1
+mon : Na : freedom : free
+mon : Cl : freedom : free
+mon : Na : valence : 1
+mon : Cl : valence : -1
+mon : X : valence : 1
+mon : X : freedom : pinned
+mon : X : pinned_range : firstlayer
+
+state : AH : valence : 0
+state : AH : mon : A
+state : AM : valence : -1
+state : AM : mon : A
+
+state : H3O : valence : 1
+state : H2O : valence : 0
+state : OH : valence : -1
+
+state : H3O : mon : W
+state : H2O : mon : W
+state : OH  : mon : W 
+
+mon : A : chi - S : -6
+
+reaction : weak : equation : 1(AH) + 1(H2O) = 1(AM) + 1(H3O)
+reaction : weak : pK : 7
+
+reaction : auto : equation : 2(H2O) = 1(OH) + 1(H3O) 
+reaction : auto : pK : 14
+
+state : H3O : alphabulk : 1e-7
+
+//mon : A : chi - S : -6
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : pol  : composition : (A)100
+mol : pol : freedom : restricted
+mol : pol : theta : 0.2
+
+mol : X : composition : (X)1(A)5
+mol : X : freedom : restricted
+mol : X : theta : 0.1
+
+mol : Na : composition  : (Na)1
+mol : Na : freedom : neutralizer
+
+mol : Cl : composition : (Cl)1
+mol : Cl : freedom : free
+mol : Cl : phibulk : 0.1
+
+
+output : pro : append : false
+pro : mol : pol : phi 
+pro : mon : A : phi
+pro : mon : Na : phi
+pro : mon : Cl : phi
+//pro : mon : B : phi
+//pro : mon : X : phi
+
+newton : isaac : tolerance : 1e-10
+//newton : isaac : iterationlimit : 0
+
+start
+

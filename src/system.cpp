@@ -1715,6 +1715,7 @@ void System::DoElectrostatics(Real *g, Real *x)
 	{
 		if (Seg[i]->ns < 2)
 		{
+//cout <<"Seg: " << Seg[i]->name << " valance : " << Seg[i]->valence << endl;
 			YplusisCtimesX(q, Seg[i]->phi, Seg[i]->valence, M);
 		}
 		YplusisCtimesX(eps, Seg[i]->phi, Seg[i]->epsilon, M);
@@ -1722,14 +1723,16 @@ void System::DoElectrostatics(Real *g, Real *x)
 	int statelistlength = In[0]->StateList.size();
 	for (int i = 0; i < statelistlength; i++)
 	{
+//cout <<"Seg: " << Seg[Sta[i]->mon_nr]->name << " state:  " << Sta[i]->state_nr << " valence " << Sta[i]->valence << endl;
 		YplusisCtimesX(q, Seg[Sta[i]->mon_nr]->phi_state + Sta[i]->state_nr * M, Sta[i]->valence, M);
 	}
 
 	Div(q, phitot, M);
 	Div(eps, phitot, M);
-	Lat[0]->set_bounds(eps);
 	Cp(psi,x,M); Cp(g,psi,M);
-	Lat[0]->set_bounds(psi);
+	Lat[0]->set_bounds(psi); //niet goed for surface bc.
+	//heck later fixen: TODO:
+	psi[0]=psi[1];
 	if (fixedPsi0) {
 		int length=FrozenList.size();
 		for (int i=0; i<length; i++) {
@@ -1940,6 +1943,7 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 		Cp(g+itpos,x+itpos,M);
 		DoElectrostatics(g+itpos,x+itpos);
 		Lat[0]->set_bounds(psi);
+		psi[0]=psi[1]; //TODO:: fix
 		Lat[0]->UpdatePsi(g+itpos,psi,q,eps,psiMask,grad_epsilon,fixedPsi0);
 		Lat[0]->remove_bounds(g+itpos);
 		itpos+=M;
@@ -2421,7 +2425,7 @@ Real System::GetFreeEnergy(void)
 	int n_sysmon = SysMonList.size();
 	for (int j = 0; j < n_sysmon; j++)
 	{
-		int n_states=Seg[SysMonList[j]]->ns; 
+		int n_states=Seg[SysMonList[j]]->ns;
 
 		if (n_states==1) {
 			phi = Seg[SysMonList[j]]->phi;

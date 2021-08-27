@@ -1,7 +1,6 @@
 #include "system.h"
 #include "tools.h"
-
-
+ 
 System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, vector<State *> Sta_, vector<Reaction *> Rea_, vector<Molecule *> Mol_, string name_)
 {
 	Seg = Seg_;
@@ -421,6 +420,7 @@ bool System::MakeItsLists(void) {
 	}
 
 	if ((ItMonListLength-ItMonList.size()==0 && ItStateListLength-ItStateList.size()==0) || ItMonListLength+ItStateListLength==0) changed = false; else changed = true;
+
 	return changed;
 }
 
@@ -580,6 +580,7 @@ bool System::CheckInput(int start_)
 			}
 			i++;
 		}
+
 		for (int j = 0; j < statelength; j++)
 		{
 			if (IsUnique(-1, j))
@@ -1885,8 +1886,11 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 	int state_length = In[0]->StateList.size();
 	int itstatelistlength=ItStateList.size();
 
-	Cp(g,x,iv);
 
+
+
+	Cp(g,x,iv);
+//cout <<endl; 
 	ComputePhis(x,iterations==0,residual);
  	Zero(alpha,M);
 
@@ -1895,13 +1899,16 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 		for (k=0; k<mon_length; k++) {
 			if (Seg[k]->ns<2) {
 				chi =Seg[ItMonList[i]]->chi[k];
-				if (chi!=0)
+				if (chi!=0) {
+//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[k]->name << "chi = " << chi << endl; 
 					PutAlpha(g+i*M,phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+				}
 			}
 		}
 		for (k=0; k<state_length; k++) {
 			chi =Seg[ItMonList[i]]->chi[mon_length+k];
 			if (chi!=0) {
+//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[Sta[k]->mon_nr]->name << " state " << Sta[k]->name << "chi = " << chi << endl; 
 				PutAlpha(g+i*M,phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
 			}
 		}
@@ -1912,16 +1919,18 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 		for (k=0; k<mon_length; k++) {
 			if (Seg[k]->ns<2) {
 				chi =Sta[ItStateList[i]]->chi[k];
-				if (chi!=0)
+				if (chi!=0) {
 					PutAlpha(g+(itmonlistlength+i)*M,phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+				}
 			}
 		}
 
 
 		for (k=0; k<state_length; k++) {
 			chi =Sta[ItStateList[i]]->chi[mon_length+k];
-			if (chi!=0)
+			if (chi!=0) {
 				PutAlpha(g+(itmonlistlength+i)*M,phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
+			}
 		}
 	}
 	for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
@@ -2448,6 +2457,7 @@ Real System::GetFreeEnergy(void)
 	for (int j = 0; j < n_seg; j++)
 	{
 		if (Seg[j]->ns < 2)
+		//if (true) //FL fix;
 		{
 			phi = Seg[j]->phi;
 			for (int k = 0; k < n_seg; k++)
@@ -2458,6 +2468,10 @@ Real System::GetFreeEnergy(void)
 						chi = Seg[j]->chi[k];
 					else
 						chi = Seg[j]->chi[k] / 2; //double counted.
+//if (chi!=0) {
+//cout <<" seg " << Seg[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//}
+
 					phi_side = Seg[k]->phi_side;
 					if (!(Seg[j]->freedom == "frozen" || Seg[j]->freedom == "clamp" || Seg[j]->freedom == "tagged" || chi == 0))
 					{
@@ -2469,7 +2483,11 @@ Real System::GetFreeEnergy(void)
 			}
 			for (int i = 0; i < n_states; i++)
 			{
-				chi = Seg[j]->chi[n_seg + i]; //not double counted;
+				chi = Seg[j]->chi[n_seg + i]/2; 
+//if (chi!=0) {
+//cout <<" seg " << Seg[j]->name << " : sta " << Sta[i]->name << " chi = " << chi << endl; 
+//}
+
 				phi_side = Seg[Sta[i]->mon_nr]->phi_side + Sta[i]->state_nr * M;
 				if (!(Seg[j]->freedom == "frozen" || Seg[j]->freedom == "clamp" || Seg[j]->freedom == "tagged" || chi == 0))
 				{
@@ -2481,15 +2499,20 @@ Real System::GetFreeEnergy(void)
 		}
 	}
 
-	for (int j = 0; j < n_states; j++)
+	//if (false) 
+	for (int j = 0; j < n_states; j++) 
 	{
 		phi = Seg[Sta[j]->mon_nr]->phi_state + Sta[j]->state_nr * M;
 		for (int k = 0; k < n_seg; k++)
 			if (Seg[k]->ns < 2)
 			{
 				chi = Sta[j]->chi[k];
-				if (!(Seg[k]->freedom == "frozen" || Seg[k]->freedom == "clamp" || Seg[k]->freedom == "tagged"))
-					chi = chi / 2;
+				if (!(Seg[k]->freedom == "frozen" || Seg[k]->freedom == "clamp" || Seg[k]->freedom == "tagged")) chi = chi / 2;
+//if (chi!=0) {
+//cout <<" sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//}
+
+
 				phi_side = Seg[k]->phi_side;
 				if (chi != 0)
 				{
@@ -2501,6 +2524,10 @@ Real System::GetFreeEnergy(void)
 		for (int l = 0; l < n_states; l++)
 		{
 			chi = Sta[j]->chi[n_seg + l] / 2;
+//if (chi!=0) {
+//cout <<" sta " << Sta[j]->name << " : sta " << Sta[l]->name << " chi = " << chi << endl; 
+//}
+
 			phi_side = Seg[Sta[j]->mon_nr]->phi_side + Sta[j]->state_nr * M;
 			if (chi != 0)
 			{
@@ -2618,11 +2645,16 @@ Real System::GetGrandPotential(void)
 				phi = Seg[j]->phi;
 				phibulkA = Seg[j]->phibulk;
 				for (int k = 0; k < n_seg; k++)
+				{
 					if (!(Seg[k]->freedom == "tagged" || Seg[k]->freedom == "clamp" || Seg[k]->freedom == "frozen"))
 					{
-						//if (Seg[k]->ns < 2)
-						//{
+						if (Seg[k]->ns < 2)
+						{
 							chi = Seg[j]->chi[k] / 2;
+//if (chi!=0) {
+//cout <<" seg " << Seg[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//}
+
 							phi_side = Seg[k]->phi_side;
 							phibulkB = Seg[k]->phibulk;
 							if (chi != 0)
@@ -2632,24 +2664,27 @@ Real System::GetGrandPotential(void)
 								Norm(TEMP, chi, M);
 								Add(GP, TEMP, M);
 							}
-						//}
-						//else
-						//{
-						//	for (int k = 0; k < n_states; k++)
-						//	{
-						//		chi = Seg[j]->chi[n_seg + k] / 2; //not double counte;
-						//		phi_side = Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr;
-						//		phibulkB = Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
-						//		if (chi != 0)
-						//		{
-						//			Times(TEMP, phi, phi_side, M);
-						//			YisAplusC(TEMP, TEMP, -phibulkA * phibulkB, M);
-						//			Norm(TEMP, chi, M);
-						//			Add(GP, TEMP, M);
-						//		}
-						//	}
-						//}
+						}
 					}
+				}
+						
+				for (int k = 0; k < n_states; k++)
+				{
+					chi = Seg[j]->chi[n_seg + k] / 2; 
+//if (chi!=0) {
+//cout <<" seg " << Seg[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl; 
+//}
+
+					phi_side = Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr * M;
+					phibulkB = Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
+					if (chi != 0)
+					{
+						Times(TEMP, phi, phi_side, M);
+						YisAplusC(TEMP, TEMP, -phibulkA * phibulkB, M);
+						Norm(TEMP, chi, M);
+						Add(GP, TEMP, M);
+					}
+				}
 			}
 		}
 	for (int j=0; j< n_seg; j++)
@@ -2671,8 +2706,12 @@ Real System::GetGrandPotential(void)
 				if (Seg[k]->ns < 2)
 				{
 					chi = Sta[j]->chi[k] / 2;
+//if (chi!=0) {
+//cout <<" sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//}
+
 					phibulkB = Seg[k]->phibulk;
-					phi_side = Seg[Sta[j]->mon_nr]->phi_side + Sta[k]->state_nr * M;
+					phi_side = Seg[k]->phi_side;
 					if (chi != 0)
 					{
 						Times(TEMP, phi, phi_side, M);
@@ -2684,7 +2723,11 @@ Real System::GetGrandPotential(void)
 			}
 		for (int k = 0; k < n_states; k++)
 		{
-			chi = Sta[j]->chi[n_seg + k] / 2; //double counted
+			chi = Sta[j]->chi[n_seg + k] / 2; 
+//if (chi!=0) {
+//cout <<" sta " << Sta[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl; 
+//}
+
 			phi_side = Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr * M;
 			phibulkB = Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
 			if (chi != 0)
@@ -2823,22 +2866,27 @@ bool System::CreateMu()
 						if (Mol[i]->IsClamped())
 							FB *= (NA + 2) / (NA);
 						chi = Seg[j]->chi[k] / 2;
+//if (chi!=0) {
+//cout <<"mol " << Mol[i]->name << " Seg " << Seg[j]->name << " : Seg " << Seg[k]->name << " chi = " << chi << endl; 
+//}
 						Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
 					}
-					else
-					{
-						for (int l = 0; l < statelistlength; l++)
-						{
-							phibulkB = Seg[Sta[l]->mon_nr]->state_phibulk[Sta[l]->state_nr];
-							FB = Mol[i]->fraction(Sta[l]->mon_nr) * Seg[Sta[l]->mon_nr]->state_alphabulk[Sta[l]->state_nr];
-							if (Mol[i]->IsTagged())
-								FB *= (NA + 1) / (NA);
-							if (Mol[i]->IsClamped())
-								FB *= (NA + 2) / (NA);
-							chi = Seg[j]->chi[n_mon + l] / 2;
-							Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
-						}
-					}
+				}
+				for (int l = 0; l < statelistlength; l++)
+				{
+					phibulkB = Seg[Sta[l]->mon_nr]->state_phibulk[Sta[l]->state_nr];
+					FB = Mol[i]->fraction(Sta[l]->mon_nr) * Seg[Sta[l]->mon_nr]->state_alphabulk[Sta[l]->state_nr];
+					if (Mol[i]->IsTagged())
+						FB *= (NA + 1) / (NA);
+					if (Mol[i]->IsClamped())
+						FB *= (NA + 2) / (NA);
+					chi = Seg[j]->chi[n_mon + l] / 2;
+//if (chi!=0) {
+//cout <<"mol " << Mol[i]->name << " Seg " << Seg[j]->name << " : sta " << Sta[l]->name << " chi = " << chi << endl; 
+//}
+
+					Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
+					
 				}
 			}
 		}
@@ -2860,6 +2908,10 @@ bool System::CreateMu()
 					if (Mol[i]->IsClamped())
 						FB *= (NA + 2) / (NA);
 					chi = Sta[j]->chi[k] / 2;
+//if (chi!=0) {
+//cout <<"mol " << Mol[i]->name << " Sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//}
+
 					Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
 				}
 			for (int k = 0; k < statelistlength; k++)
@@ -2871,10 +2923,14 @@ bool System::CreateMu()
 				if (Mol[i]->IsClamped())
 					FB *= (NA + 2) / (NA);
 				chi = Sta[j]->chi[n_mon + k] / 2;
+//if (chi!=0) {
+//cout <<"mol " << Mol[i]->name << " Sta " << Sta[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl; 
+//}
+
 				Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
 			}
 		}
-		 /*
+ /*
 		int n_seg = Mol[i]->MolMonList.size();
 		Real *phi;
 		int n_states;
@@ -2893,7 +2949,7 @@ bool System::CreateMu()
 				}
 			}
 		}
-		 */
+ */
 
 		Mol[i]->Mu = Mu;
 	}

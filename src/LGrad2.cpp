@@ -776,7 +776,7 @@ Real LGrad2::ComputeTheta(Real* phi) {
 
 void LGrad2::UpdateEE(Real* EE, Real* psi, Real* E) {
 	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_BT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
-	set_bounds(psi);
+	set_M_bounds(psi);
 	Zero(EE,M);
 	Real Exmin,Explus,Eymin,Eyplus;
 	int x,y,z;
@@ -807,7 +807,7 @@ void LGrad2::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 
 	Real r;
 	Real epsXplus, epsXmin, epsYplus,epsYmin;
-	set_bounds(eps);
+	set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
 
 	if (!fixedPsi0) {
@@ -1127,6 +1127,58 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 		}
 	}
 }
+
+void LGrad2::set_M_bounds(Real* X){
+if (debug) cout <<"set_bounds in LGrad2 " << endl;
+	int x,y;
+	int k=0;
+	if (fjc==1) {
+		for (x=1; x<MX+1; x++) {
+			X[x*JX+0] = X[x*JX+1];
+			X[x*JX+MY+1]=X[x*JX+MY];
+		}
+		for (y=1; y<MY+1; y++) {
+			X[0+y] = X[1*JX+y];
+			X[(MX+1)*JX+y]=X[MX*JX+y];
+		}
+		//corners
+		for (x=0; x<1; x++) {
+			X[x*JX+0] = X[x*JX+1];
+			X[x*JX+MY+1]=X[x*JX+MY];
+		}
+		for (x=MX+1; x<MX+2; x++) {
+			X[x*JX+0] = X[x*JX+1];
+			X[x*JX+MY+1]=X[x*JX+MY];
+		}
+	} else {
+		for (x=1; x<MX+1; x++) {
+			for (k=0; k<fjc; k++) {
+				X[P(x,k)] = X[P(x,2*fjc-k-1)];
+				X[P(x,MY+1+k)]=X[P(x,MY+fjc-k-1)];
+			}
+		}
+		for (y=1; y<MY+1; y++) {
+			for (k=0; k<fjc; k++) {
+				X[P(k,y)] = X[P(2*fjc-k-1,y)];
+				X[P(MX+1+k,y)]=X[P(MX+fjc-k-1,y)];
+			}
+		}
+		//corners
+		for (x=0; x<fjc; x++) {
+			for (k=0; k<fjc; k++) {
+				X[P(x,k)] = X[P(x,2*fjc-k-1)];
+				X[P(x,MY+1+k)]=X[P(x,MY-k)];
+			}
+		}
+		for (x=MX+1; x<MX+1+fjc; x++) {
+			for (k=0; k<fjc; k++) {
+				X[P(x,k)] = X[P(x,2*fjc-k-1)];
+				X[P(x,MY+1+k)]=X[P(x,MY-k)];
+			}
+		}
+	}
+}
+
 
 void LGrad2::remove_bounds(int *X){
 if (debug) cout <<"remove_bounds in LGrad2 " << endl;

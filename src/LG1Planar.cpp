@@ -196,7 +196,7 @@ if (debug) cout <<" propagate in LG1Planar " << endl;
 
 void LG1Planar::UpdateEE(Real* EE, Real* psi, Real* E) {
 	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_BT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
-	set_bounds(psi);
+	set_M_bounds(psi);
 	Zero(EE,M);
 	Real Exmin,Explus;
 
@@ -216,8 +216,7 @@ void LG1Planar::UpdateEE(Real* EE, Real* psi, Real* E) {
 void LG1Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
 	Real a,b,c,a_,b_,c_;
 	Real epsXplus, epsXmin;
-	set_bounds(eps); //TODO:: fix
-	eps[0]=eps[1];
+	set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
 
    if (!fixedPsi0) {

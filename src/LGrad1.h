@@ -23,6 +23,7 @@ class LGrad1 : public Lattice
 	void set_bounds(Real*,Real*);
 	void remove_bounds(int*);
 	void set_bounds(int*);
+	void set_M_bounds(Real*);
 
 	virtual void ComputeLambdas(void);
 	virtual void UpdateEE(Real*, Real*,Real*);

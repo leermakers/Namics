@@ -141,6 +141,7 @@ virtual ~Lattice();
 	virtual void set_bounds(Real*)=0;
 	virtual void remove_bounds(int*)=0;
 	virtual void set_bounds(int*)=0;
+	virtual void set_M_bounds(Real*)=0;
 	virtual Real ComputeGN(Real*,int)=0;
 	virtual void AddPhiS(Real*,Real*,Real*,int) =0;
 	virtual void AddPhiS(Real*,Real*,Real*,Real*,Real,int) =0;

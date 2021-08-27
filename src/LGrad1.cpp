@@ -531,7 +531,7 @@ Real LGrad1::ComputeTheta(Real* phi) {
 
 void LGrad1::UpdateEE(Real* EE, Real* psi, Real* E) {
 	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_BT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
-	set_bounds(psi);
+	set_M_bounds(psi);
 	Zero(EE,M);
 	Real Exmin,Explus;
 	int x;
@@ -598,7 +598,7 @@ void LGrad1::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 	Real a,b,c,a_,b_,c_;
 	Real r;
 	Real epsXplus, epsXmin;
-	set_bounds(eps);
+	set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
 
    if (!fixedPsi0) {
@@ -753,6 +753,21 @@ if (debug) cout <<"set_bounds in LGrad1 " << endl;
 		}
 	}
 }
+
+void LGrad1::set_M_bounds(Real* X){
+if (debug) cout <<"set_bounds in LGrad1 " << endl;
+	int k=0;
+	if (fjc==1) {
+		X[0]=X[1];
+		X[MX+1]=X[MX];
+	} else {
+		for (k=0; k<fjc; k++) {
+			X[k]=X[2*fjc-k-1];
+			X[MX+fjc+k]=X[MX+fjc-k-1];
+		}
+	}
+}
+
 
 void LGrad1::remove_bounds(int *X){
 if (debug) cout <<"remove_bounds in LGrad1 " << endl;

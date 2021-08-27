@@ -894,7 +894,7 @@ Real LGrad3::ComputeTheta(Real* phi) {
 
 void LGrad3::UpdateEE(Real* EE, Real* psi, Real* E) {
 	Real pf=0.5*eps0*bond_length/k_BT*(k_BT/e)*(k_BT/e); //(k_BT/e) is to convert dimensionless psi to real psi; 0.5 is needed in weighting factor.
-	set_bounds(psi);
+	set_M_bounds(psi);
 
 	Zero(EE,M);
 	AddGradSquare(EE+1,psi,psi+1,psi+2,M-2);
@@ -926,7 +926,7 @@ void LGrad3::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 	Real epsZplus, epsZmin;
 #endif
 	Real epsXplus, epsXmin, epsYplus,epsYmin;
-	set_bounds(eps);
+	set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
 
    if (!fixedPsi0) {
@@ -1449,6 +1449,48 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 		}
 	}
 }
+
+void LGrad3::set_M_bounds(Real* X){
+if (debug) cout <<"set_bounds in LGrad3 " << endl;
+	int x,y,z;
+	int k=0;
+	if (sub_box_on!=0) {
+		int k=sub_box_on;
+		for (int i=0; i<n_box[k]; i++)
+			SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
+	} else {
+		if (fjc==1) {
+			//SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){
+				X[x*JX+y*JY+0]     = X[x*JX+y*JY+1];
+				X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+MZ];
+			}
+			for (y=1; y<MY+1; y++) for (z=fjc; z<MZ+1; z++)  {
+				X[0        +y*JY+z*JZ] = X[1*JX+y*JY+z*JZ];
+				X[(MX+1)*JX+y*JY+z*JZ] = X[MX*JX+y*JY+z*JZ];
+			}
+			for (z=1; z<MZ+1; z++) for (x=1; x<MX+1; x++){
+				X[x*JX+0        +z*JZ] = X[x*JX+1*JY+z*JZ];
+				X[x*JX+(MY+1)*JY+z*JZ] = X[x*JX+MY*JY+z*JZ];
+			}
+
+		} else {
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+2*fjc-1-k];
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+MZ+fjc-k-1];
+			}
+			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+				for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = X[(2*fjc-1-k)*JX+y*JY+z*JZ];
+				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[(MX+fjc-k-1)*JX+y*JY+z*JZ];
+			}
+			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
+				for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = X[x*JX+(2*fjc-1-k)*JY+z*JZ];
+				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+(MY+fjc-k-1)*JY+z*JZ];
+			}
+		}
+	}
+}
+
 
 
 void LGrad3::remove_bounds(int *X){

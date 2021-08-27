@@ -89,7 +89,7 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 		case 3:
 			if (BC[2]=="mirror") {
 				if (fjc==1) BZ1=1; else {
-					for (int k=0; k<fjc; k++) B_Z1[k]=fjc+k;
+					for (int k=0; k<fjc; k++) B_Z1[k]=2*fjc-1-k;
 				}
 			}
 			if (BC[2]=="periodic") {
@@ -123,7 +123,7 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 		case 2:
 			if (BC[1]=="mirror") {
 				if (fjc==1) BY1=1; else {
-					for (int k=0; k<fjc; k++) B_Y1[k]=fjc+k;
+					for (int k=0; k<fjc; k++) B_Y1[k]=2*fjc-1-k;
 				}
 			}
 			if (BC[1]=="periodic") {
@@ -157,7 +157,7 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 		case 1:
 			if (BC[0]=="mirror") {
 				if (fjc==1) BX1=1; else {
-					for (int k=0; k<fjc; k++) B_X1[k]=fjc+k;
+					for (int k=0; k<fjc; k++) B_X1[k]=2*fjc-1-k;
 				}
 			}
 			if (BC[0]=="periodic") {

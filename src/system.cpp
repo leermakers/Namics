@@ -1731,9 +1731,7 @@ void System::DoElectrostatics(Real *g, Real *x)
 	Div(q, phitot, M);
 	Div(eps, phitot, M);
 	Cp(psi,x,M); Cp(g,psi,M);
-	Lat[0]->set_bounds(psi); //niet goed for surface bc.
-	//heck later fixen: TODO:
-	psi[0]=psi[1];
+	Lat[0]->set_M_bounds(psi);
 	if (fixedPsi0) {
 		int length=FrozenList.size();
 		for (int i=0; i<length; i++) {
@@ -1951,7 +1949,7 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 	if (charged) {
 		Cp(g+itpos,x+itpos,M);
 		DoElectrostatics(g+itpos,x+itpos);
-		Lat[0]->set_bounds(psi);
+		Lat[0]->set_M_bounds(psi);
 		psi[0]=psi[1]; //TODO:: fix
 		Lat[0]->UpdatePsi(g+itpos,psi,q,eps,psiMask,grad_epsilon,fixedPsi0);
 		Lat[0]->remove_bounds(g+itpos);

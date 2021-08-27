@@ -1820,7 +1820,7 @@ void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps,bool grad_epsi
 	int M=Lat[0]->M;
 	if (fixedPsi0) {
 		OverwriteC(psi,MASK,PSI0,M);
-		Lat[0]->set_bounds(psi);
+		Lat[0]->set_M_bounds(psi);
 		Lat[0]->UpdateQ(g,psi,q,eps,MASK,grad_epsilon);
 	}
 

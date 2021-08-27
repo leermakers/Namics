@@ -216,7 +216,7 @@ void LG1Planar::UpdateEE(Real* EE, Real* psi, Real* E) {
 void LG1Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
 	Real a,b,c,a_,b_,c_;
 	Real epsXplus, epsXmin;
-	set_M_bounds(eps);
+	//set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
 
    if (!fixedPsi0) {

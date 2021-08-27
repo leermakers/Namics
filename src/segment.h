@@ -61,6 +61,7 @@ public:
 	vector<Real>state_theta;
 
 	string filename;
+	string copy_of; 
 	string s_freedom;
 	bool block;
 	bool all_segment;
@@ -110,6 +111,7 @@ public:
 	Real Get_g(int ) ;
 	void Put_beta(int, Real );
 
+	string GetOriginal();	
 
 	int* H_P;
 	int* H_MASK;

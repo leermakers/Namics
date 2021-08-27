@@ -27,6 +27,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("n");
 	KEYS.push_back("size");
 	KEYS.push_back("pos");
+	KEYS.push_back("set_equal_to"); 
 
 	Amplitude=0; labda=0; seed=1;
 	var_pos=0;
@@ -935,6 +936,11 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {
 		if (GetValue("var_pos").size()>0) var_pos=In[0]->Get_int(GetValue("var_pos"),0);
+		
+		copy_of.clear(); 
+		if (GetValue("set_equal_to").size()>0) {
+			copy_of=GetValue("set_equal_to");
+		}
 
 
 		options.push_back("free");
@@ -959,11 +965,13 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 		valence =0;
 		if (GetValue("valence").size()>0) {
+			if (copy_of.size()>0) cout <<"For segmnet " << name << " value for valence will be overwritten by the value of segment " << copy_of << endl;
 			valence=In[0]->Get_Real(GetValue("valence"),0);
 			if (valence<-10 || valence > 10) cout <<"For mon " + name + " valence value out of range -10 .. 10. Default value used instead" << endl;
 		}
 		epsilon=80;
 		if (GetValue("epsilon").size()>0) {
+			if (copy_of.size()>0) cout <<"For segmnet " << name << "value for epsilon will be overwritten by the value of segment " << copy_of << endl; 
 			epsilon=In[0]->Get_Real(GetValue("epsilon"),80);
 			if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 250. Default value 80 used instead" << endl;
 		}
@@ -1109,6 +1117,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	if(n_pos>0) free(H_P);
 	free(r);
 	return success;
+}
+
+string Segment::GetOriginal() {
+	return copy_of; 
 }
 
 Real Segment::Get_g(int ii) {

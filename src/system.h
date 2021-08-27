@@ -126,6 +126,7 @@ public:
 	void PutParameter(string);
 	string GetValue(string);
 	string GetMonName(int );
+	int GetMonNr(string);
 	bool CheckChi_values(int);
 	bool MakeItsLists();
 	bool IsCharged();

@@ -1528,6 +1528,15 @@ int System::GetValue(string prop, int &int_result, Real &Real_result, string &st
 	return 0;
 }
 
+int System::GetMonNr(string MonName) {
+	int nr=-1;
+	int length=In[0]->MonList.size();
+	for (int i=0; i<length; i++) {
+		if (Seg[i]->name ==MonName) nr=i;
+	}
+	return nr; 
+}
+
 bool System::CheckChi_values(int n_seg)
 {
 	if (debug)
@@ -1548,13 +1557,6 @@ bool System::CheckChi_values(int n_seg)
 			if (CHI[i * n_seg + k] == 123)
 				CHI[i * n_seg + k] = 0;
 	for (int i = 0; i < n_seg; i++)
-		for (int k = i + 1; k < n_seg; k++)
-			if (CHI[i * n_seg + k] != CHI[k * n_seg + i])
-			{
-				cout << "CHI-value symmetry violated: chi(" << Seg[i]->name << "," << Seg[k]->name << ") is not equal to chi(" << Seg[k]->name << "," << Seg[i]->name << ")" << endl;
-				success = false;
-			}
-	for (int i = 0; i < n_seg; i++)
 	{
 		if (CHI[i * n_seg + i] != 0)
 		{
@@ -1562,6 +1564,38 @@ bool System::CheckChi_values(int n_seg)
 			success = false;
 		}
 	}
+	for (int i = 0; i < n_seg; i++)
+		for (int k = i + 1; k < n_seg; k++)
+			if (CHI[i * n_seg + k] != CHI[k * n_seg + i])
+			{
+				cout << "CHI-value symmetry violated: chi(" << Seg[i]->name << "," << Seg[k]->name << ") is not equal to chi(" << Seg[k]->name << "," << Seg[i]->name << ")" << endl;
+				success = false;
+			}
+
+	for (int i = 0; i < n_seg; i++) {
+		string NAME=Seg[i]->GetOriginal();
+		if (NAME.size()>0) {
+			int segnr = GetMonNr(NAME);
+			if (segnr<0 || segnr ==i) {
+				cout <<"In segment " << Seg[i]->name << " 'set_to_seg' is rejected because the segment " << NAME << " was not found" << endl; 
+			} else {
+				Seg[i]->valence = Seg[segnr]->valence;
+				Seg[i]->epsilon = Seg[segnr]->epsilon;
+				for (int k=0; k<n_seg; k++) {CHI[i*n_seg+k]=CHI[segnr*n_seg+k]; CHI[k*n_seg+i]=CHI[i*n_seg+k]; }
+				CHI[i*n_seg+segnr]=CHI[segnr*n_seg+i]=0;
+			}
+			//cout <<"'set_to_seg' " << NAME << " not yet implemented " << endl;  
+		}
+	}
+
+	for (int i = 0; i < n_seg; i++) {
+		cout <<GetMonName(i) << " " ;
+		for (int j=0; j<n_seg; j++) cout << CHI[i*n_seg+j] << " ";
+		cout << Seg[i]->valence << " " << Seg[i]->epsilon;
+		cout <<endl; 
+	}
+
+
 
 	int n_segments = In[0]->MonList.size();
 	int n_states = In[0]->StateList.size();
@@ -1719,6 +1753,7 @@ void System::DoElectrostatics(Real *g, Real *x)
 //cout <<"Seg: " << Seg[i]->name << " valance : " << Seg[i]->valence << endl;
 			YplusisCtimesX(q, Seg[i]->phi, Seg[i]->valence, M);
 		}
+		Lat[0]->set_bounds(Seg[i]->phi);
 		YplusisCtimesX(eps, Seg[i]->phi, Seg[i]->epsilon, M);
 	}
 	int statelistlength = In[0]->StateList.size();

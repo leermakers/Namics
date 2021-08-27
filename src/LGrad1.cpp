@@ -598,7 +598,7 @@ void LGrad1::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 	Real a,b,c,a_,b_,c_;
 	Real r;
 	Real epsXplus, epsXmin;
-	set_M_bounds(eps);
+	//set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
 
    if (!fixedPsi0) {

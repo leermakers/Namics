@@ -1577,23 +1577,22 @@ bool System::CheckChi_values(int n_seg)
 		if (NAME.size()>0) {
 			int segnr = GetMonNr(NAME);
 			if (segnr<0 || segnr ==i) {
-				cout <<"In segment " << Seg[i]->name << " 'set_to_seg' is rejected because the segment " << NAME << " was not found" << endl; 
-			} else {
-				Seg[i]->valence = Seg[segnr]->valence;
+				if (segnr < 0) cout <<"In segment " << Seg[i]->name << " 'set_to_seg' is rejected because the segment " << NAME << " was not found" << endl; 
+				else cout <<"In segment " << Seg[i]->name << " 'set_to_seg' is rejected because the segment " << NAME << " can not copied from itself...." << endl;
+			} else { 
 				Seg[i]->epsilon = Seg[segnr]->epsilon;
 				for (int k=0; k<n_seg; k++) {CHI[i*n_seg+k]=CHI[segnr*n_seg+k]; CHI[k*n_seg+i]=CHI[i*n_seg+k]; }
 				CHI[i*n_seg+segnr]=CHI[segnr*n_seg+i]=0;
 			}
-			//cout <<"'set_to_seg' " << NAME << " not yet implemented " << endl;  
 		}
 	}
 
-	for (int i = 0; i < n_seg; i++) {
-		cout <<GetMonName(i) << " " ;
-		for (int j=0; j<n_seg; j++) cout << CHI[i*n_seg+j] << " ";
-		cout << Seg[i]->valence << " " << Seg[i]->epsilon;
-		cout <<endl; 
-	}
+	//for (int i = 0; i < n_seg; i++) {
+	//	cout <<GetMonName(i) << " " ;
+	//	for (int j=0; j<n_seg; j++) cout << CHI[i*n_seg+j] << " ";
+	//	cout << Seg[i]->valence << " " << Seg[i]->epsilon;
+	//	cout <<endl; 
+	//}
 
 
 

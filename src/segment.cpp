@@ -940,6 +940,12 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		copy_of.clear(); 
 		if (GetValue("set_equal_to").size()>0) {
 			copy_of=GetValue("set_equal_to");
+			if (copy_of=="?") { success=false;
+				cout <<" The following is expected: 'set_equal_to : segname' where 'segname' as a valid name of a segment. " << endl; 
+				cout <<" Use with caution. The 'epsilon' and all 'chi'-parameters of the segment " << name << " will be copied from the (indicated) segment " << endl; 
+				cout <<" Note that the value of 'valence' is not copied. You can/should still set the 'valence' of segment '" << name << "' uniquely." <<endl;
+				cout <<" This has to do with the fact that 'electrostatics' is not effecting whether or not iteration variables are used for a particular segment. " <<endl; 
+			} 
 		}
 
 
@@ -962,16 +968,15 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			}
 		}
 
-
 		valence =0;
 		if (GetValue("valence").size()>0) {
-			if (copy_of.size()>0) cout <<"For segmnet " << name << " value for valence will be overwritten by the value of segment " << copy_of << endl;
+			//if (copy_of.size()>0) cout <<"For segment " << name << " value for valence will be overwritten by the value of segment " << copy_of << endl;
 			valence=In[0]->Get_Real(GetValue("valence"),0);
 			if (valence<-10 || valence > 10) cout <<"For mon " + name + " valence value out of range -10 .. 10. Default value used instead" << endl;
 		}
 		epsilon=80;
 		if (GetValue("epsilon").size()>0) {
-			if (copy_of.size()>0) cout <<"For segmnet " << name << "value for epsilon will be overwritten by the value of segment " << copy_of << endl; 
+			if (copy_of.size()>0) cout <<"For segment " << name << "value for epsilon will be overwritten by the value of segment " << copy_of << endl; 
 			epsilon=In[0]->Get_Real(GetValue("epsilon"),80);
 			if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 250. Default value 80 used instead" << endl;
 		}

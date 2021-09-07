@@ -27,7 +27,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("n");
 	KEYS.push_back("size");
 	KEYS.push_back("pos");
-	KEYS.push_back("set_equal_to"); 
+	KEYS.push_back("set_equal_to");
 
 	Amplitude=0; labda=0; seed=1;
 	var_pos=0;
@@ -936,16 +936,16 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	success = In[0]->CheckParameters("mon",name,start,KEYS,PARAMETERS,VALUES);
 	if(success) {
 		if (GetValue("var_pos").size()>0) var_pos=In[0]->Get_int(GetValue("var_pos"),0);
-		
-		copy_of.clear(); 
+
+		copy_of.clear();
 		if (GetValue("set_equal_to").size()>0) {
 			copy_of=GetValue("set_equal_to");
 			if (copy_of=="?") { success=false;
-				cout <<" The following is expected: 'set_equal_to : segname' where 'segname' as a valid name of a segment. " << endl; 
-				cout <<" Use with caution. The 'epsilon' and all 'chi'-parameters of the segment " << name << " will be copied from the (indicated) segment " << endl; 
+				cout <<" The following is expected: 'set_equal_to : segname' where 'segname' as a valid name of a segment. " << endl;
+				cout <<" Use with caution. The 'epsilon' and all 'chi'-parameters of the segment " << name << " will be copied from the (indicated) segment " << endl;
 				cout <<" Note that the value of 'valence' is not copied. You can/should still set the 'valence' of segment '" << name << "' uniquely." <<endl;
-				cout <<" This has to do with the fact that 'electrostatics' is not effecting whether or not iteration variables are used for a particular segment. " <<endl; 
-			} 
+				cout <<" This has to do with the fact that 'electrostatics' is not effecting whether or not iteration variables are used for a particular segment. " <<endl;
+			}
 		}
 
 
@@ -976,7 +976,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		}
 		epsilon=80;
 		if (GetValue("epsilon").size()>0) {
-			if (copy_of.size()>0) cout <<"For segment " << name << "value for epsilon will be overwritten by the value of segment " << copy_of << endl; 
+			if (copy_of.size()>0) cout <<"For segment " << name << "value for epsilon will be overwritten by the value of segment " << copy_of << endl;
 			epsilon=In[0]->Get_Real(GetValue("epsilon"),80);
 			if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 250. Default value 80 used instead" << endl;
 		}
@@ -1125,7 +1125,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 }
 
 string Segment::GetOriginal() {
-	return copy_of; 
+	return copy_of;
 }
 
 Real Segment::Get_g(int ii) {
@@ -1694,7 +1694,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 		}
 	}
 	int length=chi_name.size();
-	for (int i=0; i<length; i++) push("chi-"+chi_name[i],chi[i]);
+	for (int i=0; i<length; i++) push("chi_"+chi_name[i],chi[i]);
 	if (fixedPsi0) push("Psi0",PSI0);
 	if (freedom=="pinned") push("range",GetValue("pinned_range"));
 	if (freedom=="frozen") push("range",GetValue("frozen_range"));
@@ -1853,7 +1853,7 @@ if (debug) cout <<"AddState " << id_ <<" to seg " << name << endl;
 			state_name[k]=In[0]->StateList[ID];
 			found=true;
 			state_alphabulk[k]=alphabulk;
-			state_valence[k]=valence;  
+			state_valence[k]=valence;
 			if (fixed) state_change[k]=false; else state_change[k]=true;
 			state_number=k;
 		}
@@ -1899,7 +1899,7 @@ if (debug) cout <<"PutAlpha " << name << endl;
 
 		if (state_change[i] && niv>0 && n_free>0) {
 			state_alphabulk[i]=0.5*(1.0+tanh(2.0*x[xi]))*(1.0-fixed_value);
-//cout <<"iv : "<< xi <<" for "<< name << endl;  
+//cout <<"iv : "<< xi <<" for "<< name << endl;
 			xi++; niv--;
 		}
 		sum_alpha+=state_alphabulk[i];
@@ -1917,16 +1917,16 @@ bool Segment::PutAlpha(Real alpha) { //expected to replace other method with sam
 	int n_s;
 	if (ns==1) n_s=0; else n_s=ns;
 	if (n_s==0) return false;
- 
+
 
 	for (int i=0; i<n_s; i++) {
-		if (!state_change[i]) fixed_value+=state_alphabulk[i];} 
+		if (!state_change[i]) fixed_value+=state_alphabulk[i];}
 	for (int i=0; i<n_s; i++) {
-		if (ItState !=i && state_change[i]) state_alphabulk[i]=0; 
+		if (ItState !=i && state_change[i]) state_alphabulk[i]=0;
 	}
 
 
-	state_alphabulk[ItState]*=alpha; 
+	state_alphabulk[ItState]*=alpha;
 
 	for (int i=0; i<n_s; i++) {
 		sum_alpha+=state_alphabulk[i];
@@ -1934,15 +1934,15 @@ bool Segment::PutAlpha(Real alpha) { //expected to replace other method with sam
 	for (int i=0; i<n_s; i++) {
 		if (state_alphabulk[i]==0) state_alphabulk[i]=1.0-sum_alpha;
 		if (state_alphabulk[i]<0 || state_alphabulk[i]>1) {
-			success=false; cout <<"In Segment::PutAlpha, alphabulk out of bounds " << endl; 
+			success=false; cout <<"In Segment::PutAlpha, alphabulk out of bounds " << endl;
 		}
 	}
 
-	//cout << endl; 
+	//cout << endl;
 	//cout <<"Seg " << name << endl;
-	//for (int i=0; i<n_s; i++) cout << "state[" << i << "].alpha_bulk = " << state_alphabulk[i] << endl;  
+	//for (int i=0; i<n_s; i++) cout << "state[" << i << "].alpha_bulk = " << state_alphabulk[i] << endl;
 
-	return success;	
+	return success;
 }
 
 bool Segment::CanBeReached(int x0, int y0, int z0, int Ds) {

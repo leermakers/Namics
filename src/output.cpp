@@ -414,7 +414,9 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				fprintf(fp,"%s",s.c_str());
 				if (i<length-1) fprintf(fp,"%d\t",subl);
 				int length_vec=Size;
-				for (int j=0; j<length_vec; j++) fprintf(fp,"%i\t",X[j]);
+				for (int j=0; j<length_vec; j++) {
+					if (j<length_vec-1) fprintf(fp,"%i\t",X[j]); else fprintf(fp,"%i",X[j]);
+				}
 				fprintf(fp,"\n");
 			}
 		}
@@ -487,7 +489,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			for (int i=0; i<length; i++) {
 				key=OUT_key[i];
 				string s=key.append(sep).append(OUT_name[i]).append(sep).append(OUT_prop[i]);
-				fprintf(fp,"%s\t",s.c_str());
+				if (i<length-1) fprintf(fp,"%s\t",s.c_str()); else fprintf(fp,"%s",s.c_str());
 			}
 			fprintf(fp,"\n");
 		} else fp=fopen(filename.c_str(),"a");
@@ -507,15 +509,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			vector<string> sub;
 			In[0] -> split(OUT_prop[i],'(',sub);
 			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,Real_result,string_result);
-			if (result_nr==0) {fprintf(fp,"NiN\t");}
-			if (result_nr==1) {fprintf(fp,"%i\t",int_result);}
-			if (result_nr==2) {fprintf(fp,"%.16e\t",Real_result);}
+			if (result_nr==0) {if (i<length-1) fprintf(fp,"NiN\t"); else fprintf(fp,"NiN");}
+			if (result_nr==1) {if (i<length-1) fprintf(fp,"%i\t",int_result); else fprintf(fp,"%i",int_result);}
+			if (result_nr==2) {if (i<length-1) fprintf(fp,"%.16e\t",Real_result); else  fprintf(fp,"%.16e",Real_result);}
 			if (result_nr==3) {
 				if (sub[0]==OUT_prop[i]) {
-					fprintf(fp,"%s\t",string_result.c_str());
+					if (i<length-1) fprintf(fp,"%s\t",string_result.c_str()); else fprintf(fp,"%s",string_result.c_str());
 				} else {
 					Real* X=GetPointer(OUT_key[i],OUT_name[i],sub[0],Size);
-					fprintf(fp,"%e\t",Lat[0]->GetValue(X,sub[1]));
+					if (i<length-1) fprintf(fp,"%e\t",Lat[0]->GetValue(X,sub[1])); else fprintf(fp,"%e",Lat[0]->GetValue(X,sub[1]));
 				}
 			}
 		}

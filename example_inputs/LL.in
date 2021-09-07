@@ -1,17 +1,17 @@
-lat : flat : n_layers : 100
+lat : flat : n_layers : 200
 lat : flat : geometry : planar
 lat : flat : lattice_type : hexagonal
 //lat : flat : FJC_choices : 5
 
 mon : A : freedom : pinned
-mon : A : pinned_range : 1;60
+mon : A : pinned_range : 1;120
 
 mon : B : freedom : free
 mon : A : chi-B : 0.8
 
 mol : A : composition : (A)4
 mol : A : freedom : restricted
-mol : A : theta : 50
+mol : A : theta : 100
 
 mol : B : composition : (B)4
 mol : B : freedom : solvent
@@ -28,7 +28,7 @@ pro : mon : B : phi
 
 sys : L : constraint : delta
 sys : L : delta_molecules : A;B
-sys : L : delta_range : (50)
+sys : L : delta_range : (100)
 sys : L : phi_ratio : 1
 
 var : mol-A : search : theta
@@ -36,7 +36,7 @@ var : sys-L : Laplace_pressure : 0
 
 mol : A : compute_width_interface : true
 output : kal : append : false
-kal : mon : A : chi-B
+kal : mon : A : chi_B
 kal : sys : L : grand_potential
 kal : mol : A : width
 kal : mol : A : phi(1)
@@ -50,7 +50,7 @@ var : mon-A : step : -0.01
 var : mon-A : end_value :0.51
 start
 output : kal : append : true
-mon : A : chi-B : 5.1
+mon : A : chi-B : 0.51
 var : mon-A : step : -0.001
 var : mon-A : end_value : 0.501
 start

@@ -1,6 +1,6 @@
 #include "system.h"
 #include "tools.h"
- 
+
 System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, vector<State *> Sta_, vector<Reaction *> Rea_, vector<Molecule *> Mol_, string name_)
 {
 	Seg = Seg_;
@@ -1374,7 +1374,7 @@ void System::PushOutput()
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++)
 	for (int j=0; j<n_seg; j++){
-		push("chi-"+Seg[i]->name+"-"+Seg[j]->name,CHI[i * n_seg + j]);
+		push("chi_"+Seg[i]->name+"_"+Seg[j]->name,CHI[i * n_seg + j]);
 	}
 	if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar") {
 		push("KJ0", -Lat[0]->Moment(GrandPotentialDensity,0, 1));
@@ -1534,7 +1534,7 @@ int System::GetMonNr(string MonName) {
 	for (int i=0; i<length; i++) {
 		if (Seg[i]->name ==MonName) nr=i;
 	}
-	return nr; 
+	return nr;
 }
 
 bool System::CheckChi_values(int n_seg)
@@ -1577,9 +1577,9 @@ bool System::CheckChi_values(int n_seg)
 		if (NAME.size()>0) {
 			int segnr = GetMonNr(NAME);
 			if (segnr<0 || segnr ==i) {
-				if (segnr < 0) cout <<"In segment " << Seg[i]->name << " 'set_to_seg' is rejected because the segment " << NAME << " was not found" << endl; 
+				if (segnr < 0) cout <<"In segment " << Seg[i]->name << " 'set_to_seg' is rejected because the segment " << NAME << " was not found" << endl;
 				else cout <<"In segment " << Seg[i]->name << " 'set_to_seg' is rejected because the segment " << NAME << " can not copied from itself...." << endl;
-			} else { 
+			} else {
 				Seg[i]->epsilon = Seg[segnr]->epsilon;
 				for (int k=0; k<n_seg; k++) {CHI[i*n_seg+k]=CHI[segnr*n_seg+k]; CHI[k*n_seg+i]=CHI[i*n_seg+k]; }
 				CHI[i*n_seg+segnr]=CHI[segnr*n_seg+i]=0;
@@ -1591,7 +1591,7 @@ bool System::CheckChi_values(int n_seg)
 	//	cout <<GetMonName(i) << " " ;
 	//	for (int j=0; j<n_seg; j++) cout << CHI[i*n_seg+j] << " ";
 	//	cout << Seg[i]->valence << " " << Seg[i]->epsilon;
-	//	cout <<endl; 
+	//	cout <<endl;
 	//}
 
 
@@ -1922,7 +1922,7 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 
 
 	Cp(g,x,iv);
-//cout <<endl; 
+//cout <<endl;
 	ComputePhis(x,iterations==0,residual);
  	Zero(alpha,M);
 
@@ -1932,7 +1932,7 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 			if (Seg[k]->ns<2) {
 				chi =Seg[ItMonList[i]]->chi[k];
 				if (chi!=0) {
-//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[k]->name << "chi = " << chi << endl; 
+//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[k]->name << "chi = " << chi << endl;
 					PutAlpha(g+i*M,phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 				}
 			}
@@ -1940,7 +1940,7 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 		for (k=0; k<state_length; k++) {
 			chi =Seg[ItMonList[i]]->chi[mon_length+k];
 			if (chi!=0) {
-//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[Sta[k]->mon_nr]->name << " state " << Sta[k]->name << "chi = " << chi << endl; 
+//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[Sta[k]->mon_nr]->name << " state " << Sta[k]->name << "chi = " << chi << endl;
 				PutAlpha(g+i*M,phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
 			}
 		}
@@ -2501,7 +2501,7 @@ Real System::GetFreeEnergy(void)
 					else
 						chi = Seg[j]->chi[k] / 2; //double counted.
 //if (chi!=0) {
-//cout <<" seg " << Seg[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//cout <<" seg " << Seg[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
 //}
 
 					phi_side = Seg[k]->phi_side;
@@ -2515,9 +2515,9 @@ Real System::GetFreeEnergy(void)
 			}
 			for (int i = 0; i < n_states; i++)
 			{
-				chi = Seg[j]->chi[n_seg + i]/2; 
+				chi = Seg[j]->chi[n_seg + i]/2;
 //if (chi!=0) {
-//cout <<" seg " << Seg[j]->name << " : sta " << Sta[i]->name << " chi = " << chi << endl; 
+//cout <<" seg " << Seg[j]->name << " : sta " << Sta[i]->name << " chi = " << chi << endl;
 //}
 
 				phi_side = Seg[Sta[i]->mon_nr]->phi_side + Sta[i]->state_nr * M;
@@ -2531,8 +2531,8 @@ Real System::GetFreeEnergy(void)
 		}
 	}
 
-	//if (false) 
-	for (int j = 0; j < n_states; j++) 
+	//if (false)
+	for (int j = 0; j < n_states; j++)
 	{
 		phi = Seg[Sta[j]->mon_nr]->phi_state + Sta[j]->state_nr * M;
 		for (int k = 0; k < n_seg; k++)
@@ -2541,7 +2541,7 @@ Real System::GetFreeEnergy(void)
 				chi = Sta[j]->chi[k];
 				if (!(Seg[k]->freedom == "frozen" || Seg[k]->freedom == "clamp" || Seg[k]->freedom == "tagged")) chi = chi / 2;
 //if (chi!=0) {
-//cout <<" sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//cout <<" sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
 //}
 
 
@@ -2557,7 +2557,7 @@ Real System::GetFreeEnergy(void)
 		{
 			chi = Sta[j]->chi[n_seg + l] / 2;
 //if (chi!=0) {
-//cout <<" sta " << Sta[j]->name << " : sta " << Sta[l]->name << " chi = " << chi << endl; 
+//cout <<" sta " << Sta[j]->name << " : sta " << Sta[l]->name << " chi = " << chi << endl;
 //}
 
 			phi_side = Seg[Sta[j]->mon_nr]->phi_side + Sta[j]->state_nr * M;
@@ -2684,7 +2684,7 @@ Real System::GetGrandPotential(void)
 						{
 							chi = Seg[j]->chi[k] / 2;
 //if (chi!=0) {
-//cout <<" seg " << Seg[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//cout <<" seg " << Seg[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
 //}
 
 							phi_side = Seg[k]->phi_side;
@@ -2699,12 +2699,12 @@ Real System::GetGrandPotential(void)
 						}
 					}
 				}
-						
+
 				for (int k = 0; k < n_states; k++)
 				{
-					chi = Seg[j]->chi[n_seg + k] / 2; 
+					chi = Seg[j]->chi[n_seg + k] / 2;
 //if (chi!=0) {
-//cout <<" seg " << Seg[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl; 
+//cout <<" seg " << Seg[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl;
 //}
 
 					phi_side = Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr * M;
@@ -2739,7 +2739,7 @@ Real System::GetGrandPotential(void)
 				{
 					chi = Sta[j]->chi[k] / 2;
 //if (chi!=0) {
-//cout <<" sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//cout <<" sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
 //}
 
 					phibulkB = Seg[k]->phibulk;
@@ -2755,9 +2755,9 @@ Real System::GetGrandPotential(void)
 			}
 		for (int k = 0; k < n_states; k++)
 		{
-			chi = Sta[j]->chi[n_seg + k] / 2; 
+			chi = Sta[j]->chi[n_seg + k] / 2;
 //if (chi!=0) {
-//cout <<" sta " << Sta[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl; 
+//cout <<" sta " << Sta[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl;
 //}
 
 			phi_side = Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr * M;
@@ -2899,7 +2899,7 @@ bool System::CreateMu()
 							FB *= (NA + 2) / (NA);
 						chi = Seg[j]->chi[k] / 2;
 //if (chi!=0) {
-//cout <<"mol " << Mol[i]->name << " Seg " << Seg[j]->name << " : Seg " << Seg[k]->name << " chi = " << chi << endl; 
+//cout <<"mol " << Mol[i]->name << " Seg " << Seg[j]->name << " : Seg " << Seg[k]->name << " chi = " << chi << endl;
 //}
 						Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
 					}
@@ -2914,11 +2914,11 @@ bool System::CreateMu()
 						FB *= (NA + 2) / (NA);
 					chi = Seg[j]->chi[n_mon + l] / 2;
 //if (chi!=0) {
-//cout <<"mol " << Mol[i]->name << " Seg " << Seg[j]->name << " : sta " << Sta[l]->name << " chi = " << chi << endl; 
+//cout <<"mol " << Mol[i]->name << " Seg " << Seg[j]->name << " : sta " << Sta[l]->name << " chi = " << chi << endl;
 //}
 
 					Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
-					
+
 				}
 			}
 		}
@@ -2941,7 +2941,7 @@ bool System::CreateMu()
 						FB *= (NA + 2) / (NA);
 					chi = Sta[j]->chi[k] / 2;
 //if (chi!=0) {
-//cout <<"mol " << Mol[i]->name << " Sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl; 
+//cout <<"mol " << Mol[i]->name << " Sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
 //}
 
 					Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
@@ -2956,7 +2956,7 @@ bool System::CreateMu()
 					FB *= (NA + 2) / (NA);
 				chi = Sta[j]->chi[n_mon + k] / 2;
 //if (chi!=0) {
-//cout <<"mol " << Mol[i]->name << " Sta " << Sta[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl; 
+//cout <<"mol " << Mol[i]->name << " Sta " << Sta[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl;
 //}
 
 				Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);

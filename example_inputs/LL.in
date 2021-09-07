@@ -34,9 +34,23 @@ sys : L : phi_ratio : 1
 var : mol-A : search : theta
 var : sys-L : Laplace_pressure : 0
 
+mol : A : compute_width_interface : true
 output : kal : append : false
+kal : mon : A : chi-B
 kal : sys : L : grand_potential
+kal : mol : A : width
+kal : mol : A : phi(1)
+kal : mol : A : phibulk
+
 newton : isaac : tolerance : 1e-10
 newton : isaac : super_deltamax : 0.00001
 
+var : mon-A : scan : chi-B
+var : mon-A : step : -0.01
+var : mon-A : end_value :0.51
+start
+output : kal : append : true
+mon : A : chi-B : 5.1
+var : mon-A : step : -0.001
+var : mon-A : end_value : 0.501
 start

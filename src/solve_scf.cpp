@@ -612,9 +612,8 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		case diis:
 			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
 		break;		
-		case conjugate_gradient:
-			cout <<"conjugated gradients not implemented " << endl; 
-			success=false;
+		case conjugate_gradient: 
+			success =iterate_conjugate_gradient(xx,iv,iterationlimit,tolerance,deltamax); 
 		break;
 		case LBFGS:
 			success=true;
@@ -679,7 +678,7 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 			success=iterate(xx,iv,iterationlimit,tolerance,deltamax,deltamin,true);
 		break;
 		case conjugate_gradient:
-			SFNewton::conjugate_gradient(xx,iv,iterationlimit,tolerance);
+			success=iterate_conjugate_gradient(xx,iv,iterationlimit,tolerance,deltamax);
 		break;
 		default:
 			success = false; cout <<" in SolveMesodyn the iteration method is unknown. " << endl;

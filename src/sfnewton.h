@@ -96,14 +96,14 @@ public:
 	void gausb(Real*, Real*, int);
 	Real newfunction(Real*, Real*, int);
 	Real residue(Real*, Real*, Real*, int, Real);
-//************************************
+
 	bool iterate(Real*,int,int,Real,Real,Real,bool);
 	bool iterate_Picard(Real*,int,int,Real,Real);
 	bool iterate_DIIS(Real*,int,int, int, Real, Real);
 	bool iterate_RF(Real*,int,int,Real,Real,string);
 	void Ax(Real*, Real*, int);
 	void DIIS(Real* , Real*, Real*, Real* , Real* ,Real*, int, int , int, int);
-	void conjugate_gradient(Real *, int, int ,Real ) ;
+	bool iterate_conjugate_gradient(Real*,int,int,Real,Real);
 	void Hd(Real *, Real *, Real *, Real *, Real *, Real*, Real);
 private:
 	Real computeresidual(Real*, int);

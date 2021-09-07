@@ -834,7 +834,7 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
       		posi +=m;
 		}
 	  	Real Dvalue;
-    	Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
+    		Dot(Dvalue,x_x0+posi*nvar, x_x0+k*nvar,nvar);
 		Aij[i+m*(k_diis-1)] = Aij[k_diis-1+m*i] = Dvalue + 1e-9;
 		// write to (compressed) matrix Apij
 		for (int j=0; j<k_diis; j++)
@@ -960,7 +960,7 @@ int nvar=nvar_;
 			}
 		}
 
-		success=Message(e_info,s_info,iterations,iterationlimit,residual,tolerance,"");
+		success=Message(e_info,true,iterations,iterationlimit,residual,tolerance,"");
 
 	} catch (int error) {
 
@@ -1053,11 +1053,11 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	return success;
 }
 
-void
-SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real tolerance) {
+bool SFNewton::iterate_conjugate_gradient(Real *x, int nvar,int iterationlimit , Real tolerance, Real deltamax) {
 // Based on An Introduction to the Conjugate Gradient Method Without the Agonizing Pain Edition 1 1/4 - Jonathan Richard Shewchuk
 // CG with Newton-Raphson and Fletcher-Reeves
 	int  k=0, j=0, j_max =linesearchlimit;
+	bool success=true;
 
 	Real inner_err=0, delta_new=0, delta_old=0, delta_d=0, delta_mid = 0;
 
@@ -1121,24 +1121,25 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 			for (int z=0; z<nvar; z++) noemer +=H_d[z]*d[z];
 			alpha=teller/noemer;
 
-			for (int z=0; z<nvar; z++) {x[z]=x0[z]+alpha*d[z];}
+			for (int z=0; z<nvar; z++) {x[z]=x0[z]+deltamax*alpha*d[z];}
 			residuals(x,g);
 			j++;
-			proceed =(j<j_max && alpha*inner_err > 1e-8);
+			proceed =(j<j_max && alpha*inner_err> 1e-8);
 		}
 
 
-    for (int z=0; z<nvar; z++) r_old[z]=r[z];
+   		for (int z=0; z<nvar; z++) r_old[z]=r[z];
 		for (int z=0; z<nvar; z++) r[z]=-g[z];
 		delta_old=delta_new;
 		delta_new=0;
-    for (int z=0; z<nvar; z++) delta_mid += r[z]*r_old[z];
+    		for (int z=0; z<nvar; z++) delta_mid += r[z]*r_old[z];
 		for (int z=0; z<nvar; z++) delta_new += r[z]*r[z];
 		beta =  (delta_new-delta_mid)/delta_old;
 		for (int z=0; z<nvar; z++) d[z]=r[z]+beta*d[z];
 		k++;
 		rd=0;
 		for (int z=0; z<nvar; z++) rd +=r[z]*d[z];
+
 		if (k == nvar || rd<=0) {
 			k=0; beta=0;
 
@@ -1151,11 +1152,15 @@ SFNewton::conjugate_gradient(Real *x, int nvar,int iterationlimit , Real toleran
 			cout << "i = " << iterations << " |g| = "<< accuracy << "  alpha("<<j<<") = " << alpha << "  beta = " << beta << endl;
 		}
 	}
+	if (iterations==iterationlimit) success=false;
+	Message(e_info,true,iterations,iterationlimit,accuracy,tolerance,"");
+
   #ifdef CUDA
   cudaFree(H_d); cudaFree(g);cudaFree(dg);cudaFree(r);cudaFree(r_old);cudaFree(d);cudaFree(x0);
   #else
   free(H_d); free(g);free(dg);free(r);free(r_old);free(d);free(x0);
   #endif
+  return success;
 }
 
 void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real nvar) {
@@ -1180,6 +1185,7 @@ void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real
 			warning("invalid numbers in gradient");
 			dg[i] = 1;
 		}
-	}*/
+	}
+  */
 	for (int i=0; i<nvar; i++) H_q[i] = (dg[i]-g[i])/delta;
 }

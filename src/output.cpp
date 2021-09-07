@@ -119,8 +119,17 @@ if (debug) cout << "CheckInput in output " << endl;
 
 		if (GetValue("header_separator").size()>0) {
 			sep=GetValue("header_separator");
+			if (sep=="classic") {
+				sep = ":";
+			} else {
+				if (sep.length()>1) {
+					cout <<"For output entry 'header_separator', expected to find the keyword 'classic' (meaning ':') or a single character." << endl;
+					cout <<"header_separator set to the default value '_'" << endl;
+					sep="_";
+				}
+			}
 		} else {
-			sep = ":";
+			sep = "_";
 		}
 
 		if (GetValue("use_output_folder").size()>0) {

@@ -29,18 +29,19 @@ public:
 	vector<System*> Sys;
 	vector<Solve_scf*> New;
 	int n_output;
-	int n_starts; 
+	int n_starts;
 	int start;
 	int output_nr;
 	bool write_bounds;
 	bool append;
-	bool write; 
+	bool write;
 	bool input_error;
 	int first;
 	string output_folder;
 	string bin_folder;
 	bool use_output_folder;
 	string write_option;
+	string sep;
 
   	vector<string> ints;
  	vector<string> Reals;

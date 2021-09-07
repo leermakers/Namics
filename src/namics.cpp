@@ -515,13 +515,14 @@ int main(int argc, char *argv[])
 					Var[scan_nr]->PutVarScan(subloop);
 
 				Sys[0]->MakeItsLists();
-				 
-				New[0]->AllocateMemory();				
-				if (Sys[0]->initial_guess == "previous_result") {
-					Real iv_=New[0]->iv;
-					if (iv_<IV_new) Cp(New[0]->xx,X,iv_); else Cp(New[0]->xx,X,IV_new);
-				} else New[0]->Guess(X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old);
-				
+
+				New[0]->AllocateMemory();
+				//if (Sys[0]->initial_guess == "previous_result") {
+				//	Real iv_=New[0]->iv;
+				//	if (iv_<IV_new) Cp(New[0]->xx,X,iv_); else Cp(New[0]->xx,X,IV_new);
+				//} else
+				New[0]->Guess(X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old);
+
 				if (search_nr < 0 && ets_nr < 0 && etm_nr < 0)
 				{
 					//bool print=true;

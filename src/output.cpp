@@ -10,7 +10,8 @@ if (debug) cout <<"constructor in Output "<< endl;
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");
 	KEYS.push_back("write");
-	KEYS.push_back("clear"); 
+	KEYS.push_back("clear");
+	KEYS.push_back("header_separator");
 	input_error=false;
 	bin_folder = "bin"; // folder in Namics where the binary is located
 	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
@@ -116,6 +117,11 @@ if (debug) cout << "CheckInput in output " << endl;
 		write_bounds = In[0]->Get_bool(GetValue("write_bounds"),false);
 		write  = In[0]->Get_bool(GetValue("write"),true);
 
+		if (GetValue("header_separator").size()>0) {
+			sep=GetValue("header_separator");
+		} else {
+			sep = ":";
+		}
 
 		if (GetValue("use_output_folder").size()>0) {
 			use_output_folder = In[0]->Get_bool(GetValue("use_output_folder"),use_output_folder);
@@ -344,7 +350,7 @@ if (debug) cout << "GetValue (long) in output " << endl;
 
 void Output::WriteOutput(int subl) {
 if (debug) cout << "WriteOutput in output " + name << endl;
-	if (!write) return; 
+	if (!write) return;
 	int length;
 	int Size=0;
 	string s;
@@ -390,13 +396,14 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		fp=fopen(filename.c_str(),"a");
 		for (int i=0; i<length; i++) {
 			key.clear();
-			string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
+			string s=key.append(sep).append(OUT_name[i]).append(sep).append(OUT_prop[i]);
 			int* X=GetPointerInt(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
 			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of array is rejected " << endl;
 			} else {
 				key=OUT_key[i];
-				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]).append(":");
-				fprintf(fp,"%s",s.c_str()); fprintf(fp,"%d\t",subl);
+				s=key.append(sep).append(OUT_name[i]).append(sep).append(OUT_prop[i]).append(sep);
+				fprintf(fp,"%s",s.c_str());
+				if (i<length-1) fprintf(fp,"%d\t",subl);
 				int length_vec=Size;
 				for (int j=0; j<length_vec; j++) fprintf(fp,"%i\t",X[j]);
 				fprintf(fp,"\n");
@@ -410,12 +417,15 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		fp=fopen(filename.c_str(),"a");
 		for (int i=0; i<length; i++) {
 			key.clear();
-			string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
+			string s=key.append(sep).append(OUT_name[i]).append(sep).append(OUT_prop[i]);
+
+
 			Real* X=GetPointer(OUT_key[i],OUT_name[i],OUT_prop[i],Size);
 			if (X==NULL) { cout <<"error; pointer for " + s + " not found: output of vector is rejected " << endl;
 			}  else {
 				key=OUT_key[i];
-				s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
+
+				s=key.append(sep).append(OUT_name[i]).append(sep).append(OUT_prop[i]);
 				fprintf(fp,"%s\t",s.c_str());
 				int length_vec=Size;
 				for (int j=0; j<length_vec; j++) fprintf(fp,"%e\t",X[j]);
@@ -448,8 +458,8 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			if (X!=NULL) {
 				pointer.push_back(X);
 				key = OUT_key[i];
-				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
-				fprintf(fp,"%s \t",s.c_str());
+				string s=key.append(sep).append(OUT_name[i]).append(sep).append(OUT_prop[i]);
+				if (i<length-1) fprintf(fp,"%s\t",s.c_str()); else fprintf(fp,"%s",s.c_str());
 			} else {cout << " Error for 'pro' output. It is only possible to output quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl;}
 		}
 		fprintf(fp,"\n");
@@ -467,7 +477,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			int length = OUT_key.size();
 			for (int i=0; i<length; i++) {
 				key=OUT_key[i];
-				string s=key.append(":").append(OUT_name[i]).append(":").append(OUT_prop[i]);
+				string s=key.append(sep).append(OUT_name[i]).append(sep).append(OUT_prop[i]);
 				fprintf(fp,"%s\t",s.c_str());
 			}
 			fprintf(fp,"\n");
@@ -510,7 +520,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		} else {
 			Real*  X = GetPointer(OUT_key[0],OUT_name[0],OUT_prop[0],Size);
 			key = OUT_key[0];
-			string s=key.append(":").append(OUT_name[0]).append(":").append(OUT_prop[0]);
+			string s=key.append(sep).append(OUT_name[0]).append(sep).append(OUT_prop[0]);
 			if (!(X==NULL))
 			Lat[0]->vtk(filename,X,s,write_bounds); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
 		}

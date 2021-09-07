@@ -1,4 +1,4 @@
-#ifndef SEGMENTxH
+#ifndef SEGMENTxH 
 #define SEGMENTxH
 #include "namics.h"
 #include "input.h"

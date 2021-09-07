@@ -225,7 +225,8 @@ if (debug) cout <<"PutProfiles in LGrad1 " << endl;
 	for (x=a; x<MX+2*fjc-a; x++){
 		//fprintf(pf,"%e\t",offset_first_layer+1.0*x/fjc-1/(2.0*fjc));
 		fprintf(pf,"%e\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc);
-		for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][x]);
+		for (i=0; i<length; i++)
+		if (i<length-1) fprintf(pf,"%.20g\t",X[i][x]); else fprintf(pf,"%.20g",X[i][x]);
 		fprintf(pf,"\n");
 	}
 }

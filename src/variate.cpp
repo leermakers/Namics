@@ -55,9 +55,9 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 	bool success=true;
 	num_of_cals=0;
 	int length=In[0]->MonList.size();
-	for (int i=0; i<length; i++) KEYS.push_back("chi-"+In[0]->MonList[i]);
+	for (int i=0; i<length; i++) KEYS.push_back("chi_"+In[0]->MonList[i]);
 	length=In[0]->StateList.size();
-	for (int i=0; i<length; i++) KEYS.push_back("chi-"+In[0]->StateList[i]);
+	for (int i=0; i<length; i++) KEYS.push_back("chi_"+In[0]->StateList[i]);
 	success= In[0]->CheckParameters("var",name,start,KEYS,PARAMETERS,VALUES);
 	if (success && name != "noname") {
 		vector<string>sub;
@@ -321,7 +321,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						cout <<"progamming error in variate " << endl;
 						break;
 				}
-				
+
 				success=num_of_cals>=0;
 				cout <<"num of calculations " << num_of_cals << endl;
 

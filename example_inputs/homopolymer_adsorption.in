@@ -7,7 +7,7 @@ mon : Si : freedom : frozen
 mon : Si : frozen_range : 1;1
 mon : A : freedom : free
 mon : W : freedom : free
-mon : A : chi - Si : -6
+mon : A : chi_Si : -6
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent

@@ -20,52 +20,52 @@ mol : water : composition : @water(W)
 mol : water : freedom : solvent
 mol : water : Kw : 50
 
-mon : W : chi-C : 0.8
+mon : W : chi_C : 0.8
 //estimated from lipid solubilities (cmc vs tail length)
-mon : W : chi-N : 0.1 
+mon : W : chi_N : 0.1 
 //estimate by solubility of oligoglycine data
 
-mon : W : chi-O : 0.1
-mon : W : chi-On : 0
-mon : W : chi-NP1 : 0
-mon : W : chi-NP2 : 0
-mon : W : chi-NP3 : 0
-mon : W : chi-S : 0
+mon : W : chi_O : 0.1
+mon : W : chi_On : 0
+mon : W : chi_NP1 : 0
+mon : W : chi_NP2 : 0
+mon : W : chi_NP3 : 0
+mon : W : chi_S : 0
 
-mon : C : chi-N : 0.5
-mon : C : chi-O : 0.5
-mon : C : chi-On : 1
-mon : C : chi-NP1 : 1
-mon : C : chi-NP2 : 1
-mon : C : chi-NP3 : 1
-mon : C : chi-S : 0.5
+mon : C : chi_N : 0.5
+mon : C : chi_O : 0.5
+mon : C : chi_On : 1
+mon : C : chi_NP1 : 1
+mon : C : chi_NP2 : 1
+mon : C : chi_NP3 : 1
+mon : C : chi_S : 0.5
 
-mon : N : chi-O : -1
-mon : N : chi-On : 0
-mon : N : chi-NP1 : 0
-mon : N : chi-NP2 : 0
-mon : N : chi-NP3 : 0
-mon : N : chi-S : 0
+mon : N : chi_O : -1
+mon : N : chi_On : 0
+mon : N : chi_NP1 : 0
+mon : N : chi_NP2 : 0
+mon : N : chi_NP3 : 0
+mon : N : chi_S : 0
 
-mon : O : chi-On : 0
-mon : O : chi-NP1 : 0
-mon : O : chi-NP2 : 0
-mon : O : chi-NP3 : 0
-mon : O : chi-S : 0
+mon : O : chi_On : 0
+mon : O : chi_NP1 : 0
+mon : O : chi_NP2 : 0
+mon : O : chi_NP3 : 0
+mon : O : chi_S : 0
 
-mon : On : chi-NP1 : 0
-mon : On : chi-NP2 : 0
-mon : On : chi-NP3 : 0
-mon : On : chi-S : 0
+mon : On : chi_NP1 : 0
+mon : On : chi_NP2 : 0
+mon : On : chi_NP3 : 0
+mon : On : chi_S : 0
 
-mon : NP1 : chi-NP2 : 0
-mon : NP1 : chi-NP3 : 0
-mon : NP1 : chi-S : 0
+mon : NP1 : chi_NP2 : 0
+mon : NP1 : chi_NP3 : 0
+mon : NP1 : chi_S : 0
 
-mon : NP2 : chi-NP3 : 0
-mon : NP2 : chi-S : 0
+mon : NP2 : chi_NP3 : 0
+mon : NP2 : chi_S : 0
 
-mon : NP3 : chi-S : 0
+mon : NP3 : chi_S : 0
 
 alias : R : value : (N)1(C)1[(C)3(N)1(C)1[(N)1][(Np1)1]](C)1[(O)1]
 alias : R_ : value :    (C)1[(C)3(N)1(C)1[(N)1][(Np1)1]](C)1[(O)1]

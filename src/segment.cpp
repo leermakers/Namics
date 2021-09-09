@@ -1017,10 +1017,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	Real Chi;
 	for (int i=0; i<length; i++) {
 		Chi=-999;
-		if (GetValue("chi-"+chi_name[i]).size()>0) {
-			Chi=In[0]->Get_Real(GetValue("chi-"+chi_name[i]),Chi);
-			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "not valid." << endl; }
-			if (name==chi_name[i] && Chi!=0) {if (Chi!=-999) cout <<" chi value for chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "value ignored: set to zero!" << endl; Chi=0;}
+		if (GetValue("chi_"+chi_name[i]).size()>0) {
+			Chi=In[0]->Get_Real(GetValue("chi_"+chi_name[i]),Chi);
+			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi_"+chi_name[i]) << "not valid." << endl; }
+			if (name==chi_name[i] && Chi!=0) {if (Chi!=-999) cout <<" chi value for chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi_"+chi_name[i]) << "value ignored: set to zero!" << endl; Chi=0;}
 
 		}
 		chi[i]=Chi;
@@ -1281,7 +1281,7 @@ if (debug) cout << "Segment::PutVarInfo " << endl;
 		if (Var_target_=="var_pos") {Var_target=4; Var_start_value=var_pos;}
 		if (Var_target ==-1) {
 			vector<string>sub;
-			In[0]->split(Var_target_,'-',sub);
+			In[0]->split(Var_target_,'_',sub);
 			if (sub.size()==2) {
 				if (sub[0]=="chi") {
 					length_mon=In[0]->MonList.size();
@@ -1305,7 +1305,7 @@ if (debug) cout << "Segment::PutVarInfo " << endl;
 			}
 		}
 	}
-	if (Var_target<0) {success=false; cout <<"In var: for segment you can 'scan' {valence, ePsi0/kT, amplitude, or a chi-value 'chi-X' with 'X' valid mon/state : name} "<<endl; }
+	if (Var_target<0) {success=false; cout <<"In var: for segment you can 'scan' {valence, ePsi0/kT, amplitude, or a chi-value 'chi_X' with 'X' valid mon/state : name} "<<endl; }
 	return success;
 }
 
@@ -1612,7 +1612,7 @@ if (debug) cout <<"IsTagged for segment " + name << endl;
 
 void Segment::PutChiKEY(string new_name) {
 if (debug) cout <<"PutChiKey " + name << endl;
-	KEYS.push_back("chi-" + new_name);
+	KEYS.push_back("chi_" + new_name);
 	chi_name.push_back(new_name);
 	chi.push_back(-999);
 }

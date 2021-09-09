@@ -101,10 +101,10 @@ if (debug) cout <<"CheckInput in State " + name << endl;
 	Real Chi;
 	for (int i=0; i<length; i++) {
 		Chi=-999;
-		if (GetValue("chi-"+chi_name[i]).size()>0) {
-			Chi=In[0]->Get_Real(GetValue("chi-"+chi_name[i]),Chi);
-			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "not valid." << endl; }
-			if (name==chi_name[i] && Chi!=0) {if (Chi!=-999) cout <<" chi value for chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi-"+chi_name[i]) << "value ignored: set to zero!" << endl; Chi=0;}
+		if (GetValue("chi_"+chi_name[i]).size()>0) {
+			Chi=In[0]->Get_Real(GetValue("chi_"+chi_name[i]),Chi);
+			if (Chi==-999) {success=false; cout <<" chi value: chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi_"+chi_name[i]) << "not valid." << endl; }
+			if (name==chi_name[i] && Chi!=0) {if (Chi!=-999) cout <<" chi value for chi("<<name<<","<<chi_name[i]<<") = "<<GetValue("chi_"+chi_name[i]) << "value ignored: set to zero!" << endl; Chi=0;}
 
 		}
 		chi[i]=Chi;
@@ -128,7 +128,7 @@ if (debug) cout <<"GetValue in State " + name << endl;
 
 void State::PutChiKEY(string new_name) {
 if (debug) cout <<"PutChiKey " + name << endl;
-	KEYS.push_back("chi-" + new_name);
+	KEYS.push_back("chi_" + new_name);
 	chi_name.push_back(new_name);
 	chi.push_back(-999);
 }
@@ -261,7 +261,7 @@ if (debug) cout << "State::PutVarInfo " << endl;
 			}
 		}
 	}
-	if (Var_target<0) {success=false; cout <<"In var: for state you can 'scan' {alphabulk, chi-x} "<<endl; }
+	if (Var_target<0) {success=false; cout <<"In var: for state you can 'scan' {alphabulk, chi_x} "<<endl; }
 	return success;
 }
 

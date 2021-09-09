@@ -6,7 +6,7 @@ mon : A : freedom : pinned
 mon : A : pinned_range : 1;120
 
 mon : B : freedom : free
-mon : A : chi-B : 2.2
+mon : A : chi_B : 2.2
 
 mol : A : composition : (A)1
 mol : A : freedom : restricted
@@ -27,7 +27,7 @@ newton : isaac : iterationlimit : 5000
 
 output : kal : append : true
 kal : sys : noname : grand_potential
-kal : mon : A : chi-B
+kal : mon : A : chi_B
 kal : mol : A : phibulk
 kal : mol : B : phibulk
 kal : mol : A : phi(1)
@@ -35,15 +35,15 @@ kal : mol : B : phi(1)
 kal : mol : A : phi(100)
 kal : mol : A : phi(101)
 
-var : mon-A : scan : chi-B
+var : mon-A : scan : chi_B
 var : mon-A : end_value : 2.01
 var : mon-A : step : -0.01
 start
-mon : A : chi-B : 2.01
+mon : A : chi_B : 2.01
 var : mon-A : end_value : 2.001
 var : mon-A : step : -0.001
 start
-mon : A : chi-B : 2.001
+mon : A : chi_B : 2.001
 var : mon-A : end_value : 2.000
 var : mon-A : step : -0.0001
 start

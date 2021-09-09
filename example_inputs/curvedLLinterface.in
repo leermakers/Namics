@@ -17,7 +17,7 @@ mol : A : compute_width_interface : true
 mol : B : composition : (B)4
 mol : B : freedom : solvent
 
-mon : A : chi - B : 0.8
+mon : A : chi_B : 0.8
 start
 mon : A : freedom : free
 //output : pro : append : false

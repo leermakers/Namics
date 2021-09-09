@@ -32,7 +32,7 @@ state : H3O : mon : W
 state : H2O : mon : W
 state : OH  : mon : W 
 
-mon : A : chi - S : -6
+mon : A : chi_S : -6
 
 reaction : weak : equation : 1(AH) + 1(H2O) = 1(AM) + 1(H3O)
 reaction : weak : pK : 7
@@ -42,7 +42,7 @@ reaction : auto : pK : 14
 
 state : H3O : alphabulk : 1e-7
 
-//mon : A : chi - S : -6
+//mon : A : chi_S : -6
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent

@@ -4,25 +4,25 @@ lat : vlak : geometry : flat
 lat : vlak : bondlength : 3e-10
 lat : vlak : FJC_choices : 5
 
-mon : C : chi - W : 1.2000000000000000
-mon : C : chi - O : 2.0000000000000000
-mon : C : chi - P : 2.0000000000000000
-mon : C : chi - N : 2.0000000000000000
-mon : C : chi - C2 : 0.5000000000000000
+mon : C : chi_W : 1.2000000000000000
+mon : C : chi_O : 2.0000000000000000
+mon : C : chi_P : 2.0000000000000000
+mon : C : chi_N : 2.0000000000000000
+mon : C : chi_C2 : 0.5000000000000000
 
-mon : W : chi - O : -0.2000000000000000
-mon : W : chi - P : -0.2000000000000000
-mon : W : chi - N : -0.2000000000000000
-mon : W : chi - C2 : 0.5000000000000000
+mon : W : chi_O : -0.2000000000000000
+mon : W : chi_P : -0.2000000000000000
+mon : W : chi_N : -0.2000000000000000
+mon : W : chi_C2 : 0.5000000000000000
 
-mon : O : chi - P : 0.0000000000000000
-mon : O : chi - N : 0.0000000000000000
-mon : O : chi - C2 : 1.0000000000000000
+mon : O : chi_P : 0.0000000000000000
+mon : O : chi_N : 0.0000000000000000
+mon : O : chi_C2 : 1.0000000000000000
 
-mon : P : chi - N : -0.5000000000000000
-mon : P : chi - C2 : 1.0000000000000000
+mon : P : chi_N : -0.5000000000000000
+mon : P : chi_C2 : 1.0000000000000000
 
-mon : N : chi - C2 : 1.0000000000000000
+mon : N : chi_C2 : 1.0000000000000000
 
 mon : C2 : freedom : free
 
@@ -65,7 +65,7 @@ pro : mol : Lipid : phi-O
 
 output : kal : append : false
 kal : lat : vlak : n_layers
-kal : mon : C : chi-W
+kal : mon : C : chi_W
 kal : sys : noname : Kbar
 kal : mol : * : mu
 kal : mol : * : phibulk

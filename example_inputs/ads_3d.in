@@ -11,7 +11,7 @@ mon : S : frozen_range : 1,1,1;10,10,1
 mon : A : freedom : free
 mon : W : freedom : free
 
-mon : A : chi - S : -6
+mon : A : chi_S : -6
 
 mol : pol : composition : (A)1000
 mol : pol : freedom : free

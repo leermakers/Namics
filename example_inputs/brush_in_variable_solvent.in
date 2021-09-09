@@ -12,8 +12,8 @@ mon : G : freedom : free
 mon : X : freedom : pinned
 mon : X : pinned_range : 2;2
 
-mon : X : chi - W : 0
-mon : A : chi - W : 0
+mon : X : chi_W : 0
+mon : A : chi_W : 0
 
 mol : pol : composition  : (X)1(A)200
 mol : pol : freedom : restricted
@@ -25,7 +25,7 @@ mol : water : composition : (W)1
 alias : N : value : 100
 
 output : kal : append : false
-kal : mon : A : chi - W
+kal : mon : A : chi_W
 kal : mol : pol : composition 
 kal : mol : pol : theta
 kal : mon : X : 1st_M_phi_z
@@ -35,7 +35,7 @@ kal : mon : A : fluctuations
 
 //output : ana : append : false 
 
-var : mon-A : scan : chi-W
+var : mon-A : scan : chi_W
 var : mon-A : step : 0.01
 var : mon-A : end_value : 1
  

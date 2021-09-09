@@ -7,7 +7,7 @@ mon : A : freedom : pinned
 mon : A : pinned_range : 1;120
 
 mon : B : freedom : free
-mon : A : chi-B : 0.8
+mon : A : chi_B : 0.8
 
 mol : A : composition : (A)4
 mol : A : freedom : restricted
@@ -45,12 +45,12 @@ kal : mol : A : phibulk
 newton : isaac : tolerance : 1e-10
 newton : isaac : super_deltamax : 0.00001
 
-var : mon-A : scan : chi-B
+var : mon-A : scan : chi_B
 var : mon-A : step : -0.01
 var : mon-A : end_value :0.51
 start
 output : kal : append : true
-mon : A : chi-B : 0.51
+mon : A : chi_B : 0.51
 var : mon-A : step : -0.001
 var : mon-A : end_value : 0.501
 start

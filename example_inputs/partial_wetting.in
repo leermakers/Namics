@@ -11,10 +11,10 @@ mon : S : frozen_range : lowerbound
 mon : A : freedom : free
 mon : W : freedom : free
 
-mon : S : chi - A : -1.2
-mon : S : chi - W : 0
+mon : S : chi_A : -1.2
+mon : S : chi_W : 0
 
-mon : A : chi - W : 1
+mon : A : chi_W : 1
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent

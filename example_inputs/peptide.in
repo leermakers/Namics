@@ -8,7 +8,7 @@ lat : flat : bondlength : 3e-10
 mon : Si : freedom : frozen
 mon : Si : frozen_range : 1;1
 
-mon : Si : chi-W : 2
+mon : Si : chi_W : 2
 mon : Np3 : valence : 1
 mon : On : valence : -1
 

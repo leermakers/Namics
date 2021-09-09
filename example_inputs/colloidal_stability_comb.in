@@ -9,9 +9,9 @@ lat : flat : k_stiff : 1
 mon : Si : freedom : frozen
 mon : Si : frozen_range : 1;1
 
-mon : Si : chi - B : -6
-mon : A : chi - W : 0.5
-//mon : S : chi - A : 6
+mon : Si : chi_B : -6
+mon : A : chi_W : 0.5
+//mon : S : chi_A : 6
 
 mon : W : freedom : free
 mon : A : freedom : free

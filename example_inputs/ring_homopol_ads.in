@@ -8,9 +8,9 @@ mon : Si : freedom : frozen
 mon : Si : frozen_range : lowerbound
 mon : A : freedom : free
 mon : W : freedom : free
-mon : A : chi - Si : -6
+mon : A : chi_Si : -6
 mon : H : freedom : free
-mon : H : chi - Si : -6
+mon : H : chi_Si : -6
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent

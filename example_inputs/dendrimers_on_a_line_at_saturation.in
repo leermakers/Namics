@@ -10,11 +10,11 @@ mon : W : freedom : free
 mon : B : freedom : free
 mon : G : freedom : free
 
-mon : W : chi - B : 2.2
-mon : W : chi - A : 0
-mon : W : chi - G : 0
-mon : A : chi - B : 1
-mon : G : chi - B : 1
+mon : W : chi_B : 2.2
+mon : W : chi_A : 0
+mon : W : chi_G : 0
+mon : A : chi_B : 1
+mon : G : chi_B : 1
 mon : X : freedom : pinned
 mon : X : pinned_range : 1,1;1,1
 

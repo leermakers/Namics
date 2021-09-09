@@ -10,10 +10,10 @@ mon : S : frozen_range : 1;1
 mon : A : freedom : free
 mon : W : freedom : free
 
-mon : S : chi - A : -0.76
-mon : S : chi - W : 0
+mon : S : chi_A : -0.76
+mon : S : chi_W : 0
 
-mon : A : chi - W : 0.75
+mon : A : chi_W : 0.75
 
 mol : water : composition : (W)1
 mol : water : freedom : solvent

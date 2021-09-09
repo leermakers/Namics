@@ -1546,7 +1546,7 @@ bool System::CheckChi_values(int n_seg)
 	for (int i = 0; i < n_seg; i++)
 		for (int k = 0; k < n_seg; k++)
 		{
-			CHI[i * n_seg + k] = In[0]->Get_Real(Seg[i]->GetValue("chi-" + Seg[k]->name), 123);
+			CHI[i * n_seg + k] = In[0]->Get_Real(Seg[i]->GetValue("chi_" + Seg[k]->name), 123);
 		}
 	for (int i = 0; i < n_seg; i++)
 		for (int k = 0; k < n_seg; k++)

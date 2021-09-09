@@ -39,15 +39,15 @@ state : OH : mon : water
 reaction : auto : equation : 2(H2O)=1(H3O)+1(OH)
 reaction : auto : pK : 17.5
 
-mon : Si : chi - W : 0
-mon : Si : chi - water : 0
-mon : Si : chi - na  : 1
-mon : Si : chi - cl : 1
+mon : Si : chi_W : 0
+mon : Si : chi_water : 0
+mon : Si : chi_na  : 1
+mon : Si : chi_cl : 1
 
-mon : SiO : chi - W : 0
-mon : SiO : chi - water : 0
-mon : SiO : chi - na : 1
-mon : SiO : chi - cl : 1
+mon : SiO : chi_W : 0
+mon : SiO : chi_water : 0
+mon : SiO : chi_na : 1
+mon : SiO : chi_cl : 1
 
 mol : W5 : composition : @dend(W,(W)1,4)
 mol : W5 : freedom : solvent

@@ -17,11 +17,11 @@ mon : N  : epsilon : 10
 mon : Na : epsilon : 10
 mon : Cl : epsilon : 10
 
-mon : W : chi - C : 1.2
-mon : W : chi - N : 0
-mon : N : chi - C : 2
-mon : Na : chi - C : 2
-mon : Cl : chi - C : 2
+mon : W : chi_C : 1.2
+mon : W : chi_N : 0
+mon : N : chi_C : 2
+mon : Na : chi_C : 2
+mon : Cl : chi_C : 2
 
 mol : water : composition : (W)5
 mol : water : freedom : solvent

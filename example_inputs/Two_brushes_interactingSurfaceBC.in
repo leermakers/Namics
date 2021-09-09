@@ -10,7 +10,6 @@ mon : S : frozen_range : lowerbound
 mon : S1 : freedom : frozen
 mon : S1 : frozen_range : upperbound
 
-
 mon : W : freedom : free
 mon : A : freedom : free
 mon : G : freedom : free
@@ -18,7 +17,6 @@ mon : X : freedom : pinned
 mon : X : pinned_range :  firstlayer
 mon : X1 : freedom : pinned
 mon : X1 : pinned_range : lastlayer
-
 
 mol : pol : composition  : (X)1(A)1998(G)1
 mol : pol : freedom : restricted

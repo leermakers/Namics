@@ -2,30 +2,19 @@ lat : flat : n_layers : 1000
 lat : flat : lattice_type : simple_cubic
 lat : flat : geometry : planar
 lat : flat : gradients : 1
-lat : flat : lowerbound : surface
-lat : flat : upperbound : surface
 
 mon : S : freedom : frozen
-mon : S : frozen_range : lowerbound
-mon : S1 : freedom : frozen
-mon : S1 : frozen_range : upperbound
-
+mon : S : frozen_range : 1;1
 
 mon : W : freedom : free
 mon : A : freedom : free
 mon : G : freedom : free
 mon : X : freedom : pinned
-mon : X : pinned_range :  firstlayer
-mon : X1 : freedom : pinned
-mon : X1 : pinned_range : lastlayer
-
+mon : X : pinned_range : 2;2
 
 mol : pol : composition  : (X)1(A)1998(G)1
 mol : pol : freedom : restricted
 mol : pol : theta : 5
-mol : pol1: composition  : (X1)1(A)498(G)1
-mol : pol1 : freedom : restricted
-mol : pol1 : theta : 10
 
 mol : water : freedom : solvent
 mol : water : composition : (W)1
@@ -34,7 +23,7 @@ output : kal : append : false
 kal : lat : flat : n_layers
 kal : sys : noname : free_energy
 kal : sys : noname : grand_potential 
-kal : mol : water : phiMax
+kal : mol : pol : phiM
 newton : isaac : method : pseudohessian
 newton : isaac : iterationlimit : 10000
 newton : isaac : i_info : 100
@@ -45,5 +34,5 @@ sys : noname : initial_guess : previous_result
 
 var : lat-flat : scan : n_layers
 var : lat-flat : step : -1
-var : lat-flat : end_value : 10
+var : lat-flat : end_value : 7
 start

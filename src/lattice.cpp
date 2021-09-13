@@ -20,7 +20,7 @@ if (debug) cout <<"Lattice constructor" << endl;
 	//KEYS.push_back("Z");
 	KEYS.push_back("FJC_choices");
 	KEYS.push_back("b/l");
-	KEYS.push_back("Markov");
+	//KEYS.push_back("Markov");
 	KEYS.push_back("k_stiff");
 	sub_box_on = 0;
 	all_lattice = false;
@@ -32,7 +32,6 @@ if (debug) cout <<"Lattice constructor" << endl;
 	MX=MY=MZ=0;
 	offset_first_layer=0;
 }
-
 
 void Lattice::DeAllocateMemory(void) {
 if (debug) cout <<"DeAllocateMemory in lat " << endl;
@@ -211,7 +210,6 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 		l11=(Real*)malloc(M*sizeof(Real)); Zero(l11,M);
 		l_11=(Real*)malloc(M*sizeof(Real)); Zero(l_11,M);
 		H=(Real*)malloc(M*sizeof(Real));
-
 	}
 
 
@@ -543,11 +541,14 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		} else {
 			lambda=1.0/4.0; //l0=2.0*l1;
 		}
-	Markov=In[0]->Get_int(GetValue("Markov"),1);
-	if (Markov<1 || Markov>2) {
-		cout <<" Integer value for 'Markov' is by default 1 and may be set to 2 for some mol_types and fjc-choices only. Markov value out of bounds. Proceed with caution. " << endl; success = false;
-	}
-	if (Markov==2) {
+
+	Markov=1;
+	//Markov=In[0]->Get_int(GetValue("Markov"),1);
+	//if (Markov<1 || Markov>2) {
+	//	cout <<" Integer value for 'Markov' is by default 1 and may be set to 2 for some mol_types and fjc-choices only. Markov value out of bounds. Proceed with caution. " << endl; success = false;
+	//}
+	k_stiff=0; //default value if in mol there is no k_stiff
+	if (GetValue("k_stiff").size()>0) {
 		k_stiff=In[0]->Get_Real(GetValue("k_stiff"),0);
 		if (k_stiff<0 || k_stiff>10) {
 			success =false;

@@ -17,7 +17,7 @@ if (debug) cout <<"AddToGP in mol_water " << endl;
 	Real* G=Seg[MolMonList[0]]->G1;
 
 	for (int i=0; i<M; i++) {
-		GP[i]+=(phi[i]-phibulk)-phib1*G[i]/(1-Kw*phib1*G[i]) + phib1/(1-Kw*phib1); 
+		GP[i]+=(phi[i]-phibulk)-phib1*G[i]/(1-Kw*phib1*G[i]) + phib1/(1-Kw*phib1);
 	}
 }
 
@@ -39,7 +39,7 @@ Real mol_water::GetPhib1() {
 if (debug) cout <<"GetPhib1 in mol_water " << endl;
 	if (phibulk <0) { cout <<"problem in computation of phib1 for MolType water." << endl; return 0;}
 	phib1=1/Kw +(1-sqrt(4*Kw*phibulk+1))/(2*Kw*Kw*phibulk);
- 
+
 	return phib1;
 }
 
@@ -53,8 +53,8 @@ if (debug) cout <<"ComputePhi in mol_water " << endl;
 		for (int i=0; i<=M; i++) {
 			rho[i]=phib1*G[i]/pow((1-Kw*phib1*G[i]),2);
 		}
-		GN=Lat[0]->ComputeGN(rho,M)/phib1; 
-	} 	
+		GN=Lat[0]->ComputeGN(rho,Markov,M)/phib1;
+	}
 	return success;
 }
 

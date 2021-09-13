@@ -5,7 +5,6 @@
 
 //planar geometry is in LG1Planar.cpp
 
-
 LGrad1::LGrad1(vector<Input*> In_,string name_): Lattice(In_,name_) {
 if (debug) cout <<"LGrad1 constructor " << endl;
 }
@@ -798,7 +797,7 @@ if (debug) cout <<"set_bounds in LGrad1 " << endl;
 	}
 }
 
-Real LGrad1::ComputeGN(Real* G,int M){
+Real LGrad1::ComputeGN(Real* G,int Markov, int M){
 	Real GN=0;
 	if (Markov==2) {
 		GN=WeightedSum(G);
@@ -811,7 +810,7 @@ Real LGrad1::ComputeGN(Real* G,int M){
 	return GN;
 }
 
-void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){//Adopt for fjc>1!!!!
+void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){//Adopt for fjc>1!!!!
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
 			YplusisCtimesAtimesB(phi,Gf,Gb,0.25,M);
@@ -827,7 +826,7 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){//Adopt for fjc>1!!!!
 	}
 }
 
-void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real degeneracy, int M){//Adopt for fjc>1!!!!
+void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real degeneracy, int Markov, int M){//Adopt for fjc>1!!!!
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
 			YplusisCtimesAtimesB(phi,Gf,Gb,0.25*degeneracy,M);
@@ -844,7 +843,7 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real degeneracy, int M){//Adop
 }
 
 
-void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real* G1, Real norm, int M){//Adopt for fjc>1!!!!
+void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real* G1, Real norm, int Markov, int M){//Adopt for fjc>1!!!!
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
 			Composition (phi,Gf,Gb,G1,norm*0.25,M);
@@ -861,7 +860,7 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real* G1, Real norm, int M){//A
 }
 
 
-void LGrad1::Initiate(Real* G,Real* Gz,int M){
+void LGrad1::Initiate(Real* G,Real* Gz,int Markov, int M){
 	if (Markov==2) {
 		for (int k=0; k<FJC; k++) Cp(G+k*M,Gz,M);
 	} else {
@@ -869,7 +868,7 @@ void LGrad1::Initiate(Real* G,Real* Gz,int M){
 	}
 }
 
-void LGrad1::Terminate(Real* Gz ,Real* G,int M){
+void LGrad1::Terminate(Real* Gz ,Real* G, int Markov, int M){
 	if (Markov==2) {
 		Zero(Gz,M);
 		if (lattice_type == simple_cubic) {

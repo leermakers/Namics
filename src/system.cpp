@@ -2216,7 +2216,7 @@ for (int j=0; j<n_mol; j++) {
 			Mol[solvent]->GetPhib1();
 			Mol[solvent]->ComputePhi();
 			Mol[solvent]->chainlength=1;
-			Mol[solvent]->n = Lat[0]->ComputeGN(Mol[solvent]->phi,M);
+			Mol[solvent]->n = Lat[0]->ComputeGN(Mol[solvent]->phi,Mol[solvent]->Markov,M);
 			Mol[solvent]->theta=Mol[solvent]->n;
 			Mol[solvent]->norm=1.0;
 

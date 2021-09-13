@@ -1,6 +1,6 @@
 #ifndef LGRAD3_H
 #define LGRAD3_H
-class LGrad3 : public Lattice 
+class LGrad3 : public Lattice
 {
 	public:	LGrad3(vector<Input*> In_,string name_);
 	~LGrad3();
@@ -30,12 +30,12 @@ class LGrad3 : public Lattice
 	void set_M_bounds(Real*);
 	void remove_bounds(int*);
 	void set_bounds(int*);
-	Real ComputeGN(Real*,int);
-	void AddPhiS(Real*,Real*,Real*,int);
-	void AddPhiS(Real*,Real*,Real*,Real*,Real,int);
-	void AddPhiS(Real*,Real*,Real*,Real,int);
-	void Initiate(Real*,Real*,int);
-	void Terminate(Real*,Real*,int);
+	Real ComputeGN(Real*,int,int);
+	void AddPhiS(Real*,Real*,Real*,int,int);
+	void AddPhiS(Real*,Real*,Real*,Real*,Real,int,int);
+	void AddPhiS(Real*,Real*,Real*,Real,int,int);
+	void Initiate(Real*,Real*,int,int);
+	void Terminate(Real*,Real*,int,int);
 	void set_bounds_x(Real*,Real*,int,int);
 	void set_bounds_y(Real*,Real*,int,int);
 	void set_bounds_z(Real*,Real*,int,int);

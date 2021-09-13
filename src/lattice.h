@@ -44,7 +44,7 @@ virtual ~Lattice();
 	Real volume;
 	Real Accesible_volume;
 	int Markov;
-	Real k_stiff; 
+	Real k_stiff;
 
 	LatticeType lattice_type;
 	int gradients;
@@ -89,9 +89,9 @@ virtual ~Lattice();
 	void push(string,bool);
 	void push(string,string);
 	void PushOutput();
-	Real* GetPointer(string,int&); 
+	Real* GetPointer(string,int&);
 	int* GetPointerInt(string,int&);
-	int P(int,int,int); 
+	int P(int,int,int);
 	int P(int,int);
 	int P(int);
 
@@ -99,12 +99,12 @@ virtual ~Lattice();
 	Real GetValue(Real*,string);
 
 	bool ReadGuess(string, Real* ,string&, vector<string>&, vector<string>&, bool&, int&, int&, int&, int&, int);
-	bool StoreGuess(string,Real*,string, vector<string>,vector<string>, bool,int); 
+	bool StoreGuess(string,Real*,string, vector<string>,vector<string>, bool,int);
 	bool PutVarInfo(string,string,Real);
 	bool UpdateVarInfo(int);
 	bool ResetInitValue();
 	bool CheckInput(int);
-	
+
 	bool PutSub_box(int,int,int,int);
 	bool PutMask(int* H_MASK,vector<int>px,vector<int>py,vector<int>pz,int R);
 	void PutParameter(string);
@@ -120,8 +120,8 @@ virtual ~Lattice();
 	virtual void ComputeLambdas(void)=0;
 	virtual Real WeightedSum(Real*)=0;
 	virtual Real Moment(Real*,Real,int) =0;
-	virtual void TimesL(Real*) =0; 
-	virtual void DivL(Real*) =0; 
+	virtual void TimesL(Real*) =0;
+	virtual void DivL(Real*) =0;
 	virtual void vtk(string, Real*,string,bool) =0;
 	virtual void PutProfiles(FILE*,vector<Real*>,bool)=0;
 	virtual bool PutM(void)=0;
@@ -130,9 +130,9 @@ virtual ~Lattice();
 	virtual void propagateB(Real*,Real*,Real*,int,int,int)=0;
 	virtual void Side(Real *, Real *, int) =0;
 	virtual bool ReadRange(int*, int*, int&, bool&, string, int, string, string)=0;
-	virtual bool ReadRangeFile(string,int* H_p,int&, string, string) =0; 
+	virtual bool ReadRangeFile(string,int* H_p,int&, string, string) =0;
 	virtual bool FillMask(int*, vector<int>, vector<int>, vector<int>, string)=0;
-	virtual bool CreateMASK(int*, int*, int*, int, bool) =0; 
+	virtual bool CreateMASK(int*, int*, int*, int, bool) =0;
 	virtual Real ComputeTheta(Real*) =0;
 	virtual void UpdateEE(Real*, Real*,Real*) =0;
 	virtual void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool)=0;
@@ -142,12 +142,12 @@ virtual ~Lattice();
 	virtual void remove_bounds(int*)=0;
 	virtual void set_bounds(int*)=0;
 	virtual void set_M_bounds(Real*)=0;
-	virtual Real ComputeGN(Real*,int)=0;
-	virtual void AddPhiS(Real*,Real*,Real*,int) =0;
-	virtual void AddPhiS(Real*,Real*,Real*,Real*,Real,int) =0;
-	virtual void AddPhiS(Real*,Real*,Real*,Real,int) =0;
-	virtual void Initiate(Real*,Real*,int) =0;
-	virtual void Terminate(Real*,Real*,int) =0;
+	virtual Real ComputeGN(Real*,int, int)=0;
+	virtual void AddPhiS(Real*,Real*,Real*,int,int) =0;
+	virtual void AddPhiS(Real*,Real*,Real*,Real*,Real,int,int) =0;
+	virtual void AddPhiS(Real*,Real*,Real*,Real,int,int) =0;
+	virtual void Initiate(Real*,Real*,int,int) =0;
+	virtual void Terminate(Real*,Real*,int,int) =0;
 
 };
 #endif

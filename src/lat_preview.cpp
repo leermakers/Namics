@@ -24,7 +24,7 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("stencil_full");
 	KEYS.push_back("FJC_choices");
 	KEYS.push_back("b/l");
-	KEYS.push_back("Markov");
+	//KEYS.push_back("Markov");
 	KEYS.push_back("k_stiff");
 }
 

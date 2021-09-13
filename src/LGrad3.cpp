@@ -1547,7 +1547,7 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 }
 
 
-Real LGrad3::ComputeGN(Real* G,int M){
+Real LGrad3::ComputeGN(Real* G,int Markov, int M){
 	Real GN=0;
 	int size;
 
@@ -1561,7 +1561,7 @@ Real LGrad3::ComputeGN(Real* G,int M){
 	return GN;
 
 }
-void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
+void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){
 	if (Markov ==2) {
 		if (lattice_type==hexagonal) {
 			for (int k=0; k<12; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/12.0,M);
@@ -1572,7 +1572,7 @@ void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
 
 }
 
-void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real degeneracy, int M){
+void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real degeneracy,int Markov, int M){
 	if (Markov ==2) {
 		if (lattice_type==hexagonal) {
 			for (int k=0; k<12; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy/12.0,M);
@@ -1584,11 +1584,11 @@ void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real degeneracy, int M){
 }
 
 
-void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int M){
+void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int Markov, int M){
 	cout << "Composition phi Alias not implemented in LGrad3 " << endl;
 }
 
-void LGrad3::Initiate(Real* G,Real* Gz,int M){
+void LGrad3::Initiate(Real* G,Real* Gz,int Markov, int M){
 	int size;
 	if (Markov==2){
 		if (lattice_type==simple_cubic) size =6;
@@ -1600,7 +1600,7 @@ void LGrad3::Initiate(Real* G,Real* Gz,int M){
 	} else Cp(G,Gz,M);
 }
 
-void LGrad3::Terminate(Real* Gz,Real* G,int M){
+void LGrad3::Terminate(Real* Gz,Real* G,int Markov, int M){
 	int size;
 	if (Markov==2){
 		Zero(Gz,M);

@@ -1257,7 +1257,7 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 	}
 }
 
-Real LGrad2::ComputeGN(Real* G,int M){
+Real LGrad2::ComputeGN(Real* G,int Markov, int M){
 	Real GN=0;
 	if (Markov==2) {
 		if (lattice_type == hexagonal) {
@@ -1281,7 +1281,7 @@ Real LGrad2::ComputeGN(Real* G,int M){
 	} else GN = WeightedSum(G);
 	return GN;
 }
-void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
+void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){
 	if (Markov==2) {
 		if (lattice_type == hexagonal) {
 			for (int k=0; k<7; k++) {
@@ -1301,7 +1301,7 @@ void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,int M){
 		}
 	} else AddTimes(phi,Gf,Gb,M);
 }
-void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real degeneracy, int M){
+void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real degeneracy, int Markov, int M){
 	if (Markov==2) {
 		if (lattice_type == hexagonal) {
 			for (int k=0; k<7; k++) {
@@ -1323,11 +1323,11 @@ void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real degeneracy, int M){
 }
 
 
-void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int M){
+void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real* G1, Real norm, int Markov, int M){
 	cout << "composition not (yet) implemented for alias in LGrad2 " << endl;
 }
 
-void LGrad2::Initiate(Real* G,Real* Gz,int M){
+void LGrad2::Initiate(Real* G,Real* Gz,int Markov, int M){
 	if (Markov==2) {
 		if (lattice_type == hexagonal) {
 			for (int k=0; k<7; k++) Cp(G+k*M,Gz,M);
@@ -1337,7 +1337,7 @@ void LGrad2::Initiate(Real* G,Real* Gz,int M){
 	} else Cp(G,Gz,M);
 }
 
-void LGrad2::Terminate(Real* Gz,Real* G,int M){
+void LGrad2::Terminate(Real* Gz,Real* G,int Markov, int M){
 	if (Markov==2) {
 		Zero(Gz,M);
 		if (lattice_type == hexagonal) {

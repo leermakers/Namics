@@ -1,11 +1,11 @@
 #ifndef LGRAD1_H
 #define LGRAD1_H
-class LGrad1 : public Lattice 
+class LGrad1 : public Lattice
 {
 	public: LGrad1(vector<Input*> In_,string name_);
 	virtual ~LGrad1();
 
- 
+
 	bool PutM();
 	void TimesL(Real*);
 	void DivL(Real*);
@@ -37,12 +37,12 @@ class LGrad1 : public Lattice
 	virtual void propagate(Real*,Real*, int, int,int);
 	virtual void propagateF(Real*,Real*,Real*, int, int,int);
 	virtual void propagateB(Real*,Real*,Real*, int, int,int);
-	virtual Real ComputeGN(Real*,int);
-	virtual void AddPhiS(Real*,Real*,Real*,int);
-	virtual void AddPhiS(Real*,Real*,Real*,Real*,Real,int);
-	virtual void AddPhiS(Real*,Real*,Real*,Real,int);
-	virtual void Initiate(Real*,Real*,int);
-	virtual void Terminate(Real*,Real*,int);
+	virtual Real ComputeGN(Real*,int,int);
+	virtual void AddPhiS(Real*,Real*,Real*,int, int);
+	virtual void AddPhiS(Real*,Real*,Real*,Real*,Real,int, int);
+	virtual void AddPhiS(Real*,Real*,Real*,Real,int, int);
+	virtual void Initiate(Real*,Real*,int, int);
+	virtual void Terminate(Real*,Real*,int,int);
 };
 #endif
 

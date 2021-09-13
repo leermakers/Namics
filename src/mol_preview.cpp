@@ -6,7 +6,7 @@ mol_preview::mol_preview(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment
 if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("freedom");
 	KEYS.push_back("composition");
-	KEYS.push_back("ring"); 
+	KEYS.push_back("ring");
 	KEYS.push_back("theta");
 	KEYS.push_back("phibulk");
 	KEYS.push_back("n");
@@ -14,7 +14,9 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("restricted_range");
 	KEYS.push_back("compute_width_interface");
 	KEYS.push_back("Kw");
-	save_memory=false; 
+	KEYS.push_back("Markov");
+	KEYS.push_back("k_stiff");
+	save_memory=false;
 }
 
 mol_preview::~mol_preview() {
@@ -35,6 +37,11 @@ start=start_;
 		}
  	}
 	if ( Seg[mon_nr[0]]->freedom == "clamp") freedom="clamped";
+	if (GetValue("Markov").size()>0) Markov=In[0]->Get_int(GetValue("Markov"),0);
+	if (Markov<0 || Markov>2) {
+			success=false;
+			cout <<"Markov input in mol " +name + " is out of bounds. Integer value should be either '1' or '2'. " << endl;
+	}
 
 	return success;
 }
@@ -306,9 +313,9 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			s=s.substr(7,s.length()-8);
 			int mnr=GetMonNr(s);
 			if (mnr<0) {
-				cout <<"Language for MolType 'water' is as follows: @water(mon_name) wherein mon_name is a valid monomer name with freedom free" << endl; 
-				success=false; return false; 
-			} else { 
+				cout <<"Language for MolType 'water' is as follows: @water(mon_name) wherein mon_name is a valid monomer name with freedom free" << endl;
+				success=false; return false;
+			} else {
 				mon_nr.push_back(mnr);
 				n_mon.push_back(1);
 			}
@@ -324,7 +331,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			s=s.substr(6,s.length()-7);
 		}
 		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb.@water Problem terminated "<< endl ;
-			return false; 
+			return false;
 		 }
 	}
 
@@ -337,7 +344,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		if (aliases) if (!ExpandAlias(sub,s)) {cout <<"alias not properly processed" <<endl; success=false; return false;};
 		if (loopnr == 20) {
 			cout << "Nesting nr 20 reached in aliases for mol " + name + " -composition. It is decided that this is too deep to continue; Possible, you have defined an alias-A inside alias-B which itself refers to alias-A. This is not allowed. Problem terminated. " << endl;
-			success=false; return 0; 
+			success=false; return 0;
 		}
 	}
 	sub.clear();
@@ -348,7 +355,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	string ss;
 	switch(MolType) {
 		case water:
-			break; 
+			break;
 		case dendrimer:
 			for (i=0; i<length; i++) {
 				open.clear(); close.clear();
@@ -439,7 +446,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				In[0]->split(sub_gen[i],',',sub);
 				int sublength=sub.size();
 				if ((sublength-1)%2 >0) {success=false; cout << "In composition of dend for generation " << i << " that is, in " + sub_gen[i] + " the number of arguments is not 3; use @dend(?) for help. " << endl; }
-				if (sublength>3) MolType=asym_dendrimer; 
+				if (sublength>3) MolType=asym_dendrimer;
 				if (sublength<2) { success=false;
 
 					cout<<" ------Dendrimer language:------ " << endl;

@@ -24,7 +24,7 @@ virtual ~Molecule();
 	int mol_nr;
 	int n_box;
 	int var_al_nr;
-	Real KStiff; 
+	Real KStiff;
 	Real Kw;
 	Real Mu;
 	Real theta;
@@ -77,6 +77,7 @@ virtual ~Molecule();
 	int *H_Px2;
 	int *H_Py2;
 	int *H_Pz2;
+	Real k_stiff;
 	Real *phi;
 	//Real *G1;
 	//Real *u;
@@ -97,9 +98,9 @@ virtual ~Molecule();
 	Real *Gg_b;
 	Real *Gs;
 	Real *UNITY;
-	Real *P; 
+	Real *P;
 	int size;
-       int Markov;	
+    int Markov;
 	int tag_segment;
 	int Var_steps;
 	Real Var_step;
@@ -114,7 +115,7 @@ virtual ~Molecule();
 	string scale;
 	Real Var_target_value;
 	int n_generations;
-	bool ring; 
+	bool ring;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -177,12 +178,12 @@ virtual ~Molecule();
 
 
 	virtual Real fraction(int);
-	
-	Real* propagate_forward(Real*,int&,int,int,int); 
-	void propagate_backward(Real*,int&,int,int,int); 
-	Real* propagate_forward(Real*,int&,int,Real*,int,int); 
-	void propagate_backward(Real*,int&,int,Real*,int&,int); 
-	
+
+	Real* propagate_forward(Real*,int&,int,int,int);
+	void propagate_backward(Real*,int&,int,int,int);
+	Real* propagate_forward(Real*,int&,int,Real*,int,int);
+	void propagate_backward(Real*,int&,int,Real*,int&,int);
+
 };
 
 #endif

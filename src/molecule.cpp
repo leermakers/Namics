@@ -14,6 +14,9 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("restricted_range");
 	KEYS.push_back("compute_width_interface");
 	KEYS.push_back("Kw");
+	KEYS.push_back("Markov");
+	KEYS.push_back("k_stiff");
+
 	width=0;
 	phi1=0;
 	phiM=0;
@@ -21,17 +24,8 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	pos_interface=0;
 	ring=false;
 	all_molecule=false;
-	Markov = Lat[0]->Markov;
-	if (Markov ==2) {
-		if (Lat[0]->gradients==1) size = Lat[0]->FJC;
-		if (Lat[0]->gradients==2) {
-			if (Lat[0]->lattice_type==hexagonal) size = 7; else size = 5;
-		}
-		if (Lat[0]->gradients==3) {
-			if (Lat[0]->lattice_type==hexagonal) size = 12; else size = 6;
-		}
-	       //cout <<"size = " << size << endl;
-	} else size = 1;
+	//Markov = Lat[0]->Markov;
+
 }
 
 Molecule::~Molecule() {
@@ -130,7 +124,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		int FJC = Lat[0]->FJC;
 		P = (Real*) malloc(FJC*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
 		Real Q=0;
-		KStiff=Lat[0]->k_stiff;
+		KStiff=k_stiff;
 		for (int k=0; k<FJC-1; k++) {
 			P[k]=exp(-0.5*KStiff*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); Q+= P[k];
 		}
@@ -144,7 +138,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		int FJC = Lat[0]->FJC;
 		P = (Real*) malloc(2*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
 		Real Q=0;
-		KStiff=Lat[0]->k_stiff;
+		KStiff=k_stiff;
 		P[0]=exp(-0.5*KStiff*(PIE/3.0)*(PIE/3.0) ); Q+= 3*P[0];
 		P[1]=exp(-0.5*KStiff*(2.0*PIE/3.0)*(2.0*PIE/3.0) ); Q+= 6*P[1];
 		P[FJC-1]=0;
@@ -545,6 +539,38 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 		}
 
 	}
+	Markov=1;
+	Markov=In[0]->Get_int(GetValue("Markov"),1);
+	if (Markov<1 || Markov>2) {
+		cout <<" Integer value for 'Markov' is by default 1 and may be set to 2 for some mol_types and fjc-choices only. Markov value out of bounds. Proceed with caution. " << endl; success = false;
+	}
+	if (Markov==2) Lat[0]->Markov=2;
+	k_stiff=Lat[0]->k_stiff; //pick up 'default' value from lattice.
+	if (GetValue("k_stiff").size()>0) {
+		k_stiff=In[0]->Get_Real(GetValue("k_stiff"),k_stiff);
+		if (k_stiff<0 || k_stiff>10) {
+			success =false;
+			cout <<" Real value for 'k_stiff' out of bounds (0 < k_stiff < 10). " << endl;
+			cout <<" For Markov == 2: u_bend (theta) = 0.5 k_stiff theta^2, where 'theta' is angle for bond direction deviating from the straight direction. " <<endl;
+			cout <<" You may interpret 'k_stiff' as the molecular 'persistence length' " << endl;
+			cout <<" k_stiff is a 'default value'. Use molecular specific values to overrule the default when appropriate (future implementation....) " << endl;
+		}
+		if (Lat[0]->fjc>1 ) {
+			success=false;
+			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 5 " << endl;
+		}
+	}
+	if (Markov ==2) {
+		if (Lat[0]->gradients==1) size = Lat[0]->FJC;
+		if (Lat[0]->gradients==2) {
+			if (Lat[0]->lattice_type==hexagonal) size = 7; else size = 5;
+		}
+		if (Lat[0]->gradients==3) {
+			if (Lat[0]->lattice_type==hexagonal) size = 12; else size = 6;
+		}
+		       //cout <<"size = " << size << endl;
+	} else size = 1;
+
 	return success;
 }
 
@@ -1829,7 +1855,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	int M=Lat[0]->M;
 	Real phimax=phitot[M/2];
 	bool maxfound=false;
-	int i=M/2; 
+	int i=M/2;
 	while (!maxfound) {
 		i++;
 		if (phitot[i]> phimax ) phimax =phitot[i]; else maxfound=true;
@@ -2049,8 +2075,8 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		if (s==first_s[generation]) {
 
 			//Cp(Gs+M,G1,M); Cp(Gs,G1,M);
-			Lat[0]->Initiate(Gs+M,G1,M);
-			Lat[0]->Initiate(Gs,G1,M); //not sure why this is done....
+			Lat[0]->Initiate(Gs+M,G1,Markov,M);
+			Lat[0]->Initiate(Gs,G1,Markov,M); //not sure why this is done....
 		} else {
 			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
 		}
@@ -2084,7 +2110,7 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 
 				Lat[0] ->propagate(Gg_f,G1,s-1,s,M);
 			} else {
-				Lat[0]->Initiate(Gg_f+first_s[generation]*M,G1,M);
+				Lat[0]->Initiate(Gg_f+first_s[generation]*M,G1,Markov,M);
 			}
 			 s++;
 		}
@@ -2144,13 +2170,13 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				}
 				t = n;
 			}
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,Markov,M);
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
-						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
+						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,Markov,M);
 					}
 				}
 			}
@@ -2162,17 +2188,17 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			if (s<chainlength-1) {
 				Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
 			} else {
-				Lat[0]->Initiate(Gg_b+(s%2)*M,G1,M);
+				Lat[0]->Initiate(Gg_b+(s%2)*M,G1,Markov,M);
 			}
 
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M, M);
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M,Markov, M);
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
 						//  Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
-						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
+						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,Markov,M);
 					}
 				}
 			}
@@ -2193,8 +2219,8 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		int n0=0; if (block>0) n0=memory[block-1];
 		if (s==first_s[generation]) {
 
-			Lat[0]->Initiate(Gs+size*M,G1,M);
-			//Lat[0]->Initiate(Gs,G1,M); //not necessary.
+			Lat[0]->Initiate(Gs+size*M,G1,Markov,M);
+			//Lat[0]->Initiate(Gs,G1,Markov,M); //not necessary.
 		} else {
 			Lat[0] ->propagateF(Gs,G1,P,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
 
@@ -2230,7 +2256,7 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 				Lat[0] ->propagateF(Gg_f,G1,P,s-1,s,M);
 			} else {
 				//Cp(Gg_f+first_s[generation]*M,G1,M);
-				Lat[0]->Initiate(Gg_f+first_s[generation]*M*size,G1,M);
+				Lat[0]->Initiate(Gg_f+first_s[generation]*M*size,G1,Markov,M);
 			}
 			 s++;
 		}
@@ -2257,16 +2283,16 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 		for (k=N; k>=1; k--) {
 			if (k==N) {
 				if (s==chainlength-1) {
-					Lat[0]->Initiate(Gg_b+(k%2)*M*size,G1,M);
+					Lat[0]->Initiate(Gg_b+(k%2)*M*size,G1,Markov,M);
 					//Cp(Gg_b+(k%2)*M,G1,M);
 				} else {
 					if (unity==-1) {
 						unity=0;
 						//cout <<"SM unity " << s << endl;
 						Real* GB= (Real*) malloc(2*M*sizeof(Real)); //must be adjusted for cuda
-						Lat[0]->Terminate(GB,Gg_b+((k+1)%2)*M*size,M);
+						Lat[0]->Terminate(GB,Gg_b+((k+1)%2)*M*size,Markov,M);
 						Lat[0]->propagate(GB,G1,0,1,M); //first step is freely joined
-						Lat[0]->Initiate(Gg_b+(k%2)*M*size,GB+M,M);
+						Lat[0]->Initiate(Gg_b+(k%2)*M*size,GB+M,Markov,M);
 						free(GB);
 					} else {
 						Lat[0]->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
@@ -2301,14 +2327,14 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			}
 
 			//AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,M);  //FL
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,Markov,M);
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
 						//Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
-						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,G1,norm,M); //FL
+						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,G1,norm,Markov,M);
 					}
 				}
 			}
@@ -2322,18 +2348,18 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 					unity=0;
 					//cout <<"unity " << s << endl;
 					Real* GB= (Real*) malloc(2*M*sizeof(Real)); //must be adjusted for cuda
-					Lat[0]->Terminate(GB,Gg_b+((s+1)%2)*M*size,M);
+					Lat[0]->Terminate(GB,Gg_b+((s+1)%2)*M*size,Markov,M);
 					Lat[0]->propagate(GB,G1,0,1,M); //first step is freely joined
-					Lat[0]->Initiate(Gg_b+(s%2)*M*size,GB+M,M);
+					Lat[0]->Initiate(Gg_b+(s%2)*M*size,GB+M,Markov,M);
 					free(GB);
 				} else {
 					Lat[0]->propagateB(Gg_b,G1,P,(s+1)%2,s%2,M); //FL
 				}
 			} else {
-				Lat[0]->Initiate(Gg_b+(s%2)*M*size,G1,M); //FL
+				Lat[0]->Initiate(Gg_b+(s%2)*M*size,G1,Markov,M); //FL
 			}
 
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size, M); //FL
+			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size, Markov, M);
 
 
 			if (compute_phi_alias) {
@@ -2341,7 +2367,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
 						//Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
-						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+s*M*size,Gg_b+(s%2)*M*size,G1,norm,M); //FL
+						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+s*M*size,Gg_b+(s%2)*M*size,G1,norm,Markov, M);
 					}
 				}
 			}

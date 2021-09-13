@@ -14,15 +14,15 @@ if (debug) cout <<"fraction for mol_comb " + name << endl;
 	int Nseg=0;
 	int length = mon_nr.size();
 	int i=0;
-	if (ring) i++; 
+	if (ring) i++;
 	while (i<length) {
-		if (segnr==mon_nr[i]) Nseg += n_mon[i]*d_mon[i]; 
+		if (segnr==mon_nr[i]) Nseg += n_mon[i]*d_mon[i];
 		i++;
 	}
 	return 1.0*Nseg/chainlength;
 }
 
-bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) { 
+bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 	int N;
 	int M=Lat[0]->M;
 	Real* GB = new Real[2*M]; Zero(GB,2*M);
@@ -31,7 +31,7 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 	int slast=0,sfirst=0;
 	int s;
 	int n_arms=n_arm[0];
-	int b0,bN,g; 
+	int b0,bN,g;
 
 	s=last_s[1]+1; //first do the arm;
 	slast=s;
@@ -42,13 +42,13 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 			if (s<slast) {
 				Lat[0] ->propagateF(Gg_f,Seg[mon_nr[b]]->G1,P,s+1,s,M);
 			} else {
-				Lat[0]->Initiate(Gg_f+slast*M*size,Seg[mon_nr[b]]->G1,M);
+				Lat[0]->Initiate(Gg_f+slast*M*size,Seg[mon_nr[b]]->G1,Markov,M);
 			}
 			s--;
 		}
 	}
 
-	Lat[0] ->Terminate(GB+M,Gg_f+(s+1)*M*size,M);
+	Lat[0] ->Terminate(GB+M,Gg_f+(s+1)*M*size,Markov,M);
 	Lat[0] ->propagate(GB,UNITY,1,0,M); //side chain is freely joined
 
 
@@ -62,10 +62,10 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 			if (s<slast) {
 				Lat[0] ->propagateF(Gg_f,Seg[mon_nr[b]]->G1,P,s+1,s,M);
 			} else {
-				if (ring) 
-					Lat[0]->Initiate(Gg_f+slast*M*size,G0,M);
+				if (ring)
+					Lat[0]->Initiate(Gg_f+slast*M*size,G0,Markov,M);
 				else
-					Lat[0]->Initiate(Gg_f+slast*M*size,Seg[mon_nr[b]]->G1,M);
+					Lat[0]->Initiate(Gg_f+slast*M*size,Seg[mon_nr[b]]->G1,Markov,M);
 			}
 			s--;
 		}
@@ -90,7 +90,7 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 		s--;
 	}
 	b0=first_b[0]; bN=last_b[0];s= last_s[0];
-	
+
 	for (int b=bN; b>=b0; b--) { //terminal part of main chain
 		N= n_mon[b];
 		for (int k=0; k<N; k++) {
@@ -102,25 +102,25 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 		for (int k=0; k<size; k++) Times(Gg_f+k*M,Gg_f+k*M,Mask,M);
 
 	}
-	GN+=Lat[0]->ComputeGN(Gg_f,M);
+	GN+=Lat[0]->ComputeGN(Gg_f,Markov,M);
 	success = GN>=0;
 	if (ring) {
-		Lat[0]->Initiate(Gg_b,G0,M);
+		Lat[0]->Initiate(Gg_b,G0,Markov,M);
 	} else {
-		Lat[0]->Initiate(Gg_b,Seg[mon_nr[0]]->G1,M);
+		Lat[0]->Initiate(Gg_b,Seg[mon_nr[0]]->G1,Markov,M);
 
 	}
-	Lat[0]->AddPhiS(rho+molmon_nr[0]*M, Gg_f, Gg_b, M);
+	Lat[0]->AddPhiS(rho+molmon_nr[0]*M, Gg_f, Gg_b,Markov, M);
 	s=-1;
 	b0=first_b[0]; bN=last_b[0];
 	for (int b=b0; b<=bN; b++) { //start with main chain
 		N= n_mon[b];
 		for (int k=0; k<N; k++) {
 			if (s<0) {
-				
+
 			} else {
 				Lat[0]->propagateB(Gg_b,Seg[mon_nr[b]]->G1,P,s%2,(s+1)%2,M);
-				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size, M);
+				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size,Markov, M);
 			}
 			s++;
 		}
@@ -128,15 +128,15 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 
 	for (g=2; g<=n_arms+1; g++) { //only do the spacer and keep semiflexibility
 		Lat[0] ->propagateB(Gg_b,Seg[mon_nr[first_b[g]-1]]->G1,P,s%2,(s+1)%2,M);
-		Lat[0] ->AddPhiS(rho+molmon_nr[first_b[g]-1]*M,Gg_b+((s+1)%2)*M*size,Gg_f+(s+1)*M*size,M); //this should add phi's for the branch point
-		Times(Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size,Gg_f+(s+1)*M*size,M*size); 
+		Lat[0] ->AddPhiS(rho+molmon_nr[first_b[g]-1]*M,Gg_b+((s+1)%2)*M*size,Gg_f+(s+1)*M*size,Markov,M); //this should add phi's for the branch point
+		Times(Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size,Gg_f+(s+1)*M*size,M*size);
 		for (int k=0; k<size; k++) {
 			Div(Gg_f+(s+1)*M*size+k*M,GB,M);
 			Div(Gg_f+(s+1)*M*size+k*M,Seg[mon_nr[first_b[g]-1]]->G1 ,M); //getting ready for phi side computation!
-			Times(Gg_b+((first_s[g]-1)%2)*M*size+k*M,Gg_b+((s+1)%2)*M*size+k*M,GB,M); //getting ready to propagate along backbone	
+			Times(Gg_b+((first_s[g]-1)%2)*M*size+k*M,Gg_b+((s+1)%2)*M*size+k*M,GB,M); //getting ready to propagate along backbone
 
 		}
-		
+
 		b0=first_b[g];
 		bN=last_b[g];
 		s=first_s[g]-1;
@@ -144,18 +144,18 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 			N= n_mon[b];
 			for (int k=0; k<N; k++) {
 				Lat[0] ->propagateB(Gg_b,Seg[mon_nr[b]]->G1,P,s%2,(s+1)%2,M);
-				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size, M);
+				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size, Markov,M);
 				s++;
 			}
 		}
 	}
 	b0=first_b[n_arms+2]; bN=last_b[n_arms+2];
 	if (ring) {
-		for (int b=b0; b<bN; b++) { //last block not needed in 'ring' because this segment is already accounted for 
+		for (int b=b0; b<bN; b++) { //last block not needed in 'ring' because this segment is already accounted for
 			N= n_mon[b];
 			for (int k=0; k<N; k++) { //terminal part of main chain
 				Lat[0] ->propagateB(Gg_b,Seg[mon_nr[b]]->G1,P,s%2,(s+1)%2,M);
-				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size, M);
+				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size,Markov, M);
 				s++;
 			}
 		}
@@ -165,7 +165,7 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 			N= n_mon[b];
 			for (int k=0; k<N; k++) { //terminal part of main chain
 				Lat[0] ->propagateB(Gg_b,Seg[mon_nr[b]]->G1,P,s%2,(s+1)%2,M);
-				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size, M);
+				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size,Markov, M);
 				s++;
 			}
 		}
@@ -174,25 +174,25 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 	for (g=2; g<=n_arms+1; g++) { //computing phi's for sides
 		s=sfirst-1;
  		if (g==2) {
-			Lat[0]->Terminate(GB,Gg_f+(last_s[0]+1)*M*size,M);
+			Lat[0]->Terminate(GB,Gg_f+(last_s[0]+1)*M*size,Markov,M);
 		} else {
-			Lat[0]->Terminate(GB,Gg_f+(first_s[g]-1)*M*size,M);
+			Lat[0]->Terminate(GB,Gg_f+(first_s[g]-1)*M*size,Markov,M);
 
-		}		
-		
-		b0=first_b[1]; bN=last_b[1]; 
-		
+		}
+
+		b0=first_b[1]; bN=last_b[1];
+
 		for (int b=b0; b<=bN; b++) {
 			N= n_mon[b];
 			for (int k=0; k<N; k++) {
 				if (k==0&&b==b0) {
 					Lat[0] ->propagate(GB,Seg[mon_nr[b]]->G1,0,1,M);
-					Lat[0] ->Initiate(Gg_b+((s+1)%2)*M*size,GB+M,M);
-					Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size, M);
+					Lat[0] ->Initiate(Gg_b+((s+1)%2)*M*size,GB+M,Markov,M);
+					Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size,Markov, M);
 
 				} else {
 					Lat[0] ->propagateB(Gg_b,Seg[mon_nr[b]]->G1,P,s%2,(s+1)%2,M);
-					Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size, M);
+					Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size, Markov,M);
 				}
 				s++;
 			}
@@ -204,7 +204,7 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 
 }
 
-bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) { 
+bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 	int N;
 	int M=Lat[0]->M;
 	Real* GB = new Real[2*M]; Zero(GB,2*M);
@@ -213,7 +213,7 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 	int slast=0,sfirst=0;
 	int s;
 	int n_arms=n_arm[0];
-	int b0,bN,g; 
+	int b0,bN,g;
 
 	s=last_s[1]+1; //first do the arm;
 	slast=s;
@@ -224,13 +224,13 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 			if (s<slast) {
 				Lat[0] ->propagate(Gg_f,Seg[mon_nr[b]]->G1,s+1,s,M);
 			} else {
-				Lat[0]->Initiate(Gg_f+slast*M*size,Seg[mon_nr[b]]->G1,M);
+				Lat[0]->Initiate(Gg_f+slast*M*size,Seg[mon_nr[b]]->G1,Markov,M);
 			}
 			s--;
 		}
 	}
 
-	Lat[0] ->Terminate(GB+M,Gg_f+(s+1)*M,M);
+	Lat[0] ->Terminate(GB+M,Gg_f+(s+1)*M,Markov,M);
 	Lat[0] ->propagate(GB,UNITY,1,0,M); //side chain is freely joined
 
 
@@ -244,10 +244,10 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 			if (s<slast) {
 				Lat[0] ->propagate(Gg_f,Seg[mon_nr[b]]->G1,s+1,s,M);
 			} else {
-				if (ring) 
-					Lat[0]->Initiate(Gg_f+slast*M*size,G0,M);
+				if (ring)
+					Lat[0]->Initiate(Gg_f+slast*M*size,G0,Markov,M);
 				else
-					Lat[0]->Initiate(Gg_f+slast*M*size,Seg[mon_nr[b]]->G1,M);
+					Lat[0]->Initiate(Gg_f+slast*M*size,Seg[mon_nr[b]]->G1,Markov,M);
 			}
 			s--;
 		}
@@ -272,7 +272,7 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 		s--;
 	}
 	b0=first_b[0]; bN=last_b[0];s= last_s[0];
-	
+
 	for (int b=bN; b>=b0; b--) { //terminal part of main chain
 		N= n_mon[b];
 		for (int k=0; k<N; k++) {
@@ -284,25 +284,25 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 		Times(Gg_f,Gg_f,Mask,M);
 
 	}
-	GN+=Lat[0]->ComputeGN(Gg_f,M);
+	GN+=Lat[0]->ComputeGN(Gg_f,Markov,M);
 	success = GN>=0;
 	if (ring) {
-		Lat[0]->Initiate(Gg_b,G0,M);
+		Lat[0]->Initiate(Gg_b,G0,Markov,M);
 	} else {
-		Lat[0]->Initiate(Gg_b,Seg[mon_nr[0]]->G1,M);
+		Lat[0]->Initiate(Gg_b,Seg[mon_nr[0]]->G1,Markov,M);
 
 	}
-	Lat[0]->AddPhiS(rho+molmon_nr[0]*M, Gg_f, Gg_b, M);
+	Lat[0]->AddPhiS(rho+molmon_nr[0]*M, Gg_f, Gg_b, Markov,M);
 	s=-1;
 	b0=first_b[0]; bN=last_b[0];
 	for (int b=b0; b<=bN; b++) { //start with main chain
 		N= n_mon[b];
 		for (int k=0; k<N; k++) {
 			if (s<0) {
-				
+
 			} else {
 				Lat[0]->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
-				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+				Lat[0]->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M,Markov, M);
 			}
 			s++;
 		}
@@ -310,12 +310,12 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 
 	for (g=2; g<=n_arms+1; g++) { //only do the spacer and keep semiflexibility
 		Lat[0] ->propagate(Gg_b,Seg[mon_nr[first_b[g]-1]]->G1,s%2,(s+1)%2,M);
-		Lat[0] ->AddPhiS(rho+molmon_nr[first_b[g]-1]*M,Gg_b+((s+1)%2)*M*size,Gg_f+(s+1)*M*size,M); //this should add phi's for the branch point
-		Times(Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size,Gg_f+(s+1)*M*size,M*size); 
+		Lat[0] ->AddPhiS(rho+molmon_nr[first_b[g]-1]*M,Gg_b+((s+1)%2)*M*size,Gg_f+(s+1)*M*size,Markov,M); //this should add phi's for the branch point
+		Times(Gg_f+(s+1)*M*size,Gg_b+((s+1)%2)*M*size,Gg_f+(s+1)*M*size,M*size);
 		Div(Gg_f+(s+1)*M,GB,M);
 			Div(Gg_f+(s+1)*M,Seg[mon_nr[first_b[g]-1]]->G1 ,M); //getting ready for phi side computation!
-			Times(Gg_b+((first_s[g]-1)%2)*M,Gg_b+((s+1)%2)*M,GB,M); //getting ready to propagate along backbone	
-		
+			Times(Gg_b+((first_s[g]-1)%2)*M,Gg_b+((s+1)%2)*M,GB,M); //getting ready to propagate along backbone
+
 		b0=first_b[g];
 		bN=last_b[g];
 		s=first_s[g]-1;
@@ -323,18 +323,18 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 			N= n_mon[b];
 			for (int k=0; k<N; k++) {
 				Lat[0] ->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
-				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M,Markov, M);
 				s++;
 			}
 		}
 	}
 	b0=first_b[n_arms+2]; bN=last_b[n_arms+2];
 	if (ring) {
-		for (int b=b0; b<bN; b++) { //last block not needed in 'ring' because this segment is already accounted for 
+		for (int b=b0; b<bN; b++) { //last block not needed in 'ring' because this segment is already accounted for
 			N= n_mon[b];
 			for (int k=0; k<N; k++) { //terminal part of main chain
 				Lat[0] ->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
-				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M,Markov, M);
 				s++;
 			}
 		}
@@ -344,7 +344,7 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 			N= n_mon[b];
 			for (int k=0; k<N; k++) { //terminal part of main chain
 				Lat[0] ->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
-				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+				Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, Markov,M);
 				s++;
 			}
 		}
@@ -353,24 +353,24 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 	for (g=2; g<=n_arms+1; g++) { //computing phi's for sides
 		s=sfirst-1;
  		if (g==2) {
-			Lat[0]->Terminate(GB,Gg_f+(last_s[0]+1)*M,M);
+			Lat[0]->Terminate(GB,Gg_f+(last_s[0]+1)*M,Markov,M);
 		} else {
-			Lat[0]->Terminate(GB,Gg_f+(first_s[g]-1)*M,M);
-		}		
-		
-		b0=first_b[1]; bN=last_b[1]; 
-		
+			Lat[0]->Terminate(GB,Gg_f+(first_s[g]-1)*M,Markov,M);
+		}
+
+		b0=first_b[1]; bN=last_b[1];
+
 		for (int b=b0; b<=bN; b++) {
 			N= n_mon[b];
 			for (int k=0; k<N; k++) {
 				if (k==0&&b==b0) {
 					Lat[0] ->propagate(GB,Seg[mon_nr[b]]->G1,0,1,M);
-					Lat[0] ->Initiate(Gg_b+((s+1)%2)*M,GB+M,M);
-					Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+					Lat[0] ->Initiate(Gg_b+((s+1)%2)*M,GB+M,Markov,M);
+					Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M,Markov, M);
 
 				} else {
 					Lat[0] ->propagate(Gg_b,Seg[mon_nr[b]]->G1,s%2,(s+1)%2,M);
-					Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M, M);
+					Lat[0] ->AddPhiS(rho+molmon_nr[b]*M, Gg_f+(s+1)*M,Gg_b+((s+1)%2)*M,Markov, M);
 				}
 				s++;
 			}
@@ -385,7 +385,7 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 
 bool mol_comb::ComputePhi() {
 	if (debug) cout <<"ComputePhi for mol_comb " + name << endl;
-	bool success=true;	
+	bool success=true;
 	int M=Lat[0]->M;
 	Real* G0 = new Real[M]; Zero(G0,M);
 	Real* Mask = new Real[M]; Zero(Mask,M);
@@ -405,9 +405,9 @@ bool mol_comb::ComputePhi() {
 
 
 	if (ring) {
-	
+
 		if (IsPinned()) {
-			
+
 			int length=MolMonList.size();
 			int i=0;
 			while (i<length) {
@@ -415,7 +415,7 @@ bool mol_comb::ComputePhi() {
 				i++;
 			}
 			length = mon_nr.size();
-			
+
 			int pinnedlength=SegPinned.size();
 			for (int j=0; j<pinnedlength; j++) {
 				int Ds1=0,Ds2=0;
@@ -428,7 +428,7 @@ bool mol_comb::ComputePhi() {
 					}
 				}
 				if (Ds1<Ds2) Ds.push_back(Ds1); else Ds.push_back(Ds2); //shortest distance along contour to 'ends' of the chain
-				//cout <<"Ds for "<<SegPinned[j] << " : " << Ds[j] << endl; 
+				//cout <<"Ds for "<<SegPinned[j] << " : " << Ds[j] << endl;
 			}
 		}
 
@@ -451,15 +451,15 @@ bool mol_comb::ComputePhi() {
 
 						if (Markov==2) success = GoBackAndForth2ndO(Mask,G0); else success = GoBackAndForth(Mask,G0);
 					}
-	
+
 				}
-		}	
+		}
 
 
 	}
 
-	if (Markov==2) success = GoBackAndForth2ndO(Mask,G0); else success = GoBackAndForth(Mask,G0); 
-	
+	if (Markov==2) success = GoBackAndForth2ndO(Mask,G0); else success = GoBackAndForth(Mask,G0);
+
 	delete [] G0; delete [] Mask;
 
 	return success;

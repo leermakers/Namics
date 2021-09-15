@@ -122,16 +122,16 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	int m=0;
 	if (Markov==2 && Lat[0]->lattice_type == simple_cubic) {
 		int FJC = Lat[0]->FJC;
-		P = (Real*) malloc(FJC*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
+		P = (Real*) malloc(FJC*sizeof(Real));
 		Real Q=0;
 		KStiff=k_stiff;
 		for (int k=0; k<FJC-1; k++) {
 			P[k]=exp(-0.5*KStiff*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); Q+= P[k];
 		}
 		P[FJC-1]=0; if (Lat[0]->lattice_type==hexagonal) Q=2*Q-P[0]; else Q=4*Q-3*P[0];
-		//for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
-		//	cout << "P["<<k<<"] = " << P[k] << endl;
-		//}
+		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
+		//cout << "P["<<k<<"] = " << P[k] << endl;
+		}
 	}
 
 	if (Markov==2 && Lat[0]->lattice_type == hexagonal) {
@@ -540,7 +540,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 
 	}
 	Markov=1;
-	Markov=In[0]->Get_int(GetValue("Markov"),1);
+	if (GetValue("Markov").size()>0) Markov=In[0]->Get_int(GetValue("Markov"),1);
 	if (Markov<1 || Markov>2) {
 		cout <<" Integer value for 'Markov' is by default 1 and may be set to 2 for some mol_types and fjc-choices only. Markov value out of bounds. Proceed with caution. " << endl; success = false;
 	}
@@ -1800,8 +1800,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
 	if (freedom=="free") theta = Lat[0]->WeightedSum(phitot);
 	push("Markov",Markov);
+	push("k_stiff",k_stiff);
 	if (Markov==2) {
-		push("k_stiff",KStiff);
 		for (int k=0; k<size; k++){
 			if (k==0) push("P[0]",P[0]);
 			if (k==1) push("P[1]",P[1]);

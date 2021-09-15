@@ -37,7 +37,8 @@ start=start_;
 		}
  	}
 	if ( Seg[mon_nr[0]]->freedom == "clamp") freedom="clamped";
-	if (GetValue("Markov").size()>0) Markov=In[0]->Get_int(GetValue("Markov"),0);
+	Markov=1;
+	if (GetValue("Markov").size()>0) Markov=In[0]->Get_int(GetValue("Markov"),1);
 	if (Markov<0 || Markov>2) {
 			success=false;
 			cout <<"Markov input in mol " +name + " is out of bounds. Integer value should be either '1' or '2'. " << endl;
@@ -330,7 +331,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			MolType=comb; keyfound=true;
 			s=s.substr(6,s.length()-7);
 		}
-		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb.@water Problem terminated "<< endl ;
+		if (!keyfound) {
+				success =false ;
+				cout << "Keyword specifying Moltype not recognised: select from @dend, @comb.@water Problem terminated "<< endl ;
+				cout << "Perhaps you intent to use an 'alias' in the 'composition'. Do not use @ but bracket the alias as #alias_name# instead. "<< endl ;
 			return false;
 		 }
 	}

@@ -141,7 +141,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 				if (!In[0]->InSet(In[0]->MolList,pos,sub[1])) {
 					cout <<"In 'var' mol name " + sub[1] + " not found" << endl; success=false;
 				} else {
-					if (GetValue("scan").size()==0 && GetValue("search").size()==0) {
+					if (GetValue("scan").size()==0){ // && GetValue("search").size()==0) {
 						if (GetValue("mu").size()>0) {
 							string s = GetValue("mu");
 							vector<string>sub_;
@@ -190,7 +190,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 							cout <<"In var:" + name + ", we need either 'scan' or 'search' as third parameter." << endl;
 							cout <<"or targets selected from {mu, theta, n, phibulk} "  << endl;
 						}
-					}  //else {
+					} // else
 						if (GetValue("scan").size()>0) {
 							if (!Mol[pos]->PutVarInfo("scan",GetValue("scan"),0)) {
 								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl;
@@ -207,8 +207,8 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 								}
 							}
 
-					//	}
-					}
+						}
+					//}
 				}
 				break;
 			case 3:

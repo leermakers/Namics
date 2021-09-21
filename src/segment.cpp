@@ -1670,6 +1670,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	theta = Lat[0]->WeightedSum(phi);
 	push("theta",theta);
 	Real theta_exc=0;
+	Real RMS=0;
 
 	if (freedom != "frozen" || freedom != "pinned") theta_exc=theta-MX*MY*MZ*phibulk; else theta_exc=theta;
 	push("theta_exc",theta_exc);
@@ -1684,6 +1685,8 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 		M1=Lat[0]->Moment(phi,phibulk,1)/theta_exc;
 	 	M2=0;
 		M2=Lat[0]->Moment(phi,phibulk,2)/theta_exc;
+		RMS=pow(M2,0.5);
+		push("RMS",RMS);
 		push("1st_M_phi_z",M1);
 		push("2nd_M_phi_z",M2);
 		Fl = (M2-M1*M1);

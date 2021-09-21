@@ -400,7 +400,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
     string numc = to_string(subl);
     string numcc = to_string(start);
 
-    if (name=="kal" || name == "vec" || name == "pos") filename=sub[0].append(".").append(name); else {
+    if (name=="kal" || name == "vec" || name == "pos" || name=="ana") filename=sub[0].append(".").append(name); else {
 		if (n_starts==1 && subl < 1) filename=sub[0].append(".").append(name);
 		if (n_starts==1 && subl >0) filename = sub[0].append("_").append(numc).append(".").append(name);
 		if (n_starts>1  && subl < 1) filename = sub[0].append("_").append(numcc).append(".").append(name);

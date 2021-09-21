@@ -25,6 +25,9 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	ring=false;
 	all_molecule=false;
 	//Markov = Lat[0]->Markov;
+	Var_scan_value=-1;
+	Var_search_value=-1;
+	Var_target=-1;
 
 }
 
@@ -576,14 +579,12 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 
 bool Molecule::PutVarInfo(string Var_type_,string Var_target_,Real Var_target_value_){
 if (debug) cout <<"Molecule:: PutVarInfo in mol "+ name << endl;
-//cout <<"var type: " << Var_type_ << endl;
-//cout <<"var_target: " << Var_target_ << endl;
-//cout <<"var_target_value " << Var_target_value_ << endl;
+
 	bool success=true;
-	Var_scan_value=-1;
+	//Var_scan_value=-1;
 	//Var_search_value=-1;
-	vector<string>sub;
 	//Var_target=-1;
+	vector<string>sub;
 	Var_type="";
 	if (Var_type_=="scan") {
 		var_al_nr=-1;
@@ -897,7 +898,6 @@ if (debug) cout <<"Molecule:: PutValue" << endl;
 	switch (Var_search_value) {
 		case 0:
 			theta=X; n=theta/chainlength;
-//cout <<"Put theta to " << theta << endl; 
 			break;
 		case 1:
 			n=X; theta=n*chainlength;
@@ -1215,8 +1215,13 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	while (aliases && success) {
 		loopnr++;
 		sub.clear();
+
 		In[0]->split(s,'#',sub);
-		if (sub.size()%2!=1) {cout << " Alias in composition should be bracketed on both sides by '#'. For example, (A)10#alias_name#(B)3, when e.g., 'alias : alias_name : value : (X)5' is defined, so that you oubtain (A)10(X)5(B)3 " << endl; success=false; }
+		if (sub.size()%2!=1) {
+			if (s.back()!='#') {
+				cout << " Alias in composition should be bracketed on both sides by '#'. For example, (A)10#alias_name#(B)3, when e.g., 'alias : alias_name : value : (X)5' is defined, so that you oubtain (A)10(X)5(B)3 " << endl; success=false;
+			}
+		}
 		aliases=(s!=sub[0]);
 		if (aliases) {if (!ExpandAlias(sub,s)) {cout << "expand alias failed. " << endl; success=false; return false; }}
 		if (loopnr == 20) {
@@ -1881,13 +1886,13 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	int length = MolMonList.size();
 	for (int i=0; i<length; i++) {
 		stringstream ss; ss<<i+1; string str=ss.str();
-		s= "profile;"+str; push("phi-"+Seg[MolMonList[i]]->name,s);
+		s= "profile;"+str; push("phi_"+Seg[MolMonList[i]]->name,s);
 	}
 	for (int i=0; i<length_al; i++) {
-		push(Al[i]->name+"-value",Al[i]->value);
-		push(Al[i]->name+"-composition",Al[i]->composition);
+		push(Al[i]->name+"_value",Al[i]->value);
+		push(Al[i]->name+"_composition",Al[i]->composition);
 		stringstream ss; ss<<i+length; string str=ss.str();
-		s="profile;"+str; push(Al[i]->name+"-phi",s);
+		s="profile;"+str; push(Al[i]->name+"phi",s);
 	}
 	s="vector;0"; push("gn",s);
 #ifdef CUDA

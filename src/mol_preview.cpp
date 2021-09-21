@@ -343,7 +343,11 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		loopnr++;
 		sub.clear();
 		In[0]->split(s,'#',sub);
-		if (sub.size()%2!=1) {cout << " Alias in composition should be bracketed on both sides by '#'. For example, (A)10#alias_name#(B)3, when e.g., 'alias : alias_name : value : (X)5' is defined, so that you oubtain (A)10(X)5(B)3 " << endl; success=false; }
+		if (sub.size()%2!=1) {
+			if (s.back()!='#') {
+				cout << " Alias in composition should be bracketed on both sides by '#'. For example, (A)10#alias_name#(B)3, when e.g., 'alias : alias_name : value : (X)5' is defined, so that you oubtain (A)10(X)5(B)3 " << endl; success=false;
+			}
+		}
 		aliases=(s!=sub[0]);
 		if (aliases) if (!ExpandAlias(sub,s)) {cout <<"alias not properly processed" <<endl; success=false; return false;};
 		if (loopnr == 20) {

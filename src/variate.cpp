@@ -141,7 +141,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 				if (!In[0]->InSet(In[0]->MolList,pos,sub[1])) {
 					cout <<"In 'var' mol name " + sub[1] + " not found" << endl; success=false;
 				} else {
-					if (GetValue("scan").size()>0 || GetValue("search").size() >0) {
+					if (GetValue("scan").size()==0 && GetValue("search").size()==0) {
 						if (GetValue("mu").size()>0) {
 							string s = GetValue("mu");
 							vector<string>sub_;

@@ -254,7 +254,7 @@ bool Lattice::PutSub_box(int mx_, int my_, int mz_,int n_box_) {
 
 bool Lattice::CheckInput(int start) {
 if (debug) cout <<"CheckInput in lattice " << endl;
-	bool success;
+	bool success=true;
 	mx.push_back(0); my.push_back(0); mz.push_back(0); jx.push_back(0); jy.push_back(0); m.push_back(0); n_box.push_back(0);
 	string Value;
 
@@ -276,7 +276,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		}
 
 		if (success && GetValue("b/l").length()>0) {
-			int fjc_new;
+			int fjc_new=1;
 			if (!In[0]->Get_int(GetValue("b/l"),fjc_new,"b/l can adopt only few integer values: 1, 2, 3, ..."))
 				success=false;
 			else {
@@ -308,7 +308,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 		string lat_type;
 		//lat_type="simple_cubic"; lattice_type=simple_cubic; lambda=1.0/6.0; Z=6;
-
+		lattice_type=simple_cubic;
 		options.push_back("simple_cubic"); options.push_back("hexagonal");
 		Value=GetValue("lattice_type");
 		if (Value.length()>0) {
@@ -321,6 +321,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		}
 
 		offset_first_layer =0;
+		gradients=1;
 		gradients=In[0]->Get_int(GetValue("gradients"),1);
 		if (gradients<0||gradients>3) {cout << "value of gradients out of bounds 1..3; default value '1' is used instead " << endl; gradients=1;}
 		switch(gradients) {

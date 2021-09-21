@@ -28,12 +28,13 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("size");
 	KEYS.push_back("pos");
 	KEYS.push_back("set_equal_to");
-
 	Amplitude=0; labda=0; seed=1;
 	var_pos=0;
 	ns=1;
 	all_segment=false;
 	constraints=false;
+	phibulk=0;
+	freedom="free";
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -954,6 +955,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		options.push_back("frozen");
 		options.push_back("tagged");
 		options.push_back("clamp");
+		freedom="free";
 		freedom = In[0]->Get_string(GetValue("freedom"),"free");
 		if (!In[0]->InSet(options,freedom)) {
 			cout << "Freedom: '"<< freedom  <<"' for mon " + name + " not recognized. "<< endl;
@@ -1651,6 +1653,9 @@ if (debug) cout <<"Push in Segment (string) " + name << endl;
 void Segment::PushOutput() {
 if (debug) cout <<"PushOutput for segment " + name << endl;
 	int M = Lat[0]->M;
+	int MX=Lat[0]->MX;
+	int MY=Lat[0]->MY; if (MY<1) MY=1;
+	int MZ=Lat[0]->MZ; if (MZ<1) MZ=1;
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -1661,16 +1666,20 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	Reals_value.clear();
 	push("freedom",freedom);
 	push("valence",valence);
-	Real theta = Lat[0]->WeightedSum(phi);
+	Real theta=0;
+	theta = Lat[0]->WeightedSum(phi);
 	push("theta",theta);
-	theta_exc=0;
-	theta_exc=theta-Lat[0]->Accesible_volume*phibulk;
+	Real theta_exc=0;
+
+	if (freedom != "frozen" || freedom != "pinned") theta_exc=theta-MX*MY*MZ*phibulk; else theta_exc=theta;
 	push("theta_exc",theta_exc);
 	push("phibulk",phibulk);
-	push("fluctuation_amplitude",Amplitude);
-	push("fluctuation_wavelength",labda);
-	push("var_pos",var_pos);
-	if (theta_exc!=0) {
+	if (freedom != "frozen" || freedom != "pinned") {
+		push("fluctuation_amplitude",Amplitude);
+		push("fluctuation_wavelength",labda);
+		push("var_pos",var_pos);
+	}
+	if (freedom=="free") {
 		M1=0;
 		M1=Lat[0]->Moment(phi,phibulk,1)/theta_exc;
 	 	M2=0;

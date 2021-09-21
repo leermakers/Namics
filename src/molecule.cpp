@@ -575,12 +575,15 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 }
 
 bool Molecule::PutVarInfo(string Var_type_,string Var_target_,Real Var_target_value_){
-if (debug) cout <<"Molecule:: PutVarInfo" << endl;
+if (debug) cout <<"Molecule:: PutVarInfo in mol "+ name << endl;
+//cout <<"var type: " << Var_type_ << endl;
+//cout <<"var_target: " << Var_target_ << endl;
+//cout <<"var_target_value " << Var_target_value_ << endl;
 	bool success=true;
 	Var_scan_value=-1;
-	Var_search_value=-1;
+	//Var_search_value=-1;
 	vector<string>sub;
-	Var_target=-1;
+	//Var_target=-1;
 	Var_type="";
 	if (Var_type_=="scan") {
 		var_al_nr=-1;
@@ -613,7 +616,7 @@ if (debug) cout <<"Molecule:: PutVarInfo" << endl;
 	}
 	if (Var_type_=="search") {
 		Var_type="search";
-		if (Var_target_=="theta") {Var_search_value=0; Var_start_search_value=theta; }
+		if (Var_target_=="theta") {Var_search_value=0; Var_start_search_value=theta;  }
 		if (Var_target_=="n") {Var_search_value=1; Var_start_search_value=n; }
 		if (Var_target_=="phibulk") {Var_search_value=2; Var_start_search_value=phibulk; }
 		if (Var_target_=="equate_to_solvent") {
@@ -848,12 +851,13 @@ if (debug) cout <<"Molecule:: GetError" << endl;
 			break;
 		case 2:
 			if (Var_target_value!=0) Error=phibulk/Var_target_value-1.0; else Error = phibulk;
+			Error *=-1;
 			break;
 		case 3:
 			if (Var_target_value!=0) Error=Mu/Var_target_value-1.0; else Error = Mu;
 			break;
 		default:
-			//cout <<"program error in Molecule::GetError" << endl;
+			cout <<"program error in Molecule::GetError" << endl;
 			break;
 	}
 
@@ -893,6 +897,7 @@ if (debug) cout <<"Molecule:: PutValue" << endl;
 	switch (Var_search_value) {
 		case 0:
 			theta=X; n=theta/chainlength;
+//cout <<"Put theta to " << theta << endl; 
 			break;
 		case 1:
 			n=X; theta=n*chainlength;

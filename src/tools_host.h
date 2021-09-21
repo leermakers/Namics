@@ -113,7 +113,7 @@ inline void Zero(T* P, int M) {
 }
 
 template <typename T>
-inline void Cp(Real* P, T* A, int M) { 
+inline void Cp(Real* P, T* A, int M) {
   std::copy(A, A + M, P);
 }
 
@@ -354,12 +354,12 @@ void Div(T *P, T *A, int M)   {
 
 template<typename T>
 void AddG(T *g, T *phitot, T *alpha, int M)   {
-	for (int i=0; i<M; i++) if (phitot[i]>0)  g[i]= g[i] -alpha[i] +1/phitot[i]-1.0; else g[i]=0;
+	for (int i=0; i<M; i++) if (phitot[i]>0)  g[i]= g[i] - alpha[i] +1/phitot[i]-1.0; else g[i]=0;
 }
 
 template<typename T>
 void OneMinusPhitot(T *g, T *phitot, int M)   {
-	for (int i=0; i<M; i++) g[i]= 1/phitot[i]-1;
+	for (int i=0; i<M; i++) g[i]= 1.0/phitot[i]-1.0;
 }
 
 namespace tools {

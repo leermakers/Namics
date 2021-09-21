@@ -141,7 +141,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 				if (!In[0]->InSet(In[0]->MolList,pos,sub[1])) {
 					cout <<"In 'var' mol name " + sub[1] + " not found" << endl; success=false;
 				} else {
-					if (GetValue("scan").size()==0 && GetValue("search").size() ==0) {
+					if (GetValue("scan").size()>0 || GetValue("search").size() >0) {
 						if (GetValue("mu").size()>0) {
 							string s = GetValue("mu");
 							vector<string>sub_;
@@ -161,7 +161,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						if (GetValue("theta").size()>0) {
 							if (R_target ==-123.0) {
 								R_target=In[0]->Get_Real(GetValue("theta"),0); targeting=2; target_nr=pos;
-								if (!Mol[0]->PutVarInfo("target","theta",R_target)) {
+								if (!Mol[pos]->PutVarInfo("target","theta",R_target)) {
 									success=false;
 									cout <<"In var:"+name+":theta, Target value rejected" << endl;
 								}
@@ -170,16 +170,16 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						if (GetValue("n").size()>0) {
 							if (R_target ==-123.0) {
 								R_target=In[0]->Get_Real(GetValue("n"),0); targeting=2; target_nr=pos;
-								if (!Mol[0]->PutVarInfo("target","n",R_target)) {
+								if (!Mol[pos]->PutVarInfo("target","n",R_target)) {
 									success=false;
 									cout <<"In var:"+name+":n, Target value rejected" << endl;
 								}
 							} else {dubbel = true;}
 						}
-						if (GetValue("theta").size()>0) {
+						if (GetValue("phibulk").size()>0) {
 							if (R_target ==-123.0) {
 								R_target=In[0]->Get_Real(GetValue("phibulk"),0); targeting=2; target_nr=pos;
-								if (!Mol[0]->PutVarInfo("target","phibulk",R_target)) {
+								if (!Mol[pos]->PutVarInfo("target","phibulk",R_target)) {
 									success=false;
 									cout <<"In var:"+name+":phibulk, Target value rejected" << endl;
 								}
@@ -190,7 +190,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 							cout <<"In var:" + name + ", we need either 'scan' or 'search' as third parameter." << endl;
 							cout <<"or targets selected from {mu, theta, n, phibulk} "  << endl;
 						}
-					} else {
+					}  //else {
 						if (GetValue("scan").size()>0) {
 							if (!Mol[pos]->PutVarInfo("scan",GetValue("scan"),0)) {
 								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl;
@@ -207,7 +207,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 								}
 							}
 
-						}
+					//	}
 					}
 				}
 				break;

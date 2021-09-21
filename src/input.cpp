@@ -47,12 +47,12 @@ Input::Input(string name_) {
 						if (In_line.length()>2) {if (In_line.substr(0,2) == "//") add_also = false;}
 						if (add_also) elems.push_back(std::to_string(line_nr).append("-").append(std::to_string(line_nr_inc)).append(":").append(In_line)); else add_also=true;
 					}
-					
+
 					inc_file.close();
 				} else {
-					cout <<"'include : " << filename_inc <<"' not working because file is not found " << endl; Input_error=true; 
+					cout <<"'include : " << filename_inc <<"' not working because file is not found " << endl; Input_error=true;
 				}
-				
+
 			}}
 			if (add) elems.push_back(std::to_string(line_nr).append(":").append(In_line)); else add=true;
 		}
@@ -702,25 +702,25 @@ bool Input::MakeLists(int start) {
 	ReactionList.clear();
 
 	if (!TestNum(SysList,"sys",0,1,start)) {cout << "There can be no more than 1 'sys name' in the input" << endl; success=false; }
-	if (SysList.size()==0) SysList.push_back("noname");
+	if (SysList.size()==0) SysList.push_back("NN");
 	if (!TestNum(LatList,"lat",1,1,start)) {cout << "There must be exactly one 'lat name' in the input" << endl; success=false;}
 	if (!TestNum(NewtonList,"newton",0,1,start)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
-	if (NewtonList.size()==0) NewtonList.push_back("noname");
+	if (NewtonList.size()==0) NewtonList.push_back("NN");
 	if (!TestNum(NewtonList,"newton",0,1,start)) {cout << "There can be no more than 1 'newton name' in input" << endl; success=false;}
 	if (!TestNum(MonList,"mon",1,1000,start)) {cout << "There must be at least one 'mon name' in input" << endl; success=false;}
 	if (!TestNum(StateList,"state",0,1000,start)) {cout << "There can not be more than 1000 'state name's in input" << endl; success=false;}
-	//if (StateList.size()==0) StateList.push_back("noname");
+	//if (StateList.size()==0) StateList.push_back("NN");
 	if (!TestNum(ReactionList,"reaction",0,1000,start)) {cout << "There can not be more than 1000 reaction name's in input" << endl; success=false;}
-	//if (ReactionList.size()==0) ReactionList.push_back("noname");
+	//if (ReactionList.size()==0) ReactionList.push_back("NN");
 	TestNum(AliasList,"alias",0,1000,start);
-	if (AliasList.size()==0) AliasList.push_back("noname");
+	if (AliasList.size()==0) AliasList.push_back("NN");
 	if (!TestNum(MolList,"mol",1,1000,start)) {cout << "There must be at least one 'mol name' in input" << endl; success=false;}
 	if (!TestNum(OutputList,"output",1,1000,start)) {cout << "No output defined! " << endl;}
 	if (!TestNum(MesodynList,"mesodyn",0,1,start)) {cout << "There can be no more than 1 'mesodyn' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(ClengList,"cleng",0,1,start)) {cout << "There can be no more than 1 'cleng' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(TengList,"teng",0,1,start)) {cout << "There can be no more than 1 'teng' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(VarList,"var",0,10,start))
-	if (VarList.size()==0) VarList.push_back("noname");
+	if (VarList.size()==0) VarList.push_back("NN");
 	return success;
 }
 

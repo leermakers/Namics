@@ -1,7 +1,7 @@
-#include <iostream> 
-#include <string>   
+#include <iostream>
+#include <string>
 #include "lattice.h"
-#include "LG2Planar.h" 
+#include "LG2Planar.h"
 
 LG2Planar::LG2Planar(vector<Input*> In_,string name_): LGrad2(In_,name_) {
 	JY=1;
@@ -75,15 +75,15 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 					Add(X_side,X,M);
 					Norm(X_side,1.0/3.0,M);
 				} else { //not fully tested...
-					cout <<" in side fractions the bc are not fully tested yet..." << endl; 
+					cout <<" in side fractions the bc are not fully tested yet..." << endl;
 					Add(X_side+JX,X,   M-JX);
-					Add(X_side,   X+JX,M-JX);	
+					Add(X_side,   X+JX,M-JX);
 					Add(X_side+JY,X   ,M-JY);
 					Add(X_side,   X+JY,M-JY);
-					Add(X_side,   X   ,M); 
+					Add(X_side,   X   ,M);
 					Norm(X_side,2.0,M);
-				
-					remove_bounds(X); 
+
+					remove_bounds(X);
 					set_bounds_x(X,-1);
 					Add(X_side+JX,X+JY,M-JX-JY);
 					Add(X_side+JY,X+JX,M-JX-JY);
@@ -138,7 +138,7 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 		Real *gz4=gs_1+4*M;
 		Real *gz5=gs_1+5*M;
 		Real *gz6=gs_1+6*M;
-		
+
 		Real *gx0=gs;
 		Real *gx1=gs+M;
 		Real *gx2=gs+2*M;
@@ -150,7 +150,7 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 
 		Zero(gs,7*M);
 		remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);
-		set_bounds_x(gz0,gz6,0);set_bounds_x(gz1,gz5,0);set_bounds_x(gz2,gz4,0);set_bounds_x(gz3,0); 
+		set_bounds_x(gz0,gz6,0);set_bounds_x(gz1,gz5,0);set_bounds_x(gz2,gz4,0);set_bounds_x(gz3,0);
 
 		YplusisCtimesX(gx0+JX,gz0,2*P[0],M-JX);
 		YplusisCtimesX(gx0+JX,gz1,  P[0],M-JX);
@@ -191,7 +191,7 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 		YplusisCtimesX(gx3,gz5,P[1],M);
 		YplusisCtimesX(gx3,gz6,2*P[1],M);
 
-		set_bounds_y(gz0,-1); set_bounds_y(gz1,-1);set_bounds_y(gz2,-1);set_bounds_y(gz4,-1);set_bounds_y(gz3,-1); 
+		set_bounds_y(gz0,-1); set_bounds_y(gz1,-1);set_bounds_y(gz2,-1);set_bounds_y(gz4,-1);set_bounds_y(gz3,-1);
 		YplusisCtimesX(gx1+JX,gz0+JY,2*P[0],M-JX-JY);
 		YplusisCtimesX(gx1+JX,gz1+JY,  P[0],M-JX-JY);
 		YplusisCtimesX(gx1+JX,gz2+JY,2*P[1],M-JX-JY);
@@ -199,7 +199,7 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 		YplusisCtimesX(gx1+JX,gz4+JY,2*P[1],M-JX-JY);
 
 		remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);
-		set_bounds_x(gz6,-1);set_bounds_x(gz5,-1);set_bounds_x(gz2,-1);set_bounds_x(gz4,-1);set_bounds_x(gz3,-1); 
+		set_bounds_x(gz6,-1);set_bounds_x(gz5,-1);set_bounds_x(gz2,-1);set_bounds_x(gz4,-1);set_bounds_x(gz3,-1);
 		YplusisCtimesX(gx5+JY,gz2+JX,2*P[1],M-JX-JY);
 		YplusisCtimesX(gx5+JY,gz3+JX,2*P[1],M-JX-JY);
 		YplusisCtimesX(gx5+JY,gz4+JX,2*P[1],M-JX-JY);
@@ -215,8 +215,8 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 		Real *gz2=gs_1+2*M;
 		Real *gz3=gs_1+3*M;
 		Real *gz4=gs_1+4*M;
-		set_bounds_x(gz0,gz4,0); set_bounds_x(gz1,0); set_bounds_x(gz2,0); set_bounds_x(gz3,0); 
-		set_bounds_y(gz1,gz3,0); set_bounds_y(gz0,0); set_bounds_y(gz2,0); set_bounds_y(gz4,0); 	
+		set_bounds_x(gz0,gz4,0); set_bounds_x(gz1,0); set_bounds_x(gz2,0); set_bounds_x(gz3,0);
+		set_bounds_y(gz1,gz3,0); set_bounds_y(gz0,0); set_bounds_y(gz2,0); set_bounds_y(gz4,0);
 		Real *gx0=gs;
 		Real *gx1=gs+M;
 		Real *gx2=gs+2*M;
@@ -250,7 +250,7 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 		YplusisCtimesX(gx4,gz2+JX,2*P[1],M-JX);
 		YplusisCtimesX(gx4,gz3+JX,P[1],M-JX);
 		YplusisCtimesX(gx4,gz4+JX,P[0],M-JX);
-	
+
 		for (int k=0; k<5; k++) Times(gs+k*M,gs+k*M,g,M);
 	}
 }
@@ -266,7 +266,7 @@ void LG2Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 		Real *gz4=gs_1+4*M;
 		Real *gz5=gs_1+5*M;
 		Real *gz6=gs_1+6*M;
-		
+
 		Real *gx0=gs;
 		Real *gx1=gs+M;
 		Real *gx2=gs+2*M;
@@ -292,7 +292,7 @@ void LG2Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 		YplusisCtimesX(gx2,gz0+JX,2*P[1],M-JX);
 		YplusisCtimesX(gx3,gz0+JX,2*P[1],M-JX);
 		YplusisCtimesX(gx4,gz0+JX,2*P[1],M-JX);
-	
+
 		set_bounds_y(gz2,gz4,0);
 
 		YplusisCtimesX(gx0+JY,gz4,2*P[1],M-JY);
@@ -347,7 +347,7 @@ void LG2Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 		Real *gz2=gs_1+2*M;
 		Real *gz3=gs_1+3*M;
 		Real *gz4=gs_1+4*M;
-		set_bounds_x(gz0,gz4,0); set_bounds_x(gz1,0); set_bounds_x(gz2,0); set_bounds_x(gz3,0); 
+		set_bounds_x(gz0,gz4,0); set_bounds_x(gz1,0); set_bounds_x(gz2,0); set_bounds_x(gz3,0);
 		set_bounds_y(gz1,gz3,0); set_bounds_y(gz0,0); set_bounds_y(gz2,0); set_bounds_y(gz4,0);
 		Real *gx0=gs;
 		Real *gx1=gs+M;
@@ -429,15 +429,15 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 				Add(gs,gs_1,M);
 				Norm(gs,1.0/3.0,M);
 				Times(gs,gs,G1,M);
-			} else { //hexagonal Johan's method			
+			} else { //hexagonal Johan's method
 				Add(gs+JX,gs_1,   M-JX);
-				Add(gs,   gs_1+JX,M-JX);	
+				Add(gs,   gs_1+JX,M-JX);
 				Add(gs+JY,gs_1   ,M-JY);
 				Add(gs,   gs_1+JY,M-JY);
-				Add(gs,   gs_1   ,M); 
+				Add(gs,   gs_1   ,M);
 				Norm(gs,2.0,M);
-				
-				remove_bounds(gs_1); 
+
+				remove_bounds(gs_1);
 				set_bounds_x(gs_1,-1);
 				Add(gs+JX,gs_1+JY,M-JX-JY);
 				Add(gs+JY,gs_1+JX,M-JX-JY);
@@ -501,7 +501,7 @@ void LG2Planar::UpdateEE(Real* EE, Real* psi, Real* E) {
 			Eymin*=Eymin;
 			Eyplus=psi[z]-psi[z+1];
 			Eyplus*=Eyplus;
-			EE[x*MX+y]=pf*(Exmin+Explus+Eymin+Eyplus);
+			EE[x*JX+y]=pf*(Exmin+Explus+Eymin+Eyplus);
 		}
 	}
 }
@@ -513,6 +513,7 @@ void LG2Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, boo
 	Real epsXplus, epsXmin, epsYplus,epsYmin;
 	//set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
+	Real ax,ay;
 
 	if (!fixedPsi0) {
 		C=C*2.0/fjc/fjc;
@@ -523,8 +524,10 @@ void LG2Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, boo
 				epsXplus=eps[i]+eps[i+JX];
 				epsYmin=eps[i]+eps[i-1];
 				epsYplus=eps[i]+eps[i+1];
-				X[i]= (C*q[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/
-					(epsXmin+epsXplus+epsYmin+epsYplus);
+				if (x==fjc) ax=psi[i-JX]; else ax=X[i-JX]; //upwind
+				if (y==fjc) ay=psi[i-1]; else ay=X[i-1]; //upwind
+				//X[i]= (C*q[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/(epsXmin+epsXplus+epsYmin+epsYplus);
+				X[i]= (C*q[i]+epsXmin*ax+epsXplus*psi[i+JX]+epsYmin*ay+epsYplus*psi[i+1])/(epsXmin+epsXplus+epsYmin+epsYplus);
 			}
 		}
 		//Cp(psi,X,M);
@@ -555,7 +558,7 @@ void LG2Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, boo
 			psi[x*JX+y]=X[x*JX+y];
 			g[x*JX+y]-=psi[x*JX+y];
 		}
-	} 
+	}
 }
 
 

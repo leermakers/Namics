@@ -1653,9 +1653,7 @@ if (debug) cout <<"Push in Segment (string) " + name << endl;
 void Segment::PushOutput() {
 if (debug) cout <<"PushOutput for segment " + name << endl;
 	int M = Lat[0]->M;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY; if (MY<1) MY=1;
-	int MZ=Lat[0]->MZ; if (MZ<1) MZ=1;
+
 	strings.clear();
 	strings_value.clear();
 	bools.clear();
@@ -1672,7 +1670,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	Real theta_exc=0;
 	Real RMS=0;
 
-	if (freedom != "frozen" || freedom != "pinned") theta_exc=theta-MX*MY*MZ*phibulk; else theta_exc=theta;
+	if (freedom != "frozen" || freedom != "pinned") theta_exc=theta-Lat[0]->volume*phibulk; else theta_exc=theta;
 	push("theta_exc",theta_exc);
 	push("phibulk",phibulk);
 	if (freedom != "frozen" || freedom != "pinned") {
@@ -1682,10 +1680,10 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	}
 	if (freedom=="free") {
 		M1=0;
-		M1=Lat[0]->Moment(phi,phibulk,1)/theta_exc;
+		if (theta_exc !=0) M1=Lat[0]->Moment(phi,phibulk,1)/theta_exc;
 	 	M2=0;
-		M2=Lat[0]->Moment(phi,phibulk,2)/theta_exc;
-		RMS=pow(M2,0.5);
+		if (theta_exc !=0) M2=Lat[0]->Moment(phi,phibulk,2)/theta_exc;
+		if (M2 !=0) RMS=pow(M2,0.5);
 		push("RMS",RMS);
 		push("1st_M_phi_z",M1);
 		push("2nd_M_phi_z",M2);
@@ -1696,13 +1694,13 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	if (ns>1) {
 		state_theta.clear();
 		for (int i=0; i<ns; i++){
-			push("alphabulk-"+state_name[i],state_alphabulk[i]);
-			push("valence-"+state_name[i],state_valence[i]);
-			push("phibulk-"+state_name[i],state_phibulk[i]);
+			push("alphabulk_"+state_name[i],state_alphabulk[i]);
+			push("valence_"+state_name[i],state_valence[i]);
+			push("phibulk_"+state_name[i],state_phibulk[i]);
 			theta=Lat[0]->WeightedSum(phi_state+i*M);
 			state_theta.push_back(theta);
-			push("theta-"+state_name[i],theta);
-			push("theta_exc-"+state_name[i],theta-Lat[0]->Accesible_volume*state_phibulk[i]);
+			push("theta_"+state_name[i],theta);
+			push("theta_exc_"+state_name[i],theta-Lat[0]->Accesible_volume*state_phibulk[i]);
 		}
 	}
 	int length=chi_name.size();

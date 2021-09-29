@@ -53,6 +53,9 @@ if (debug) cout <<"PutParameter in Variate " + name << endl;
 bool Variate::CheckInput(int start) {
 if (debug) cout <<"CheckInput in Variate " + name << endl;
 	bool success=true;
+	scanning =-1;
+	targeting =-1;
+	searching=-1;
 	num_of_cals=0;
 	int length=In[0]->MonList.size();
 	for (int i=0; i<length; i++) KEYS.push_back("chi_"+In[0]->MonList[i]);
@@ -70,9 +73,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 		Real R_target= -123.0;
 		bool dubbel=false;
 		int choice=4;
-		scanning =-1;
-		targeting =-1;
-		searching=-1;
+
 		eq_to_solvating=-1;
 		balance_membraning = -1;
 		eq_to_mu =-1;
@@ -138,6 +139,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 				}
 				break;
 			case 2:
+
 				if (!In[0]->InSet(In[0]->MolList,pos,sub[1])) {
 					cout <<"In 'var' mol name " + sub[1] + " not found" << endl; success=false;
 				} else {
@@ -191,6 +193,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						//	cout <<"or targets selected from {mu, theta, n, phibulk} "  << endl;
 						//}
 					} //else {
+
 						if (GetValue("scan").size()>0) {
 							if (!Mol[pos]->PutVarInfo("scan",GetValue("scan"),0)) {
 								success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl;
@@ -210,6 +213,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						//}
 					}
 				}
+
 				break;
 			case 3:
 				if (!In[0]->InSet(In[0]->MonList,pos,sub[1])) {

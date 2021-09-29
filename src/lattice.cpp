@@ -367,7 +367,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 
 				if (GetValue("lowerbound").size()==0) BC[0]="mirror";
-				else if (!In[0]->Get_string(GetValue("lowerbound"),BC[0],options,"For 'lowerbound' boundary condition not recognized.")) success=false;
+				else if (!In[0]->Get_string(GetValue("lowerbound"),BC[0],options,"For 'lowerbound' boundary condition not recognized. ")) success=false;
 
 				if (GetValue("upperbound").size()==0) BC[3]="mirror";
 				else if (!In[0]->Get_string(GetValue("upperbound"),BC[3],options,"For 'upperbound' boundary condition not recognized."))
@@ -422,7 +422,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 				options.clear();
 				options.push_back("mirror");
-				options.push_back("surface");
+				//options.push_back("surface");
 				if (geometry=="planar")
 					options.push_back("periodic");
 				if (GetValue("lowerbound_z").size()>0) {
@@ -435,16 +435,16 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				}
 
 				if (GetValue("lowerbound_x").size()==0) BC[0]="mirror";
-				else if (!In[0]->Get_string(GetValue("lowerbound_x"),BC[0],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
+				else if (!In[0]->Get_string(GetValue("lowerbound_x"),BC[0],options,"for 'lowerbound_x' boundary condition not recognized. Put 'mirror' or 'periodic' and put 'surface' inside system. ")) success=false;
 
 				if (GetValue("upperbound").size()==0) BC[3]="mirror";
-				else if (!In[0]->Get_string(GetValue("upperbound"),BC[3],options,"for 'upperbound' boundary condition not recognized.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound"),BC[3],options,"for 'upperbound_x' boundary condition not recognized. Put 'mirror' or 'periodic' and put 'surface' inside system.")) success = false;
 
 				if (GetValue("lowerbound_y").size()==0) BC[1]="mirror";
-				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
+				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound_y' boundary condition not recognized. Put 'mirror' or 'periodic' and put 'surface' inside system.")) success=false;
 
 				if (GetValue("upperbound_y").size()==0) BC[4]="mirror";
-				else if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound' boundary condition not recognized.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound_Y' boundary condition not recognized. Put 'mirror' or 'periodic' and put 'surface' inside system.")) success = false;
 
 
 				if (BC[0]=="periodic" || BC[1]=="periodic") {
@@ -473,27 +473,27 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				options.clear();
 				options.push_back("mirror"); //options.push_back("mirror_2");
 				options.push_back("periodic");
-				options.push_back("surface");
+				//options.push_back("surface");
 				//options.push_back("shifted_mirror");
 
 
 				if (GetValue("lowerbound_x").size()==0) BC[0]="mirror";
-				else if (!In[0]->Get_string(GetValue("lowerbound_x"),BC[0],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
+				else if (!In[0]->Get_string(GetValue("lowerbound_x"),BC[0],options,"for 'lowerbound_x' boundary condition not recognized. Put 'mirror' or 'periodic' and put surface inside system. ")) success=false;
 
 				if (GetValue("upperbound").size()==0) BC[3]="mirror";
-				else if (!In[0]->Get_string(GetValue("upperbound"),BC[3],options,"for 'upperbound' boundary condition not recognized.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound_x"),BC[3],options,"for 'upperbound_x' boundary condition not recognized. Put 'mirror' or 'periodic' and put surface inside system. ")) success = false;
 
 				if (GetValue("lowerbound_y").size()==0) BC[1]="mirror";
-				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
+				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound_y' boundary condition not recognized. Put 'mirror' or 'periodic' and put surface inside system. ")) success=false;
 
 				if (GetValue("upperbound_y").size()==0) BC[4]="mirror";
-				else if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound' boundary condition not recognized.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound_y' boundary condition not recognized. Put 'mirror' or 'periodic' and put surface inside system. ")) success = false;
 
 				if (GetValue("lowerbound_z").size()==0) BC[2]="mirror";
-				else if (!In[0]->Get_string(GetValue("lowerbound_z"),BC[2],options,"for 'lowerbound' boundary condition not recognized.")) success=false;
+				else if (!In[0]->Get_string(GetValue("lowerbound_z"),BC[2],options,"for 'lowerbound_z' boundary condition not recognized. Put 'mirror' or 'periodic' and put surface inside system. ")) success=false;
 
 				if (GetValue("upperbound_z").size()==0) BC[5]="mirror";
-				else if (!In[0]->Get_string(GetValue("upperbound_z"),BC[5],options,"for 'upperbound' boundary condition not recognized.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound_z"),BC[5],options,"for 'upperbound_z' boundary condition not recognized. Put 'mirror' or 'periodic' and put surface inside system. ")) success = false;
 
 				if (BC[2]=="periodic" || BC[3]=="periodic") {
 					if (BC[2] != BC[3]) {

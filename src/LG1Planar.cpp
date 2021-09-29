@@ -226,8 +226,10 @@ void LG1Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, boo
 	for (int x=fjc; x<MX+fjc; x++) {
 		epsXmin=epsXplus;
 		epsXplus=eps[x]+eps[x+1];
-		a=b; b=c; c=psi[x+1];
-		X[x]=(epsXmin*a  +C*q[x] + epsXplus*c)/(epsXmin+epsXplus);
+		//a=b; b=c; c=psi[x+1];
+		//X[x]=(epsXmin*a  +C*q[x] + epsXplus*c)/(epsXmin+epsXplus);
+		if (x==fjc) a=psi[fjc-1]; else a=X[x-1]; //upwind
+		X[x]=(epsXmin*a  +C*q[x] + epsXplus*psi[x+1])/(epsXmin+epsXplus);
 	}
 	YisAminB(g,g,X,M);
    } else { //fixedPsi0 is true;

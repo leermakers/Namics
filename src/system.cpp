@@ -1430,8 +1430,11 @@ void System::PushOutput()
 	push("alpha", s);
 	s = "profile;1";
 	push("GrandPotentialDensity", s);
+	push("grand_potential_density", s);
 	s = "profile;2";
 	push("FreeEnergyDensity", s);
+	push("free_energy_density", s);
+
 	if (charged)
 	{
 		s = "profile;3";

@@ -734,6 +734,20 @@ if (debug) cout <<"ParseFreedoms " << endl;
 	return success;
 }
 
+Real Segment::PinnedVolume() {
+	int M=Lat[0]->M;
+	Real volume=0;
+	int VOLUME=0;
+	if (freedom !="pinned") return volume;
+	if (Lat[0]->geometry=="planar") {
+		Sum(VOLUME,MASK,M); volume=1.0*VOLUME;
+	} else {
+		for (int i=0;i<M; i++) volume += MASK[i]*Lat[0]->L[i];
+		//Dot(volume,MASK,Lat[0]->L,M);
+	}
+	return volume/Lat[0]->fjc;
+}
+
 bool Segment::Overlap(int I, int R) {
 	int X=px[I];
 	int Y=py[I];
@@ -1066,11 +1080,6 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	}
 
 
-
-
-	//vector<int> constraint_z;
-	//vector<Real> constraint_phi;
-	//vector<Real> constraint_beta;
 	if (GetValue("phi").size()>0){
 		constraints=true;
 		string s = GetValue("phi");
@@ -1700,7 +1709,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 			theta=Lat[0]->WeightedSum(phi_state+i*M);
 			state_theta.push_back(theta);
 			push("theta_"+state_name[i],theta);
-			push("theta_exc_"+state_name[i],theta-Lat[0]->Accesible_volume*state_phibulk[i]);
+			push("theta_exc_"+state_name[i],theta-Lat[0]->volume*state_phibulk[i]);
 		}
 	}
 	int length=chi_name.size();

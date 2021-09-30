@@ -21,7 +21,6 @@
 #include "namics.h"
 #include "cleng/cleng.h"
 #include "teng.h"
-//#include "newton.h"
 #include "output.h"
 #include "segment.h"
 #include "state.h"
@@ -32,13 +31,13 @@
 #include "solve_scf.h"
 #include "mesodyn.h"
 
-string version = "2.1.2.2.1.1.1";
+string version = "2.2.2.2.2.1.1";
 // meaning:
 // newton version number =2
-// system version number =1
+// system version number =2
 // lattice version number =2
 // molecule version number =2
-// segment version number =1
+// segment version number =2
 // alias version number =1
 // output version number =1
 Real check = 0.4534345;

@@ -1,0 +1,122 @@
+lat : flat : lattice_type : simple_cubic
+lat : flat : n_layers_x : 150
+//make sure to have sufficient nr of layers.
+lat : flat : n_layers_y : 8
+lat : flat : geometry : planar
+lat : flat : gradients : 2
+lat : flat : bondlength : 3e-10
+lat : flat : lowerbound_x : mirror
+lat : flat : lowerbound_y : mirror
+lat : flat : upperbound_x : mirror
+lat : flat : upperbound_y : mirror
+
+mon : W : valence : 0
+mon : S : valence : 0
+mon : na : valence : 1
+mon : cl : valence :-1
+
+state : SIOH: valence : 0
+state : SIOH : mon : SiO
+state : SIO : valence : -1
+state : SIO : mon : SiO
+reaction : weak : equation: 1(SIOH)+1(H2O)=1(SIO)+1(H3O)
+reaction: weak : pK : 7.5
+state : SI_OH: valence : 0
+state : SI_OH : mon : Si_O
+state : SI_O : valence : -1
+state : SI_O : mon : Si_O
+reaction : weak_ : equation: 1(SI_OH)+1(H2O)=1(SI_O)+1(H3O)
+reaction: weak_ : pK : 3.5
+
+mon : S : freedom : frozen
+mon : S : frozen_range : 1,1;5,8
+//this surface slap is 5 layer wide (in x) along all layers in y
+
+mon : SiO : freedom : pinned
+mon : SiO : pinned_range : 6,1;6,4
+mon : Si_O : freedom : pinned
+mon : Si_O : pinned_range : 6,5;6,8
+
+mon : Si : valence : 0
+mon : Si : freedom : pinned
+mon : Si : pinned_range : 6,1;6,8
+//this component will fill up the layer that contas the SiO and Si_O segments so that 'water' and 'ions' can not enter this range
+
+mon : water : freedom : free
+
+state : H3O : valence : 1
+state : H3O : mon  : water
+state : H2O : valence : 0
+state : H2O : mon : water
+state : OH : valence : -1
+state : OH : mon : water
+
+reaction : auto : equation : 2(H2O)=1(H3O)+1(OH)
+reaction : auto : pK : 14
+
+mon : Si : chi_W : 0
+mon : Si : chi_water : 0
+mon : Si : chi_na  : 1
+mon : Si : chi_cl : 1
+//mon : Si : epsilon : 2
+
+mon : SiO : chi_W : 0
+mon : SiO : chi_water : 0
+mon : SiO : chi_na : 1
+mon : SiO : chi_cl : 1
+//mon : SiO : epsilon : 2
+
+mol : W5 : composition : @dend(W,(W)1,4)
+mol : W5 : freedom : solvent
+
+mol : water : composition : (water)1
+mol : water : freedom : free
+mol : water : phibulk : 0.018
+
+mol : Si : composition : (Si)1
+mol : Si : freedom  : fill_range
+//This is the nice stuff. With 'fill_range' the top of the surface layer is made impenetrable for the solvent and the ions etc. 
+
+mol : SiO : composition : (SiO)1
+mol : SiO : freedom : restricted
+mol : SiO : theta : 2
+mol : Si_O : composition : (Si_O)1
+mol : Si_O : freedom : restricted
+mol : Si_O : theta : 2
+
+mol : Na : composition : (na)1
+mol : Na : freedom : neutralizer
+
+mol : Cl : composition : (cl)1
+mol : Cl : freedom : free
+mol : Cl : phibulk : 0.01
+output : pro : append : false
+pro : sys : NN : psi
+
+output : kal : append : true
+kal : mon : water : alphabulk_H3O
+kal : mon : SiO : theta_SIO 
+kal : mon : SiO : theta_SIOH
+kal : mon : Si_O : theta_SI_O 
+kal : mon : Si_O : theta_SI_OH
+
+state : H3O : alphabulk : 1e-10
+var : state-H3O : scan : alphabulk
+var : state-H3O : scale : exponential
+var : state-H3O : steps : 5
+var : state-H3O : end_value : 1e-7
+
+newton : isaac : i_info : 10
+//newton : isaac : deltamax : 0.1
+newton : isaac : iterationlimit : 10000
+
+start
+mol : Cl : freedom : neutralizer
+mol : Na : freedom : free
+mol : Na : phibulk : 0.01
+
+state : H3O : alphabulk : 1e-7
+var : state-H3O : end_value : 1e-3
+start
+
+

@@ -24,7 +24,7 @@ GPU Accelleration:
 
 Set the ccbin value in the NVCC flags in the makefile to the correct g++ version and replace the CUDA paths if needed. Also set the nvcc arch flag to the correct compute capability (list can be found [here](https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/))
 
-## TODO 9-4-2018
+## TODO 30-9-2021
 - [x] Fix cuda for 3d : likely problem is with generating arrays in branched propagator  
 - [ ] In solve_scf: target function  
 	- [ ] g(i) = phit-1/phit
@@ -34,11 +34,11 @@ Set the ccbin value in the NVCC flags in the makefile to the correct g++ version
 	- [ ] Multiple states  
 - [ ] Layer analysis (first moments, second moment) (available in sfbox)  
 - [ ] SOT evaluation Gibbs plane etcetera (partial available in sfbox)  
-- [ ] Dendrimers (asymmetric) (partially available insfbox)  
-- [ ] Rings (with tether) (partial available in sfbox)  
+- [x] Dendrimers (asymmetric)   
+- [x] Rings (with tether)   
 - [ ] Force ensemble (partially available in sfbox)  
 - [x] Grid refinement in 2D and 3D  
-- [ ] LBFGS implementation in newton (available in sfbox)  
+- [x] LBFGS implementation in newton
 - [ ] MGRES implementation in newton  
 - [ ] Trunctated newton  (available in sfbox)  
 - [ ] Fix Picard method  
@@ -79,6 +79,12 @@ Constraints
 	Frozen (spectator segments with local density unity)
 	Clamping (constrained at both ends)
 	beta constraint (extra constraint to e.g. fix the position of an interface). 
+Boundery conditions
+	In 1 gradient calculations the surface bc is implemented
+	In 2 and 3 gradient systems the surface is to be placed inside the box. 
+		The idea is that this will fix the 'image'-charges problem. 
+		Gradients of electrostatic potential inside solid phase can be studies by using a sufficiently thick solid phase in the system.
+	Freedom of molecule can be set to 'fill-range' (when it is pinned to surface layer) to prevent the solvent to penetrate the surface layer.
 Output	
 	Density profiles
 	Free energy 

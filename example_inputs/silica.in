@@ -37,17 +37,20 @@ state : OH : valence : -1
 state : OH : mon : water
 
 reaction : auto : equation : 2(H2O)=1(H3O)+1(OH)
-reaction : auto : pK : 17.5
+reaction : auto : pK : 14
 
 mon : Si : chi_W : 0
 mon : Si : chi_water : 0
 mon : Si : chi_na  : 1
 mon : Si : chi_cl : 1
+mon : Si : epsilon : 2
 
 mon : SiO : chi_W : 0
 mon : SiO : chi_water : 0
 mon : SiO : chi_na : 1
 mon : SiO : chi_cl : 1
+mon : SiO : epsilon : 2
+
 
 mol : W5 : composition : @dend(W,(W)1,4)
 mol : W5 : freedom : solvent
@@ -58,7 +61,7 @@ mol : water : phibulk : 0.018
 
 mol : Si : composition : (Si)1
 mol : Si : freedom  : restricted
-mol : Si : theta : 0.49
+mol : Si : theta : 0.4999
 
 mol : SiO : composition : (SiO)1
 mol : SiO : freedom : restricted
@@ -69,28 +72,32 @@ mol : Na : freedom : neutralizer
 
 mol : Cl : composition : (cl)1
 mol : Cl : freedom : free
-mol : Cl : phibulk : 0.01
+mol : Cl : phibulk : 0.1
+output : pro : write_bounds : true
+pro : sys : NN : psi
+pro : sys : NN : q
+pro : mon : * : phi
 
 output : kal : append : true
-kal : mon : water : alphabulk-H3O
-kal : mon : SiO : theta-SIO 
-kal : mon : SiO : theta-SIOH
+kal : mon : water : alphabulk_H3O
+kal : mon : SiO : theta_SIO 
+kal : mon : SiO : theta_SIOH
 
 state : H3O : alphabulk : 1e-10
-var : state-H3O : scan : alphabulk
-var : state-H3O : scale : exponential
-var : state-H3O : steps : 5
-var : state-H3O : end_value : 1e-7
+//var : state-H3O : scan : alphabulk
+//var : state-H3O : scale : exponential
+//var : state-H3O : steps : 5
+//var : state-H3O : end_value : 1e-7
 
 newton : isaac : i_info : 1000
 
-start
-mol : Cl : freedom : neutralizer
-mol : Na : freedom : free
-mol : Na : phibulk : 0.01
+//start
+//mol : Cl : freedom : neutralizer
+//mol : Na : freedom : free
+//mol : Na : phibulk : 0.1
 
-state : H3O : alphabulk : 1e-7
-var : state-H3O : end_value : 1e-3
-start
+//state : H3O : alphabulk : 1e-7
+//var : state-H3O : end_value : 1e-3
+//start
 
 

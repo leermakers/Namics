@@ -1,4 +1,4 @@
-#ifndef SEGMENTxH 
+#ifndef SEGMENTxH
 #define SEGMENTxH
 #include "namics.h"
 #include "input.h"
@@ -61,7 +61,7 @@ public:
 	vector<Real>state_theta;
 
 	string filename;
-	string copy_of; 
+	string copy_of;
 	string s_freedom;
 	bool block;
 	bool all_segment;
@@ -111,7 +111,7 @@ public:
 	Real Get_g(int ) ;
 	void Put_beta(int, Real );
 
-	string GetOriginal();	
+	string GetOriginal();
 
 	int* H_P;
 	int* H_MASK;
@@ -142,6 +142,7 @@ public:
 	string GetValue(string);
 	string GetFreedom();
 	bool GetClamp(string);
+	Real PinnedVolume();
 	bool IsFree();
 	bool IsPinned();
 	bool IsFrozen();
@@ -166,7 +167,7 @@ public:
 	int AddState(int,Real,Real,bool);
 	void SetPhiSide();
 	//void PutAlpha(Real*,int&);
-	bool PutAlpha(Real); 
+	bool PutAlpha(Real);
 	bool CanBeReached(int, int, int, int);
 };
 #endif

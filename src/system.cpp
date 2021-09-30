@@ -75,6 +75,7 @@ void System:: DeAllocateMemory(void){
   cudaFree(FreeEnergyDensity);
   cudaFree(TEMP);
   cudaFree(KSAM);
+  cudaFree(FILL);
   if (charged) {
     cudaFree(psi);
     cudaFree(eps);
@@ -91,6 +92,7 @@ void System:: DeAllocateMemory(void){
   free(phitot);
   free(TEMP);
   free(KSAM);
+  free(FILL);
   free(CHI);
 
   if (charged) {
@@ -138,6 +140,7 @@ void System::AllocateMemory()
 	FreeEnergyDensity = (Real *)AllOnDev(M);
 	TEMP = (Real *)AllOnDev(M);
 	KSAM = (int *)AllIntOnDev(M);
+	FILL = (int *)AllIntOnDev(M);
 	Zero(KSAM, M);
   if (charged) {
     psi = (Real*)AllOnDev(M);
@@ -167,11 +170,13 @@ void System::AllocateMemory()
 	BETA=H_BETA;
   }
   KSAM = (int*)malloc(M * sizeof(int));
+  FILL = (int*)malloc(M * sizeof(int));
   FreeEnergyDensity = H_FreeEnergyDensity;
   GrandPotentialDensity = H_GrandPotentialDensity;
   TEMP = (Real*)malloc(M * sizeof(Real));
 #endif
   Zero(KSAM, M);
+  Zero(FILL,M);
   if (charged) {
     Zero(psi, M);
     Zero(EE, M);
@@ -266,6 +271,8 @@ bool System::PrepareForCalculations(bool first_time)
 	bool success = true;
 	int M = Lat[0]->M;
 
+
+
 	// necessary part; essentially for cleng
 	if (In.back()->MesodynList.empty() or prepared == false) {
 		success = generate_mask();
@@ -283,9 +290,68 @@ bool System::PrepareForCalculations(bool first_time)
 	success = Lat[0]->PrepareForCalculations();
 	int n_mon = In[0]->MonList.size();
 
+	Filling=false;
+	for (int i = 0; i < n_mol; i++){
+		if (Mol[i]->Filling) {
+			Filling=true;
+			FillList.clear();
+			Zero(FILL,M);
+			Mol[i]->theta=0;
+			Real frac=0;
+			Real frac_0=0;
+			Real pinned_v=0;
+			int seg_pinned=Mol[i]->GetPinnedSeg();
+			int S1=0,S2=0;
+			Mol[i]->FillRangesList.clear();
+			for (int k=0; k<n_mon; k++) {
+				S1=0;
+				if (Seg[k]->freedom=="pinned") {
+					for (int j=0; j<M; j++) S1+=Seg[k]->MASK[j]*Seg[seg_pinned]->MASK[j];
+					S2=0; Sum(S2,Seg[k]->MASK,M);
+					if (S1==S2) Mol[i]->FillRangesList.push_back(k);
+				}
+			}
+			int length=Mol[i]->FillRangesList.size();
+
+			for (int j=0; j<length; j++) {
+				frac=0;
+				Add(FILL, Seg[Mol[i]->FillRangesList[j]]->MASK, M);
+				FillList.push_back(Mol[i]->FillRangesList[j]);
+				for (int k=0; k<n_mol;k++) {
+					frac=Mol[k]->fraction(Mol[i]->FillRangesList[j]);
+					if (k==i && frac>0) {
+							if (frac_0==0) {
+								frac_0=frac;
+								pinned_v=Seg[Mol[i]->FillRangesList[j]]->PinnedVolume();
+							} else {cout <<" Multiple pinned segments found in molecule that is filling the pinned_range" << endl; }
+					} else Mol[i]->theta+=frac*Mol[k]->theta;
+				}
+			}
+			if (frac_0==0) {
+				success=false;
+				cout <<"Error in computing theta for molecule " << Mol[i]->name << ". Possible pinned monomer of this molecule is not in the 'fill_range-of' list of monomers. " << endl;
+			} else {
+				Mol[i]->theta=(pinned_v-Mol[i]->theta)/frac_0;
+				Mol[i]->n=Mol[i]->theta/Mol[i]->chainlength;
+			success=false;
+			}
+			for (int i=0; i<M; i++) {
+				if (FILL[i]>0) FILL[i]=1;  //Not ready for cuda.
+				Lat[0]->volume-=FILL[i];
+			}
+
+			Invert(FILL, FILL, M);
+		}
+	}
+
 	for (int i = 0; i < n_mon; i++)
 	{
 		success = Seg[i]->PrepareForCalculations(KSAM,first_time);
+		if (Filling) {
+			if (!In[0]->InSet(FillList,i) && Seg[i]->freedom =="free") {
+				Times(Seg[i]->G1,Seg[i]->G1,FILL,M);
+			}
+		}
 	}
 	for (int i = 0; i < n_mol; i++)
 	{

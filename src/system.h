@@ -30,6 +30,7 @@ public:
 	vector<int> FrozenList;
 	vector<int> SysTagList;
 	vector<int> SysClampList;
+	vector<int> FillList;
 	vector<int> XmolList;
 	vector<int> XstateList_1;
 	vector<int> XstateList_2;
@@ -44,6 +45,7 @@ public:
 	Real Kbar;
 	Real* phitot;
 	int* KSAM;
+	int* FILL;
 	Real* eps;
 	Real* H_psi;
 	Real* H_q;
@@ -96,6 +98,7 @@ public:
 	int progress;
 
 	bool prepared;
+	bool Filling;
 
 	int MonA,MonB;
 

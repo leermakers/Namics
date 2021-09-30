@@ -28,6 +28,8 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	Var_scan_value=-1;
 	Var_search_value=-1;
 	Var_target=-1;
+	FillRangesList.clear();
+	Filling=false;
 
 }
 
@@ -373,7 +375,39 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 		if (GetValue("restricted_range").size()>0) {
 			if (GetValue("freedom")!="range_restricted") cout <<"For mol '" + name + "' freedom is not set to 'range_restricted' and therefore  the value of 'restricted_range' is ignored" << endl;
 		}
-		if ( IsClamped()) {
+		if (IsPinned()) {
+			if (GetValue("freedom").size()==0) {
+					cout <<"For mol " + name + " the setting for 'freedom' was not set" << endl; return false;
+			} else {
+				vector<string> free_list;
+				free_list.push_back("restricted");
+				free_list.push_back("fill_range");
+				if (!In[0]->Get_string(GetValue("freedom"),freedom,free_list,"In mol " + name + " the value for 'freedom' is not recognised ")) return false;
+				if (freedom=="restricted") {
+					if (GetValue("theta").size() ==0 && GetValue("n").size()==0) {
+							cout <<"In mol " + name + ", the setting 'freedom = restricted' or 'freedom = range_restricted',should be combined with a value for 'theta' or 'n'; do not use both settings! "<<endl; success=false;
+					} else {
+							if (GetValue("theta").size() >0 && GetValue("n").size()>0) {
+							cout <<"In mol " + name + ", the setting 'freedom = restricted' of 'freedom = range_restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
+					} else {
+							if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*Lat[0]->volume);theta=n*chainlength;}
+							if (GetValue("theta").size()>0) {theta = In[0]->Get_Real(GetValue("theta"),10*Lat[0]->volume);n=theta/chainlength;}
+							if (theta < 0 || theta > Lat[0]->volume) {
+								cout << "In mol " + name + ", the value of 'n' or 'theta' is out of range 0 .. 'volume', cq 'volume'/N." << endl; success=false;
+							}
+						}
+					}
+				}
+				if (freedom=="fill_range") {
+					freedom="restricted";
+					Filling=true;
+					if (GetValue("theta").size() > 0 || GetValue("n").size()>0 || GetValue("phibulk").size() > 0) {
+						if (start==1) cout <<"For mol " + name + " the freedom is set to 'fill-range-of{-mon_name}' and therefore the value of 'theta', the value of 'n', or the value of 'phibulk' is ignored. " << endl;
+					}
+				}
+			}
+		} else
+		if ( IsClamped() ){
 			freedom="clamped";
 			if (GetValue("freedom").size() > 0) freedom = In[0]->Get_string(GetValue("freedom"),"clamped");
 			if (freedom !="clamped") {
@@ -397,9 +431,11 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				}
 			}
 		} else
-		if (GetValue("freedom").size()==0 && !IsTagged()) {
+		if (GetValue("freedom").size()==0 && !IsTagged() ) {
 			cout <<"For mol " + name + " the setting 'freedom' is expected: options: 'free' 'restricted' 'solvent' 'neutralizer' 'range_restricted' 'clamped' 'tagged' . Problem terminated " << endl; success = false;
-			} else { if (!IsTagged()) {
+			} else {
+
+				if (!IsTagged()) {
 				vector<string> free_list;
 				if (!IsPinned()) {
 					free_list.push_back("free");
@@ -411,7 +447,6 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				if (!In[0]->Get_string(GetValue("freedom"),freedom,free_list,"In mol " + name + " the value for 'freedom' is not recognised ")) success=false;
 				if (freedom == "solvent") {
 					if (IsPinned()) {success=false; cout << "Mol '" + name + "' is 'pinned' and therefore this molecule can not be the solvent" << endl; }
-
 				}
 				if (MolType == water && freedom!="solvent" ) {
 					cout <<"MolType 'water' can only be used for the component with freedom 'solvent'. Job terminated." << endl; success=false;
@@ -500,6 +535,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				if (GetValue("theta").size() >0 || GetValue("n").size() > 0 || GetValue("phibulk").size() >0 || GetValue("freedom").size() > 0) cout <<"Warning. In mol " + name + " tagged segment(s) were detected. In this case no value for 'freedom' is needed, and also 'theta', 'n' and 'phibulk' values are ignored. " << endl;
 			}
 		}
+
+
+
 		if (GetValue("ring").size() > 0) {
 			In[0]->Get_bool(GetValue("ring"),ring,"Input for ring is either 'true' or 'false'. Moreover, first and last segments of the backbone will be put on top of each other (chain length gets shorter by one). ");
 			if (ring) {
@@ -1707,6 +1745,20 @@ if (debug) cout <<"IsPinned for Mol " + name << endl;
 		i++;
 	}
 	return success;
+}
+
+int Molecule::GetPinnedSeg() {
+if (debug) cout <<"GetPinnedSeg for Mol " + name << endl;
+	int segnr=-1;
+	int length=MolMonList.size();
+	int i=0;
+	while (i<length) {
+        	if (Seg[MolMonList[i]]->GetFreedom()=="pinned") {
+				if (segnr > -1) cout <<"multiple segnrs in GetPinnedSeg() " << endl; else segnr=MolMonList[i];
+			}
+		i++;
+	}
+	return segnr;
 }
 
 bool Molecule::IsTagged() {

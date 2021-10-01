@@ -43,6 +43,7 @@ if (debug) cout <<" Side in LG1Planar " << endl;
 		YplusisCtimesX(X_side,X,1.0/3.0,M);
 	} else {
 		if (fjc==1) {
+//cout << "lambda" << lambda << endl;
 			YplusisCtimesX(X_side+1,X,lambda,M-1);
 			YplusisCtimesX(X_side,X+1,lambda,M-1);
 			YplusisCtimesX(X_side,X,1.0-2.0*lambda,M);

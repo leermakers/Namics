@@ -313,8 +313,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		Value=GetValue("lattice_type");
 		if (Value.length()>0) {
 			if (!In[0]->Get_string(Value,lat_type,options,"Input for 'lattice_type' not recognized. 'simple_cubic' or 'hexagonal'.")) success = false; else {
-				if (lattice_type == simple_cubic) {lambda=1.0/6.0; Z=6;}
-				if (lattice_type == hexagonal) {lambda=1.0/4.0; Z=4;}
+				if (lat_type == "simple_cubic") {lattice_type=simple_cubic; lambda=1.0/6.0; Z=6;}
+				if (lat_type == "hexagonal") {lattice_type=hexagonal; lambda=1.0/4.0; Z=4;}
 			}
 		} else {
 			success=false; cout <<"Namics can not run without input for 'lattice_type'" << endl;
@@ -537,12 +537,11 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		}
 		//Initialize system size and indexing
 		PutM();
-		if (lattice_type==simple_cubic) {
-			lambda=1.0/6.0; //l0=4.0*l1;
-		} else {
-			lambda=1.0/4.0; //l0=2.0*l1;
-		}
-
+		//if (lattice_type==simple_cubic) {
+		//	lambda=1.0/6.0; //l0=4.0*l1;
+		//} else {
+		//	lambda=1.0/4.0; //l0=2.0*l1;
+		//}
 	Markov=1;
 	//Markov=In[0]->Get_int(GetValue("Markov"),1);
 	//if (Markov<1 || Markov>2) {

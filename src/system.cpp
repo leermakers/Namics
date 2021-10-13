@@ -657,7 +657,12 @@ bool System::CheckInput(int start_)
 		}
 */
 		if (!solvent_found && In[0]->MolList.size()==1) {
-			phibulktot=1; cout <<"WARNING: no solvent found. Expecting solvent free 'brush'" << endl;
+			if (Mol[0]->IsPinned()) {
+				phibulktot=1; cout <<"WARNING: no solvent found. Expecting solvent free 'brush'" << endl;
+			} else {
+				cout <<"Error: No solvent molecule found. One of your molecules must have 'freedom' : 'solvent'! " << endl;
+				success=false;
+			}
 		}
 		else
 		if (!solvent_found || (phibulktot > 0.99999999 && phibulktot < 1.0000000001))

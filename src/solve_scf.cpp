@@ -2,13 +2,13 @@
 #include <iostream>
 
 Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*> Sys_,vector<Variate*>Var_,string name_) :
-	name{name_}, In{In_}, Sys{Sys_}, Seg{Seg_}, Lat{Lat_}, Mol{Mol_}, Var{Var_}, Sta{Sta_}, Rea{Rea_} 
+	name{name_}, In{In_}, Sys{Sys_}, Seg{Seg_}, Lat{Lat_}, Mol{Mol_}, Var{Var_}, Sta{Sta_}, Rea{Rea_}
 {
-if(debug) cout <<"Constructor in Solve_scf " << endl;  
- 
+if(debug) cout <<"Constructor in Solve_scf " << endl;
+
 	KEYS.push_back("method");
 	KEYS.push_back("gradient_type");
-	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");KEYS.push_back("hs_info"); 
+	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");KEYS.push_back("hs_info");
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance");
 	KEYS.push_back("stop_criterion");
 	KEYS.push_back("deltamin");KEYS.push_back("deltamax");
@@ -31,7 +31,7 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("super_deltamax");
 	max_g = false; // compute g based on max error
 	rescue_status = NONE;
-	all=false; 	
+	all=false;
 }
 
 Solve_scf::~Solve_scf() {
@@ -66,7 +66,7 @@ if (debug) cout <<"exit for 'destructor' in Solve " << endl;
 
 void Solve_scf::AllocateMemory() {
 if(debug) cout <<"AllocateMemeory in Solve " << endl;
-	if (all) DeAllocateMemory(); 
+	if (all) DeAllocateMemory();
 	int M=Lat[0]->M;
 	if (mesodyn) {
 		iv = Sys[0]->SysMolMonList.size()*M;
@@ -92,7 +92,7 @@ if(debug) cout <<"AllocateMemeory in Solve " << endl;
 #else
 	x=Vector::Zero(iv); //voor LBFGS;
 	xx=&x[0]; //voor newton etc.
-	//xx=(Real*) malloc(iv*sizeof(Real)); 
+	//xx=(Real*) malloc(iv*sizeof(Real));
 	//Zero(xx,iv);
 #endif
 	all=true;
@@ -136,7 +136,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		if (iterationlimit < 0 || iterationlimit>1e6) {iterationlimit = 1000;}
 
 		e_info=In[0]->Get_bool(GetValue("e_info"),true); value_e_info=e_info;
-		hs_info=In[0]->Get_bool(GetValue("hs_info"),true); 
+		hs_info=In[0]->Get_bool(GetValue("hs_info"),true);
 		s_info=In[0]->Get_bool(GetValue("s_info"),false); value_s_info =s_info;
 		t_info=In[0]->Get_bool(GetValue("t_info"),false);
 		i_info=In[0]->Get_int(GetValue("i_info"),1);
@@ -184,6 +184,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 			method_options.push_back("hessian");
 			method_options.push_back("conjugate_gradient");
 			method_options.push_back("LBFGS");
+			method_options.push_back("BRR");
 			if (!In[0]->Get_string(GetValue("method"),SCF_method,method_options,"In 'solve_scf' the entry for 'method' not recognized: choose from:")) success=false;
 		}
 		if (SCF_method=="hessian" || SCF_method=="pseudohessian") {
@@ -246,7 +247,11 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 			m=In[0]->Get_int(GetValue("m"),6);
 			if (m < 0 ||m>1000) {m=6;  cout << "Value of 'm' out of range 0..1000, value set to default value 6" <<endl; }
 		}
-
+		//if (SCF_method=="BRR") {
+			//solver=BRR;
+			//m=In[0]->Get_int(GetValue("m"),10);
+			//if (m < 0 ||m>1000) {m=10;  cout << "Value of 'm' out of range 0..1000, value set to default value 10" <<endl; }
+		//}
 
 		if (GetValue("gradient_type").size()==0) {gradient=classical;} else {
 			vector<string>gradient_options;
@@ -524,19 +529,19 @@ private:
     vector<Segment*> Seg;
     vector<State*> Sta;
     vector<Reaction*> Rea;
-    vector<Molecule*> Mol; 
+    vector<Molecule*> Mol;
     vector<System*> Sys;
     vector<Variate*> Var;
     int iterations =0;
      Real residual=1;
 public:
-    SCF_LBFGS(vector<Input*> In_,vector<Lattice*>Lat_,vector<Segment*>Seg_,vector<State*>Sta_,vector<Reaction*>Rea_,vector<Molecule*>Mol_,vector<System*> Sys_,vector<Variate*> Var_) : 
+    SCF_LBFGS(vector<Input*> In_,vector<Lattice*>Lat_,vector<Segment*>Seg_,vector<State*>Sta_,vector<Reaction*>Rea_,vector<Molecule*>Mol_,vector<System*> Sys_,vector<Variate*> Var_) :
       In(In_),Lat(Lat_),Seg(Seg_),Sta(Sta_),Rea(Rea_),Mol(Mol_),Sys(Sys_),Var(Var_)  {
-	
+
 	}
 
-    Real operator()(Vector& x_, Vector& g_) //checkout LBFGS.h; this way of computing residuals is the same as below procedure used by default in pseudohessian. 
-    {	
+    Real operator()(Vector& x_, Vector& g_) //checkout LBFGS.h; this way of computing residuals is the same as below procedure used by default in pseudohessian.
+    {
 	Real* x=&x_[0];
 	Real* g=&g_[0];
 	int iv=x_.size();
@@ -566,9 +571,9 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		control= super;
 		pseudohessian=false; hessian =true;
 		//Zero(yy,niv);
-		
+
 		success=iterate(yy,niv,100,1e-8,1,0.0000001,true);
-		cout << iterations << " iterations to find alphabulk values. " <<endl; 
+		cout << iterations << " iterations to find alphabulk values. " <<endl;
 		if (!success) cout <<"iteration for alphabulk values for internal states failed. Check eqns. " << endl;
 		e_info=ee_info;
 		s_info=ss_info;
@@ -611,9 +616,9 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		break;
 		case diis:
 			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
-		break;		
-		case conjugate_gradient: 
-			success =iterate_conjugate_gradient(xx,iv,iterationlimit,tolerance,deltamax); 
+		break;
+		case conjugate_gradient:
+			success =iterate_conjugate_gradient(xx,iv,iterationlimit,tolerance,deltamax);
 		break;
 		case LBFGS:
 			success=true;
@@ -625,10 +630,10 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 			param.max_iterations =iterationlimit;
 			param.e_info =e_info;
 			param.i_info =i_info;
-			cout <<endl <<"LBFGS has been notified" << endl; 
+			cout <<endl <<"LBFGS has been notified" << endl;
 			iterations =mysolver.minimize(fun,x,res);
-	
-			cout <<endl <<"Problem solved: " << iterations << " iterations,  |g|: " << res <<  endl; 
+
+			cout <<endl <<"Problem solved: " << iterations << " iterations,  |g|: " << res <<  endl;
 		break;
 		default:
 			cout <<"Solve is lost" << endl; success=false;

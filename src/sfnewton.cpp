@@ -1,6 +1,10 @@
+#include <Eigen/Dense>
 #include <iostream>
 #include "sfnewton.h"
 #include "tools.h"
+
+using namespace Eigen;
+using namespace std;
 
 SFNewton::SFNewton () : residual{0} {
 
@@ -272,7 +276,7 @@ if(debug) cout <<"residue in Newton " << endl;
 	return sqrt(norm2(p,nvar)*norm2(g,nvar)/(1+norm2(x,nvar)));
 }
 
-Real SFNewton::linecriterion(Real *g, Real *g0, Real *p, Real *p0, int nvar) { 
+Real SFNewton::linecriterion(Real *g, Real *g0, Real *p, Real *p0, int nvar) {
 if(debug) cout <<"linecriterion in Newton " << endl;
 	Real normg,gg0;
 	normg = norm2(g0,nvar);
@@ -292,7 +296,7 @@ if(debug) cout <<"linecriterion in Newton " << endl;
 	}
 }
 
-Real SFNewton::newfunction(Real *g, Real *x, int nvar) { 
+Real SFNewton::newfunction(Real *g, Real *x, int nvar) {
 if(debug) cout <<"newfunction in Newton " << endl;
 	return pow(norm2(g,nvar),2);
 }
@@ -840,7 +844,7 @@ if(debug) cout <<"DIIS in  SFNewton " << endl;
 		for (int j=0; j<k_diis; j++)
 		    Apij[j+k_diis*i] = Aij[j+m*i];
 	}
-  
+
 
 	Ax(Apij,Ci,k_diis);
 
@@ -908,9 +912,77 @@ Real SFNewton::computeresidual(Real* array, int size) {
   return residual;
 }
 
+bool SFNewton::iterate_BRR(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
+if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyden notation using Eigen library.
+	int nvar=nvar_;
+	bool success=true;
+
+	MatrixXd CC(nvar,m+1); CC.setZero();
+	MatrixXd DD(nvar,m+1); DD.setZero();
+	MatrixXd thinQ(MatrixXd::Identity(nvar,m+1));
+	VectorXd y(nvar); //moet g-g0 gaan bevatten
+    VectorXd S(m+1);
+    Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+    Real* g0 = (Real*) malloc(nvar*sizeof(Real)); Zero(g0,nvar);
+    Real* p = (Real*) malloc(nvar*sizeof(Real)); Zero(p,nvar);
+    Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+    Map<VectorXd> gg(g,nvar);
+    Map<VectorXd> gg0(g0,nvar);
+    Map<VectorXd> s(p,nvar);
+    Map<VectorXd> xx(x,nvar);
+    Map<VectorXd> xx0(x0,nvar);
+    Real stHy,nHts;
+    int k=0;
+    int it=0;
+    Real error;
+    residuals(x,g); //gg*=-1; //changed sign of g.
+    error=norm2(g,nvar);
+    if (e_info) {
+		cout <<"Broyden Rank Reduction -inverse notation- notified"<< endl;
+		cout <<"Your guess: " << error << endl;
+	}
+    while (it <iterationlimit && error>tolerance) {
+		Cp(x0,x,nvar);
+		s=gg-CC.block(0,1,nvar,k-1)*DD.block(0,1,nvar,k-1).transpose()*gg; //heb element 0 kunnen overslaan CC(:,1:k)
+		xx=xx0+delta_max*s;
+		Cp(g0,g,nvar);
+		residuals(x,g); //gg*=-1;
+		error=norm2(g,nvar);
+		if (e_info) {
+			cout << "i = " << it <<" g = " << error << endl;
+		}
+		y=gg-gg0;
+		it++;
+		if (k==m) {
+			HouseholderQR<MatrixXd> qr(DD);
+			DD=qr.householderQ()*thinQ;
+			CC=CC*qr.matrixQR().triangularView<Upper>().transpose()*thinQ;
+			JacobiSVD<MatrixXd> svd(CC,ComputeThinU | ComputeThinV);
+			S=svd.singularValues();
+			CC=svd.matrixU()*S.asDiagonal();
+			DD=DD*svd.matrixV();
+			CC.col(k).setZero(); DD.col(k).setZero();k--;
+			for (int i=m-1; i>1; i--) {
+				if (S(i)/S(0)< tolerance) {
+					CC.col(k).setZero(); DD.col(k).setZero();k--;
+				}
+			}
+		}
+		k++;
+		CC.col(k)=CC.block(0,1,nvar,k-1)*DD.block(0,1,nvar,k-1).transpose()*y-y; //0,1 (kan 0 overslaan)
+		stHy=s.dot(CC.col(k)); if (stHy==0) return false;
+		DD.col(k)=DD.block(0,1,nvar,k-1)*CC.block(0,1,nvar,k-1).transpose()*s-s;
+		nHts=pow(DD.col(k).dot(DD.col(k)),0.5); if (nHts==0) return false;
+		CC.col(k)=(s-CC.col(k))/stHy*nHts;
+		DD.col(k)=DD.col(k)/nHts;
+	}
+	if (it == iterationlimit+1) return false;
+	return success;
+}
+
 bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
-int nvar=nvar_;
+	int nvar=nvar_;
 	bool success;
   Real* Aij = (Real*) malloc(m*m*sizeof(Real)); H_Zero(Aij,m*m);
   Real* Apij = (Real*) malloc(m*m*sizeof(Real)); H_Zero(Apij,m*m);
@@ -982,7 +1054,7 @@ int nvar=nvar_;
 		throw error;
 	}
   	free(Aij);
-	free(Apij); 
+	free(Apij);
 	free(Ci);
   #ifdef CUDA
   cudaFree(xR);cudaFree(x_x0);cudaFree(x0);cudaFree(g); cudaFree(d_Ci);

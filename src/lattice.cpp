@@ -826,7 +826,7 @@ if (debug) cout <<"PushOutput in lat " << endl;
 	if (offset_first_layer>0) push("offset_first_layer",offset_first_layer);
 	push("volume",volume);
 	push("accessible volume",Accesible_volume);
-	if (lattice_type == simple_cubic) push("lattice_type",simple_cubic); else push("lattice_type",hexagonal);
+	if (lattice_type == simple_cubic) push("lattice_type","simple_cubic"); else push("lattice_type","hexagonal");
 	push("bond_length",bond_length);
 	push("FJC_choices",FJC);
 	string s="profile;0"; push("L",s);

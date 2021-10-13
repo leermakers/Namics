@@ -99,7 +99,8 @@ public:
 
 	bool iterate(Real*,int,int,Real,Real,Real,bool);
 	bool iterate_Picard(Real*,int,int,Real,Real);
-	bool iterate_DIIS(Real*,int,int, int, Real, Real);
+	bool iterate_DIIS(Real*,int,int,int, Real, Real);
+	bool iterate_BRR(Real*,int,int,int iterationlimit,Real,Real);
 	bool iterate_RF(Real*,int,int,Real,Real,string);
 	void Ax(Real*, Real*, int);
 	void DIIS(Real* , Real*, Real*, Real* , Real* ,Real*, int, int , int, int);

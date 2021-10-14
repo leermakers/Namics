@@ -247,11 +247,11 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 			m=In[0]->Get_int(GetValue("m"),6);
 			if (m < 0 ||m>1000) {m=6;  cout << "Value of 'm' out of range 0..1000, value set to default value 6" <<endl; }
 		}
-		//if (SCF_method=="BRR") {
-			//solver=BRR;
-			//m=In[0]->Get_int(GetValue("m"),10);
-			//if (m < 0 ||m>1000) {m=10;  cout << "Value of 'm' out of range 0..1000, value set to default value 10" <<endl; }
-		//}
+		if (SCF_method=="BRR") {
+			solver=BRR;
+			m=In[0]->Get_int(GetValue("m"),10);
+			if (m < 0 ||m>1000) {m=10;  cout << "In method 'BRR', value of 'm' out of range 0..1000, value set to default value 10" <<endl; }
+		}
 
 		if (GetValue("gradient_type").size()==0) {gradient=classical;} else {
 			vector<string>gradient_options;
@@ -564,6 +564,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		if (solver==PSEUDOHESSIAN) i_solver=2;
 		if (solver==diis) i_solver=3;
 		if (solver==LBFGS) i_solver=4;
+		if (solver==BRR) i_solver=5;
 		bool ee_info, ss_info;
 		if (e_info) ee_info=true; else ee_info=false; e_info=false;
 		if (s_info) ss_info=true; else ss_info=false; s_info=false;
@@ -583,6 +584,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		if (i_solver==2) {solver=PSEUDOHESSIAN; pseudohessian=true;}
 		if (i_solver==3) solver=diis;
 		if (i_solver==4) solver=LBFGS;
+		if (i_solver==5) solver=BRR;
 		gradient = classical;
 		control = proceed;
 
@@ -616,6 +618,9 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 		break;
 		case diis:
 			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+		break;
+		case BRR:
+			success=iterate_BRR(xx,iv,m,iterationlimit,tolerance,deltamax);
 		break;
 		case conjugate_gradient:
 			success =iterate_conjugate_gradient(xx,iv,iterationlimit,tolerance,deltamax);

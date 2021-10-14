@@ -60,8 +60,8 @@ output : pro : append : false
 pro : sys : noname : GrandPotentialDensity
 pro : mol : * : phi
 pro : mon : * : phi
-pro : mol : Lipid : phi-C
-pro : mol : Lipid : phi-O
+pro : mol : Lipid : phi_C
+pro : mol : Lipid : phi_O
 
 output : kal : append : false
 kal : lat : vlak : n_layers

@@ -668,7 +668,7 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 	Real trustfactor =1;
 	//reverseDirectionRange=50;
 
-        trouble = resetiteration = 0;
+    trouble = resetiteration = 0;
 	minAccuracySoFar = 1e30;
 	numIterationsSinceHessian=0;
 
@@ -925,9 +925,11 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
     Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
     Real* g0 = (Real*) malloc(nvar*sizeof(Real)); Zero(g0,nvar);
     Real* p = (Real*) malloc(nvar*sizeof(Real)); Zero(p,nvar);
+    Real* p0 = (Real*) malloc(nvar*sizeof(Real)); Zero(p,nvar);
     Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
     Map<VectorXd> gg(g,nvar);
     Map<VectorXd> gg0(g0,nvar);
+    Map<VectorXd> pp0(p0,nvar);
     Map<VectorXd> s(p,nvar);
     Map<VectorXd> xx(x,nvar);
     Map<VectorXd> xx0(x0,nvar);
@@ -935,7 +937,7 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
     int k=0;
     int it=0;
     Real error;
-    residuals(x,g); //gg*=-1; //changed sign of g.
+    residuals(x,g);
     error=norm2(g,nvar);
     if (e_info) {
 		cout <<"Broyden Rank Reduction -inverse notation- notified"<< endl;
@@ -943,15 +945,18 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
 	}
     while (it <iterationlimit && error>tolerance) {
 		Cp(x0,x,nvar);
-		s=gg-CC.block(0,1,nvar,k-1)*DD.block(0,1,nvar,k-1).transpose()*gg; //heb element 0 kunnen overslaan CC(:,1:k)
-		xx=xx0+delta_max*s;
+		s=-gg+CC.block(0,1,nvar,k)*DD.block(0,1,nvar,k).transpose()*gg; //sign of s changed wrt Rotten thesis
+
 		Cp(g0,g,nvar);
-		residuals(x,g); //gg*=-1;
+		xx=xx0+s;
+		residuals(x,g);
 		error=norm2(g,nvar);
+
 		if (e_info) {
-			cout << "i = " << it <<" g = " << error << endl;
+			cout << "i = " << it <<"\tg = " << error << endl;
 		}
-		y=gg-gg0;
+
+		y=gg0-gg; //sign of y changed wrt Rotten thesis
 		it++;
 		if (k==m) {
 			HouseholderQR<MatrixXd> qr(DD);
@@ -969,7 +974,7 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
 			}
 		}
 		k++;
-		CC.col(k)=CC.block(0,1,nvar,k-1)*DD.block(0,1,nvar,k-1).transpose()*y-y; //0,1 (kan 0 overslaan)
+		CC.col(k)=CC.block(0,1,nvar,k-1)*DD.block(0,1,nvar,k-1).transpose()*y-y;
 		stHy=s.dot(CC.col(k)); if (stHy==0) return false;
 		DD.col(k)=DD.block(0,1,nvar,k-1)*CC.block(0,1,nvar,k-1).transpose()*s-s;
 		nHts=pow(DD.col(k).dot(DD.col(k)),0.5); if (nHts==0) return false;

@@ -513,7 +513,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				cout << "gradients out of bounds " << endl;
 				break;
 		}
-		if ((fjc>1) && (lattice_type ==hexagonal)) {success = false; cout << "For FJC-choices >3, we need lattice_type = 'hexagonal'." << endl; }
+		if ((fjc>1) && (lattice_type != hexagonal)) {success = false; cout << "For FJC-choices >3, we need lattice_type = 'hexagonal'." << endl; }
 		if (gradients ==2 && fjc>2) {success = false; cout <<" When gradients is 2, FJC-choices are limited to 5 " << endl; }
 		if (gradients ==3 && fjc>1) {success = false; cout <<" When gradients is 3, FJC-choices are limited to 3 " << endl; }
 

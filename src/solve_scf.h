@@ -60,7 +60,7 @@ public:
 	int iv;
 	int m;
 	SolverType SolType;
-	bool all; 
+	bool all;
 
 	Real super_tolerance,tolerance;
 	Real super_deltamax,deltamax;
@@ -87,7 +87,7 @@ public:
 	void push(string,string);
 	void PushOutput();
 	int GetValue(string,int&,Real&,string&);
-	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis,conjugate_gradient,LBFGS};
+	enum iteration_method {HESSIAN,PSEUDOHESSIAN,PICARD,diis,conjugate_gradient,LBFGS,BRR};
 	enum inner_iteration_method {super,proceed};
 	enum gradient_method {classical, MESODYN, Picard, custum, WEAK};
 	iteration_method solver;

@@ -49,21 +49,21 @@ private:
 		gg0=gg0/normg0/normg0;
 		normg=g.norm()/normg0;
 		normg=normg*normg;
-		if ((gg0>1||normg>1) && normg-gg0*fabs(gg0) < 0.2) normg=1.5*normg; 
+		if ((gg0>1||normg>1) && normg-gg0*fabs(gg0) < 0.2) normg=1.5*normg;
 		if (gg0<0&& normg<2) return 1;
-		else if (normg>10) return 0.01; 
+		else if (normg>10) return 0.01;
 		else { //most of the time....
 			return 0.4*(1+0.75*normg)/(normg-gg0*fabs(gg0)+0.1);
 		}
 	}
-	
-    	void newtrustregion(Scalar normp,Scalar delta_max,Scalar delta_min) {
+
+    void newtrustregion(Scalar normp,Scalar delta_max,Scalar delta_min) {
 		if (normp>0 &&trustregion>2*ALPHA*normp) trustregion = 2*ALPHA*normp;
 		trustregion *=trustfactor;
 		trustfactor =1;
 		if (trustregion > delta_max) trustregion = delta_max;
-		if (trustregion < delta_min) trustregion = delta_min; 
-    	}
+		if (trustregion < delta_min) trustregion = delta_min;
+    }
 
 public:
     LBFGSSolver(LBFGSParam<Scalar>& param) :
@@ -82,11 +82,11 @@ public:
 	 trustregion=delta_max;
         const int n = x.size();
         reset(n);
-	   
+
         gnorm = residuals(x, m_grad);
 
         if(gnorm <= m_param.epsilon) {
-		cout <<"You hit the nail on its head" <<endl; 
+		cout <<"You hit the nail on its head" <<endl;
 	   	return 1;
 	 }
 
@@ -100,8 +100,8 @@ public:
 	     pnorm=m_drt.norm();
 	     newtrustregion(pnorm,delta_max,delta_min);
 	     alphabound = trustregion/pnorm;
-	     if (alphabound>1) ALPHA=1; else ALPHA=alphabound; 
-	  
+	     if (alphabound>1) ALPHA=1; else ALPHA=alphabound;
+
 	     x.noalias() = m_xp + ALPHA * m_drt;
 	     gnorm=residuals(x, m_grad);
 
@@ -111,7 +111,7 @@ public:
 	     if (m_param.e_info) {
 		if (k==1) cout <<"Your Guess: "<<gnorm << endl;
 		if (k%m_param.i_info==0 && k>1) {
-			cout << "i = " << k << " |g| = " << gnorm << " alpha = " << ALPHA << endl;  
+			cout << "i = " << k << " |g| = " << gnorm << " alpha = " << ALPHA << endl;
 		}
 	     }
 
@@ -126,7 +126,7 @@ public:
         }
 
         return k;
-    } 
+    }
 
 };
 

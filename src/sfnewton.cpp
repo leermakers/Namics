@@ -939,7 +939,8 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
 
     Real error;
     Real alpha;
-
+	Real pg0;
+	Real pg;
     residuals(x,g);
     error=norm2(g,nvar);
 
@@ -951,7 +952,7 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
 		Cp(x0,x,nvar);
 		s=-gg+CC.block(0,1,nvar,k)*DD.block(0,1,nvar,k).transpose()*gg; //sign of s changed wrt Rotten thesis; equivalent to sign change of g.
 		Cp(g0,g,nvar);
-
+        pg0=s.dot(gg);
 		if (error>1) alpha=delta_max;
 		else alpha=delta_max - it*(1.0-delta_max)/1e4*log(error);
 		if (alpha>1) alpha=1;
@@ -960,11 +961,22 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
 		xx=xx0+alpha*s;
 		residuals(x,g);
 		error=norm2(g,nvar);
+		pg = s.dot(gg);
 
+
+		if (abs(pg)>-10*pg0){
+			cout <<"pg = "<<pg;// << "\tpg0 = " << pg0 << endl;
+			alpha=alpha/2;
+			xx=xx0+alpha*s;
+			residuals(x,g);
+			error=norm2(g,nvar);
+			pg = s.dot(gg);
+			cout <<" "<<pg << "\tpg0 = " << pg0 << endl;
+		}
 		if (e_info && it%i_info==0) {
 			cout << "i = " << it <<"\tg = " << error << "\talpha = "<< alpha << endl;
-		}
 
+		}
 		y=gg0-gg; //sign of y changed wrt Rotten thesis ; equivalent to sign change of g.
 		it++;
 		if (k==m) {

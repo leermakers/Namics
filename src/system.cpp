@@ -129,7 +129,7 @@ void System::AllocateMemory()
 	{
 		H_beta = (int *)malloc(M * sizeof(int));
 		std::fill(H_beta,H_beta+M,0);
-		H_BETA = (Real *)malloc(M * sizeof(Real));
+		H_BETA = (Real *)malloc(M * sizeof(Real)); Zero(H_BETA,M);
 		Lat[0]->FillMask(H_beta, px, py, pz, delta_inputfile);
 	}
 
@@ -1442,6 +1442,7 @@ void System::PushOutput()
 	push("start",start);
 	push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->fjc]);
 	if (GetValue("delta_range").size()>0) push("delta_range",GetValue("delta_range"));
+	if (GetValue("phi_ratio").size()>0) push("phi_ratio",GetValue("phi_ratio"));
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++)
 	for (int j=0; j<n_seg; j++){
@@ -2421,7 +2422,7 @@ bool System::CheckResults(bool e_info_)
 
 	//if (e_info)
 	//	cout << endl;
-	if (e_info&& first_pass)
+	if ((e_info&& first_pass))
 	{
 		cout << "free energy                 = " << FreeEnergy << endl;
 		cout << "grand potential             = " << GrandPotential << endl;
@@ -2435,7 +2436,7 @@ bool System::CheckResults(bool e_info_)
 			n = Mol[i]->n_box;
 		n_times_mu += n * Mu;
 	}
-	if (e_info && first_pass)
+	if ((e_info && first_pass))
 	{
 		cout << "free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
 		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl<<endl;;
@@ -2733,6 +2734,15 @@ Real System::GetGrandPotential(void)
 	if (Mol[solvent]->MolType==water) {Mol[solvent]->AddToGP(GP); }
 
 	Add(GP,alpha,M);
+	//if (constraintfields) {
+	//	Real result=0;
+	//	for (int i=0; i<M; i++) if (beta[i]>0) {
+	//		cout <<"i " << i << " beta[i] = " << beta[i] << " BETA[i]= " << log(BETA[i]) << endl;
+	//		result +=log(BETA[i])*Lat[0]->L[i];
+	//	}
+	//	//Sum(result,BETA,M);
+	//	cout <<"Sum Beta = " << result << endl;
+ 	//}
 
 	Real phibulkA;
 	Real phibulkB;

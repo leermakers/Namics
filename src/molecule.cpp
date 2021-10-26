@@ -1032,7 +1032,6 @@ bool Molecule::ExpandBrackets(string &s) {
 if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 	bool success=true;
 	if (s[0] != '(') {cout <<"illegal composition. Expects composition to start with a '(' in: " << s << endl; return false;}
-	if (s[s.size()-1]==']') {cout <<"illegal composition. Composition can not end with a ']' in: " << s << endl; return false;}
 	vector<int> open;
 	vector<int> close;
 	bool done=false; //now interpreted the (expanded) composition
@@ -1080,7 +1079,10 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 			sC="";
 			s=sA;for (int k=0; k<x; k++) s.append(sB); s.append(sC);
 		}
+
 	}
+	if (s[s.size()-1]==']') {cout <<"illegal composition. Composition can not end with a ']' in: " << s << endl; return false;}
+
 	return success;
 }
 

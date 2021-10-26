@@ -1025,6 +1025,7 @@ if (debug) cout <<"Molecule:: ExpandAlias" << endl;
 		ss=ss.append(sub[i]);
 	}
 	s=ss;
+	//cout <<"expanded to " << s << endl;
 	return success;
 }
 
@@ -1082,12 +1083,13 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 
 	}
 	if (s[s.size()-1]==']') {cout <<"illegal composition. Composition can not end with a ']' in: " << s << endl; return false;}
-
+//cout <<"expand brackets to " << s << endl;
 	return success;
 }
 
 bool Molecule::Interpret(string s,int generation){
 if (debug) cout <<"Molecule:: Interpret" << endl;
+	if (s=="[") return true;
 	bool success=true;
 	vector<string>sub;
 	vector<int>open;
@@ -1137,8 +1139,8 @@ if (debug) cout <<"Molecule:: Interpret" << endl;
 					for (int i=0; i<AlListLength; i++) {if (Al[i]->active) Al[i]->frag.push_back(1); else Al[i]->frag.push_back(0);}
 				}
 				int nn = In[0]->Get_int(sub[i].substr(close[k]+1,s.size()-close[k]-1),0);
-				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity " << endl; success=false;
-				throw "Composition error";
+				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity " << endl; success=false; return success;
+				//throw "Composition error";
 				} else {
 					n_mon.push_back(nn);
 				}
@@ -1168,8 +1170,10 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 		openfound=closedfound=false;
 		i=0;
 		while (i<length && !(openfound && closedfound) ){
+
 			if (close[i]>pos && !closedfound) {closedfound=true; pos_close=close[i]+1; new_generation=i+1;}
-			if (open[i]>pos && !openfound) {openfound=true; pos_open=open[i]+1; newgeneration=i+1;}
+			if (open[i]>=pos && !openfound) {openfound=true; pos_open=open[i]+1; newgeneration=i+1;}
+			cout <<i ; if (openfound) cout << " open " ; if (closedfound) cout << " closed " << "generation " << generation << "new g " << new_generation << endl;
 			i++;
 		}
 
@@ -1186,13 +1190,13 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 				pos_close=pos_open+1;
 			} else {
 				pos=pos_close;
-				success = Interpret(ss,generation);
+				success =Interpret(ss,generation);
 				if (!success)  {cout <<"error in interpret ." << endl; return success; }
 			}
 		} else {
 			ss=s.substr(pos,pos_open-pos);
 			pos=pos_open;
-			success = Interpret(ss,generation);
+			success =Interpret(ss,generation);
 			if (!success) {cout <<"error in Interpret" << endl;  return success;}
 			first_s.push_back(-1);
 			last_s.push_back(-1);
@@ -1487,7 +1491,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				}
 				degeneracy*=arms;
 			}
-//   //anticipated that asymmetric dendrimers will be of interest in the future
+   //anticipated that asymmetric dendrimers will be of interest in the future
 //for (int i=0; i<n_generations; i++) cout<<"generation " << i << " first_a " << first_a[i] << " last_a " << last_a[i] << endl;
 //length=n_arm.size();
 //for (int i=0; i<length; i++) cout <<"arm " << i << " first_b " << first_b[i] << " last_b " << last_b[i] << endl;

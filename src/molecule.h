@@ -137,6 +137,7 @@ virtual ~Molecule();
 	int GetValue(string,int&,Real&,string&);
 	bool PutVarInfo(string,string,Real);
 	int PutVarScan(Real,Real,int,string);
+
 	bool ResetInitValue();
 	bool UpdateVarInfo(int);
 	Real GetError();
@@ -156,7 +157,7 @@ virtual ~Molecule();
 	bool ExpandBrackets(string&);
 	bool Interpret(string,int);
 	bool GenerateTree(string,int,int&,vector<int>,vector<int>);
-	bool GenerateDend(string,int);
+	//bool GenerateDend(string,int);
 	bool Decomposition(string);
 	int GetChainlength(void);
 	Real Theta(void);

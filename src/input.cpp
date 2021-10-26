@@ -33,7 +33,12 @@ Input::Input(string name_) {
 			if (In_line.length()>2) {if (In_line.substr(0,2) == "//") add = false;}
 			if (In_line.length()>7) {if (In_line.substr(0,7) == "include") {
 				add = false;
-				string filename_inc=In_line.substr(8,In_line.size()-1);
+				string filename_inc; 
+				string s=In_line.substr(8,In_line.size()-1);
+				int length=s.length(); 
+				if (s.substr(length-2,length-1)=="::") 
+					filename_inc=s.substr(0,length-2); 
+				else filename_inc=s;
 				inc_file.open(filename_inc);
 				if (inc_file.is_open()) {
 					int line_nr_inc=0;

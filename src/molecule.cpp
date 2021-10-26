@@ -989,7 +989,7 @@ if (debug) cout <<"Molecule:: ExpandAlias" << endl;
 		string sA;
 		sA=sub[i+1];
 		if (!In[0]->InSet(In[0]->AliasList,sA)) {
-			cout <<"In composition of mol '" + name + "' Alias '" + sA + "' was not found"<<endl; success=false;
+			cout <<"In composition of mol '" + name + "' Alias '" + sA + "' was not found"<<endl; success=false; return success;
 		} else {
 			int Alnr =GetAlNr(sA);
 			if (Alnr<0) {
@@ -1031,7 +1031,8 @@ if (debug) cout <<"Molecule:: ExpandAlias" << endl;
 bool Molecule::ExpandBrackets(string &s) {
 if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 	bool success=true;
-	if (s[0] != '(') {cout <<"illegal composition: " << s << endl; return false;}
+	if (s[0] != '(') {cout <<"illegal composition. Expects composition to start with a '(' in: " << s << endl; return false;}
+	if (s[s.size()-1]==']') {cout <<"illegal composition. Composition can not end with a ']' in: " << s << endl; return false;}
 	vector<int> open;
 	vector<int> close;
 	bool done=false; //now interpreted the (expanded) composition
@@ -1039,7 +1040,7 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 		open.clear(); close.clear();
 		if (!In[0]->EvenBrackets(s,open,close)) {
 			cout << "s : " << s << endl;
-			cout << "In composition of mol '" + name + "' the backets are not balanced."<<endl; success=false;
+			cout << "In composition of mol '" + name + "' the backets are not balanced."<<endl; success=false; return success;
 		 }
 		int length=open.size();
 		int pos_open;
@@ -1178,30 +1179,34 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 				last_s.push_back(-1);
 				first_b.push_back(-1);
 				last_b.push_back(-1);
-				GenerateTree(s,new_generation,pos,open,close);
+				success=GenerateTree(s,new_generation,pos,open,close);
+				if (!success) {cout <<"error in generate tree ." << endl; return success; }
 				pos_close=pos_open+1;
 			} else {
 				pos=pos_close;
 				success = Interpret(ss,generation);
+				if (!success)  {cout <<"error in interpret ." << endl; return success; }
 			}
 		} else {
 			ss=s.substr(pos,pos_open-pos);
 			pos=pos_open;
 			success = Interpret(ss,generation);
+			if (!success) {cout <<"error in Interpret" << endl;  return success;}
 			first_s.push_back(-1);
 			last_s.push_back(-1);
 			first_b.push_back(-1);
 			last_b.push_back(-1);
-			GenerateTree(s,newgeneration,pos,open,close);
+			success=GenerateTree(s,newgeneration,pos,open,close);
+			if (!success) {cout <<"error in generate tree .." << endl; return success;}
 		}
 	}
 	return success;
 }
 
-bool Molecule::GenerateDend(string s, int generation) {
-if (debug) cout <<"Molecule:: GenerateDend" << endl;
-return true;
-}
+//bool Molecule::GenerateDend(string s, int generation) {
+//if (debug) cout <<"Molecule:: GenerateDend" << endl;
+//return true;
+//}
 
 bool Molecule::Decomposition(string s){
 if (debug) cout <<"Decomposition for Mol " + name << endl;
@@ -1227,7 +1232,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			int mnr=GetMonNr(s);
 			if (mnr<0) {
 				cout <<"Language for MolType 'water' is as follows: @water(mon_name) wherein mon_name is a valid monomer name with freedom free" << endl;
-				success=false;
+				success=false; return success;
 			} else {
 				mon_nr.push_back(mnr);
 				n_mon.push_back(1);
@@ -1246,7 +1251,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			s=s.substr(6,s.length()-7);
 		}
 		if (!keyfound) { success=false; cout << "Keyword specifying Moltype not recognised: select from @dend, @comb. @water Problem terminated "<< endl ;
-			return false;
+			return success;
 		 }
 	}
 
@@ -1261,10 +1266,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			}
 		}
 		aliases=(s!=sub[0]);
-		if (aliases) {if (!ExpandAlias(sub,s)) {cout << "expand alias failed. " << endl; success=false; return false; }}
+		if (aliases) {if (!ExpandAlias(sub,s)) {cout << "expand alias failed. " << endl; success=false; return success; }}
 		if (loopnr == 20) {
 			cout << "Nesting nr 20 reached in aliases for mol " + name + " -composition. It is decided that this is too deep to continue; Possible, you have defined an alias-A inside alias-B which itself refers to alias-A. This is not allowed. Problem terminated. " << endl;
-			success=false;
+			success=false; return success;
 		}
 	}
 	sub.clear();
@@ -1285,7 +1290,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				if (length_open>0) {
 					if (!ExpandBrackets(sub[i])) {
 						cout <<"brackets '(' ')' not well positioned in "+sub[i] << endl;
-          					success=false;
+          				success=false; return success;
 					}
 				}
 			}
@@ -1299,7 +1304,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			//success=false;
 		break;
 		default:
-			if (!ExpandBrackets(s)) success=false;
+			if (!ExpandBrackets(s)) {success=false; return success;}
 		break;
 	}
 	if (!In[0]->EvenSquareBrackets(s,open,close)) {
@@ -1307,8 +1312,8 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		// The error message drowns in the rest of the output really quickly, throwing for safety instead.
 		// Caught by CheckInput
 		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl;
-		success=false;
-		throw "Composition error";
+		success=false; return success;
+		//throw "Composition error";
 	}
 	if (open.size()>0) {
 		if (MolType==linear) { //overwrite default.
@@ -1330,6 +1335,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	int length_g,length_dd,mnr,nn,arm=-1,degeneracy=1,arms=0;
 	string segname;
 	int N=0;
+	int lopen;
 	int chainlength_backbone,chainlength_arm;
 	switch(MolType) {
 		case water:
@@ -1340,13 +1346,19 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			first_b.push_back(-1);
 			last_b.push_back(-1);
 			success = GenerateTree(s,generation,pos,open,close);
+			if (!success) {cout << " GenerateTree failed " << endl; return success; }
 			break;
 		case branched:
 			first_s.push_back(-1);
 			last_s.push_back(-1);
 			first_b.push_back(-1);
 			last_b.push_back(-1);
+			lopen=open.size();
+			for (int i=1; i<=lopen; i++) {
+				if ((open[i]-open[i-1])==1 || (close[i]-close[i-1])==1) {cout <<"In molecule " + name + " in 'composition', two similar square brackets in a row '[[' or ']]' is not allowed" << endl; success=false; return success;  }
+			}
 			success = GenerateTree(s,generation,pos,open,close);
+			if (!success) {cout <<"GenerateTree failed" << endl; return success;}
 			//if (save_memory) {
 			//	success = false;
 			//	cout <<"In branched the use of 'save_memory' is not allowed (yet). " << endl; return success;
@@ -1394,6 +1406,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 					cout <<" example 4: 10 arm star end-grafted by one arm to a surface by way of segment 'X' " << endl;
 					cout <<" @dend(A,(B)100,9,(B)99(X)1,1)" << endl;
 					cout<<" ------Dendrimer language:------ " << endl;
+					return success;
 				}
 
 				length_g = sub.size();
@@ -1572,10 +1585,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			while (j<length) {
 				segname=sub[1].substr(open[j]+1,close[j]-open[j]-1);
 				mnr=GetMonNr(segname);
-				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; this occurs at generation " << endl; success=false;}
+				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; this occurs at generation " << endl; success=false; return success; }
 				mon_nr.push_back(mnr); d_mon.push_back(n_arm[0]);
 				nn=In[0]->Get_int(sub[1].substr(close[j]+1,s.size()-close[j]-1),0);
-				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; this occurs at generation " << endl; success=false;}
+				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; this occurs at generation " << endl; success=false; return success; }
 				n_mon.push_back(nn); N+=nn;
 				chainlength +=nn;
 				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
@@ -1612,10 +1625,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				while (j<length) {
 					segname=sub[2].substr(open[j]+1,close[j]-open[j]-1);
 					mnr=GetMonNr(segname);
-					if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; Use ring(?) for details." << endl; success=false;}
+					if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; Use ring(?) for details." << endl; success=false; return success; }
 					mon_nr.push_back(mnr); d_mon.push_back(1);
 					nn=In[0]->Get_int(sub[2].substr(close[j]+1,s.size()-close[j]-1),0);
-					if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; Use ring(? ) for details. "<< endl; success=false;}
+					if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity; Use ring(? ) for details. "<< endl; success=false; return success; }
 					n_mon.push_back(nn); N+=nn;
 					chainlength +=nn;
 					if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;
@@ -1638,10 +1651,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			while (j<length) {
 				segname=sub_gen[2].substr(open[j]+1,close[j]-open[j]-1);
 				mnr=GetMonNr(segname);
-				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; " << endl; success=false;}
+				if (mnr<0)  {cout <<"In composition of mol '" + name + "', segment name '" + segname + "' is not recognised; " << endl; success=false; return success; }
 				mon_nr.push_back(mnr); d_mon.push_back(1);
 				nn=In[0]->Get_int(sub_gen[2].substr(close[j]+1,s.size()-close[j]-1),0);
-				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity;  " << endl; success=false;}
+				if (nn<1) {cout <<"In composition of mol '" + name + "' the number of repeats should have values larger than unity;  " << endl; success=false; return success; }
 				n_mon.push_back(nn); N+=nn;
 				chainlength +=nn;
 				if (first_b[first_b.size()-1] < 0) first_b[first_b.size()-1]=mon_nr.size()-1;

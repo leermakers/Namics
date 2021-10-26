@@ -92,6 +92,12 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 				if (!In[0]->InSet(In[0]->SysList,pos,sub[1])) {
 					cout <<"In 'var' sys name " + sub[1] + " not found." << endl; success=false;
 				} else {
+					if (GetValue("scan").size()>0) {
+						if (!Sys[pos]->PutVarInfo("scan",GetValue("scan"),0)) {
+							success=false; cout <<"In var:" + name + ":scan, the target is rejected " << endl;
+						} else {scanning = 0; scan_nr=pos;}
+					}
+
 					if (GetValue("free_energy").size()>0) {
 						R_target=In[0]->Get_Real(GetValue("free_energy"),0); targeting=0; target_nr=0;
 						if (!Sys[0]->PutVarInfo("target","free_energy",R_target)) {
@@ -122,6 +128,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						cout <<"In var:" + name + " we expect either 'free_energy' or 'grand_potential' or 'Laplace_pressure' as target function. " << endl;
 					}
 				}
+
 				break;
 			case 1:
 				if (!In[0]->InSet(In[0]->LatList,pos,sub[1])) {
@@ -304,7 +311,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 			if (success) {
 				switch(scanning) {
 					case 0:
-						cout <<"programming error in variate" <<endl;
+						num_of_cals=Sys[0]->PutVarScan(step,end_value,steps,scale);
 						break;
 					case 1:
 						num_of_cals=Lat[0]->PutVarScan(step,end_value);
@@ -357,7 +364,7 @@ bool Variate::PutVarScan(int cal_nr) {
 	switch(scanning) {
 		case 0:
 			success=false;
-			cout <<"programming error in PutVarScan" << endl;
+			Sys[scan_nr]->UpdateVarInfo(cal_nr);
 			break;
 		case 1:
 			Lat[scan_nr]->UpdateVarInfo(cal_nr);
@@ -493,7 +500,7 @@ bool Variate::ResetScanValue(void) {
 	switch(scanning) {
 		case 0:
 			success=false;
-			cout <<"programming error in ResetVarScan" << endl;
+			Sys[scan_nr]->ResetInitValue();
 			break;
 		case 1:
 			Lat[scan_nr]->ResetInitValue();

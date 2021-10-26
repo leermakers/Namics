@@ -1305,11 +1305,92 @@ bool System::IsUnique(int Segnr_, int Statenr_)
 	return is_unique;
 }
 
+bool System::UpdateVarInfo(int step_nr) {
+if (debug) cout <<"System:: UpdateVarInfo" << endl;
+	bool success=true;
+	switch(Var_scan_value) {
+		case 0:
+			if (scale=="exponential") {
+				phi_ratio=pow(10,(1-1.0*step_nr/num_of_steps)*log10(Var_start_value)+(1.0*step_nr/num_of_steps)*log10(Var_end_value));
+			} else {
+				phi_ratio=Var_start_value+step_nr*Var_step;
+			};
+			cout <<"scanning ... sys : " + name + " : phi_ratio : " << phi_ratio << endl;
+			break;
+
+		default:
+			cout <<"program error in System::UpdateVarInfo " << endl;
+			break;
+	}
+	return success;
+}
+
+bool System::ResetInitValue() {
+if (debug) cout <<"System:: ResetInitValue" << endl;
+	bool success=true;
+	cout <<"reset: ";
+	switch (Var_scan_value) {
+		case 0:
+			phi_ratio=Var_start_value;
+			cout <<"sys : " + name + " : phi_ratio : " << phi_ratio << endl;
+			break;
+
+		default:
+			break;
+	}
+	return success;
+}
+
+int System::PutVarScan(Real step, Real end_value, int steps, string scale_) {
+if (debug) cout <<"System:: PutVarScan" << endl;
+	num_of_steps = -1;
+	scale=scale_;
+	Var_end_value=end_value;
+	if (scale=="exponential") {
+		Var_steps=steps; Var_step=0;
+		if (steps==0) {
+			cout <<"In var scan: the value of 'steps' is zero, this is not allowed" << endl; return -1;
+		}
+		if (Var_end_value*Var_start_value<0) {
+			cout <<"In var scan: the product end_value*start_value <0. This is not allowed. " << endl; return -1;
+		}
+		if (Var_end_value > Var_start_value)
+			num_of_steps=steps*log10(Var_end_value/Var_start_value);
+		else
+			num_of_steps=steps*log10(Var_start_value/Var_end_value);
+	} else {
+		Var_steps=0; Var_step=step;
+		if (step==0) {
+			cout <<"In var san: of system variable, the value of step can not be zero" << endl; return -1;
+		}
+		num_of_steps=(Var_end_value-Var_start_value)/step;
+
+		if (num_of_steps<0) {
+			cout <<"In var scan : (end_value-start_value)/step is negative. This is not allowed. Try changing the sign of 'step'. " << endl;
+			return -1;
+		}
+
+	}
+	return num_of_steps;
+}
+
 bool System::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_value_)
 {
 	if (debug)
 		cout << "System::PutVarInfo " << endl;
 	bool success = true;
+	if (Var_type_ =="scan") {
+		Var_scan_value = -1;
+		if (Var_target_=="phi_ratio") {
+			Var_scan_value=0; Var_start_value=phi_ratio;
+		}
+		if (Var_scan_value<0) {
+			success = false;
+			cout << "Var scan " + Var_target_ + " rejected in PutVarInfo in System " << endl; return success;
+		}
+		return success;
+	}
+
 	Var_target = -1;
 	if (Var_type_ != "target")
 		success = false;
@@ -1442,7 +1523,7 @@ void System::PushOutput()
 	push("start",start);
 	push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->fjc]);
 	if (GetValue("delta_range").size()>0) push("delta_range",GetValue("delta_range"));
-	if (GetValue("phi_ratio").size()>0) push("phi_ratio",GetValue("phi_ratio"));
+	if (GetValue("phi_ratio").size()>0) push("phi_ratio",phi_ratio);
 	int n_seg=In[0]->MonList.size();
 	for (int i=0; i<n_seg; i++)
 	for (int j=0; j<n_seg; j++){

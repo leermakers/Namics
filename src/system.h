@@ -41,6 +41,7 @@ public:
 	vector<int> Xn_1;
 	Real FreeEnergy;
 	Real GrandPotential;
+
 	Real KJ0;
 	Real Kbar;
 	Real* phitot;
@@ -92,6 +93,13 @@ public:
 	string delta_inputfile;
 	int Var_target;
 	Real Var_target_value;
+	Real Var_start_value;
+	int Var_scan_value;
+	int Var_steps;
+	Real Var_step;
+	Real Var_end_value;
+	int num_of_steps;
+	string scale;
 	int start;
 	int extra_constraints;
 	Real old_residual;
@@ -150,6 +158,9 @@ public:
 	Real GetSpontaneousCurvature();
 	bool CreateMu();
 	bool PutVarInfo(string,string,Real);
+	bool ResetInitValue();
+	int PutVarScan(Real, Real, int, string );
+	bool UpdateVarInfo(int );
 	Real GetError();
 };
 #endif

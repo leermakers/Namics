@@ -119,6 +119,7 @@ if (debug) cout <<"Molecule:: ExpandAlias" << endl;
 		ss=ss.append(sub[i]);
 	}
 	s=ss;
+//cout <<"expand alias results in " << s << endl;
 	return success;
 }
 
@@ -153,8 +154,9 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 					if (pos_open > pos_close) {cout << "Brackets open in composition not correct" << endl; return false;}
 				} else {
 					done=false;
-					int x=In[0]->Get_int(s.substr(pos_close+1),0);
+					int x=In[0]->Get_int(s.substr(pos_close+1),1);
 					string sA,sB,sC;
+					if (s.substr(pos_open-1,1)=="]") {pos_open --;  }
 					sA=s.substr(0,pos_low);
 					sB=s.substr(pos_low+1,pos_close-pos_low-1);
 					sC=s.substr(pos_open,s.size()-pos_open+1);
@@ -392,7 +394,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		// Another success bool that doesn't travel down the stack.
 		// The error message drowns in the rest of the output really quickly, throwing for safety instead.
 		// Caught by CheckInput
-		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl;
+		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced in: " << s << endl;
 		success=false;
 		throw "Composition error";
 	}

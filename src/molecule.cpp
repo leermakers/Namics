@@ -1063,6 +1063,7 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 					done=false;
 					int x=In[0]->Get_int(s.substr(pos_close+1),0);
 					string sA,sB,sC;
+					if (s.substr(pos_open-1,1)=="]") {pos_open --;  }
 					sA=s.substr(0,pos_low);
 					sB=s.substr(pos_low+1,pos_close-pos_low-1);
 					sC=s.substr(pos_open,s.size()-pos_open+1);
@@ -1173,7 +1174,6 @@ if (debug) cout <<"Molecule:: GenerateTree" << endl;
 
 			if (close[i]>pos && !closedfound) {closedfound=true; pos_close=close[i]+1; new_generation=i+1;}
 			if (open[i]>=pos && !openfound) {openfound=true; pos_open=open[i]+1; newgeneration=i+1;}
-			cout <<i ; if (openfound) cout << " open " ; if (closedfound) cout << " closed " << "generation " << generation << "new g " << new_generation << endl;
 			i++;
 		}
 
@@ -1317,7 +1317,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		// Another success bool that doesn't travel down the stack.
 		// The error message drowns in the rest of the output really quickly, throwing for safety instead.
 		// Caught by CheckInput
-		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced. " << endl;
+		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced in " << s << endl;
 		success=false; return success;
 		//throw "Composition error";
 	}

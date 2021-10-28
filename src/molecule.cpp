@@ -1061,7 +1061,11 @@ if (debug) cout <<"Molecule:: ExpandBrackets" << endl;
 					if (pos_open > pos_close) {cout << "Brackets open in composition not correct" << endl; return false;}
 				} else {
 					done=false;
-					int x=In[0]->Get_int(s.substr(pos_close+1),0);
+
+					int x=In[0]->Get_int(s.substr(pos_close+1),-1);
+					if (x<1) {
+							cout <<"Number of 'repeats' smaller or equal to zero (or '# repeats' is missing) in composition at pos : " << pos_close+1 << " for: " << s << endl; return false;
+					}
 					string sA,sB,sC;
 					if (s.substr(pos_open-1,1)=="]") {pos_open --;  }
 					sA=s.substr(0,pos_low);

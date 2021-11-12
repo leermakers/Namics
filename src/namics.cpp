@@ -109,6 +109,7 @@ int main(int argc, char *argv[])
 	bool cuda;
 	int start = 0;
 	int n_starts = 0;
+	bool kal_append=false;
 
 	string initial_guess;
 	string final_guess;
@@ -503,6 +504,11 @@ int main(int argc, char *argv[])
 				{
 					cout << "input_error in output " << endl;
 					return 0;
+				} else {
+					if (Out[ii]->name=="kal") { //this is to make sure that append is set to true when 'kal'-file is not initiated for the first time.
+						if (kal_append) Out[ii]->append=true;
+						else kal_append=true;
+					}
 				}
 			}
 

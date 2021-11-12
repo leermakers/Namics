@@ -1679,6 +1679,33 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	Real theta_exc=0;
 	Real RMS=0;
 
+	if (freedom == "frozen" || freedom == "pinned") {
+		int num_of_points;
+		Sum(num_of_points,MASK,M);
+		if (num_of_points==1) {
+			int px=0,py=0,pz=0;
+			int gradients=Lat[0]->gradients;
+			int point=0;
+			int JX=Lat[0]->JX;
+			int JY=Lat[0]->JY;
+			for (int i=0; i<M; i++) if (MASK[i]==1) point =i;
+			switch (gradients)  {
+				case 3 :
+						pz=(point%JX)%JY;
+						push("Range_z",pz);
+				case 2 :
+						py=(point%JX)/JY;
+						push("Range_y",py);
+				case 1 :
+						px=point/JX;
+						push("Range_x",px);
+				break;
+				default :
+				break;
+			}
+		}
+	}
+
 	if (freedom != "frozen" || freedom != "pinned") theta_exc=theta-Lat[0]->volume*phibulk; else theta_exc=theta;
 	push("theta_exc",theta_exc);
 	push("phibulk",phibulk);

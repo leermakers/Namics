@@ -105,6 +105,7 @@ if (debug) cout << "CheckInput in output " << endl;
 		if (GetValue("append").size()>0) {
 			if (name=="ana") append=true;
 			append=In[0]->Get_bool(GetValue("append"),append);
+
 			if (name=="pro") {
 					if (append) cout << "Warning: for output of type 'pro', the append is set to 'false'." << endl;
 			}
@@ -117,10 +118,10 @@ if (debug) cout << "CheckInput in output " << endl;
 			if (first==0) first=start;
 		} else {
 			if (name=="ana") append=true;
-			if (name=="kal") append=true;
+			if (name=="kal") append=false;
 			if (name=="pro") append=false;
 			if (name=="vtk") append=false;
-			if (name=="vec") append=true;
+			if (name=="vec") append=true; //do not know why
 		}
 
 		write_bounds = In[0]->Get_bool(GetValue("write_bounds"),false);

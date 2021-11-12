@@ -1,0 +1,159 @@
+lat : flat : n_layers : 200
+lat : flat : lattice_type : simple_cubic
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+lat : flat : lowerbound : surface
+
+mon : Si : freedom : frozen
+mon : Si : frozen_range : lowerbound
+mon : A : freedom : free
+mon : W : freedom : free
+mon : A : chi_Si : -6
+mon : X : freedom : pinned
+mon : X : pinned_range : 1;1
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : pol : composition : (A)100(X)1
+
+mol : pol : freedom : restricted
+mol : pol : theta : 1e-6
+
+output : kal : append : false
+kal : mon : X : Range_x
+kal : sys : NN : free_energy 
+
+
+output : ana : append :false 
+output : pro : append : false
+pro : mol : pol : phi
+pro : mol : water : phi
+output : ana : append : true
+
+newton : isaac : deltamax : 0.5
+newton : isaac : method : pseudohessian 
+newton : isaac : tolerance : 1e-10
+newton : isaac : iterationlimit : 10000
+newton : isaac : i_info : 1
+
+start 
+mon : X : pinned_range : 2;2
+start 
+mon : X : pinned_range : 3;3
+start 
+mon : X : pinned_range : 4;4
+start 
+mon : X : pinned_range : 5;5
+start 
+mon : X : pinned_range : 6;6
+start 
+mon : X : pinned_range : 7;7
+start 
+mon : X : pinned_range : 8;8
+start
+mon : X : pinned_range : 9;9
+start 
+mon : X : pinned_range : 10;10
+start 
+mon : X : pinned_range : 11;11
+start 
+mon : X : pinned_range : 12;12
+start 
+mon : X : pinned_range : 13;13
+start 
+mon : X : pinned_range : 14;14
+start 
+mon : X : pinned_range : 15;15
+start 
+mon : X : pinned_range : 16;16
+start 
+mon : X : pinned_range : 17;17
+start 
+mon : X : pinned_range : 18;18
+start
+mon : X : pinned_range : 19;19
+start 
+mon : X : pinned_range : 20;20
+start 
+mon : X : pinned_range : 21;21
+start 
+mon : X : pinned_range : 22;22
+start 
+mon : X : pinned_range : 23;23
+start 
+mon : X : pinned_range : 24;24
+start 
+mon : X : pinned_range : 25;25
+start 
+mon : X : pinned_range : 26;26
+start 
+mon : X : pinned_range : 27;27
+start 
+mon : X : pinned_range : 28;28
+start
+mon : X : pinned_range : 29;29
+start 
+mon : X : pinned_range : 30;30
+start 
+mon : X : pinned_range : 31;31
+start 
+mon : X : pinned_range : 32;32
+start 
+mon : X : pinned_range : 33;33
+start 
+mon : X : pinned_range : 34;34
+start 
+mon : X : pinned_range : 35;35
+start 
+mon : X : pinned_range : 36;36
+start 
+mon : X : pinned_range : 37;37
+start 
+mon : X : pinned_range : 38;38
+start
+mon : X : pinned_range : 39;39
+start
+mon : X : pinned_range : 40;40
+start
+mon : X : pinned_range : 41;41
+start 
+mon : X : pinned_range : 42;42
+start 
+mon : X : pinned_range : 43;43
+start 
+mon : X : pinned_range : 44;44
+start 
+mon : X : pinned_range : 45;45
+start 
+mon : X : pinned_range : 46;46
+start 
+mon : X : pinned_range : 47;47
+start 
+mon : X : pinned_range : 48;48
+start
+mon : X : pinned_range : 49;49
+start
+mon : X : pinned_range : 50;50
+start
+mon : X : pinned_range : 51;51
+start 
+mon : X : pinned_range : 52;52
+start 
+mon : X : pinned_range : 53;53
+start 
+mon : X : pinned_range : 54;54
+start 
+mon : X : pinned_range : 55;55
+start 
+mon : X : pinned_range : 56;56
+start 
+mon : X : pinned_range : 57;57
+start 
+mon : X : pinned_range : 58;58
+start
+mon : X : pinned_range : 59;59
+start
+mon : X : pinned_range : 60;60
+start
+

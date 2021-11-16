@@ -983,6 +983,7 @@ bool System::CheckInput(int start_)
 			options.push_back("membrane_torus");
 			options.push_back("membrane");
 			options.push_back("micelle");
+			options.push_back("none");
 			In[0]->Get_string(GetValue("initial_guess"), initial_guess, options, " Info about 'initial_guess' rejected;");
 			if (initial_guess == "file")
 			{

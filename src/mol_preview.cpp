@@ -357,6 +357,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			success=false; return 0;
 		}
 	}
+//cout <<" s : " << s << endl;
 	sub.clear();
 	In[0]->split(s,',',sub);
 	int length=sub.size();
@@ -753,9 +754,9 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			xxx=Gnr[i]; Gnr[i]=Gnr[length-1-i]; Gnr[length-1-i]=xxx;
 			xxx=n_mon[i]; n_mon[i]=n_mon[length-1-i]; n_mon[length-1-i]=xxx;
 			xxx=mon_nr[i]; mon_nr[i]=mon_nr[length-1-i]; mon_nr[length-1-i]=xxx;
-			for (int j=0; j<AlListLength; j++) {
-				xxx=Al[j]->frag[i]; Al[j]->frag[i]=Al[j]->frag[length-1-i]; Al[j]->frag[length-1-i]=xxx;
-			}
+			//for (int j=0; j<AlListLength; j++) {
+			//	xxx=Al[j]->frag[i]; Al[j]->frag[i]=Al[j]->frag[length-1-i]; Al[j]->frag[length-1-i]=xxx;
+			//}
 		}
 	}
 

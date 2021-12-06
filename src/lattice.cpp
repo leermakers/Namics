@@ -31,6 +31,7 @@ if (debug) cout <<"Lattice constructor" << endl;
 	fjc=1;
 	MX=MY=MZ=0;
 	offset_first_layer=0;
+	Markov=1;
 }
 
 void Lattice::DeAllocateMemory(void) {

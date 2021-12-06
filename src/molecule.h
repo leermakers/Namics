@@ -101,7 +101,7 @@ virtual ~Molecule();
 	Real *UNITY;
 	Real *P;
 	int size;
-    int Markov;
+    	int Markov;
 	int tag_segment;
 	int Var_steps;
 	Real Var_step;

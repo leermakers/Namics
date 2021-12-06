@@ -301,7 +301,8 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 
 
 bool mol_branched::ComputePhi() {
-if (debug) cout <<"ComputePhi in mol_branched " << endl;
+if (!debug) cout <<"ComputePhi in mol_branched " << endl;
+
 	int M=Lat[0]->M;
 	bool success=true;
 	int generation=0;
@@ -323,6 +324,7 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 	bool doit;
 
 	Real* G;
+//cout <<"punt 1" << endl;
 	if (ring) {
 		G0 = new Real[M]; Zero(G0,M);
 		Mask = new Real[M]; Zero(Mask,M);
@@ -385,6 +387,7 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 						if (Markov == 2) {
 							BackwardBra2ndO(G0,generation,unity,s);
 						} else {
+
 							BackwardBra(G0,generation,s);
 						}
 					}
@@ -392,13 +395,16 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 		}
 		delete [] G0; delete [] Mask;
 	} else {
+//cout <<"punt 2 " << endl;
 		if (Markov == 2) {
 			G=ForwardBra2ndO(Seg[mon_nr[last_b[0]]]->G1,generation,s);
 		} else {
+//cout <<"punt 3 " << endl;
 			G=ForwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
 		}
 		GN=Lat[0]->ComputeGN(G,Markov,M);
 		s--;
+//cout <<"punt 4" << endl;
 		if (save_memory) {
 			Lat[0]->Initiate(Gg_b,Seg[mon_nr[last_b[0]]]->G1,Markov,M);
 			Lat[0]->Initiate(Gg_b+M*size,Seg[mon_nr[last_b[0]]]->G1,Markov,M);
@@ -406,6 +412,8 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 		if (Markov == 2) {
 			BackwardBra2ndO(Seg[mon_nr[last_b[0]]]->G1,generation,unity,s);
 		} else {
+
+//cout <<"punt 5 " << endl;
 			BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
 		}
 	}

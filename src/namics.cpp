@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 						break;
 
 				}
-				delete mol_p;
+			//	delete mol_p;
 				if (!Mol[i]->CheckInput(start)) return 0;
 			}
 		}

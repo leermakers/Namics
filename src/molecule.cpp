@@ -24,12 +24,13 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	pos_interface=0;
 	ring=false;
 	all_molecule=false;
-	//Markov = Lat[0]->Markov;
+	Markov =1;
 	Var_scan_value=-1;
 	Var_search_value=-1;
 	Var_target=-1;
 	FillRangesList.clear();
 	Filling=false;
+	save_memory=false;
 
 }
 
@@ -341,7 +342,7 @@ int M=Lat[0]->M;
 }
 
 bool Molecule::CheckInput(int start_) {
-if (debug) cout <<"Molecule:: CheckInput" << endl;
+if (debug) cout <<"Molecule:: CheckInput for mol " << name << endl;
 start=start_;
 phibulk=0;
 n=0;
@@ -537,7 +538,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 		}
 
 
-
+		ring=false;
 		if (GetValue("ring").size() > 0) {
 			In[0]->Get_bool(GetValue("ring"),ring,"Input for ring is either 'true' or 'false'. Moreover, first and last segments of the backbone will be put on top of each other (chain length gets shorter by one). ");
 			if (ring) {
@@ -1318,12 +1319,8 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		break;
 	}
 	if (!In[0]->EvenSquareBrackets(s,open,close)) {
-		// Another success bool that doesn't travel down the stack.
-		// The error message drowns in the rest of the output really quickly, throwing for safety instead.
-		// Caught by CheckInput
 		cout << "Error in composition of mol '" + name + "'; the square brackets are not balanced in " << s << endl;
 		success=false; return success;
-		//throw "Composition error";
 	}
 	if (open.size()>0) {
 		if (MolType==linear) { //overwrite default.
@@ -1336,7 +1333,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	}
 	int generation=0;
 	int pos=0;
-
 	MolMonList.clear();
 	int AlListLength=MolAlList.size();
 	for (int i=0;i<AlListLength; i++) Al[i]->active=false;
@@ -1351,6 +1347,10 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 		case water:
 			break;
 		case linear:
+			first_s.clear();
+			last_s.clear();
+			first_b.clear();
+			last_b.clear();
 			first_s.push_back(-1);
 			last_s.push_back(-1);
 			first_b.push_back(-1);
@@ -1359,21 +1359,20 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			if (!success) {cout << " GenerateTree failed " << endl; return success; }
 			break;
 		case branched:
+			first_s.clear();
+			last_s.clear();
+			first_b.clear();
+			last_b.clear();
 			first_s.push_back(-1);
 			last_s.push_back(-1);
 			first_b.push_back(-1);
 			last_b.push_back(-1);
 			lopen=open.size();
-			for (int i=1; i<=lopen; i++) {
+			for (int i=1; i<lopen; i++) {
 				if ((open[i]-open[i-1])==1 || (close[i]-close[i-1])==1) {cout <<"In molecule " + name + " in 'composition', two similar square brackets in a row '[[' or ']]' is not allowed" << endl; success=false; return success;  }
 			}
 			success = GenerateTree(s,generation,pos,open,close);
 			if (!success) {cout <<"GenerateTree failed" << endl; return success;}
-			//if (save_memory) {
-			//	success = false;
-			//	cout <<"In branched the use of 'save_memory' is not allowed (yet). " << endl; return success;
-			//}
-
 			break;
 		case dendrimer:
 			first_a.clear();
@@ -1680,7 +1679,6 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 					default:
 			break;
 	}
-
 	if (MolType==branched) { //invert numbers;
 		int g_length=first_s.size();
 		int length = n_mon.size();
@@ -1695,15 +1693,16 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			last_b[i]=length-last_b[i]-1;
 			xxx=first_b[i]; first_b[i]=last_b[i]; last_b[i]=xxx;
 		}
-
+		//AlListLength=MolAlList.size();
 		for (int i=0; i<length/2; i++) {
 			xxx=Gnr[i]; Gnr[i]=Gnr[length-1-i]; Gnr[length-1-i]=xxx;
 			xxx=n_mon[i]; n_mon[i]=n_mon[length-1-i]; n_mon[length-1-i]=xxx;
 			xxx=mon_nr[i]; mon_nr[i]=mon_nr[length-1-i]; mon_nr[length-1-i]=xxx;
-			for (int j=0; j<AlListLength; j++) {
-				xxx=Al[j]->frag[i]; Al[j]->frag[i]=Al[j]->frag[length-1-i]; Al[j]->frag[length-1-i]=xxx;
-			}
+			//for (int j=0; j<AlListLength; j++) {
+			//	xxx=Al[j]->frag[i]; Al[j]->frag[i]=Al[j]->frag[length-1-i]; Al[j]->frag[length-1-i]=xxx;
+			//} //dit geeft problemen in valgrind. Als alias verbetert is dan moet dit ook weer aangapake.
 		}
+
 	}
 
 	success=MakeMonList();

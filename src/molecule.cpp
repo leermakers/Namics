@@ -1694,13 +1694,20 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			xxx=first_b[i]; first_b[i]=last_b[i]; last_b[i]=xxx;
 		}
 		//AlListLength=MolAlList.size();
+
 		for (int i=0; i<length/2; i++) {
 			xxx=Gnr[i]; Gnr[i]=Gnr[length-1-i]; Gnr[length-1-i]=xxx;
 			xxx=n_mon[i]; n_mon[i]=n_mon[length-1-i]; n_mon[length-1-i]=xxx;
 			xxx=mon_nr[i]; mon_nr[i]=mon_nr[length-1-i]; mon_nr[length-1-i]=xxx;
 			//for (int j=0; j<AlListLength; j++) {
 			//	xxx=Al[j]->frag[i]; Al[j]->frag[i]=Al[j]->frag[length-1-i]; Al[j]->frag[length-1-i]=xxx;
-			//} //dit geeft problemen in valgrind. Als alias verbetert is dan moet dit ook weer aangapake.
+			//} //dit geeft problemen in valgrind. Als alias verbetert is dan moet dit ook weer aangepakt.
+		}
+		for (int i=1; i<length-1; i++) {
+				if ((Gnr[i-1]!=Gnr[i]) && (Gnr[i]!=Gnr[i+1])) {
+					cout <<"Violation of the architecture in branched molecule '" + name + "': spacers between branches must be more than one segment in length.  " << endl;
+					return false;
+				}
 		}
 
 	}

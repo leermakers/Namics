@@ -543,7 +543,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 			}
 		}
-		if (n_pos<1 && Lat[0]->gradients==3&& px.size()==0) {
+		if (n_pos<1 && Lat[0]->gradients==3 && px.size()==0 && !block) {
 			n=0; R=0; //px.clear(); py.clear(); pz.clear();
 			bool found=false;
 			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {

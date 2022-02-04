@@ -239,6 +239,7 @@ bool System::generate_mask()
 		Add(KSAM, Seg[SysClampList[i]]->MASK, M);
 	}
 
+
 	Invert(KSAM, KSAM, M);
 
 	if (Lat[0]->gradients < 3)

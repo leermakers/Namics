@@ -481,7 +481,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (GetValue("lowerbound_x").size()==0) BC[0]="mirror";
 				else if (!In[0]->Get_string(GetValue("lowerbound_x"),BC[0],options,"for 'lowerbound_x' boundary condition not recognized. Put 'mirror' or 'periodic' and put surface inside system. ")) success=false;
 
-				if (GetValue("upperbound_x").size()==0) BC[3]="mirror";
+				if (GetValue("upperbound").size()==0) BC[3]="mirror";
 				else if (!In[0]->Get_string(GetValue("upperbound_x"),BC[3],options,"for 'upperbound_x' boundary condition not recognized. Put 'mirror' or 'periodic' and put surface inside system. ")) success = false;
 
 				if (GetValue("lowerbound_y").size()==0) BC[1]="mirror";
@@ -499,7 +499,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (BC[2]=="periodic" || BC[3]=="periodic") {
 					if (BC[2] != BC[3]) {
 					cout <<"In y-direction the boundary conditions do not match:" + BC[2] << " and " <<  BC[3] << endl;
-					success=false; 
+					success=false;
 					}
 				}
 				if (BC[4]=="periodic" || BC[5]=="periodic") {

@@ -1,0 +1,42 @@
+lat : flat : gradients : 3
+lat : flat : n_layers_x : 20
+lat : flat : n_layers_y : 20
+lat : flat : n_layers_z : 20
+lat : flat : geometry : planar
+lat : flat : lattice_type : simple_cubic
+
+mon : W : freedom : free
+mon : X : freedom : clamp
+
+mon : X : clamp_info : (5,5,5)(15,5,5);(5,5,5)(5,15,5);(5,5,5)(5,5,15);(15,5,5)(15,5,15);(5,15,5)(15,15,5);(5,5,15)(5,15,15);(15,15,5)(15,15,15);(15,15,5)(15,25,5);(15,5,15)(15,15,15);(15,5,15)(25,5,15);(5,15,15)(5,15,25);(5,15,15)(15,15,15)
+mon : A : freedom : free
+mon : X : sub_box_size : 14
+
+mol : pol : composition : (X)1(A)99(X)1
+mol : pol : freedom : clamped
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+newton : isaac : method : DIIS
+newton : isaac : m : 4
+newton : isaac : deltamax : 0.1
+newton : isaac : e_info : true
+newton :isaac : iterationlimit: 300
+newton :isaac : tolerance : 1e-3
+
+sys : sacha : GPU : true
+out_info : folder : path : data
+
+output : vtk : append : false
+vtk : mol : pol : phi
+
+output : kal : append : true
+kal : output : variable : MC_attempt
+kal : output : variable : free_energy
+
+cleng : parameters : MCS : 30
+cleng : parameters : delta_save : 1
+cleng : parameters : delta_step : 1
+
+start

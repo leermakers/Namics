@@ -1,0 +1,48 @@
+// pwgel44_subbox16_A25_chi1.8_dstep1_MCS200000_pK7.0_pH7.0_cs0.05 2021-11-13 12:57:06.712820
+lat : flat : gradients : 3
+lat : flat : n_layers_x : 44
+lat : flat : n_layers_y : 44
+lat : flat : n_layers_z : 44
+lat : flat : geometry : planar
+lat : flat : lattice_type : simple_cubic
+lat : flat : lowerbound_x : periodic
+lat : flat : upperbound_x : periodic
+lat : flat : lowerbound_y : periodic
+lat : flat : upperbound_y : periodic
+lat : flat : lowerbound_z : periodic
+lat : flat : upperbound_z : periodic
+lat : flat : bondlength : 7e-10
+
+mon : W : freedom : free
+mon : A : freedom : free
+mon : X : freedom : clamp
+mon : X : clamp_info : (1, 1, 1)(4, 5, 4);(4, 5, 4)(12, 10, 11);(12, 10, 11)(17, 16, 6);(17, 16, 6)(23, 23, 1);(12, 10, 11)(6, 16, 17);(6, 16, 17)(1, 23, 23);(12, 10, 11)(17, 5, 17);(17, 5, 17)(23, 1, 23);(23, 23, 1)(28, 27, 6);(28, 27, 6)(33, 33, 11);(33, 33, 11)(38, 39, 6);(38, 39, 6)(45, 45, 1);(33, 33, 11)(37, 26, 16);(37, 26, 16)(45, 23, 23);(33, 33, 11)(27, 38, 16);(27, 38, 16)(23, 45, 23);(1, 23, 23)(3, 27, 25);(3, 27, 25)(11, 33, 33);(11, 33, 33)(4, 38, 37);(4, 38, 37)(1, 45, 45);(11, 33, 33)(15, 26, 36);(15, 26, 36)(23, 23, 45);(11, 33, 33)(16, 38, 27);(16, 38, 27)(23, 45, 23);(23, 1, 23)(28, 6, 27);(28, 6, 27)(34, 12, 33);(34, 12, 33)(37, 4, 38);(37, 4, 38)(45, 1, 45);(34, 12, 33)(28, 16, 39);(28, 16, 39)(23, 23, 45);(34, 12, 33)(39, 16, 28);(39, 16, 28)(45, 23, 23);
+mon : X : sub_box_size : 16
+
+mol : pol : freedom : clamped
+mol : pol : composition : (X)1(A)25(X)1
+mol : water : freedom : solvent
+mol : water : composition : (W)1
+
+newton : isaac : method : DIIS
+newton : isaac : m : 4
+newton : isaac : deltamax : 0.1
+newton : isaac : e_info : true
+newton : isaac : iterationlimit : 7000
+newton : isaac : tolerance : 0.001
+
+out_info : folder : path : data
+
+output : vtk : append : false
+vtk : mol : pol : phi
+
+output : kal : append : true
+kal : output : variable : MC_attempt
+kal : output : variable : free_energy
+
+cleng : parameters : MCS : 200
+cleng : parameters : delta_save : 1
+cleng : parameters : delta_step : 1
+cleng : parameters : seed : 1
+
+start

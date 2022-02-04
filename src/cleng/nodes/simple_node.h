@@ -8,9 +8,15 @@ using std::shared_ptr;
 
 class SimpleNode : public Node {
 public:
-    SimpleNode(const Point &p, int id, Point box_size);
+    SimpleNode(const Point &p, int id, const Point& box_size);
 
     void shift(const Point &shift) override;
+
+    void shift(const ClMatrix<Real> &matrix) override;
+
+    Point _returnSystemPoint() const override;
+    
+    bool _checkPoints() const override;
 
     std::string to_string() const override;
 
@@ -22,15 +28,15 @@ public:
 
     shared_ptr<SimpleNode> get_cnode();
 
-    bool inSubBoxRange(const Point &subBoxRange, const Point &shift) const override;
-
-    Real distance_with_shift(const Point &point, const Point &shift) const;
+    bool inSubBoxRange(const Point &subBoxRange) const override;
 
     Real distance(const Point &other) const;
 
     Point get_system_point() const;
 
-    void reduceToPrimitive();
+    int get_ID() const;
+
+    bool isIdInside(const int &ID) const override;
 
 private:
     Point system_point;

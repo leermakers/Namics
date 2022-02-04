@@ -1,0 +1,51 @@
+// nstar31_subbox20_f3_A20_dstep1_rings1_chi0.0_MCS9000000_seed0 2020-08-06 23:17:05.628503
+lat : flat : gradients : 3
+lat : flat : n_layers_x : 31
+lat : flat : n_layers_y : 31
+lat : flat : n_layers_z : 31
+lat : flat : geometry : planar
+lat : flat : lattice_type : simple_cubic
+lat : flat : lowerbound_x : periodic
+lat : flat : upperbound_x : periodic
+lat : flat : lowerbound_y : periodic
+lat : flat : upperbound_y : periodic
+lat : flat : lowerbound_z : periodic
+lat : flat : upperbound_z : periodic
+
+mon : W : freedom : free
+mon : A : freedom : free
+mon : X : freedom : clamp
+mon : X : clamp_info : (15, 15, 15)(19, 13, 16);(15, 15, 15)(14, 15, 19);(15, 15, 15)(15, 19, 14);
+mon : X : sub_box_size : 20
+
+mol : pol : freedom : clamped
+mol : pol : composition : (X)1(A)20(X)1
+mol : water : freedom : solvent
+mol : water : composition : (W)1
+
+newton : isaac : method : DIIS
+newton : isaac : m : 4
+newton : isaac : deltamax : 0.1
+newton : isaac : e_info : true
+newton : isaac : iterationlimit : 7000
+newton : isaac : tolerance : 1e-3
+
+out_info : folder : path : data
+
+output : vtk : append : false
+vtk : mol : pol : phi
+
+output : kal : append : true
+kal : output : varyable : MC_attempt
+kal : output : varyable : free_energy
+kal : sys : varyable : free_energy
+
+output : ana : append : false
+
+cleng : parameters : MCS : 100
+cleng : parameters : delta_save : 1
+cleng : parameters : delta_step : 1
+cleng : parameters : one_node : true
+cleng : parameters : seed : 1
+
+start

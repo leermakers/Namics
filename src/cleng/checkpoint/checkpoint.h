@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <memory>
@@ -17,17 +18,27 @@ class Checkpoint {
 public:
     Checkpoint();
 
-    void updateCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList);
-    void saveCheckpoint(vector<std::shared_ptr<SimpleNode>> simpleNodeList);
-    vector<std::shared_ptr<Node>> loadCheckpoint(vector<std::shared_ptr<Node>> nodes, Point box);
+    void updateCheckpoint(const vector<std::shared_ptr<SimpleNode>> &simpleNodeList,
+                          int MCS_done = 0, int mcs_done = 0, Real accepted = 0.0, Real rejected = 0.0);
 
-    void addProperty(const string &elem, const string &param, const string &value);
-    void addFolderInfo(const string &param, const string &value);
+    void saveCheckpoint(const vector<std::shared_ptr<SimpleNode>> &simpleNodeList,
+                        int MCS_done = 0,
+                        int mcs_done = 0,
+                        Real accepted = 0.0,
+                        Real rejected = 0.0);
 
-    bool isCheckpointExists(const std::string& name) const;
+    vector<shared_ptr<SimpleNode>> loadCheckpoint(vector<shared_ptr<SimpleNode>> simpleNodeList, const Point &box,
+                                                  int& MCS_done,
+                                                  int& mcs_done,
+                                                  Real& accepted,
+                                                  Real& rejected
+                                                  );
 
-    void getLastCheckpoint();
-    void getNewId4Checkpoint();
+    bool isCheckpointExists(const std::string &name) const;
+
+    void updateCheckpointName(bool plusOne = false);
+
+    bool isLoadable();
 
     static const string IN_CLASS_NAME;
     static const string DEFAULT_CHECKPOINT_PATH;
@@ -38,6 +49,5 @@ private:
 
     string checkpoint_name;
     string checkpoint_path;
-    string processCheckpointPath(std::string path);
 };
 

@@ -1,0 +1,82 @@
+lat : flat : n_layers_x : 12
+lat : flat : n_layers_y : 400
+lat : flat : n_layers_z : 400
+lat : flat : lowerbound_x : periodic
+lat : flat : upperbound_x : periodic
+lat : flat : lowerbound_y : periodic
+lat : flat : upperbound_y : periodic
+lat : flat : lowerbound_z : periodic
+lat : flat : upperbound_z : periodic
+lat : flat : lattice_type : simple_cubic
+lat : flat : gradients : 3
+
+mon : B : freedom : free
+
+mon : A : chi_B : 1
+
+mol : A : composition : (A)4
+mol : A : freedom : restricted
+mol : A : theta : 960000
+
+mol : B : composition : (B)8
+mol : B : freedom : solvent
+
+output : kal : append : false
+kal : sys : noname : grand_potential
+kal : sys : noname : free_energy
+kal : mol : A : mu
+kal : mol : A : phibulk
+kal : mol : B : mu
+kal : mol : B : phibulk
+
+// Mesodyn options:
+// timesteps, timebetweensaves, delta_t, read_pro, read_vtk, equilibrate, diffusionconstant, seed
+// mean, stddev, cn_ratio ( 1 = only old )
+
+mesodyn : smth : timesteps : 10000
+mesodyn : smth : timebetweensaves : 1000
+mesodyn : smth : diffusionconstant : 1
+mesodyn : smth : delta_t : 0.1
+mesodyn : smth : seed : 1
+//mesodyn : smth : read_pro : LL_mesodyn_1_0_expanded.pro
+
+kal : output : mesodyn : order_parameter
+
+newton : isaac : method : DIIS
+newton : isaac : e_info : true
+newton : isaac : s_info : false
+newton : isaac : i_info : 50
+newton : isaac : super_e_info : false
+newton : isaac : iterationlimit : 10000
+newton : isaac : m : 20
+newton : isaac : deltamax : 0.1
+newton : isaac : tolerance : 1e-4
+newton : isaac : stop_criterion : max_of_element_of_|g|
+start
+
+//read_pro <string>: De inhoud van dit .pro-bestand als initiele dichtheden gebruiken.
+//read_vtk <string>:  De inhoud van dit .vtk-bestand als initiele dichtheden gebruiken.
+//diffusionconstant <Real>: Diffusiecontante zoals in de fluxvergelijkingen. Standaard 0.01.
+//delta_t <Real>: Tijdstapgrootte, schaalt direct de diffusieconstante. Standaard 0.1.
+//mean <Real>: Gemiddelde van de normaalverdeling waaruit de 'noise' term getrokken wordt: normaliter uiteraard 0.
+//stddev <Real>: Standaardafwijking van bovenstaande normaalverdeling. Standaard en volgens fluctuation dissipation theorem 2 * D * sqrt(dt).
+//seed <Real>: De seed voor het trekken van getallen uit bovenstaande normaalverdeling.
+//timesteps <size_t (= max afmeting van bijv. vector, te zien als soort unsigned int)>: Aantal tijdstappen dat gezet zal worden.
+//timebetweensaves <size_t>: Ieder aantal tijdstappen 'timebetweensaves' een output-profiel genereren.
+//save_delay <size_t>: Pas beginnen met output opslaan nadat dit aantal tijdstappen verstreken is: handig voor bijv. equilibratie.
+//cn_ratio <Real>: Crank-Nicolson parameter. Als ik me niet vergis zou het strikt genomen de ratio zijn tussen forward- en backward Euler. Standaard 0.5.
+//sanity_check <bool>: Activeert een aantal controles op de data die door Mesodyn heen gaat. Bijvoorbeeld of theta hetzelfde blijft en of dichtheden tussen 0 en 1 blijven.
+//profile_type <string>: Bestandsformaat waarin de output geschreven dient te worden: KAL, CSV, VTK_STRUCTURED_GRID, VTK_STRUCTURED_POINTS of PRO.
+//write_grand_potential <bool>: Schrijf de grootse potentiaaldichtheid naar bovenstaand bestandstype.
+//write_free_energy <bool>: Schrijf de vrije energiedichtheid naar bovenstaand bestandstype.
+//write_alpha <bool>: Schrijf de segmentpotentialen naar bovenstaand bestandstype.
+//write_density <bool>: Schrijf de dichtheden naar bovenstaand bestandstype.
+//treat_lower_than_as_zero <Real>: Als een dichtheid lager wordt dan dit getal, zet het op 0. Dit voorkomt floating point problemen met functies als log en exp in C++ wanneer de dichtheidsgradienten enorm groot zijn. Standaard tolerance*0.1.
+//adaptive_tolerance <bool>: Pas tolerantie aan naar beneden wanneer de dichtheden lokaal erg klein worden, of naar boven wanneer ze weer groter worden. Dit voorkomt ook floating point eigenaardigheden van namics. Standaard aan.
+//adaptive_tolerance_modifier <Real>: Bepaalt wanneer het bovenstaande gebeurt. De tolerance wordt ingesteld op de ordegrootte van de kleinste dichtied gedeeld door dit getal.  In het kort krijg je dus een tolerance die afhankelijk is van de ordegrootte van kleinste dichteid. Bijvoorbeeld:
+//Huidige tolerance 10^-4.  Kleinste dichtheid 0.002 heeft ordegroootte: 10^-3. Met adaptive_tolerance_modifier 100 wordt de tolerance dus bij deze dichtheid bijgesteld naar 10^-5. Wanneer de dichtheden minder klein worden, gebeurt het omgekeerde. Standaard 100.
+//
+//De volgende opties bestaan wel, maar doen naar mijn weten nog niets. Dit was een voorbereiding voor steady-state implementaties denk ik:
+//grand_cannonical
+//grand_cannonical_time_average
+//grand_cannonical_molecule

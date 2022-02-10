@@ -9,6 +9,8 @@ bool Cleng::Checks(int id_node_for_move) {
 
     bool not_collapsing = NotCollapsing(id_node_for_move);
 
+    bool not_violated_frozen_states = NotViolatedFrozenStates(id_node_for_move);
+
     bool consistent_monoliths = true;
 
     // check distance between all nodes_map and constrains (walls)
@@ -24,7 +26,7 @@ bool Cleng::Checks(int id_node_for_move) {
         consistent_monoliths = node_id_value.second.data()->get()->_checkPoints();
     }
 
-    bool result = not_collapsing and in_range and in_subbox_range and commensurate and consistent_monoliths;
+    bool result = not_collapsing and in_range and in_subbox_range and commensurate and consistent_monoliths and not_violated_frozen_states;
 //    cout << "[Checks] result: " << result << endl;
     return result;
 }

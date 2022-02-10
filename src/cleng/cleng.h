@@ -36,9 +36,9 @@ static const string EXPERIMENTAL="[EXPERIMENTAL]";
 static const string EXPERIMENTAL="";
 #endif
 static const string CLENG_MAJOR_VERSION = "1";
-static const string CLENG_MINOR_VERSION = "7";
-static const string CLENG_PATCH         = "5";
-static const string CLENG_INTERNAL_VERSION = "212";
+static const string CLENG_MINOR_VERSION = "8";
+static const string CLENG_PATCH         = "0";
+static const string CLENG_INTERNAL_VERSION = "220";
 static const string CLENG_VERSION = CLENG_MAJOR_VERSION + "." + CLENG_MINOR_VERSION + "." + CLENG_PATCH + " (v." + CLENG_INTERNAL_VERSION + ") " + EXPERIMENTAL;
 
 class Cleng {
@@ -199,6 +199,8 @@ public:
     bool InSubBoxRange(int id_node_for_move);
 
     bool IsCommensuratable();
+
+    bool NotViolatedFrozenStates(int id_node_for_move);
 
     bool NotCollapsing(int id_node_for_move);
 

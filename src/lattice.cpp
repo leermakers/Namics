@@ -448,14 +448,14 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				else if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound_Y' boundary condition not recognized. Put 'mirror' or 'periodic' and put 'surface' inside system.")) success = false;
 
 
-				if (BC[0]=="periodic" || BC[1]=="periodic") {
-					if (BC[0]!=BC[1]) {
+				if (BC[0]=="periodic" || BC[3]=="periodic") {
+					if (BC[0]!=BC[3]) {
 						success=false;
 						cout <<"For boundaries in x-direction: 'periodic' BC  should be set to upper and lower bounds " << endl;
 					}
 				}
-				if (BC[2]=="periodic" || BC[3]=="periodic") {
-					if (BC[2]!=BC[3]) {success=false;  cout <<"For boundaries in y-direction: 'periodic' BC should be set to upper and lower bounds " << endl;}
+				if (BC[1]=="periodic" || BC[4]=="periodic") {
+					if (BC[1]!=BC[4]) {success=false;  cout <<"For boundaries in y-direction: 'periodic' BC should be set to upper and lower bounds " << endl;}
 				}
 				break;
 			case 3:
@@ -496,15 +496,15 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				if (GetValue("upperbound_z").size()==0) BC[5]="mirror";
 				else if (!In[0]->Get_string(GetValue("upperbound_z"),BC[5],options,"for 'upperbound_z' boundary condition not recognized. Put 'mirror' or 'periodic' and put surface inside system. ")) success = false;
 
-				if (BC[2]=="periodic" || BC[3]=="periodic") {
-					if (BC[2] != BC[3]) {
-					cout <<"In y-direction the boundary conditions do not match:" + BC[2] << " and " <<  BC[3] << endl;
-					success=false; 
+				if (BC[1]=="periodic" || BC[4]=="periodic") {
+					if (BC[1] != BC[4]) {
+					cout <<"In y-direction the boundary conditions do not match:" + BC[1] << " and " <<  BC[4] << endl;
+					success=false;
 					}
 				}
-				if (BC[4]=="periodic" || BC[5]=="periodic") {
-					if (BC[4] != BC[5]) {
-						cout <<"In z-direction the boundary conditions do not match:" + BC[4] << " and " <<  BC[5] << endl;
+				if (BC[2]=="periodic" || BC[5]=="periodic") {
+					if (BC[2] != BC[5]) {
+						cout <<"In z-direction the boundary conditions do not match:" + BC[2] << " and " <<  BC[5] << endl;
 						success=false;
 					}
 				}

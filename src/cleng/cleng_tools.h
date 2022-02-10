@@ -82,6 +82,8 @@ bool Cleng::InSubBoxRange(int id_node_for_move) {
     if (!nodes_map[id_node_for_move].data()->get()->inSubBoxRange(sub_box)) {
         id_nodes.push_back(id_node_for_move);
         success = false;
+        cout << endl;
+        cout << "[WARNING] Subbox check is failed..." << endl;
     }
     return success;
 }
@@ -120,11 +122,150 @@ bool Cleng::IsCommensuratable() {
     return success;
 }
 
+//  Idea: check if shifted_point (candidate) will occupy position with *0* value of KSAM
+//
+//  (BUG) At very first check KSAM probably zero array. Need to be initialized... TODO
+//  a coordinate x,y,z is put on element j:  KSAM[j]=KSAM[JX*x+JY*y+z] with JX=(MX+2)*(MY+2) and JY=(MY+2)
+//std::cout << "is it 0/1?" << std::endl; // if it's *0* --> frozen state --> bad move
+//std::cout << Sys[0] -> KSAM[JX*shifted_point.x + JY*shifted_point.y + shifted_point.z] << std::endl;
+bool Cleng::NotViolatedFrozenStates(int id_node_for_move) {
+if (debug) cout <<"NotViolatedFrozenStates " << endl;
+    bool not_violated_frozen_states = true;
+
+    //int sum = 0;
+    //Sum(sum, Sys[0]->KSAM, Lat[0]->MX*Lat[0]->MY*Lat[0]->MZ);
+    //std::cout << sum << std::endl;
+    //if (sum == 0) return true; // hack;
+
+    // Apparently these quantities are available
+    int JX = Lat[0]->JX;
+    int JY = Lat[0]->JY;
+
+    //cout << "JX:" << JX << endl;
+    //cout << "JY:" << JY << endl;
+
+    Point shifted_point(nodes_map[id_node_for_move].data()->get()->point());
+    //cout << "id node for move: " << id_node_for_move << " | coord: " << shifted_point.to_string() << endl;
+
+    // additionally check the hypothetical nodes between node and clamped node
+    int i = 0;
+    for (auto &&SN :  simpleNodeList) {
+        i++;
+        if  (i%2 == 0) continue;
+        //cout << i << " node "<< SN->get_system_point().to_string() << endl;
+        //cout << i << " cnode"<< SN->get_cnode()->get_system_point().to_string() << endl;
+
+        //int s_x = SN->get_system_point().x < SN->get_cnode()->get_system_point().x ?SN->get_system_point().x:SN->get_cnode()->get_system_point().x;
+        //int b_x = SN->get_system_point().x > SN->get_cnode()->get_system_point().x ?SN->get_system_point().x:SN->get_cnode()->get_system_point().x;
+        //int s_y = SN->get_system_point().y < SN->get_cnode()->get_system_point().y ?SN->get_system_point().y:SN->get_cnode()->get_system_point().y;
+        //int b_y = SN->get_system_point().y > SN->get_cnode()->get_system_point().y ?SN->get_system_point().y:SN->get_cnode()->get_system_point().y;
+        //int s_z = SN->get_system_point().z < SN->get_cnode()->get_system_point().z ?SN->get_system_point().z:SN->get_cnode()->get_system_point().z;
+        //int b_z = SN->get_system_point().z > SN->get_cnode()->get_system_point().z ?SN->get_system_point().z:SN->get_cnode()->get_system_point().z;
+
+		int s_x = SN->get_system_point().x;
+        int b_x = SN->get_cnode()->get_system_point().x;
+        int s_y = SN->get_system_point().y;
+        int b_y = SN->get_cnode()->get_system_point().y;
+        int s_z = SN->get_system_point().z ;
+        int b_z = SN->get_cnode()->get_system_point().z;
+
+        //cout << "s_x:" << s_x << " b_x:" << b_x << endl;
+        //cout << "s_y:" << s_y << " b_y:" << b_y << endl;
+        //cout << "s_z:" << s_z << " b_z:" << b_z << endl;
+        // it is possible to extend the range of checked hypothetical nodes
+		int MX=Lat[0]->MX;
+		int MY=Lat[0]->MY;
+		int MZ=Lat[0]->MZ;
+		//bool MirrorX=false;
+		//bool MirrorY=false;
+		//bool MirrorZ=false;
+		//if (Lat[0]->BC[0]=="mirror") {MirrorX=true; cout <<"mirrorx"<< endl;}
+		//if (Lat[0]->BC[1]=="mirror") {MirrorY=true; cout <<"mirrory"<< endl;}
+		//if (Lat[0]->BC[2]=="mirror") {MirrorZ=true; cout <<"mirrorz"<< endl;}
+		if (s_x>MX ) s_x-=MX;
+		if (b_x>MX ) b_x-=MX;
+		if (s_y>MY ) s_y-=MY;
+		if (b_y>MY ) b_y-=MY;
+		if (s_z>MZ ) s_z-=MZ;
+		if (b_z>MZ ) b_z-=MZ;
+
+        //cout << " s_x:" << s_x << " b_x:" << b_x << endl;
+        //cout << " s_y:" << s_y << " b_y:" << b_y << endl;
+        //cout << " s_z:" << s_z << " b_z:" << b_z << endl;
+
+        //for (int _x = s_x; _x < b_x+1; _x++) {
+            //for (int _y = s_y; _y < b_y+1; _y++)  {
+                //for (int _z = s_z; _z < b_z+1; _z++)  {
+                    //cout << "{ " << _x << " " << _y << " " << _z << " }" << endl;
+                    //cout << "KSAM[JX*x+JY*y+z] JX:" << JX << "| JY:" << JY << "|:" << Sys[0] -> KSAM[JX*_x + JY*_y + _z]  << endl;
+
+                    int length = In[0]->MonList.size();
+                    for (int i = 0; i < length; i++)
+                    {
+
+                        if (Seg[i]->freedom == "frozen") {
+                            //cout << "Seg -> MASK[JX*x+JY*y+z]: " << Seg[i]->MASK[JX*_x + JY*_y + _z] << endl;
+                            if (Seg[i] -> MASK[JX*s_x + JY*s_y + s_z] == 1 || Seg[i] -> MASK[JX*b_x + JY*b_y + b_z] == 1) {
+                                //cout << "node on  FROZEN site at";
+                                //cout <<" x,y,z = " << s_x << "," << s_y << "," << s_z << endl;
+
+                                not_violated_frozen_states = false;
+                                return not_violated_frozen_states;
+                            }
+                            //if (Seg[i] -> MASK[JX*b_x + JY*b_y + b_z] == 1) {
+                            //    cout << "node on  FROZEN Site at";
+                            //    cout <<" x,y,z = " << b_x << "," << b_y << "," << b_z << endl;
+
+                            //    not_violated_frozen_states = false;
+                            //    return not_violated_frozen_states;
+                            //}
+                        }
+                    }
+
+                    // Apparently KSAM could be *0* for non frozen state... TODO: need to check...
+                    //
+                    //if (Sys[0] -> KSAM[JX*_x + JY*_y + _z] == 0) {
+                    //    // either it can be frozen state or another node -> checking for another node
+                    //    Point p = Point(_x, _y, _z);
+
+                    //    bool is_it_node = false;
+                    //    int _i = 0;
+                    //    for (auto &&_SN: simpleNodeList) {
+                    //        _i++;
+                    //        if (_i%2 == 0) continue;
+
+                    //        Point p1 = _SN->point();
+                    //        Point p2 = _SN->get_cnode()->point();
+                    //        if ((p1 == p) || (p2 == p))
+                    //            is_it_node = true;
+                    //    }
+
+                    //    cout << "is it node: " << is_it_node << endl;
+                    //    //cout << "POINT _x _y _z " << p.to_string() << endl;
+
+                    //    if (!is_it_node) {
+                    //        cout << endl;
+                    //        cout << "Virtual node "<< "{ "<< _x << " " << _y << " " << _z << " }"
+                    //             << " is crossing frozen state!"
+                    //             << endl;
+                    //        not_violated_frozen_states = false;
+                    //        return not_violated_frozen_states;
+                    //    }
+                    //}
+                //}
+            //}
+        //}
+        //bool less = SN->get_system_point() < SN->get_cnode()->get_system_point();
+        //cout << i << " node < cnode: " << less << endl;
+    }
+    return not_violated_frozen_states;
+}
+
 bool Cleng::NotCollapsing(int id_node_for_move) {
     bool not_collapsing = true;
 
     Point shifted_point(nodes_map[id_node_for_move].data()->get()->point());
-    //cout << "Id node for move: " << id_node_for_move << " | coord: " << shifted_point.to_string() << endl;
+    //cout << "id node for move: " << id_node_for_move << " | coord: " << shifted_point.to_string() << endl;
 
     double min_dist = 0.3; // minimal distance between nodes_map. at least 1. --> too dense --> crash state TODO: write test!
 
@@ -153,7 +294,7 @@ bool Cleng::NotCollapsing(int id_node_for_move) {
                     cout << "Test point from nodes_map:    "     << test_point.to_string()    << endl;
                     not_collapsing = false;
                 }
-            } 
+            }
            // else {
            //     cout << "Same point: " << "Id test [check]: " << test_point_id << " | coord: " << test_point.to_string() << endl;
            // }
@@ -194,14 +335,14 @@ vector<Real> Cleng::prepare_vtk(string key, string name, string prop) {
     vtk.clear();
     Real *X = Out[0]->GetPointer(std::move(key), std::move(name), std::move(prop), Size);
     if (X != nullptr) {
-        for (int i = 1; i < box.x + 1; i++) 
-        for (int j = 1; j < box.y + 1; j++) 
-        for (int k = 1; k < box.z + 1; k++) 
+        for (int i = 1; i < box.x + 1; i++)
+        for (int j = 1; j < box.y + 1; j++)
+        for (int k = 1; k < box.z + 1; k++)
         vtk.push_back(X[i * J.x + j * J.y + k]);
     } else {
         vtk.push_back(0.0);
     }
-    
+
     return vtk;
 }
 
@@ -609,7 +750,7 @@ Real Cleng::getFreeEnergyBox() {
 
             //
             dist = nodes_map[id1].data()->get()->point().distance(nodes_map[id2].data()->get()->point());
-            
+
             // find polymer segment [typically it A] // TODO: implement interface for providing polymer mon
             for (size_t seg_idx=0; seg_idx < Seg.size(); seg_idx++)
             {
@@ -618,9 +759,9 @@ Real Cleng::getFreeEnergyBox() {
                 //if (Seg[seg_idx]->name == "X") mon_clamp_id = seg_idx;
             }
             chi = Seg[mon_pol_id]->chi[mon_sol_id];
-            
+
             // len
-            for (size_t mol_idx=0; mol_idx < Mol.size(); mol_idx++) 
+            for (size_t mol_idx=0; mol_idx < Mol.size(); mol_idx++)
             {
                 if (Mol[mol_idx]->name == "pol")   mol_pol_id = mol_idx;
                 //if (Mol[mol_idx]->name == "water") mol_sol_id = mol_idx;
@@ -646,7 +787,7 @@ Real Cleng::calcFreeEnergyBox(const Real& N, const Real& R, const Real& chi) {
     //F_conf = N * ( (pow(R,2) / (2.0*pow(N,2)) ) - log( 1.0 - (pow(R,2)/pow(N,2)) ) ) / kT;
     F_conf = 3.0/2.0 * pow(R,2) / N;
 //    cout << "F_conf:" << F_conf << endl;
-    
+
     Real V = pow(R * pow(N, nu), 3);
     //cout << "V:" << V << endl;
 

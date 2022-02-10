@@ -208,7 +208,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 						coor.clear();
 						In[0]->split(set[1],',',coor);
 						if (coor.size()!=3) {
-							success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format. " << endl;
+							success=false; cout <<" In 'clamp_info' for segment '"+name+"' for box number "<< i <<" the coordinates for the p1 position (px1,py1,pz1) not correct format: found " << set[1] << endl;
 						} else {
 							px1.push_back(In[0]->Get_int(coor[0],-10000));
 							py1.push_back(In[0]->Get_int(coor[1],-10000));

@@ -2083,7 +2083,7 @@ bool Molecule::ComputeWidth() {
 		phi1=phitot[fjc]; phiM=phitot[M-2*fjc]; Dphi=phi1-phiM;
 		if (Dphi*Dphi<1e-20) {cout << "There is no interface present. Width evaluation failed;" << endl; return success; }
 		for (int x=fjc; x<M-fjc-1; x++) {
-			if ((phitot[x]-phitot[x+1])/Dphi > width) {width = (phitot[x]-phitot[x+1])/Dphi; pos_interface=x-0.5; phi_av=(phitot[x]+phitot[x+1])/2;}
+			if ((phitot[x]-phitot[x+1])/Dphi > width) {width = (phitot[x]-phitot[x+1])/Dphi; pos_interface=x+0.5; phi_av=(phitot[x]+phitot[x+1])/2;}
 			}
 	}
 	if (width >0) width = 1.0/width/Lat[0]->fjc;

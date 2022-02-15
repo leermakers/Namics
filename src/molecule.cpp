@@ -1896,7 +1896,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		int MZ=Lat[0]->MZ;
 		int MY=Lat[0]->MY;
 		int MX=Lat[0]->MX;
-		int JX=Lat[0]->JZ;
+		int JX=Lat[0]->JX;
 		int JY=Lat[0]->JY;
 		for (int z=1; z<MZ+1; z++) {
 			Real phiz=0;

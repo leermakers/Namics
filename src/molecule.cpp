@@ -1892,6 +1892,40 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	if (freedom=="free") theta = Lat[0]->WeightedSum(phitot);
 	push("Markov",Markov);
 	push("k_stiff",k_stiff);
+	if (Lat[0]->gradients==3) {
+		int MZ=Lat[0]->MZ;
+		int MY=Lat[0]->MY;
+		int MX=Lat[0]->MX;
+		int JX=Lat[0]->JZ;
+		int JY=Lat[0]->JY;
+		for (int z=1; z<MZ+1; z++) {
+			Real phiz=0;
+			for (int x=1; x<MX+1; x++) for (int y=1;y<MY+1;y++) {
+				phiz +=phitot[x*JX+y*JY+z];
+			}
+			phiz /= MX*MY;
+			if (z==1) push("phiz[1]",phiz);
+			if (z==2) push("phiz[2]",phiz);
+			if (z==3) push("phiz[3]",phiz);
+			if (z==4) push("phiz[4]",phiz);
+			if (z==5) push("phiz[5]",phiz);
+			if (z==6) push("phiz[6]",phiz);
+			if (z==7) push("phiz[7]",phiz);
+			if (z==8) push("phiz[8]",phiz);
+			if (z==9) push("phiz[9]",phiz);
+			if (z==10) push("phiz[10]",phiz);
+			if (z==11) push("phiz[11]",phiz);
+			if (z==12) push("phiz[12]",phiz);
+			if (z==13) push("phiz[13]",phiz);
+			if (z==14) push("phiz[14]",phiz);
+			if (z==15) push("phiz[15]",phiz);
+			if (z==16) push("phiz[16]",phiz);
+			if (z==17) push("phiz[17]",phiz);
+			if (z==18) push("phiz[18]",phiz);
+			if (z==19) push("phiz[19]",phiz);
+			if (z==20) push("phiz[20]",phiz);
+		}
+	}
 	if (Markov==2) {
 		for (int k=0; k<size; k++){
 			if (k==0) push("P[0]",P[0]);

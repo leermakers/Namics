@@ -2251,9 +2251,10 @@ if(debug) cout <<"ComputePhis in system" << endl;
 
 		if (Mol[i]->IsTagged() || Mol[i]->IsPinned())
 		{
-			if (Mol[i]->GN > 0)
+			if (Mol[i]->GN > 0){
+				if (Mol[i]->n ==0) Mol[i]->n =1;
 				norm = Mol[i]->n / Mol[i]->GN;
-			else
+			} else
 			{
 				norm = 0;
 				cout << "GN for molecule " << i << " is not larger than zero..." << endl;
@@ -2836,6 +2837,21 @@ Real System::GetGrandPotential(void)
 	int n_seg = In[0]->MonList.size();
 	int n_states = In[0]->StateList.size();
 
+	int n_mon = In[0]->MonList.size();
+	for (int i = 0; i < n_mon; i++) //if this is not done, in 3 gradients we have wrong results...
+	{
+		if (Seg[i]->ns < 2)
+			Lat[0]->remove_bounds(Seg[i]->phi_side);
+		else
+		{
+			for (int j = 0; j < Seg[i]->ns; j++)
+			{
+				Lat[0]->remove_bounds(Seg[i]->phi_side + j * M);
+			}
+		}
+	}
+
+
 	for (int j = 0; j < n_seg; j++)
 		if (!(Seg[j]->freedom == "tagged" || Seg[j]->freedom == "clamp" || Seg[j]->freedom == "frozen"))
 		{
@@ -2950,7 +2966,8 @@ Real System::GetGrandPotential(void)
 			phi_side=Seg[SysMonList[k]]->phi_side;
 			Times(TEMP,phi,phi_side,M); YisAplusC(TEMP,TEMP,-phibulkA*phibulkB,M); Norm(TEMP,chi,M); Add(GP,TEMP,M);
 		}
-	}*/
+	} */
+
 	Norm(GP,-1.0,M); //correct the sign.
 
 	Zero(TEMP,M);
@@ -3031,7 +3048,6 @@ bool System::CreateMu()
 		}
 		Mu = Mu - NA * constant;
 		if (Mol[solvent]->MolType==water) Mu+= NA*(Mol[solvent]->phib1/(1-Mol[solvent]->Kw*Mol[solvent]->phib1)-Mol[solvent]->phibulk);
-
 		//Real theta;
 		Real phibulkA;
 		Real phibulkB;
@@ -3049,17 +3065,18 @@ bool System::CreateMu()
 			if (Seg[j]->ns < 2)
 			{
 				phibulkA = Seg[j]->phibulk;
-				FA = Mol[i]->fraction(j);
+				if (Seg[j]->freedom == "tagged"|| Seg[j]->freedom=="clamped") FA=0; else FA = Mol[i]->fraction(j);
 				if (Mol[i]->IsTagged())
-					FA = (NA + 1) / (NA); //works only in case of homopolymers?
+					FA *= (NA + 1) / (NA); //works only in case of homopolymers?
 				if (Mol[i]->IsClamped())
-					FA = (NA + 2) / (NA); //works only when homopolymers are clamped....needs probably a fix.
+					FA *= (NA + 2) / (NA); //works only when homopolymers are clamped....needs probably a fix.
 				for (int k = 0; k < n_mon; k++)
 				{
 					if (Seg[k]->ns < 2)
 					{
 						phibulkB = Seg[k]->phibulk;
 						FB = Mol[i]->fraction(k);
+						if (Seg[k]->freedom=="tagged"||Seg[k]->freedom=="clamped") FB=0; else FB=Mol[i]->fraction(k);
 						if (Mol[i]->IsTagged())
 							FB *= (NA + 1) / (NA);
 						if (Mol[i]->IsClamped())

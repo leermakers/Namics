@@ -1935,7 +1935,15 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 			if (k==4) push("P[4]",P[4]);
 		}
 	}
+	//if (theta==0) {
+        //  if (Lat[0]->gradients==3) {
+	//	    Lat[0]->remove_bounds(phitot); 
+	//	    Sum(theta,phitot,Lat[0]->M);
+	//  }
+	//}
+	
 	push("theta",theta);
+        //cout <<"theta " << name << " = " << theta << endl; 
 	Real thetaexc=theta-Lat[0]->volume*phibulk;
 	push("theta_exc",thetaexc);
 	push("thetaexc",thetaexc);

@@ -69,7 +69,7 @@ class Boundary2D : public Boundary1D {
 class Boundary3D : public Boundary2D {
   public:
     Boundary3D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type_) noexcept;
-    ~Boundary3D() { }
+    virtual ~Boundary3D() { }
 
 
   private:

@@ -29,6 +29,7 @@ class INeighborlist_config {
   public:
     INeighborlist_config(Subsystem_loop);
     INeighborlist_config();
+    virtual ~INeighborlist_config() {};
 
     virtual Offset_map get_offset();
 
@@ -76,7 +77,7 @@ class Neighborlist {
   public:
     Neighborlist(const Lattice_object<size_t>& mask_) noexcept;
 
-    ~Neighborlist() { }
+    virtual ~Neighborlist() { }
 
     // explicitly allow certain child classes
     void register_config(const Neighborlist_config& configuration_);

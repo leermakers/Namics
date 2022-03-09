@@ -17,6 +17,7 @@ class IComponent {
   public:
 
     IComponent(Lattice*, Lattice_object<Real>&);
+    virtual ~IComponent() {} // not responsible for deleting Lattice pointer
 
     Lattice* Lat;
     Lattice_object<Real> rho;
@@ -35,7 +36,7 @@ class IComponent {
 class Component : public IComponent {
 public:
   Component(Lattice*, shared_ptr<Boundary1D>, Lattice_object<Real>); //1D
-  ~Component();
+  virtual ~Component();
   
   int update_density(const Lattice_object<Real>&, int) override;     //Explicit scheme
   int update_density(const Lattice_object<Real>&, Real ratio, int=0) override; //Implicit scheme

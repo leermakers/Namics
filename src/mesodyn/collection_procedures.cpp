@@ -95,7 +95,7 @@ void Norm_densities::adjust_theta(size_t segment_index, Real theta_adjustment)
   fetch_theta();
 }
 
-Order_parameter::Order_parameter(vector<shared_ptr<IComponent>> components_, std::map<size_t, size_t> combinations_, Real boundaryless_volume_)
+Order_parameter::Order_parameter(vector<shared_ptr<IComponent>> components_, std::multimap<size_t, size_t> combinations_, Real boundaryless_volume_)
     : m_boundaryless_volume{boundaryless_volume_}, m_components{components_}, m_combinations{combinations_}
 {
 }
@@ -140,5 +140,5 @@ void Treat_as_zero::execute()
 {
   auto tolerance = this->m_tolerance;
    for (auto& component : m_components)
-    stl::for_each(component->rho.begin(), component->rho.end(), [tolerance] DEVICE_LAMBDA (Real& a) mutable { if (a < tolerance) a = tolerance; } );
+    stl::for_each(component->rho.begin(), component->rho.end(), [tolerance] DEVICE_LAMBDA (Real& a) mutable { if (a < tolerance and a != 0.0) a = tolerance; } );
 }

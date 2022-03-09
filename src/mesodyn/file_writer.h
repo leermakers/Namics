@@ -74,6 +74,7 @@ struct Header {
 
 class IOutput_ptr {
     public:
+        virtual ~IOutput_ptr() {}
         virtual string data(const size_t = 0) = 0;
 };
 
@@ -130,7 +131,7 @@ class Output_ptr : public IOutput_ptr
 class Writable_file {
     public:
         Writable_file(const std::string, Writable_filetype, int = 0);
-        ~Writable_file();
+        virtual ~Writable_file();
         Writable_filetype get_filetype();
         string get_filename();
         void increment_identifier();
@@ -147,7 +148,7 @@ class IProfile_writer
 {
     public:
         IProfile_writer(Lattice*, Writable_file);
-        ~IProfile_writer();
+        virtual ~IProfile_writer();
 
         virtual void write() = 0;
 
@@ -190,7 +191,7 @@ class Vtk_structured_grid_writer : public IProfile_writer
 {
     public:
         Vtk_structured_grid_writer(Lattice*, Writable_file);
-        ~Vtk_structured_grid_writer();
+        virtual ~Vtk_structured_grid_writer();
 
         virtual void write() override;
         virtual void prepare_for_data() override;
@@ -200,7 +201,7 @@ class Vtk_structured_points_writer : public IProfile_writer
 {
     public:
         Vtk_structured_points_writer(Lattice*, Writable_file);
-        ~Vtk_structured_points_writer();
+        virtual ~Vtk_structured_points_writer();
 
         virtual void write() override;
         virtual void prepare_for_data() override;
@@ -210,7 +211,7 @@ class Pro_writer : public IProfile_writer
 {
     public:
         Pro_writer(Lattice*, Writable_file);
-        ~Pro_writer();
+        virtual ~Pro_writer();
 
         virtual void write() override;
         virtual void prepare_for_data() override;
@@ -223,12 +224,13 @@ class IParameter_writer
 
     public:
         IParameter_writer(Writable_file);
+        virtual ~IParameter_writer() {}
 
         typedef std::map<string, shared_ptr<IOutput_ptr>> Prop_map;
 
         struct Configuration {
             size_t precision = DEFAULT_PRECISION;
-            ios_base::open_mode write_mode = ios_base::app;
+            std::ios_base::openmode write_mode = ios_base::app;
         } configuration;
 
         virtual void write() = 0;
@@ -252,7 +254,7 @@ class JSON_parameter_writer : public IParameter_writer
 {
     public:
         JSON_parameter_writer(Writable_file);
-        ~JSON_parameter_writer();
+        virtual ~JSON_parameter_writer();
 
 
         void write();
@@ -292,7 +294,7 @@ class Kal_writer : public IParameter_writer
 {
     public:
         Kal_writer(Writable_file);
-        ~Kal_writer();
+        virtual ~Kal_writer();
 
         void write();
         void prepare_for_data(vector<string>&);
@@ -302,7 +304,7 @@ class Csv_parameter_writer : public IParameter_writer
 {
     public:
         Csv_parameter_writer(Writable_file);
-        ~Csv_parameter_writer();
+        virtual ~Csv_parameter_writer();
 
         void write();
         void prepare_for_data(vector<string>&);

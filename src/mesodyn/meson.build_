@@ -1,0 +1,13 @@
+mesodyn_files = files(
+    'boundary_conditions.cpp',
+    'collection_procedures.cpp',
+    'component.cpp',
+    'density_initializer.cpp',
+    'file_reader.cpp',
+    'file_writer.cpp',
+    'flux.cpp',
+    'gaussian_noise.cpp',
+    'lattice_accessor.cpp',
+    'neighborlist.cpp',
+    'peturbation.cpp',
+)

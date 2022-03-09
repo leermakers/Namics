@@ -301,6 +301,9 @@ Vtk_structured_grid_reader::STATUS Vtk_structured_grid_reader::parse_next_data_b
 {
     std::string line;
 
+    size_t index{0};
+    size_t system_size{ (file_lattice.MX-2)*(file_lattice.MY-2)*(file_lattice.MZ-2) };
+
     //This should really be regex'ed to include possible whitespace
     while (line.find("LOOKUP_TABLE default") == string::npos)
     {
@@ -309,13 +312,18 @@ Vtk_structured_grid_reader::STATUS Vtk_structured_grid_reader::parse_next_data_b
 
     while (getline(m_file, line))
     {
-        if (!std::regex_match(line, std::regex(R"(^[\d]+.[\d]+(e-?[\d]+)?$)")))
+        if (index == system_size and !std::regex_match(line, std::regex(R"(^[\d]+.[\d]+(e-?[\d]+)?$)")))
             return STATUS::NEW_BLOCK_FOUND;
-        else
+        else if (index < system_size)
             data.emplace_back(atof(line.c_str()));
+        else
+            throw ERROR_FILE_FORMAT;
+
+        ++index;
     }
 
     return STATUS::END;
+
 }
 
 std::vector<Real> Vtk_structured_grid_reader::with_bounds(std::vector<Real> &input)

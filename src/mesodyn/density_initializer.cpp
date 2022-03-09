@@ -67,11 +67,18 @@ vector<Real> &Molecule_density::monomer_total_mass()
 Homogeneous_system_initializer::Homogeneous_system_initializer(System *system)
     : SOLVENT{(size_t)system->solvent},
       m_molecules{system->Mol},
-      m_system_volume{(size_t)system->boundaryless_volume}
+      m_system_volume{(size_t)system->boundaryless_volume},
+      m_mask{system->KSAM},
+      m_segments{system->Seg},
+      m_frozen(0)
 {
     assert(system->boundaryless_volume > 0);
     assert(system->Mol.size() > 1);
     assert(system->Lat.size() > 0);
+
+/*     for (size_t i = 0 ; i < m_segments.size() ; ++i)
+        if (m_segments[i]->freedom == "frozen")
+            m_frozen.push_back(i); */
 }
 
 void Homogeneous_system_initializer::build_objects()
@@ -101,6 +108,23 @@ void Homogeneous_system_initializer::build_objects()
     for (Molecule_density *all_initializers : initializer)
         for (auto all_densities : all_initializers->homogeneous(m_system_volume))
             m_densities.push_back(all_densities);
+
+  // insert_frozen();
+    
+    for (size_t i = 0 ; i < m_densities.size() ; ++i)
+        /* if (std::find(m_frozen.begin(), m_frozen.end(), i) == m_frozen.end()) */
+            mask_density(m_densities[i]);
+}
+
+void Homogeneous_system_initializer::mask_density(Lattice_object<Real>& density) {
+    Times((Real*)density, (Real*)density, const_cast<int*>(m_mask), density.size());
+}
+
+void Homogeneous_system_initializer::insert_frozen() {
+    for (auto& segment : m_frozen) {
+        m_densities.insert(m_densities.begin() + segment, Lattice_object<Real>(m_densities.back().m_subject_lattice, 1.0));
+        std::transform(m_densities[segment].begin(), m_densities[segment].end(), m_segments[segment]->MASK, m_densities[segment].begin(), stl::multiplies<Real>());
+    }
 }
 
 void Homogeneous_system_initializer::push_data_to_objects(std::vector<Lattice_object<Real>> &target)

@@ -6,18 +6,25 @@
 vector<string> Mesodyn::PARAMETERS;
 vector<string> Mesodyn::VALUES;
 vector<string> Mesodyn::KEYS
-{   "read_pro",
+{
+    "read_pro",
     "read_vtk",
     "diffusionconstant",
     "delta_t",
     "mean",
-    "stddev",
+    "variance",
     "seed",
     "timesteps",
     "timebetweensaves",
+    "perturb_interval",
     "save_delay",
     "cn_ratio",
+    "realizations",
     "sanity_check",
+    "perturb_type",
+    "perturb_range",
+    "sine_wavelength",
+    "perturb_amplitude",
     "profile_type",
     "write_grand_potential",
     "write_free_energy",
@@ -38,16 +45,22 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
 
       //Const-correct way of initializing member variables from file, see template in header file.
       //Initialization syntax: initialize<Datatype>("option", default_value);
-      D                                { initialize<Real>("diffusionconstant", 0.01) },
+      D                                { initialize<Real>("diffusionconstant", 0.1) },
       dt                               { initialize<Real>("delta_t", 0.1) },
       mean                             { initialize<Real>("mean", 0.0) },
-      stddev                           { initialize<Real>("stddev", (2 * D * sqrt(dt) ) )},
+      variance                         { initialize<Real>("variance", 2*D)},
       seed                             { initialize<Real>("seed", -12345.6789) },
       seed_specified                   { seed != -12345.6789 ? true : false },   
       timesteps                        { initialize<size_t>("timesteps", 100) },
       save_delay                       { initialize<size_t>("save_delay", 0) },
       timebetweensaves                 { initialize<size_t>("timebetweensaves", 1) },
+      perturb_interval                 { initialize<size_t>("perturb_interval", 1) },
+      perturb_range                    { initialize<Range>("perturb_range", Range()) },
+      sine_wavelength                   { initialize<Real>("sine_wavelength", 1.0) },
+      perturb_amplitude                { initialize<Real>("perturb_amplitude", 0.01) },
+      perturbation_type                { initialize<string>("perturb_type", "")},
       cn_ratio                         { initialize<Real>("cn_ratio", 0.5) },
+      realizations                     { initialize<size_t>("realizations", 1) },
       treat_lower_than_as_zero         { initialize<Real>("treat_lower_than_as_zero", New.back()->tolerance*0.1)},
       adaptive_tolerance               { initialize<bool>("adaptive_tolerance", 1)},
       adaptive_tolerance_modifier      { initialize<Real>("adaptive_tolerance_modifier", 100)},
@@ -59,11 +72,12 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
 
       //Variables for rho initialization
       initialization_mode              { INIT_HOMOGENEOUS },
-      component_no                     { Sys.front()->SysMolMonList.size() },
+      component_no                     { Sys.back()->SysMolMonList.size() },
       t                                { 0 }
 {
   // to get the correct KSAM and volume.
-  Sys.front()->PrepareForCalculations(false);
+  // true for first_time
+  Sys.front()->PrepareForCalculations(true);
 
   callback_densities.resize(component_no*system_size);
   
@@ -129,9 +143,9 @@ bool Mesodyn::mesodyn() {
       checks.emplace_back(new Check_theta<Real>(&components[i]->rho, std::accumulate(components[i]->rho.begin(), components[i]->rho.end(), 0.0), i));
     }
 
-    Check_index_unity<Real> check_rho(&components[0]->rho);
-    for (size_t i = 1 ; i < component_no ; ++i)
-      check_rho.register_checkable(&components[i]->rho);
+  //  Check_index_unity<Real> check_rho(&components[0]->rho);
+  //  for (size_t i = 1 ; i < component_no ; ++i)
+  //    check_rho.register_checkable(&components[i]->rho);
   }
 
   // Prepare IO
@@ -144,43 +158,67 @@ bool Mesodyn::mesodyn() {
   function<Real*()> solver_callback = bind(&Mesodyn::solve_crank_nicolson, this);
   function<void(Real*,size_t)> loader_callback = bind(&Mesodyn::load_alpha, this, std::placeholders::_1, std::placeholders::_2);
 
+  Norm_densities_relative relative_norm( Mol, components, Sys[0]->solvent );
+
   /**** Main MesoDyn time loop ****/
-  for (t = 0; t < timesteps+1; t++) {
+  for (t = 1; t < timesteps+1; t++) {
+    for (size_t r = 0 ; r < realizations; t % timebetweensaves == 0 ? ++r : r = realizations) {
+      cout << "MESODYN: t = " << t << " / " << timesteps;
 
-    cout << "MESODYN: t = " << t << " / " << timesteps << endl;
+      if (realizations > 1 and r != 0) {
+        for (auto& all_fluxes : fluxes) all_fluxes->J.reinstate_previous_state();
+        for (auto& all_components : components) all_components->rho.reinstate_previous_state();
+      }
 
-    gaussian->generate(system_size);
+      if (t % timebetweensaves == 0 and realizations != 1)
+        cout << " realization: " << r+1 << " / " << realizations;
 
-    for (auto& all_fluxes : fluxes) all_fluxes->J.save_state();
-    for (auto& all_components : components) all_components->rho.save_state();
+      cout << endl;
 
-    New[0]->SolveMesodyn(loader_callback, solver_callback);
+      if (perturb_interval != 0)
+        if (t % perturb_interval == 0)
+          for (auto& perturbation : perturbations)
+            perturbation->next();
 
-    norm_densities->execute();
+      for (auto& all_fluxes : fluxes) all_fluxes->J.save_state();
+      for (auto& all_components : components) all_components->rho.save_state();
 
-    order_parameter->execute();
+      New[0]->SolveMesodyn(loader_callback, solver_callback);
 
-    cout << "Order parameter: " << order_parameter->attach() << endl;
+      // norm_densities->execute();
 
-    if (enable_sanity_check)
-      sanity_check();
+      //Somehow if stencil_full in combination with frozen segments gives wrong densities
+      // Breaks periodic boundaries
+      /* if (Lat.back()->stencil_full)
+          for (auto& all_components : components)
+          Times((Real*)all_components->rho, (Real*)all_components->rho, Sys.back()->KSAM, system_size); */
 
-    write_parameters();
+      order_parameter->execute();
 
-    if (t > save_delay and t % timebetweensaves == 0)
-      write_profile();
+      cout << "Order parameter: " << order_parameter->attach() << endl;
 
-    if (adaptive_tolerance) {
-      adapt_tolerance();
+      if (enable_sanity_check)
+        sanity_check();
+
+      write_parameters();
+
+      if (t > save_delay and t % timebetweensaves == 0)
+        write_profile();
+
+      if (adaptive_tolerance) {
+        adapt_tolerance();
+      }
+
+       Zero(New.back()->xx, system_size);
+    
     }
-
   } // time loop
 
   std::cout << "Done." << std::endl;
   return true;
 }
 
-std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
+std::multimap<size_t, size_t> Mesodyn::generate_pairs(size_t N)
 {
     // Returns every combination in a set of size N, e.g.
     // 0,1 - 0,2 - 0,3 - 1,2 - 1,3 - 2,3
@@ -188,17 +226,20 @@ std::map<size_t, size_t> Mesodyn::generate_pairs(size_t N)
     std::string bitmask(2, 1); // K leading 1's
     bitmask.resize(N, 0); // N-K trailing 0's
 
-    std::map<size_t, size_t> combinations;
+    using combimap = std::multimap<size_t, size_t>;
+    using combipair = combimap::value_type;
 
+    combimap combinations;
+
+    // print integers and permute bitmask
     do {
+        std::deque<size_t> index;
 
-      std::vector<size_t> index;
-
-      for (size_t i = 0; i < N; ++i) // [0..N-1] integers
-        if (bitmask[i]) index.emplace_back(i);
-
-      combinations[ index[0] ] = index[1];
-
+        for (size_t i = 0; i < N; ++i) // [0..N-1] integers
+        {
+            if (bitmask[i]) index.push_back(i);
+        }
+        combinations.insert(combipair(index.front(), index.back()));
     } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
 
     return combinations;
@@ -223,6 +264,7 @@ Real* Mesodyn::solve_crank_nicolson() {
   for (auto& all_components : components) {
     all_components->rho.reinstate_previous_state();
     all_components->update_boundaries();
+  //  Times((Real*)all_components->rho, (Real*)all_components->rho, Sys.back()->KSAM, system_size);
   }
 
   for (auto& all_fluxes : fluxes)
@@ -289,21 +331,36 @@ int Mesodyn::initial_conditions() {
   for (auto& density : densities)
     Mesodyn::components.emplace_back(make_shared<Component>(Lat[0], boundary, density));
 
-  std::map<size_t, size_t> combinations = generate_pairs(components.size());
+  std::multimap<size_t, size_t> combinations = generate_pairs(components.size());
+
+  size_t stencil_size {
+    (Lat.back()->stencil_full ? static_cast<size_t>(26) : static_cast<size_t>(6))
+  };
 
   if (seed_specified == true)
-    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev, seed);
+    Mesodyn::gaussian = make_shared<Gaussian_noise>(mean, variance, stencil_size, seed);
   else
-    Mesodyn::gaussian = make_shared<Gaussian_noise>(boundary, mean, stddev);  
+    Mesodyn::gaussian = make_shared<Gaussian_noise>(mean, variance, stencil_size);
+
+  Range full_system(Coordinate(0,0,0), Coordinate(MX+2,MY+2,MZ+2));
+  perturbations.emplace_back( make_shared<Gaussian_perturbation>(full_system, gaussian) );
+  perturbations.back()->next();
+
+  if (not perturbation_type.empty())
+    perturbations.emplace_back(Perturbation::Factory::Create(perturbation_type, perturb_range, perturb_amplitude, sine_wavelength));
+
+  cout << "Building neighborlists.." << endl;
 
   for (auto& index_of : combinations)
     if (Lat.back()->stencil_full) {
       assert (three_D == dimensionality and "Full stencil is only supported in 3D when using mesodyn.");
-      Mesodyn::fluxes.emplace_back(make_shared<Flux3D_extended_stencil>(Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
+      Mesodyn::fluxes.emplace_back(make_shared<Flux3D_extended_stencil>(Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], perturbations));
     }
-    else
-    Mesodyn::fluxes.emplace_back(
-      Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], gaussian));
+    else {
+   // if (Seg[index_of.first]->freedom != "frozen" and Seg[index_of.second]->freedom != "frozen")
+      Mesodyn::fluxes.emplace_back(
+        Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], perturbations));
+    }
 
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
   Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);
@@ -423,7 +480,7 @@ void Mesodyn::write_parameters() {
      Out[0]->push("diffusionconstant", D);
      Out[0]->push("seed", seed);
      Out[0]->push("mean", mean);
-     Out[0]->push("stddev", stddev);
+     Out[0]->push("variance", variance);
      Out[0]->push("delta_t", dt);
      Out[0]->push("cn_ratio", cn_ratio);
 

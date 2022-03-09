@@ -2,17 +2,16 @@
 
 
 #ifdef PAR_MESOYN
-Gaussian_noise::Gaussian_noise(shared_ptr<Boundary1D> boundary, Real mean, Real stddev)
-: noise(0), prng{std::random_device{}()}, dist(mean, stddev), boundary{boundary}
+Gaussian_noise::Gaussian_noise(Real mean, Real variance_, size_t stencil_size_)
+: noise(0), prng{std::random_device{}()}, dist(mean, sqrt(0.5*variance_)), variance{variance_}
 {
   curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_MT19937);
   curandSetPseudoRandomGeneratorSeed(gen, rand());
 }
 
-Gaussian_noise::Gaussian_noise(shared_ptr<Boundary1D> boundary, Real mean_, Real stddev_, size_t seed)
-: noise(0), prng(seed), dist(mean_, stddev_), boundary{boundary}
+Gaussian_noise::Gaussian_noise(Real mean_, Real variance_, size_t stencil_size_, size_t seed)
+: noise(0), prng(seed), dist(mean, sqrt(0.5*variance_)), variance{variance_}
 {
-  mean = mean_; stddev=stddev_;
   curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_MT19937);
   curandSetPseudoRandomGeneratorSeed(gen, seed);
 }
@@ -22,18 +21,19 @@ Gaussian_noise::~Gaussian_noise() {
 }
 
 int Gaussian_noise::generate(size_t system_size) {
-  curandGenerateNormalDouble(gen, thrust::raw_pointer_cast(noise.data()), system_size, mean, stddev);
-
-  boundary->update_boundaries(noise);
+  curandGenerateNormalDouble(gen, thrust::raw_pointer_cast(noise.data()), system_size, mean, sqrt(0.5*variance);
+  //Real factor = sqrt(variance);
+  //thrust::for_each(thrust::raw_pointer_cast(noise.data()), thrust::raw_pointer_cast(noise.data()+system_size), [this, factor] DEVICE_LAMBDA(Real& noise){noise *= factor;});
 
   return 0;
 }
 #else
-Gaussian_noise::Gaussian_noise(shared_ptr<Boundary1D> boundary, Real mean, Real stddev)
-: noise(0), prng{std::random_device{}()}, dist(mean, stddev), boundary{boundary}{}
+Gaussian_noise::Gaussian_noise(Real mean, Real variance_, size_t stencil_size_)
+: noise(0), prng{std::random_device{}()}, dist(mean, sqrt(0.5*variance_)), variance{variance_}
+{}
 
-Gaussian_noise::Gaussian_noise(shared_ptr<Boundary1D> boundary, Real mean, Real stddev, size_t seed)
-: noise(0), prng(seed), dist(mean, stddev), boundary{boundary}
+Gaussian_noise::Gaussian_noise(Real mean, Real variance_, size_t stencil_size_, size_t seed)
+: noise(0), prng(seed), dist(mean, sqrt(0.5*variance_)), variance{variance_}
 {}
 
 Gaussian_noise::~Gaussian_noise() {}
@@ -44,8 +44,6 @@ int Gaussian_noise::generate(size_t system_size) {
     value = dist(prng);
 
   noise = tmp_noise;
-
-  //boundary->update_boundaries(noise);
 
   return 0;
 }

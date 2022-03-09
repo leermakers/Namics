@@ -147,40 +147,61 @@ void UpQ(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
 void UpPsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
 
 Real ComputeResidual(Real*, int);
-
 struct saxpy_functor
 {
-    const double a;
+  const double a;
 
-    saxpy_functor(double _a) : a(_a) {}
+  saxpy_functor(double _a) : a(_a) {}
 
-    __host__ __device__
-        double operator()(const double& x, const double& y) const { 
-            return a * x + y;
-        }
+  __host__ __device__ double operator()(const double &x, const double &y) const
+  {
+    return a * x + y;
+  }
 };
 
-struct const_multiply_functor
+struct reverse_minus_functor
 {
-    const double a;
+  reverse_minus_functor() {}
 
-    const_multiply_functor(double _a) : a(_a) {}
+  __host__ __device__ double operator()(const double &x, const double &y) const
+  {
+    return y - x;
+  }
+};
 
-    __host__ __device__
-        double operator()(const double& x, const double& y) const { 
-            return a * x * y;
-        }
+struct binary_norm_functor
+{
+  const double a;
+
+  binary_norm_functor(double _a) : a(_a) {}
+
+  __host__ __device__ double operator()(const double &x, const double &y) const
+  {
+    return a * x * y;
+  }
+};
+
+struct norm_functor
+{
+  const double a;
+
+  norm_functor(double _a) : a(_a) {}
+
+  __host__ __device__ double operator()(const double &x) const
+  {
+    return a * x;
+  }
 };
 
 struct order_param_functor
 {
 
-    order_param_functor() {}
+  order_param_functor() {}
 
-    __host__ __device__
-        double operator()(const double& x, const double& y) const { 
-            return pow(x-y,2);
-        }
+  __host__ __device__ double operator()(const double &x, const double &y) const
+  {
+    return pow(x - y, 2);
+  }
 };
 
 struct is_negative_functor
@@ -188,12 +209,11 @@ struct is_negative_functor
 
   const double tolerance{0};
 
-  is_negative_functor(double _tolerance=0) : tolerance(_tolerance) {}
+  is_negative_functor(double _tolerance = 0) : tolerance(_tolerance) {}
 
-  __host__ __device__
-  bool operator()(const double &x) const
+  __host__ __device__ bool operator()(const double &x) const
   {
-    return x < 0-tolerance || x > 1+tolerance;
+    return x < 0 - tolerance || x > 1 + tolerance;
   }
 };
 
@@ -201,14 +221,13 @@ struct is_not_unity_functor
 {
   const double tolerance{0};
 
-  is_not_unity_functor(double _tolerance=0) : tolerance(_tolerance) {}
+  is_not_unity_functor(double _tolerance = 0) : tolerance(_tolerance) {}
 
-  __host__ __device__
-  bool operator()(const double &x) const
+  __host__ __device__ bool operator()(const double &x) const
   {
     bool result{0};
 
-    if (x > (1+tolerance) || x < (1-tolerance))
+    if (x > (1 + tolerance) || x < (1 - tolerance))
       result = 1;
 
     return result;

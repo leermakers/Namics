@@ -64,6 +64,7 @@ class Readable_file {
 // Sometimes the jumps are needed for a particular operation, which is why we provide these as well.
 
 struct Lattice_geometry {
+    virtual ~Lattice_geometry() {}
     size_t dimensions{0};
     size_t MX{0};
     size_t MY{0};
@@ -142,7 +143,7 @@ class Vtk_structured_grid_reader : public IReader {
 class Reader {
     public:
         Reader();
-        ~Reader();
+        virtual ~Reader();
 
         //Callable for multiple files. returns number of objects read.
         size_t read_objects_in(Readable_file file);

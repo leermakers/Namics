@@ -1,11 +1,16 @@
 #ifndef LATTICE_ACCESSOR_H
 #define LATTICE_ACCESSOR_H
 
+#include "stl_typedef.h"
+
 #include <unistd.h> //size_t
 #include <map>
 #include <functional>
+#include <sstream>
+#include <vector>
 
 class Lattice;
+class Lattice_accessor;
 
 enum class Dimension {
         X,
@@ -14,28 +19,83 @@ enum class Dimension {
         ALL
 };
 
+// NOTE: We assume only positive integer coordinates!
+class Coordinate {
+  public:
+    Coordinate(std::string in);
+    Coordinate(size_t x, size_t y, size_t z);
+    Coordinate() {};
+    virtual ~Coordinate() {};
+
+    friend std::istringstream & operator >> (std::istringstream &in,  Coordinate &coordinate);
+    friend std::ostream & operator << (std::ostream& out,  const Coordinate &coordinate_class) ;
+    size_t& operator [] (Dimension d);
+    size_t operator [] (Dimension d) const;
+    size_t at(Dimension d);
+
+  private:
+    void tokens_to_map(std::vector<std::string>& tokens);
+    std::map<Dimension, size_t> m_coordinate;
+};
+
+// NOTE: We assume only positive integer coordinates!
+class Range {
+  public:
+    Range(const std::string& in);
+    Range(const Coordinate& low, const Coordinate& high);
+    Range() {};
+    virtual ~Range();
+
+    void loop(std::function<void(size_t, size_t, size_t)> function) noexcept;
+    const stl::device_vector<size_t>& get_indices(const Lattice_accessor& geometry_);
+    
+    friend std::istringstream & operator >> (std::istringstream &in,  Range &range);
+    friend std::ostream & operator << (std::ostream& out,  const Range &range_class) ;
+
+    size_t size();
+    
+    // Returns the size of the box as if low is the origin
+    Coordinate as_box() const;
+
+  private:
+    stl::device_vector<size_t> m_indices;
+    Coordinate m_low;
+    Coordinate m_high;
+};
+
 enum Dimensionality {
         one_D = 1,
         two_D = 2,
         three_D = 3
 };
 
-/* Do **NOT** inherit this publicly, accidental upcasting will cause a boatload of trouble */
+template <class T>
+class external_const {
+      friend class Lattice_accessor;
+  private:
+      T data;
+      T operator=(const T& arg) { data = arg; return data; }
+  public:
+      operator const T&() const { return data; }
+      external_const(T data_) {
+        data = data_;
+      }
+};
 
+/* Do **NOT** inherit this publicly, accidental upcasting will cause a boatload of trouble */
 class Lattice_accessor {
     static constexpr uint8_t SYSTEM_EDGE_OFFSET = 1;
     static constexpr uint8_t BOUNDARIES = 2;
-    typedef std::map<Dimension, size_t> Coordinate;
 
   public:
     Lattice_accessor(const Lattice* Lat);
 
-    const size_t MX, MY, MZ;
-    const size_t system_size;
+    external_const<size_t> MX, MY, MZ;
+    external_const<size_t> system_size;
     //in lattice: gradients
-    const Dimensionality dimensionality;
+    external_const<Dimensionality> dimensionality;
 
-    const Coordinate coordinate(size_t index);
+    Coordinate coordinate(size_t index);
 
     void skip_bounds(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
@@ -66,12 +126,12 @@ class Lattice_accessor {
     void zm_boundary(std::function<void(size_t, size_t, size_t)> function) noexcept;
 
   private:
-      //in lattice: JX
-    const size_t jump_x;
+    //in lattice: JX
+    size_t jump_x;
     //in lattice: JY
-    const size_t jump_y;
+    size_t jump_y;
     //in lattice: JZ
-    const size_t jump_z;
+    size_t jump_z;
     //in lattice: M
 
 };

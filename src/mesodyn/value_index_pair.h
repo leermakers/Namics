@@ -38,7 +38,7 @@ struct Value_index_pair
 
         iterator(Value_index_pair* ptr = nullptr){mask = ptr;}
         iterator(const iterator& rawIterator) = default;
-        ~iterator(){}
+        virtual ~iterator(){}
 
         iterator& operator=(const iterator& rawIterator) = default;
         iterator& operator=(Value_index_pair* ptr){mask = ptr;return (*this);}

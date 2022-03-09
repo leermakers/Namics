@@ -11,65 +11,89 @@
 
 struct saxpy_functor
 {
-    const double a;
+	const double a;
 
-    saxpy_functor(double _a) : a(_a) {}
+	saxpy_functor(double _a) : a(_a) {}
 
-      double operator()(const double& x, const double& y) const {
-            return a * x + y;
-        }
+	double operator()(const double &x, const double &y) const
+	{
+		return a * x + y;
+	}
 };
 
-struct const_multiply_functor
+struct reverse_minus_functor
 {
-    const double a;
+	reverse_minus_functor() {}
 
-    const_multiply_functor(double _a) : a(_a) {}
-
-      double operator()(const double& x, const double& y) const {
-            return a * x * y;
-        }
+	double operator()(const double &x, const double &y) const
+	{
+		return y - x;
+	}
 };
 
+struct norm_functor
+{
+	const double a;
+
+	norm_functor(double _a) : a(_a) {}
+
+	double operator()(const double &x) const
+	{
+		return a * x;
+	}
+};
+
+struct binary_norm_functor
+{
+	const double a;
+
+	binary_norm_functor(double _a) : a(_a) {}
+
+	double operator()(const double &x, const double &y) const
+	{
+		return a * x * y;
+	}
+};
 
 struct order_param_functor
 {
 
-    order_param_functor() {}
+	order_param_functor() {}
 
-        double operator()(const double& x, const double& y) const {
-            return pow(x-y,2);
-        }
+	double operator()(const double &x, const double &y) const
+	{
+		return pow(x - y, 2);
+	}
 };
 
 struct is_negative_functor
 {
 
-  const double tolerance{0};
+	const double tolerance{0};
 
-  is_negative_functor(double _tolerance=0) : tolerance(_tolerance) {}
+	is_negative_functor(double _tolerance = 0) : tolerance(_tolerance) {}
 
-  bool operator()(const double &x) const
-  {
-    return x < 0-tolerance || x > 1+tolerance;
-  }
+	bool operator()(const double &x) const
+	{
+		return x < 0 - tolerance || x > 1 + tolerance;
+	}
 };
 
 struct is_not_unity_functor
 {
-  const double tolerance{0};
+	const double tolerance{0};
 
-  is_not_unity_functor(double _tolerance = 1e-4 ) : tolerance(_tolerance) {}
+	is_not_unity_functor(double _tolerance = 1e-4) : tolerance(_tolerance) {}
 
-  bool operator()(const double &x) const
-  {
-    bool result{0};
+	bool operator()(const double &x) const
+	{
+		bool result{0};
 
-    if (x > (1+tolerance) || x < (1-tolerance))
-      result = 1;
+		if (x > (1 + tolerance) || x < (1 - tolerance))
+			result = 1;
 
-    return result;
-  }
+		return result;
+	}
 };
 
 typedef double Real;

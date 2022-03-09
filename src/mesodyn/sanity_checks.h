@@ -31,6 +31,7 @@
 class Sanity_check
 {
   public:
+    virtual ~Sanity_check() {}
     virtual void check() = 0;
 };
 
@@ -49,7 +50,7 @@ class Checkable
       m_size{size}
     { }
 
-    virtual ~Checkable() { } // Derived class responsible for freeing data
+    virtual ~Checkable() { } // Sanity checks NOT responsible for deleting the data they check!!
 
     virtual void attach(Sanity_check *obs)
     {
@@ -98,7 +99,7 @@ class Check_theta : public Sanity_check
         checkable->attach(this);
     }
 
-    ~Check_theta() { }
+    virtual ~Check_theta() { }
 
     void check() override
     {
@@ -136,7 +137,7 @@ class Check_between_zero_and_one : public Sanity_check
         checkable->attach(this);
     }
 
-    ~Check_between_zero_and_one() { }
+    virtual ~Check_between_zero_and_one() { }
 
     void check() override
     {
@@ -171,7 +172,7 @@ class Check_index_unity : public Sanity_check
         m_coupled_checkables.push_back(checkable);
     }
 
-    ~Check_index_unity() { }
+    virtual ~Check_index_unity() { }
 
     void register_checkable(Checkable<T>* checkable_) {
       m_coupled_checkables.push_back(checkable_);

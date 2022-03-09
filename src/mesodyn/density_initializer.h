@@ -41,11 +41,16 @@ class Homogeneous_system_initializer {
         const std::vector<Molecule*> m_molecules;
         const size_t m_system_volume;
         std::vector<Lattice_object<Real>> m_densities;
+        const int* m_mask;
+        const std::vector<Segment*> m_segments;
+        std::vector<size_t> m_frozen;
 
     public:
         Homogeneous_system_initializer(System* system);
         void build_objects();
         void push_data_to_objects(std::vector<Lattice_object<Real>>& target);
+        void insert_frozen();
+        void mask_density(Lattice_object<Real>&);
 };
 
 #endif

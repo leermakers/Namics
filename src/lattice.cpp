@@ -253,7 +253,7 @@ bool Lattice::PutSub_box(int mx_, int my_, int mz_,int n_box_) {
 	return success;
 }
 
-bool Lattice::CheckInput(int start) {
+bool Lattice::CheckInput(int start, bool checking) {
 if (debug) cout <<"CheckInput in lattice " << endl;
 	bool success=true;
 	mx.push_back(0); my.push_back(0); mz.push_back(0); jx.push_back(0); jy.push_back(0); m.push_back(0); n_box.push_back(0);
@@ -261,8 +261,26 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 	success = In[0]->CheckParameters("lat",name,start,KEYS,PARAMETERS,VALUES);
 	if (!success) return success;
-
 	vector<string> options;
+	if (checking) {
+		gradients=1;
+		gradients=In[0]->Get_int(GetValue("gradients"),1);
+		if (gradients<0||gradients>3) {cout << "value of gradients out of bounds 1..3; default value '1' is used instead " << endl; gradients=1;}
+		options.clear();
+		options.push_back("spherical");
+		options.push_back("cylindrical");
+		options.push_back("flat");options.push_back("planar");
+
+		if (GetValue("geometry").size()>0) {
+			if (!In[0]->Get_string(GetValue("geometry"),geometry,options,"In lattice input for 'geometry' not recognized."))
+				success=false;
+		} else geometry = "planar";
+		if (geometry=="flat") geometry="planar";
+
+		return success;
+	}
+
+
 
 		FJC=3;	fjc=1;
 		if (success && GetValue("FJC_choices").length()>0) {
@@ -514,6 +532,8 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				cout << "gradients out of bounds " << endl;
 				break;
 		}
+
+
 		if ((fjc>1) && (lattice_type != hexagonal)) {success = false; cout << "For FJC-choices >3, we need lattice_type = 'hexagonal'." << endl; }
 		if (gradients ==2 && fjc>2) {success = false; cout <<" When gradients is 2, FJC-choices are limited to 5 " << endl; }
 		if (gradients ==3 && fjc>1) {success = false; cout <<" When gradients is 3, FJC-choices are limited to 3 " << endl; }

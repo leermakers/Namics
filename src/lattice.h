@@ -103,7 +103,7 @@ virtual ~Lattice();
 	bool PutVarInfo(string,string,Real);
 	bool UpdateVarInfo(int);
 	bool ResetInitValue();
-	bool CheckInput(int);
+	bool CheckInput(int,bool);
 
 	bool PutSub_box(int,int,int,int);
 	bool PutMask(int* H_MASK,vector<int>px,vector<int>py,vector<int>pz,int R);

@@ -3,8 +3,8 @@
 #include "alias.h"
 #include "input.h"
 #include "lattice.h"
-#include "lat_preview.h"
-#include "mol_preview.h"
+//#include "lat_preview.h"
+//#include "mol_preview.h"
 #include "LGrad1.h"
 #include "LGrad2.h"
 #include "LGrad3.h"
@@ -134,8 +134,10 @@ int main(int argc, char *argv[])
 	vector<Input *> In;			// Inputs read from file
 	vector<Output *> Out;		// Outputs written to file
 	vector<Lattice *> Lat;		// Properties of the lattice
-	Lat_preview* lat_p;
-	mol_preview* mol_p;
+	//Lat_preview* lat_p;
+	Lattice * lat_p;
+	//mol_preview* mol_p;
+	Molecule * mol_p;
 	vector<Molecule *> Mol; 		// Properties of entire molecule
 	vector<Segment *> Seg;		// Properties of molecule segments
 	vector<State *> Sta;
@@ -173,9 +175,11 @@ int main(int argc, char *argv[])
 		//Lat.push_back(new Lattice(In, In[0]->LatList[0]));
 
 
-		lat_p = new Lat_preview(In, In[0]->LatList[0]);
+		//lat_p = new Lat_preview(In, In[0]->LatList[0]);
+		lat_p = new LGrad1(In, In[0]->LatList[0]);
+
 		//Lat[0]->outputtest();
-		if (!lat_p->CheckInput(start))
+		if (!lat_p->CheckInput(start,true)) //-1 means that checkinput will stop when gradients and geometry are known.
 		{
 			return 0;
 		} else
@@ -205,7 +209,7 @@ int main(int argc, char *argv[])
 					break;
 
 			}
-			success=Lat[0]->CheckInput(start);
+			success=Lat[0]->CheckInput(start,false);
 			if (!success) return 0;
 		}
 
@@ -259,8 +263,9 @@ int main(int argc, char *argv[])
 		int n_mol = In[0]->MolList.size();
 		for (int i = 0; i < n_mol; i++)
 		{
-			mol_p = new mol_preview(In, Lat, Seg, In[0]->MolList[i]);
-			if (!mol_p->CheckInput(start))
+			//mol_p = new mol_preview(In, Lat, Seg, In[0]->MolList[i]);
+			mol_p = new Molecule(In, Lat, Seg, In[0]->MolList[i]);
+			if (!mol_p->CheckInput(start,true)) //'true' here means that checkinput can stop wehn Moltype and freedom are known.
 			{
 				return 0;
 			} else {
@@ -296,8 +301,8 @@ int main(int argc, char *argv[])
 						break;
 
 				}
-			//	delete mol_p;
-				if (!Mol[i]->CheckInput(start)) return 0;
+				delete mol_p;
+				if (!Mol[i]->CheckInput(start,false)) return 0;
 			}
 		}
 

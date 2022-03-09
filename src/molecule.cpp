@@ -341,7 +341,7 @@ int M=Lat[0]->M;
 	return success;
 }
 
-bool Molecule::CheckInput(int start_) {
+bool Molecule::CheckInput(int start_, bool checking) {
 if (debug) cout <<"Molecule:: CheckInput for mol " << name << endl;
 start=start_;
 phibulk=0;
@@ -375,6 +375,14 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 		}
 		if (GetValue("restricted_range").size()>0) {
 			if (GetValue("freedom")!="range_restricted") cout <<"For mol '" + name + "' freedom is not set to 'range_restricted' and therefore  the value of 'restricted_range' is ignored" << endl;
+		}
+
+		if (checking) {
+			if (GetValue("freedom").size() > 0) freedom = GetValue("freedom"); else {
+				cout <<"For molecule " << name << " no value for 'freedom' was found " << endl;
+				success=false;
+			}
+			return success; //because moltype and freedom are known; as start <0 the checkinput can be terminated.
 		}
 		if (IsPinned()) {
 			if (GetValue("freedom").size()==0) {
@@ -1937,13 +1945,13 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	}
 	//if (theta==0) {
         //  if (Lat[0]->gradients==3) {
-	//	    Lat[0]->remove_bounds(phitot); 
+	//	    Lat[0]->remove_bounds(phitot);
 	//	    Sum(theta,phitot,Lat[0]->M);
 	//  }
 	//}
-	
+
 	push("theta",theta);
-        //cout <<"theta " << name << " = " << theta << endl; 
+        //cout <<"theta " << name << " = " << theta << endl;
 	Real thetaexc=theta-Lat[0]->volume*phibulk;
 	push("theta_exc",thetaexc);
 	push("thetaexc",thetaexc);

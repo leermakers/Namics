@@ -151,7 +151,7 @@ virtual ~Molecule();
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
-	bool CheckInput(int);
+	bool CheckInput(int,bool);
 	void PutParameter(string);
 	bool ExpandAlias(vector<string>,string&);
 	bool ExpandBrackets(string&);

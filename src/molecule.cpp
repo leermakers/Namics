@@ -16,8 +16,12 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("Kw");
 	KEYS.push_back("Markov");
 	KEYS.push_back("k_stiff");
+	KEYS.push_back("phi_LB_x");
+	KEYS.push_back("phi_UB_x");
 
 	width=0;
+	phi_LB_X=0;
+	phi_UB_X=0;
 	phi1=0;
 	phiM=0;
 	Dphi=0;
@@ -451,6 +455,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 					free_list.push_back("solvent");
 					free_list.push_back("neutralizer");
 					free_list.push_back("range_restricted");
+					free_list.push_back("gradient");
 				}
 				free_list.push_back("restricted");
 				if (!In[0]->Get_string(GetValue("freedom"),freedom,free_list,"In mol " + name + " the value for 'freedom' is not recognised ")) success=false;
@@ -482,20 +487,31 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 					if (IsClamped()) {success=false; cout <<"Mol '" + name + "' is 'clamped' and therefore this molecule can not be the neutralizer" << endl;}
 				}
 				if (freedom == "free") {
-					//if (GetValue("theta").size()>0 || GetValue("n").size() > 0) {
-					//	cout << "In mol " + name + ", the setting of 'freedom = free', can not not be combined with 'theta' or 'n': use 'phibulk' instead." << endl; success=false;
-					//} else {
-						if (GetValue("phibulk").size() ==0) {
-							cout <<"In mol " + name + ", the setting 'freedom = free' should be combined with a value for 'phibulk'. "<<endl; success=false;
+					if (GetValue("phibulk").size() ==0) {
+						cout <<"In mol " + name + ", the setting 'freedom = free' should be combined with a value for 'phibulk'. "<<endl; return false;
+					} else {
+						phibulk=In[0]->Get_Real(GetValue("phibulk"),-1);
+						if (phibulk < 0 || phibulk >1) {
+							cout << "In mol " + name + ", the value of 'phibulk' is out of range 0 .. 1." << endl; return false;
+						}
+					}
+				}
+				if (freedom == "gradient") { //for the time being only in one-gradient systems; this is tested in system.
+					if (GetValue("phibulk").size() >0) {
+						cout <<"In mol " + name + ", the setting 'freedom : gradient' should not be combined with a value for 'phibulk' but with values for 'phi_LB_x' and 'phi_UP_x' "<<endl; return false;
+					} else {
+						if (GetValue("phi_LB_x").size()==0 || GetValue("phi_UB_x").size()==0) {
+							cout <<"in mol " + name + "the setting 'freedom : gradient' should be combined with values of 'phi_LB_x' and 'phi_UB_x'=phibulk " << endl; return false;
 						} else {
-
-					phibulk=In[0]->Get_Real(GetValue("phibulk"),-1);
-							if (phibulk < 0 || phibulk >1) {
-								cout << "In mol " + name + ", the value of 'phibulk' is out of range 0 .. 1." << endl; success=false;
+							phi_UB_X=In[0]->Get_Real(GetValue("phi_UB_x"),-1); phibulk=phi_UB_X;
+							phi_LB_X=In[0]->Get_Real(GetValue("phi_LB_x"),-1);
+							if (phi_UB_X < 0 || phi_UB_X >1 || phi_LB_X <0 || phi_UB_X > 1 ) {
+								cout << "In mol " + name + ", the value of 'phi_UB_x' or 'phi_LB_x' is out of range 0 .. 1." << endl; return false;
 							}
 						}
-					//}
+					}
 				}
+
 				if (freedom == "restricted" || freedom=="range_restricted") {
 					//if (GetValue("phibulk").size()>0) {
 					//	cout << "In mol " + name + ", the setting of 'freedom = restricted' or 'freedom = range_restricted', can not not be combined with 'phibulk'  use 'theta' or 'n'  instead." << endl; success=false;
@@ -1732,6 +1748,7 @@ if (debug) cout <<"GetChainlength for Mol " + name << endl;
 
 bool Molecule:: MakeMonList(void) {
 if (debug) cout <<"Molecule:: MakeMonList" << endl;
+	MolMonList.clear();
 	bool success=true;
 	int length = mon_nr.size();
 	int i=0;
@@ -2012,6 +2029,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 
 	push("GN",GN);
 	push("norm",norm);
+	push("phi_LB_x",phi_LB_X);
+	push("phi_UB_x",phi_UB_X);
 
 	string s="profile;0"; push("phi",s);
 	int length = MolMonList.size();

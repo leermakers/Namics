@@ -34,7 +34,7 @@ if (debug) cout <<" Side in LG1Planar " << endl;
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;
 	}
-	Zero(X_side,M);set_bounds(X);
+	Zero(X_side,M); //set_bounds(X);
 	int kk;
 
 	if (fcc_sites) {

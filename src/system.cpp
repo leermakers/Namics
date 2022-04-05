@@ -20,7 +20,6 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("delta_inputfile");
 	KEYS.push_back("delta_molecules");
 	KEYS.push_back("phi_ratio");
-	KEYS.push_back("generate_guess");
 	KEYS.push_back("initial_guess");
 	KEYS.push_back("guess_inputfile");
 	KEYS.push_back("final_guess");
@@ -44,6 +43,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	old_residual = 10;
 	do_blocks=false;
 	first_pass=true;
+	neutralizer=-1;
 }
 System::~System()
 {
@@ -70,6 +70,7 @@ void System:: DeAllocateMemory(void){
 	}
 #ifdef CUDA
   cudaFree(phitot);
+  if (CalculationType=="steady_state") cudaFree(B_phitot);
   cudaFree(alpha);
   cudaFree(GrandPotentialDensity);
   cudaFree(FreeEnergyDensity);
@@ -90,6 +91,7 @@ void System:: DeAllocateMemory(void){
   }
 #else
   free(phitot);
+  if (CalculationType=="steady_state") free(B_phitot); 
   free(TEMP);
   free(KSAM);
   free(FILL);
@@ -135,6 +137,7 @@ void System::AllocateMemory()
 
 #ifdef CUDA
 	phitot = (Real *)AllOnDev(M);
+	if (CalculationType=="steady_state") B_phitot = (Real *)AllOnDev(M);
 	alpha = (Real *)AllOnDev(M);
 	GrandPotentialDensity = (Real *)AllOnDev(M);
 	FreeEnergyDensity = (Real *)AllOnDev(M);
@@ -156,6 +159,7 @@ void System::AllocateMemory()
   }
 #else
   phitot = (Real*)malloc(M * sizeof(Real));
+  if (CalculationType=="steady_state") B_phitot = (Real*)malloc(M * sizeof(Real));
   alpha = H_alpha;
   if (charged) {
     psi = H_psi;
@@ -875,105 +879,60 @@ bool System::CheckInput(int start_)
 
 
 		vector<string> options;
-
-		options.push_back("micro_phasesegregation");
+		options.push_back("equilibrium");
+		options.push_back("steady_state");
 		CalculationType = "";
 		if (GetValue("calculation_type").size() > 0)
 		{
-			if (!In[0]->Get_string(GetValue("calculation_type"), CalculationType, options, " Info about calculation_type rejected"))
-			{
-				success = false;
-			};
-			if (CalculationType == "micro_emulsion")
-			{
-				if (In[0]->MolList.size() < 3)
-				{
-					cout << "In 'calculation_type : micro-emulsion', we expect at least three types of molecules " << endl;
-					success = false;
-				}
-				int length = In[0]->MolList.size();
-				int i = 0;
-				int number_of_solvents = 0;
-				int number_of_surfactants = 0;
-				while (i < length)
-				{
-					if (Mol[i]->IsTagged())
-					{
-						number_of_surfactants++;
-					}
-					else
-					{
-						number_of_solvents++;
-					}
-					i++;
-				}
-				if (number_of_solvents < 2 || number_of_surfactants < 1)
-				{
-					cout << "In 'calculation_type : micro-emulsion', we expect at least two solvents and one surfactant which is tagged. " << endl;
-					success = false;
-				}
+			if (!In[0]->Get_string(GetValue("calculation_type"), CalculationType, options, " Info about calculation_type rejected; options are: 'equilibrium' and 'steady_state'."))
+			return false;
+		}
+
+		int num_of_gradient_settings=0;
+		int num_of_mol = In[0]->MolList.size();
+		for (int i=0; i<num_of_mol; i++)
+			if (Mol[i]->freedom =="gradient") num_of_gradient_settings++;
+
+		if (num_of_gradient_settings>0) {
+			if (CalculationType=="equilibrium") {cout <<" 'calculation_type : equilibrium' can not be combined with molecules have freedom 'gradient' ; use 'steady_state' instead." << endl; return false;}
+		} else {
+			if (CalculationType=="steady_state") {cout <<" 'calculation_type : steady_state' must be combined with one or more molecules have freedom 'gradient' " << endl; return false;}
+		}
+		if (num_of_gradient_settings>0) CalculationType=="steady_state"; else CalculationType=="equilibrium";
+
+
+		if (CalculationType=="steady_state") {
+				//Steady state is in development. For the time being this option is quite limited. In time some of these constraints will be lifted.
+			if (Lat[0]->gradients>1) {
+				cout <<"For 'calculation_type : steady_state' is currently limited to 1 gradient calculations " << endl;
+				return false;
 			}
-			if (CalculationType == "micro_phasesegregation")
-			{
-				int length = In[0]->MolList.size();
-				bool found = false;
-				int i = 0;
-				while (i < length && !found)
-				{
-					if (Mol[i]->MolMonList.size() > 1)
-						found = true;
-				}
-				if (!found)
-				{
-					cout << "In 'calculation_type : micro_phasesegregation', we expect at least copolymer in the system " << endl;
-					success = false;
+			if (Lat[0]->fjc != 1) {
+				cout <<"For 'calculation_type : steady_state' the value for FJC_choices is limited to 3 " << endl;
+				return false;
+			}
+			if (Lat[0]->BC[0] != "mirror") {
+				cout <<"For 'calculation_type : steady_state' the setting for both 'lowerbound' and 'upperbound' must be 'mirror'. " << endl;
+				return false;
+			}
+			for (int i=0; i<num_of_mol; i++) {
+				int length=Mol[i]->MolMonList.size();
+				for (int j=0; j<length; j++) {
+					if (Seg[Mol[i]->MolMonList[j]]->used_in_mol_nr==-2) {
+						Seg[Mol[i]->MolMonList[j]]->used_in_mol_nr=i;
+						if (Mol[i]->phi_LB_X > 0) {
+							Seg[Mol[i]->MolMonList[j]]->phi_LB_X=Mol[i]->phi_LB_X*Mol[i]->fraction(Mol[i]->MolMonList[j]);
+							Seg[Mol[i]->MolMonList[j]]->phi_UB_X=Mol[i]->phi_UB_X*Mol[i]->fraction(Mol[i]->MolMonList[j]);
+						}
+					} else {
+						cout <<"Multiple usage of seg " + Seg[Mol[i]->MolMonList[j]]->name + " in steady state system forbidden: each monomer may be used in only one molecule; it can not be used in multiple molecules. " << endl;
+						return false;
+					}
 				}
 			}
 		}
-		options.clear();
-		options.push_back("lamellae");
-		options.push_back("Im3m");
-		GuessType = "";
-		MonA = 0;
-		MonB = 0;
-		if (GetValue("generate_guess").size() > 0)
-		{
-			if (!In[0]->Get_string(GetValue("generate_guess"), GuessType, options, " Info about 'generate_guess' rejected"))
-			{
-				success = false;
-			};
-			if (GuessType == "lamellae" || GuessType == "Im3m")
-			{
-				int length = In[0]->MonList.size();
-				int n_guess = 0;
-				for (int i = 0; i < length; i++)
-				{
-					string s = "guess-" + In[0]->MonList[i];
-					if (GetValue(s).size() > 0)
-					{
-						Seg[i]->guess_u = In[0]->Get_Real(GetValue(s), 0);
-						if (Seg[i]->guess_u < -2 || Seg[i]->guess_u > 2)
-						{
-							cout << "Suggested 'guess value' for 'u' for mon '" + In[0]->MonList[i] + "' out of range: current range is -2, .., 2. Value ignored. " << endl;
-							Seg[i]->guess_u = 0;
-						}
-						else
-						{
-							n_guess++;
-							if (i == 0 && n_guess == 1)
-								MonA = i;
-							if (i == 1 && n_guess == 2)
-								MonB = i;
-						}
-					}
-				}
-				if (n_guess < 2)
-				{
-					cout << "generate_guess needs two valid non-zero (real) values for 'guess_xxx' quantities. Here xxx is a monomomer name; 'generate_guess : " + GuessType + "' is most likely ineffective.  " << endl;
-					cout << "The idea is that the first 'mon' quantity will be the 'oil' and the second 'mon' quantity the 'water' component. Each filling one half-space. Adjust input accordingly. " << endl;
-				}
-			}
-		}
+
+
 		initial_guess = "previous_result";
 		if (GetValue("initial_guess").size() > 0)
 		{
@@ -2071,13 +2030,9 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 	int i,k;
 
-
 	int itmonlistlength=ItMonList.size();
 	int state_length = In[0]->StateList.size();
 	int itstatelistlength=ItStateList.size();
-
-
-
 
 	Cp(g,x,iv);
 //cout <<endl;
@@ -2216,7 +2171,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 	for (int i = 0; i < n_mol; i++)
 	{
 		Real norm = 0;
-		if (Mol[i]->freedom == "free")
+		if (Mol[i]->freedom == "free" || Mol[i]->freedom == "gradient")
 		{
 			norm = Mol[i]->phibulk / Mol[i]->chainlength;
 			Mol[i]->n = norm * Mol[i]->GN;
@@ -2476,8 +2431,54 @@ for (int j=0; j<n_mol; j++) {
 		}
 	}
 
-	for (int i = 0; i < n_seg; i++)
+
+	for (int i = 0; i < n_seg; i++) {
+		Lat[0]->set_bounds(Seg[i]->phi);
+	}
+
+	if (CalculationType=="steady_state") {
+		Real PhiTot0=0;
+		Real Qtot0=0;
+		for (int i = 0; i < n_seg; i++) {
+			Seg[i]->PutContraintBC();
+
+					//make sure that both bounds have sumphi=1 and are neutral.
+			if (!(Seg[i]->used_in_mol_nr==solvent || Seg[i]->used_in_mol_nr==neutralizer)) {
+				PhiTot0+=Seg[i]->phi[0];
+				Qtot0+=Seg[i]->phi[0]*Seg[i]->valence;
+			}
+		}
+
+		if (Qtot0!=0 && neutralizer==-1) cout <<"Error: neutralizer needed, but was not found. Outcome uncertain" << endl;
+		if (Qtot0!=0) {Mol[neutralizer]->phitot[0]=-Qtot0/Mol[neutralizer]->Charge(); PhiTot0 +=Mol[neutralizer]->phitot[0];}
+		
+		Mol[solvent]->phitot[0]=1.0-PhiTot0;
+		for (int i=0; i<n_seg; i++) {
+			if (Seg[i]->used_in_mol_nr==solvent) {
+				Seg[i]->phi[0]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[0];
+			}
+			if (Seg[i]->used_in_mol_nr==neutralizer) {
+				Seg[i]->phi[0]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[0];
+			}
+		}
+
+
+		PhiTot0=0;
+		Qtot0=0;
+		for (int i = 0; i < n_seg; i++) {
+			PhiTot0+=Seg[i]->phi[0];
+			Qtot0+=Seg[i]->phi[0]*Seg[i]->valence;
+		}
+		//if (PhiTot0!=1.0) cout <<"phi in layer 0 not equal to unity: value is " << PhiTot0 << endl;
+		//if (Qtot0!=0) cout <<"charge in layer 0 not equal to zero: value is " << Qtot0 << endl;
+		int it_mon_length=ItMonList.size();
+		Zero(B_phitot,M);
+		for (int i=0; i<it_mon_length; i++)  YplusisCtimesX(B_phitot,Seg[ItMonList[i]]->phi,Seg[ItMonList[i]]->B,M); 
+	}
+
+	for (int i = 0; i < n_seg; i++) {
 		Seg[i]->SetPhiSide();
+	}
 
 
 	if (prepare_for_blocks) {

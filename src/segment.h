@@ -88,6 +88,9 @@ public:
 	int start;
 	int var_pos;
 	int frozen_at_bound;
+	int used_in_mol_nr;
+	Real phi_LB_X;
+	Real phi_UB_X;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -110,6 +113,8 @@ public:
 	bool SetExternalPotentials();
 	Real Get_g(int ) ;
 	void Put_beta(int, Real );
+	void PutContraintBC ();
+
 
 	string GetOriginal();
 
@@ -133,6 +138,7 @@ public:
 
 	Real* alpha;
 	int ItState;
+	Real B;
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;

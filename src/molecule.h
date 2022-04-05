@@ -101,7 +101,7 @@ virtual ~Molecule();
 	Real *UNITY;
 	Real *P;
 	int size;
-    	int Markov;
+    int Markov;
 	int tag_segment;
 	int Var_steps;
 	Real Var_step;
@@ -117,6 +117,8 @@ virtual ~Molecule();
 	Real Var_target_value;
 	int n_generations;
 	bool ring;
+	Real phi_LB_X;
+	Real phi_UB_X;
 
 	vector<string> ints;
 	vector<string> Reals;

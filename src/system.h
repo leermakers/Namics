@@ -45,6 +45,7 @@ public:
 	Real KJ0;
 	Real Kbar;
 	Real* phitot;
+	Real* B_phitot;
 	int* KSAM;
 	int* FILL;
 	Real* eps;

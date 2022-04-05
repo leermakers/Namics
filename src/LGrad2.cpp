@@ -195,7 +195,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;
 	}
-	Zero(X_side,M);set_bounds(X);
+	Zero(X_side,M);//set_bounds(X);
 
 	if (fcc_sites) {
 		YplusisCtimesX(X_side,X,1.0/3.0,M);

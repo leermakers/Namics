@@ -236,7 +236,7 @@ if (debug) cout <<" Side in LGrad1 " << endl;
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;
 	}
-	Zero(X_side,M);set_bounds(X);
+	Zero(X_side,M);//set_bounds(X);
 	int j, kk;
 
 	if (fcc_sites) {

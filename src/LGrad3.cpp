@@ -88,7 +88,7 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;
 	}
-	Zero(X_side,M);set_bounds(X);
+	Zero(X_side,M);//set_bounds(X);
 
 	if (stencil_full) {
 		Add(X_side+JX,X   ,M-JX);

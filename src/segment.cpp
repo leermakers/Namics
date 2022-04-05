@@ -8,6 +8,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("freedom");
 	KEYS.push_back("valence");
 	KEYS.push_back("epsilon");
+	KEYS.push_back("B");
 	KEYS.push_back("e.psi0/kT");
 	KEYS.push_back("pinned_range");
 	KEYS.push_back("frozen_range");
@@ -35,6 +36,9 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	constraints=false;
 	phibulk=0;
 	freedom="free";
+	used_in_mol_nr=-2;
+	phi_LB_X=phi_UB_X=0;
+	B=1;
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -930,6 +934,12 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	return success;
 }
 
+void Segment::PutContraintBC() {
+if (debug) cout <<"PutConstraintBC Segment " + name << endl;
+	int MX=Lat[0]->MX;
+	if (phi_LB_X>0) phi[0]=phi_LB_X; 
+	if (phi_UB_X>0) phi[MX+1]=phibulk; //we will assume phibulk values in upperboundary. This bound should be sumphi=1 and electroneutral.
+}
 
 bool Segment::CheckInput(int start_) {
 if (debug) cout <<"CheckInput in Segment " + name << endl;
@@ -1019,6 +1029,13 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 				success=false;
 				cout <<"Value for dimensionless surface potentials 'e.psi0/kT' is out of range -25 .. 25. Recall the value of 1 at room temperature is equivalent to approximately 25 mV " << endl;
 			}
+		}
+	}
+
+	if (GetValue("B").size()>0) {
+		B=In[0]->Get_Real(GetValue("B"),B);
+		if (B <1e-9) {
+			cout <<"For Seg " + name + " mobility B should have be positive value " << endl;
 		}
 	}
 
@@ -1254,7 +1271,8 @@ void Segment::SetPhiSide(){
 if (debug) cout <<"SetPhiSide in Segment " + name << endl;
 	int M=Lat[0]->M;
 	if (ns==1) {
-		if (freedom !="frozen") Lat[0]->set_bounds(phi);
+		//if (freedom !="frozen") Lat[0]->set_bounds(phi);
+
 		Lat[0]->Side(phi_side,phi,M);
 	} else {
 		for (int i=0; i<ns; i++) {
@@ -1673,6 +1691,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	Reals_value.clear();
 	push("freedom",freedom);
 	push("valence",valence);
+	push("B",B);
 	Real theta=0;
 	theta = Lat[0]->WeightedSum(phi);
 	push("theta",theta);
@@ -1727,6 +1746,8 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 		if (Fl >0) Fl = sqrt(Fl); else Fl=0;
 		push("fluctuations",Fl);
 	}
+	push("phi_LB_x",phi_LB_X);
+	push("phi_UB_x",phi_UB_X);
 	if (ns>1) {
 		state_theta.clear();
 		for (int i=0; i<ns; i++){

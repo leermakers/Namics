@@ -1,0 +1,35 @@
+lat : flat : n_layers : 10
+lat : flat : gradients : 1
+lat : flat : geometry : planar
+lat : flat : lattice_type : simple_cubic
+//lat : flat : lowerbound : mirror
+//lat : flat : upperbound : mirror
+
+mon : A : freedom : free
+mon : B : freedom : free
+
+mon : A : chi_B : 0.0000001
+
+mol : pol : composition : (A)1
+mol : pol : freedom : gradient
+mol : pol : phi_LB_x : 0.15
+mol : pol : phi_UB_x : 0.21
+
+mol : solvent : freedom : solvent
+mol : solvent : composition : (B)1
+
+sys : frans : calculation_type : steady_state
+
+output : kal : append : false
+kal : mol : pol : phi_UB_x
+kal : mol : pol : phi_LB_x
+kal : mon : * : phi_UB_x
+kal : mon : * : phi_LB_x
+kal : mon : * : B 
+kal : mol : * : phibulk
+kal : mon : * : phibulk
+output : pro : append : false
+output : pro : write_bounds : true
+pro : mol : pol : phi
+pro : mol : solvent : phi
+pro : mon : * : phi

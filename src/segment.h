@@ -126,6 +126,7 @@ public:
 
 	Real* H_phi_state;
 	Real* H_alpha;
+	Real* H_ALPHA;
 
 	int* P;
 	int* MASK;
@@ -136,7 +137,8 @@ public:
 	Real* u;
 	Real* u_ext;
 
-	Real* alpha;
+	Real* alpha;//fraction of segment in specfied state
+	Real* ALPHA; //Lagrange parameter per segement for steady state
 	int ItState;
 	Real B;
 

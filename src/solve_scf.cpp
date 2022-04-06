@@ -897,7 +897,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 		}
 		default:
 			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
-			Sys[0]->Classical_residual(x,g,residual,iterations, iv);
+			if (Sys[0]->CalculationType=="steady_state") 
+				Sys[0]->Steady_residual(x,g,residual,iterations, iv);
+			else Sys[0]->Classical_residual(x,g,residual,iterations, iv);
 		break;
 	}
 }

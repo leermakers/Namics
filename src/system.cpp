@@ -2124,6 +2124,147 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 }
 
 
+void System::Steady_residual(Real* x,Real*g,Real residual, int iterations, int iv){
+if (debug) cout <<"steady_residuals in scf mode in system " << endl;
+	int M=Lat[0]->M;
+	Real chi;
+	int mon_length = In[0]->MonList.size(); //also frozen segments
+	int i,k;
+
+	int itmonlistlength=ItMonList.size();
+	int state_length = In[0]->StateList.size();
+	int itstatelistlength=ItStateList.size();
+
+	if (itstatelistlength>0) cout <<"currently, internal states of segments incompatible with steady state " << endl; 
+
+	Cp(g,x,iv);
+	ComputePhis(x,iterations==0,residual);
+/*
+		Real PhiTot0=0;
+		Real PhiTotM=0;
+		int n_seg=itmonlistlength; 
+		for (int i = 0; i < n_seg; i++) {
+			PhiTot0+=Seg[i]->phi[0];
+			PhiTotM+=Seg[i]->phi[M-1];
+		}
+		cout <<"itmonlistlength " << itmonlistlength << endl; 
+		cout <<" phi in layer 0 is " << PhiTot0 << endl;
+		cout <<" phi in layer M is " << PhiTotM << endl;
+*/
+	for (i=0; i<itmonlistlength; i++) {
+		Add(g+i*M,Seg[i]->u_ext,M);
+		for (k=0; k<mon_length; k++) {
+			if (Seg[k]->ns<2) {
+				chi =Seg[ItMonList[i]]->chi[k];
+				if (chi!=0) {
+//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[k]->name << "chi = " << chi << endl;
+					PutAlpha(g+i*M,phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+				}
+			}
+		}
+		for (k=0; k<state_length; k++) {
+			chi =Seg[ItMonList[i]]->chi[mon_length+k];
+			if (chi!=0) {
+//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[Sta[k]->mon_nr]->name << " state " << Sta[k]->name << "chi = " << chi << endl;
+				PutAlpha(g+i*M,phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
+			}
+		}
+	}
+	//for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
+
+	for (i=0; i<itstatelistlength; i++) {
+		for (k=0; k<mon_length; k++) {
+			if (Seg[k]->ns<2) {
+				chi =Sta[ItStateList[i]]->chi[k];
+				if (chi!=0) {
+					PutAlpha(g+(itmonlistlength+i)*M,phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
+				}
+			}
+		}
+
+
+		for (k=0; k<state_length; k++) {
+			chi =Sta[ItStateList[i]]->chi[mon_length+k];
+			if (chi!=0) {
+				PutAlpha(g+(itmonlistlength+i)*M,phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
+			}
+		}
+	}
+	for (i=0; i<itmonlistlength; i++) Cp(Seg[i]->ALPHA,g+i*M,M);
+
+	Zero(g,iv);
+       // now compute g function.	
+	//for the first try, we will assume 1-gradient, planar, system
+ //start with segment type 0. 	
+ 	Real a,b,c,Ma,Mb,Mc,k_B;
+	g[1]=Seg[0]->phi[0]/Seg[0]->phi[1]-1;
+	for (int z=2; z<M-2; z++) g[z]=1.0/phitot[z]-1.0;
+	g[M-2]=Seg[0]->phi[M-1]/Seg[0]->phi[M-2]-1;
+	for (int i =1; i<itmonlistlength; i++) {
+		for (int k =0; k<itmonlistlength; k++) {
+			k_B=Seg[k]->B;
+			g[i*M+1]=Seg[i]->phi[0]/Seg[i]->phi[1]-1;
+			b=Seg[i]->phi[1]*Seg[k]->phi[1]*k_B/B_phitot[1];
+			c=Seg[i]->phi[2]*Seg[k]->phi[2]*k_B/B_phitot[2];
+			Mb=Seg[i]->ALPHA[1]-Seg[k]->ALPHA[1];
+			Mc=Seg[i]->ALPHA[2]-Seg[k]->ALPHA[2];
+			
+			for (int z=2; z<M-2; z++) {//dphi/dt=0 except when i=0; then we put sum phi = 1; and when i==k we do not do anything
+				a=b; b=c; c=Seg[i]->phi[z+1]*Seg[k]->phi[z+1]*k_B/B_phitot[z+1];
+				Ma=Mb; Mb=Mc; Mc=Seg[i]->ALPHA[z+1]-Seg[k]->ALPHA[z+1];
+				g[i*M+z] =g[i*M+z] +(a+b)*(Mb-Ma)+(b+c)*(Mc-Mb);
+				//g[i*M+z] =g[i*M+z] +(Mb-Ma)+(Mc-Mb);
+			}
+			g[i*M+M-2]=Seg[i]->phi[M-1]/Seg[i]->phi[M-2]-1;
+		}
+	}
+
+
+	//for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
+	//Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);
+	//for (i=0; i<itmonlistlength; i++) {
+	//	AddG(g+i*M,phitot,alpha,M);
+	//	Lat[0]->remove_bounds(g+i*M);
+	//	Times(g+i*M,g+i*M,KSAM,M);
+	//}
+	//for (i=0; i<itstatelistlength; i++) {
+	//	AddG(g+(itmonlistlength+i)*M,phitot,alpha,M);
+	//	Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
+	//	Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,KSAM,M);
+	//}
+
+	int itpos=(itmonlistlength+itstatelistlength)*M;
+
+	if (charged) {
+		Cp(g+itpos,x+itpos,M);
+		DoElectrostatics(g+itpos,x+itpos);
+		Lat[0]->set_M_bounds(psi);
+		psi[0]=psi[1]; //TODO:: fix
+		Lat[0]->UpdatePsi(g+itpos,psi,q,eps,psiMask,grad_epsilon,fixedPsi0);
+		Lat[0]->remove_bounds(g+itpos);
+		itpos+=M;
+	}
+	if (constraintfields) {
+		Cp(g+itpos,Mol[DeltaMolList[1]]->phitot,M);
+		YisAminB(g+itpos,g+itpos,Mol[DeltaMolList[0]]->phitot,M);
+		Real R = (phi_ratio-1)/(phi_ratio+1);
+		YisAplusC(g+itpos,g+itpos,R,M);
+		Times(g+itpos,g+itpos,beta,M);
+		itpos+=M;
+	}
+	if (extra_constraints>0) {
+		int length = In[0]->MonList.size();
+		for (int i = 0; i < length; i++)
+		{
+			int constraint_size=Seg[i]->constraint_z.size();
+			for (int k=0; k<constraint_size; k++) {
+				itpos++;
+				g[itpos-1]=Seg[i]->Get_g(k);
+			}
+		}
+	}
+}
+
 bool System::ComputePhis(Real residual){
 if(debug) cout <<"ComputePhis in system" << endl;
 	bool prepare_for_blocks=false;
@@ -2438,7 +2579,9 @@ for (int j=0; j<n_mol; j++) {
 
 	if (CalculationType=="steady_state") {
 		Real PhiTot0=0;
+		Real PhiTotM=0;
 		Real Qtot0=0;
+		Real QtotM=0;
 		for (int i = 0; i < n_seg; i++) {
 			Seg[i]->PutContraintBC();
 
@@ -2446,31 +2589,41 @@ for (int j=0; j<n_mol; j++) {
 			if (!(Seg[i]->used_in_mol_nr==solvent || Seg[i]->used_in_mol_nr==neutralizer)) {
 				PhiTot0+=Seg[i]->phi[0];
 				Qtot0+=Seg[i]->phi[0]*Seg[i]->valence;
+				PhiTotM+=Seg[i]->phi[M-1];
+				QtotM+=Seg[i]->phi[M-1]*Seg[i]->valence;
 			}
 		}
 
 		if (Qtot0!=0 && neutralizer==-1) cout <<"Error: neutralizer needed, but was not found. Outcome uncertain" << endl;
-		if (Qtot0!=0) {Mol[neutralizer]->phitot[0]=-Qtot0/Mol[neutralizer]->Charge(); PhiTot0 +=Mol[neutralizer]->phitot[0];}
+		if (Qtot0!=0) {
+			Mol[neutralizer]->phitot[0]=-Qtot0/Mol[neutralizer]->Charge(); PhiTot0 +=Mol[neutralizer]->phitot[0];
+			Mol[neutralizer]->phitot[M-1]=-QtotM/Mol[neutralizer]->Charge(); PhiTotM +=Mol[neutralizer]->phitot[M-1];
+		}
 		
 		Mol[solvent]->phitot[0]=1.0-PhiTot0;
+		Mol[solvent]->phitot[M-1]=1.0-PhiTotM;
+
 		for (int i=0; i<n_seg; i++) {
 			if (Seg[i]->used_in_mol_nr==solvent) {
 				Seg[i]->phi[0]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[0];
+				Seg[i]->phi[M-1]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[M-1];
 			}
 			if (Seg[i]->used_in_mol_nr==neutralizer) {
 				Seg[i]->phi[0]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[0];
+				Seg[i]->phi[M-1]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[M-1];
 			}
 		}
 
-
+/*
 		PhiTot0=0;
-		Qtot0=0;
+		PhiTotM=0;
 		for (int i = 0; i < n_seg; i++) {
 			PhiTot0+=Seg[i]->phi[0];
-			Qtot0+=Seg[i]->phi[0]*Seg[i]->valence;
+			PhiTotM+=Seg[i]->phi[M-1];
 		}
-		//if (PhiTot0!=1.0) cout <<"phi in layer 0 not equal to unity: value is " << PhiTot0 << endl;
-		//if (Qtot0!=0) cout <<"charge in layer 0 not equal to zero: value is " << Qtot0 << endl;
+		cout <<"phi in layer 0 is " << PhiTot0 << endl;
+		cout <<"phi in layer M is " << PhiTotM << endl;
+*/		
 		int it_mon_length=ItMonList.size();
 		Zero(B_phitot,M);
 		for (int i=0; i<it_mon_length; i++)  YplusisCtimesX(B_phitot,Seg[ItMonList[i]]->phi,Seg[ItMonList[i]]->B,M); 

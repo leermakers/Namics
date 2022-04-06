@@ -56,6 +56,7 @@ if (n_pos>0) cout <<"problem for n_pos " <<endl;
 	free(H_phi);
 	free(H_MASK);
 	free(H_alpha);
+	free(H_ALPHA);
 	free(H_phi_state);
 #ifdef CUDA
 	if(n_pos>0) cudaFree(P);
@@ -84,6 +85,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	H_phi = (Real*) malloc(M*sizeof(Real));
 	H_MASK = (int*) malloc(M*sizeof(int));
 	H_alpha=(Real*) malloc(M*ns*sizeof(Real));
+	H_ALPHA=(Real*) malloc(M*ns*sizeof(Real));
 	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
 	H_Zero(H_u,M*ns);
 	H_Zero(H_phi,M);
@@ -99,6 +101,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	u_ext=(Real*)AllOnDev(M); Zero(u_ext,M);
 	phi_side=(Real*)AllOnDev(ns*M); Zero(phi_side,ns*M);
 	alpha=(Real*)AllOnDev(ns*M); Zero(alpha,ns*M);
+	ALPHA=(Real*)AllOnDev(M); Zero(ALPHA,M);
 #else
 	if (n_pos>0) P=H_P;
 	MASK=H_MASK;
@@ -107,6 +110,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	u_ext=H_u_ext; Zero(u_ext,M);
 	phi_state = H_phi_state;
 	alpha=H_alpha;
+	ALPHA=H_ALPHA; Zero(ALPHA,M);
 	G1 = (Real*)malloc(M*sizeof(Real));
 	phi_side = (Real*)malloc(M*ns*sizeof(Real));
 	Zero(G1,M);
@@ -938,7 +942,7 @@ void Segment::PutContraintBC() {
 if (debug) cout <<"PutConstraintBC Segment " + name << endl;
 	int MX=Lat[0]->MX;
 	if (phi_LB_X>0) phi[0]=phi_LB_X; 
-	if (phi_UB_X>0) phi[MX+1]=phibulk; //we will assume phibulk values in upperboundary. This bound should be sumphi=1 and electroneutral.
+	if (phi_UB_X>0) phi[MX+1]=phi_UB_X;  //we will assume phibulk values in upperboundary. This bound should be sumphi=1 and electroneutral.
 }
 
 bool Segment::CheckInput(int start_) {

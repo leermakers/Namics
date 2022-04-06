@@ -151,6 +151,7 @@ public:
 	bool Put_U(Real*);
 	bool PutU(Real*);
 	void Classical_residual(Real* ,Real*,Real,int,int);
+	void Steady_residual(Real* ,Real*,Real,int,int);
 
 	void DoElectrostatics(Real*,Real*);
 	bool CheckResults(bool);

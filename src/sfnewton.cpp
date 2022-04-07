@@ -59,7 +59,8 @@ C Copyright (2018) Wageningen University, NL.
 	trustregion =0.0;
 	pseudohessian = samehessian = false;
 	d_info = e_info = g_info = h_info = s_info = x_info = false;
-	newtondirection = ignore_newton_direction  = false ;
+	newtondirection  = false ;
+	ignore_newton_direction = false; 
 	i_info=1;
 	max_accuracy_for_hessian_scaling = 0.1;
 	linesearchlimit = 20;
@@ -413,7 +414,7 @@ void SFNewton::numhessian(Real* h,Real* g, Real* x, int nvar,bool filter) {//don
 if(debug) cout <<"numhessian in Newton" << endl;
 	Real dmax2=0,dmax3=0,di=0;
 	Real *g1;
-	g1 = new Real[nvar];
+	g1 = new Real[IV];
 	Real xt;
 	dmax2 = pow(2.0,nbits/2); //alternative 2*pow(DBL_EPSILON,-0.5)?
 	dmax3 = pow(2.0,nbits/3); //alternative 2*pow(DBL_EPSILON,-1.0/3)?

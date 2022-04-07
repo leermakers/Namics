@@ -2137,7 +2137,6 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 	int itstatelistlength=ItStateList.size();
 
 	if (itstatelistlength>0) cout <<"currently, internal states of segments incompatible with steady state " << endl; 
-
 	Cp(g,x,iv);
 	ComputePhis(x,iterations==0,residual);
 /*
@@ -2219,7 +2218,6 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 			g[i*M+M-2]=Seg[i]->phi[M-1]/Seg[i]->phi[M-2]-1;
 		}
 	}
-
 
 	//for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
 	//Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);

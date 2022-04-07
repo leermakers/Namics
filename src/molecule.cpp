@@ -20,8 +20,8 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("phi_UB_x");
 
 	width=0;
-	phi_LB_X=0;
-	phi_UB_X=0;
+	phi_LB_X=0.0;
+	phi_UB_X=0.0;
 	phi1=0;
 	phiM=0;
 	Dphi=0;

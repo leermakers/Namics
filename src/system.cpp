@@ -1196,6 +1196,7 @@ bool System::IsUnique(int Segnr_, int Statenr_)
 {
 	if (debug)
 		cout << "System::IsUnique: Segnr = " << Segnr_ << " Statenr = " << Statenr_ << endl;
+	if (CalculationType=="steady_state") return true; 
 	bool is_unique = true;
 	bool is_equal = true;
 	if (In[0]->MesodynList.size() > 0)
@@ -2212,7 +2213,7 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 			for (int z=2; z<M-2; z++) {//dphi/dt=0 except when i=0; then we put sum phi = 1; and when i==k we do not do anything
 				a=b; b=c; c=Seg[i]->phi[z+1]*Seg[k]->phi[z+1]*k_B/B_phitot[z+1];
 				Ma=Mb; Mb=Mc; Mc=Seg[i]->ALPHA[z+1]-Seg[k]->ALPHA[z+1];
-				g[i*M+z] =g[i*M+z] +(a+b)*(Mb-Ma)+(b+c)*(Mc-Mb);
+				g[i*M+z] =g[i*M+z] +(a+b)*(Mb-Ma)-(b+c)*(Mc-Mb);
 				//g[i*M+z] =g[i*M+z] +(Mb-Ma)+(Mc-Mb);
 			}
 			g[i*M+M-2]=Seg[i]->phi[M-1]/Seg[i]->phi[M-2]-1;

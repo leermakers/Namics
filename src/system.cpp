@@ -2196,12 +2196,20 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
        // now compute g function.	
 	//for the first try, we will assume 1-gradient, planar, system
  //start with segment type 0. 	
- 	Real a,b,c,Ma,Mb,Mc,k_B;
-	g[1]=Seg[0]->phi[0]/Seg[0]->phi[1]-1;
+ 	//Real a,b,c,Ma,Mb,Mc,k_B;
+	Real Jtot=0;
+	Segment* Seg0=Seg[ItMonList[0]];
+	g[1]=Seg0->phi[0]/Seg0->phi[1]-1;
 	for (int z=2; z<M-2; z++) g[z]=1.0/phitot[z]-1.0;
-	g[M-2]=Seg[0]->phi[M-1]/Seg[0]->phi[M-2]-1;
-	for (int i =1; i<itmonlistlength; i++) {
+	g[M-2]=Seg0->phi[M-1]/Seg0->phi[M-2]-1;
+	for (int i =1; i<itmonlistlength; i++) { 
+		Segment* Segi=Seg[ItMonList[i]];
+		Segi->J=0;
 		for (int k =0; k<itmonlistlength; k++) {
+			Segment* Segk=Seg[ItMonList[k]];
+			if (i !=k) Segi->J += Lat[0]->DphiDt(g+i*M,B_phitot,Segi->phi,Segk->phi,Segi->ALPHA,Segk->ALPHA,Segi->B,Segk->B); 
+			
+/*
 			k_B=Seg[k]->B;
 			g[i*M+1]=Seg[i]->phi[0]/Seg[i]->phi[1]-1;
 			b=Seg[i]->phi[1]*Seg[k]->phi[1]*k_B/B_phitot[1];
@@ -2216,9 +2224,13 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 				//g[i*M+z] =g[i*M+z] +(Mb-Ma)+(Mc-Mb);
 			}
 			g[i*M+M-2]=Seg[i]->phi[M-1]/Seg[i]->phi[M-2]-1;
+*/
 		}
+		Jtot +=Segi->J;
 	}
-
+	Seg[ItMonList[0]]->J=-Jtot;
+//
+//
 	//for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
 	//Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);
 	//for (i=0; i<itmonlistlength; i++) {
@@ -2655,11 +2667,24 @@ bool System::CheckResults(bool e_info_)
 
 	FreeEnergy = GetFreeEnergy();
 	GrandPotential = GetGrandPotential();
-	CreateMu();
+	if (CalculationType=="steady_state") {
+		CreateMu(Lat[0]->M-2); //assuming 1 gradient systems....
+		for (int i=0; i<n_mol; i++) {
+			Mol[i]->Delta_MU=Mol[i]->Mu; 
+//cout <<"Mol " << Mol[i]->name << " mu M : " << Mol[i]->Mu << endl;
+		}
+		CreateMu(1);
+		for (int i=0; i<n_mol; i++) {
+			Mol[i]->Delta_MU-=Mol[i]->Mu; 
+//cout <<"Mol " << Mol[i]->name << " mu 0 : " << Mol[i]->Mu << " and Dmu : " << Mol[i]->Delta_MU << endl;
+		}
+
+	}
+	CreateMu(Lat[0]->M);
 
 	//if (e_info)
 	//	cout << endl;
-	if ((e_info&& first_pass))
+	if ((e_info&& first_pass && CalculationType=="equilibrium"))
 	{
 		cout << "free energy                 = " << FreeEnergy << endl;
 		cout << "grand potential             = " << GrandPotential << endl;
@@ -2673,7 +2698,7 @@ bool System::CheckResults(bool e_info_)
 			n = Mol[i]->n_box;
 		n_times_mu += n * Mu;
 	}
-	if ((e_info && first_pass))
+	if ((e_info && first_pass && CalculationType=="equilibrium"))
 	{
 		cout << "free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
 		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl<<endl;;
@@ -3145,11 +3170,11 @@ if (charged) {
 
 }
 
-bool System::CreateMu()
+bool System::CreateMu(int pos)
 {
 	if (debug)
 		cout << "CreateMu for system " << endl;
-	//int M=Lat[0]->M;
+	int M=Lat[0]->M;
 	bool success = true;
 	Real constant;
 	Real n;
@@ -3186,7 +3211,9 @@ bool System::CreateMu()
 		{
 			n = Mol[i]->n;
 			GN = Mol[i]->GN;
-			Mu = log(NA * n / GN) + 1;
+			if (pos==M) Mu = log(NA * n / GN) + 1; else {
+				Mu=log(Mol[i]->phitot[pos]) +1;
+			}
 		}
 		constant = 0;
 		for (int k = 0; k < n_mol; k++)
@@ -3196,10 +3223,12 @@ bool System::CreateMu()
 				NB = NB - 1;
 			if (Mol[k]->IsClamped())
 				NB = NB - 2;
-			Real phibulkB = Mol[k]->phibulk;
+			Real phibulkB;
+		        if (pos==M) phibulkB=Mol[k]->phibulk; else phibulkB=Mol[k]->phitot[pos];
 			constant += phibulkB / NB;
 		}
 		Mu = Mu - NA * constant;
+		if (Mol[solvent]->MolType==water && pos !=M) cout <<"for Moltype==water chemical potential evaluation must be checked in steady state" << endl; 
 		if (Mol[solvent]->MolType==water) Mu+= NA*(Mol[solvent]->phib1/(1-Mol[solvent]->Kw*Mol[solvent]->phib1)-Mol[solvent]->phibulk);
 		//Real theta;
 		Real phibulkA;
@@ -3217,7 +3246,7 @@ bool System::CreateMu()
 		{
 			if (Seg[j]->ns < 2)
 			{
-				phibulkA = Seg[j]->phibulk;
+				if (pos==M) phibulkA = Seg[j]->phibulk; else phibulkA=Seg[j]->phi[pos];
 				if (Seg[j]->freedom == "tagged"|| Seg[j]->freedom=="clamped") FA=0; else FA = Mol[i]->fraction(j);
 				if (Mol[i]->IsTagged())
 					FA *= (NA + 1) / (NA); //works only in case of homopolymers?
@@ -3227,7 +3256,7 @@ bool System::CreateMu()
 				{
 					if (Seg[k]->ns < 2)
 					{
-						phibulkB = Seg[k]->phibulk;
+						if (pos==M) phibulkB = Seg[k]->phibulk; else phibulkB=Seg[k]->phi[pos];
 						FB = Mol[i]->fraction(k);
 						if (Seg[k]->freedom=="tagged"||Seg[k]->freedom=="clamped") FB=0; else FB=Mol[i]->fraction(k);
 						if (Mol[i]->IsTagged())
@@ -3242,7 +3271,7 @@ bool System::CreateMu()
 					}
 				}
 				for (int l = 0; l < statelistlength; l++)
-				{
+				{     //adjust for steady_state
 					phibulkB = Seg[Sta[l]->mon_nr]->state_phibulk[Sta[l]->state_nr];
 					FB = Mol[i]->fraction(Sta[l]->mon_nr) * Seg[Sta[l]->mon_nr]->state_alphabulk[Sta[l]->state_nr];
 					if (Mol[i]->IsTagged())
@@ -3260,7 +3289,7 @@ bool System::CreateMu()
 			}
 		}
 		for (int j = 0; j < statelistlength; j++)
-		{
+		{ //adjust for steady state
 			phibulkA = Seg[Sta[j]->mon_nr]->state_phibulk[Sta[j]->state_nr];
 			FA = Mol[i]->fraction(Sta[j]->mon_nr) * Seg[Sta[j]->mon_nr]->state_alphabulk[Sta[j]->state_nr];
 			if (Mol[i]->IsTagged())

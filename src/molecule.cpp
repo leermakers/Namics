@@ -35,6 +35,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	FillRangesList.clear();
 	Filling=false;
 	save_memory=false;
+	J=0; Delta_MU=0;
 
 }
 
@@ -1967,6 +1968,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	//  }
 	//}
 
+
 	push("theta",theta);
         //cout <<"theta " << name << " = " << theta << endl;
 	Real thetaexc=theta-Lat[0]->volume*phibulk;
@@ -1979,7 +1981,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		push("phib1",phib1);
 		push("Kw",Kw);
 	}
-	push("mu",Mu);
+	push("Mu",Mu);
 	if (Lat[0]->gradients==3) {
 		Real TrueVolume=Lat[0]->MX*Lat[0]->MY*Lat[0]->MZ;
 		Real Volume_particles=0;
@@ -2031,7 +2033,14 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	push("norm",norm);
 	push("phi_LB_x",phi_LB_X);
 	push("phi_UB_x",phi_UB_X);
+	J=0;
 
+	int molmonlength=MolMonList.size();
+	for (int i=0; i<molmonlength; i++) {
+		J+=Seg[MolMonList[i]]->J;	
+	}
+	push("J",J/chainlength);
+	push("DeltaMu",Delta_MU);
 	string s="profile;0"; push("phi",s);
 	int length = MolMonList.size();
 	for (int i=0; i<length; i++) {

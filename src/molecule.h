@@ -119,6 +119,8 @@ virtual ~Molecule();
 	bool ring;
 	Real phi_LB_X;
 	Real phi_UB_X;
+	Real J; 
+	Real Delta_MU;
 
 	vector<string> ints;
 	vector<string> Reals;

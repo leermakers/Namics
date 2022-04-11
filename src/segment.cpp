@@ -38,7 +38,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	freedom="free";
 	used_in_mol_nr=-2;
 	phi_LB_X=phi_UB_X=0;
-	B=1;
+	B=1; J=0;
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -1696,6 +1696,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	push("freedom",freedom);
 	push("valence",valence);
 	push("B",B);
+	push("J",J);
 	Real theta=0;
 	theta = Lat[0]->WeightedSum(phi);
 	push("theta",theta);

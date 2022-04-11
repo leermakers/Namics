@@ -14,6 +14,7 @@ class LG2Planar : public LGrad2
 	void UpdateEE(Real*, Real*,Real*);
 	void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
 	void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
+	Real DphiDt(Real*,Real*,Real*,Real*,Real*,Real*,Real,Real);
 };
 #endif
 

@@ -590,4 +590,7 @@ void LG2Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool g
 	}
 
 }
-
+Real LG2Planar::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
+	cout <<"LG2Planar : DphiDt not implemented yet " << endl; 
+	return 0;
+}	

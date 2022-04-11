@@ -158,7 +158,7 @@ public:
 	Real GetFreeEnergy();
 	Real GetGrandPotential();
 	Real GetSpontaneousCurvature();
-	bool CreateMu();
+	bool CreateMu(int);
 	bool PutVarInfo(string,string,Real);
 	bool ResetInitValue();
 	int PutVarScan(Real, Real, int, string );

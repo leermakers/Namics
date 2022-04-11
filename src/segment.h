@@ -141,6 +141,7 @@ public:
 	Real* ALPHA; //Lagrange parameter per segement for steady state
 	int ItState;
 	Real B;
+	Real J;
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;

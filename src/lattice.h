@@ -148,6 +148,7 @@ virtual ~Lattice();
 	virtual void AddPhiS(Real*,Real*,Real*,Real,int,int) =0;
 	virtual void Initiate(Real*,Real*,int,int) =0;
 	virtual void Terminate(Real*,Real*,int,int) =0;
+	virtual Real DphiDt(Real*,Real*,Real*,Real*,Real*,Real*,Real,Real)=0;
 
 };
 #endif

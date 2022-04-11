@@ -886,4 +886,7 @@ void LGrad1::Terminate(Real* Gz ,Real* G, int Markov, int M){
 	}
 }
 
-
+Real LGrad1::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB,Real B_A, Real B_B) {
+	cout <<"LGrad1 : DphiDt not implemented yet " << endl;
+	return 0; 	
+}

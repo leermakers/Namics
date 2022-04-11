@@ -43,6 +43,7 @@ class LGrad2 : public Lattice
 	//void set_bounds_x(Real*);
 	void set_bounds_x(Real*,int);
 	void set_bounds_y(Real*,int);
+	Real DphiDt(Real*,Real*,Real*,Real*,Real*,Real*,Real,Real);
 };
 #endif
 

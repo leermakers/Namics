@@ -1549,6 +1549,12 @@ void System::PushOutput()
 	s = "profile;2";
 	push("FreeEnergyDensity", s);
 	push("free_energy_density", s);
+	int n_mol = In[0]->MolList.size();
+	Real Sprod=0;
+	for (int i=0; i<n_mol; i++) {
+		Sprod-=Mol[i]->J*Mol[i]->Delta_MU;
+	}
+	push("Sprod",Sprod); 
 
 	if (charged)
 	{
@@ -2675,7 +2681,8 @@ bool System::CheckResults(bool e_info_)
 		}
 		CreateMu(1);
 		for (int i=0; i<n_mol; i++) {
-			Mol[i]->Delta_MU-=Mol[i]->Mu; 
+			Mol[i]->Delta_MU-=Mol[i]->Mu;
+		       	
 //cout <<"Mol " << Mol[i]->name << " mu 0 : " << Mol[i]->Mu << " and Dmu : " << Mol[i]->Delta_MU << endl;
 		}
 

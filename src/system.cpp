@@ -1552,7 +1552,7 @@ void System::PushOutput()
 	int n_mol = In[0]->MolList.size();
 	Real Sprod=0;
 	for (int i=0; i<n_mol; i++) {
-		Sprod-=Mol[i]->J*Mol[i]->Delta_MU;
+		Sprod += Mol[i]->J*Mol[i]->Delta_MU;
 	}
 	push("Sprod",Sprod); 
 

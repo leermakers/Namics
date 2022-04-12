@@ -295,5 +295,5 @@ Real LG1Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* al
 	}
 	g[M-2]=phiA[M-1]/phiA[M-2]-1.0;
 	
-	return B_A*AverageJ/(M-4); 
+	return -B_A*AverageJ/(M-4); 
 }

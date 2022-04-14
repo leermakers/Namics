@@ -498,9 +498,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 					}
 				}
 				if (freedom == "gradient") { //for the time being only in one-gradient systems; this is tested in system.
-					if (GetValue("phibulk").size() >0) {
-						cout <<"In mol " + name + ", the setting 'freedom : gradient' should not be combined with a value for 'phibulk' but with values for 'phi_LB_x' and 'phi_UP_x' "<<endl; return false;
-					} else {
+					//if (GetValue("phibulk").size() >0) {
+					//	cout <<"In mol " + name + ", the setting 'freedom : gradient' should not be combined with a value for 'phibulk' but with values for 'phi_LB_x' and 'phi_UP_x' "<<endl; return false;
+					//} else {
 						if (GetValue("phi_LB_x").size()==0 || GetValue("phi_UB_x").size()==0) {
 							cout <<"in mol " + name + "the setting 'freedom : gradient' should be combined with values of 'phi_LB_x' and 'phi_UB_x'=phibulk " << endl; return false;
 						} else {
@@ -510,7 +510,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 								cout << "In mol " + name + ", the value of 'phi_UB_x' or 'phi_LB_x' is out of range 0 .. 1." << endl; return false;
 							}
 						}
-					}
+					//}
 				}
 
 				if (freedom == "restricted" || freedom=="range_restricted") {

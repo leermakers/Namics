@@ -1,0 +1,111 @@
+lat : flat : n_layers : 100
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+lat : flat : lattice_type : hexagonal
+
+mon : C : freedom : pinned
+mon : C : pinned_range : 45;55
+mon : H : freedom : free
+mon : W : freedom : free
+
+mon : C : chi_W : 1.6
+mon : C : chi_H : 1.6
+mon : H : chi_W : -0.5
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : lipid : composition : @dend(H,(H)4,1,(C)20,2)
+mol : lipid : freedom : restricted
+mol : lipid : theta : 8
+
+start
+mon : C : freedom : free
+start
+
+
+//var : mol-lipid : search : theta
+//var : sys-NN : grand_potential : 0
+
+sys : NN : constraint : delta
+sys : NN : delta_molecules : lipid;water
+sys : NN : delta_range : (55)
+sys : NN : phi_ratio : 1
+
+mol : lipid : freedom : free
+//mol : lipid : phibulk :2.9e-9
+mol : lipid : phibulk : 2.8e-9
+
+
+output : pro : append : false
+pro : mol : * : phi
+pro : mon : * : phi
+
+output : kal : append : false
+kal : sys : NN : grand_potential
+kal : mol : lipid : theta
+kal : mol : lipid : phibulk
+kal : mol : lipid : theta_excess
+start
+
+sys : NN : calculation_type : steady_state
+mol : lipid : freedom : gradient
+mol : lipid : phi_LB_x : 2.7e-9
+mol : lipid : phi_UB_x : 2.9e-9
+
+mon : C : B : 0.1
+mon : H : B : 0.1
+mon : W : B : 0.2
+newton : isaac : n_iterations_for_hessian : 1000
+newton : isaac : deltamax : 0.1
+newton : isaac : iterationlimit : 100000
+start
+sys : NN : delta_range : (54)
+start
+sys : NN : delta_range : (53)
+start
+sys : NN : delta_range : (52)
+start
+sys : NN : delta_range : (51)
+start
+sys : NN : delta_range : (50)
+start
+sys : NN : delta_range : (49)
+start
+sys : NN : delta_range : (48)
+start
+sys : NN : delta_range : (47)
+start
+sys : NN : delta_range : (46)
+start
+sys : NN : delta_range : (45)
+start
+sys : NN : delta_range : (44)
+start
+sys : NN : delta_range : (43)
+start
+sys : NN : delta_range : (42)
+start
+sys : NN : delta_range : (41)
+start
+sys : NN : delta_range : (40)
+start
+sys : NN : delta_range : (39)
+start
+sys : NN : delta_range : (38)
+start
+sys : NN : delta_range : (37)
+start
+sys : NN : delta_range : (36)
+start
+sys : NN : delta_range : (35)
+start
+sys : NN : delta_range : (34)
+start
+sys : NN : delta_range : (33)
+start
+sys : NN : delta_range : (32)
+start
+sys : NN : delta_range : (31)
+start
+sys : NN : delta_range : (30)

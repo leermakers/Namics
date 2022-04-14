@@ -1,0 +1,37 @@
+lat : flat : n_layers : 100
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+lat : flat : lattice_type : hexagonal
+
+mon : C : freedom : pinned
+mon : C : pinned_range : 1;10
+mon : H : freedom : free
+mon : W : freedom : free
+
+mon : C : chi_W : 1.6
+mon : C : chi_H : 1.6
+mon : H : chi_W : -0.5
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : lipid : composition : @dend(H,(H)4,1,(C)20,2)
+mol : lipid : freedom : restricted
+mol : lipid : theta : 3
+
+start
+mon : C : freedom : free
+
+var : mol-lipid : search : theta
+var : sys-NN : grand_potential : 0
+
+
+output : pro : append : false
+pro : mol : * : phi
+pro : mon : * : phi
+
+output : kal : append : false
+kal : sys : NN : grand_potential
+kal : mol : lipid : theta
+kal : mol : lipid : phibulk
+kal : mol : lipid : theta_excess

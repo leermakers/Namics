@@ -842,6 +842,8 @@ bool System::CheckInput(int start_)
 							if (sub[1] == Mol[i]->name)
 								DeltaMolList.push_back(i);
 						}
+						if (DeltaMolList.size() !=2) {success = false; 
+						cout << " In delta_molecules, two molecule names were expected but not found " << endl; return 0; }
 						if (DeltaMolList[0] == DeltaMolList[1])
 						{
 							success = false;
@@ -2040,6 +2042,10 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 	int itmonlistlength=ItMonList.size();
 	int state_length = In[0]->StateList.size();
 	int itstatelistlength=ItStateList.size();
+//	for (int i=0; i<itmonlistlength; i++) cout <<Seg[ItMonList[i]]->name << " " ;
+//	cout <<endl;
+//	for (int i=0; i<mon_length; i++) cout <<Seg[i]->name << " " ;
+//	cout <<endl;
 
 	Cp(g,x,iv);
 //cout <<endl;
@@ -2047,7 +2053,7 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
  	Zero(alpha,M);
 
 	for (i=0; i<itmonlistlength; i++) {
-		Add(g+i*M,Seg[i]->u_ext,M);
+		Add(g+i*M,Seg[ItMonList[i]]->u_ext,M);
 		for (k=0; k<mon_length; k++) {
 			if (Seg[k]->ns<2) {
 				chi =Seg[ItMonList[i]]->chi[k];
@@ -2158,7 +2164,7 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 		cout <<" phi in layer M is " << PhiTotM << endl;
 */
 	for (i=0; i<itmonlistlength; i++) {
-		Add(g+i*M,Seg[i]->u_ext,M);
+		Add(g+i*M,Seg[ItMonList[i]]->u_ext,M);
 		for (k=0; k<mon_length; k++) {
 			if (Seg[k]->ns<2) {
 				chi =Seg[ItMonList[i]]->chi[k];
@@ -2196,8 +2202,8 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 			}
 		}
 	}
-	for (i=0; i<itmonlistlength; i++) Cp(Seg[i]->ALPHA,g+i*M,M);
-
+	for (i=0; i<itmonlistlength; i++) Cp(Seg[ItMonList[i]]->ALPHA,g+i*M,M);
+	
 	Zero(g,iv);
        // now compute g function.	
 	//for the first try, we will assume 1-gradient, planar, system
@@ -2205,9 +2211,9 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
  	//Real a,b,c,Ma,Mb,Mc,k_B;
 	Real Jtot=0;
 	Segment* Seg0=Seg[ItMonList[0]];
-	g[1]=Seg0->phi[0]/Seg0->phi[1]-1;
+	g[1]=Seg0->phi[0]/Seg0->phi[1]-1.0;
 	for (int z=2; z<M-2; z++) g[z]=1.0/phitot[z]-1.0;
-	g[M-2]=Seg0->phi[M-1]/Seg0->phi[M-2]-1;
+	g[M-2]=Seg0->phi[M-1]/Seg0->phi[M-2]-1.0;
 	for (int i =1; i<itmonlistlength; i++) { 
 		Segment* Segi=Seg[ItMonList[i]];
 		Segi->J=0;
@@ -2629,6 +2635,8 @@ for (int j=0; j<n_mol; j++) {
 				Seg[i]->phi[0]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[0];
 				Seg[i]->phi[M-1]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[M-1];
 			}
+//cout <<"Seg " << Seg[i]->name << "phi0 = " << Seg[i]->phi[0] << endl; 
+//cout <<"Seg " << Seg[i]->name << "phiM = " << Seg[i]->phi[M-1] << endl; 
 		}
 
 /*

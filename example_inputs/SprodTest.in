@@ -1,0 +1,54 @@
+lat : flat : n_layers : 101
+lat : flat : gradients : 1
+lat : flat : geometry : planar
+lat : flat : lattice_type : simple_cubic
+//lat : flat : lowerbound : mirror
+//lat : flat : upperbound : mirror
+
+mon : A : freedom : free
+mon : B : freedom : free
+mon : A : B : 1
+mon : B : B : 1
+
+//mon : A : chi_B : 0.0000001
+
+mol : pol : composition : (A)100
+mol : pol : freedom : gradient
+mol : pol : phi_LB_x : 0.1
+mol : pol : phi_UB_x : 0.9
+
+mol : solvent : freedom : solvent
+mol : solvent : composition : (B)100
+
+sys : frans : calculation_type : steady_state
+sys : frans : constraint : delta
+sys : frans : delta_molecules : pol;solvent
+sys : frans : delta_range : (51)
+sys : frans : phi_ratio : 1
+newton : isaac : deltamax : 0.01
+newton : isaac : n_iterations_for_hessian : 1000
+newton : isaac : min_accuracy_for_hessian : 0.01 
+newton : isaac : iterationlimit : 100000
+newton : isaac : i_info : 1000
+
+output : kal : append : false
+kal : mol : pol : phi_UB_x
+kal : mol : pol : phi_LB_x
+kal : mon : * : phi_UB_x
+kal : mon : * : phi_LB_x
+kal : mon : * : B 
+kal : mol : * : phibulk
+kal : mon : * : phibulk
+kal : mol : pol : J
+kal : mol : solvent : J
+kal : mol : pol : DeltaMu
+kal : mol : solvent : DeltaMu
+kal : mol : pol : Mu
+kal : mol : solvent : Mu
+kal : sys : frans : Sprod
+output : pro : append : false
+output : pro : write_bounds : true
+pro : sys : frans : grand_potential_density
+pro : mol : pol : phi
+pro : mol : solvent : phi
+pro : mon : * : phi

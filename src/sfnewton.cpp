@@ -60,7 +60,7 @@ C Copyright (2018) Wageningen University, NL.
 	pseudohessian = samehessian = false;
 	d_info = e_info = g_info = h_info = s_info = x_info = false;
 	newtondirection  = false ;
-	ignore_newton_direction = false; 
+	ignore_newton_direction = true; 
 	i_info=1;
 	max_accuracy_for_hessian_scaling = 0.1;
 	linesearchlimit = 20;

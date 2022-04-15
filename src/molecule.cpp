@@ -1729,7 +1729,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			//} //dit geeft problemen in valgrind. Als alias verbetert is dan moet dit ook weer aangepakt.
 		}
 		for (int i=1; i<length-1; i++) {
-				if ((Gnr[i-1]!=Gnr[i]) && (Gnr[i]!=Gnr[i+1])) {
+				if ((Gnr[i-1]!=Gnr[i]) && (Gnr[i]!=Gnr[i+1])&& Gnr[i-1]!=Gnr[i+1]) {
 					cout <<"Violation of the architecture in branched molecule '" + name + "': spacers between branches must be more than one segment in length.  " << endl;
 					return false;
 				}

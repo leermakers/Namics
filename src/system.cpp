@@ -2699,7 +2699,7 @@ bool System::CheckResults(bool e_info_)
 
 	//if (e_info)
 	//	cout << endl;
-	if ((e_info&& first_pass && CalculationType=="equilibrium"))
+	if ((e_info&& first_pass && CalculationType!="steady_state"))
 	{
 		cout << "free energy                 = " << FreeEnergy << endl;
 		cout << "grand potential             = " << GrandPotential << endl;
@@ -2713,7 +2713,7 @@ bool System::CheckResults(bool e_info_)
 			n = Mol[i]->n_box;
 		n_times_mu += n * Mu;
 	}
-	if ((e_info && first_pass && CalculationType=="equilibrium"))
+	if ((e_info && first_pass && CalculationType!="steady_state"))
 	{
 		cout << "free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
 		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl<<endl;;

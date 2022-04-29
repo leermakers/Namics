@@ -278,22 +278,44 @@ void LG1Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool g
 		g[x]=-q[x];
 	}
 }
-
-Real LG1Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
+/*
+Real LGrad1::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
 	Real AverageJ=0;
 	Real a,b,c,Ma,Mb,Mc;
 	g[1]=phiA[0]/phiA[1]-1.0;
-	b=phiA[1]*phiB[1]*B_B/B_phitot[1];
-	c=phiA[2]*phiB[2]*B_B/B_phitot[2];
+	b=L[1]*phiA[1]*phiB[1]*B_B/B_phitot[1];
+	c=L[2]*phiA[2]*phiB[2]*B_B/B_phitot[2];
 	Mb=alphaA[1]-alphaB[1];
 	Mc=alphaA[2]-alphaB[2];
 	for (int z=2; z<M-2; z++) {
+		a=b; b=c; c=L[z+1]*phiA[z+1]*phiB[z+1]*B_B/B_phitot[z+1];
+		Ma=Mb; Mb=Mc; Mc=alphaA[z+1]-alphaB[z+1];
+		g[z] = g[z] + (a+b)*(Mb-Ma)-(b+c)*(Mc-Mb);
+		AverageJ+=(a+b)*(Mb-Ma);
+	}
+	g[M-2]=phiA[M-1]/phiA[M-2]-1.0;
+
+	return -B_A*AverageJ/(M-4);
+}
+*/
+Real LG1Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
+	Real AverageJ=0;
+	Real a,b,c,Ma,Mb,Mc;
+	for (int k=0; k<fjc; k++){
+		g[fjc+k]=phiA[fjc-k-1]/phiA[fjc+k]-1.0;
+	}
+	b=phiA[fjc]*phiB[fjc]*B_B/B_phitot[fjc];
+	c=phiA[fjc+1]*phiB[fjc+1]*B_B/B_phitot[fjc+1];
+	Mb=alphaA[fjc]-alphaB[fjc];
+	Mc=alphaA[fjc+1]-alphaB[fjc+1];
+	for (int z=2*fjc; z<MX; z++) {
 		a=b; b=c; c=phiA[z+1]*phiB[z+1]*B_B/B_phitot[z+1];
 		Ma=Mb; Mb=Mc; Mc=alphaA[z+1]-alphaB[z+1];
 		g[z] = g[z] + (a+b)*(Mb-Ma)-(b+c)*(Mc-Mb);
-		AverageJ+=(a+b)*(Mb-Ma); 
+		AverageJ+=(a+b)*(Mb-Ma);
 	}
-	g[M-2]=phiA[M-1]/phiA[M-2]-1.0;
-	
-	return -B_A*AverageJ/(M-4); 
+	for (int k=0; k<fjc; k++) {
+		g[MX+k]=phiA[M-1-k]/phiA[MX+k]-1.0;
+	}
+	return -B_A*AverageJ/(M-4*fjc)/2;
 }

@@ -886,7 +886,21 @@ void LGrad1::Terminate(Real* Gz ,Real* G, int Markov, int M){
 	}
 }
 
-Real LGrad1::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB,Real B_A, Real B_B) {
-	cout <<"LGrad1 : DphiDt not implemented yet " << endl;
-	return 0; 	
+Real LGrad1::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
+	Real AverageJ=0;
+	Real a,b,c,Ma,Mb,Mc;
+	g[1]=phiA[0]/phiA[1]-1.0;
+	b=phiA[1]*phiB[1]*B_B/B_phitot[1];
+	c=phiA[2]*phiB[2]*B_B/B_phitot[2];
+	Mb=alphaA[1]-alphaB[1];
+	Mc=alphaA[2]-alphaB[2];
+	for (int z=2; z<M-2; z++) {
+		a=b; b=c; c=phiA[z+1]*phiB[z+1]*B_B/B_phitot[z+1];
+		Ma=Mb; Mb=Mc; Mc=alphaA[z+1]-alphaB[z+1];
+		g[z] = g[z] + lambda_1[z]*(a+b)*(Mb-Ma)-lambda1[z]*(b+c)*(Mc-Mb);
+		AverageJ+=(a+b)*(Mb-Ma)*lambda_1[z]*L[z];
+	}
+	g[M-2]=phiA[M-1]/phiA[M-2]-1.0;
+
+	return -B_A*AverageJ/((M-4)*2*lambda);
 }

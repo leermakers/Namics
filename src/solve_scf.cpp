@@ -984,13 +984,13 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 			numIterationsSinceHessian++;
 			Real frReverseDirection = Real(numReverseDirection)/reverseDirectionRange;
 			if ((frReverseDirection > maxFrReverseDirection && pseudohessian && accuracy < minAccuracyForHessian)) {
-				cout <<"Bad convergence (reverse direction), computing full hessian..." << endl;
+				if (s_info && e_info) cout <<"Bad convergence (reverse direction), computing full hessian..." << endl; else cout <<"!";
 				pseudohessian = false; reset_pseudohessian =true;
 				//if (!reverseDirection) {reverseDirection=new Real[reverseDirectionRange]; H_Zero(reverseDirection,reverseDirectionRange); }
 				numIterationsSinceHessian = 0;
 			} else if ((numIterationsSinceHessian >= n_iterations_for_hessian &&
 						iterations > 0 && accuracy < minAccuracyForHessian && minimum < minAccuracyForHessian)) {
-				cout << "Still no solution, computing full hessian..." << endl;
+				if (s_info && e_info) cout << "Still no solution, computing full hessian..." << endl; else cout <<"*";
 				pseudohessian = false; reset_pseudohessian =true;
 				numIterationsSinceHessian = 0;
 			}

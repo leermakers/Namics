@@ -120,6 +120,7 @@ virtual ~Molecule();
 	Real phi_LB_X;
 	Real phi_UB_X;
 	Real J; 
+	Real B;
 	Real Delta_MU;
 
 	vector<string> ints;

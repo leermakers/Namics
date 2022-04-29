@@ -91,7 +91,7 @@ void System:: DeAllocateMemory(void){
   }
 #else
   free(phitot);
-  if (CalculationType=="steady_state") free(B_phitot); 
+  if (CalculationType=="steady_state") free(B_phitot);
   free(TEMP);
   free(KSAM);
   free(FILL);
@@ -842,7 +842,7 @@ bool System::CheckInput(int start_)
 							if (sub[1] == Mol[i]->name)
 								DeltaMolList.push_back(i);
 						}
-						if (DeltaMolList.size() !=2) {success = false; 
+						if (DeltaMolList.size() !=2) {success = false;
 						cout << " In delta_molecules, two molecule names were expected but not found " << endl; return 0; }
 						if (DeltaMolList[0] == DeltaMolList[1])
 						{
@@ -922,6 +922,8 @@ bool System::CheckInput(int start_)
 				for (int j=0; j<length; j++) {
 					if (Seg[Mol[i]->MolMonList[j]]->used_in_mol_nr==-2) {
 						Seg[Mol[i]->MolMonList[j]]->used_in_mol_nr=i;
+						Seg[Mol[i]->MolMonList[j]]->B=Mol[i]->B;
+
 						if (Mol[i]->phi_LB_X > 0) {
 							Seg[Mol[i]->MolMonList[j]]->phi_LB_X=Mol[i]->phi_LB_X*Mol[i]->fraction(Mol[i]->MolMonList[j]);
 							Seg[Mol[i]->MolMonList[j]]->phi_UB_X=Mol[i]->phi_UB_X*Mol[i]->fraction(Mol[i]->MolMonList[j]);
@@ -1198,7 +1200,7 @@ bool System::IsUnique(int Segnr_, int Statenr_)
 {
 	if (debug)
 		cout << "System::IsUnique: Segnr = " << Segnr_ << " Statenr = " << Statenr_ << endl;
-	if (CalculationType=="steady_state") return true; 
+	if (CalculationType=="steady_state") return true;
 	bool is_unique = true;
 	bool is_equal = true;
 	if (In[0]->MesodynList.size() > 0)
@@ -1556,7 +1558,7 @@ void System::PushOutput()
 	for (int i=0; i<n_mol; i++) {
 		Sprod += Mol[i]->J*Mol[i]->Delta_MU;
 	}
-	push("Sprod",Sprod); 
+	push("Sprod",Sprod);
 
 	if (charged)
 	{
@@ -2148,18 +2150,18 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 	int state_length = In[0]->StateList.size();
 	int itstatelistlength=ItStateList.size();
 
-	if (itstatelistlength>0) cout <<"currently, internal states of segments incompatible with steady state " << endl; 
+	if (itstatelistlength>0) cout <<"currently, internal states of segments incompatible with steady state " << endl;
 	Cp(g,x,iv);
 	ComputePhis(x,iterations==0,residual);
 /*
 		Real PhiTot0=0;
 		Real PhiTotM=0;
-		int n_seg=itmonlistlength; 
+		int n_seg=itmonlistlength;
 		for (int i = 0; i < n_seg; i++) {
 			PhiTot0+=Seg[i]->phi[0];
 			PhiTotM+=Seg[i]->phi[M-1];
 		}
-		cout <<"itmonlistlength " << itmonlistlength << endl; 
+		cout <<"itmonlistlength " << itmonlistlength << endl;
 		cout <<" phi in layer 0 is " << PhiTot0 << endl;
 		cout <<" phi in layer M is " << PhiTotM << endl;
 */
@@ -2203,24 +2205,24 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 		}
 	}
 	for (i=0; i<itmonlistlength; i++) Cp(Seg[ItMonList[i]]->ALPHA,g+i*M,M);
-	
+
 	Zero(g,iv);
-       // now compute g function.	
+       // now compute g function.
 	//for the first try, we will assume 1-gradient, planar, system
- //start with segment type 0. 	
+ //start with segment type 0.
  	//Real a,b,c,Ma,Mb,Mc,k_B;
 	Real Jtot=0;
 	Segment* Seg0=Seg[ItMonList[0]];
 	g[1]=Seg0->phi[0]/Seg0->phi[1]-1.0;
 	for (int z=2; z<M-2; z++) g[z]=1.0/phitot[z]-1.0;
 	g[M-2]=Seg0->phi[M-1]/Seg0->phi[M-2]-1.0;
-	for (int i =1; i<itmonlistlength; i++) { 
+	for (int i =1; i<itmonlistlength; i++) {
 		Segment* Segi=Seg[ItMonList[i]];
 		Segi->J=0;
 		for (int k =0; k<itmonlistlength; k++) {
 			Segment* Segk=Seg[ItMonList[k]];
-			if (i !=k) Segi->J += Lat[0]->DphiDt(g+i*M,B_phitot,Segi->phi,Segk->phi,Segi->ALPHA,Segk->ALPHA,Segi->B,Segk->B); 
-			
+			if (i !=k) Segi->J += Lat[0]->DphiDt(g+i*M,B_phitot,Segi->phi,Segk->phi,Segi->ALPHA,Segk->ALPHA,Segi->B,Segk->B);
+
 /*
 			k_B=Seg[k]->B;
 			g[i*M+1]=Seg[i]->phi[0]/Seg[i]->phi[1]-1;
@@ -2228,7 +2230,7 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 			c=Seg[i]->phi[2]*Seg[k]->phi[2]*k_B/B_phitot[2];
 			Mb=Seg[i]->ALPHA[1]-Seg[k]->ALPHA[1];
 			Mc=Seg[i]->ALPHA[2]-Seg[k]->ALPHA[2];
-			
+
 			for (int z=2; z<M-2; z++) {//dphi/dt=0 except when i=0; then we put sum phi = 1; and when i==k we do not do anything
 				a=b; b=c; c=Seg[i]->phi[z+1]*Seg[k]->phi[z+1]*k_B/B_phitot[z+1];
 				Ma=Mb; Mb=Mc; Mc=Seg[i]->ALPHA[z+1]-Seg[k]->ALPHA[z+1];
@@ -2601,15 +2603,25 @@ for (int j=0; j<n_mol; j++) {
 	}
 
 	if (CalculationType=="steady_state") {
+		int fjc = Lat[0]->fjc;
+		//when fjc>1 the plan is as follows:
+		//
+		// task 1: in lower and upperbound first make densities homogene
+		// task 2: then put constraints and make sure that in 0 and M-1 electroneutral and space filling
+		// task 3: put same densities in other boundary layers
+		//
+		//
 		Real PhiTot0=0;
 		Real PhiTotM=0;
 		Real Qtot0=0;
 		Real QtotM=0;
 		for (int i = 0; i < n_seg; i++) {
+			//Task 1: make density in bound homogene and implement constraints; this is done in PutConstraintBC
 			Seg[i]->PutContraintBC();
 
 					//make sure that both bounds have sumphi=1 and are neutral.
 			if (!(Seg[i]->used_in_mol_nr==solvent || Seg[i]->used_in_mol_nr==neutralizer)) {
+				//task 2 (indepencent of fjc value because 0 and M-1 are 'generic first and last layers'
 				PhiTot0+=Seg[i]->phi[0];
 				Qtot0+=Seg[i]->phi[0]*Seg[i]->valence;
 				PhiTotM+=Seg[i]->phi[M-1];
@@ -2617,12 +2629,13 @@ for (int j=0; j<n_mol; j++) {
 			}
 		}
 
+
 		if (Qtot0!=0 && neutralizer==-1) cout <<"Error: neutralizer needed, but was not found. Outcome uncertain" << endl;
 		if (Qtot0!=0) {
 			Mol[neutralizer]->phitot[0]=-Qtot0/Mol[neutralizer]->Charge(); PhiTot0 +=Mol[neutralizer]->phitot[0];
 			Mol[neutralizer]->phitot[M-1]=-QtotM/Mol[neutralizer]->Charge(); PhiTotM +=Mol[neutralizer]->phitot[M-1];
 		}
-		
+
 		Mol[solvent]->phitot[0]=1.0-PhiTot0;
 		Mol[solvent]->phitot[M-1]=1.0-PhiTotM;
 
@@ -2635,23 +2648,19 @@ for (int j=0; j<n_mol; j++) {
 				Seg[i]->phi[0]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[0];
 				Seg[i]->phi[M-1]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[M-1];
 			}
-//cout <<"Seg " << Seg[i]->name << "phi0 = " << Seg[i]->phi[0] << endl; 
-//cout <<"Seg " << Seg[i]->name << "phiM = " << Seg[i]->phi[M-1] << endl; 
 		}
 
-/*
-		PhiTot0=0;
-		PhiTotM=0;
-		for (int i = 0; i < n_seg; i++) {
-			PhiTot0+=Seg[i]->phi[0];
-			PhiTotM+=Seg[i]->phi[M-1];
+//task3: now make sure that density is homogene in bound.
+		for (int i=0; i<n_seg; i++) {
+			for (int k=1; k<fjc; k++) {
+				Seg[i]->phi[k]=Seg[i]->phi[0];
+				Seg[i]->phi[M-k-1]=Seg[i]->phi[M-1];
+			}
 		}
-		cout <<"phi in layer 0 is " << PhiTot0 << endl;
-		cout <<"phi in layer M is " << PhiTotM << endl;
-*/		
+
 		int it_mon_length=ItMonList.size();
 		Zero(B_phitot,M);
-		for (int i=0; i<it_mon_length; i++)  YplusisCtimesX(B_phitot,Seg[ItMonList[i]]->phi,Seg[ItMonList[i]]->B,M); 
+		for (int i=0; i<it_mon_length; i++)  YplusisCtimesX(B_phitot,Seg[ItMonList[i]]->phi,Seg[ItMonList[i]]->B,M);
 	}
 
 	for (int i = 0; i < n_seg; i++) {
@@ -2684,13 +2693,13 @@ bool System::CheckResults(bool e_info_)
 	if (CalculationType=="steady_state") {
 		CreateMu(Lat[0]->M-2); //assuming 1 gradient systems....
 		for (int i=0; i<n_mol; i++) {
-			Mol[i]->Delta_MU=Mol[i]->Mu; 
+			Mol[i]->Delta_MU=Mol[i]->Mu;
 //cout <<"Mol " << Mol[i]->name << " mu M : " << Mol[i]->Mu << endl;
 		}
 		CreateMu(1);
 		for (int i=0; i<n_mol; i++) {
 			Mol[i]->Delta_MU-=Mol[i]->Mu;
-		       	
+
 //cout <<"Mol " << Mol[i]->name << " mu 0 : " << Mol[i]->Mu << " and Dmu : " << Mol[i]->Delta_MU << endl;
 		}
 
@@ -3243,7 +3252,7 @@ bool System::CreateMu(int pos)
 			constant += phibulkB / NB;
 		}
 		Mu = Mu - NA * constant;
-		if (Mol[solvent]->MolType==water && pos !=M) cout <<"for Moltype==water chemical potential evaluation must be checked in steady state" << endl; 
+		if (Mol[solvent]->MolType==water && pos !=M) cout <<"for Moltype==water chemical potential evaluation must be checked in steady state" << endl;
 		if (Mol[solvent]->MolType==water) Mu+= NA*(Mol[solvent]->phib1/(1-Mol[solvent]->Kw*Mol[solvent]->phib1)-Mol[solvent]->phibulk);
 		//Real theta;
 		Real phibulkA;

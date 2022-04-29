@@ -8,7 +8,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("freedom");
 	KEYS.push_back("valence");
 	KEYS.push_back("epsilon");
-	KEYS.push_back("B");
+	//KEYS.push_back("B");
 	KEYS.push_back("e.psi0/kT");
 	KEYS.push_back("pinned_range");
 	KEYS.push_back("frozen_range");
@@ -940,9 +940,11 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 void Segment::PutContraintBC() {
 if (debug) cout <<"PutConstraintBC Segment " + name << endl;
-	int MX=Lat[0]->MX;
-	if (phi_LB_X>0) phi[0]=phi_LB_X; 
-	if (phi_UB_X>0) phi[MX+1]=phi_UB_X;  //we will assume phibulk values in upperboundary. This bound should be sumphi=1 and electroneutral.
+	//int fjc=Lat[0]->fjc;
+	//int MX=Lat[0]->MX;
+	int M=Lat[0]->M;
+	if (phi_LB_X>0) phi[0]=phi_LB_X;
+	if (phi_UB_X>0) phi[M-1]=phi_UB_X;  //we will assume phibulk values in upperboundary. This bound should be sumphi=1 and electroneutral.
 }
 
 bool Segment::CheckInput(int start_) {
@@ -1036,12 +1038,12 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 		}
 	}
 
-	if (GetValue("B").size()>0) {
-		B=In[0]->Get_Real(GetValue("B"),B);
-		if (B <1e-9) {
-			cout <<"For Seg " + name + " mobility B should have be positive value " << endl;
-		}
-	}
+	//if (GetValue("B").size()>0) {
+	//	B=In[0]->Get_Real(GetValue("B"),B);
+	//	if (B <1e-9) {
+	//		cout <<"For Seg " + name + " mobility B should have be positive value " << endl;
+	//	}
+	//}
 
 	int length = state_name.size();
 	if (length >0 && (freedom == "frozen"||freedom=="tagged"||freedom=="clamp")) {

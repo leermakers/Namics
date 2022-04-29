@@ -18,6 +18,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	KEYS.push_back("k_stiff");
 	KEYS.push_back("phi_LB_x");
 	KEYS.push_back("phi_UB_x");
+	KEYS.push_back("B");
 
 	width=0;
 	phi_LB_X=0.0;
@@ -35,7 +36,7 @@ if (debug) cout <<"Constructor for Mol " + name << endl;
 	FillRangesList.clear();
 	Filling=false;
 	save_memory=false;
-	J=0; Delta_MU=0;
+	J=0; Delta_MU=0; B=1;
 
 }
 
@@ -498,6 +499,15 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 					}
 				}
 				if (freedom == "gradient") { //for the time being only in one-gradient systems; this is tested in system.
+					B=1;
+					if (GetValue("B").size()>0){
+						B=In[0]->Get_Real(GetValue("B"),B);
+						if (B<1e-9) {
+							cout <<"for Mol" + name + " mobility B should have a posititve value. Default value B=1 is chosen. " << endl;
+							B=1;  
+						}	
+					}
+
 					//if (GetValue("phibulk").size() >0) {
 					//	cout <<"In mol " + name + ", the setting 'freedom : gradient' should not be combined with a value for 'phibulk' but with values for 'phi_LB_x' and 'phi_UP_x' "<<endl; return false;
 					//} else {

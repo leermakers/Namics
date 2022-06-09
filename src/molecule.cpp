@@ -498,16 +498,18 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						}
 					}
 				}
-				if (freedom == "gradient") { //for the time being only in one-gradient systems; this is tested in system.
-					B=1;
-					if (GetValue("B").size()>0){
-						B=In[0]->Get_Real(GetValue("B"),B);
-						if (B<1e-9) {
-							cout <<"for Mol" + name + " mobility B should have a posititve value. Default value B=1 is chosen. " << endl;
-							B=1;  
-						}	
-					}
 
+				//if (freedom == "gradient") { //for the time being only in one-gradient systems; this is tested in system.
+				B=1;
+				if (GetValue("B").size()>0){
+					B=In[0]->Get_Real(GetValue("B"),B);
+					if (B<1e-9) {
+						cout <<"for Mol" + name + " mobility B should have a posititve value. Default value B=1 is chosen. " << endl;
+						B=1;  
+					}	
+				}
+
+				if (freedom == "gradient") { //for the time being only in one-gradient systems; this is tested in system.
 					//if (GetValue("phibulk").size() >0) {
 					//	cout <<"In mol " + name + ", the setting 'freedom : gradient' should not be combined with a value for 'phibulk' but with values for 'phi_LB_x' and 'phi_UP_x' "<<endl; return false;
 					//} else {
@@ -1738,12 +1740,12 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			//	xxx=Al[j]->frag[i]; Al[j]->frag[i]=Al[j]->frag[length-1-i]; Al[j]->frag[length-1-i]=xxx;
 			//} //dit geeft problemen in valgrind. Als alias verbetert is dan moet dit ook weer aangepakt.
 		}
-		for (int i=1; i<length-1; i++) {
-				if ((Gnr[i-1]!=Gnr[i]) && (Gnr[i]!=Gnr[i+1])&& Gnr[i-1]!=Gnr[i+1]) {
-					cout <<"Violation of the architecture in branched molecule '" + name + "': spacers between branches must be more than one segment in length.  " << endl;
-					return false;
-				}
-		}
+		//for (int i=1; i<length-1; i++) { //needs a fix
+		//		if ((Gnr[i-1]!=Gnr[i]) && (Gnr[i]!=Gnr[i+1])&& Gnr[i-1]!=Gnr[i+1]) {
+		//			cout <<"Violation of the architecture in branched molecule '" + name + "': spacers between branches must be more than one segment in length.  " << endl;
+	        //			return false;
+		//		}
+		//}
 
 	}
 

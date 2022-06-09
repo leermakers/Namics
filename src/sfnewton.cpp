@@ -446,36 +446,36 @@ if(debug) cout <<"decomposition in Newton" << endl;
 			if (ntr==0) {
 				cout << "Not too bad.";
 			} else {
-				cout << " sign might be wrong.";
+				if (s_info) cout << " sign might be wrong.";
 			}
 		} else if (ntr>0 && trouble==0) {
 			if (ntr==1) {
-				cout << "Wait a sec.";
+				if (s_info) cout << "Wait a sec.";
 			} else {
-				cout << "some TROUBLES appear.";
+				if (s_info) cout << "some TROUBLES appear.";
 			}
 		} else if (ntr>trouble+1) {
 			for (int i=1; i<= ntr; i++) {
-				cout << "O";
+				if (s_info) cout << "O";
 			}
-			cout << "H!";
+			if (s_info) cout << "H!";
 		} else if (trouble>0) {
 			if (ntr==0) {
-				cout << "Here we go.";
+				if (s_info) cout << "Here we go.";
 			} else if (ntr<trouble-1) {
-				cout << "Hold on.";
+				if (s_info) cout << "Hold on.";
 			} else if (ntr < trouble) {
-				cout << "There is some hope for you.";
+				if (s_info) cout << "There is some hope for you.";
 			} else if (ntr == trouble) {
-				cout << "no Progress.";
+				if (s_info) cout << "no Progress.";
 			} else if (ntr > 4) {
-				cout << "We won't fix it.";
+				if (s_info) cout << "We won't fix it.";
 			} else {
-				cout << "More troubles.";
+				if (s_info) cout << "More troubles.";
 			}
 		}
 		if (iterations==0 || trouble>0 || ntr>0) {
-			cout <<  endl;
+			if (s_info) cout <<  endl;
 		}
 	}
 	trouble = ntr;

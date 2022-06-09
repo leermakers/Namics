@@ -1,0 +1,169 @@
+lat : flat : n_layers : 100
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+lat : flat : lattice_type : hexagonal
+lat : flat : bondlength : 3e-10
+
+mon : C : freedom : pinned
+mon : C : pinned_range : 45;55
+mon : W : freedom : free
+mon : O : freedom : free
+
+mon : K : valence : 1
+mon : Na : valence : 1
+mon : Cl : valence : -1
+mon : P : valence : -0.2
+mon : N : valence : 0.25
+mon : A : valence : -0.1
+
+mon : N : epsilon : 2 
+mon : P : epsilon : 2 
+mon : K : epsilon : 2 
+mon : Na : epsilon : 2 
+mon : Cl : epsilon : 2
+mon : A : epsilon : 2
+mon : C : epsilon : 2
+
+mon : C : chi_W : 1.6
+mon : C : chi_O : 1.2
+mon : P : chi_C : 2
+mon : N : chi_C : 2
+
+mon : K : chi_P : -2
+
+mon : K : chi_C : 0
+mon : Na : chi_C : 3
+mon : Cl : chi_C : 2
+
+mon : K : chi_W : 0
+mon : Na : chi_W : 0
+mon : Cl : chi_W : 0
+
+mon : K : chi_O : 0
+mon : Na : chi_O : 0
+mon : Cl : chi_O : 0
+
+mon : A : chi_C : 2
+mon : A : chi_W : 0
+mon : A : chi_O : 0
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+//mol : lipid : composition : (C)18(C)1[(W)1](W)1(C)2[(C)1(P)2[(P)1][(P)1](P)1(C)2(N)1[(N)1][(N)1](N)1](W)1(C)1[(W)1](C)18
+mol : lipid : composition : (C)18(C)1[(O)1](O)1(C)2[(C)1(P)2[(P)1][(P)1](P)1(C)2(N)1[(N)1][(N)1](N)1](O)1(C)1[(O)1](C)18
+mol : lipid : freedom : restricted
+mol : lipid : theta : 8.2994
+
+mol : PolA : composition : (A)10
+mol : PolA : freedom : free
+mol : PolA : phibulk : 1e-6
+
+mol : Na : composition : (Na)1
+mol : Na : freedom : free
+mol : Na : phibulk : 0.01
+
+mol : K : composition : (K)1
+mol : K : freedom : free
+mol : K : phibulk : 1e-4
+
+mol : Cl : composition : (Cl)1
+mol : Cl : freedom : neutralizer
+
+newton : isaac : iterationlimit : 1000
+newton : isaac : max_accuracy_for_hessian_scaling : 1
+newton : isaac : n_iterations_for_hessian : 1000
+newton : isaac : min_accuracy_for_hessian : 0.5
+newton : isaac : i_info : 1000
+newton : isaac : hs_info : false
+newton : isaac : deltamax : 0.01
+newton : isaac : tolerance : 1e-9
+
+start
+mon : C : freedom : free
+
+sys : NN : constraint : delta
+sys : NN : delta_molecules : lipid;water
+sys : NN : delta_range : (54)
+sys : NN : phi_ratio : 1
+
+output : pro : append : false
+pro : mol : * : phi
+pro : mon : * : phi
+pro : sys : NN : q
+pro : sys : NN : psi
+
+output : kal : append : false
+kal : sys : NN : grand_potential
+kal : mol : lipid : theta
+kal : mol : * : phibulk
+kal : mol : lipid : theta_exc
+kal : mol : lipid : J
+kal : mol : water : J
+kal : mol : K : J
+kal : mol : Na : J
+kal : mol : Cl : J
+kal : mol : PolA : J
+kal : sys : NN : Sprod
+kal : sys : NN : Dpsi
+
+newton : isaac : iterationlimit : 100000
+start
+
+
+sys : NN : calculation_type : steady_state
+mol : Na : freedom : gradient
+mol : Na : phi_LB_x : 0.001 
+mol : Na : phi_UB_x : 0.01
+
+mol : K : freedom : gradient
+mol : K : phi_LB_x : 0.015
+mol : K : phi_UB_x : 1e-4
+
+mol : PolA : freedom : gradient
+mol : PolA : phi_LB_x : 0.159
+mol : PolA : phi_UB_x : 1e-6
+
+mol : PolA : B : 0.1
+mol : K : B : 0.1
+mol : Na : B : 0.1
+mol : Cl : B : 0.1
+mol : lipid : B : 0.1
+mol : water : B : 0.1
+
+//mon : C : B : 0.1
+//mon : H : B : 0.1
+//mon : W : B : 0.1
+//mon : O : B : 0.1
+//mon : K : B : 0.1
+//mon : Na : B : 0.1
+//mon : Cl : B : 0.1
+//mon : A : B : 0.1
+ 
+newton : isaac : deltamax : 0.01
+newton : isaac : n_iterations_for_hessian : 1000
+newton : isaac : max_accuracy_for_hessian_scaling : 0.1
+newton : isaac : iterationlimit : 500000
+newton : isaac : tolerance : 1e-7
+
+//newton : isaac : tolerance : 1e-9
+//newton : isaac : super_deltamax : 0.01
+//newton : isaac : super_tolerance : 1e-6
+//newton : isaac : min_accuracy_for_hessian : 0.01
+newton : isaac : i_info : 1000
+start
+
+//mon : Na : chi_C : 4
+//mol : lipid : theta : 8.3135
+//start
+
+//mon : Na : chi_C : 5
+//mol : lipid : theta : 8.3249
+//start
+
+//mon : Na : chi_C : 6
+//mol : lipid : theta : 8.3343
+//start
+
+//mon : Na : chi_C : 7
+//mol : lipid : theta : 8.3424

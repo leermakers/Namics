@@ -118,7 +118,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 	s_info=false;
 	e_info=false;
 	t_info=false;
-	hs_info=true;
+	hs_info=false;
 	i_info=1;
 	hessian =false;
 	bool success=true;
@@ -195,7 +195,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 				cout <<"max_accuracy_for_hessian_scaling is out of range: 1e-7...1; default value 0.1 is used instead" << endl;
 				max_accuracy_for_hessian_scaling=0.1;
 			}
-			minAccuracyForHessian=In[0]->Get_Real(GetValue("min_accuracy_for_hessian"),0);
+			minAccuracyForHessian=In[0]->Get_Real(GetValue("min_accuracy_for_hessian"),0.5);
 			if (minAccuracyForHessian<0 ||minAccuracyForHessian>1) {
 				cout <<"min_accuracy_for_hessian is out of range: 0...0.1; default value 0 is used instead (no hessian computation)" << endl;
 				minAccuracyForHessian=0;
@@ -206,12 +206,12 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 				maxFrReverseDirection =0.4;
 			}
 
-			n_iterations_for_hessian=In[0]->Get_int("n_iterations_for_hessian",100);
-			if (n_iterations_for_hessian<1 ||n_iterations_for_hessian>1000) {
-				cout <<" n_iterations_for_hessian setting is out of range: 1, ..., 1000; hessian evaluations will not be done " << endl;
+			n_iterations_for_hessian=In[0]->Get_int(GetValue("n_iterations_for_hessian"),iterationlimit+1);
+			if (n_iterations_for_hessian<1 ) {
+				cout <<" n_iterations_for_hessian setting must be larger than unity; hessian evaluations will not be done " << endl;
 				n_iterations_for_hessian=iterationlimit+100;
 			}
-			maxNumSmallAlpha=In[0]->Get_int("max_n_small_alpha",50);
+			maxNumSmallAlpha=In[0]->Get_int(GetValue("max_n_small_alpha"),50);
 			if (maxNumSmallAlpha<10 ||maxNumSmallAlpha>1000) {
 				cout <<" max_n_small_alpha is out of range: 10, ..., 100;  max_n_small_alpha is set to default: 50 " << endl;
 				maxNumSmallAlpha=50;
@@ -990,7 +990,9 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 				numIterationsSinceHessian = 0;
 			} else if ((numIterationsSinceHessian >= n_iterations_for_hessian &&
 						iterations > 0 && accuracy < minAccuracyForHessian && minimum < minAccuracyForHessian)) {
-				if (s_info && e_info) cout << "Still no solution, computing full hessian..." << endl; else cout <<"*";
+				if (s_info && e_info) 
+					cout << "Still no solution, computing full hessian..." << endl; 
+				else cout <<"*";
 				pseudohessian = false; reset_pseudohessian =true;
 				numIterationsSinceHessian = 0;
 			}

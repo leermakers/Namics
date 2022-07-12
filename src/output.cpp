@@ -449,7 +449,11 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				s=key.append(sep).append(OUT_name[i]).append(sep).append(OUT_prop[i]);
 				fprintf(fp,"%s\t",s.c_str());
 				int length_vec=Size;
+#ifdef LongReal
+				for (int j=0; j<length_vec; j++) fprintf(fp,"%Le\t",X[j]);
+#else
 				for (int j=0; j<length_vec; j++) fprintf(fp,"%e\t",X[j]);
+#endif
 				fprintf(fp,"\n");
 			}
 		}
@@ -521,13 +525,21 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			result_nr= GetValue(OUT_key[i],OUT_name[i],sub[0],int_result,Real_result,string_result);
 			if (result_nr==0) {if (i<length-1) fprintf(fp,"NiN\t"); else fprintf(fp,"NiN");}
 			if (result_nr==1) {if (i<length-1) fprintf(fp,"%i\t",int_result); else fprintf(fp,"%i",int_result);}
+#ifdef LongReal
+			if (result_nr==2) {if (i<length-1) fprintf(fp,"%.16Le\t",Real_result); else  fprintf(fp,"%.16Le",Real_result);}
+#else
 			if (result_nr==2) {if (i<length-1) fprintf(fp,"%.16e\t",Real_result); else  fprintf(fp,"%.16e",Real_result);}
+#endif
 			if (result_nr==3) {
 				if (sub[0]==OUT_prop[i]) {
 					if (i<length-1) fprintf(fp,"%s\t",string_result.c_str()); else fprintf(fp,"%s",string_result.c_str());
 				} else {
 					Real* X=GetPointer(OUT_key[i],OUT_name[i],sub[0],Size);
+#ifdef LongReal
+					if (i<length-1) fprintf(fp,"%Le\t",Lat[0]->GetValue(X,sub[1])); else fprintf(fp,"%Le",Lat[0]->GetValue(X,sub[1]));
+#else
 					if (i<length-1) fprintf(fp,"%e\t",Lat[0]->GetValue(X,sub[1])); else fprintf(fp,"%e",Lat[0]->GetValue(X,sub[1]));
+#endif
 				}
 			}
 		}
@@ -560,7 +572,11 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		for (int i=0; i<length; i++)
 			fprintf(fp,"%s %s : %i \n",s.c_str(),Sys[0]->ints[i].c_str(),Sys[0]->ints_value[i]);
 		length = Sys[0]->Reals.size();
+#ifdef LongReal
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %Le \n",s.c_str(),Sys[0]->Reals[i].c_str(),Sys[0]->Reals_value[i]);
+#else
 		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Sys[0]->Reals[i].c_str(),Sys[0]->Reals_value[i]);
+#endif
 		length = Lat[0]->bools.size();
 		for (int i=0; i<length; i++) {
 			if (Sys[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Sys[0]->bools[i].c_str(),"true");
@@ -575,7 +591,11 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		for (int i=0; i<length; i++)
 			fprintf(fp,"%s %s : %i \n",s.c_str(),Lat[0]->ints[i].c_str(),Lat[0]->ints_value[i]);
 		length = Lat[0]->Reals.size();
+#ifdef LongReal
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %Le \n",s.c_str(),Lat[0]->Reals[i].c_str(),Lat[0]->Reals_value[i]);
+#else
 		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Lat[0]->Reals[i].c_str(),Lat[0]->Reals_value[i]);
+#endif
 		length = Lat[0]->bools.size();
 		for (int i=0; i<length; i++) {
 			if (Lat[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Lat[0]->bools[i].c_str(),"true");
@@ -590,7 +610,11 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		for (int i=0; i<length; i++)
 			fprintf(fp,"%s %s : %i \n",s.c_str(),New[0]->ints[i].c_str(),New[0]->ints_value[i]);
 		length = New[0]->Reals.size();
+#ifdef LongReal
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %Le \n",s.c_str(),New[0]->Reals[i].c_str(),New[0]->Reals_value[i]);
+#else
 		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),New[0]->Reals[i].c_str(),New[0]->Reals_value[i]);
+#endif
 		length = New[0]->bools.size();
 		for (int i=0; i<length; i++) {
 			if (New[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),New[0]->bools[i].c_str(),"true");
@@ -607,7 +631,11 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			for (int i=0; i<length; i++)
 				fprintf(fp,"%s %s : %i \n",s.c_str(),Seg[j]->ints[i].c_str(),Seg[j]->ints_value[i]);
 			length = Seg[j]->Reals.size();
+#ifdef LongReal
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %Le \n",s.c_str(),Seg[j]->Reals[i].c_str(),Seg[j]->Reals_value[i]);
+#else
 			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Seg[j]->Reals[i].c_str(),Seg[j]->Reals_value[i]);
+#endif
 			length = Seg[j]->bools.size();
 			for (int i=0; i<length; i++) {
 				if (Seg[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Seg[j]->bools[i].c_str(),"true");
@@ -624,7 +652,11 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			for (int i=0; i<length; i++)
 				fprintf(fp,"%s %s : %i \n",s.c_str(),Mol[j]->ints[i].c_str(),Mol[j]->ints_value[i]);
 			length = Mol[j]->Reals.size();
+#ifdef LongReal
+			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %Le \n",s.c_str(),Mol[j]->Reals[i].c_str(),Mol[j]->Reals_value[i]);
+#else
 			for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Mol[j]->Reals[i].c_str(),Mol[j]->Reals_value[i]);
+#endif
 			length = Mol[j]->bools.size();
 			for (int i=0; i<length; i++) {
 				if (Mol[j]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Mol[j]->bools[i].c_str(),"true");
@@ -639,7 +671,11 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		for (int i=0; i<length; i++)
 			fprintf(fp,"%s %s : %i \n",s.c_str(),ints[i].c_str(),ints_value[i]);
 		length = Reals.size();
+#ifdef LongReal
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %Le \n",s.c_str(),Reals[i].c_str(),Reals_value[i]);
+#else
 		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Reals[i].c_str(),Reals_value[i]);
+#endif
 		length = bools.size();
 		for (int i=0; i<length; i++) {
 			if (bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),bools[i].c_str(),"true");
@@ -667,8 +703,11 @@ if (debug) cout << "vtk in output " << endl;
 	fprintf(fp, "SCALARS Box_profile float\nLOOKUP_TABLE default \n");
 
 	for(int x=1; x<MX+1; x++) for(int y=1; y<MY+1; y++) for(int z=1; z<MZ+1; z++)
-		fprintf(fp,"%lf \n",X[x*JX+y*JY+z]);
-
+#ifdef LongReal
+		fprintf(fp,"%Lf \n",X[x*JX+y*JY+z]);
+#else
+		fprintf(fp,"%f \n",X[x*JX+y*JY+z]);
+#endif
 	fclose(fp);
 }
 

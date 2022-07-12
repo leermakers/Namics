@@ -9,7 +9,7 @@
 #endif
 #include <cmath>
 
-struct saxpy_functor
+/* struct saxpy_functor
 {
 	const double a;
 
@@ -19,8 +19,7 @@ struct saxpy_functor
 	{
 		return a * x + y;
 	}
-};
-
+}; 
 struct reverse_minus_functor
 {
 	reverse_minus_functor() {}
@@ -30,7 +29,6 @@ struct reverse_minus_functor
 		return y - x;
 	}
 };
-
 struct norm_functor
 {
 	const double a;
@@ -42,7 +40,6 @@ struct norm_functor
 		return a * x;
 	}
 };
-
 struct binary_norm_functor
 {
 	const double a;
@@ -54,7 +51,6 @@ struct binary_norm_functor
 		return a * x * y;
 	}
 };
-
 struct order_param_functor
 {
 
@@ -65,7 +61,6 @@ struct order_param_functor
 		return pow(x - y, 2);
 	}
 };
-
 struct is_negative_functor
 {
 
@@ -95,8 +90,97 @@ struct is_not_unity_functor
 		return result;
 	}
 };
+*/
+//typedef double Real;
+struct saxpy_functor
+{
+	const Real a;
 
-typedef double Real;
+	saxpy_functor(Real _a) : a(_a) {}
+
+	Real operator()(const Real &x, const Real &y) const
+	{
+		return a * x + y;
+	}
+};
+
+struct reverse_minus_functor
+{
+	reverse_minus_functor() {}
+
+	Real operator()(const Real &x, const Real &y) const
+	{
+		return y - x;
+	}
+};
+
+struct norm_functor
+{
+	const Real a;
+
+	norm_functor(Real _a) : a(_a) {}
+
+	Real operator()(const Real &x) const
+	{
+		return a * x;
+	}
+};
+
+struct binary_norm_functor
+{
+	const Real a;
+
+	binary_norm_functor(Real _a) : a(_a) {}
+
+	Real operator()(const Real &x, const Real &y) const
+	{
+		return a * x * y;
+	}
+};
+
+struct order_param_functor
+{
+
+	order_param_functor() {}
+
+	Real operator()(const Real &x, const Real &y) const
+	{
+		return pow(x - y, 2);
+	}
+};
+
+struct is_negative_functor
+{
+
+	const Real tolerance{0};
+
+	is_negative_functor(Real _tolerance = 0) : tolerance(_tolerance) {}
+
+	bool operator()(const Real &x) const
+	{
+		return x < 0 - tolerance || x > 1 + tolerance;
+	}
+};
+
+struct is_not_unity_functor
+{
+	const Real tolerance{0};
+
+	is_not_unity_functor(Real _tolerance = 1e-4) : tolerance(_tolerance) {}
+
+	bool operator()(const Real &x) const
+	{
+		bool result{0};
+
+		if (x > (1 + tolerance) || x < (1 - tolerance))
+			result = 1;
+
+		return result;
+	}
+};
+
+//typedef long double Real;
+
 
 template <typename T>
 inline void Times(Real* P, Real* A, T* B, int M) {
@@ -224,32 +308,33 @@ inline void RemoveBoundaries(T* P, int jx, int jy, int bx1, int bxm, int by1, in
   b_z(P, Mx + 2, My + 2, Mz + 1, bz1, bzm, jx, jy);
 }
 
-#if __SSE__
-template<typename T>
-void Dot(T &result, T *x,T *y, int M)   {
-	T z = 0.0;
-	result = 0.0;
-	T ftmp[2] = { 0.0, 0.0 };
-	__m128d mres;
+//#if __SSE__
+//template<typename T>
+//void Dot(T &result, T *x,T *y, int M)   {
+//	T z = 0.0;
+//	result = 0.0;
+//	Real zero=0.0;
+//	T ftmp[2] = { zero, zero };
+//	__m128d mres;
+//
+//	if ((M / 2) != 0) {
+//		mres = _mm_load_sd(&z);
+//		for (int i = 0; i < M / 2; i++)
+//			mres = _mm_add_pd(mres, _mm_mul_pd(_mm_loadu_pd(&x[2*i]),
+//			_mm_loadu_pd(&y[2*i])));
+//
+//		_mm_store_pd(ftmp, mres);
+//
+//		result = ftmp[0] + ftmp[1];
+//}
+//
+//	if ((M % 2) != 0) {
+//		for (int i = M - M % 2; i < M; i++)
+//			result += x[i] * y[i];
+//	}
+//}
 
-	if ((M / 2) != 0) {
-		mres = _mm_load_sd(&z);
-		for (int i = 0; i < M / 2; i++)
-			mres = _mm_add_pd(mres, _mm_mul_pd(_mm_loadu_pd(&x[2*i]),
-			_mm_loadu_pd(&y[2*i])));
-
-		_mm_store_pd(ftmp, mres);
-
-		result = ftmp[0] + ftmp[1];
-}
-
-	if ((M % 2) != 0) {
-		for (int i = M - M % 2; i < M; i++)
-			result += x[i] * y[i];
-	}
-}
-
-#else
+//#else
 
 template< typename T>
 void Dot(T &result, T *x,T *y, int M)   {
@@ -258,7 +343,7 @@ void Dot(T &result, T *x,T *y, int M)   {
 		result += x[i] * y[i];
 }
 
-#endif
+//#endif
 
 template<typename T>
 void AddTimes(T *P, T *A, T *B, int M)   {

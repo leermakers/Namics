@@ -58,6 +58,15 @@ if (debug) cout << "vtk in LGrad3 " << endl;
 		fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",MX*MY*MZ);
 	}
 	fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
+#ifdef LongReal
+	if (writebounds) for(i=0; i<M; i++) fprintf(fp,"%Lf\n",X[i]);
+	else {
+		for (int x=fjc; x<MX+fjc; x++)
+		for (int y=fjc; y<MY+fjc; y++)
+		for (int z=fjc; z<MZ+fjc; z++)
+		fprintf(fp,"%Le\n",X[P(x,y,z)]);
+	}
+#else
 	if (writebounds) for(i=0; i<M; i++) fprintf(fp,"%f\n",X[i]);
 	else {
 		for (int x=fjc; x<MX+fjc; x++)
@@ -65,11 +74,13 @@ if (debug) cout << "vtk in LGrad3 " << endl;
 		for (int z=fjc; z<MZ+fjc; z++)
 		fprintf(fp,"%e\n",X[P(x,y,z)]);
 	}
+#endif
 	fclose(fp);
 }
 
 void LGrad3::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds){
 if (debug) cout <<"PutProfiles in LGrad3 " << endl;
+	Real one=1.0;
 	int x,y,z,i;
 	int length=X.size();
 	int a;
@@ -77,8 +88,14 @@ if (debug) cout <<"PutProfiles in LGrad3 " << endl;
 	for (x=a; x<MX+2*fjc-a; x++)
 	for (y=a; y<MY+2*fjc-a; y++)
 	for (z=a; z<MZ+2*fjc-a; z++) {
-		fprintf(pf,"%e\t%e\t%e\t",1.0*(x-fjc+1)/fjc-0.5/fjc,1.0*(y-fjc+1)/fjc-0.5/fjc,1.0*(z-fjc+1)/fjc-0.5/fjc);
-		for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][P(x,y,z)]);
+#ifdef LongReal
+		fprintf(pf,"%Le\t%Le\t%Le\t",one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc,one*(z-fjc+1)/fjc-0.5/fjc);
+		for (i=0; i<length; i++) fprintf(pf,"%.20Le\t",X[i][P(x,y,z)]);
+#else
+		fprintf(pf,"%e\t%e\t%e\t",one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc,one*(z-fjc+1)/fjc-0.5/fjc);
+		for (i=0; i<length; i++) fprintf(pf,"%.20e\t",X[i][P(x,y,z)]);
+
+#endif
 		fprintf(pf,"\n");
 	}
 }
@@ -1562,11 +1579,12 @@ Real LGrad3::ComputeGN(Real* G,int Markov, int M){
 
 }
 void LGrad3::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){
+	Real one=1.0;
 	if (Markov ==2) {
 		if (lattice_type==hexagonal) {
-			for (int k=0; k<12; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/12.0,M);
+			for (int k=0; k<12; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,one/12.0,M);
 		} else {
-			for (int k=0; k<6; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
+			for (int k=0; k<6; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,one/6.0,M);
 		}
 	} else AddTimes(phi,Gf,Gb,M);
 

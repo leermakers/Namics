@@ -56,6 +56,7 @@ bool Teng::MonteCarlo()
 	Real Percentageaccepted = 0.0;
 	Real Percentagerejected = 0.0;
 	Real acceptance;
+	Real one=1.0;
 
 	for (time = 1; time <= MCS; time++)
 	{
@@ -64,7 +65,7 @@ bool Teng::MonteCarlo()
 		solved = New[0]->Solve(true);
 		F_am = Sys[0]->FreeEnergy;
 
-		acceptance = GetRandom(1.0);
+		acceptance = GetRandom(one);
 
 		if ((F_am - F_bm <= 0 || acceptance < exp(-1.0 * (F_am - F_bm))) && solved)
 		{
@@ -123,13 +124,14 @@ bool Teng::ChangeMode()
 {
 	bool success = false;
 	bool copy = false;
+	Real one = 1.0;
 	while (!success)
 	{
 		Real Amplitude;
 		Real Wavenumber;
 		//Real pi = 4.0 * atan(1.0);
-		Amplitude = GetRandom(1.0);
-		Wavenumber = round(GetRandom(Lat[0]->MZ / 2.0)) * 2; //creates even wavenumbers in uniform space
+		Amplitude = GetRandom(one);
+		Wavenumber = round(GetRandom(Lat[0]->MZ / 2.0*one)) * 2; //creates even wavenumbers in uniform space
 
 		//TODO : Select random number of particles and translate them randomly
 
@@ -139,7 +141,7 @@ bool Teng::ChangeMode()
 		{
 			X[i] = X[i];// + round(0.5 - round(GetRandom(1.0)));
 			Y[i] = Y[i];// + round(0.5 - round(GetRandom(1.0)));
-			Z[i] = Z[i] + round(0.5-round(GetRandom(1.0))); //round(Amplitude * (sin(Wavenumber * pi * X[i] / Lat[0]->MX) * sin(Wavenumber * pi * Y[i] / Lat[0]->MY)));
+			Z[i] = Z[i] + round(0.5-round(GetRandom(one))); //round(Amplitude * (sin(Wavenumber * pi * X[i] / Lat[0]->MX) * sin(Wavenumber * pi * Y[i] / Lat[0]->MY)));
 		}
 		success = IsLegal();
 		if (success)

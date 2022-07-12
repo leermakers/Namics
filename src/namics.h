@@ -1,6 +1,7 @@
 
 #ifndef NAMICSxH
 #define NAMICSxH
+#define LongReal // if Real should refer to long double then #define LongReal should be chosen, else it should be commented out. 
 
 #include <cmath>
 #include <cstdio>
@@ -22,7 +23,11 @@
 
 using namespace std;
 //these are our options.
+#ifdef LongReal
+typedef long double Real; //See comment at top of file.
+#else
 typedef double Real;
+#endif
 
 
 

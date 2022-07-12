@@ -26,44 +26,45 @@ void LG2Planar:: ComputeLambdas() {
 
 void LG2Planar::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in LGrad2 " << endl;
+	Real one=1.0;
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;
 	}
 	Zero(X_side,M);set_bounds(X);
 
 	if (fcc_sites) {
-		YplusisCtimesX(X_side,X,     1.0/9.0,M);
-		YplusisCtimesX(X_side+1,X,   1.0/9.0,M-1);
-		YplusisCtimesX(X_side,X+1,   1.0/9.0,M-1);
-		YplusisCtimesX(X_side+JX,X,  1.0/9.0,M-JX);
-		YplusisCtimesX(X_side,X+JX,  1.0/9.0,M-JX);
-		YplusisCtimesX(X_side+JX+1,X,1.0/9.0,M-JX-1);
-		YplusisCtimesX(X_side+JX,X+1,1.0/9.0,M-JX);
-		YplusisCtimesX(X_side+1,X+JX,1.0/9.0,M-JX);
-		YplusisCtimesX(X_side,X+JX+1,1.0/9.0,M-JX-1);
+		YplusisCtimesX(X_side,X,     1.0/9.0*one,M);
+		YplusisCtimesX(X_side+1,X,   1.0/9.0*one,M-1);
+		YplusisCtimesX(X_side,X+1,   1.0/9.0*one,M-1);
+		YplusisCtimesX(X_side+JX,X,  1.0/9.0*one,M-JX);
+		YplusisCtimesX(X_side,X+JX,  1.0/9.0*one,M-JX);
+		YplusisCtimesX(X_side+JX+1,X,1.0/9.0*one,M-JX-1);
+		YplusisCtimesX(X_side+JX,X+1,1.0/9.0*one,M-JX);
+		YplusisCtimesX(X_side+1,X+JX,1.0/9.0*one,M-JX);
+		YplusisCtimesX(X_side,X+JX+1,1.0/9.0*one,M-JX-1);
 	} else {
 		if (fjc==1) {
 			if (stencil_full) {
 				if (lattice_type==simple_cubic) { //9 point stencil
-					YplusisCtimesX(X_side,X,    16.0/36.0,M);
-					YplusisCtimesX(X_side+1,X,   4.0/36.0,M-1);
-					YplusisCtimesX(X_side,X+1,   4.0/36.0,M-1);
-					YplusisCtimesX(X_side+JX,X,  4.0/36.0,M-JX);
-					YplusisCtimesX(X_side,X+JX,  4.0/36.0,M-JX);
-					YplusisCtimesX(X_side+JX+1,X,1.0/36.0,M-JX-1);
-					YplusisCtimesX(X_side+JX,X+1,1.0/36.0,M-JX);
-					YplusisCtimesX(X_side+1,X+JX,1.0/36.0,M-JX);
-					YplusisCtimesX(X_side,X+JX+1,1.0/36.0,M-JX-1);
+					YplusisCtimesX(X_side,X,    16.0/36.0*one,M);
+					YplusisCtimesX(X_side+1,X,   4.0/36.0*one,M-1);
+					YplusisCtimesX(X_side,X+1,   4.0/36.0*one,M-1);
+					YplusisCtimesX(X_side+JX,X,  4.0/36.0*one,M-JX);
+					YplusisCtimesX(X_side,X+JX,  4.0/36.0*one,M-JX);
+					YplusisCtimesX(X_side+JX+1,X,1.0/36.0*one,M-JX-1);
+					YplusisCtimesX(X_side+JX,X+1,1.0/36.0*one,M-JX);
+					YplusisCtimesX(X_side+1,X+JX,1.0/36.0*one,M-JX);
+					YplusisCtimesX(X_side,X+JX+1,1.0/36.0*one,M-JX-1);
 				} else {
-					YplusisCtimesX(X_side,X,    12.0/48.0,M);
-					YplusisCtimesX(X_side+1,X,   6.0/48.0,M-1);
-					YplusisCtimesX(X_side,X+1,   6.0/48.0,M-1);
-					YplusisCtimesX(X_side+JX,X,  6.0/48.0,M-JX);
-					YplusisCtimesX(X_side,X+JX,  6.0/48.0,M-JX);
-					YplusisCtimesX(X_side+JX+1,X,3.0/48.0,M-JX-1);
-					YplusisCtimesX(X_side+JX,X+1,3.0/48.0,M-JX);
-					YplusisCtimesX(X_side+1,X+JX,3.0/48.0,M-JX);
-					YplusisCtimesX(X_side,X+JX+1,3.0/48.0,M-JX-1);
+					YplusisCtimesX(X_side,X,    12.0/48.0*one,M);
+					YplusisCtimesX(X_side+1,X,   6.0/48.0*one,M-1);
+					YplusisCtimesX(X_side,X+1,   6.0/48.0*one,M-1);
+					YplusisCtimesX(X_side+JX,X,  6.0/48.0*one,M-JX);
+					YplusisCtimesX(X_side,X+JX,  6.0/48.0*one,M-JX);
+					YplusisCtimesX(X_side+JX+1,X,3.0/48.0*one,M-JX-1);
+					YplusisCtimesX(X_side+JX,X+1,3.0/48.0*one,M-JX);
+					YplusisCtimesX(X_side+1,X+JX,3.0/48.0*one,M-JX);
+					YplusisCtimesX(X_side,X+JX+1,3.0/48.0*one,M-JX-1);
 				}
 			} else {
 				if (lattice_type==simple_cubic) {//classical
@@ -71,9 +72,9 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 					Add(X_side,X+JX,M-JX);
 					Add(X_side+1,X,M-1);
 					Add(X_side,X+1,M-1);
-					Norm(X_side,1.0/2.0,M);
+					Norm(X_side,1.0/2.0*one,M);
 					Add(X_side,X,M);
-					Norm(X_side,1.0/3.0,M);
+					Norm(X_side,1.0/3.0*one,M);
 				} else { //not fully tested...
 					cout <<" in side fractions the bc are not fully tested yet..." << endl;
 					Add(X_side+JX,X,   M-JX);
@@ -88,7 +89,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 					Add(X_side+JX,X+JY,M-JX-JY);
 					Add(X_side+JY,X+JX,M-JX-JY);
 
-					Norm(X_side,1.0/12.0,M);
+					Norm(X_side,1.0/12.0*one,M);
 				}
 			}
 		}
@@ -391,32 +392,33 @@ void LG2Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 
 void LG2Planar::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in LGrad2 " << endl;
+	Real one=1.0;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 
 	Zero(gs,M); set_bounds(gs_1);
 	if (fjc==1) {
 		if (stencil_full) {
 			if (lattice_type==simple_cubic) { //9 point stencil
-				YplusisCtimesX(gs,gs_1,    16.0/36.0,M);
-				YplusisCtimesX(gs+1,gs_1,   4.0/36.0,M-1);
-				YplusisCtimesX(gs,gs_1+1,   4.0/36.0,M-1);
-				YplusisCtimesX(gs+JX,gs_1,  4.0/36.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX,  4.0/36.0,M-JX);
-				YplusisCtimesX(gs+JX+1,gs_1,1.0/36.0,M-JX-1);
-				YplusisCtimesX(gs+JX,gs_1+1,1.0/36.0,M-JX);
-				YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0,M-JX-1);
+				YplusisCtimesX(gs,gs_1,    16.0/36.0*one,M);
+				YplusisCtimesX(gs+1,gs_1,   4.0/36.0*one,M-1);
+				YplusisCtimesX(gs,gs_1+1,   4.0/36.0*one,M-1);
+				YplusisCtimesX(gs+JX,gs_1,  4.0/36.0*one,M-JX);
+				YplusisCtimesX(gs,gs_1+JX,  4.0/36.0*one,M-JX);
+				YplusisCtimesX(gs+JX+1,gs_1,1.0/36.0*one,M-JX-1);
+				YplusisCtimesX(gs+JX,gs_1+1,1.0/36.0*one,M-JX);
+				YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0*one,M-JX);
+				YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0*one,M-JX-1);
 				Times(gs,gs,G1,M);
 			} else { //hexagonal //9 point stencil
-				YplusisCtimesX(gs,gs_1,    12.0/48.0,M);
-				YplusisCtimesX(gs+1,gs_1,   6.0/48.0,M-1);
-				YplusisCtimesX(gs,gs_1+1,   6.0/48.0,M-1);
-				YplusisCtimesX(gs+JX,gs_1,  6.0/48.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX,  6.0/48.0,M-JX);
-				YplusisCtimesX(gs+JX+1,gs_1,3.0/48.0,M-JX-1);
-				YplusisCtimesX(gs+JX,gs_1+1,3.0/48.0,M-JX);
-				YplusisCtimesX(gs+1,gs_1+JX,3.0/48.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX+1,3.0/48.0,M-JX-1);
+				YplusisCtimesX(gs,gs_1,    12.0/48.0*one,M);
+				YplusisCtimesX(gs+1,gs_1,   6.0/48.0*one,M-1);
+				YplusisCtimesX(gs,gs_1+1,   6.0/48.0*one,M-1);
+				YplusisCtimesX(gs+JX,gs_1,  6.0/48.0*one,M-JX);
+				YplusisCtimesX(gs,gs_1+JX,  6.0/48.0*one,M-JX);
+				YplusisCtimesX(gs+JX+1,gs_1,3.0/48.0*one,M-JX-1);
+				YplusisCtimesX(gs+JX,gs_1+1,3.0/48.0*one,M-JX);
+				YplusisCtimesX(gs+1,gs_1+JX,3.0/48.0*one,M-JX);
+				YplusisCtimesX(gs,gs_1+JX+1,3.0/48.0*one,M-JX-1);
 				Times(gs,gs,G1,M);
 			}
 		} else { // classical!
@@ -425,9 +427,9 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 				Add(gs,gs_1+JX,M-JX);
 				Add(gs+JY,gs_1,M-1);
 				Add(gs,gs_1+JY,M-1);
-				Norm(gs,1.0/2.0,M);
+				Norm(gs,1.0/2.0*one,M);
 				Add(gs,gs_1,M);
-				Norm(gs,1.0/3.0,M);
+				Norm(gs,1.0/3.0*one,M);
 				Times(gs,gs,G1,M);
 			} else { //hexagonal Johan's method
 				Add(gs+JX,gs_1,   M-JX);

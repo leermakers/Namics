@@ -1,5 +1,6 @@
 #include "system.h"
 #include "tools.h"
+#include <algorithm>
 
 System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Seg_, vector<State *> Sta_, vector<Reaction *> Rea_, vector<Molecule *> Mol_, string name_)
 {
@@ -2149,33 +2150,27 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 	Real chi;
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 	int i,k;
+	//dphidt*=(Real*) malloc(iv*sizeof(Real);
 
 	int itmonlistlength=ItMonList.size();
 	int state_length = In[0]->StateList.size();
 	int itstatelistlength=ItStateList.size();
 
 	if (itstatelistlength>0) cout <<"currently, internal states of segments incompatible with steady state " << endl; 
+//for (int l=0; l<1; l++) {
 	Cp(g,x,iv);
 	ComputePhis(x,iterations==0,residual);
-/*
-		Real PhiTot0=0;
-		Real PhiTotM=0;
-		int n_seg=itmonlistlength; 
-		for (int i = 0; i < n_seg; i++) {
-			PhiTot0+=Seg[i]->phi[0];
-			PhiTotM+=Seg[i]->phi[M-1];
-		}
-		cout <<"itmonlistlength " << itmonlistlength << endl; 
-		cout <<" phi in layer 0 is " << PhiTot0 << endl;
-		cout <<" phi in layer M is " << PhiTotM << endl;
-*/
+
+	//for (i=0; i<itmonlistlength; i++) {
+	//	Add(Seg[ItMonList[i]]->phi,Seg[ItMonList[i]]->dphidt,M);
+	//	Seg[ItMonList[i]]->SetPhiSide();
+	//}
 	for (i=0; i<itmonlistlength; i++) {
 		Add(g+i*M,Seg[ItMonList[i]]->u_ext,M);
 		for (k=0; k<mon_length; k++) {
 			if (Seg[k]->ns<2) {
 				chi =Seg[ItMonList[i]]->chi[k];
 				if (chi!=0) {
-//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[k]->name << "chi = " << chi << endl;
 					PutAlpha(g+i*M,phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 				}
 			}
@@ -2183,12 +2178,10 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 		for (k=0; k<state_length; k++) {
 			chi =Seg[ItMonList[i]]->chi[mon_length+k];
 			if (chi!=0) {
-//cout <<"for seg " << Seg[ItMonList[i]]->name <<" seg " << Seg[Sta[k]->mon_nr]->name << " state " << Sta[k]->name << "chi = " << chi << endl;
 				PutAlpha(g+i*M,phitot,Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr*M,chi,Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr],M);
 			}
 		}
 	}
-	//for (i=0; i<itmonlistlength; i++) Add(alpha,g+i*M,M);
 
 	for (i=0; i<itstatelistlength; i++) {
 		for (k=0; k<mon_length; k++) {
@@ -2212,37 +2205,26 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 	
 	Zero(g,iv);
 	Real Jtot=0;
-	//for (int i=0; i<itmonlistlength; i++) {
-		Segment* Seg0=Seg[ItMonList[0]];
-		g[1]=Seg0->phi[0]/Seg0->phi[1]-1.0;
-		for (int z=2; z<M-2; z++) g[z]=1.0/phitot[z]-1.0;
-		g[M-2]=Seg0->phi[M-1]/Seg0->phi[M-2]-1.0;
-	//}
+	Segment* Seg0=Seg[ItMonList[0]];
+	g[1]=Seg0->phi[0]/Seg0->phi[1]-1.0;
+	for (int z=2; z<M-2; z++) { 
+		g[z]=1.0/phitot[z]-1.0; 
+		//Seg0->dphidt[z]=0;
+	}
+	g[M-2]=Seg0->phi[M-1]/Seg0->phi[M-2]-1.0;
 	for (int i =1 ; i<itmonlistlength; i++) { 
 		Segment* Segi=Seg[ItMonList[i]];
 		Segi->J=0;
 		for (int k =0; k<itmonlistlength; k++) {
 			Segment* Segk=Seg[ItMonList[k]];
 			if (i !=k) Segi->J += Lat[0]->DphiDt(g+i*M,B_phitot,Segi->phi,Segk->phi,Segi->ALPHA,Segk->ALPHA,Segi->B,Segk->B); 
-			
-/*
-			k_B=Seg[k]->B;
-			g[i*M+1]=Seg[i]->phi[0]/Seg[i]->phi[1]-1;
-			b=Seg[i]->phi[1]*Seg[k]->phi[1]*k_B/B_phitot[1];
-			c=Seg[i]->phi[2]*Seg[k]->phi[2]*k_B/B_phitot[2];
-			Mb=Seg[i]->ALPHA[1]-Seg[k]->ALPHA[1];
-			Mc=Seg[i]->ALPHA[2]-Seg[k]->ALPHA[2];
-			
-			for (int z=2; z<M-2; z++) {//dphi/dt=0 except when i=0; then we put sum phi = 1; and when i==k we do not do anything
-				a=b; b=c; c=Seg[i]->phi[z+1]*Seg[k]->phi[z+1]*k_B/B_phitot[z+1];
-				Ma=Mb; Mb=Mc; Mc=Seg[i]->ALPHA[z+1]-Seg[k]->ALPHA[z+1];
-				g[i*M+z] =g[i*M+z] +(a+b)*(Mb-Ma)-(b+c)*(Mc-Mb);
-				//g[i*M+z] =g[i*M+z] +(Mb-Ma)+(Mc-Mb);
-			}
-			g[i*M+M-2]=Seg[i]->phi[M-1]/Seg[i]->phi[M-2]-1;
-*/                      
 		}
 		Jtot +=Segi->J;
+		//if (residual < 0.01) 
+		//for (int z=2; z<M-2; z++) {
+		//	Segi->dphidt[z]=g[i*M+z]/2.0;
+		//	Seg0->dphidt[z]-=g[i*M+z]/2.0;
+		//}
 	}
 	Seg[ItMonList[0]]->J=-Jtot;
 	
@@ -2291,6 +2273,7 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 			}
 		}
 	}
+//}//extra loop for implicit iterations.
 }
 
 bool System::ComputePhis(Real residual){
@@ -2361,6 +2344,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 				else
 				{
 					Mol[i]->phibulk = Mol[i]->chainlength * norm;
+					//cout<<"phibulk = " << Mol[i]->phibulk << endl;
 					A += Mol[i]->phibulk * Mol[i]->Charge();
 					B += Mol[i]->phibulk;
 				}
@@ -2663,8 +2647,9 @@ for (int j=0; j<n_mol; j++) {
 */		
 		int it_mon_length=ItMonList.size();
 		Zero(B_phitot,M);
-		for (int i=0; i<it_mon_length; i++)  YplusisCtimesX(B_phitot,Seg[ItMonList[i]]->phi,Seg[ItMonList[i]]->B,M); 
-		Times(B_phitot,B_phitot,phitot,M);
+		for (int i=0; i<it_mon_length; i++)  
+			YplusisCtimesX(B_phitot,Seg[ItMonList[i]]->phi,Seg[ItMonList[i]]->B,M); 
+		//Times(B_phitot,B_phitot,phitot,M);
 		//Cp(B_phitot,phitot,M);
 	}
 
@@ -2713,7 +2698,7 @@ bool System::CheckResults(bool e_info_)
 
 	//if (e_info)
 	//	cout << endl;
-	if ((e_info&& first_pass && CalculationType=="equilibrium"))
+	if ((e_info&& first_pass && CalculationType!="steady_state"))
 	{
 		cout << "free energy                 = " << FreeEnergy << endl;
 		cout << "grand potential             = " << GrandPotential << endl;
@@ -2730,7 +2715,7 @@ bool System::CheckResults(bool e_info_)
 			n = Mol[i]->n_box;
 		n_times_mu += n * Mu;
 	}
-	if ((e_info && first_pass && CalculationType=="equilibrium"))
+	if ((e_info && first_pass && CalculationType!="steady_state"))
 	{
 		cout << "free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
 		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl<<endl;;

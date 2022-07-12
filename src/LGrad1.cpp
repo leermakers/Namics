@@ -223,10 +223,17 @@ if (debug) cout <<"PutProfiles in LGrad1 " << endl;
 
 	for (x=a; x<MX+2*fjc-a; x++){
 		//fprintf(pf,"%e\t",offset_first_layer+1.0*x/fjc-1/(2.0*fjc));
-		fprintf(pf,"%e\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc);
+#ifdef LongReal
+		fprintf(pf,"%Le\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc); //g - e
+		for (i=0; i<length; i++)
+		if (i<length-1) fprintf(pf,"%.20Lg\t",X[i][x]); else fprintf(pf,"%.20Lg",X[i][x]);
+		fprintf(pf,"\n");
+#else
+		fprintf(pf,"%e\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc); //g - e
 		for (i=0; i<length; i++)
 		if (i<length-1) fprintf(pf,"%.20g\t",X[i][x]); else fprintf(pf,"%.20g",X[i][x]);
 		fprintf(pf,"\n");
+#endif
 	}
 }
 
@@ -811,15 +818,16 @@ Real LGrad1::ComputeGN(Real* G,int Markov, int M){
 }
 
 void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){//Adopt for fjc>1!!!!
+	Real one=1.0;
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
-			YplusisCtimesAtimesB(phi,Gf,Gb,0.25,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5,M);
-			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25,M);
+			YplusisCtimesAtimesB(phi,Gf,Gb,0.25*one,M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5*one,M);
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25*one,M);
 		} else {
-			YplusisCtimesAtimesB(phi,Gf,Gb,1.0/6.0,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,4.0/6.0,M);
-			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,1.0/6.0,M);
+			YplusisCtimesAtimesB(phi,Gf,Gb,1.0/6.0*one,M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,4.0/6.0*one,M);
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,1.0/6.0*one,M);
 		}
 	} else {
 		AddTimes(phi,Gf,Gb,M);
@@ -869,16 +877,17 @@ void LGrad1::Initiate(Real* G,Real* Gz,int Markov, int M){
 }
 
 void LGrad1::Terminate(Real* Gz ,Real* G, int Markov, int M){
+	Real one=1.0;
 	if (Markov==2) {
 		Zero(Gz,M);
 		if (lattice_type == simple_cubic) {
-			Add(Gz,G+M,M); Norm(Gz,4.0,M);
+			Add(Gz,G+M,M); Norm(Gz,4.0*one,M);
 			Add(Gz,G,M); Add(Gz,G+2*M,M);
-			Norm(Gz,1.0/6.0,M);
+			Norm(Gz,1.0/6.0*one,M);
 		} else {
-			Add(Gz,G+M,M); Norm(Gz,2.0,M);
+			Add(Gz,G+M,M); Norm(Gz,2.0*one,M);
 			Add(Gz,G,M); Add(Gz,G+2*M,M);
-			Norm(Gz,1.0/4.0,M);
+			Norm(Gz,1.0/4.0*one,M);
 
 		}
 	} else {

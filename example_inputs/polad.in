@@ -1,0 +1,61 @@
+lat : flat : n_layers : 5000
+lat : flat : lattice_type : simple_cubic
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+lat : flat : lowerbound : surface
+
+mon : Si : freedom : frozen
+mon : Si : frozen_range : lowerbound
+mon : A : freedom : free
+mon : W : freedom : free
+mon : A : chi_Si : -6
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+mol : pol : composition : (A)1000
+mol : pol : freedom : free
+mol : pol : phibulk : 0.001
+mol : pol : save_memory : true
+
+output : kal : append : false
+kal : mol : pol : theta_exc
+kal : mon : A : theta_exc
+kal : mol : pol : phiblk
+
+output : pro : append : false
+pro : mol : pol : phi
+pro : mol : water : phi
+output : ana : append : true
+
+newton : isaac : deltamax : 0.01
+newton : isaac : method : conjugate_gradient
+newton : isaac : m : 5
+newton : isaac : iterationlimit : 100000
+newton : isaac : i_info : 1
+
+sys : polad : initial_guess : polymer_adsorption
+
+start
+mol : pol : composition : (A)10000
+mol : pol : phibulk : 0.0001
+newton : isaac : deltamax : 0.01
+start
+mol : pol : composition : (A)100000
+mol : pol : phibulk : 0.00001
+newton : isaac : deltamax : 0.001
+start
+mol : pol : composition : (A)1000000
+mol : pol : phibulk : 0.000001
+newton : isaac : deltamax : 0.0001
+start
+mol : pol : composition : (A)10000000
+mol : pol : phibulk : 0.0000001
+start
+mol : pol : composition : (A)20000000
+mol : pol : phibulk : 0.00000005
+start
+mol : pol : composition : (A)50000000
+mol : pol : phibulk : 0.00000002
+start
+

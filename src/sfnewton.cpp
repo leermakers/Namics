@@ -704,7 +704,11 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 		if (e_info)
 		if (i_info > 0)
 		if (it%i_info == 0) {
+#ifdef LongReal
+			printf("it =  %i  E = %Le |g| = %Le alpha = %Le \n",it,accuracy,normg,ALPHA);
+#else
 			printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
+#endif
 		}
 		it++; iterations=it;  lineiterations=0;
 		newtrustregion(p0,ALPHA,trustregion,trustfactor,delta_max,delta_min,nvar);  //trustregion and trustfactor are adjusted.
@@ -719,7 +723,11 @@ if(debug) cout <<"iterate in SFNewton" << endl;
 		accuracy=newdirection(h,p,p0,g,g0,x,nvar,ALPHA,filter);
 		normg=sqrt(minimum);
 	}
+#ifdef LongReal
+	if (e_info) printf("it =  %i  E = %Le |g| = %Le alpha = %Le \n",it,accuracy,normg,ALPHA);
+#else
 	if (e_info) printf("it =  %i  E = %e |g| = %e alpha = %e \n",it,accuracy,normg,ALPHA);
+#endif
 	success=Message(e_info,s_info,it,iterationlimit,accuracy,tolerance,"");
 	ResetX(x,nvar,filter);
   #ifdef CUDA
@@ -762,7 +770,11 @@ Real* g = (Real*) malloc(nvar*sizeof(Real));
 	residual=computeresidual(g,nvar);
 	while (residual > tolerance && it < iterationlimit) {
 		if(it%i_info == 0){
-			printf("it = %i g = %1e \n",it,residual);
+#ifdef LongReal
+			printf("it = %i g = %Le \n",it,residual);
+#else
+			printf("it = %i g = %e \n",it,residual);
+#endif
 		}
 		YplusisCtimesX(x,g,delta_max,nvar);
 		residual=computeresidual(g,nvar);
@@ -913,7 +925,14 @@ Real SFNewton::computeresidual(Real* array, int size) {
   return residual;
 }
 
+
 bool SFNewton::iterate_BRR(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
+#ifdef LongReal
+	cout <<"BRR is turned off due to long double calculations. Go to SFNewton to fix it" << endl; 
+	return false;
+}
+#else 
+
 if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyden notation using Eigen library.
 	int nvar=nvar_;
 	bool success=true;
@@ -934,7 +953,7 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
     Map<VectorXd> s(p,nvar);
     Map<VectorXd> xx(x,nvar);
     Map<VectorXd> xx0(x0,nvar);
-    Real stHy,nHts;
+    double stHy,nHts;
     int k=0;
     int it=0;
 
@@ -1013,6 +1032,7 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
 	cout <<"BRR: that will do. Error: " << error << endl;
 	return success;
 }
+#endif
 
 bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
@@ -1050,7 +1070,11 @@ if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
   		residual = computeresidual(g, nvar);
 
 		if (e_info) printf("DIIS has been notified\n");
-		if (e_info) printf("Your guess = %1e \n",residual);
+#ifdef LongReal
+		if (e_info) printf("Your guess = %Le \n",residual);
+#else
+		if (e_info) printf("Your guess = %e \n",residual);
+#endif
 		while ( residual > tolerance and iterations < iterationlimit) {
 			iterations++;
 			Cp(x0,x,nvar);
@@ -1062,7 +1086,11 @@ if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
 			DIIS(x,x_x0,xR,Aij,Apij,Ci,k,k_diis,m,nvar);
     			residual = computeresidual(g, nvar);
 			if(e_info && iterations%i_info == 0){
-				printf("iterations = %i g = %1e \n",iterations,residual);
+#ifdef LongReal
+				printf("iterations = %i g = %Le \n",iterations,residual);
+#else
+				printf("iterations = %i g = %e \n",iterations,residual);
+#endif
 			}
 		}
 

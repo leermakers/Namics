@@ -70,6 +70,7 @@ if (n_pos>0) cout <<"problem for n_pos " <<endl;
 #else
 	free(G1);
 	free(phi_side);
+	//free(dphidt);
 #endif
 	all_segment=false;
 }
@@ -113,6 +114,8 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	ALPHA=H_ALPHA; Zero(ALPHA,M);
 	G1 = (Real*)malloc(M*sizeof(Real));
 	phi_side = (Real*)malloc(M*ns*sizeof(Real));
+	//dphidt=(Real*)malloc(M*sizeof(Real));
+	//Zero(dphidt,M);
 	Zero(G1,M);
 	Zero(phi_side,ns*M);
 #endif

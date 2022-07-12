@@ -5,9 +5,8 @@ Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> S
 	name{name_}, In{In_}, Sys{Sys_}, Seg{Seg_}, Lat{Lat_}, Mol{Mol_}, Var{Var_}, Sta{Sta_}, Rea{Rea_}
 {
 if(debug) cout <<"Constructor in Solve_scf " << endl;
-
-	KEYS.push_back("method");
 	KEYS.push_back("gradient_type");
+	KEYS.push_back("method");
 	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");KEYS.push_back("hs_info");
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance");
 	KEYS.push_back("stop_criterion");
@@ -176,6 +175,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		tolerance=In[0]->Get_Real(GetValue("tolerance"),1e-7);
 		super_tolerance=In[0]->Get_Real(GetValue("super_tolerance"),tolerance*10);
 		if (tolerance < 1e-16 ||tolerance>10) {tolerance = 1e-5;  cout << "Value of tolerance out of range 1e-12..10 Value set to default value 1e-5" <<endl; }
+
 		if (GetValue("method").size()==0) {SCF_method="pseudohessian";} else {
 			vector<string>method_options;
 			method_options.push_back("DIIS");
@@ -878,7 +878,8 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
 				Lat[0]->remove_bounds(g+sysmon_length*M);
 			}
-			YisAplusC(g+jump*M,Sys[0]->phitot,-1.0,M);
+			Real one=1.0; 
+			YisAplusC(g+jump*M,Sys[0]->phitot,-1.0*one,M);
 			for (i=0; i<sysmon_length; i++) {
 				Cp(g+i*M,xx+i*M,M);
 				for (k=0; k<mon_length; k++) {

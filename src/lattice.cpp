@@ -1014,7 +1014,11 @@ if (debug) cout <<"StoreGuess in output" << endl;
 	for (int i=0; i<state_length; i++) fprintf(fp,"%s\n",statelist[i].c_str());
 	int iv=(mon_length+state_length)*M;
 	if (charged) iv +=M;
+#ifdef LongReal
+	for (int i=0; i<iv; i++) fprintf(fp,"%Le\n",x[i]);
+#else
 	for (int i=0; i<iv; i++) fprintf(fp,"%e\n",x[i]);
+#endif
 	fclose(fp);
 	return success;
 }

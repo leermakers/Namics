@@ -30,7 +30,7 @@ void LG1Planar:: ComputeLambdas() {
 
 void LG1Planar::Side(Real *X_side, Real *X, int M) {
 if (debug) cout <<" Side in LG1Planar " << endl;
-
+	Real one_over_three=1.0/3.0;
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;
 	}
@@ -38,9 +38,9 @@ if (debug) cout <<" Side in LG1Planar " << endl;
 	int kk;
 
 	if (fcc_sites) {
-		YplusisCtimesX(X_side+1,X,1.0/3.0,M-1);
-		YplusisCtimesX(X_side,X+1,1.0/3.0,M-1);
-		YplusisCtimesX(X_side,X,1.0/3.0,M);
+		YplusisCtimesX(X_side+1,X,one_over_three,M-1);
+		YplusisCtimesX(X_side,X+1,one_over_three,M-1);
+		YplusisCtimesX(X_side,X,one_over_three,M);
 	} else {
 		if (fjc==1) {
 //cout << "lambda" << lambda << endl;
@@ -281,11 +281,8 @@ void LG1Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool g
 
 Real LG1Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
 	Real AverageJ=0;
-	//Real Jplus,Jmin;
 	Real a,b,c,Ma,Mb,Mc;
 	g[1]=phiA[0]/phiA[1]-1.0;
-	//b=phiA[1]*phiB[1]*B_B/B_phitot[1];
-	//c=phiA[2]*phiB[2]*B_B/B_phitot[2];
 	b=phiA[1]*phiB[1]*B_B/B_phitot[1];
 	c=phiA[2]*phiB[2]*B_B/B_phitot[2];
 	Mb=alphaA[1]-alphaB[1];
@@ -293,16 +290,10 @@ Real LG1Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* al
 	for (int z=2; z<M-2; z++) {
 		a=b; b=c; c=phiA[z+1]*phiB[z+1]*B_B/B_phitot[z+1];
 		Ma=Mb; Mb=Mc; Mc=alphaA[z+1]-alphaB[z+1];
-		//Jmin =(a+b)*(Mb-Ma);
-		//if (Jmin <0) Jmin=-log(-Jmin); else Jmin=log(Jmin);
-		//Jplus = (b+c)*(Mc-Mb);
-		//if (Jplus <0) Jplus=-log(-Jplus); else Jplus=log(Jplus);
-		//g[z]=g[z]+ (Jmin-Jplus);
-		//g[z]=g[z]+ (Jmin-Jplus)/abs(Jmin+Jplus);
-		g[z] = g[z]  + ((a+b)*(Mb-Ma)-(b+c)*(Mc-Mb));
+		g[z] = g[z]  + B_A*((a+b)*(Mb-Ma)-(b+c)*(Mc-Mb));
 		AverageJ+=(a+b)*(Mb-Ma);	
 	}
-	//AverageJ/=(M-4);
+	AverageJ/=(M-4);
 	
         //for (int z=2; z<M-2; z++) g[z]-=AverageJ;
 	

@@ -168,73 +168,88 @@ if (debug) cout << "vtk in LGrad2 " << endl;
 		fprintf(fp,"SPACING 1 1 1\nORIGIN 0 0 0\nPOINT_DATA %i\n",MX*MY);
 	}
 	fprintf(fp,"SCALARS %s double\nLOOKUP_TABLE default\n",id.c_str());
+#ifdef LongReal
+	if (writebounds) for (i=0; i<M; i++) fprintf(fp,"%Lf\n",X[i]);
+	for (int x=fjc; x<MX+fjc; x++)
+	for (int y=fjc; y<MY+fjc; y++)
+	fprintf(fp,"%Lf\n",X[P(x,y)]);
+#else
 	if (writebounds) for (i=0; i<M; i++) fprintf(fp,"%f\n",X[i]);
 	for (int x=fjc; x<MX+fjc; x++)
 	for (int y=fjc; y<MY+fjc; y++)
 	fprintf(fp,"%f\n",X[P(x,y)]);
+#endif
 	fclose(fp);
 }
 
 void LGrad2::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds){
 if (debug) cout <<"PutProfiles in LGrad2 " << endl;
+	Real one=1.0;
 	int x,y,i;
 	int length=X.size();
 	int a;
 	if (writebounds) a=0; else a = fjc;
 	for (x=a; x<MX+2*fjc-a; x++)
 	for (y=a; y<MY+2*fjc-a; y++){
-		fprintf(pf,"%e\t%e\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc,1.0*(y-fjc+1)/fjc-0.5/fjc);
-		for (i=0; i<length; i++) fprintf(pf,"%.20g\t",X[i][P(x,y)]);
+#ifdef LongReal
+		fprintf(pf,"%Le\t%Le\t",offset_first_layer/fjc+one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc); 
+		for (i=0; i<length; i++) fprintf(pf,"%.20Le\t",X[i][P(x,y)]);
 		fprintf(pf,"\n");
+#else
+		fprintf(pf,"%e\t%e\t",offset_first_layer/fjc+one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc); 
+		for (i=0; i<length; i++) fprintf(pf,"%.20e\t",X[i][P(x,y)]);
+		fprintf(pf,"\n");
+#endif
 	}
 }
 
 
 void LGrad2::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in LGrad2 " << endl;
+	Real one=1.0; 
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;
 	}
 	Zero(X_side,M);//set_bounds(X);
 
 	if (fcc_sites) {
-		YplusisCtimesX(X_side,X,1.0/3.0,M);
+		YplusisCtimesX(X_side,X,1.0/3.0*one,M);
 		AddTimes(X_side+JX,X,fcc_lambda_1+JX,M-JX);
 		AddTimes(X_side,X+JX,fcc_lambda1,M-JX);
-		YplusisCtimesX(X_side+1,X,1.0/3.0,M-1);
-		YplusisCtimesX(X_side,X+1,1.0/3.0,M-1);
+		YplusisCtimesX(X_side+1,X,1.0/3.0*one,M-1);
+		YplusisCtimesX(X_side,X+1,1.0/3.0*one,M-1);
 		AddTimes(X_side+JX+1,X,fcc_lambda_1+JX+1,M-JX-1);
 		AddTimes(X_side+JX,X+1,fcc_lambda_1+JX,M-JX);
 		AddTimes(X_side+1,X+JX,fcc_lambda1+1,M-JX);
 		AddTimes(X_side,X+JX+1,fcc_lambda1,M-JX-1);
-		Norm(X_side,1.0/3.0,M);
+		Norm(X_side,1.0/3.0*one,M);
 
 	} else {
 		if (fjc==1) {
 			if (lattice_type ==simple_cubic) {
-				YplusisCtimesX(X_side,X,4.0/6.0,M);
+				YplusisCtimesX(X_side,X,4.0/6.0*one,M);
 				AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
 				AddTimes(X_side,X+JX,lambda1,M-JX);
-				YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
-				YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
-				Norm(X_side,4.0,M);
+				YplusisCtimesX(X_side+1,X,1.0/6.0*one,M-1);
+				YplusisCtimesX(X_side,X+1,1.0/6.0*one,M-1);
+				Norm(X_side,4.0*one,M);
 				AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
 				AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
 				AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
 				AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
-				Norm(X_side,1.0/6.0,M);
+				Norm(X_side,1.0/6.01*one,M);
 			} else {
-				YplusisCtimesX(X_side,X,2.0/4.0,M);
+				YplusisCtimesX(X_side,X,2.0/4.0*one,M);
 				AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
 				AddTimes(X_side,X+JX,lambda1,M-JX);
-				YplusisCtimesX(X_side+1,X,1.0/4.0,M-1);
-				YplusisCtimesX(X_side,X+1,1.0/4.0,M-1);
-				Norm(X_side,2.0,M);
+				YplusisCtimesX(X_side+1,X,1.0/4.0*one,M-1);
+				YplusisCtimesX(X_side,X+1,1.0/4.0*one,M-1);
+				Norm(X_side,2.0*one,M);
 				AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
 				AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
 				AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
 				AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
-				Norm(X_side,3.0/12.0,M);
+				Norm(X_side,3.0/12.0*one,M);
 			}
 		}
 
@@ -242,14 +257,14 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 			Add(X_side,X,M);
 			Add(X_side+1,X,M-1);
 			Add(X_side,X+1,M-1);
-			Norm(X_side,1.0/4.0,M);
+			Norm(X_side,1.0/4.0*one,M);
 			AddTimes(X_side+JX,X,LAMBDA+M+JX,M-JX);
 			AddTimes(X_side+JX+1,X,LAMBDA+M+JX+1,M-JX-1);
 			AddTimes(X_side+JX,X+1,LAMBDA+M+JX+1,M-JX);
 			AddTimes(X_side,X+JX,LAMBDA+3*M,M-JX);
 			AddTimes(X_side,X+JX+1,LAMBDA+3*M,M-JX-1);
 			AddTimes(X_side+1,X+JX,LAMBDA+3*M,M-JX);
-			Norm(X_side,2.0,M);
+			Norm(X_side,2.0*one,M);
 			AddTimes(X_side+2*JX,X,LAMBDA+2*JX,M-2*JX);
 			AddTimes(X_side,X+2*JX,LAMBDA+4*M,M-2*JX);
 			AddTimes(X_side+2*JX,X+1,LAMBDA+2*JX,M-2*JX);
@@ -262,12 +277,12 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 			AddTimes(X_side+2,X+JX,LAMBDA+3*M+2,M-JX);
 			AddTimes(X_side+2,X,LAMBDA+2*M+2,M-2);
 			AddTimes(X_side,X+2,LAMBDA+2*M,M-2);
-			Norm(X_side,2.0,M);
+			Norm(X_side,2.0*one,M);
 			AddTimes(X_side+2*JX+2,X,LAMBDA+2*JX+2,M-2*JX-2);
 			AddTimes(X_side,X+2*JX+2,LAMBDA+4*M,M-2*JX-2);
 			AddTimes(X_side+2*JX,X+2,LAMBDA+2*JX,M-2*JX);
 			AddTimes(X_side+2,X+2*JX,LAMBDA+4*M+2,M-2*JX);
-			Norm(X_side,1.0/16.0,M);
+			Norm(X_side,1.0/16.0*one,M);
 		}
 	}
 }
@@ -556,35 +571,36 @@ void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 
 void LGrad2::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in LGrad2 " << endl;
+	Real one=1.0;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 
 	Zero(gs,M); set_bounds(gs_1);
 	if (fjc==1) {
 		if (lattice_type==simple_cubic) {
-			YplusisCtimesX(gs,gs_1,4.0/6.0,M);
+			YplusisCtimesX(gs,gs_1,4.0/6.0*one,M);
 			AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
 			AddTimes(gs,gs_1+JX,lambda1,M-JX);
-			YplusisCtimesX(gs+1,gs_1,1.0/6.0,M-1);
-			YplusisCtimesX(gs,gs_1+1,1.0/6.0,M-1);
-			Norm(gs,4.0,M);
+			YplusisCtimesX(gs+1,gs_1,1.0/6.0*one,M-1);
+			YplusisCtimesX(gs,gs_1+1,1.0/6.0*one,M-1);
+			Norm(gs,4.0*one,M);
 			AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
 			AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
 			AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
 			AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
-			Norm(gs,1.0/6.0,M);
+			Norm(gs,1.0/6.0*one,M);
 			Times(gs,gs,G1,M);
 		} else {
-			YplusisCtimesX(gs,gs_1,2.0/4.0,M);
+			YplusisCtimesX(gs,gs_1,2.0/4.0*one,M);
 			AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
 			AddTimes(gs,gs_1+JX,lambda1,M-JX);
-			YplusisCtimesX(gs+1,gs_1,1.0/4.0,M-1);
-			YplusisCtimesX(gs,gs_1+1,1.0/4.0,M-1);
-			Norm(gs,2.0,M);
+			YplusisCtimesX(gs+1,gs_1,1.0/4.0*one,M-1);
+			YplusisCtimesX(gs,gs_1+1,1.0/4.0*one,M-1);
+			Norm(gs,2.0*one,M);
 			AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
 			AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
 			AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
 			AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
-			Norm(gs,3.0/12.0,M);
+			Norm(gs,3.0/12.0*one,M);
 			Times(gs,gs,G1,M);
 		}
 	}
@@ -599,7 +615,7 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 		AddTimes(gs,gs_1+JX,LAMBDA+3*M,M-JX);
 		AddTimes(gs,gs_1+JX+1,LAMBDA+3*M,M-JX-1);
 		AddTimes(gs+1,gs_1+JX,LAMBDA+3*M+1,M-JX);
-		Norm(gs,2.0,M);
+		Norm(gs,2.0*one,M);
 		AddTimes(gs+2*JX,gs_1,LAMBDA+2*JX,M-2*JX);
 		AddTimes(gs,gs_1+2*JX,LAMBDA+4*M,M-2*JX);
 		AddTimes(gs+2*JX,gs_1+1,LAMBDA+2*JX,M-2*JX);
@@ -612,12 +628,12 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 		AddTimes(gs+2,gs_1+JX,LAMBDA+3*M+2,M-JX);
 		AddTimes(gs+2,gs_1,LAMBDA+2*M+2,M-2);
 		AddTimes(gs,gs_1+2,LAMBDA+2*M,M-2);
-		Norm(gs,2.0,M);
+		Norm(gs,2.0*one,M);
 		AddTimes(gs+2*JX+2,gs_1,LAMBDA+2*JX+2,M-2*JX-2);
 		AddTimes(gs,gs_1+2*JX+2,LAMBDA+4*M,M-2*JX-2);
 		AddTimes(gs+2*JX,gs_1+2,LAMBDA+2*JX,M-2*JX);
 		AddTimes(gs+2,gs_1+2*JX,LAMBDA+4*M+2,M-2*JX);
-		Norm(gs,1.0/16.0,M);
+		Norm(gs,1.0/16.0*one,M);
 		Times(gs,gs,G1,M);
 	}
 }
@@ -1282,21 +1298,22 @@ Real LGrad2::ComputeGN(Real* G,int Markov, int M){
 	return GN;
 }
 void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){
+	Real one=1.0;
 	if (Markov==2) {
 		if (lattice_type == hexagonal) {
 			for (int k=0; k<7; k++) {
 				if (k==1 || k==5)
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/12.0,M);
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/12.0*one,M);
 				else
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0*one,M);
 			}
 
 		} else {
 			for (int k=0; k<5; k++) {
 				if (k==2)
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/3.0,M);
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/3.0*one,M);
 				else
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0*one,M);
 			}
 		}
 	} else AddTimes(phi,Gf,Gb,M);
@@ -1338,16 +1355,17 @@ void LGrad2::Initiate(Real* G,Real* Gz,int Markov, int M){
 }
 
 void LGrad2::Terminate(Real* Gz,Real* G,int Markov, int M){
+	Real one=1.0;
 	if (Markov==2) {
 		Zero(Gz,M);
 		if (lattice_type == hexagonal) {
 			Add(Gz,G,M); Add(Gz,G+2*M,M); Add(Gz,G+3*M,M); Add(Gz,G+4*M,M); Add(Gz,G+6*M,M);
-			Norm(Gz,2,M);
+			Norm(Gz,2*one,M);
 			Add(Gz,G+M,M); Add(Gz,G+5*M,M);
-			Norm(Gz,1.0/12.0,M);
+			Norm(Gz,1.0/12.0*one,M);
 		} else {
 			for (int k=0; k<5; k++) Add(Gz,G+k*M,M);
-			Norm(Gz,1.0/6.0,M);
+			Norm(Gz,1.0/6.0*one,M);
 		}
 	} else Cp(Gz,G,M);
 }

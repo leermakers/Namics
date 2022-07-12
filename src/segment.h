@@ -136,6 +136,7 @@ public:
 	Real* phi_side;
 	Real* u;
 	Real* u_ext;
+//	Real* dphidt;
 
 	Real* alpha;//fraction of segment in specfied state
 	Real* ALPHA; //Lagrange parameter per segement for steady state

@@ -1,0 +1,20 @@
+lat : cyl : gradients : 2
+lat : cyl : geometry : cylindrical
+lat : cyl : n_layers_x : 50
+lat : cyl : n_layers_y : 100
+lat : cyl : lattice_type : hexagonal
+
+mon : S : freedom : frozen
+mon : S : size : 10
+mon : S : n : 1
+mon : S : pos : (0,50)
+
+mon : W : freedom : free
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+output : vtk : append : false
+vtk : mon : S : phi 
+
+start

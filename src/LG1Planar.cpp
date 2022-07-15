@@ -278,6 +278,11 @@ void LG1Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool g
 		g[x]=-q[x];
 	}
 }
+bool LG1Planar:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+	bool success=true;
+	cout <<"PutMask does not make sence in planar 1 gradient system " << endl;
+	return success;
+}
 
 Real LG1Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
 	Real AverageJ=0;
@@ -291,14 +296,14 @@ Real LG1Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* al
 		a=b; b=c; c=phiA[z+1]*phiB[z+1]*B_B/B_phitot[z+1];
 		Ma=Mb; Mb=Mc; Mc=alphaA[z+1]-alphaB[z+1];
 		g[z] = g[z]  + B_A*((a+b)*(Mb-Ma)-(b+c)*(Mc-Mb));
-		AverageJ+=(a+b)*(Mb-Ma);	
+		AverageJ+=(a+b)*(Mb-Ma);
 	}
 	AverageJ/=(M-4);
-	
+
         //for (int z=2; z<M-2; z++) g[z]-=AverageJ;
-	
+
 	g[M-2]=phiA[M-1]/phiA[M-2]-1.0;
- 	//cout <<"J " << -B_A*AverageJ/(2*(M-4)) << endl; 	
-	
-	return -B_A*AverageJ/2;// /(2*(M-4)); 
+ 	//cout <<"J " << -B_A*AverageJ/(2*(M-4)) << endl;
+
+	return -B_A*AverageJ/2;// /(2*(M-4));
 }

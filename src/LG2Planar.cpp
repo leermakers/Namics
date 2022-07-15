@@ -592,7 +592,14 @@ void LG2Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool g
 	}
 
 }
+
+bool LG2Planar:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+	bool success=false;
+	cout <<"PutMask does not make sence in planar 2 gradient system " << endl;
+	return success;
+}
+
 Real LG2Planar::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
-	cout <<"LG2Planar : DphiDt not implemented yet " << endl; 
+	cout <<"LG2Planar : DphiDt not implemented yet " << endl;
 	return 0;
-}	
+}

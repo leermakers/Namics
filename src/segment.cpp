@@ -84,7 +84,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	H_u = (Real*) malloc(M*ns*sizeof(Real));
 	H_u_ext = (Real*) malloc(M*sizeof(Real));
 	H_phi = (Real*) malloc(M*sizeof(Real));
-	H_MASK = (int*) malloc(M*sizeof(int));
+	if (!H_MASK) H_MASK = (int*) malloc(M*sizeof(int));
 	H_alpha=(Real*) malloc(M*ns*sizeof(Real));
 	H_ALPHA=(Real*) malloc(M*ns*sizeof(Real));
 	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
@@ -554,8 +554,47 @@ if (debug) cout <<"ParseFreedoms " << endl;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 			}
 		}
+		if (n_pos<1 && Lat[0]->geometry == "cylindrical" && Lat[0]->gradients == 2) {
+			//this case we can have a particle at the axis 
+			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
+				success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the particle at the axis of cylindrical coordonate system " << endl;
+				cout<< "More specifically we expect n : 1 ; size < n_layers_x and size < n_layers_y; pos : (0,y) " << endl;  	
+			}
+			n=In[0]->Get_int(GetValue("n"),-1); if (n!=1) {success = false; cout <<"expect value for 'n' to be unity, that is, 'n : 1' in this case"<< endl; }
+			R=In[0]->Get_int(GetValue("size"),-1); if (R<0) {success = false ; cout <<"expecting positive integer for 'size' " << endl; }
+			if (GetValue("pos")=="?") {success = false; cout <<" expect (0,y) coordinate in this case" << endl; }
+			if (success) {
+				px.clear(); py.clear(); pz.clear(); 
+				vector<int>open;
+				vector<int>close;
+				vector<string>sub;
+				string t=GetValue("pos");
+				if (!In[0]->EvenBrackets(t,open,close)) {cout << "Brackets in 'pos' not balanced "<<endl; success=false;};
+				int opensize=open.size();
+			       	if (opensize !=n ) {
+					success=false; cout <<"number of positions not equal to 'n' " << endl;
+				} else {
+					for (int i=0; i<n; i++) {
+						sub.clear();
+						string tt=t.substr(open[i]+1,close[i]-open[i]-1); //cout << tt << endl;
+						In[0]->split(tt,',',sub);
+						if (sub.size() !=2) {
+							success=false;
+							cout <<"pos does not contain expected (x,y) set. Problem occurred for for particle nr " << i << "We found: " +tt << endl;
+						} else {
+							px.push_back(In[0]->Get_int(sub[0],-1));
+							py.push_back(In[0]->Get_int(sub[1],-1));
+							if (px[i] !=0) {success=false; cout << "pos x for particle " << i << " is expected to be 0; we found " << px[i] << endl; }
+							if (py[i] <0 || py[i]>Lat[0]->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
+							pz.push_back(0);
+						}
+					}
+				}
+			}
+
+		}
 		if (n_pos<1 && Lat[0]->gradients==3 && px.size()==0 && !block) {
-			n=0; R=0; //px.clear(); py.clear(); pz.clear();
+			n=0; R=0; px.clear(); py.clear(); pz.clear();
 			bool found=false;
 			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
 				success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the set of spherical particles in the system. " << endl;
@@ -660,8 +699,10 @@ if (debug) cout <<"ParseFreedoms " << endl;
 		if (px.size()>0) {
 			HMaskDone=true;
 			if (success) {
+				if (!H_MASK) H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
 				if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl;
 			}
+
 		}
 	}
 

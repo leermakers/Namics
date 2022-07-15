@@ -1632,8 +1632,39 @@ void LGrad3::Terminate(Real* Gz,Real* G,int Markov, int M){
 	} else Cp(Gz,G,M);
 }
 
+bool LGrad3:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+	bool success=true;
+	int length =px.size();
+	int X,Y,Z;
+
+	for (int i =0; i<length; i++) {
+		int xx,yy,zz;
+		xx=px[i]; yy=py[i]; zz=pz[i];
+		for (int x=xx-R; x<xx+R+1; x++)
+		for (int y=yy-R; y<yy+R+1; y++)
+		for (int z=zz-R; z<zz+R+1; z++) {
+			if ((xx-x)*(xx-x)+(yy-y)*(yy-y)+(zz-z)*(zz-z) <=R*R) {
+				X=x; Y=y; Z=z;
+				if (x<1) X+=MX;
+				if (y<1) Y+=MY;
+				if (z<1) Z+=MZ;
+				if (x>MX) X-=MX;
+				if (y>MY) Y-=MY;
+				if (z>MZ) Z-=MZ;
+				MASK[P(X,Y,Z)]++;
+			}
+		}
+		for (int x=1; x<MX; x++)
+		for (int y=1; y<MY; y++)
+		for (int z=1; z<MZ; z++)
+		if (MASK[P(x,y,z)]>1) success=false;
+	}
+
+	return success;
+}
+
 
 Real LGrad3::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
-	cout <<"Grad3 DphiDt not implemented yet " << endl;  
+	cout <<"Grad3 DphiDt not implemented yet " << endl;
 	return 0;
 }

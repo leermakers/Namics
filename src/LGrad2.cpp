@@ -192,11 +192,11 @@ if (debug) cout <<"PutProfiles in LGrad2 " << endl;
 	for (x=a; x<MX+2*fjc-a; x++)
 	for (y=a; y<MY+2*fjc-a; y++){
 #ifdef LongReal
-		fprintf(pf,"%Le\t%Le\t",offset_first_layer/fjc+one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc); 
+		fprintf(pf,"%Le\t%Le\t",offset_first_layer/fjc+one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc);
 		for (i=0; i<length; i++) fprintf(pf,"%.20Le\t",X[i][P(x,y)]);
 		fprintf(pf,"\n");
 #else
-		fprintf(pf,"%e\t%e\t",offset_first_layer/fjc+one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc); 
+		fprintf(pf,"%e\t%e\t",offset_first_layer/fjc+one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc);
 		for (i=0; i<length; i++) fprintf(pf,"%.20e\t",X[i][P(x,y)]);
 		fprintf(pf,"\n");
 #endif
@@ -206,7 +206,7 @@ if (debug) cout <<"PutProfiles in LGrad2 " << endl;
 
 void LGrad2::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in LGrad2 " << endl;
-	Real one=1.0; 
+	Real one=1.0;
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;
 	}
@@ -1370,7 +1370,45 @@ void LGrad2::Terminate(Real* Gz,Real* G,int Markov, int M){
 	} else Cp(Gz,G,M);
 }
 
+bool LGrad2:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+if (debug) cout <<"PutMask in LGrad2 " << endl;
+	bool success=true;
+	int length =px.size();
+	int X,Y;
+	if (length > 1) {
+		cout <<"In two gradient system, we can have just one particle: we found " <<length <<"particles. " << endl;
+		return false;
+	}
+	for (int i =0; i<length; i++) {
+		int xx,yy;
+		xx=px[i]; yy=py[i];
+		if (xx !=0) {
+			cout <<"In two gradients system, we expect the particle at the central axis" << endl;
+			return false;
+		}
+		for (int x=1; x<xx+R+1; x++)
+		for (int y=yy-R; y<yy+R+1; y++){
+			if ((xx-x)*(xx-x)+(yy-y)*(yy-y) <=R*R) {
+				X=x; Y=y;
+				if (y<1) {cout << "particle too close to y=0 boundary " << endl;
+					return false;
+				}
+				if (x>MX) {
+					cout <<"in two gradient system, particle should be smaller than size of system in radial direction" << endl;
+					return false;
+				}
+				if (y>MY) { cout <<"particle too close to y upperbound " << endl;
+					return false;
+				}
+				MASK[P(X,Y)]++;
+			}
+		}
+	}
+
+	return success;
+}
+
 Real LGrad2::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB, Real B_A, Real B_B) {
 	cout <<"LGrad2: DphiDt not implemented yet " << endl;
 	return 0;
-}	
+}

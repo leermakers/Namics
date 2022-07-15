@@ -106,7 +106,7 @@ virtual ~Lattice();
 	bool CheckInput(int,bool);
 
 	bool PutSub_box(int,int,int,int);
-	bool PutMask(int* H_MASK,vector<int>px,vector<int>py,vector<int>pz,int R);
+
 	void PutParameter(string);
 	string GetValue(string);
 	int PutVarScan(int, int);
@@ -122,6 +122,7 @@ virtual ~Lattice();
 	virtual Real Moment(Real*,Real,int) =0;
 	virtual void TimesL(Real*) =0;
 	virtual void DivL(Real*) =0;
+	virtual bool PutMask(int* H_MASK,vector<int>px,vector<int>py,vector<int>pz,int R)=0;
 	virtual void vtk(string, Real*,string,bool) =0;
 	virtual void PutProfiles(FILE*,vector<Real*>,bool)=0;
 	virtual bool PutM(void)=0;

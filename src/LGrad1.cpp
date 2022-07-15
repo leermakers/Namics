@@ -895,9 +895,15 @@ void LGrad1::Terminate(Real* Gz ,Real* G, int Markov, int M){
 	}
 }
 
+bool LGrad1:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+	bool success=false;
+	cout <<"PutMask does not make sence in 1 gradient system " << endl;
+	return success;
+}
+
 Real LGrad1::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB,Real B_A, Real B_B) {
 	//cout <<"LGrad1 : DphiDt not implemented yet " << endl;
-	
+
 	Real AverageJ=0;
 	//Real Jplus,Jmin;
 	Real a,b,c,Ma,Mb,Mc;
@@ -919,10 +925,10 @@ Real LGrad1::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alpha
 		//g[z]=g[z]+ (Jmin-Jplus)/abs(Jmin+Jplus);
 		g[z] = g[z]  + (a+b)*(Mb-Ma)*lambda_1[z]-(b+c)*(Mc-Mb)*lambda1[z];///L[z];
 
-		AverageJ+=lambda_1[z]*L[z]*(a+b)*(Mb-Ma); 
+		AverageJ+=lambda_1[z]*L[z]*(a+b)*(Mb-Ma);
 	}
 	//g[M-2]=phiA[M-1]/phiA[M-2]-1.0;
-	
-	return -B_A*AverageJ/(2*(M-4)*lambda); 
-	 	
+
+	return -B_A*AverageJ/(2*(M-4)*lambda);
+
 }

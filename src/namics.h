@@ -1,7 +1,7 @@
 
 #ifndef NAMICSxH
 #define NAMICSxH
-#define LongReal // if Real should refer to long double then #define LongReal should be chosen, else it should be commented out. 
+//#define LongReal // if Real should refer to long double then #define LongReal should be chosen, else it should be commented out. 
 
 #include <cmath>
 #include <cstdio>

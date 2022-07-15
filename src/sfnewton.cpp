@@ -1307,6 +1307,7 @@ void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real
 	Real delta = epsilon* (1+normx)/normq;
 
 
+
 	for (int i=0; i<nvar; i++)
     x[i] = x0[i] + delta*q[i];
 

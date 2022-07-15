@@ -25,6 +25,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("guess_inputfile");
 	KEYS.push_back("final_guess");
 	KEYS.push_back("guess_outputfile");
+	KEYS.push_back("overflow_protection");
 	KEYS.push_back("GPU");
 	KEYS.push_back("find_local_solution");
 	KEYS.push_back("split");
@@ -548,6 +549,25 @@ bool System::CheckInput(int start_)
 		}
 
 		success = CheckChi_values(In[0]->MonList.size());
+
+#ifdef LongReal
+		if (GetValue("overflow_protection").size()==0||GetValue("overflow_protection")=="false" || GetValue("overflow_protection")=="FALSE"){
+
+			cout <<"The program is compiled for the use of 'long double' while 'overflow_protection' is not requested for;" << endl;
+			cout <<"1. Turn on 'overflow_protection'." << endl;
+			cout <<"2. Compile progrem without the #define 'LongReal' in namics.h. " << endl; 
+		}
+#else
+		if (GetValue("overflow_protection").size() > 0) {
+			if (In[0]->Get_bool(GetValue("overflow_protection"),true)) {
+				cout<<"You request 'overflow_protection', but the program was not compiled with the #define LongReal" << endl;
+				cout<<"1. Go to namics.h in the /src directory and turn on #define LongReal  ." <<endl;
+				cout<<"2. Do not request 'overflow_protection'." << endl;
+			}
+		}
+		
+#endif		
+
 		GPU = In[0]->Get_bool(GetValue("GPU"), false);
 		if (GPU)
 			if (!cuda)

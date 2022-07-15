@@ -43,6 +43,7 @@ class LGrad1 : public Lattice
 	virtual void AddPhiS(Real*,Real*,Real*,Real,int, int);
 	virtual void Initiate(Real*,Real*,int, int);
 	virtual void Terminate(Real*,Real*,int,int);
+	bool PutMask(int* ,vector<int>,vector<int>,vector<int>,int);
 	virtual Real DphiDt(Real*,Real*,Real*,Real*,Real*,Real*,Real,Real);
 };
 #endif

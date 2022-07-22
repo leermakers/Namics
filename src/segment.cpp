@@ -48,8 +48,7 @@ if (debug) cout <<"Segment destructor " + name << endl;
 void Segment::DeAllocateMemory(void){
 if (debug) cout << "In Segment, Deallocating memory " + name << endl;
 if (!all_segment) return;
-if (n_pos>0) cout <<"problem for n_pos " <<endl;
-	if(n_pos>0) free(H_P);
+
 	free(r);
 	free(H_u);
 	free(H_u_ext); //cout <<"H_u_ext dismissed" << endl;
@@ -84,7 +83,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	H_u = (Real*) malloc(M*ns*sizeof(Real));
 	H_u_ext = (Real*) malloc(M*sizeof(Real));
 	H_phi = (Real*) malloc(M*sizeof(Real));
-	if (!H_MASK) H_MASK = (int*) malloc(M*sizeof(int));
+	H_MASK = (int*) malloc(M*sizeof(int));
 	H_alpha=(Real*) malloc(M*ns*sizeof(Real));
 	H_ALPHA=(Real*) malloc(M*ns*sizeof(Real));
 	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
@@ -699,8 +698,8 @@ if (debug) cout <<"ParseFreedoms " << endl;
 		if (px.size()>0) {
 			HMaskDone=true;
 			if (success) {
-				if (!H_MASK) H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
-				if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl;
+				//H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
+				if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl; 
 			}
 
 		}
@@ -1195,8 +1194,10 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 	//valence=In[0]->Get_Real(GetValue("valence"),0);
 	bool HMD=false;
+	H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
 	r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
 	if (success) success=ParseFreedoms(HMD);
+	free(H_MASK);
 	if(n_pos>0) free(H_P);
 	free(r);
 	return success;

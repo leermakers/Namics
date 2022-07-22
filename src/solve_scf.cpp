@@ -347,7 +347,9 @@ if(debug) cout <<"PushOutput in  Solve " << endl;
 	}
 	Lat[0]->PushOutput();
 	int length = In[0]->MonList.size();
-	for (int i=0; i<length; i++) Seg[i]->PushOutput();
+	for (int i=0; i<length; i++) {
+		Seg[i]->PushOutput();
+	}
 	length = In[0]->MolList.size();
 	for (int i=0; i<length; i++){
 		int al_length=Mol[i]->MolAlList.size();
@@ -487,7 +489,6 @@ bool Solve_scf::Guess(Real *X, string METHOD, vector<string> MONLIST, vector<str
 	if (debug) cout << "Guess in Solve" << endl;
 	int M=Lat[0]->M;
 	bool success=true;
-
 	if (start ==1 && Sys[0]->GuessType != "")  {
 		cout <<"guessing " << endl;
 		Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);

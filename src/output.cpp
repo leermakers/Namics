@@ -536,9 +536,9 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				} else {
 					Real* X=GetPointer(OUT_key[i],OUT_name[i],sub[0],Size);
 #ifdef LongReal
-					if (i<length-1) fprintf(fp,"%Le\t",Lat[0]->GetValue(X,sub[1])); else fprintf(fp,"%Le",Lat[0]->GetValue(X,sub[1]));
+					if (i<length-1) fprintf(fp,"%.16Le\t",Lat[0]->GetValue(X,sub[1])); else fprintf(fp,"%.16Le",Lat[0]->GetValue(X,sub[1]));
 #else
-					if (i<length-1) fprintf(fp,"%e\t",Lat[0]->GetValue(X,sub[1])); else fprintf(fp,"%e",Lat[0]->GetValue(X,sub[1]));
+					if (i<length-1) fprintf(fp,"%.16e\t",Lat[0]->GetValue(X,sub[1])); else fprintf(fp,"%.16e",Lat[0]->GetValue(X,sub[1]));
 #endif
 				}
 			}

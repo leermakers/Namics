@@ -206,7 +206,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 				maxFrReverseDirection =0.4;
 			}
 
-			n_iterations_for_hessian=In[0]->Get_int(GetValue("n_iterations_for_hessian"),iterationlimit+1);
+			n_iterations_for_hessian=In[0]->Get_int(GetValue("n_iterations_for_hessian"),iterationlimit+100);
 			if (n_iterations_for_hessian<1 ) {
 				cout <<" n_iterations_for_hessian setting must be larger than unity; hessian evaluations will not be done " << endl;
 				n_iterations_for_hessian=iterationlimit+100;

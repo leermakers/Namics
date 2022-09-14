@@ -553,10 +553,13 @@ if (debug) cout <<"ParseFreedoms " << endl;
 				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 			}
 		}
-		if (n_pos<1 && Lat[0]->geometry == "cylindrical" && Lat[0]->gradients == 2) {
+		if (GetValue("frozen_range").size()==0 && Lat[0]->geometry == "cylindrical" && Lat[0]->gradients == 2) {
 			//this case we can have a particle at the axis 
 			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
-				success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the particle at the axis of cylindrical coordonate system " << endl;
+
+				success=false; 
+				cout <<"For seg " << name << endl;
+				cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the particle at the axis of cylindrical coordonate system " << endl;
 				cout<< "More specifically we expect n : 1 ; size < n_layers_x and size < n_layers_y; pos : (0,y) " << endl;  	
 			}
 			n=In[0]->Get_int(GetValue("n"),-1); if (n!=1) {success = false; cout <<"expect value for 'n' to be unity, that is, 'n : 1' in this case"<< endl; }
@@ -1749,6 +1752,13 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	push("theta",theta);
 	Real theta_exc=0;
 	Real RMS=0;
+	if (freedom == "frozen" && n==1 && Lat[0]->geometry=="cylindrical") {
+		string s=GetValue("pos"); 
+		int length = s.size();
+		if (length>3) push("pos",s.substr(3,length-4));
+		push("size",R); 
+	        	
+	}
 
 	if (freedom == "frozen" || freedom == "pinned") {
 		int num_of_points;

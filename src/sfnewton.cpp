@@ -539,7 +539,7 @@ if(debug) cout <<"zero in Newton " << endl;
 			if ( g[i]!=g0[i] && !timedep) {
 				cout <<"[NEWTON:ERROR?: your functions are time dependent!]"<< endl;
 				timedep = true;
-			} else if (!finite(g[i]) && valid) {
+			} else if (!isfinite(g[i]) && valid) {
 				cout <<"invalid numbers in gradient, reversing search direction"<<endl; ;
 				valid = false;
 				alpha *= -1; // reverse search direction
@@ -552,7 +552,7 @@ if(debug) cout <<"zero in Newton " << endl;
 
 	COMPUTEG(x,g,nvar,filter);
 	for (int i=0; i<nvar && valid; i++) {
-		if (!finite(g[i])) {
+		if (!isfinite(g[i])) {
 			valid = false;
 			cout <<"invalid numbers in gradient"<<endl;
 				g[i] = 1;
@@ -1315,7 +1315,7 @@ void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real
   /*
 	valid = true;
 	for (int i=0; i<nvar && valid; i++) {
-		if (!finite(dg[i])) {
+		if (!isfinite(dg[i])) {
 			valid = false;
 			warning("invalid numbers in gradient");
 			dg[i] = 1;

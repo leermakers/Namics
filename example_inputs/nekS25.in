@@ -1,0 +1,98 @@
+lat : cyl : gradients : 2
+lat : cyl : geometry : cylindrical
+lat : cyl : n_layers_x : 50
+lat : cyl : n_layers_y : 100
+lat : cyl : lattice_type : hexagonal
+
+mon : P : freedom : frozen
+mon : P : frozen_range : 1,1;50,1
+
+mon : S : freedom : frozen
+mon : S : size : 25
+mon : S : n : 1
+mon : S : pos : (0,27)
+
+mon : W : freedom : free
+mon : A : freedom : free
+mon : A : chi_W : 1
+mon : A : chi_S : -2
+mon : A : chi_P : -0.5
+
+mol : pol : composition : (A)10
+mol : pol : freedom : restricted
+mol : pol : theta : 100
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+newton : isaac : method : DIIS
+newton : isaac : deltamax : 1
+newton : isaac : iterationlimit : 50000
+newton : isaac : i_info : 100
+start
+output : kal : append : false
+kal : sys : NN : start
+kal : sys : NN : grand_potential
+kal : mol : pol : theta
+kal : mon : S : size
+kal : mon : S : pos
+
+output : vtk : append : false
+vtk : mon : A : phi 
+mol : pol : freedom : free
+mol : pol : phibulk : 4.2797e-2
+start
+mon : A : chi_P : -0.6
+start
+mon : A : chi_P : -0.7
+start
+mon : A : chi_P : -0.8
+start
+mon : S : pos : (0,27)
+start
+mon : S : pos : (0,28)
+start
+mon : S : pos : (0,29)
+//newton : isaac : method : pseudohessian
+newton : isaac : deltamax :0.1
+start
+mon : S : pos : (0,30)
+start
+mon : S : pos : (0,31)
+start
+mon : S : pos : (0,32)
+start
+mon : S : pos : (0,33)
+start
+mon : S : pos : (0,34)
+start
+mon : S : pos : (0,35)
+start
+mon : S : pos : (0,36)
+start
+mon : S : pos : (0,37)
+start
+mon : S : pos : (0,38)
+start
+mon : S : pos : (0,39)
+start
+mon : S : pos : (0,40)
+start
+mon : S : pos : (0,41)
+start
+mon : S : pos : (0,42)
+start
+mon : S : pos : (0,43)
+start
+mon : S : pos : (0,44)
+start
+mon : S : pos : (0,45)
+start
+mon : S : pos : (0,46)
+start
+mon : S : pos : (0,47)
+start
+mon : S : pos : (0,48)
+start
+mon : S : pos : (0,49)
+start
+
+

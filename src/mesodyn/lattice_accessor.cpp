@@ -84,7 +84,8 @@ size_t Coordinate::operator [] (Dimension d) const {
     try {
         return m_coordinate.at(d);
     } catch (...) {
-        return std::numeric_limits<size_t>::quiet_NaN();
+        //return std::numeric_limits<size_t>::quiet_NaN(); //this line does not compile everywhere.
+	return 0;
     }
 }
 

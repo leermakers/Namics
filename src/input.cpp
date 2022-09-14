@@ -282,7 +282,7 @@ bool Input:: TestNum(std::vector<std::string> &S, string c,int num_low, int num_
 	while (i<length) {
 		std::vector<std::string> set;
 	       	split(elems[i],':',set);
-		if (set[1]=="start") n_starts++;
+		if (set[1].substr(0,5)=="start") n_starts++;
 		if (c==set[1] && n_starts<UptoStartNumber ){
 			InList=false;
 			int S_length=S.size();
@@ -303,7 +303,7 @@ int Input:: GetNumStarts() {
 		vector<std::string> set;
 		split(elems[i],':',set);
 		if (set[1] == "start") number++;
-		if ( (i==length-1)&& ( set[1]!="start") ) number++;
+		if ( (i==length-1)&& ( set[1].substr(0,5)!="start") ) number++;
 	}
 	return number;
 }

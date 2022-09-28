@@ -25,7 +25,7 @@ void LG2Planar:: ComputeLambdas() {
 
 
 void LG2Planar::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
-if (debug) cout <<" Side in LGrad2 " << endl;
+if (debug) cout <<" Side in LG2Planar " << endl;
 	Real one=1.0;
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;

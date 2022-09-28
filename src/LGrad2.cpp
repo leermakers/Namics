@@ -139,7 +139,7 @@ if (debug) cout << "Moment in LGrad2 " << endl;
 			if (zz>0) Result+= pow(zz,n)*Nz;
 		}
 	} else {
-		cout <<"Moment analysis not yet implemented in LGrad" << endl;
+		//cout <<"Moment analysis not yet implemented in LGrad" << endl;
 	}
 	return Result/fjc;
 }
@@ -918,52 +918,40 @@ void LGrad2::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad
 void LGrad2::remove_bounds(Real *X){
 if (debug) cout <<"remove_bounds in LGrad2 " << endl;
 	int x,y;
-	int k;
-	if (fjc==1) {
-		for (x=0; x<MX+2; x++) {
-			if (BX1!=0) X[P(x,0)] = 0;
-			if (BXM!=MX+1) X[P(x,MY+1)]=0;
-		}
-		for (y=0; y<MY+2; y++) {
-			if (BY1!=0) X[P(0,y)] = 0;
-			if (BYM!=MY+1) X[P(MX+1,y)]=0;
-		}
-	} else {
-		for (x=0; x<MX+fjc+1; x++) {
-			for (k=0; k<fjc; k++) if (B_Y1[k]!=k) X[P(x,k)] =0;
-			for (k=0; k<fjc; k++) if (B_YM[k]!=MY+1+k) X[P(x,MY+1+k)]=0;
-		}
-		for (y=0; y<MY+fjc+1; y++) {
-			for (k=0; k<fjc; k++) if (B_X1[k]!=k) X[P(k,y)] = 0;
-			for (k=0; k<fjc; k++) if (B_XM[k]!=MX+1+k) X[P(MX+1+k,y)]=0;
-		}
-	}
-}
-
-/*
-void LGrad2::set_bounds_x(Real* X){
-if (debug) cout <<"set_bounds XY in LGrad2 " << endl;
-	int y;
 	int k=0;
 	if (fjc==1) {
+		for (x=1; x<MX+1; x++) {
+			X[x*JX+0] = 0;
+			X[x*JX+MY+1]=0;
+		}
 		for (y=1; y<MY+1; y++) {
-			X[0+y] = X[BX1*JX+y];
-			X[(MX+1)*JX+y]=X[BXM*JX+y];
-
+			X[0+y] = 0;
+			X[(MX+1)*JX+y]=0;
+		}
+		//corners
+		for (x=0; x<1; x++) {
+			X[x*JX+0] = 0;
+			X[x*JX+MY+1]=0;
+		}
+		for (x=MX+1; x<MX+2; x++) {
+			X[x*JX+0] = 0;
+			X[x*JX+MY+1]=0;
 		}
 	} else {
-		for (y=1; y<MY+1; y++) {
+		for (x=fjc; x<MX+fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(k,y)] = X[P(B_X1[k],y)];
+				X[x*JX+k]=0;
+				X[x*JX+MY+fjc+k]=0;
 			}
+		}
+		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...
 			for (k=0; k<fjc; k++) {
-				X[P(MX+1+k,y)]=X[P(B_XM[k],y)];
+				X[k*JX+y]=0;
+				X[(MX+fjc+k)*JX+y]=0;
 			}
 		}
 	}
 }
-*/
-
 
 void LGrad2::set_bounds_x(Real* X,Real*Y, int shifty){
 if (debug) cout <<"set_bounds_x XY in LGrad2 " << endl;
@@ -981,6 +969,7 @@ if (debug) cout <<"set_bounds_x XY in LGrad2 " << endl;
 
 			}
 		} else {
+			cout <<"set_bounds_x error" << endl;
 			for (y=1; y<MY+1; y++) {
 				for (k=0; k<fjc; k++) {
 					X[P(k,y)] = Y[P(B_X1[k],(y+shifty))];
@@ -1010,6 +999,7 @@ if (debug) cout <<"set_bounds_y XY in LGrad2 " << endl;
 
 			}
 		} else {
+			cout <<"set_bounds_y error "<< endl;
 			for (x=1; x<MX+1; x++) {
 				for (k=0; k<fjc; k++) {
 					X[P(x,k)] = Y[P((x+shiftx),B_Y1[k])];
@@ -1043,6 +1033,7 @@ if (debug) cout <<"set_bounds_x X in LGrad2 " << endl;
 		//	X[x*JX+MY+1]=X[x*JX+MY];
 		//}
 	} else {
+		cout <<"set_bounds_x error" << endl;
 		for (y=0; y<MY+fjc+1; y++) { //including upper and lower bound in y... testing...
 			for (k=0; k<fjc; k++) {
 				X[P(k,y)] = X[P(B_X1[k],(y+shifty))];
@@ -1082,9 +1073,10 @@ if (debug) cout <<"set_bounds_y X in LGrad2 " << endl;
 
 		}
 	} else {
+		cout <<"set_bounds_y error" << endl;
 		for (x=1; x<MX+1; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P((x+shiftx),B_Y1[k])];
+				X[P(x,k)] = X[P((x+shiftx),B_Y1[k])]; //P(x,k) should contain x, y not x,k
 				X[P(x,MY+1+k)]=X[P((x-shiftx),B_YM[k])];
 			}
 		}
@@ -1116,31 +1108,28 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 			X[x*JX+MY+1]=X[x*JX+MY];
 		}
 	} else {
-		for (x=1; x<MX+1; x++) {
+		for (x=fjc; x<MX+fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P(x,B_Y1[k])];
-				X[P(x,MY+1+k)]=X[P(x,B_YM[k])];
+				X[x*JX+k]=X[x*JX+B_Y1[k]];
+				X[x*JX+MY+fjc+k]=X[x*JX+B_YM[k]];
 			}
 		}
-		for (y=1; y<MY+1; y++) {
+		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...
 			for (k=0; k<fjc; k++) {
-				X[P(k,y)] = X[P(B_X1[k],y)];
-				X[P(MX+1+k,y)]=X[P(B_XM[k],y)];
+				X[k*JX+y]=X[B_X1[k]*JX+y];
+				X[(MX+fjc+k)*JX+y]=X[B_XM[k]*JX+y];
 			}
 		}
 		//corners
-		for (x=0; x<fjc; x++) {
-			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P(x,2*fjc-k-1)];
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
-			}
-		}
-		for (x=MX+1; x<MX+1+fjc; x++) {
-			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P(x,2*fjc-k-1)];
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
-			}
-		}
+		//for (x=0; x<fjc; x++) {
+		//	for (y=0; y<fjc; y++) {
+		//		X[x*JX+y] = X[] //not finished....
+		//	}
+		//}
+		//for (x=MX+fjc; x<MX+2*fjc; x++) {
+		//	for (k=0; k<fjc; k++) {
+		//
+		//}
 	}
 }
 
@@ -1167,6 +1156,7 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 			X[x*JX+MY+1]=X[x*JX+MY];
 		}
 	} else {
+		cout <<"error in set_M_bounds" << endl;
 		for (x=1; x<MX+1; x++) {
 			for (k=0; k<fjc; k++) {
 				X[P(x,k)] = X[P(x,2*fjc-k-1)];
@@ -1210,13 +1200,17 @@ if (debug) cout <<"remove_bounds in LGrad2 " << endl;
 			X[P(MX+1,y)]=0;
 		}
 	} else {
-		for (x=0; x<MX+fjc+1; x++) {
-			for (k=0; k<fjc; k++) X[P(x,k)] =0;
-			for (k=0; k<fjc; k++) X[P(x,MY+1+k)]=0;
+		for (x=fjc; x<MX+fjc; x++) {
+			for (k=0; k<fjc; k++) {
+				X[x*JX+k]=0;
+				X[x*JX+MY+fjc+k]=0;
+			}
 		}
-		for (y=0; y<MY+fjc+1; y++) {
-			for (k=0; k<fjc; k++) X[P(k,y)] = 0;
-			for (k=0; k<fjc; k++) X[P(MX+1+k,y)]=0;
+		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...fingers crossed...
+			for (k=0; k<fjc; k++) {
+				X[k*JX+y]=0;
+				X[(MX+fjc+k)*JX+y]=0;
+			}
 		}
 	}
 }
@@ -1245,29 +1239,16 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 			X[x*JX+MY+1]=X[x*JX+MY];
 		}
 	} else {
-		for (x=fjc; x<MX+1; x++) {
+		for (x=fjc; x<MX+fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P(x,B_Y1[k])];
-				X[P(x,MY+1+k)]=X[P(x,B_YM[k])];
+				X[x*JX+k]=X[x*JX+B_Y1[k]];
+				X[x*JX+MY+fjc+k]=X[x*JX+B_YM[k]];
 			}
 		}
-		for (y=1; y<MY+1; y++) {
+		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...fingers crossed
 			for (k=0; k<fjc; k++) {
-				X[P(k,y)] = X[P(B_X1[k],y)];
-				X[P(MX+1+k,y)]=X[P(B_XM[k],y)];
-			}
-		}
-		//corners....needs a test
-		for (x=0; x<fjc; x++) {
-			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P(x,2*fjc-k-1)];
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
-			}
-		}
-		for (x=MX+1; x<MX+1+fjc; x++) {
-			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P(x,2*fjc-k-1)];
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
+				X[k*JX+y]=X[B_X1[k]*JX+y];
+				X[(MX+fjc+k)*JX+y]=X[B_XM[k]*JX+y];
 			}
 		}
 	}

@@ -762,7 +762,7 @@ if (debug) cout <<"set_bounds in LGrad1 " << endl;
 }
 
 void LGrad1::set_M_bounds(Real* X){
-if (debug) cout <<"set_bounds in LGrad1 " << endl;
+if (debug) cout <<"set_M_bounds in LGrad1 " << endl; //set mirror bounds
 	int k=0;
 	if (fjc==1) {
 		X[0]=X[1];

@@ -60,7 +60,7 @@ C Copyright (2018) Wageningen University, NL.
 	pseudohessian = samehessian = false;
 	d_info = e_info = g_info = h_info = s_info = x_info = false;
 	newtondirection  = false ;
-	ignore_newton_direction = true; 
+	ignore_newton_direction = true;
 	i_info=1;
 	max_accuracy_for_hessian_scaling = 0.1;
 	linesearchlimit = 20;
@@ -928,10 +928,10 @@ Real SFNewton::computeresidual(Real* array, int size) {
 
 bool SFNewton::iterate_BRR(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
 #ifdef LongReal
-	cout <<"BRR is turned off due to long double calculations. Go to SFNewton to fix it" << endl; 
+	cout <<"BRR is turned off due to long double calculations. Go to SFNewton to fix it" << endl;
 	return false;
 }
-#else 
+#else
 
 if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyden notation using Eigen library.
 	int nvar=nvar_;
@@ -1187,6 +1187,68 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	return success;
 }
 
+/*
+bool SFNewton::iterate_conjugate_gradient(Real *x, int nvar,int iterationlimit , Real tolerance, Real deltamax) {
+	Real* x0 = (Real*) malloc(nvar*sizeof(Real)); Zero(x0,nvar);
+	Real* g = (Real*) malloc(nvar*sizeof(Real)); Zero(g,nvar);
+	Real* g0 = (Real*) malloc(nvar*sizeof(Real)); Zero(g0,nvar);
+	Real* d = (Real*) malloc(nvar*sizeof(Real)); Zero(d,nvar);
+	Real* d0 = (Real*) malloc(nvar*sizeof(Real)); Zero(d0,nvar);
+	Real* d00 = (Real*) malloc(nvar*sizeof(Real)); Zero(d00,nvar);
+	Real* y0 = (Real*) malloc(nvar*sizeof(Real)); Zero(y0,nvar);
+	Real* y00 = (Real*) malloc(nvar*sizeof(Real)); Zero(y00,nvar);
+	Real alpha; Real y0d0; Real accuracy; Real Teller1,Teller2,Noemer1,Noemer2;
+	int iterations=0;
+
+	residuals(x,g);
+	Cp(x0,x,nvar); Cp(g0,g,nvar);
+	for (int i=0; i<nvar; i++) d0[i]=-g[i];
+
+	y0d0=-1; alpha=2;
+	while (y0d0<0 && alpha>0.001) {
+		alpha =alpha/2;
+		for (int i=0; i<nvar; i++) x[i]=x0[i]+alpha*d0[i];
+		residuals(x,g);
+		y0d0=0; accuracy=0;
+		for (int i=0; i<nvar; i++) {y0[i]=g[i]-g0[i]; y0d0 +=y0[i]*d0[i]; accuracy+=g[i]*g[i];}
+	}
+	accuracy= pow(accuracy,0.5);
+	cout <<"Your guess: E = " << accuracy << " alpha = " << alpha << endl;
+	Teller1=Noemer1=0;
+	for (int i=0; i<nvar; i++) {
+		Teller1+=y0[i]*y0[i];
+		Noemer1+=d0[i]*y0[i];
+	}
+	for (int i=0; i<nvar; i++) {
+		d[i]=-y0[i]+Teller1/Noemer1*d0[i];
+	}
+	while (accuracy > tolerance && iterations < iterationlimit) {
+		iterations++;
+		Cp(d00,d0,nvar); Cp(d0,d,nvar);  Cp(x0,x,nvar); Cp(g0,g,nvar);
+		y0d0=-1; alpha=1; Cp(y00,y0,nvar);
+		while (y0d0<0 && alpha > 0.001) {
+			alpha =alpha/2;
+			for (int i=0; i<nvar; i++) x[i]=x0[i]+alpha*d0[i];
+			residuals(x,g);	y0d0=0; accuracy=0;
+			for (int i=0; i<nvar; i++) {y0[i]=g[i]-g0[i]; y0d0 +=y0[i]*d0[i]; accuracy+=g[i]*g[i];}
+		}
+		accuracy= pow(accuracy,0.5);
+		cout <<"it = " << iterations << " E = " << accuracy << " alpha = " << alpha << endl;
+		Teller1=Teller2=Noemer1=Noemer2=0;
+		for (int i=0; i<nvar; i++) {
+			Teller1+=y0[i]*y0[i];
+			Teller2+=y00[i]*y0[i];
+			Noemer1+=d0[i]*y0[i];
+			Noemer2+=d00[i]*y00[i];
+		}
+		for (int i=0; i<nvar; i++) d[i]=-y0[i]+Teller1/Noemer1*d0[i] + Teller2/Noemer2*d00[i];
+	}
+
+	free(x0); free(g); free(g0); free(d); free(d0); free(d00); free(y0); free(y00);
+	return true;
+}
+*/
+
 bool SFNewton::iterate_conjugate_gradient(Real *x, int nvar,int iterationlimit , Real tolerance, Real deltamax) {
 // Based on An Introduction to the Conjugate Gradient Method Without the Agonizing Pain Edition 1 1/4 - Jonathan Richard Shewchuk
 // CG with Newton-Raphson and Fletcher-Reeves
@@ -1296,6 +1358,7 @@ bool SFNewton::iterate_conjugate_gradient(Real *x, int nvar,int iterationlimit ,
   #endif
   return success;
 }
+
 
 void SFNewton::Hd(Real *H_q, Real *q, Real *x, Real *x0, Real *g, Real* dg, Real nvar) {
 

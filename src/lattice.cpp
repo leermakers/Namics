@@ -232,14 +232,14 @@ if (debug) cout <<"lattice destructor " << endl;
 
 
 int Lattice::P(int x, int y, int z) {
-	return (x+fjc-1)*JX + (y+fjc-1)*JY +(z+fjc-1);
+	return x*JX+y*JY+z;//(x+fjc-1)*JX + (y+fjc-1)*JY +(z+fjc-1);
 }
 int Lattice::P(int x, int y) {
-	return (x+fjc-1)*JX +(y+fjc-1);
+	return x*JX+y; //(x+fjc-1)*JX +(y+fjc-1);
 }
 
 int Lattice::P(int x) {
-	return x+fjc-1;
+	return x; //x+fjc-1;
 }
 
 

@@ -536,7 +536,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 		if ((fjc>1) && (lattice_type != hexagonal)) {success = false; cout << "For FJC-choices >3, we need lattice_type = 'hexagonal'." << endl; }
 		if (gradients ==2 && fjc>2) {success = false; cout <<" When gradients is 2, FJC-choices are limited to 5 " << endl; }
-		if (gradients ==3 && fjc>1) {success = false; cout <<" When gradients is 3, FJC-choices are limited to 3 " << endl; }
+		if (gradients ==3 && fjc>2) {success = false; cout <<" When gradients is 3, FJC-choices are limited to 5 " << endl; }
 
 		if (GetValue("ignore_site_fraction").length()>0) {
 			ignore_sites=In[0]->Get_bool(GetValue("ignore_sites"),false);

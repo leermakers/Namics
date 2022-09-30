@@ -944,7 +944,7 @@ if (debug) cout <<"remove_bounds in LGrad2 " << endl;
 				X[x*JX+MY+fjc+k]=0;
 			}
 		}
-		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...
+		for (y=0; y<MY+2*fjc; y++) { //this will also remove the corners...
 			for (k=0; k<fjc; k++) {
 				X[k*JX+y]=0;
 				X[(MX+fjc+k)*JX+y]=0;
@@ -970,12 +970,12 @@ if (debug) cout <<"set_bounds_x XY in LGrad2 " << endl;
 			}
 		} else {
 			cout <<"set_bounds_x error" << endl;
-			for (y=1; y<MY+1; y++) {
+			for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...fingers crossed ; this might go wrong when reflecting and periodic b.c. are mixed...
 				for (k=0; k<fjc; k++) {
-					X[P(k,y)] = Y[P(B_X1[k],(y+shifty))];
-					Y[P(k,y)] = X[P(B_X1[k],(y+shifty))];
-					X[P(MX+1+k,y)]=Y[P(B_XM[k],(y-shifty))];
-					Y[P(MX+1+k,y)]=X[P(B_XM[k],(y-shifty))];
+					X[k*JX+y]=Y[B_X1[k]*JX+(y+shifty)];
+					X[(MX+fjc+k)*JX+y]=Y[B_XM[k]*JX+(y-shifty)];
+					Y[k*JX+y]=X[B_X1[k]*JX+(y+shifty)];
+					Y[(MX+fjc+k)*JX+y]=X[B_XM[k]*JX+(y-shifty)];
 				}
 			}
 		}
@@ -999,13 +999,12 @@ if (debug) cout <<"set_bounds_y XY in LGrad2 " << endl;
 
 			}
 		} else {
-			cout <<"set_bounds_y error "<< endl;
-			for (x=1; x<MX+1; x++) {
+			for (x=fjc; x<MX+fjc; x++) {
 				for (k=0; k<fjc; k++) {
-					X[P(x,k)] = Y[P((x+shiftx),B_Y1[k])];
-					Y[P(x,k)] = X[P((x+shiftx),B_Y1[k])];
-					X[P(x,MY+1+k)]=Y[P((x-shiftx),B_YM[k])];
-					Y[P(x,MY+1+k)]=X[P((x-shiftx),B_YM[k])];
+					X[x*JX+k]=Y[(x+shiftx)*JX+B_Y1[k]];
+					X[x*JX+MY+fjc+k]=Y[(x-shiftx)*JX+B_YM[k]];
+					Y[x*JX+k]=X[(x+shiftx)*JX+B_Y1[k]];
+					Y[x*JX+MY+fjc+k]=X[(x-shiftx)*JX+B_YM[k]];
 				}
 			}
 		}
@@ -1023,40 +1022,13 @@ if (debug) cout <<"set_bounds_x X in LGrad2 " << endl;
 			X[0        +y] = X[BX1*JX+(y+shifty)];
 			X[(MX+1)*JX+y] = X[BXM*JX+(y-shifty)];
 		}
-		//corners
-		//for (x=0; x<1; x++) {
-		//	X[x*JX+0] = X[x*JX+1];
-		//	X[x*JX+MY+1]=X[x*JX+MY];
-		//}
-		//for (x=MX+1; x<MX+2; x++) {
-		//	X[x*JX+0] = X[x*JX+1];
-		//	X[x*JX+MY+1]=X[x*JX+MY];
-		//}
 	} else {
-		cout <<"set_bounds_x error" << endl;
-		for (y=0; y<MY+fjc+1; y++) { //including upper and lower bound in y... testing...
+		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...fingers crossed ; this might go wrong when reflecting and periodic b.c. are mixed...
 			for (k=0; k<fjc; k++) {
-				X[P(k,y)] = X[P(B_X1[k],(y+shifty))];
-				X[P(MX+1+k,y)]=X[P(B_XM[k],(y-shifty))];
+				X[k*JX+y]=X[B_X1[k]*JX+(y+shifty)];
+				X[(MX+fjc+k)*JX+y]=X[B_XM[k]*JX+(y-shifty)];
 			}
 		}
-		//corners
-		//for (x=1-fjc; x<1; x++) {
-		//	for (k=0; k<fjc; k++) {
-		//		X[P(x,k)] = X[P(x,1+k)];
-		//	}
-		//	for (k=0; k<fjc; k++) {
-		//		X[P(x,MY+1+k)]=X[P(x,MY-k)];
-		//	}
-		//}
-		//for (x=MX+1; x<MX+1+fjc; x++) {
-		//	for (k=0; k<fjc; k++) {
-		//		X[P(x,k)] = X[P(x,1+k)];
-		//	}
-		//	for (k=0; k<fjc; k++) {
-		//		X[P(x,MY+1+k)]=X[P(x,MY-k)];
-		//	}
-		//}
 	}
 }
 
@@ -1070,20 +1042,16 @@ if (debug) cout <<"set_bounds_y X in LGrad2 " << endl;
 		for (x=1; x<MX+1; x++) {
 			X[x*JX+0   ]= X[(x+shiftx)*JX+BY1];
 			X[x*JX+MY+1]= X[(x-shiftx)*JX+BYM];
-
 		}
 	} else {
-		cout <<"set_bounds_y error" << endl;
-		for (x=1; x<MX+1; x++) {
+		for (x=fjc; x<MX+fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P((x+shiftx),B_Y1[k])]; //P(x,k) should contain x, y not x,k
-				X[P(x,MY+1+k)]=X[P((x-shiftx),B_YM[k])];
+				X[x*JX+k]=X[(x+shiftx)*JX+B_Y1[k]];
+				X[x*JX+MY+fjc+k]=X[(x-shiftx)*JX+B_YM[k]];
 			}
 		}
 	}
 }
-
-
 
 void LGrad2::set_bounds(Real* X){
 if (debug) cout <<"set_bounds in LGrad2 " << endl;
@@ -1120,16 +1088,6 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 				X[(MX+fjc+k)*JX+y]=X[B_XM[k]*JX+y];
 			}
 		}
-		//corners
-		//for (x=0; x<fjc; x++) {
-		//	for (y=0; y<fjc; y++) {
-		//		X[x*JX+y] = X[] //not finished....
-		//	}
-		//}
-		//for (x=MX+fjc; x<MX+2*fjc; x++) {
-		//	for (k=0; k<fjc; k++) {
-		//
-		//}
 	}
 }
 
@@ -1156,30 +1114,16 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 			X[x*JX+MY+1]=X[x*JX+MY];
 		}
 	} else {
-		cout <<"error in set_M_bounds" << endl;
-		for (x=1; x<MX+1; x++) {
+		for (x=fjc; x<MX+fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P(x,2*fjc-k-1)];
-				X[P(x,MY+1+k)]=X[P(x,MY+fjc-k-1)];
+				X[x*JX+k]=X[x*JX+2*fjc-1-k];
+				X[x*JX+MY+fjc+k]=X[x*JX+MY+fjc-k-1];
 			}
 		}
-		for (y=1; y<MY+1; y++) {
+		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...fingers crossed ; this might go wrong when reflecting and periodic b.c. are mixed...
 			for (k=0; k<fjc; k++) {
-				X[P(k,y)] = X[P(2*fjc-k-1,y)];
-				X[P(MX+1+k,y)]=X[P(MX+fjc-k-1,y)];
-			}
-		}
-		//corners
-		for (x=0; x<fjc; x++) {
-			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P(x,2*fjc-k-1)];
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
-			}
-		}
-		for (x=MX+1; x<MX+1+fjc; x++) {
-			for (k=0; k<fjc; k++) {
-				X[P(x,k)] = X[P(x,2*fjc-k-1)];
-				X[P(x,MY+1+k)]=X[P(x,MY-k)];
+				X[k*JX+y]=X[(2*fjc-1-k)*JX+y];
+				X[(MX+fjc+k)*JX+y]=X[(MX+fjc-k-1)*JX+y];
 			}
 		}
 	}
@@ -1215,7 +1159,6 @@ if (debug) cout <<"remove_bounds in LGrad2 " << endl;
 	}
 }
 
-
 void LGrad2::set_bounds(int* X){
 if (debug) cout <<"set_bounds in LGrad2 " << endl;
 	int x,y;
@@ -1245,7 +1188,7 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 				X[x*JX+MY+fjc+k]=X[x*JX+B_YM[k]];
 			}
 		}
-		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...fingers crossed
+		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...fingers crossed ; this might go wrong when reflecting and periodic b.c. are mixed...
 			for (k=0; k<fjc; k++) {
 				X[k*JX+y]=X[B_X1[k]*JX+y];
 				X[(MX+fjc+k)*JX+y]=X[B_XM[k]*JX+y];

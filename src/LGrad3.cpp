@@ -160,19 +160,154 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 			Add(X_side   ,X+JZ,M-JZ);
 	 		Norm(X_side,1.0/6.0,M);
 		} else { //hexagonal
-			Add(X_side+JX ,X,    M-JX);
-			Add(X_side    ,X+JX ,M-JX);
-			Add(X_side+JX ,X+JY ,M-JX-JY);
-			Add(X_side    ,X+JY ,M-JY);
-			Add(X_side+JY ,X    ,M-JY);
-			Add(X_side+JY ,X+JX ,M-JX-JY);
-			Add(X_side+JZ ,X+JY ,M-JY-JZ);
-			Add(X_side+JZ ,X    ,M-JZ);
-			Add(X_side+JZ ,X+JX ,M-JX-JZ);
-			Add(X_side+JX ,X+JZ ,M-JX-JZ);
-			Add(X_side    ,X+JZ ,M-JZ);
-			Add(X_side+JY ,X+JZ ,M-JY-JZ);
-			Norm(X_side,1.0/12.0,M);
+			if (fjc==1) {
+				Add(X_side+JX ,X,    M-JX);
+				Add(X_side    ,X+JX ,M-JX);
+				Add(X_side+JX ,X+JY ,M-JX-JY);
+				Add(X_side    ,X+JY ,M-JY);
+				Add(X_side+JY ,X    ,M-JY);
+				Add(X_side+JY ,X+JX ,M-JX-JY);
+				Add(X_side+JZ ,X+JY ,M-JY-JZ);
+				Add(X_side+JZ ,X    ,M-JZ);
+				Add(X_side+JZ ,X+JX ,M-JX-JZ);
+				Add(X_side+JX ,X+JZ ,M-JX-JZ);
+				Add(X_side    ,X+JZ ,M-JZ);
+				Add(X_side+JY ,X+JZ ,M-JY-JZ);
+				Norm(X_side,1.0/12.0,M);
+			} else { //fjc==2
+				Add(X_side,        X,        M);   //1
+				Add(X_side+JX,     X,        M-JX);//2
+				Add(X_side,        X+JX,     M-JX);//3
+				Add(X_side+JY,     X,        M-JY);//4
+				Add(X_side,        X+JY,     M-JY);//5
+				Add(X_side+1,      X,        M-1);//6
+				Add(X_side,        X+1,      M-1);//7
+				Add(X_side+JX+1,   X,        M-JX-1);//8
+				Add(X_side,        X+JX+1,   M-JX-1);//9
+				Add(X_side+1,      X+JX,     M-JX-1);//10
+				Add(X_side+JX,     X+1,      M-JX-1);//11
+				Add(X_side+JY+1,   X,        M-JY-1);//12
+				Add(X_side,        X+JY+1,   M-JY-1);//13
+				Add(X_side+1,      X+JY,     M-JY-1);//14
+				Add(X_side+JY,     X+1,      M-JY-1);//15
+				Add(X_side+JX+JY,  X,        M-JX-JY);//16
+				Add(X_side,        X+JX+JY,  M-JX-JY);//17
+				Add(X_side+JY,     X+JX,     M-JX-JY);//18
+				Add(X_side+JX,     X+JY,     M-JX-JY);//19
+				Add(X_side+JX+JY+1,X,        M-JX-JY-1);//20
+				Add(X_side,        X+JX+JY+1,M-JX-JY-1);//21
+				Add(X_side+JX+JY,  X+1,      M-JX-JY-1);//22
+				Add(X_side+1,      X+JX+JY,  M-JX-JY-1);//23
+				Add(X_side+JX+1,   X+JY,     M-JX-JY-1);//24
+				Add(X_side+JY,     X+JX+1,   M-JX-JY-1);//25
+				Add(X_side+JY+1,   X+JX,     M-JX-JY-1);//26
+				Add(X_side+JX,     X+JY+1,   M-JX-JY-1);//27
+				Norm(X_side,2.0,M);
+
+				Add(X_side+2*JX,  X,          M-2*JX);//28
+				Add(X_side,       X+2*JX,     M-2*JX);//29
+				Add(X_side+2*JY,  X,          M-2*JY);//30
+				Add(X_side,       X+2*JY,     M-2*JY);//31
+				Add(X_side+2,     X,          M-2);//32
+				Add(X_side,       X+2,        M-2);//33
+				Add(X_side+2*JX+1, X,     	 M-2*JX-1);//34
+				Add(X_side+2*JX,   X+1,       M-2*JX-1);//35
+				Add(X_side+1,      X+2*JX,    M-2*JX-1);//36
+				Add(X_side,        X+2*JX+1,  M-2*JX-1);//37
+				Add(X_side+2*JY,   X+1,       M-2*JY-1);//38
+				Add(X_side+2*JY+1, X,         M-2*JY-1);//39
+				Add(X_side+1,      X+2*JY,    M-2*JY-1);//40
+				Add(X_side,        X+2*JY+1,  M-2*JY-1);//41
+				Add(X_side+JX+2,   X,         M-JX-2);//42
+				Add(X_side+JX,     X+2,       M-JX-2);//43
+				Add(X_side,        X+JX+2,    M-JX-2);//44
+				Add(X_side+2,      X+JX,      M-JX-2);//45
+				Add(X_side+JY+2,   X,         M-JY-2);//46
+				Add(X_side+JY,     X+2,       M-JY-2);//47
+				Add(X_side,        X+JY+2,    M-JY-2);//48
+				Add(X_side+2,      X+JY,      M-JY-2);//49
+				Add(X_side+2*JX,   X+JY,      M-2*JX-JY);//50
+				Add(X_side+2*JX+JY,X,         M-2*JX-JY);//51
+				Add(X_side+JY,     X+2*JX,    M-2*JX-JY);//52
+				Add(X_side,        X+2*JX+JY, M-2*JX-JY);//53
+				Add(X_side+2*JY,     X+JX,        M-2*JY-JX);//54
+				Add(X_side+2*JY+JX,  X,           M-2*JY-JX);//55
+				Add(X_side+JX,       X+2*JY,      M-2*JY-JX);//56
+				Add(X_side,          X+2*JY+JX,   M-2*JY-JX);//57
+				Add(X_side+2*JX+JY+1,X,           M-2*JX-JY-1);//58
+				Add(X_side+2*JX+1,   X+JY,        M-2*JX-JY-1);//59
+				Add(X_side+JY+1,     X+2*JX,      M-2*JX-JY-1);//60
+				Add(X_side+1,        X+2*JX+JY,   M-2*JX-JY-1);//61
+				Add(X_side+2*JX+JY,  X+1,    	 M-2*JX-JY-1);//62
+				Add(X_side+2*JX,     X+JY+1,      M-2*JX-JY-1);//63
+				Add(X_side+JY,       X+2*JX+1,    M-2*JX-JY-1);//64
+				Add(X_side,          X+2*JX+JY+1, M-2*JX-JY-1);//65
+				Add(X_side+JX+2*JY+1,X,           M-JX-2*JY-1);//66
+				Add(X_side+JX+1,     X+2*JY,      M-JX-2*JY-1);//67
+				Add(X_side+2*JY+1,   X+JX,        M-JX-2*JY-1);//68
+				Add(X_side+1,        X+JX+2*JY,   M-JX-2*JY-1);//69
+				Add(X_side+JX+2*JY,  X+1,         M-JX-2*JY-1);//70
+				Add(X_side+JX,       X+2*JY+1,    M-JX-2*JY-1);//71
+				Add(X_side+2*JY,     X+JX+1,      M-JX-2*JY-1);//72
+				Add(X_side,          X+JX+2*JY+1, M-JX-2*JY-1);//73
+				Add(X_side+JX+JY+2,  X,           M-JX-JY-2);//74
+				Add(X_side+JX+2,     X+JY,        M-JX-JY-2);//75
+				Add(X_side+JY+2,     X+JX,        M-JX-JY-2);//76
+				Add(X_side+2,        X+JX+JY,     M-JX-JY-2);//77
+				Add(X_side+JX+JY,    X+2,         M-JX-JY-2);//78
+				Add(X_side+JX,       X+JY+2,      M-JX-JY-2);//79
+				Add(X_side+JY,       X+JX+2,      M-JX-JY-2);//80
+				Add(X_side,          X+JX+JY+2,   M-JX-JY-2);//81
+				Norm(X_side,2.0,M);
+
+				Add(X_side+2*JX+2*JY,X,           M-2*JX-2*JY);//82
+				Add(X_side,          X+2*JX+2*JY, M-2*JX-2*JY);//83
+				Add(X_side+2*JX,     X+2*JY,      M-2*JX-2*JY);//84
+				Add(X_side+2*JY,     X+2*JX,      M-2*JX-2*JY);//85
+				Add(X_side+2*JX+2*JY+1,X,           M-2*JX-2*JY-1);//86
+				Add(X_side+1,          X+2*JX+2*JY, M-2*JX-2*JY-1);//87
+				Add(X_side+2*JX+1,     X+2*JY,      M-2*JX-2*JY-1);//88
+				Add(X_side+2*JY+1,     X+2*JX,      M-2*JX-2*JY-1);//89
+				Add(X_side+2*JX+2*JY,X+1,           M-2*JX-2*JY-1);//90
+				Add(X_side,          X+2*JX+2*JY+1, M-2*JX-2*JY-1);//91
+				Add(X_side+2*JX,     X+2*JY+1,      M-2*JX-2*JY-1);//92
+				Add(X_side+2*JY,     X+2*JX+1,      M-2*JX-2*JY-1);//93
+				Add(X_side+2*JX+2,     X,           M-2*JX-2);//94
+				Add(X_side+2*JX+JY+2,  X,           M-2*JX-JY-2);//95
+				Add(X_side+2*JX+2,     X+JY,        M-2*JX-JY-2);//96
+				Add(X_side+2,          X+2*JX,      M-2*JX-2);//97
+				Add(X_side+JY+2,       X+2*JX,      M-2*JX-JY-2);//98
+				Add(X_side+2,          X+2*JX+JY,   M-2*JX-JY-2);//99
+				Add(X_side+2*JY+2,     X,           M-2*JY-2);//100
+				Add(X_side+2*JY+JX+2,  X,           M-2*JY-JX-2);//101
+				Add(X_side+2*JY+2,     X+JX,        M-2*JY-JX-2);//102
+				Add(X_side+2,          X+2*JY,      M-2*JY-2);//103
+				Add(X_side+JX+2,       X+2*JY,      M-2*JY-JX-2);//104
+				Add(X_side+2,          X+2*JY+JX,   M-2*JY-JX-2);//105
+				Add(X_side+2*JX,     X+2,           M-2*JX-2);//106
+				Add(X_side+2*JX+JY,  X+2,           M-2*JX-JY-2);//107
+				Add(X_side+2*JX,     X+JY+2,        M-2*JX-JY-2);//108
+				Add(X_side,          X+2*JX+2,      M-2*JX-2);//109
+				Add(X_side+JY,       X+2*JX+2,      M-2*JX-JY-2);//110
+				Add(X_side,          X+2*JX+JY+2,   M-2*JX-JY-2);//111
+				Add(X_side+2*JY,     X+2,           M-2*JY-2);//112
+				Add(X_side+2*JY+JX,  X+2,           M-2*JY-JX-2);//113
+				Add(X_side+2*JY,     X+JX+2,        M-2*JY-JX-2);//114
+				Add(X_side,          X+2*JY+2,      M-2*JY-2);//115
+				Add(X_side+JX,       X+2*JY+2,      M-2*JY-JX-2);//116
+				Add(X_side,          X+2*JY+JX+2,   M-2*JY-JX-2);//117
+				Norm(X_side,2.0,M);
+
+				Add(X_side+2*JX+2*JY+2,X,           M-2*JX-2*JY-2);//118
+				Add(X_side+2,          X+2*JX+2*JY, M-2*JX-2*JY-2);//119
+				Add(X_side+2*JX+2,     X+2*JY,      M-2*JX-2*JY-2);//120
+				Add(X_side+2*JY+2,     X+2*JX,      M-2*JX-2*JY-2);//121
+				Add(X_side+2*JX+2*JY,X+2,           M-2*JX-2*JY-2);//122
+				Add(X_side,          X+2*JX+2*JY+2, M-2*JX-2*JY-2);//123
+				Add(X_side+2*JX,     X+2*JY+2,      M-2*JX-2*JY-2);//124
+				Add(X_side+2*JY,     X+2*JX+2,      M-2*JX-2*JY-2);//125
+				Norm(X_side,1.0/512.0,M);
+			}
 		}
 	}
 }
@@ -722,31 +857,167 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 			Times(gs,gs,G1,M);
 #endif
 		} else { //hexagonal
-			Add(gs+JX_,gs_1,    M-JX_);
-			Add(gs,    gs_1+JX_,M-JX_);
-			Add(gs+JY_,gs_1    ,M-JY_);
-			Add(gs,    gs_1+JY_,M-JY_);
-			Add(gs+JZ, gs_1    ,M-JZ);
-			Add(gs,    gs_1+JZ ,M-JZ);
+			if (fjc==1) {
+				Add(gs+JX_,gs_1,    M-JX_);
+				Add(gs,    gs_1+JX_,M-JX_);
+				Add(gs+JY_,gs_1    ,M-JY_);
+				Add(gs,    gs_1+JY_,M-JY_);
+				Add(gs+JZ, gs_1    ,M-JZ);
+				Add(gs,    gs_1+JZ ,M-JZ);
 
-			remove_bounds(gs_1);
-			set_bounds_x(gs_1,-1,0);
-			Add(gs+JX_,gs_1+JY_,M-JX_-JY_);
-			Add(gs+JY_,gs_1+JX_,M-JX_-JY_);
+				remove_bounds(gs_1);
+				set_bounds_x(gs_1,-1,0);
+				Add(gs+JX_,gs_1+JY_,M-JX_-JY_);
+				Add(gs+JY_,gs_1+JX_,M-JX_-JY_);
 
-			remove_bounds(gs_1);
-			set_bounds_x(gs_1,0,-1);
-			Add(gs+JX_,gs_1+JZ ,M-JX_-JZ);
-			Add(gs+JZ, gs_1+JX_,M-JX_-JZ);
+				remove_bounds(gs_1);
+				set_bounds_x(gs_1,0,-1);
+				Add(gs+JX_,gs_1+JZ ,M-JX_-JZ);
+				Add(gs+JZ, gs_1+JX_,M-JX_-JZ);
 
-			remove_bounds(gs_1);
-			set_bounds_y(gs_1,0,-1);
-			Add(gs+JY_,gs_1+JZ ,M-JY_-JZ);
-			Add(gs+JZ, gs_1+JY_,M-JY_-JZ);
+				remove_bounds(gs_1);
+				set_bounds_y(gs_1,0,-1);
+				Add(gs+JY_,gs_1+JZ ,M-JY_-JZ);
+				Add(gs+JZ, gs_1+JY_,M-JY_-JZ);
 
-			Norm(gs,1.0/12.0,M);
-			Times(gs,gs,G1,M);
+				Norm(gs,1.0/12.0,M);
+				Times(gs,gs,G1,M);
+			} else { //hexagonal and fjc=2
+				Add(gs,            gs_1,             M);   //1
+				Add(gs+JX,         gs_1,             M-JX);//2
+				Add(gs,            gs_1+JX,          M-JX);//3
+				Add(gs+JY,         gs_1,             M-JY);//4
+				Add(gs,            gs_1+JY,          M-JY);//5
+				Add(gs+1,          gs_1,             M-1);//6
+				Add(gs,            gs_1+1,           M-1);//7
+				Add(gs+JX+1,       gs_1,             M-JX-1);//8
+				Add(gs,            gs_1+JX+1,        M-JX-1);//9
+				Add(gs+1,          gs_1+JX,          M-JX-1);//10
+				Add(gs+JX,         gs_1+1,           M-JX-1);//11
+				Add(gs+JY+1,       gs_1,             M-JY-1);//12
+				Add(gs,            gs_1+JY+1,        M-JY-1);//13
+				Add(gs+1,          gs_1+JY,          M-JY-1);//14
+				Add(gs+JY,         gs_1+1,           M-JY-1);//15
+				Add(gs+JX+JY,      gs_1,             M-JX-JY);//16
+				Add(gs,            gs_1+JX+JY,       M-JX-JY);//17
+				Add(gs+JY,         gs_1+JX,          M-JX-JY);//18
+				Add(gs+JX,         gs_1+JY,          M-JX-JY);//19
+				Add(gs+JX+JY+1,    gs_1,             M-JX-JY-1);//20
+				Add(gs,            gs_1+JX+JY+1,     M-JX-JY-1);//21
+				Add(gs+JX+JY,      gs_1+1,           M-JX-JY-1);//22
+				Add(gs+1,          gs_1+JX+JY,       M-JX-JY-1);//23
+				Add(gs+JX+1,       gs_1+JY,          M-JX-JY-1);//24
+				Add(gs+JY,         gs_1+JX+1,        M-JX-JY-1);//25
+				Add(gs+JY+1,       gs_1+JX,          M-JX-JY-1);//26
+				Add(gs+JX,         gs_1+JY+1,        M-JX-JY-1);//27
+				Norm(gs,2.0,M);
 
+				Add(gs+2*JX,       gs_1,             M-2*JX);//28
+				Add(gs,            gs_1+2*JX,        M-2*JX);//29
+				Add(gs+2*JY,       gs_1,             M-2*JY);//30
+				Add(gs,            gs_1+2*JY,        M-2*JY);//31
+				Add(gs+2,          gs_1,             M-2);//32
+				Add(gs,            gs_1+2,           M-2);//33
+				Add(gs+2*JX+1,     gs_1,     	     M-2*JX-1);//34
+				Add(gs+2*JX,       gs_1+1,           M-2*JX-1);//35
+				Add(gs+1,          gs_1+2*JX,        M-2*JX-1);//36
+				Add(gs,            gs_1+2*JX+1,      M-2*JX-1);//37
+				Add(gs+2*JY,       gs_1+1,           M-2*JY-1);//38
+				Add(gs+2*JY+1,     gs_1,             M-2*JY-1);//39
+				Add(gs+1,          gs_1+2*JY,        M-2*JY-1);//40
+				Add(gs,            gs_1+2*JY+1,      M-2*JY-1);//41
+				Add(gs+JX+2,       gs_1,             M-JX-2);//42
+				Add(gs+JX,         gs_1+2,           M-JX-2);//43
+				Add(gs,            gs_1+JX+2,        M-JX-2);//44
+				Add(gs+2,          gs_1+JX,          M-JX-2);//45
+				Add(gs+JY+2,       gs_1,             M-JY-2);//46
+				Add(gs+JY,         gs_1+2,           M-JY-2);//47
+				Add(gs,            gs_1+JY+2,        M-JY-2);//48
+				Add(gs+2,          gs_1+JY,          M-JY-2);//49
+				Add(gs+2*JX,       gs_1+JY,          M-2*JX-JY);//50
+				Add(gs+2*JX+JY,    gs_1,             M-2*JX-JY);//51
+				Add(gs+JY,         gs_1+2*JX,        M-2*JX-JY);//52
+				Add(gs,            gs_1+2*JX+JY,     M-2*JX-JY);//53
+				Add(gs+2*JY,       gs_1+JX,          M-2*JY-JX);//54
+				Add(gs+2*JY+JX,    gs_1,             M-2*JY-JX);//55
+				Add(gs+JX,         gs_1+2*JY,        M-2*JY-JX);//56
+				Add(gs,            gs_1+2*JY+JX,     M-2*JY-JX);//57
+				Add(gs+2*JX+JY+1,  gs_1,             M-2*JX-JY-1);//58
+				Add(gs+2*JX+1,     gs_1+JY,          M-2*JX-JY-1);//59
+				Add(gs+JY+1,       gs_1+2*JX,        M-2*JX-JY-1);//60
+				Add(gs+1,          gs_1+2*JX+JY,     M-2*JX-JY-1);//61
+				Add(gs+2*JX+JY,    gs_1+1,    	     M-2*JX-JY-1);//62
+				Add(gs+2*JX,       gs_1+JY+1,        M-2*JX-JY-1);//63
+				Add(gs+JY,         gs_1+2*JX+1,      M-2*JX-JY-1);//64
+				Add(gs,            gs_1+2*JX+JY+1,   M-2*JX-JY-1);//65
+				Add(gs+JX+2*JY+1,  gs_1,             M-JX-2*JY-1);//66
+				Add(gs+JX+1,       gs_1+2*JY,        M-JX-2*JY-1);//67
+				Add(gs+2*JY+1,     gs_1+JX,          M-JX-2*JY-1);//68
+				Add(gs+1,          gs_1+JX+2*JY,     M-JX-2*JY-1);//69
+				Add(gs+JX+2*JY,    gs_1+1,           M-JX-2*JY-1);//70
+				Add(gs+JX,         gs_1+2*JY+1,      M-JX-2*JY-1);//71
+				Add(gs+2*JY,       gs_1+JX+1,        M-JX-2*JY-1);//72
+				Add(gs,            gs_1+JX+2*JY+1,   M-JX-2*JY-1);//73
+				Add(gs+JX+JY+2,    gs_1,             M-JX-JY-2);//74
+				Add(gs+JX+2,       gs_1+JY,          M-JX-JY-2);//75
+				Add(gs+JY+2,       gs_1+JX,          M-JX-JY-2);//76
+				Add(gs+2,          gs_1+JX+JY,       M-JX-JY-2);//77
+				Add(gs+JX+JY,      gs_1+2,           M-JX-JY-2);//78
+				Add(gs+JX,         gs_1+JY+2,        M-JX-JY-2);//79
+				Add(gs+JY,         gs_1+JX+2,        M-JX-JY-2);//80
+				Add(gs,            gs_1+JX+JY+2,     M-JX-JY-2);//81
+				Norm(gs,2.0,M);
+
+				Add(gs+2*JX+2*JY,  gs_1,             M-2*JX-2*JY);//82
+				Add(gs,            gs_1+2*JX+2*JY,   M-2*JX-2*JY);//83
+				Add(gs+2*JX,       gs_1+2*JY,        M-2*JX-2*JY);//84
+				Add(gs+2*JY,       gs_1+2*JX,        M-2*JX-2*JY);//85
+				Add(gs+2*JX+2*JY+1,gs_1,             M-2*JX-2*JY-1);//86
+				Add(gs+1,          gs_1+2*JX+2*JY,   M-2*JX-2*JY-1);//87
+				Add(gs+2*JX+1,     gs_1+2*JY,        M-2*JX-2*JY-1);//88
+				Add(gs+2*JY+1,     gs_1+2*JX,        M-2*JX-2*JY-1);//89
+				Add(gs+2*JX+2*JY,  gs_1+1,           M-2*JX-2*JY-1);//90
+				Add(gs,            gs_1+2*JX+2*JY+1, M-2*JX-2*JY-1);//91
+				Add(gs+2*JX,       gs_1+2*JY+1,      M-2*JX-2*JY-1);//92
+				Add(gs+2*JY,       gs_1+2*JX+1,      M-2*JX-2*JY-1);//93
+				Add(gs+2*JX+2,     gs_1,             M-2*JX-2);//94
+				Add(gs+2*JX+JY+2,  gs_1,             M-2*JX-JY-2);//95
+				Add(gs+2*JX+2,     gs_1+JY,          M-2*JX-JY-2);//96
+				Add(gs+2,          gs_1+2*JX,        M-2*JX-2);//97
+				Add(gs+JY+2,       gs_1+2*JX,        M-2*JX-JY-2);//98
+				Add(gs+2,          gs_1+2*JX+JY,     M-2*JX-JY-2);//99
+				Add(gs+2*JY+2,     gs_1,             M-2*JY-2);//100
+				Add(gs+2*JY+JX+2,  gs_1,             M-2*JY-JX-2);//101
+				Add(gs+2*JY+2,     gs_1+JX,          M-2*JY-JX-2);//102
+				Add(gs+2,          gs_1+2*JY,        M-2*JY-2);//103
+				Add(gs+JX+2,       gs_1+2*JY,        M-2*JY-JX-2);//104
+				Add(gs+2,          gs_1+2*JY+JX,     M-2*JY-JX-2);//105
+				Add(gs+2*JX,       gs_1+2,           M-2*JX-2);//106
+				Add(gs+2*JX+JY,    gs_1+2,           M-2*JX-JY-2);//107
+				Add(gs+2*JX,       gs_1+JY+2,        M-2*JX-JY-2);//108
+				Add(gs,            gs_1+2*JX+2,      M-2*JX-2);//109
+				Add(gs+JY,         gs_1+2*JX+2,      M-2*JX-JY-2);//110
+				Add(gs,            gs_1+2*JX+JY+2,   M-2*JX-JY-2);//111
+				Add(gs+2*JY,       gs_1+2,           M-2*JY-2);//112
+				Add(gs+2*JY+JX,    gs_1+2,           M-2*JY-JX-2);//113
+				Add(gs+2*JY,       gs_1+JX+2,        M-2*JY-JX-2);//114
+				Add(gs,            gs_1+2*JY+2,      M-2*JY-2);//115
+				Add(gs+JX,         gs_1+2*JY+2,      M-2*JY-JX-2);//116
+				Add(gs,            gs_1+2*JY+JX+2,   M-2*JY-JX-2);//117
+				Norm(gs,2.0,M);
+
+				Add(gs+2*JX+2*JY+2,gs_1,             M-2*JX-2*JY-2);//118
+				Add(gs+2,          gs_1+2*JX+2*JY,   M-2*JX-2*JY-2);//119
+				Add(gs+2*JX+2,     gs_1+2*JY,        M-2*JX-2*JY-2);//120
+				Add(gs+2*JY+2,     gs_1+2*JX,        M-2*JX-2*JY-2);//121
+				Add(gs+2*JX+2*JY,  gs_1+2,           M-2*JX-2*JY-2);//122
+				Add(gs,            gs_1+2*JX+2*JY+2, M-2*JX-2*JY-2);//123
+				Add(gs+2*JX,       gs_1+2*JY+2,      M-2*JX-2*JY-2);//124
+				Add(gs+2*JY,       gs_1+2*JX+2,      M-2*JX-2*JY-2);//125
+				Norm(gs,1.0/512.0,M);
+
+				Times(gs,gs,G1,M);
+			}
 		}
 	}
 }
@@ -1154,7 +1425,6 @@ void LGrad3::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad
 
 }
 
-
 void LGrad3::set_bounds_x(Real* X,Real* Y,int shifty,int shiftz){
 if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
 	int y,z;
@@ -1164,47 +1434,26 @@ if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
 		set_bounds_x(Y,shifty,shiftz);
 	} else {
 
-	if (fjc==1) {
-		 for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++)  {
-			X[0+        y*JY+z*JZ] = Y[BX1*JX+(y+shifty)*JY+(z+shiftz)*JZ];
-			X[(MX+1)*JX+y*JY+z*JZ] = Y[BXM*JX+(y-shifty)*JY+(z-shiftz)*JZ];
-			Y[0        +y*JY+z*JZ] = X[BX1*JX+(y+shifty)*JY+(z+shiftz)*JZ];
-			Y[(MX+1)*JX+y*JY+z*JZ] = X[BXM*JX+(y-shifty)*JY+(z-shiftz)*JZ];
-		}
-		//X[P(0,   0,0)]=X[P(BX1,0,0)];
-		//Y[P(0,   0,0)]=Y[P(BX1,0,0)];
-		//X[P(MX+1,0,0)]=X[P(BXM,0,0)];
-		//Y[P(MX+1,0,0)]=Y[P(BXM,0,0)];
-
-		//X[P(0,   0,MZ+1)]=X[P(BX1,0,MZ+1)];
-		//Y[P(0,   0,MZ+1)]=Y[P(BX1,0,MZ+1)];
-		//X[P(MX+1,0,MZ+1)]=X[P(BXM,0,MZ+1)];
-		//Y[P(MX+1,0,MZ+1)]=Y[P(BXM,0,MZ+1)];
-
-		//X[P(0,   MY+1,0)]=X[P(BX1,MY+1,0)];
-		//Y[P(0,   MY+1,0)]=Y[P(BX1,MY+1,0)];
-		//X[P(MX+1,MY+1,0)]=X[P(BXM,MY+1,0)];
-		//Y[P(MX+1,MY+1,0)]=Y[P(BXM,MY+1,0)];
-
-		//X[P(0,   MY+1,MZ+1)]=X[P(BX1,MY+1,MZ+1)];
-		//Y[P(0,   MY+1,MZ+1)]=Y[P(BX1,MY+1,MZ+1)];
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(BXM,MY+1,MZ+1)];
-		//Y[P(MX+1,MY+1,MZ+1)]=Y[P(BXM,MY+1,MZ+1)];
-
-
-	} else {
-		for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
-			for (k=0; k<fjc; k++) {
-				X[(fjc-k-1)*JX+y*JY+z*JZ] = Y[B_X1[k]*JX+y*JY+z*JZ];
-				Y[(fjc-k-1)*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
-
+		if (fjc==1) {
+			 for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++)  {
+				X[0+        y*JY+z*JZ] = Y[BX1*JX+(y+shifty)*JY+(z+shiftz)*JZ];
+				X[(MX+1)*JX+y*JY+z*JZ] = Y[BXM*JX+(y-shifty)*JY+(z-shiftz)*JZ];
+				Y[0        +y*JY+z*JZ] = X[BX1*JX+(y+shifty)*JY+(z+shiftz)*JZ];
+				Y[(MX+1)*JX+y*JY+z*JZ] = X[BXM*JX+(y-shifty)*JY+(z-shiftz)*JZ];
 			}
-			for (k=0; k<fjc; k++) {
-				X[(MX+fjc+k)*JX+y*JY+z*JZ] = Y[B_XM[k]*JX+y*JY+z*JZ];
-				Y[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
+		} else {
+			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+				for (k=0; k<fjc; k++) {
+					X[k*JX+y*JY+z*JZ] = Y[B_X1[k]*JX+(y+shifty)*JY+(z+shiftz)*JZ];
+					Y[k*JX+y*JY+z*JZ] = X[B_X1[k]*JX+(y+shifty)*JY+(z+shiftz)*JZ];
+
+				}
+				for (k=0; k<fjc; k++) {
+					X[(MX+fjc+k)*JX+y*JY+z*JZ] = Y[B_XM[k]*JX+(y-shifty)*JY+(z-shiftz)*JZ];
+					Y[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+(y-shifty)*JY+(z-shiftz)*JZ];
+				}
 			}
 		}
-	}
 	}
 }
 void LGrad3::set_bounds_y(Real* X,Real* Y,int shiftx, int shiftz){
@@ -1216,45 +1465,25 @@ if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
 		set_bounds_y(Y,shiftx,shiftz);
 	} else {
 
-	if (fjc==1) {
-		for (z=1; z<MZ+1; z++) for (x=1; x<MX+1; x++){
-			X[x*JX+0+        z*JZ] = Y[(x+shiftx)*JX+BY1*JY+(z+shiftz)*JZ];
-			X[x*JX+(MY+1)*JY+z*JZ] = Y[(x-shiftx)*JX+BYM*JY+(z-shiftz)*JZ];
-			Y[x*JX+0+        z*JZ] = X[(x+shiftx)*JX+BY1*JY+(z+shiftz)*JZ];
-			Y[x*JX+(MY+1)*JY+z*JZ] = X[(x-shiftx)*JX+BYM*JY+(z-shiftz)*JZ];
-		}
-		//X[P(0,0,   0)]=X[P(0,BY1,0)];
-		//Y[P(0,0,   0)]=Y[P(0,BY1,0)];
-		//X[P(0,MY+1,0)]=X[P(0,BYM,0)];
-		//Y[P(0,MY+1,0)]=Y[P(0,BYM,0)];
-
-		//X[P(0,0   ,MZ+1)]=X[P(0,BY1,MZ+1)];
-		//Y[P(0,0,   MZ+1)]=Y[P(0,BY1,MZ+1)];
-		//X[P(0,MY+1,MZ+1)]=X[P(0,BYM,MZ+1)];
-		//Y[P(0,MY+1,MZ+1)]=Y[P(0,BYM,MZ+1)];
-
-		//X[P(MX+1,0   ,0)]=X[P(MX+1,BY1,0)];
-		//Y[P(MX+1,0,   0)]=Y[P(MX+1,BY1,0)];
-		//X[P(MX+1,MY+1,0)]=X[P(MX+1,BYM,0)];
-		//Y[P(MX+1,MY+1,0)]=Y[P(MX+1,BYM,0)];
-
-		//X[P(MX+1,0,   MZ+1)]=X[P(MX+1,BY1,MZ+1)];
-		//Y[P(MX+1,0,   MZ+1)]=Y[P(MX+1,BY1,MZ+1)];
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,BYM,MZ+1)];
-		//Y[P(MX+1,MY+1,MZ+1)]=Y[P(MX+1,BYM,MZ+1)];
-
-	} else {
-		for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
-			for (k=0; k<fjc; k++) {
-				X[x*JX+(fjc-k-1)*JY+z*JZ] = Y[x*JX+B_Y1[k]*JY+z*JZ];
-				Y[x*JX+(fjc-k-1)*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
+		if (fjc==1) {
+			for (z=1; z<MZ+1; z++) for (x=1; x<MX+1; x++){
+				X[x*JX+0+        z*JZ] = Y[(x+shiftx)*JX+BY1*JY+(z+shiftz)*JZ];
+				X[x*JX+(MY+1)*JY+z*JZ] = Y[(x-shiftx)*JX+BYM*JY+(z-shiftz)*JZ];
+				Y[x*JX+0+        z*JZ] = X[(x+shiftx)*JX+BY1*JY+(z+shiftz)*JZ];
+				Y[x*JX+(MY+1)*JY+z*JZ] = X[(x-shiftx)*JX+BYM*JY+(z-shiftz)*JZ];
 			}
-			for (k=0; k<fjc; k++) {
-				X[x*JX+(MY+fjc+k)*JY+z*JZ] = Y[x*JX+B_YM[k]*JY+z*JZ];
-				Y[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
+		} else {
+			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
+				for (k=0; k<fjc; k++) {
+					X[x*JX+k*JY+z*JZ] = Y[(x+shiftx)*JX+B_Y1[k]*JY+(z+shiftz)*JZ];
+					Y[x*JX+k*JY+z*JZ] = X[(x+shiftx)*JX+B_Y1[k]*JY+(z+shiftz)*JZ];
+				}
+				for (k=0; k<fjc; k++) {
+					X[x*JX+(MY+fjc+k)*JY+z*JZ] = Y[(x-shiftx)*JX+B_YM[k]*JY+(z-shiftz)*JZ];
+					Y[x*JX+(MY+fjc+k)*JY+z*JZ] = X[(x-shiftx)*JX+B_YM[k]*JY+(z-shiftz)*JZ];
+				}
 			}
 		}
-	}
 	}
 
 }
@@ -1267,48 +1496,27 @@ if (debug) cout <<"set_bounds_z (x,y) in LGrad3 " << endl;
 		set_bounds_z(X,shiftx,shifty);
 		set_bounds_z(Y,shiftx,shifty);
 	} else {
-	if (fjc==1) {
-		for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++) {
-			X[x*JX+y*JY+   0] = Y[(x+shiftx)*JX+(y+shifty)*JY+BZ1];
-			X[x*JX+y*JY+MZ+1] = Y[(x-shiftx)*JX+(y-shifty)*JY+BZM];
-			Y[x*JX+y*JY+   0] = X[(x+shiftx)*JX+(y+shifty)*JY+BZ1];
-			Y[x*JX+y*JY+MZ+1] = X[(x-shiftx)*JX+(y-shifty)*JY+BZM];
-		}
-		//X[P(0,0,   0)]=X[P(0,0,BZ1)];
-		//Y[P(0,0,   0)]=Y[P(0,0,BZ1)];
-		//X[P(0,0,MZ+1)]=X[P(0,0,BZM)];
-		//Y[P(0,0,MZ+1)]=Y[P(0,0,BZM)];
-
-		//X[P(0,MY+1,   0)]=X[P(0,MY+1,BZ1)];
-		//Y[P(0,MY+1,   0)]=Y[P(0,MY+1,BZ1)];
-		//X[P(0,MY+1,MZ+1)]=X[P(0,MY+1,BZM)];
-		//Y[P(0,MY+1,MZ+1)]=Y[P(0,MY+1,BZM)];
-
-		//X[P(MX+1,0,   0)]=X[P(MX+1,0,BZ1)];
-		//Y[P(MX+1,0,   0)]=Y[P(MX+1,0,BZ1)];
-		//X[P(MX+1,0,MZ+1)]=X[P(MX+1,0,BZM)];
-		//Y[P(MX+1,0,MZ+1)]=Y[P(MX+1,0,BZM)];
-
-		//X[P(MX+1,MY+1,   0)]=X[P(MX+1,MY+1,BZ1)];
-		//Y[P(MX+1,MY+1,   0)]=Y[P(MX+1,MY+1,BZ1)];
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,MY+1,BZM)];
-		//Y[P(MX+1,MY+1,MZ+1)]=Y[P(MX+1,MY+1,BZM)];
-
-	} else {
-		for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) {
-			for (k=0; k<fjc; k++) {
-				X[x*JX+y*JY+(fjc-1)-k] = Y[x*JX+y*JY+B_Z1[k]];
-				Y[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+B_Z1[k]];
+		if (fjc==1) {
+			for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++) {
+				X[x*JX+y*JY+   0] = Y[(x+shiftx)*JX+(y+shifty)*JY+BZ1];
+				X[x*JX+y*JY+MZ+1] = Y[(x-shiftx)*JX+(y-shifty)*JY+BZM];
+				Y[x*JX+y*JY+   0] = X[(x+shiftx)*JX+(y+shifty)*JY+BZ1];
+				Y[x*JX+y*JY+MZ+1] = X[(x-shiftx)*JX+(y-shifty)*JY+BZM];
 			}
-			for (k=0; k<fjc; k++) {
-				X[x*JX+y*JY+MZ+fjc+k]  = Y[x*JX+y*JY+B_ZM[k]];
-				Y[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+		} else {
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++) {
+				for (k=0; k<fjc; k++) {
+					X[x*JX+y*JY+k] = Y[(x+shiftx)*JX+(y+shifty)*JY+B_Z1[k]];
+					Y[x*JX+y*JY+k] = X[(x+shiftx)*JX+(y+shifty)*JY+B_Z1[k]];
+				}
+				for (k=0; k<fjc; k++) {
+					X[x*JX+y*JY+MZ+fjc+k]  = Y[(x-shiftx)*JX+(y-shifty)*JY+B_ZM[k]];
+					Y[x*JX+y*JY+MZ+fjc+k]  = X[(x-shiftx)*JX+(y-shifty)*JY+B_ZM[k]];
+				}
 			}
 		}
-	}
 	}
 }
-
 
 void LGrad3::set_bounds_x(Real* X, int shifty, int shiftz){
 if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
@@ -1320,22 +1528,10 @@ if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
 			X[0        +y*JY+z*JZ] = X[BX1*JX+(y+shifty)*JY+(z+shiftz)*JZ];
 			X[(MX+1)*JX+y*JY+z*JZ] = X[BXM*JX+(y-shifty)*JY+(z-shiftz)*JZ];
 		}
-		//X[P(0,   0,0)]=X[P(BX1,0,0)];
-		//X[P(MX+1,0,0)]=X[P(BXM,0,0)];
-
-		//X[P(0,   0,MZ+1)]=X[P(BX1,0,MZ+1)];
-		//X[P(MX+1,0,MZ+1)]=X[P(BXM,0,MZ+1)];
-
-		//X[P(0,   MY+1,0)]=X[P(BX1,MY+1,0)];
-		//X[P(MX+1,MY+1,0)]=X[P(BXM,MY+1,0)];
-
-		//X[P(0,   MY+1,MZ+1)]=X[P(BX1,MY+1,MZ+1)];
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(BXM,MY+1,MZ+1)];
-
-	} else {//shfits for hexagonal lattice not put in the fjc>1 case...
+	} else {//shifts for hexagonal lattice not put in the fjc>1 case...
 		for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
-			for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
-			for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
+			for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = X[B_X1[k]*JX+(y+shifty)*JY+(z+shiftz)*JZ];
+			for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+(y-shifty)*JY+(z-shiftz)*JZ];
 		}
 	}
 }
@@ -1350,22 +1546,10 @@ if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
 			X[x*JX+    0    +z*JZ] = X[(x+shiftx)*JX+BY1*JY+(z+shiftz)*JZ];
 			X[x*JX+(MY+1)*JY+z*JZ] = X[(x-shiftx)*JX+BYM*JY+(z-shiftz)*JZ];
 		}
-		//X[P(0,0,   0)]=X[P(0,BY1,0)];
-		//X[P(0,MY+1,0)]=X[P(0,BYM,0)];
-
-		//X[P(0,0   ,MZ+1)]=X[P(0,BY1,MZ+1)];
-		//X[P(0,MY+1,MZ+1)]=X[P(0,BYM,MZ+1)];
-
-		//X[P(MX+1,0   ,0)]=X[P(MX+1,BY1,0)];
-		//X[P(MX+1,MY+1,0)]=X[P(MX+1,BYM,0)];
-
-		//X[P(MX+1,0,   MZ+1)]=X[P(MX+1,BY1,MZ+1)];
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,BYM,MZ+1)];
-
 	} else {
 		for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
-			for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
-			for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
+			for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = X[(x+shiftx)*JX+B_Y1[k]*JY+(z+shiftz)*JZ];
+			for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[(x-shiftx)*JX+B_YM[k]*JY+(z-shiftz)*JZ];
 		}
 	}
 }
@@ -1380,22 +1564,10 @@ if (debug) cout <<"set_bounds_z in LGrad3 " << endl;
 			X[x*JX+y*JY+   0] = X[(x+shiftx)*JX+(y+shifty)*JY+BZ1];
 			X[x*JX+y*JY+MZ+1] = X[(x-shiftx)*JX+(y-shifty)*JY+BZM];
 		}
-		//X[P(0,0,   0)]=X[P(0,0,BZ1)];
-		//X[P(0,0,MZ+1)]=X[P(0,0,BZM)];
-
-		//X[P(0,MY+1,   0)]=X[P(0,MY+1,BZ1)];
-		//X[P(0,MY+1,MZ+1)]=X[P(0,MY+1,BZM)];
-
-		//X[P(MX+1,0,   0)]=X[P(MX+1,0,BZ1)];
-		//X[P(MX+1,0,MZ+1)]=X[P(MX+1,0,BZM)];
-
-		//X[P(MX+1,MY+1,   0)]=X[P(MX+1,MY+1,BZ1)];
-		//X[P(MX+1,MY+1,MZ+1)]=X[P(MX+1,MY+1,BZM)];
-
 	} else {
 		for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
-			for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+B_Z1[k]];
-			for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+			for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = X[(x+shiftx)*JX+(y+shifty)*JY+B_Z1[k]];
+			for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[(x-shiftx)*JX+(y-shifty)*JY+B_ZM[k]];
 		}
 	}
 }
@@ -1410,17 +1582,18 @@ if (debug) cout <<"remove_bounds in LGrad3 " << endl;
 			RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 	} else {
 		if (fjc==1) RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
-			for (x=fjc; x<MX+fjc+1; x++) for (y=fjc; y<MY+fjc+1; y++){
-				for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = 0;
-				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc-k]  = 0;
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = 0;
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = 0;
 			}
-			for (y=fjc; y<MY+fjc+1; y++) for (z=fjc; z<MZ+fjc+1; z++)  {
-				for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = 0;
-				for (k=0; k<fjc; k++) X[(MX+fjc-k)*JX+y*JY+z*JZ] = 0;
+			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = 0;
+				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = 0;
 			}
-			for (z=fjc; z<MZ+fjc+1; z++) for (x=fjc; x<MX+fjc+1; x++){
-				for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = 0;
-				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc-k)*JY+z*JZ] = 0;
+			//for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){ //what about corners?
+			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){ //including corners
+				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = 0;
+				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = 0;
 			}
 		}
 	}
@@ -1449,18 +1622,18 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 				X[x*JX+0        +z*JZ] = X[x*JX+BY1*JY+z*JZ];
 				X[x*JX+(MY+1)*JY+z*JZ] = X[x*JX+BYM*JY+z*JZ];
 			}
-
 		} else {
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
-				for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+B_Z1[k]];
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = X[x*JX+y*JY+B_Z1[k]];
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
 			}
 			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
-				for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
+				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
 			}
-			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
-				for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
+			//for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){ //corners?
+			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){
+				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
 			}
 		}
@@ -1493,22 +1666,20 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 
 		} else {
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
-				for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+2*fjc-1-k];
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = X[x*JX+y*JY+2*fjc-1-k];
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+MZ+fjc-k-1];
 			}
 			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
-				for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = X[(2*fjc-1-k)*JX+y*JY+z*JZ];
+				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = X[(2*fjc-1-k)*JX+y*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[(MX+fjc-k-1)*JX+y*JY+z*JZ];
 			}
-			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
-				for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = X[x*JX+(2*fjc-1-k)*JY+z*JZ];
+			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){ //corners?
+				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = X[x*JX+(2*fjc-1-k)*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+(MY+fjc-k-1)*JY+z*JZ];
 			}
 		}
 	}
 }
-
-
 
 void LGrad3::remove_bounds(int *X){
 if (debug) cout <<"remove_bounds in LGrad3 " << endl;
@@ -1520,22 +1691,22 @@ if (debug) cout <<"remove_bounds in LGrad3 " << endl;
 			RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 	} else {
 		if (fjc==1) RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
-			for (x=fjc; x<MX+fjc+1; x++) for (y=fjc; y<MY+fjc+1; y++){
-				for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = 0;
-				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc-k]  = 0;
+			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = 0;
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = 0;
 			}
-			for (y=fjc; y<MY+fjc+1; y++) for (z=fjc; z<MZ+fjc+1; z++)  {
-				for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = 0;
-				for (k=0; k<fjc; k++) X[(MX+fjc-k)*JX+y*JY+z*JZ] = 0;
+			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = 0;
+				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = 0;
 			}
-			for (z=fjc; z<MZ+fjc+1; z++) for (x=fjc; x<MX+fjc+1; x++){
-				for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = 0;
-				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc-k)*JY+z*JZ] = 0;
+			//for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){//corners?
+			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){
+				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = 0;
+				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = 0;
 			}
 		}
 	}
 }
-
 
 void LGrad3::set_bounds(int* X){
 if (debug) cout <<"set_bounds in LGrad3 " << endl;
@@ -1548,21 +1719,21 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 	} else {
 		if (fjc==1) SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
-				for (k=0; k<fjc; k++) X[x*JX+y*JY+(fjc-1)-k] = X[x*JX+y*JY+B_Z1[k]];
+				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = X[x*JX+y*JY+B_Z1[k]];
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
 			}
 			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
-				for (k=0; k<fjc; k++) X[(fjc-k-1)*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
+				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
 			}
-			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
-				for (k=0; k<fjc; k++) X[x*JX+(fjc-k-1)*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
+			//for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){//corners?
+			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){
+				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
 			}
 		}
 	}
 }
-
 
 Real LGrad3::ComputeGN(Real* G,int Markov, int M){
 	Real GN=0;

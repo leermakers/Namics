@@ -94,33 +94,33 @@ if (debug) cout <<" Side in LG2Planar " << endl;
 			}
 		}
 		if (fjc==2) {
-			Add(X_side,X,M);
-			Add(X_side+JX,X,M-JX);
-			Add(X_side,X+JX,M-JX);
-			Add(X_side+1,X,M-1);
-			Add(X_side,X+1,M-1);
-			Add(X_side+JX+1,X,M-JX-1);
-			Add(X_side,X+JX+1,M-JX-1);
-			Add(X_side+1,X+JX,M-JX);
-			Add(X_side+JX,X+1,M-JX);
+			Add(X_side,       X,       M);
+			Add(X_side+JX,    X,       M-JX);
+			Add(X_side,       X+JX,    M-JX);
+			Add(X_side+1,     X,       M-1);
+			Add(X_side,       X+1,     M-1);
+			Add(X_side+JX+1,  X,       M-JX-1);
+			Add(X_side,       X+JX+1,  M-JX-1);
+			Add(X_side+1,     X+JX,    M-JX-1);
+			Add(X_side+JX,    X+1,     M-JX-1);
 			Norm(X_side,2.0,M);
-			Add(X_side+2*JX,X,M-2*JX);
-			Add(X_side,X+2*JX,M-2*JX);
-			Add(X_side+2*JX,X+1,M-2*JX);
-			Add(X_side+2*JX+1,X,M-2*JX-1);
-			Add(X_side+1,X+2*JX,M-2*JX);
-			Add(X_side,X+2*JX+1,M-2*JX-1);
-			Add(X_side+JX+2,X,M-JX-2);
-			Add(X_side+JX,X+2,M-JX);
-			Add(X_side,X+JX+2,M-JX-2);
-			Add(X_side+2,X+JX,M-JX);
-			Add(X_side+2,X,M-2);
-			Add(X_side,X+2,M-2);
+			Add(X_side+2*JX,  X,       M-2*JX);
+			Add(X_side,       X+2*JX,  M-2*JX);
+			Add(X_side+2*JX,  X+1,     M-2*JX-1);
+			Add(X_side+2*JX+1,X,       M-2*JX-1);
+			Add(X_side+1,     X+2*JX,  M-2*JX-1);
+			Add(X_side,       X+2*JX+1,M-2*JX-1);
+			Add(X_side+JX+2,  X,       M-JX-2);
+			Add(X_side+JX,    X+2,     M-JX-2);
+			Add(X_side,       X+JX+2,  M-JX-2);
+			Add(X_side+2,     X+JX,    M-JX-2);
+			Add(X_side+2,     X,       M-2);
+			Add(X_side,       X+2,     M-2);
 			Norm(X_side,2.0,M);
-			Add(X_side+2*JX+2,X,M-2*JX-2);
-			Add(X_side,X+2*JX+2,M-2*JX-2);
-			Add(X_side+2*JX,X+2,M-2*JX);
-			Add(X_side+2,X+2*JX,M-2*JX);
+			Add(X_side+2*JX+2,X,       M-2*JX-2);
+			Add(X_side,       X+2*JX+2,M-2*JX-2);
+			Add(X_side+2*JX,  X+2,     M-2*JX-2);
+			Add(X_side+2,     X+2*JX,  M-2*JX-2);
 			Norm(X_side,1.0/64.0,M);
 		}
 	}
@@ -449,35 +449,35 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 			}
 		}
 	}
-	if (fjc==2) { //25 point stencil only fjc==2 implemented....
+	if (fjc==2) { //25 point stencil only fjc==2 (FJC_choices = 5) implemented....
 		 //lattice_type = hexagonal
-		Add(gs,gs_1,M);
-		Add(gs+JX,gs_1,M-JX);
-		Add(gs,gs_1+JX,M-JX);
-		Add(gs+1,gs_1,M-1);
-		Add(gs,gs_1+1,M-1);
-		Add(gs+JX+1,gs_1,M-JX-1);
-		Add(gs,gs_1+JX+1,M-JX-1);
-		Add(gs+1,gs_1+JX,M-JX);
-		Add(gs+JX,gs_1+1,M-JX);
+		Add(gs,       gs_1,        M);
+		Add(gs+JX,    gs_1,        M-JX);
+		Add(gs,       gs_1+JX,     M-JX);
+		Add(gs+1,     gs_1,        M-1);
+		Add(gs,       gs_1+1,      M-1);
+		Add(gs+JX+1,  gs_1,        M-JX-1);
+		Add(gs,       gs_1+JX+1,   M-JX-1);
+		Add(gs+1,     gs_1+JX,     M-JX-1);
+		Add(gs+JX,    gs_1+1,      M-JX-1);
 		Norm(gs,2.0,M);
-		Add(gs+2*JX,gs_1,M-2*JX);
-		Add(gs,gs_1+2*JX,M-2*JX);
-		Add(gs+2*JX,gs_1+1,M-2*JX);
-		Add(gs+2*JX+1,gs_1,M-2*JX-1);
-		Add(gs+1,gs_1+2*JX,M-2*JX);
-		Add(gs,gs_1+2*JX+1,M-2*JX-1);
-		Add(gs+JX+2,gs_1,M-JX-2);
-		Add(gs+JX,gs_1+2,M-JX);
-		Add(gs,gs_1+JX+2,M-JX-2);
-		Add(gs+2,gs_1+JX,M-JX);
-		Add(gs+2,gs_1,M-2);
-		Add(gs,gs_1+2,M-2);
+		Add(gs+2*JX,  gs_1,        M-2*JX);
+		Add(gs,       gs_1+2*JX,   M-2*JX);
+		Add(gs+2*JX,  gs_1+1,      M-2*JX-1);
+		Add(gs+2*JX+1,gs_1,        M-2*JX-1);
+		Add(gs+1,     gs_1+2*JX,   M-2*JX-1);
+		Add(gs,       gs_1+2*JX+1, M-2*JX-1);
+		Add(gs+JX+2,  gs_1,        M-JX-2);
+		Add(gs+JX,    gs_1+2,      M-JX-2);
+		Add(gs,       gs_1+JX+2,   M-JX-2);
+		Add(gs+2,     gs_1+JX,     M-JX-2);
+		Add(gs+2,     gs_1,        M-2);
+		Add(gs,       gs_1+2,      M-2);
 		Norm(gs,2.0,M);
-		Add(gs+2*JX+2,gs_1,M-2*JX-2);
-		Add(gs,gs_1+2*JX+2,M-2*JX-2);
-		Add(gs+2*JX,gs_1+2,M-2*JX);
-		Add(gs+2,gs_1+2*JX,M-2*JX);
+		Add(gs+2*JX+2,gs_1,        M-2*JX-2);
+		Add(gs,       gs_1+2*JX+2, M-2*JX-2);
+		Add(gs+2*JX,  gs_1+2,      M-2*JX-2);
+		Add(gs+2,     gs_1+2*JX,   M-2*JX-2);
 		Norm(gs,1.0/64.0,M);
 		Times(gs,gs,G1,M);
 	}

@@ -1066,14 +1066,14 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 			X[0+y] = X[BX1*JX+y];
 			X[(MX+1)*JX+y]=X[BXM*JX+y];
 		}
-		//corners
+		//corners....
 		for (x=0; x<1; x++) {
-			X[x*JX+0] = X[x*JX+1];
-			X[x*JX+MY+1]=X[x*JX+MY];
+			X[x*JX+0] = X[x*JX+BY1];
+			X[x*JX+MY+1]=X[x*JX+BYM];
 		}
 		for (x=MX+1; x<MX+2; x++) {
-			X[x*JX+0] = X[x*JX+1];
-			X[x*JX+MY+1]=X[x*JX+MY];
+			X[x*JX+0] = X[x*JX+BY1];
+			X[x*JX+MY+1]=X[x*JX+BYM];
 		}
 	} else {
 		for (x=fjc; x<MX+fjc; x++) {
@@ -1174,12 +1174,12 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 		}
 		//corners
 		for (x=0; x<1; x++) {
-			X[x*JX+0] = X[x*JX+1];
-			X[x*JX+MY+1]=X[x*JX+MY];
+			X[x*JX+0] = X[x*JX+BY1];
+			X[x*JX+MY+1]=X[x*JX+BYM];
 		}
 		for (x=MX+1; x<MX+2; x++) {
-			X[x*JX+0] = X[x*JX+1];
-			X[x*JX+MY+1]=X[x*JX+MY];
+			X[x*JX+0] = X[x*JX+BY1];
+			X[x*JX+MY+1]=X[x*JX+BYM];
 		}
 	} else {
 		for (x=fjc; x<MX+fjc; x++) {

@@ -793,7 +793,6 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 
 	Zero(gs,M);
 	set_bounds(gs_1);
-
 	if (k>0) {
 		JX_=jx[k];
 		JY_=jy[k];
@@ -866,17 +865,17 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 				Add(gs,    gs_1+JZ ,M-JZ);
 
 				remove_bounds(gs_1);
-				set_bounds_x(gs_1,-1,0);
+				//set_bounds_x(gs_1,-1,0);
 				Add(gs+JX_,gs_1+JY_,M-JX_-JY_);
 				Add(gs+JY_,gs_1+JX_,M-JX_-JY_);
 
 				remove_bounds(gs_1);
-				set_bounds_x(gs_1,0,-1);
+				//set_bounds_x(gs_1,0,-1);
 				Add(gs+JX_,gs_1+JZ ,M-JX_-JZ);
 				Add(gs+JZ, gs_1+JX_,M-JX_-JZ);
 
 				remove_bounds(gs_1);
-				set_bounds_y(gs_1,0,-1);
+				//set_bounds_y(gs_1,0,-1);
 				Add(gs+JY_,gs_1+JZ ,M-JY_-JZ);
 				Add(gs+JZ, gs_1+JY_,M-JY_-JZ);
 
@@ -1426,7 +1425,7 @@ void LGrad3::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad
 }
 
 void LGrad3::set_bounds_x(Real* X,Real* Y,int shifty,int shiftz){
-if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
+if (debug) cout <<"set_bounds_x (shift in y,z ) in LGrad3 " << endl;
 	int y,z;
 	int k=0;
 	if (BX1>BXM) {
@@ -1457,7 +1456,7 @@ if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
 	}
 }
 void LGrad3::set_bounds_y(Real* X,Real* Y,int shiftx, int shiftz){
-if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
+if (debug) cout <<"set_bounds_y (shift in x,z) in LGrad3 " << endl;
 	int x,z;
 	int k=0;
 	if (BY1>BYM) {
@@ -1489,7 +1488,7 @@ if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
 }
 
 void LGrad3::set_bounds_z(Real* X,Real* Y,int shiftx,int shifty){
-if (debug) cout <<"set_bounds_z (x,y) in LGrad3 " << endl;
+if (debug) cout <<"set_bounds_z shift (x,y) in LGrad3 " << endl;
 	int x,y;
 	int k=0;
 	if (BZ1>BZM) { //periodic
@@ -1519,7 +1518,7 @@ if (debug) cout <<"set_bounds_z (x,y) in LGrad3 " << endl;
 }
 
 void LGrad3::set_bounds_x(Real* X, int shifty, int shiftz){
-if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
+if (debug) cout <<"set_bounds_x (shift yz) in LGrad3 " << endl;
 	int y,z;
 	int k=0;
 	//if (BX1>BXM) {shifty=0; shiftz=0;} //periodic
@@ -1537,7 +1536,7 @@ if (debug) cout <<"set_bounds_x in LGrad3 " << endl;
 }
 
 void LGrad3::set_bounds_y(Real* X,int shiftx, int shiftz){
-if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
+if (debug) cout <<"set_bounds_y (shift x,z) in LGrad3 " << endl;
 	int x,z;
 	int k=0;
 	//if (BY1>BYM) {shiftx=0; shiftz=0;} //periodic
@@ -1555,7 +1554,7 @@ if (debug) cout <<"set_bounds_y in LGrad3 " << endl;
 }
 
 void LGrad3::set_bounds_z(Real* X,int shiftx, int shifty){
-if (debug) cout <<"set_bounds_z in LGrad3 " << endl;
+if (debug) cout <<"set_bounds_z (shift xy) in LGrad3 " << endl;
 	int x,y;
 	int k=0;
 	//if (BZ1>BZM) {shiftx=0; shifty=0;} //periodic.
@@ -1582,16 +1581,15 @@ if (debug) cout <<"remove_bounds in LGrad3 " << endl;
 			RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 	} else {
 		if (fjc==1) RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
-			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
+			for (x=0; x<MX+2*fjc; x++) for (y=0; y<MY+2*fjc; y++){
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = 0;
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = 0;
 			}
-			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+			for (y=0; y<MY+2*fjc; y++) for (z=0; z<MZ+2*fjc; z++)  {
 				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = 0;
 				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = 0;
 			}
-			//for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){ //what about corners?
-			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){ //including corners
+			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){
 				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = 0;
 				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = 0;
 			}
@@ -1609,12 +1607,14 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 			SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 	} else {
 		if (fjc==1) {
+
 			//SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+
 			for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){
 				X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];
 				X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+BZM];
 			}
-			for (y=1; y<MY+1; y++) for (z=fjc; z<MZ+1; z++)  {
+			for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++)  {
 				X[0        +y*JY+z*JZ] = X[BX1*JX+y*JY+z*JZ];
 				X[(MX+1)*JX+y*JY+z*JZ] = X[BXM*JX+y*JY+z*JZ];
 			}
@@ -1622,6 +1622,50 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 				X[x*JX+0        +z*JZ] = X[x*JX+BY1*JY+z*JZ];
 				X[x*JX+(MY+1)*JY+z*JZ] = X[x*JX+BYM*JY+z*JZ];
 			}
+
+			x=0; {
+				for (y=1; y<MY+1; y++){
+					X[y*JY+0]     = X[y*JY+BZ1];
+					X[y*JY+MZ+1]  = X[y*JY+BZM];
+				}
+				for (z=1; z<MZ+1; z++){
+					X[0        +z*JZ] = X[BY1*JY+z*JZ];
+					X[(MY+1)*JY+z*JZ] = X[BYM*JY+z*JZ];
+				}
+			}
+			x=MX+1; {
+				for (y=1; y<MY+1; y++){
+					X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];
+					X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+BZM];
+				}
+				for (z=1; z<MZ+1; z++){
+					X[x*JX+0        +z*JZ] = X[x*JX+BY1*JY+z*JZ];
+					X[x*JX+(MY+1)*JY+z*JZ] = X[x*JX+BYM*JY+z*JZ];
+				}
+			}
+			y=0; {
+				for (x=1; x<MX+1; x++){
+					X[x*JX        +0] = X[x*JX+BZ1*JZ];
+					X[x*JX+(MZ+1)*JZ] = X[x*JX+BZM*JZ];
+				}
+			}
+			y=MY+1; {
+				for (x=1; x<MX+1; x++){
+					X[x*JX+y*JY        +0] = X[x*JX+y*JY+BZ1*JZ];
+					X[x*JX+y*JY+(MZ+1)*JZ] = X[x*JX+y*JY+BZM*JZ];
+				}
+			}
+
+			X[0        +0        +0]        =X[BX1*JX+BY1*JY+BZ1*JZ];
+			X[(MX+1)*JX+0        +0]        =X[BXM*JX+BY1*JY+BZ1*JZ];
+			X[0        +(MY+1)*JY+0]        =X[BX1*JX+BYM*JY+BZ1*JZ];
+			X[0        +0        +(MZ+1)*JZ]=X[BX1*JX+BY1*JY+BZM*JZ];
+			X[(MX+1)*JX+(MY+1)*JY+0]        =X[BXM*JX+BYM*JY+BZ1*JZ];
+			X[(MX+1)*JX+ 0       +(MZ+1)*JZ]=X[BXM*JX+BY1*JY+BZM*JZ];
+			X[0        +(MY+1)*JY+(MZ+1)*JZ]=X[BX1*JX+BYM*JY+BZM*JZ];
+			X[(MX+1)*JX+(MY+1)*JY+(MZ+1)*JZ]=X[BXM*JX+BYM*JY+BZM*JZ];
+
+
 		} else {
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = X[x*JX+y*JY+B_Z1[k]];
@@ -1631,17 +1675,60 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
 			}
-			//for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){ //corners?
-			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){
+			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
 				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
+			}
+
+			for (x=0; x<fjc; x++ ) {
+				for (y=fjc; y<MY+fjc; y++){
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+k]         = X[x*JX+y*JY+B_Z1[k]];
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+				}
+				for (z=fjc; z<MZ+fjc; z++){
+					for (int k=0; k<fjc; k++) X[x*JX+k*JY         +z]  = X[x*JX+B_Y1[k]*JY+z*JZ];
+					for (int k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z] = X[x*JX+B_YM[k]*JY+z*JZ];
+				}
+			}
+			for (x=MX+fjc; x<MX+2*fjc; x++) {
+				for (y=fjc; y<MY+fjc; y++){
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+k]         = X[x*JX+y*JY+B_Z1[k]];
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+				}
+				for (z=fjc; z<MZ+fjc; z++){
+					for (int k=0; k<fjc; k++) X[x*JX+k*JY        +z]  = X[x*JX+B_Y1[k]*JY+z];
+					for (int k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z] = X[x*JX+B_YM[k]*JY+z];
+				}
+			}
+			for (y=0; y<fjc; y++) {
+				for (x=fjc; x<MX+fjc; x++){
+					for (int k=0; k<fjc; k++) X[x*JX +y*JY       +k]    = X[x*JX+y*JY+B_Z1[k]];
+					for (int k=0; k<fjc; k++) X[x*JX +y*JY +(MZ+fjc+k)] = X[x*JX+y*JY+B_ZM[k]];
+				}
+			}
+			for (y=MY+fjc; y<MY+2*fjc; y++) {
+				for (x=fjc; x<MX+fjc; x++){
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY        +k]     = X[x*JX+y*JY+B_Z1[k]];
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+(MZ+fjc+k)*JZ] = X[x*JX+y*JY+B_ZM[k]];
+				}
+			}
+
+			for (int k=0; k<fjc; k++) for (int l=0; l<fjc; l++) for (int m=0; m<fjc; m++) {
+				X[k*JX         +l*JY         +m*JZ]         =X[B_X1[k]*JX+B_Y1[l]*JY+B_Z1[m]*JZ];
+				X[(MX+fjc+k)*JX+l*JY         +m*JZ]         =X[B_XM[k]*JX+B_Y1[l]*JY+B_Z1[m]*JZ];
+				X[k*JX         +(MY+fjc+l)*JY+m*JZ]         =X[B_X1[k]*JX+B_YM[l]*JY+B_Z1[m]*JZ];
+				X[k*JX         +l*JY         +(MZ+fjc+m)*JZ]=X[B_X1[k]*JX+B_Y1[l]*JY+B_ZM[m]*JZ];
+				X[(MX+fjc+k)*JX+(MY+fjc+l)*JY+m*JZ]         =X[B_XM[k]*JX+B_YM[l]*JY+B_Z1[m]*JZ];
+				X[(MX+fjc+k)*JX+l*JY         +(MZ+fjc+m)*JZ]=X[B_XM[k]*JX+B_Y1[l]*JY+B_ZM[m]*JZ];
+				X[k*JX         +(MY+fjc+l)*JY+(MZ+fjc+m)*JZ]=X[B_X1[k]*JX+B_YM[l]*JY+B_ZM[m]*JZ];
+				X[(MX+fjc+k)*JX+(MY+fjc+l)*JY+(MZ+fjc+m)*JZ]=X[B_XM[k]*JX+B_YM[l]*JY+B_ZM[m]*JZ];
 			}
 		}
 	}
 }
 
 void LGrad3::set_M_bounds(Real* X){
-if (debug) cout <<"set_bounds in LGrad3 " << endl;
+if (!debug) cout <<"set_bounds (M) in LGrad3 " << endl;
 	int x,y,z;
 	int k=0;
 	if (sub_box_on!=0) {
@@ -1682,7 +1769,7 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 }
 
 void LGrad3::remove_bounds(int *X){
-if (debug) cout <<"remove_bounds in LGrad3 " << endl;
+if (!debug) cout <<"remove_bounds (int) in LGrad3 " << endl;
 	int x,y,z;
 	int k;
 	if (sub_box_on!=0) {
@@ -1691,16 +1778,15 @@ if (debug) cout <<"remove_bounds in LGrad3 " << endl;
 			RemoveBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 	} else {
 		if (fjc==1) RemoveBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
-			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
+			for (x=0; x<MX+2*fjc; x++) for (y=0; y<MY+2*fjc; y++){
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = 0;
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = 0;
 			}
-			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
+			for (y=0; y<MY+2*fjc; y++) for (z=0; z<MZ+2*fjc; z++)  {
 				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = 0;
 				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = 0;
 			}
-			//for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){//corners?
-			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){
+			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){//corners?
 				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = 0;
 				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = 0;
 			}
@@ -1709,7 +1795,7 @@ if (debug) cout <<"remove_bounds in LGrad3 " << endl;
 }
 
 void LGrad3::set_bounds(int* X){
-if (debug) cout <<"set_bounds in LGrad3 " << endl;
+if (!debug) cout <<"set_bounds (int) in LGrad3 " << endl;
 	int x,y,z;
 	int k=0;
 	if (sub_box_on!=0) {
@@ -1717,7 +1803,66 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 		for (int i=0; i<n_box[k]; i++)
 			SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 	} else {
-		if (fjc==1) SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ); else {
+		if (fjc==1) {
+			//SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+
+			for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){
+				X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];
+				X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+BZM];
+			}
+			for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++)  {
+				X[0        +y*JY+z*JZ] = X[BX1*JX+y*JY+z*JZ];
+				X[(MX+1)*JX+y*JY+z*JZ] = X[BXM*JX+y*JY+z*JZ];
+			}
+			for (z=1; z<MZ+1; z++) for (x=1; x<MX+1; x++){
+				X[x*JX+0        +z*JZ] = X[x*JX+BY1*JY+z*JZ];
+				X[x*JX+(MY+1)*JY+z*JZ] = X[x*JX+BYM*JY+z*JZ];
+			}
+
+			x=0; {
+				for (y=1; y<MY+1; y++){
+					X[y*JY+0]     = X[y*JY+BZ1];
+					X[y*JY+MZ+1]  = X[y*JY+BZM];
+				}
+				for (z=1; z<MZ+1; z++){
+					X[0        +z*JZ] = X[BY1*JY+z*JZ];
+					X[(MY+1)*JY+z*JZ] = X[BYM*JY+z*JZ];
+				}
+			}
+			x=MX+1; {
+				for (y=1; y<MY+1; y++){
+					X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];
+					X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+BZM];
+				}
+				for (z=1; z<MZ+1; z++){
+					X[x*JX+0        +z*JZ] = X[x*JX+BY1*JY+z*JZ];
+					X[x*JX+(MY+1)*JY+z*JZ] = X[x*JX+BYM*JY+z*JZ];
+				}
+			}
+			y=0; {
+				for (x=1; x<MX+1; x++){
+					X[x*JX        +0] = X[x*JX+BZ1*JZ];
+					X[x*JX+(MZ+1)*JZ] = X[x*JX+BZM*JZ];
+				}
+			}
+			y=MY+1; {
+				for (x=1; x<MX+1; x++){
+					X[x*JX+y*JY        +0] = X[x*JX+y*JY+BZ1*JZ];
+					X[x*JX+y*JY+(MZ+1)*JZ] = X[x*JX+y*JY+BZM*JZ];
+				}
+			}
+
+			X[0        +0        +0]        =X[BX1*JX+BY1*JY+BZ1*JZ];
+			X[(MX+1)*JX+0        +0]        =X[BXM*JX+BY1*JY+BZ1*JZ];
+			X[0        +(MY+1)*JY+0]        =X[BX1*JX+BYM*JY+BZ1*JZ];
+			X[0        +0        +(MZ+1)*JZ]=X[BX1*JX+BY1*JY+BZM*JZ];
+			X[(MX+1)*JX+(MY+1)*JY+0]        =X[BXM*JX+BYM*JY+BZ1*JZ];
+			X[(MX+1)*JX+ 0       +(MZ+1)*JZ]=X[BXM*JX+BY1*JY+BZM*JZ];
+			X[0        +(MY+1)*JY+(MZ+1)*JZ]=X[BX1*JX+BYM*JY+BZM*JZ];
+			X[(MX+1)*JX+(MY+1)*JY+(MZ+1)*JZ]=X[BXM*JX+BYM*JY+BZM*JZ];
+
+
+		}else {
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = X[x*JX+y*JY+B_Z1[k]];
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
@@ -1726,10 +1871,53 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
 			}
-			//for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){//corners?
-			for (z=0; z<MZ+2*fjc; z++) for (x=0; x<MX+2*fjc; x++){
+			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
 				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
 				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
+			}
+
+			for (x=0; x<fjc; x++ ) {
+				for (y=fjc; y<MY+fjc; y++){
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+k]         = X[x*JX+y*JY+B_Z1[k]];
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+				}
+				for (z=fjc; z<MZ+fjc; z++){
+					for (int k=0; k<fjc; k++) X[x*JX+k*JY         +z]  = X[x*JX+B_Y1[k]*JY+z*JZ];
+					for (int k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z] = X[x*JX+B_YM[k]*JY+z*JZ];
+				}
+			}
+			for (x=MX+fjc; x<MX+2*fjc; x++) {
+				for (y=fjc; y<MY+fjc; y++){
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+k]         = X[x*JX+y*JY+B_Z1[k]];
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+				}
+				for (z=fjc; z<MZ+fjc; z++){
+					for (int k=0; k<fjc; k++) X[x*JX+k*JY        +z]  = X[x*JX+B_Y1[k]*JY+z];
+					for (int k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z] = X[x*JX+B_YM[k]*JY+z];
+				}
+			}
+			for (y=0; y<fjc; y++) {
+				for (x=fjc; x<MX+fjc; x++){
+					for (int k=0; k<fjc; k++) X[x*JX +y*JY       +k]    = X[x*JX+y*JY+B_Z1[k]];
+					for (int k=0; k<fjc; k++) X[x*JX +y*JY +(MZ+fjc+k)] = X[x*JX+y*JY+B_ZM[k]];
+				}
+			}
+			for (y=MY+fjc; y<MY+2*fjc; y++) {
+				for (x=fjc; x<MX+fjc; x++){
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY        +k]     = X[x*JX+y*JY+B_Z1[k]];
+					for (int k=0; k<fjc; k++) X[x*JX+y*JY+(MZ+fjc+k)*JZ] = X[x*JX+y*JY+B_ZM[k]];
+				}
+			}
+
+			for (int k=0; k<fjc; k++) for (int l=0; l<fjc; l++) for (int m=0; m<fjc; m++) {
+				X[k*JX         +l*JY         +m*JZ]         =X[B_X1[k]*JX+B_Y1[l]*JY+B_Z1[m]*JZ];
+				X[(MX+fjc+k)*JX+l*JY         +m*JZ]         =X[B_XM[k]*JX+B_Y1[l]*JY+B_Z1[m]*JZ];
+				X[k*JX         +(MY+fjc+l)*JY+m*JZ]         =X[B_X1[k]*JX+B_YM[l]*JY+B_Z1[m]*JZ];
+				X[k*JX         +l*JY         +(MZ+fjc+m)*JZ]=X[B_X1[k]*JX+B_Y1[l]*JY+B_ZM[m]*JZ];
+				X[(MX+fjc+k)*JX+(MY+fjc+l)*JY+m*JZ]         =X[B_XM[k]*JX+B_YM[l]*JY+B_Z1[m]*JZ];
+				X[(MX+fjc+k)*JX+l*JY         +(MZ+fjc+m)*JZ]=X[B_XM[k]*JX+B_Y1[l]*JY+B_ZM[m]*JZ];
+				X[k*JX         +(MY+fjc+l)*JY+(MZ+fjc+m)*JZ]=X[B_X1[k]*JX+B_YM[l]*JY+B_ZM[m]*JZ];
+				X[(MX+fjc+k)*JX+(MY+fjc+l)*JY+(MZ+fjc+m)*JZ]=X[B_XM[k]*JX+B_YM[l]*JY+B_ZM[m]*JZ];
 			}
 		}
 	}

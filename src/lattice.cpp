@@ -94,7 +94,7 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 			}
 			if (BC[2]=="periodic") {
 				if (fjc==1) BZ1=MZ; else {
-					for (int k=0; k<fjc; k++) B_Z1[k]=MZ+fjc-k-1;
+					for (int k=0; k<fjc; k++) B_Z1[k]=MZ+k;
 				}
 			}
 			if (BC[2]=="surface") {
@@ -128,7 +128,7 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 			}
 			if (BC[1]=="periodic") {
 				if (fjc==1) BY1=MY; else {
-					for (int k=0; k<fjc; k++) B_Y1[k]=MY+fjc-k-1;
+					for (int k=0; k<fjc; k++) B_Y1[k]=MY+k;
 				}
 			}
 			if (BC[1]=="surface") {
@@ -162,7 +162,7 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 			}
 			if (BC[0]=="periodic") {
 				if (fjc==1) BX1=MX;else {
-					for (int k=0; k<fjc; k++) B_X1[k]=MX+fjc-k-1;
+					for (int k=0; k<fjc; k++) B_X1[k]=MX+k;
 				}
 			}
 			if (BC[0]=="surface") {

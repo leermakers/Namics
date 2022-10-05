@@ -589,18 +589,19 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 			AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
 			Norm(gs,1.0/6.0*one,M);
 			Times(gs,gs,G1,M);
-		} else {
-			YplusisCtimesX(gs,gs_1,2.0/4.0*one,M);
+		} else { //9 point stencil; hexagonal
+
+			YplusisCtimesX(gs,gs_1,0.5,M);
 			AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
 			AddTimes(gs,gs_1+JX,lambda1,M-JX);
-			YplusisCtimesX(gs+1,gs_1,1.0/4.0*one,M-1);
-			YplusisCtimesX(gs,gs_1+1,1.0/4.0*one,M-1);
-			Norm(gs,2.0*one,M);
+			YplusisCtimesX(gs+1,gs_1,0.25,M-1);
+			YplusisCtimesX(gs,gs_1+1,0.25,M-1);
+			Norm(gs,2.0,M);
 			AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
 			AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
 			AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
 			AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
-			Norm(gs,3.0/12.0*one,M);
+			Norm(gs,0.25,M);
 			Times(gs,gs,G1,M);
 		}
 	}
@@ -615,7 +616,7 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 		AddTimes(gs,gs_1+JX,LAMBDA+3*M,M-JX);
 		AddTimes(gs,gs_1+JX+1,LAMBDA+3*M,M-JX-1);
 		AddTimes(gs+1,gs_1+JX,LAMBDA+3*M+1,M-JX);
-		Norm(gs,2.0*one,M);
+		Norm(gs,2.0,M);
 		AddTimes(gs+2*JX,gs_1,LAMBDA+2*JX,M-2*JX);
 		AddTimes(gs,gs_1+2*JX,LAMBDA+4*M,M-2*JX);
 		AddTimes(gs+2*JX,gs_1+1,LAMBDA+2*JX,M-2*JX);
@@ -628,12 +629,12 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 		AddTimes(gs+2,gs_1+JX,LAMBDA+3*M+2,M-JX);
 		AddTimes(gs+2,gs_1,LAMBDA+2*M+2,M-2);
 		AddTimes(gs,gs_1+2,LAMBDA+2*M,M-2);
-		Norm(gs,2.0*one,M);
+		Norm(gs,2.0,M);
 		AddTimes(gs+2*JX+2,gs_1,LAMBDA+2*JX+2,M-2*JX-2);
 		AddTimes(gs,gs_1+2*JX+2,LAMBDA+4*M,M-2*JX-2);
 		AddTimes(gs+2*JX,gs_1+2,LAMBDA+2*JX,M-2*JX);
 		AddTimes(gs+2,gs_1+2*JX,LAMBDA+4*M+2,M-2*JX);
-		Norm(gs,1.0/16.0*one,M);
+		Norm(gs,1.0/16.0,M);
 		Times(gs,gs,G1,M);
 	}
 }

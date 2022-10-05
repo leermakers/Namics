@@ -161,6 +161,43 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 	 		Norm(X_side,1.0/6.0,M);
 		} else { //hexagonal
 			if (fjc==1) {
+				YplusisCtimesX(X_side,X,2.0,M);
+				Add(X_side+JX,X,   M-JX);
+				Add(X_side,   X+JX,M-JX);
+				Add(X_side+JY,X,   M-JY);
+				Add(X_side,   X+JY,M-JY);
+				Add(X_side+1, X,   M-1);
+				Add(X_side,   X+1, M-1);
+				Norm(X_side,2,M);
+
+				Add(X_side+JX+JY,   X,      M-JX-JY);
+				Add(X_side,         X+JX+JY,M-JX-JY);
+				Add(X_side+JX,      X+JY,   M-JX-JY);
+				Add(X_side+JY,      X+JX,   M-JX-JY);
+				Add(X_side+JX+1,    X,       M-JX-1);
+				Add(X_side+1,       X+JX,    M-JX-1);
+				Add(X_side+JY+1,    X,       M-JY-1);
+				Add(X_side+1,       X+JY,    M-JY-1);
+				Add(X_side+JX,      X+1,     M-JX-1);
+				Add(X_side,         X+JX+1,  M-JX-1);
+				Add(X_side+JY,      X+1,     M-JY-1);
+				Add(X_side,         X+JY+1,  M-JY-1);
+				Norm(X_side,2,M);
+
+				Add(X_side+JX+JY+1,X,        M-JX-JY-1);
+				Add(X_side,        X+JX+JY+1,M-JX-JY-1);
+				Add(X_side+JX+JY,  X+1,      M-JX-JY-1);
+				Add(X_side+1,      X+JX+JY,  M-JX-JY-1);
+				Add(X_side+JX+1,   X+JY,     M-JX-JY-1);
+				Add(X_side+JY,     X+JX+1,   M-JX-JY-1);
+				Add(X_side+JY+1,   X+JX,     M-JX-JY-1);
+				Add(X_side+JX,     X+JY+1,   M-JX-JY-1);
+
+				Norm(X_side,1.0/40.0,M);
+
+
+
+/*
 				Add(X_side+JX ,X,    M-JX);
 				Add(X_side    ,X+JX ,M-JX);
 				Add(X_side+JX ,X+JY ,M-JX-JY);
@@ -174,6 +211,7 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 				Add(X_side    ,X+JZ ,M-JZ);
 				Add(X_side+JY ,X+JZ ,M-JY-JZ);
 				Norm(X_side,1.0/12.0,M);
+*/
 			} else { //fjc==2
 				Add(X_side,        X,        M);   //1
 				Add(X_side+JX,     X,        M-JX);//2
@@ -799,6 +837,7 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 	}
 
 	if (stencil_full) {
+		cout<<"not tested"<< endl;
 		Add(gs+JX_,gs_1,M-JX_);
 		Add(gs,gs_1+JX_,M-JX_);
 		Add(gs+JY_,gs_1,M-JY_);
@@ -857,6 +896,41 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 #endif
 		} else { //hexagonal
 			if (fjc==1) {
+				YplusisCtimesX(gs,gs_1,2.0,M);
+				Add(gs+JX,gs_1,   M-JX);
+				Add(gs,   gs_1+JX,M-JX);
+				Add(gs+JY,gs_1,   M-JY);
+				Add(gs,   gs_1+JY,M-JY);
+				Add(gs+1, gs_1,   M-1);
+				Add(gs,   gs_1+1, M-1);
+				Norm(gs,2,M);
+
+				Add(gs+JX+JY,   gs_1,      M-JX-JY);
+				Add(gs,         gs_1+JX+JY,M-JX-JY);
+				Add(gs+JX,      gs_1+JY,   M-JX-JY);
+				Add(gs+JY,      gs_1+JX,   M-JX-JY);
+				Add(gs+JX+1,    gs_1,       M-JX-1);
+				Add(gs+1,       gs_1+JX,    M-JX-1);
+				Add(gs+JY+1,    gs_1,       M-JY-1);
+				Add(gs+1,       gs_1+JY,    M-JY-1);
+				Add(gs+JX,      gs_1+1,     M-JX-1);
+				Add(gs,         gs_1+JX+1,  M-JX-1);
+				Add(gs+JY,      gs_1+1,     M-JY-1);
+				Add(gs,         gs_1+JY+1,  M-JY-1);
+				Norm(gs,2,M);
+
+				Add(gs+JX+JY+1,gs_1,        M-JX-JY-1);
+				Add(gs,        gs_1+JX+JY+1,M-JX-JY-1);
+				Add(gs+JX+JY,  gs_1+1,      M-JX-JY-1);
+				Add(gs+1,      gs_1+JX+JY,  M-JX-JY-1);
+				Add(gs+JX+1,   gs_1+JY,     M-JX-JY-1);
+				Add(gs+JY,     gs_1+JX+1,   M-JX-JY-1);
+				Add(gs+JY+1,   gs_1+JX,     M-JX-JY-1);
+				Add(gs+JX,     gs_1+JY+1,   M-JX-JY-1);
+
+				Norm(gs,1.0/40.0,M);
+				Times(gs,gs,G1,M);
+/* Johan's method
 				Add(gs+JX_,gs_1,    M-JX_);
 				Add(gs,    gs_1+JX_,M-JX_);
 				Add(gs+JY_,gs_1    ,M-JY_);
@@ -865,154 +939,156 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 				Add(gs,    gs_1+JZ ,M-JZ);
 
 				remove_bounds(gs_1);
-				//set_bounds_x(gs_1,-1,0);
+				set_bounds_x(gs_1,-1,0);
 				Add(gs+JX_,gs_1+JY_,M-JX_-JY_);
 				Add(gs+JY_,gs_1+JX_,M-JX_-JY_);
 
 				remove_bounds(gs_1);
-				//set_bounds_x(gs_1,0,-1);
+				set_bounds_x(gs_1,0,-1);
 				Add(gs+JX_,gs_1+JZ ,M-JX_-JZ);
 				Add(gs+JZ, gs_1+JX_,M-JX_-JZ);
 
 				remove_bounds(gs_1);
-				//set_bounds_y(gs_1,0,-1);
+				set_bounds_y(gs_1,0,-1);
 				Add(gs+JY_,gs_1+JZ ,M-JY_-JZ);
 				Add(gs+JZ, gs_1+JY_,M-JY_-JZ);
 
 				Norm(gs,1.0/12.0,M);
 				Times(gs,gs,G1,M);
+*/
+
 			} else { //hexagonal and fjc=2
-				Add(gs,            gs_1,             M);   //1
-				Add(gs+JX,         gs_1,             M-JX);//2
-				Add(gs,            gs_1+JX,          M-JX);//3
-				Add(gs+JY,         gs_1,             M-JY);//4
-				Add(gs,            gs_1+JY,          M-JY);//5
-				Add(gs+1,          gs_1,             M-1);//6
-				Add(gs,            gs_1+1,           M-1);//7
-				Add(gs+JX+1,       gs_1,             M-JX-1);//8
-				Add(gs,            gs_1+JX+1,        M-JX-1);//9
-				Add(gs+1,          gs_1+JX,          M-JX-1);//10
-				Add(gs+JX,         gs_1+1,           M-JX-1);//11
-				Add(gs+JY+1,       gs_1,             M-JY-1);//12
-				Add(gs,            gs_1+JY+1,        M-JY-1);//13
-				Add(gs+1,          gs_1+JY,          M-JY-1);//14
-				Add(gs+JY,         gs_1+1,           M-JY-1);//15
-				Add(gs+JX+JY,      gs_1,             M-JX-JY);//16
-				Add(gs,            gs_1+JX+JY,       M-JX-JY);//17
-				Add(gs+JY,         gs_1+JX,          M-JX-JY);//18
-				Add(gs+JX,         gs_1+JY,          M-JX-JY);//19
-				Add(gs+JX+JY+1,    gs_1,             M-JX-JY-1);//20
-				Add(gs,            gs_1+JX+JY+1,     M-JX-JY-1);//21
-				Add(gs+JX+JY,      gs_1+1,           M-JX-JY-1);//22
-				Add(gs+1,          gs_1+JX+JY,       M-JX-JY-1);//23
-				Add(gs+JX+1,       gs_1+JY,          M-JX-JY-1);//24
-				Add(gs+JY,         gs_1+JX+1,        M-JX-JY-1);//25
-				Add(gs+JY+1,       gs_1+JX,          M-JX-JY-1);//26
-				Add(gs+JX,         gs_1+JY+1,        M-JX-JY-1);//27
+				Add(gs,            gs_1,             M);
+				Add(gs+JX,         gs_1,             M-JX);
+				Add(gs,            gs_1+JX,          M-JX);
+				Add(gs+JY,         gs_1,             M-JY);
+				Add(gs,            gs_1+JY,          M-JY);
+				Add(gs+1,          gs_1,             M-1);
+				Add(gs,            gs_1+1,           M-1);
+				Add(gs+JX+1,       gs_1,             M-JX-1);
+				Add(gs,            gs_1+JX+1,        M-JX-1);
+				Add(gs+1,          gs_1+JX,          M-JX-1);
+				Add(gs+JX,         gs_1+1,           M-JX-1);
+				Add(gs+JY+1,       gs_1,             M-JY-1);
+				Add(gs,            gs_1+JY+1,        M-JY-1);
+				Add(gs+1,          gs_1+JY,          M-JY-1);
+				Add(gs+JY,         gs_1+1,           M-JY-1);
+				Add(gs+JX+JY,      gs_1,             M-JX-JY);
+				Add(gs,            gs_1+JX+JY,       M-JX-JY);
+				Add(gs+JY,         gs_1+JX,          M-JX-JY);
+				Add(gs+JX,         gs_1+JY,          M-JX-JY);
+				Add(gs+JX+JY+1,    gs_1,             M-JX-JY-1);
+				Add(gs,            gs_1+JX+JY+1,     M-JX-JY-1);
+				Add(gs+JX+JY,      gs_1+1,           M-JX-JY-1);
+				Add(gs+1,          gs_1+JX+JY,       M-JX-JY-1);
+				Add(gs+JX+1,       gs_1+JY,          M-JX-JY-1);
+				Add(gs+JY,         gs_1+JX+1,        M-JX-JY-1);
+				Add(gs+JY+1,       gs_1+JX,          M-JX-JY-1);
+				Add(gs+JX,         gs_1+JY+1,        M-JX-JY-1);
 				Norm(gs,2.0,M);
 
-				Add(gs+2*JX,       gs_1,             M-2*JX);//28
-				Add(gs,            gs_1+2*JX,        M-2*JX);//29
-				Add(gs+2*JY,       gs_1,             M-2*JY);//30
-				Add(gs,            gs_1+2*JY,        M-2*JY);//31
-				Add(gs+2,          gs_1,             M-2);//32
-				Add(gs,            gs_1+2,           M-2);//33
-				Add(gs+2*JX+1,     gs_1,     	     M-2*JX-1);//34
-				Add(gs+2*JX,       gs_1+1,           M-2*JX-1);//35
-				Add(gs+1,          gs_1+2*JX,        M-2*JX-1);//36
-				Add(gs,            gs_1+2*JX+1,      M-2*JX-1);//37
-				Add(gs+2*JY,       gs_1+1,           M-2*JY-1);//38
-				Add(gs+2*JY+1,     gs_1,             M-2*JY-1);//39
-				Add(gs+1,          gs_1+2*JY,        M-2*JY-1);//40
-				Add(gs,            gs_1+2*JY+1,      M-2*JY-1);//41
-				Add(gs+JX+2,       gs_1,             M-JX-2);//42
-				Add(gs+JX,         gs_1+2,           M-JX-2);//43
-				Add(gs,            gs_1+JX+2,        M-JX-2);//44
-				Add(gs+2,          gs_1+JX,          M-JX-2);//45
-				Add(gs+JY+2,       gs_1,             M-JY-2);//46
-				Add(gs+JY,         gs_1+2,           M-JY-2);//47
-				Add(gs,            gs_1+JY+2,        M-JY-2);//48
-				Add(gs+2,          gs_1+JY,          M-JY-2);//49
-				Add(gs+2*JX,       gs_1+JY,          M-2*JX-JY);//50
-				Add(gs+2*JX+JY,    gs_1,             M-2*JX-JY);//51
-				Add(gs+JY,         gs_1+2*JX,        M-2*JX-JY);//52
-				Add(gs,            gs_1+2*JX+JY,     M-2*JX-JY);//53
-				Add(gs+2*JY,       gs_1+JX,          M-2*JY-JX);//54
-				Add(gs+2*JY+JX,    gs_1,             M-2*JY-JX);//55
-				Add(gs+JX,         gs_1+2*JY,        M-2*JY-JX);//56
-				Add(gs,            gs_1+2*JY+JX,     M-2*JY-JX);//57
-				Add(gs+2*JX+JY+1,  gs_1,             M-2*JX-JY-1);//58
-				Add(gs+2*JX+1,     gs_1+JY,          M-2*JX-JY-1);//59
-				Add(gs+JY+1,       gs_1+2*JX,        M-2*JX-JY-1);//60
-				Add(gs+1,          gs_1+2*JX+JY,     M-2*JX-JY-1);//61
-				Add(gs+2*JX+JY,    gs_1+1,    	     M-2*JX-JY-1);//62
-				Add(gs+2*JX,       gs_1+JY+1,        M-2*JX-JY-1);//63
-				Add(gs+JY,         gs_1+2*JX+1,      M-2*JX-JY-1);//64
-				Add(gs,            gs_1+2*JX+JY+1,   M-2*JX-JY-1);//65
-				Add(gs+JX+2*JY+1,  gs_1,             M-JX-2*JY-1);//66
-				Add(gs+JX+1,       gs_1+2*JY,        M-JX-2*JY-1);//67
-				Add(gs+2*JY+1,     gs_1+JX,          M-JX-2*JY-1);//68
-				Add(gs+1,          gs_1+JX+2*JY,     M-JX-2*JY-1);//69
-				Add(gs+JX+2*JY,    gs_1+1,           M-JX-2*JY-1);//70
-				Add(gs+JX,         gs_1+2*JY+1,      M-JX-2*JY-1);//71
-				Add(gs+2*JY,       gs_1+JX+1,        M-JX-2*JY-1);//72
-				Add(gs,            gs_1+JX+2*JY+1,   M-JX-2*JY-1);//73
-				Add(gs+JX+JY+2,    gs_1,             M-JX-JY-2);//74
-				Add(gs+JX+2,       gs_1+JY,          M-JX-JY-2);//75
-				Add(gs+JY+2,       gs_1+JX,          M-JX-JY-2);//76
-				Add(gs+2,          gs_1+JX+JY,       M-JX-JY-2);//77
-				Add(gs+JX+JY,      gs_1+2,           M-JX-JY-2);//78
-				Add(gs+JX,         gs_1+JY+2,        M-JX-JY-2);//79
-				Add(gs+JY,         gs_1+JX+2,        M-JX-JY-2);//80
-				Add(gs,            gs_1+JX+JY+2,     M-JX-JY-2);//81
+				Add(gs+2*JX,       gs_1,             M-2*JX);
+				Add(gs,            gs_1+2*JX,        M-2*JX);
+				Add(gs+2*JY,       gs_1,             M-2*JY);
+				Add(gs,            gs_1+2*JY,        M-2*JY);
+				Add(gs+2,          gs_1,             M-2);
+				Add(gs,            gs_1+2,           M-2);
+				Add(gs+2*JX+1,     gs_1,     	     M-2*JX-1);
+				Add(gs+2*JX,       gs_1+1,           M-2*JX-1);
+				Add(gs+1,          gs_1+2*JX,        M-2*JX-1);
+				Add(gs,            gs_1+2*JX+1,      M-2*JX-1);
+				Add(gs+2*JY,       gs_1+1,           M-2*JY-1);
+				Add(gs+2*JY+1,     gs_1,             M-2*JY-1);
+				Add(gs+1,          gs_1+2*JY,        M-2*JY-1);
+				Add(gs,            gs_1+2*JY+1,      M-2*JY-1);
+				Add(gs+JX+2,       gs_1,             M-JX-2);
+				Add(gs+JX,         gs_1+2,           M-JX-2);
+				Add(gs,            gs_1+JX+2,        M-JX-2);
+				Add(gs+2,          gs_1+JX,          M-JX-2);
+				Add(gs+JY+2,       gs_1,             M-JY-2);
+				Add(gs+JY,         gs_1+2,           M-JY-2);
+				Add(gs,            gs_1+JY+2,        M-JY-2);
+				Add(gs+2,          gs_1+JY,          M-JY-2);
+				Add(gs+2*JX,       gs_1+JY,          M-2*JX-JY);
+				Add(gs+2*JX+JY,    gs_1,             M-2*JX-JY);
+				Add(gs+JY,         gs_1+2*JX,        M-2*JX-JY);
+				Add(gs,            gs_1+2*JX+JY,     M-2*JX-JY);
+				Add(gs+2*JY,       gs_1+JX,          M-2*JY-JX);
+				Add(gs+2*JY+JX,    gs_1,             M-2*JY-JX);
+				Add(gs+JX,         gs_1+2*JY,        M-2*JY-JX);
+				Add(gs,            gs_1+2*JY+JX,     M-2*JY-JX);
+				Add(gs+2*JX+JY+1,  gs_1,             M-2*JX-JY-1);
+				Add(gs+2*JX+1,     gs_1+JY,          M-2*JX-JY-1);
+				Add(gs+JY+1,       gs_1+2*JX,        M-2*JX-JY-1);
+				Add(gs+1,          gs_1+2*JX+JY,     M-2*JX-JY-1);
+				Add(gs+2*JX+JY,    gs_1+1,    	     M-2*JX-JY-1);
+				Add(gs+2*JX,       gs_1+JY+1,        M-2*JX-JY-1);
+				Add(gs+JY,         gs_1+2*JX+1,      M-2*JX-JY-1);
+				Add(gs,            gs_1+2*JX+JY+1,   M-2*JX-JY-1);
+				Add(gs+JX+2*JY+1,  gs_1,             M-JX-2*JY-1);
+				Add(gs+JX+1,       gs_1+2*JY,        M-JX-2*JY-1);
+				Add(gs+2*JY+1,     gs_1+JX,          M-JX-2*JY-1);
+				Add(gs+1,          gs_1+JX+2*JY,     M-JX-2*JY-1);
+				Add(gs+JX+2*JY,    gs_1+1,           M-JX-2*JY-1);
+				Add(gs+JX,         gs_1+2*JY+1,      M-JX-2*JY-1);
+				Add(gs+2*JY,       gs_1+JX+1,        M-JX-2*JY-1);
+				Add(gs,            gs_1+JX+2*JY+1,   M-JX-2*JY-1);
+				Add(gs+JX+JY+2,    gs_1,             M-JX-JY-2);
+				Add(gs+JX+2,       gs_1+JY,          M-JX-JY-2);
+				Add(gs+JY+2,       gs_1+JX,          M-JX-JY-2);
+				Add(gs+2,          gs_1+JX+JY,       M-JX-JY-2);
+				Add(gs+JX+JY,      gs_1+2,           M-JX-JY-2);
+				Add(gs+JX,         gs_1+JY+2,        M-JX-JY-2);
+				Add(gs+JY,         gs_1+JX+2,        M-JX-JY-2);
+				Add(gs,            gs_1+JX+JY+2,     M-JX-JY-2);
 				Norm(gs,2.0,M);
 
-				Add(gs+2*JX+2*JY,  gs_1,             M-2*JX-2*JY);//82
-				Add(gs,            gs_1+2*JX+2*JY,   M-2*JX-2*JY);//83
-				Add(gs+2*JX,       gs_1+2*JY,        M-2*JX-2*JY);//84
-				Add(gs+2*JY,       gs_1+2*JX,        M-2*JX-2*JY);//85
-				Add(gs+2*JX+2*JY+1,gs_1,             M-2*JX-2*JY-1);//86
-				Add(gs+1,          gs_1+2*JX+2*JY,   M-2*JX-2*JY-1);//87
-				Add(gs+2*JX+1,     gs_1+2*JY,        M-2*JX-2*JY-1);//88
-				Add(gs+2*JY+1,     gs_1+2*JX,        M-2*JX-2*JY-1);//89
-				Add(gs+2*JX+2*JY,  gs_1+1,           M-2*JX-2*JY-1);//90
-				Add(gs,            gs_1+2*JX+2*JY+1, M-2*JX-2*JY-1);//91
-				Add(gs+2*JX,       gs_1+2*JY+1,      M-2*JX-2*JY-1);//92
-				Add(gs+2*JY,       gs_1+2*JX+1,      M-2*JX-2*JY-1);//93
-				Add(gs+2*JX+2,     gs_1,             M-2*JX-2);//94
-				Add(gs+2*JX+JY+2,  gs_1,             M-2*JX-JY-2);//95
-				Add(gs+2*JX+2,     gs_1+JY,          M-2*JX-JY-2);//96
-				Add(gs+2,          gs_1+2*JX,        M-2*JX-2);//97
-				Add(gs+JY+2,       gs_1+2*JX,        M-2*JX-JY-2);//98
-				Add(gs+2,          gs_1+2*JX+JY,     M-2*JX-JY-2);//99
-				Add(gs+2*JY+2,     gs_1,             M-2*JY-2);//100
-				Add(gs+2*JY+JX+2,  gs_1,             M-2*JY-JX-2);//101
-				Add(gs+2*JY+2,     gs_1+JX,          M-2*JY-JX-2);//102
-				Add(gs+2,          gs_1+2*JY,        M-2*JY-2);//103
-				Add(gs+JX+2,       gs_1+2*JY,        M-2*JY-JX-2);//104
-				Add(gs+2,          gs_1+2*JY+JX,     M-2*JY-JX-2);//105
-				Add(gs+2*JX,       gs_1+2,           M-2*JX-2);//106
-				Add(gs+2*JX+JY,    gs_1+2,           M-2*JX-JY-2);//107
-				Add(gs+2*JX,       gs_1+JY+2,        M-2*JX-JY-2);//108
-				Add(gs,            gs_1+2*JX+2,      M-2*JX-2);//109
-				Add(gs+JY,         gs_1+2*JX+2,      M-2*JX-JY-2);//110
-				Add(gs,            gs_1+2*JX+JY+2,   M-2*JX-JY-2);//111
-				Add(gs+2*JY,       gs_1+2,           M-2*JY-2);//112
-				Add(gs+2*JY+JX,    gs_1+2,           M-2*JY-JX-2);//113
-				Add(gs+2*JY,       gs_1+JX+2,        M-2*JY-JX-2);//114
-				Add(gs,            gs_1+2*JY+2,      M-2*JY-2);//115
-				Add(gs+JX,         gs_1+2*JY+2,      M-2*JY-JX-2);//116
-				Add(gs,            gs_1+2*JY+JX+2,   M-2*JY-JX-2);//117
+				Add(gs+2*JX+2*JY,  gs_1,             M-2*JX-2*JY);
+				Add(gs,            gs_1+2*JX+2*JY,   M-2*JX-2*JY);
+				Add(gs+2*JX,       gs_1+2*JY,        M-2*JX-2*JY);
+				Add(gs+2*JY,       gs_1+2*JX,        M-2*JX-2*JY);
+				Add(gs+2*JX+2*JY+1,gs_1,             M-2*JX-2*JY-1);
+				Add(gs+1,          gs_1+2*JX+2*JY,   M-2*JX-2*JY-1);
+				Add(gs+2*JX+1,     gs_1+2*JY,        M-2*JX-2*JY-1);
+				Add(gs+2*JY+1,     gs_1+2*JX,        M-2*JX-2*JY-1);
+				Add(gs+2*JX+2*JY,  gs_1+1,           M-2*JX-2*JY-1);
+				Add(gs,            gs_1+2*JX+2*JY+1, M-2*JX-2*JY-1);
+				Add(gs+2*JX,       gs_1+2*JY+1,      M-2*JX-2*JY-1);
+				Add(gs+2*JY,       gs_1+2*JX+1,      M-2*JX-2*JY-1);
+				Add(gs+2*JX+2,     gs_1,             M-2*JX-2);
+				Add(gs+2*JX+JY+2,  gs_1,             M-2*JX-JY-2);
+				Add(gs+2*JX+2,     gs_1+JY,          M-2*JX-JY-2);
+				Add(gs+2,          gs_1+2*JX,        M-2*JX-2);
+				Add(gs+JY+2,       gs_1+2*JX,        M-2*JX-JY-2);
+				Add(gs+2,          gs_1+2*JX+JY,     M-2*JX-JY-2);
+				Add(gs+2*JY+2,     gs_1,             M-2*JY-2);
+				Add(gs+2*JY+JX+2,  gs_1,             M-2*JY-JX-2);
+				Add(gs+2*JY+2,     gs_1+JX,          M-2*JY-JX-2);
+				Add(gs+2,          gs_1+2*JY,        M-2*JY-2);
+				Add(gs+JX+2,       gs_1+2*JY,        M-2*JY-JX-2);
+				Add(gs+2,          gs_1+2*JY+JX,     M-2*JY-JX-2);
+				Add(gs+2*JX,       gs_1+2,           M-2*JX-2);
+				Add(gs+2*JX+JY,    gs_1+2,           M-2*JX-JY-2);
+				Add(gs+2*JX,       gs_1+JY+2,        M-2*JX-JY-2);
+				Add(gs,            gs_1+2*JX+2,      M-2*JX-2);
+				Add(gs+JY,         gs_1+2*JX+2,      M-2*JX-JY-2);
+				Add(gs,            gs_1+2*JX+JY+2,   M-2*JX-JY-2);
+				Add(gs+2*JY,       gs_1+2,           M-2*JY-2);
+				Add(gs+2*JY+JX,    gs_1+2,           M-2*JY-JX-2);
+				Add(gs+2*JY,       gs_1+JX+2,        M-2*JY-JX-2);
+				Add(gs,            gs_1+2*JY+2,      M-2*JY-2);
+				Add(gs+JX,         gs_1+2*JY+2,      M-2*JY-JX-2);
+				Add(gs,            gs_1+2*JY+JX+2,   M-2*JY-JX-2);
 				Norm(gs,2.0,M);
 
-				Add(gs+2*JX+2*JY+2,gs_1,             M-2*JX-2*JY-2);//118
-				Add(gs+2,          gs_1+2*JX+2*JY,   M-2*JX-2*JY-2);//119
-				Add(gs+2*JX+2,     gs_1+2*JY,        M-2*JX-2*JY-2);//120
-				Add(gs+2*JY+2,     gs_1+2*JX,        M-2*JX-2*JY-2);//121
-				Add(gs+2*JX+2*JY,  gs_1+2,           M-2*JX-2*JY-2);//122
-				Add(gs,            gs_1+2*JX+2*JY+2, M-2*JX-2*JY-2);//123
-				Add(gs+2*JX,       gs_1+2*JY+2,      M-2*JX-2*JY-2);//124
-				Add(gs+2*JY,       gs_1+2*JX+2,      M-2*JX-2*JY-2);//125
+				Add(gs+2*JX+2*JY+2,gs_1,             M-2*JX-2*JY-2);
+				Add(gs+2,          gs_1+2*JX+2*JY,   M-2*JX-2*JY-2);
+				Add(gs+2*JX+2,     gs_1+2*JY,        M-2*JX-2*JY-2);
+				Add(gs+2*JY+2,     gs_1+2*JX,        M-2*JX-2*JY-2);
+				Add(gs+2*JX+2*JY,  gs_1+2,           M-2*JX-2*JY-2);
+				Add(gs,            gs_1+2*JX+2*JY+2, M-2*JX-2*JY-2);
+				Add(gs+2*JX,       gs_1+2*JY+2,      M-2*JX-2*JY-2);
+				Add(gs+2*JY,       gs_1+2*JX+2,      M-2*JX-2*JY-2);
 				Norm(gs,1.0/512.0,M);
 
 				Times(gs,gs,G1,M);
@@ -1806,20 +1882,23 @@ if (!debug) cout <<"set_bounds (int) in LGrad3 " << endl;
 		if (fjc==1) {
 			//SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
 
-			for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){
-				X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];
-				X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+BZM];
+			for (x=1; x<MX+1; x++) {
+				for (y=1; y<MY+1; y++){
+					X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];
+					X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+BZM];
+				}
+				for (z=1; z<MZ+1; z++) {
+					X[x*JX+0        +z*JZ] = X[x*JX+BY1*JY+z*JZ];
+					X[x*JX+(MY+1)*JY+z*JZ] = X[x*JX+BYM*JY+z*JZ];
+				}
 			}
 			for (y=1; y<MY+1; y++) for (z=1; z<MZ+1; z++)  {
 				X[0        +y*JY+z*JZ] = X[BX1*JX+y*JY+z*JZ];
 				X[(MX+1)*JX+y*JY+z*JZ] = X[BXM*JX+y*JY+z*JZ];
 			}
-			for (z=1; z<MZ+1; z++) for (x=1; x<MX+1; x++){
-				X[x*JX+0        +z*JZ] = X[x*JX+BY1*JY+z*JZ];
-				X[x*JX+(MY+1)*JY+z*JZ] = X[x*JX+BYM*JY+z*JZ];
-			}
 
-			x=0; {
+
+			for (int x=0; x<MX+2; x+=MX+1) {
 				for (y=1; y<MY+1; y++){
 					X[y*JY+0]     = X[y*JY+BZ1];
 					X[y*JY+MZ+1]  = X[y*JY+BZM];
@@ -1829,26 +1908,11 @@ if (!debug) cout <<"set_bounds (int) in LGrad3 " << endl;
 					X[(MY+1)*JY+z*JZ] = X[BYM*JY+z*JZ];
 				}
 			}
-			x=MX+1; {
-				for (y=1; y<MY+1; y++){
-					X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];
-					X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+BZM];
-				}
-				for (z=1; z<MZ+1; z++){
-					X[x*JX+0        +z*JZ] = X[x*JX+BY1*JY+z*JZ];
-					X[x*JX+(MY+1)*JY+z*JZ] = X[x*JX+BYM*JY+z*JZ];
-				}
-			}
-			y=0; {
+
+			for (y=0; y<MY+2; y+=MY+1) {
 				for (x=1; x<MX+1; x++){
 					X[x*JX        +0] = X[x*JX+BZ1*JZ];
 					X[x*JX+(MZ+1)*JZ] = X[x*JX+BZM*JZ];
-				}
-			}
-			y=MY+1; {
-				for (x=1; x<MX+1; x++){
-					X[x*JX+y*JY        +0] = X[x*JX+y*JY+BZ1*JZ];
-					X[x*JX+y*JY+(MZ+1)*JZ] = X[x*JX+y*JY+BZM*JZ];
 				}
 			}
 
@@ -1863,49 +1927,69 @@ if (!debug) cout <<"set_bounds (int) in LGrad3 " << endl;
 
 
 		}else {
-			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
-				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = X[x*JX+y*JY+B_Z1[k]];
-				for (k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+			for (x=fjc; x<MX+fjc; x++) {
+				for (y=fjc; y<MY+fjc; y++){
+					for (k=0; k<fjc; k++) {
+						X[x*JX+y*JY+k] = X[x*JX+y*JY+B_Z1[k]];
+						X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+					}
+				}
+				for (z=fjc; z<MZ+fjc; z++) {
+					for (k=0; k<fjc; k++) {
+						X[x*JX+k*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
+						X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
+					}
+				}
 			}
 			for (y=fjc; y<MY+fjc; y++) for (z=fjc; z<MZ+fjc; z++)  {
-				for (k=0; k<fjc; k++) X[k*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
-				for (k=0; k<fjc; k++) X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
-			}
-			for (z=fjc; z<MZ+fjc; z++) for (x=fjc; x<MX+fjc; x++){
-				for (k=0; k<fjc; k++) X[x*JX+k*JY+z*JZ] = X[x*JX+B_Y1[k]*JY+z*JZ];
-				for (k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z*JZ] = X[x*JX+B_YM[k]*JY+z*JZ];
+				for (k=0; k<fjc; k++) {
+					X[k*JX+y*JY+z*JZ] = X[B_X1[k]*JX+y*JY+z*JZ];
+					X[(MX+fjc+k)*JX+y*JY+z*JZ] = X[B_XM[k]*JX+y*JY+z*JZ];
+				}
 			}
 
 			for (x=0; x<fjc; x++ ) {
 				for (y=fjc; y<MY+fjc; y++){
-					for (int k=0; k<fjc; k++) X[x*JX+y*JY+k]         = X[x*JX+y*JY+B_Z1[k]];
-					for (int k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+					for (int k=0; k<fjc; k++) {
+						X[x*JX+y*JY+k]         = X[x*JX+y*JY+B_Z1[k]];
+						X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+					}
 				}
 				for (z=fjc; z<MZ+fjc; z++){
-					for (int k=0; k<fjc; k++) X[x*JX+k*JY         +z]  = X[x*JX+B_Y1[k]*JY+z*JZ];
-					for (int k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z] = X[x*JX+B_YM[k]*JY+z*JZ];
+					for (int k=0; k<fjc; k++) {
+						X[x*JX+k*JY         +z]  = X[x*JX+B_Y1[k]*JY+z*JZ];
+						X[x*JX+(MY+fjc+k)*JY+z] = X[x*JX+B_YM[k]*JY+z*JZ];
+					}
 				}
 			}
 			for (x=MX+fjc; x<MX+2*fjc; x++) {
 				for (y=fjc; y<MY+fjc; y++){
-					for (int k=0; k<fjc; k++) X[x*JX+y*JY+k]         = X[x*JX+y*JY+B_Z1[k]];
-					for (int k=0; k<fjc; k++) X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+					for (int k=0; k<fjc; k++) {
+						X[x*JX+y*JY+k]         = X[x*JX+y*JY+B_Z1[k]];
+						X[x*JX+y*JY+MZ+fjc+k]  = X[x*JX+y*JY+B_ZM[k]];
+					}
 				}
 				for (z=fjc; z<MZ+fjc; z++){
-					for (int k=0; k<fjc; k++) X[x*JX+k*JY        +z]  = X[x*JX+B_Y1[k]*JY+z];
-					for (int k=0; k<fjc; k++) X[x*JX+(MY+fjc+k)*JY+z] = X[x*JX+B_YM[k]*JY+z];
+					for (int k=0; k<fjc; k++) {
+						X[x*JX+k*JY        +z]  = X[x*JX+B_Y1[k]*JY+z];
+						X[x*JX+(MY+fjc+k)*JY+z] = X[x*JX+B_YM[k]*JY+z];
+					}
 				}
 			}
 			for (y=0; y<fjc; y++) {
 				for (x=fjc; x<MX+fjc; x++){
-					for (int k=0; k<fjc; k++) X[x*JX +y*JY       +k]    = X[x*JX+y*JY+B_Z1[k]];
-					for (int k=0; k<fjc; k++) X[x*JX +y*JY +(MZ+fjc+k)] = X[x*JX+y*JY+B_ZM[k]];
+					for (int k=0; k<fjc; k++) {
+						X[x*JX +y*JY       +k]    = X[x*JX+y*JY+B_Z1[k]];
+						X[x*JX +y*JY +(MZ+fjc+k)] = X[x*JX+y*JY+B_ZM[k]];
+					}
 				}
 			}
 			for (y=MY+fjc; y<MY+2*fjc; y++) {
 				for (x=fjc; x<MX+fjc; x++){
-					for (int k=0; k<fjc; k++) X[x*JX+y*JY        +k]     = X[x*JX+y*JY+B_Z1[k]];
-					for (int k=0; k<fjc; k++) X[x*JX+y*JY+(MZ+fjc+k)*JZ] = X[x*JX+y*JY+B_ZM[k]];
+					for (int k=0; k<fjc; k++) {
+						X[x*JX+y*JY        +k]     = X[x*JX+y*JY+B_Z1[k]];
+						X[x*JX+y*JY+(MZ+fjc+k)*JZ] = X[x*JX+y*JY+B_ZM[k]];
+					}
 				}
 			}
 

@@ -43,102 +43,179 @@ if (debug) cout <<" Side in LG2Planar " << endl;
 		YplusisCtimesX(X_side+1,X+JX,1.0/9.0*one,M-JX);
 		YplusisCtimesX(X_side,X+JX+1,1.0/9.0*one,M-JX-1);
 	} else {
-		if (fjc==1) {
-			if (stencil_full) {
-				if (lattice_type==simple_cubic) { //9 point stencil
-					cout <<"not fully tested" << endl;
-					YplusisCtimesX(X_side,X,    16.0/36.0*one,M);
-					YplusisCtimesX(X_side+1,X,   4.0/36.0*one,M-1);
-					YplusisCtimesX(X_side,X+1,   4.0/36.0*one,M-1);
-					YplusisCtimesX(X_side+JX,X,  4.0/36.0*one,M-JX);
-					YplusisCtimesX(X_side,X+JX,  4.0/36.0*one,M-JX);
-					YplusisCtimesX(X_side+JX+1,X,1.0/36.0*one,M-JX-1);
-					YplusisCtimesX(X_side+JX,X+1,1.0/36.0*one,M-JX);
-					YplusisCtimesX(X_side+1,X+JX,1.0/36.0*one,M-JX);
-					YplusisCtimesX(X_side,X+JX+1,1.0/36.0*one,M-JX-1);
-				} else {
-					//not fully tested...
-					cout <<" in side fractions the bc are not fully tested yet..." << endl;
-					Add(X_side+JX,X,   M-JX);
-					Add(X_side,   X+JX,M-JX);
-					Add(X_side+JY,X   ,M-JY);
-					Add(X_side,   X+JY,M-JY);
-					Add(X_side,   X   ,M);
-					Norm(X_side,2.0,M);
+		switch (fjc) {
+			case 1:
+				if (stencil_full) {
+					if (lattice_type==simple_cubic) { //9 point stencil
+						cout <<"not fully tested" << endl;
+						YplusisCtimesX(X_side,X,    16.0/36.0*one,M);
+						YplusisCtimesX(X_side+1,X,   4.0/36.0*one,M-1);
+						YplusisCtimesX(X_side,X+1,   4.0/36.0*one,M-1);
+						YplusisCtimesX(X_side+JX,X,  4.0/36.0*one,M-JX);
+						YplusisCtimesX(X_side,X+JX,  4.0/36.0*one,M-JX);
+						YplusisCtimesX(X_side+JX+1,X,1.0/36.0*one,M-JX-1);
+						YplusisCtimesX(X_side+JX,X+1,1.0/36.0*one,M-JX);
+						YplusisCtimesX(X_side+1,X+JX,1.0/36.0*one,M-JX);
+						YplusisCtimesX(X_side,X+JX+1,1.0/36.0*one,M-JX-1);
+					} else {
+						//not fully tested...
+						cout <<" in side fractions the bc are not fully tested yet..." << endl;
+						Add(X_side+JX,X,   M-JX);
+						Add(X_side,   X+JX,M-JX);
+						Add(X_side+JY,X   ,M-JY);
+						Add(X_side,   X+JY,M-JY);
+						Add(X_side,   X   ,M);
+						Norm(X_side,2.0,M);
 
-					remove_bounds(X);
-					set_bounds_x(X,-1);
-					Add(X_side+JX,X+JY,M-JX-JY);
-					Add(X_side+JY,X+JX,M-JX-JY);
+						remove_bounds(X);
+						set_bounds_x(X,-1);
+						Add(X_side+JX,X+JY,M-JX-JY);
+						Add(X_side+JY,X+JX,M-JX-JY);
 
-					Norm(X_side,1.0/12.0*one,M);
+						Norm(X_side,1.0/12.0*one,M);
 
-					//YplusisCtimesX(X_side,X,    12.0/48.0*one,M);
-					//YplusisCtimesX(X_side+1,X,   6.0/48.0*one,M-1);
-					//YplusisCtimesX(X_side,X+1,   6.0/48.0*one,M-1);
-					//YplusisCtimesX(X_side+JX,X,  6.0/48.0*one,M-JX);
-					//YplusisCtimesX(X_side,X+JX,  6.0/48.0*one,M-JX);
-					//YplusisCtimesX(X_side+JX+1,X,3.0/48.0*one,M-JX-1);
-					//YplusisCtimesX(X_side+JX,X+1,3.0/48.0*one,M-JX);
-					//YplusisCtimesX(X_side+1,X+JX,3.0/48.0*one,M-JX);
-					//YplusisCtimesX(X_side,X+JX+1,3.0/48.0*one,M-JX-1);
+						//YplusisCtimesX(X_side,X,    12.0/48.0*one,M);
+						//YplusisCtimesX(X_side+1,X,   6.0/48.0*one,M-1);
+						//YplusisCtimesX(X_side,X+1,   6.0/48.0*one,M-1);
+						//YplusisCtimesX(X_side+JX,X,  6.0/48.0*one,M-JX);
+						//YplusisCtimesX(X_side,X+JX,  6.0/48.0*one,M-JX);
+						//YplusisCtimesX(X_side+JX+1,X,3.0/48.0*one,M-JX-1);
+						//YplusisCtimesX(X_side+JX,X+1,3.0/48.0*one,M-JX);
+						//YplusisCtimesX(X_side+1,X+JX,3.0/48.0*one,M-JX);
+						//YplusisCtimesX(X_side,X+JX+1,3.0/48.0*one,M-JX-1);
+					}
+				} else { //classical
+					if (lattice_type==simple_cubic) {
+						Add(X_side+JX,X,M-JX);
+						Add(X_side,X+JX,M-JX);
+						Add(X_side+1,X,M-1);
+						Add(X_side,X+1,M-1);
+						Norm(X_side,1.0/2.0*one,M);
+						Add(X_side,X,M);
+						Norm(X_side,1.0/3.0*one,M);
+					} else {
+						//hexagonal //9 point stencil
+						//Add(gs,gs_1,M);
+						YplusisCtimesX(X_side,X,2.0,M);
+						Add(X_side+JX,X,   M-JX);
+						Add(X_side,   X+JX,M-JX);
+						Add(X_side+JY,X,   M-JY);
+						Add(X_side,   X+JY,M-JY);
+						Norm(X_side,2,M);
+						Add(X_side+JX+JY,X,      M-JX-JY);
+						Add(X_side,      X+JX+JY,M-JX-JY);
+						Add(X_side+JX,   X+JY,   M-JX-JY);
+						Add(X_side+JY,   X+JX,   M-JX-JY);
+
+						Norm(X_side,1.0/16.0,M);
+					}
 				}
-			} else { //classical
-				if (lattice_type==simple_cubic) {
-					Add(X_side+JX,X,M-JX);
-					Add(X_side,X+JX,M-JX);
-					Add(X_side+1,X,M-1);
-					Add(X_side,X+1,M-1);
-					Norm(X_side,1.0/2.0*one,M);
-					Add(X_side,X,M);
-					Norm(X_side,1.0/3.0*one,M);
-				} else {
-					//hexagonal //9 point stencil
-					//Add(gs,gs_1,M);
-					YplusisCtimesX(X_side,X,2.0,M);
-					Add(X_side+JX,X,   M-JX);
-					Add(X_side,   X+JX,M-JX);
-					Add(X_side+JY,X,   M-JY);
-					Add(X_side,   X+JY,M-JY);
-					Norm(X_side,2,M);
-					Add(X_side+JX+JY,X,      M-JX-JY);
-					Add(X_side,      X+JX+JY,M-JX-JY);
-					Add(X_side+JX,   X+JY,   M-JX-JY);
-					Add(X_side+JY,   X+JX,   M-JX-JY);
+				break;
+			case 2: //only hexagonal
+				Add(X_side,       X,       M);
 
-					Norm(X_side,1.0/16.0,M);
-				}
-			}
-		}
-		if (fjc==2) { //only hexagonal
-			Add(X_side,       X,       M);
-			Add(X_side+JX,    X,       M-JX);
-			Add(X_side,       X+JX,    M-JX);
-			Add(X_side+1,     X,       M-1);
-			Add(X_side,       X+1,     M-1);
-			Add(X_side+JX+1,  X,       M-JX-1);
-			Add(X_side,       X+JX+1,  M-JX-1);
-			Add(X_side+1,     X+JX,    M-JX-1);
-			Add(X_side+JX,    X+1,     M-JX-1);
-			Norm(X_side,2.0,M);
-			Add(X_side+2*JX,  X,       M-2*JX);
-			Add(X_side,       X+2*JX,  M-2*JX);
-			Add(X_side+2*JX,  X+1,     M-2*JX-1);
-			Add(X_side+2*JX+1,X,       M-2*JX-1);
-			Add(X_side+1,     X+2*JX,  M-2*JX-1);
-			Add(X_side,       X+2*JX+1,M-2*JX-1);
-			Add(X_side+JX+2,  X,       M-JX-2);
-			Add(X_side+JX,    X+2,     M-JX-2);
-			Add(X_side,       X+JX+2,  M-JX-2);
-			Add(X_side+2,     X+JX,    M-JX-2);
-			Add(X_side+2,     X,       M-2);
-			Add(X_side,       X+2,     M-2);
-			Norm(X_side,2.0,M);
-			Add(X_side+2*JX+2,X,       M-2*JX-2);
-			Add(X_side,       X+2*JX+2,M-2*JX-2);
-			Add(X_side+2*JX,  X+2,     M-2*JX-2);
-			Add(X_side+2,     X+2*JX,  M-2*JX-2);
-			Norm(X_side,1.0/64.0,M);
+				Add(X_side+JX,    X,       M-JX);
+				Add(X_side,       X+JX,    M-JX);
+				Add(X_side+1,     X,       M-1);
+				Add(X_side,       X+1,     M-1);
+
+				Add(X_side+JX+1,  X,       M-JX-1);
+				Add(X_side,       X+JX+1,  M-JX-1);
+				Add(X_side+1,     X+JX,    M-JX-1);
+				Add(X_side+JX,    X+1,     M-JX-1);
+				Norm(X_side,2.0,M);
+				Add(X_side+2*JX,  X,       M-2*JX);
+				Add(X_side,       X+2*JX,  M-2*JX);
+				Add(X_side+2,     X,       M-2);
+				Add(X_side,       X+2,     M-2);
+
+				Add(X_side+2*JX,  X+1,     M-2*JX-1);
+				Add(X_side+2*JX+1,X,       M-2*JX-1);
+				Add(X_side+1,     X+2*JX,  M-2*JX-1);
+				Add(X_side,       X+2*JX+1,M-2*JX-1);
+
+				Add(X_side+JX+2,  X,       M-JX-2);
+				Add(X_side+JX,    X+2,     M-JX-2);
+				Add(X_side,       X+JX+2,  M-JX-2);
+				Add(X_side+2,     X+JX,    M-JX-2);
+
+				Norm(X_side,2.0,M);
+				Add(X_side+2*JX+2,X,       M-2*JX-2);
+				Add(X_side,       X+2*JX+2,M-2*JX-2);
+				Add(X_side+2*JX,  X+2,     M-2*JX-2);
+				Add(X_side+2,     X+2*JX,  M-2*JX-2);
+				Norm(X_side,1.0/64.0,M);
+				break;
+			case 3:
+				Add(X_side,       X,        M);
+
+				Add(X_side+JX,    X,        M-JX);
+				Add(X_side,       X+JX,     M-JX);
+				Add(X_side+1,     X,        M-1);
+				Add(X_side,       X+1,      M-1);
+
+				Add(X_side+JX+1,  X,        M-JX-1);
+				Add(X_side,       X+JX+1,   M-JX-1);
+				Add(X_side+1,     X+JX,     M-JX-1);
+				Add(X_side+JX,    X+1,      M-JX-1);
+
+				Add(X_side+2*JX,  X,        M-2*JX);
+				Add(X_side,       X+2*JX,   M-2*JX);
+				Add(X_side+2,     X,        M-2);
+				Add(X_side,       X+2,      M-2);
+
+				Add(X_side+2*JX+1,X,        M-2*JX-1);
+				Add(X_side,       X+2*JX+1, M-2*JX-1);
+				Add(X_side+1,     X+2*JX,   M-2*JX-1);
+				Add(X_side+2*JX,  X+1,      M-2*JX-1);
+
+				Add(X_side+2,     X+JX,     M-JX-2);
+				Add(X_side+JX,    X+2,      M-JX-2);
+				Add(X_side+JX+2,  X,        M-JX-2);
+				Add(X_side,       X+JX+2,   M-JX-2);
+
+				Add(X_side+2*JX+2, X,       M-2*JX-2);
+				Add(X_side,        X+2*JX+2,M-2*JX-2);
+				Add(X_side+2,      X+2*JX,  M-2*JX-2);
+				Add(X_side+2*JX,   X+2,     M-2*JX-2);
+
+				Norm(X_side,2.0,M);
+
+				Add(X_side+3*JX,  X,        M-3*JX);
+				Add(X_side,       X+3*JX,   M-3*JX);
+				Add(X_side+3,     X,        M-3);
+				Add(X_side,       X+3,      M-3);
+
+				Add(X_side+3*JX,  X+1,      M-3*JX-1);
+				Add(X_side+3*JX+1,X,        M-3*JX-1);
+				Add(X_side+1,     X+3*JX,   M-3*JX-1);
+				Add(X_side,       X+3*JX+1, M-3*JX-1);
+
+				Add(X_side+JX+3,  X,        M-JX-3);
+				Add(X_side+JX,    X+3,      M-JX-3);
+				Add(X_side,       X+JX+3,   M-JX-3);
+				Add(X_side+3,     X+JX,     M-JX-3);
+
+				Add(X_side+3*JX,  X+2,      M-3*JX-2);
+				Add(X_side+3*JX+2,X,        M-3*JX-2);
+				Add(X_side+2,     X+3*JX,   M-3*JX-2);
+				Add(X_side,       X+3*JX+2, M-3*JX-2);
+
+				Add(X_side+2*JX+3,X,        M-2*JX-3);
+				Add(X_side+2*JX,  X+3,      M-2*JX-3);
+				Add(X_side,       X+2*JX+3, M-2*JX-3);
+				Add(X_side+3,     X+2*JX,   M-2*JX-3);
+				Norm(X_side,2.0,M);
+
+				Add(X_side+3*JX+3,X,        M-3*JX-3);
+				Add(X_side,       X+3*JX+3, M-3*JX-3);
+				Add(X_side+3*JX,  X+3,      M-3*JX-3);
+				Add(X_side+3,     X+3*JX,   M-3*JX-3);
+				Norm(X_side,1.0/144.0,M);
+
+				break;
+			default:
+				break;
 		}
 	}
 }
@@ -409,111 +486,190 @@ void LG2Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 
 void LG2Planar::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in LGrad2 " << endl;
-	Real one=1.0;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
-
 	Zero(gs,M); set_bounds(gs_1);
-	if (fjc==1) {
-		if (stencil_full) {
-			if (lattice_type==simple_cubic) { //9 point stencil..
-				YplusisCtimesX(gs,gs_1,    16.0/36.0*one,M);
-				YplusisCtimesX(gs+1,gs_1,   4.0/36.0*one,M-1);
-				YplusisCtimesX(gs,gs_1+1,   4.0/36.0*one,M-1);
-				YplusisCtimesX(gs+JX,gs_1,  4.0/36.0*one,M-JX);
-				YplusisCtimesX(gs,gs_1+JX,  4.0/36.0*one,M-JX);
-				YplusisCtimesX(gs+JX+1,gs_1,1.0/36.0*one,M-JX-1);
-				YplusisCtimesX(gs+JX,gs_1+1,1.0/36.0*one,M-JX);
-				YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0*one,M-JX);
-				YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0*one,M-JX-1);
-				Times(gs,gs,G1,M);
-			} else { //hexagonal Johan's method //kept for nostalgic reasons
+	switch (fjc) {
+		case 1:
+			if (stencil_full) {
+				if (lattice_type==simple_cubic) { //9 point stencil..
+					YplusisCtimesX(gs,gs_1,    16.0/36.0,M);
+					YplusisCtimesX(gs+1,gs_1,   4.0/36.0,M-1);
+					YplusisCtimesX(gs,gs_1+1,   4.0/36.0,M-1);
+					YplusisCtimesX(gs+JX,gs_1,  4.0/36.0,M-JX);
+					YplusisCtimesX(gs,gs_1+JX,  4.0/36.0,M-JX);
+					YplusisCtimesX(gs+JX+1,gs_1,1.0/36.0,M-JX-1);
+					YplusisCtimesX(gs+JX,gs_1+1,1.0/36.0,M-JX);
+					YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0,M-JX);
+					YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0,M-JX-1);
+					Times(gs,gs,G1,M);
+				} else { //hexagonal Johan's method //kept for nostalgic reasons
 
-				Add(gs+JX,gs_1,   M-JX);
-				Add(gs,   gs_1+JX,M-JX);
-				Add(gs+JY,gs_1   ,M-JY);
-				Add(gs,   gs_1+JY,M-JY);
-				Add(gs,   gs_1   ,M);
-				Norm(gs,2.0,M);
+					Add(gs+JX,gs_1,   M-JX);
+					Add(gs,   gs_1+JX,M-JX);
+					Add(gs+JY,gs_1   ,M-JY);
+					Add(gs,   gs_1+JY,M-JY);
+					Add(gs,   gs_1   ,M);
+					Norm(gs,2.0,M);
 
-				remove_bounds(gs_1);
-				set_bounds_x(gs_1,-1);
-				Add(gs+JX,gs_1+JY,M-JX-JY);
-				Add(gs+JY,gs_1+JX,M-JX-JY);
+					remove_bounds(gs_1);
+					set_bounds_x(gs_1,-1);
+					Add(gs+JX,gs_1+JY,M-JX-JY);
+					Add(gs+JY,gs_1+JX,M-JX-JY);
 
-				Norm(gs,1.0/12.0,M);
-				Times(gs,gs,G1,M);
+					Norm(gs,1.0/12.0,M);
+					Times(gs,gs,G1,M);
 
-				//9 punt stencil
-				//YplusisCtimesX(gs,gs_1,    12.0/48.0*one,M);
-				//YplusisCtimesX(gs+1,gs_1,   6.0/48.0*one,M-1);
-				//YplusisCtimesX(gs,gs_1+1,   6.0/48.0*one,M-1);
-				//YplusisCtimesX(gs+JX,gs_1,  6.0/48.0*one,M-JX);
-				//YplusisCtimesX(gs,gs_1+JX,  6.0/48.0*one,M-JX);
-				//YplusisCtimesX(gs+JX+1,gs_1,3.0/48.0*one,M-JX-1);
-				//YplusisCtimesX(gs+JX,gs_1+1,3.0/48.0*one,M-JX);
-				//YplusisCtimesX(gs+1,gs_1+JX,3.0/48.0*one,M-JX);
-				//YplusisCtimesX(gs,gs_1+JX+1,3.0/48.0*one,M-JX-1);
-				//Times(gs,gs,G1,M);
+					//9 punt stencil
+					//YplusisCtimesX(gs,gs_1,    12.0/48.0,M);
+					//YplusisCtimesX(gs+1,gs_1,   6.0/48.0,M-1);
+					//YplusisCtimesX(gs,gs_1+1,   6.0/48.0,M-1);
+					//YplusisCtimesX(gs+JX,gs_1,  6.0/48.0,M-JX);
+					//YplusisCtimesX(gs,gs_1+JX,  6.0/48.0,M-JX);
+					//YplusisCtimesX(gs+JX+1,gs_1,3.0/48.0,M-JX-1);
+					//YplusisCtimesX(gs+JX,gs_1+1,3.0/48.0,M-JX);
+					//YplusisCtimesX(gs+1,gs_1+JX,3.0/48.0,M-JX);
+					//YplusisCtimesX(gs,gs_1+JX+1,3.0/48.0,M-JX-1);
+					//Times(gs,gs,G1,M);
+				}
+			} else { // classical!
+				if (lattice_type==simple_cubic) {
+					Add(gs+JX,gs_1,M-JX);
+					Add(gs,gs_1+JX,M-JX);
+					Add(gs+JY,gs_1,M-JY);
+					Add(gs,gs_1+JY,M-JY);
+					Norm(gs,1.0/2.0,M);
+					Add(gs,gs_1,M);
+					Norm(gs,1.0/3.0,M);
+					Times(gs,gs,G1,M);
+				} else { //hexagonal //9 point stencil
+					//Add(gs,gs_1,M);
+					YplusisCtimesX(gs,gs_1,2.0,M);
+					Add(gs+JX,gs_1,   M-JX);
+					Add(gs,   gs_1+JX,M-JX);
+					Add(gs+JY,gs_1,   M-JY);
+					Add(gs,   gs_1+JY,M-JY);
+					Norm(gs,2,M);
+					Add(gs+JX+JY,gs_1,      M-JX-JY);
+					Add(gs,      gs_1+JX+JY,M-JX-JY);
+					Add(gs+JX,   gs_1+JY,   M-JX-JY);
+					Add(gs+JY,   gs_1+JX,   M-JX-JY);
+
+					Norm(gs,1.0/16.0,M);
+					Times(gs,gs,G1,M);
+				}
 			}
-		} else { // classical!
-			if (lattice_type==simple_cubic) {
-				Add(gs+JX,gs_1,M-JX);
-				Add(gs,gs_1+JX,M-JX);
-				Add(gs+JY,gs_1,M-JY);
-				Add(gs,gs_1+JY,M-JY);
-				Norm(gs,1.0/2.0*one,M);
-				Add(gs,gs_1,M);
-				Norm(gs,1.0/3.0*one,M);
-				Times(gs,gs,G1,M);
-			} else { //hexagonal //9 point stencil
-				//Add(gs,gs_1,M);
-				YplusisCtimesX(gs,gs_1,2.0,M);
-				Add(gs+JX,gs_1,   M-JX);
-				Add(gs,   gs_1+JX,M-JX);
-				Add(gs+JY,gs_1,   M-JY);
-				Add(gs,   gs_1+JY,M-JY);
-				Norm(gs,2,M);
-				Add(gs+JX+JY,gs_1,      M-JX-JY);
-				Add(gs,      gs_1+JX+JY,M-JX-JY);
-				Add(gs+JX,   gs_1+JY,   M-JX-JY);
-				Add(gs+JY,   gs_1+JX,   M-JX-JY);
+			break;
+		case 2:  //25 point stencil
+			 //lattice_type = hexagonal
+			Add(gs,       gs_1,        M);
 
-				Norm(gs,1.0/16.0,M);
-				Times(gs,gs,G1,M);
-			}
-		}
-	}
-	if (fjc==2) { //25 point stencil only fjc==2 (FJC_choices = 5) implemented....
-		 //lattice_type = hexagonal
-		Add(gs,       gs_1,        M);
-		Add(gs+JX,    gs_1,        M-JX);
-		Add(gs,       gs_1+JX,     M-JX);
-		Add(gs+1,     gs_1,        M-1);
-		Add(gs,       gs_1+1,      M-1);
-		Add(gs+JX+1,  gs_1,        M-JX-1);
-		Add(gs,       gs_1+JX+1,   M-JX-1);
-		Add(gs+1,     gs_1+JX,     M-JX-1);
-		Add(gs+JX,    gs_1+1,      M-JX-1);
-		Norm(gs,2.0,M);
-		Add(gs+2*JX,  gs_1,        M-2*JX);
-		Add(gs,       gs_1+2*JX,   M-2*JX);
-		Add(gs+2*JX,  gs_1+1,      M-2*JX-1);
-		Add(gs+2*JX+1,gs_1,        M-2*JX-1);
-		Add(gs+1,     gs_1+2*JX,   M-2*JX-1);
-		Add(gs,       gs_1+2*JX+1, M-2*JX-1);
-		Add(gs+JX+2,  gs_1,        M-JX-2);
-		Add(gs+JX,    gs_1+2,      M-JX-2);
-		Add(gs,       gs_1+JX+2,   M-JX-2);
-		Add(gs+2,     gs_1+JX,     M-JX-2);
-		Add(gs+2,     gs_1,        M-2);
-		Add(gs,       gs_1+2,      M-2);
-		Norm(gs,2.0,M);
-		Add(gs+2*JX+2,gs_1,        M-2*JX-2);
-		Add(gs,       gs_1+2*JX+2, M-2*JX-2);
-		Add(gs+2*JX,  gs_1+2,      M-2*JX-2);
-		Add(gs+2,     gs_1+2*JX,   M-2*JX-2);
-		Norm(gs,1.0/64.0,M);
-		Times(gs,gs,G1,M);
+			Add(gs+JX,    gs_1,        M-JX);
+			Add(gs,       gs_1+JX,     M-JX);
+			Add(gs+1,     gs_1,        M-1);
+			Add(gs,       gs_1+1,      M-1);
+
+			Add(gs+JX+1,  gs_1,        M-JX-1);
+			Add(gs,       gs_1+JX+1,   M-JX-1);
+			Add(gs+1,     gs_1+JX,     M-JX-1);
+			Add(gs+JX,    gs_1+1,      M-JX-1);
+
+			Norm(gs,2.0,M);
+
+			Add(gs+2*JX,  gs_1,        M-2*JX);
+			Add(gs,       gs_1+2*JX,   M-2*JX);
+			Add(gs+2,     gs_1,        M-2);
+			Add(gs,       gs_1+2,      M-2);
+
+			Add(gs+2*JX,  gs_1+1,      M-2*JX-1);
+			Add(gs+1,     gs_1+2*JX,   M-2*JX-1);
+			Add(gs+2*JX+1,gs_1,        M-2*JX-1);
+			Add(gs,       gs_1+2*JX+1, M-2*JX-1);
+
+			Add(gs+JX+2,  gs_1,        M-JX-2);
+			Add(gs+JX,    gs_1+2,      M-JX-2);
+			Add(gs,       gs_1+JX+2,   M-JX-2);
+			Add(gs+2,     gs_1+JX,     M-JX-2);
+
+			Norm(gs,2.0,M);
+
+			Add(gs+2*JX+2,gs_1,        M-2*JX-2);
+			Add(gs,       gs_1+2*JX+2, M-2*JX-2);
+			Add(gs+2*JX,  gs_1+2,      M-2*JX-2);
+			Add(gs+2,     gs_1+2*JX,   M-2*JX-2);
+			Norm(gs,1.0/64.0,M);
+			Times(gs,gs,G1,M);
+			break;
+		case 3:
+			Add(gs,       gs_1,        M);
+
+			Add(gs+JX,    gs_1,        M-JX);
+			Add(gs,       gs_1+JX,     M-JX);
+			Add(gs+1,     gs_1,        M-1);
+			Add(gs,       gs_1+1,      M-1);
+
+			Add(gs+JX+1,  gs_1,        M-JX-1);
+			Add(gs,       gs_1+JX+1,   M-JX-1);
+			Add(gs+1,     gs_1+JX,     M-JX-1);
+			Add(gs+JX,    gs_1+1,      M-JX-1);
+
+			Add(gs+2*JX,  gs_1,        M-2*JX);
+			Add(gs,       gs_1+2*JX,   M-2*JX);
+			Add(gs+2,     gs_1,        M-2);
+			Add(gs,       gs_1+2,      M-2);
+
+			Add(gs+2*JX+1,gs_1,        M-2*JX-1);
+			Add(gs,       gs_1+2*JX+1, M-2*JX-1);
+			Add(gs+1,     gs_1+2*JX,   M-2*JX-1);
+			Add(gs+2*JX,  gs_1+1,      M-2*JX-1);
+
+			Add(gs+2,     gs_1+JX,     M-JX-2);
+			Add(gs+JX,    gs_1+2,      M-JX-2);
+			Add(gs+JX+2,  gs_1,        M-JX-2);
+			Add(gs,       gs_1+JX+2,   M-JX-2);
+
+			Add(gs+2*JX+2,gs_1,        M-2*JX-2);
+			Add(gs,       gs_1+2*JX+2, M-2*JX-2);
+			Add(gs+2,     gs_1+2*JX,   M-2*JX-2);
+			Add(gs+2*JX,  gs_1+2,      M-2*JX-2);
+
+			Norm(gs,2.0,M);
+
+			Add(gs+3*JX,  gs_1,        M-3*JX);
+			Add(gs,       gs_1+3*JX,   M-3*JX);
+			Add(gs+3,     gs_1,        M-3);
+			Add(gs,       gs_1+3,      M-3);
+
+			Add(gs+3*JX,  gs_1+1,      M-3*JX-1);
+			Add(gs+3*JX+1,gs_1,        M-3*JX-1);
+			Add(gs+1,     gs_1+3*JX,   M-3*JX-1);
+			Add(gs,       gs_1+3*JX+1, M-3*JX-1);
+
+			Add(gs+JX+3,  gs_1,        M-JX-3);
+			Add(gs+JX,    gs_1+3,      M-JX-3);
+			Add(gs,       gs_1+JX+3,   M-JX-3);
+			Add(gs+3,     gs_1+JX,     M-JX-3);
+
+			Add(gs+3*JX,  gs_1+2,      M-3*JX-2);
+			Add(gs+3*JX+2,gs_1,        M-3*JX-2);
+			Add(gs+2,     gs_1+3*JX,   M-3*JX-2);
+			Add(gs,       gs_1+3*JX+2, M-3*JX-2);
+
+			Add(gs+2*JX+3,gs_1,        M-2*JX-3);
+			Add(gs+2*JX,  gs_1+3,      M-2*JX-3);
+			Add(gs,       gs_1+2*JX+3, M-2*JX-3);
+			Add(gs+3,     gs_1+2*JX,   M-2*JX-3);
+			Norm(gs,2.0,M);
+
+			Add(gs+3*JX+3,gs_1,        M-3*JX-3);
+			Add(gs,       gs_1+3*JX+3, M-3*JX-3);
+			Add(gs+3*JX,  gs_1+3,      M-3*JX-3);
+			Add(gs+3,     gs_1+3*JX,   M-3*JX-3);
+			Norm(gs,1.0/144.0,M);
+			Times(gs,gs,G1,M);
+			break;
+		default:
+			cout <<"FJC-choices >7 not implemented " << endl;
+			break;
 	}
 }
 

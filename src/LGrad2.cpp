@@ -48,8 +48,8 @@ void LGrad2:: ComputeLambdas() {
 		}
 
 	}
-	if (fjc==2) {
-		for (int y=1-fjc; y<MY+fjc; y++) {
+	if (fjc>1) {
+		for (int y=fjc; y<MY+fjc; y++) {
 			for (int x = fjc; x < MX+fjc; x++) {
 				r = offset_first_layer+1.0*(x-fjc+1.0)/fjc;
 				rlow = r - 0.5;
@@ -206,83 +206,161 @@ if (debug) cout <<"PutProfiles in LGrad2 " << endl;
 
 void LGrad2::Side(Real *X_side, Real *X, int M) { //this procedure should use the lambda's according to 'lattice_type'-, 'lambda'- or 'Z'-info;
 if (debug) cout <<" Side in LGrad2 " << endl;
-	Real one=1.0;
 	if (ignore_sites) {
 		Cp(X_side,X,M); return;
 	}
 	Zero(X_side,M);//set_bounds(X);
 
 	if (fcc_sites) {
-		YplusisCtimesX(X_side,X,1.0/3.0*one,M);
+		YplusisCtimesX(X_side,X,1.0/3.0,M);
 		AddTimes(X_side+JX,X,fcc_lambda_1+JX,M-JX);
-		AddTimes(X_side,X+JX,fcc_lambda1,M-JX);
-		YplusisCtimesX(X_side+1,X,1.0/3.0*one,M-1);
-		YplusisCtimesX(X_side,X+1,1.0/3.0*one,M-1);
+		AddTimes(X_side,X+JX,fcc_lambda1,    M-JX);
+		YplusisCtimesX(X_side+1,X,1.0/3.0,M-1);
+		YplusisCtimesX(X_side,X+1,1.0/3.0,M-1);
 		AddTimes(X_side+JX+1,X,fcc_lambda_1+JX+1,M-JX-1);
-		AddTimes(X_side+JX,X+1,fcc_lambda_1+JX,M-JX);
-		AddTimes(X_side+1,X+JX,fcc_lambda1+1,M-JX);
-		AddTimes(X_side,X+JX+1,fcc_lambda1,M-JX-1);
-		Norm(X_side,1.0/3.0*one,M);
+		AddTimes(X_side+JX,X+1,fcc_lambda_1+JX,  M-JX-1);
+		AddTimes(X_side+1,X+JX,fcc_lambda1+1,M-JX-1);
+		AddTimes(X_side,X+JX+1,fcc_lambda1,  M-JX-1);
+		Norm(X_side,1.0/3.0,M);
 
 	} else {
-		if (fjc==1) {
-			if (lattice_type ==simple_cubic) {
-				YplusisCtimesX(X_side,X,4.0/6.0*one,M);
-				AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
-				AddTimes(X_side,X+JX,lambda1,M-JX);
-				YplusisCtimesX(X_side+1,X,1.0/6.0*one,M-1);
-				YplusisCtimesX(X_side,X+1,1.0/6.0*one,M-1);
-				Norm(X_side,4.0*one,M);
-				AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
-				AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
-				AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
-				AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
-				Norm(X_side,1.0/6.01*one,M);
-			} else {
-				YplusisCtimesX(X_side,X,2.0/4.0*one,M);
-				AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
-				AddTimes(X_side,X+JX,lambda1,M-JX);
-				YplusisCtimesX(X_side+1,X,1.0/4.0*one,M-1);
-				YplusisCtimesX(X_side,X+1,1.0/4.0*one,M-1);
-				Norm(X_side,2.0*one,M);
-				AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
-				AddTimes(X_side+JX,X+1,lambda_1+JX,M-JX);
-				AddTimes(X_side+1,X+JX,lambda1+1,M-JX);
-				AddTimes(X_side,X+JX+1,lambda1,M-JX-1);
-				Norm(X_side,3.0/12.0*one,M);
-			}
-		}
+		switch (fjc) {
+			case 1:
+				if (lattice_type ==simple_cubic) {
+					YplusisCtimesX(X_side,X,4.0/6.0,M);
+					AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
+					AddTimes(X_side,X+JX,lambda1,    M-JX);
+					YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
+					YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
+					Norm(X_side,4.0,M);
+					AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
+					AddTimes(X_side+JX,X+1,lambda_1+JX,  M-JX-1);
+					AddTimes(X_side+1,X+JX,lambda1+1,M-JX-1);
+					AddTimes(X_side,X+JX+1,lambda1,  M-JX-1);
+					Norm(X_side,1.0/6.0,M);
+				} else {
+					YplusisCtimesX(X_side,X,2.0/4.0,M);
+					AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
+					AddTimes(X_side,X+JX,lambda1,    M-JX);
+					YplusisCtimesX(X_side+1,X,1.0/4.0,M-1);
+					YplusisCtimesX(X_side,X+1,1.0/4.0,M-1);
+					Norm(X_side,2.0,M);
+					AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
+					AddTimes(X_side+JX,X+1,lambda_1+JX,  M-JX-1);
+					AddTimes(X_side+1,X+JX,lambda1+1,    M-JX-1);
+					AddTimes(X_side,X+JX+1,lambda1,      M-JX-1);
+					Norm(X_side,3.0/12.0,M);
+				}
+				break;
+			case 2:
+				AddTimes(X_side,     X,         LAMBDA+2*M,     M);
 
-		if (fjc==2) {
-			Add(X_side,X,M);
-			Add(X_side+1,X,M-1);
-			Add(X_side,X+1,M-1);
-			Norm(X_side,1.0/4.0*one,M);
-			AddTimes(X_side+JX,X,LAMBDA+M+JX,M-JX);
-			AddTimes(X_side+JX+1,X,LAMBDA+M+JX+1,M-JX-1);
-			AddTimes(X_side+JX,X+1,LAMBDA+M+JX+1,M-JX);
-			AddTimes(X_side,X+JX,LAMBDA+3*M,M-JX);
-			AddTimes(X_side,X+JX+1,LAMBDA+3*M,M-JX-1);
-			AddTimes(X_side+1,X+JX,LAMBDA+3*M,M-JX);
-			Norm(X_side,2.0*one,M);
-			AddTimes(X_side+2*JX,X,LAMBDA+2*JX,M-2*JX);
-			AddTimes(X_side,X+2*JX,LAMBDA+4*M,M-2*JX);
-			AddTimes(X_side+2*JX,X+1,LAMBDA+2*JX,M-2*JX);
-			AddTimes(X_side+2*JX+1,X,LAMBDA+2*JX+1,M-2*JX-1);
-			AddTimes(X_side+1,X+2*JX,LAMBDA+4*M+1,M-2*JX);
-			AddTimes(X_side,X+2*JX+1,LAMBDA+4*M,M-2*JX-1);
-			AddTimes(X_side+JX+2,X,LAMBDA+M+JX+2,M-JX-2);
-			AddTimes(X_side+JX,X+2,LAMBDA+M+JX,M-JX);
-			AddTimes(X_side,X+JX+2,LAMBDA+3*M,M-JX-2);
-			AddTimes(X_side+2,X+JX,LAMBDA+3*M+2,M-JX);
-			AddTimes(X_side+2,X,LAMBDA+2*M+2,M-2);
-			AddTimes(X_side,X+2,LAMBDA+2*M,M-2);
-			Norm(X_side,2.0*one,M);
-			AddTimes(X_side+2*JX+2,X,LAMBDA+2*JX+2,M-2*JX-2);
-			AddTimes(X_side,X+2*JX+2,LAMBDA+4*M,M-2*JX-2);
-			AddTimes(X_side+2*JX,X+2,LAMBDA+2*JX,M-2*JX);
-			AddTimes(X_side+2,X+2*JX,LAMBDA+4*M+2,M-2*JX);
-			Norm(X_side,1.0/16.0*one,M);
+				AddTimes(X_side+1,   X,         LAMBDA+2*M+1,   M-1);
+				AddTimes(X_side,     X+1,       LAMBDA+2*M,     M-1);
+				AddTimes(X_side+JX,  X,         LAMBDA+M+JX,    M-JX);
+				AddTimes(X_side,     X+JX,      LAMBDA+3*M,     M-JX);
+
+				AddTimes(X_side+JX+1,X,     LAMBDA+M+JX+1,M-JX-1);
+				AddTimes(X_side+JX,  X+1,   LAMBDA+M+JX+1,M-JX-1);
+				AddTimes(X_side,     X+JX+1,LAMBDA+3*M,   M-JX-1);
+				AddTimes(X_side+1,   X+JX,  LAMBDA+3*M,   M-JX-1);
+
+				AddTimes(X_side+2*JX,X,     LAMBDA+2*JX,    M-2*JX);
+				AddTimes(X_side,     X+2*JX,LAMBDA+4*M,     M-2*JX);
+
+				AddTimes(X_side+2*JX,  X+1,     LAMBDA+2*JX,  M-2*JX-1);
+				AddTimes(X_side+2*JX+1,X,       LAMBDA+2*JX+1,M-2*JX-1);
+				AddTimes(X_side+1,     X+2*JX,  LAMBDA+4*M+1, M-2*JX-1);
+				AddTimes(X_side,       X+2*JX+1,LAMBDA+4*M,   M-2*JX-1);
+
+				Norm(X_side,2.0,M);
+
+				AddTimes(X_side+2,   X,     LAMBDA+2*M+2,   M-2);
+				AddTimes(X_side,     X+2,   LAMBDA+2*M,     M-2);
+
+				AddTimes(X_side+JX+2, X,     LAMBDA+M+JX+2,  M-JX-2);
+				AddTimes(X_side+JX,   X+2,   LAMBDA+M+JX,    M-JX-2);
+				AddTimes(X_side,      X+JX+2,LAMBDA+3*M,     M-JX-2);
+				AddTimes(X_side+2,    X+JX,  LAMBDA+3*M+2,   M-JX-2);
+
+
+				AddTimes(X_side+2*JX+2, X,       LAMBDA+2*JX+2,M-2*JX-2);
+				AddTimes(X_side,        X+2*JX+2,LAMBDA+4*M,   M-2*JX-2);
+				AddTimes(X_side+2*JX,   X+2,     LAMBDA+2*JX,  M-2*JX-2);
+				AddTimes(X_side+2,      X+2*JX,  LAMBDA+4*M+2, M-2*JX-2);
+				Norm(X_side,1.0/8.0,M);
+				break;
+			case 3:
+
+				AddTimes(X_side,        X,        LAMBDA+3*M,         M);
+
+				AddTimes(X_side+1,      X,        LAMBDA+3*M+1,       M-1);
+				AddTimes(X_side,        X+1,      LAMBDA+3*M,         M-1);
+				AddTimes(X_side+JX,     X,        LAMBDA+2*M+JX,      M-JX);
+				AddTimes(X_side,        X+JX,     LAMBDA+4*M,         M-JX);
+
+				AddTimes(X_side+JX+1,   X,        LAMBDA+2*M+JX+1,    M-JX-1);
+				AddTimes(X_side,        X+JX+1,   LAMBDA+4*M,         M-JX-1);
+				AddTimes(X_side+1,      X+JX,     LAMBDA+4*M+1,       M-JX-1);
+				AddTimes(X_side+JX,     X+1,      LAMBDA+2*M+JX,      M-JX-1);
+
+				AddTimes(X_side+2*JX,   X,        LAMBDA+M+2*JX,      M-2*JX);
+				AddTimes(X_side,        X+2*JX,   LAMBDA+5*M,         M-2*JX);
+				AddTimes(X_side+2,      X,        LAMBDA+3*M+2,       M-2);
+				AddTimes(X_side,        X+2,      LAMBDA+3*M,         M-2);
+
+				AddTimes(X_side+2*JX+1, X,        LAMBDA+M+2*JX+1,    M-2*JX-1);
+				AddTimes(X_side,        X+2*JX+1, LAMBDA+5*M,         M-2*JX-1);
+				AddTimes(X_side+1,      X+2*JX,   LAMBDA+5*M+1,       M-2*JX-1);
+				AddTimes(X_side+2*JX,   X+1,      LAMBDA+M+2*JX,      M-2*JX-1);
+
+				AddTimes(X_side+JX+2,   X,        LAMBDA+2*M+JX+2,    M-JX-2);
+				AddTimes(X_side,        X+JX+2,   LAMBDA+4*M,         M-JX-2);
+				AddTimes(X_side+2,      X+JX,     LAMBDA+4*M+2,       M-JX-2);
+				AddTimes(X_side+JX,     X+2,      LAMBDA+2*M+JX,      M-JX-2);
+
+				AddTimes(X_side+2*JX+2, X,        LAMBDA+1*M+2*JX+2,  M-2*JX-2);
+				AddTimes(X_side,        X+2*JX+2, LAMBDA+5*M,         M-2*JX-2);
+				AddTimes(X_side+2,      X+2*JX,   LAMBDA+5*M+2,       M-2*JX-2);
+				AddTimes(X_side+2*JX,   X+2,      LAMBDA+1*M+2*JX,    M-2*JX-2);
+
+				AddTimes(X_side+3*JX,   X,        LAMBDA+3*JX,      M-3*JX);
+				AddTimes(X_side,        X+3*JX,   LAMBDA+6*M,       M-3*JX);
+
+				AddTimes(X_side+3*JX,   X+1,      LAMBDA+3*JX,      M-3*JX-1);
+				AddTimes(X_side+3*JX+1, X,        LAMBDA+3*JX+1,    M-3*JX-1);
+				AddTimes(X_side+1,      X+3*JX,   LAMBDA+6*M+1,     M-3*JX-1);
+				AddTimes(X_side,        X+3*JX+1, LAMBDA+6*M,       M-3*JX-1);
+
+				AddTimes(X_side+3*JX,   X+2,      LAMBDA+3*JX,      M-3*JX-2);
+				AddTimes(X_side+3*JX+2, X,        LAMBDA+3*JX+2,    M-3*JX-2);
+				AddTimes(X_side+2,      X+3*JX,   LAMBDA+6*M+2,     M-3*JX-2);
+				AddTimes(X_side,        X+3*JX+2, LAMBDA+6*M,       M-3*JX-2);
+
+				Norm(X_side,2.0,M);
+
+				AddTimes(X_side+3,      X,        LAMBDA+3*M+3,     M-3);
+				AddTimes(X_side,        X+3,      LAMBDA+3*M,       M-3);
+
+				AddTimes(X_side+JX+3,   X,        LAMBDA+2*M+JX+3,  M-JX-3);
+				AddTimes(X_side+JX,     X+3,      LAMBDA+2*M+JX,    M-JX-3);
+				AddTimes(X_side,        X+JX+3,   LAMBDA+4*M,       M-JX-3);
+				AddTimes(X_side+3,      X+JX,     LAMBDA+4*M+3,     M-JX-3);
+
+				AddTimes(X_side+2*JX+3, X,        LAMBDA+1*M+2*JX+3,M-2*JX-3);
+				AddTimes(X_side+2*JX,   X+3,      LAMBDA+1*M+2*JX,  M-2*JX-3);
+				AddTimes(X_side,        X+2*JX+3, LAMBDA+5*M,       M-2*JX-3);
+				AddTimes(X_side+3,      X+2*JX,   LAMBDA+5*M+3,     M-2*JX-3);
+
+				AddTimes(X_side+3*JX+3, X,        LAMBDA+3*JX+3,    M-3*JX-3);
+				AddTimes(X_side,        X+3*JX+3, LAMBDA+6*M,       M-3*JX-3);
+				AddTimes(X_side+3*JX,   X+3,      LAMBDA+3*JX,      M-3*JX-3);
+				AddTimes(X_side+3,      X+3*JX,   LAMBDA+6*M+3,     M-3*JX-3);
+
+				Norm(X_side,1.0/10.0,M);
+				break;
+			default:
+				break;
 		}
 	}
 }
@@ -571,71 +649,149 @@ void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 
 void LGrad2::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
 if (debug) cout <<" propagate in LGrad2 " << endl;
-	Real one=1.0;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
-
 	Zero(gs,M); set_bounds(gs_1);
-	if (fjc==1) {
-		if (lattice_type==simple_cubic) {
-			YplusisCtimesX(gs,gs_1,4.0/6.0*one,M);
-			AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
-			AddTimes(gs,gs_1+JX,lambda1,M-JX);
-			YplusisCtimesX(gs+1,gs_1,1.0/6.0*one,M-1);
-			YplusisCtimesX(gs,gs_1+1,1.0/6.0*one,M-1);
-			Norm(gs,4.0*one,M);
-			AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
-			AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
-			AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
-			AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
-			Norm(gs,1.0/6.0*one,M);
-			Times(gs,gs,G1,M);
-		} else { //9 point stencil; hexagonal
+	switch (fjc) {
+		case 1:
+			if (lattice_type==simple_cubic) {
+				YplusisCtimesX(gs,gs_1,4.0/6.0,M);
+				AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
+				AddTimes(gs,gs_1+JX,lambda1,    M-JX);
+				YplusisCtimesX(gs+1,gs_1,1.0/6.0,M-1);
+				YplusisCtimesX(gs,gs_1+1,1.0/6.0,M-1);
+				Norm(gs,4.0,M);
+				AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
+				AddTimes(gs+JX,gs_1+1,lambda_1+JX,  M-JX-1);
+				AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX-1);
+				AddTimes(gs,gs_1+JX+1,lambda1,  M-JX-1);
+				Norm(gs,1.0/6.0,M);
+				Times(gs,gs,G1,M);
+			} else { //9 point stencil; hexagonal
 
-			YplusisCtimesX(gs,gs_1,0.5,M);
-			AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
-			AddTimes(gs,gs_1+JX,lambda1,M-JX);
-			YplusisCtimesX(gs+1,gs_1,0.25,M-1);
-			YplusisCtimesX(gs,gs_1+1,0.25,M-1);
+				YplusisCtimesX(gs,gs_1,0.5,M);
+				AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
+				AddTimes(gs,gs_1+JX,lambda1,    M-JX);
+				YplusisCtimesX(gs+1,gs_1,0.25,M-1);
+				YplusisCtimesX(gs,gs_1+1,0.25,M-1);
+				Norm(gs,2.0,M);
+				AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
+				AddTimes(gs+JX,gs_1+1,lambda_1+JX,	M-JX-1);
+				AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX-1);
+				AddTimes(gs,gs_1+JX+1,lambda1,  M-JX-1);
+				Norm(gs,0.25,M);
+				Times(gs,gs,G1,M);
+			}
+			break;
+		case 2:  //25 point stencil
+			AddTimes(gs,     gs_1,         LAMBDA+2*M,     M);
+
+			AddTimes(gs+1,   gs_1,         LAMBDA+2*M+1,   M-1);
+			AddTimes(gs,     gs_1+1,       LAMBDA+2*M,     M-1);
+			AddTimes(gs+JX,  gs_1,         LAMBDA+M+JX,    M-JX);
+			AddTimes(gs,     gs_1+JX,      LAMBDA+3*M,     M-JX);
+
+			AddTimes(gs+JX+1,gs_1,         LAMBDA+M+JX+1,  M-JX-1);
+			AddTimes(gs+JX,  gs_1+1,       LAMBDA+M+JX,    M-JX-1);
+			AddTimes(gs,     gs_1+JX+1,    LAMBDA+3*M,     M-JX-1);
+			AddTimes(gs+1,   gs_1+JX,      LAMBDA+3*M+1,   M-JX-1);
+
+			AddTimes(gs+2*JX,  gs_1,       LAMBDA+2*JX,    M-2*JX);
+			AddTimes(gs,       gs_1+2*JX,  LAMBDA+4*M,     M-2*JX);
+
+			AddTimes(gs+2*JX,  gs_1+1,     LAMBDA+2*JX,    M-2*JX-1);
+			AddTimes(gs+2*JX+1,gs_1,       LAMBDA+2*JX+1,  M-2*JX-1);
+			AddTimes(gs+1,     gs_1+2*JX,  LAMBDA+4*M+1,   M-2*JX-1);
+			AddTimes(gs,       gs_1+2*JX+1,LAMBDA+4*M,     M-2*JX-1);
+
 			Norm(gs,2.0,M);
-			AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
-			AddTimes(gs+JX,gs_1+1,lambda_1+JX,M-JX);
-			AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX);
-			AddTimes(gs,gs_1+JX+1,lambda1,M-JX-1);
-			Norm(gs,0.25,M);
+			AddTimes(gs+2,     gs_1,       LAMBDA+2*M+2,   M-2);
+			AddTimes(gs,       gs_1+2,     LAMBDA+2*M,     M-2);
+
+			AddTimes(gs+JX+2,  gs_1,       LAMBDA+1*M+JX+2,M-JX-2);
+			AddTimes(gs+JX,    gs_1+2,     LAMBDA+1*M+JX,  M-JX-2);
+			AddTimes(gs,       gs_1+JX+2,  LAMBDA+3*M,     M-JX-2);
+			AddTimes(gs+2,     gs_1+JX,    LAMBDA+3*M+2,   M-JX-2);
+
+			AddTimes(gs+2*JX+2,gs_1,       LAMBDA+2*JX+2,  M-2*JX-2);
+			AddTimes(gs,       gs_1+2*JX+2,LAMBDA+4*M,     M-2*JX-2);
+			AddTimes(gs+2*JX,  gs_1+2,     LAMBDA+2*JX,    M-2*JX-2);
+			AddTimes(gs+2,     gs_1+2*JX,  LAMBDA+4*M+2,   M-2*JX-2);
+			Norm(gs,1.0/8.0,M);
 			Times(gs,gs,G1,M);
-		}
-	}
-	if (fjc==2) { //25 point stencil only fjc==2 implemented....
-		Add(gs,gs_1,M);
-		Add(gs+1,gs_1,M-1);
-		Add(gs,gs_1+1,M-1);
-		Norm(gs,1.0/4.0,M);
-		AddTimes(gs+JX,gs_1,LAMBDA+M+JX,M-JX);
-		AddTimes(gs+JX+1,gs_1,LAMBDA+M+JX+1,M-JX-1);
-		AddTimes(gs+JX,gs_1+1,LAMBDA+M+JX,M-JX);
-		AddTimes(gs,gs_1+JX,LAMBDA+3*M,M-JX);
-		AddTimes(gs,gs_1+JX+1,LAMBDA+3*M,M-JX-1);
-		AddTimes(gs+1,gs_1+JX,LAMBDA+3*M+1,M-JX);
-		Norm(gs,2.0,M);
-		AddTimes(gs+2*JX,gs_1,LAMBDA+2*JX,M-2*JX);
-		AddTimes(gs,gs_1+2*JX,LAMBDA+4*M,M-2*JX);
-		AddTimes(gs+2*JX,gs_1+1,LAMBDA+2*JX,M-2*JX);
-		AddTimes(gs+2*JX+1,gs_1,LAMBDA+2*JX+1,M-2*JX-1);
-		AddTimes(gs+1,gs_1+2*JX,LAMBDA+4*M+1,M-2*JX);
-		AddTimes(gs,gs_1+2*JX+1,LAMBDA+4*M,M-2*JX-1);
-		AddTimes(gs+JX+2,gs_1,LAMBDA+1*M+JX+2,M-JX-2);
-		AddTimes(gs+JX,gs_1+2,LAMBDA+1*M+JX,M-JX);
-		AddTimes(gs,gs_1+JX+2,LAMBDA+3*M,M-JX-2);
-		AddTimes(gs+2,gs_1+JX,LAMBDA+3*M+2,M-JX);
-		AddTimes(gs+2,gs_1,LAMBDA+2*M+2,M-2);
-		AddTimes(gs,gs_1+2,LAMBDA+2*M,M-2);
-		Norm(gs,2.0,M);
-		AddTimes(gs+2*JX+2,gs_1,LAMBDA+2*JX+2,M-2*JX-2);
-		AddTimes(gs,gs_1+2*JX+2,LAMBDA+4*M,M-2*JX-2);
-		AddTimes(gs+2*JX,gs_1+2,LAMBDA+2*JX,M-2*JX);
-		AddTimes(gs+2,gs_1+2*JX,LAMBDA+4*M+2,M-2*JX);
-		Norm(gs,1.0/16.0,M);
-		Times(gs,gs,G1,M);
+			break;
+		case 3:
+
+			AddTimes(gs,        gs_1,        LAMBDA+3*M,         M);
+
+			AddTimes(gs+1,      gs_1,        LAMBDA+3*M+1,       M-1);
+			AddTimes(gs,        gs_1+1,      LAMBDA+3*M,         M-1);
+			AddTimes(gs+JX,     gs_1,        LAMBDA+2*M+JX,      M-JX);
+			AddTimes(gs,        gs_1+JX,     LAMBDA+4*M,         M-JX);
+
+			AddTimes(gs+JX+1,   gs_1,        LAMBDA+2*M+JX+1,    M-JX-1);
+			AddTimes(gs,        gs_1+JX+1,   LAMBDA+4*M,         M-JX-1);
+			AddTimes(gs+1,      gs_1+JX,     LAMBDA+4*M+1,       M-JX-1);
+			AddTimes(gs+JX,     gs_1+1,      LAMBDA+2*M+JX,      M-JX-1);
+
+			AddTimes(gs+2*JX,   gs_1,        LAMBDA+M+2*JX,      M-2*JX);
+			AddTimes(gs,        gs_1+2*JX,   LAMBDA+5*M,         M-2*JX);
+			AddTimes(gs+2,      gs_1,        LAMBDA+3*M+2,       M-2);
+			AddTimes(gs,        gs_1+2,      LAMBDA+3*M,         M-2);
+
+			AddTimes(gs+2*JX+1, gs_1,        LAMBDA+M+2*JX+1,    M-2*JX-1);
+			AddTimes(gs,        gs_1+2*JX+1, LAMBDA+5*M,         M-2*JX-1);
+			AddTimes(gs+1,      gs_1+2*JX,   LAMBDA+5*M+1,       M-2*JX-1);
+			AddTimes(gs+2*JX,   gs_1+1,      LAMBDA+M+2*JX,      M-2*JX-1);
+
+			AddTimes(gs+JX+2,   gs_1,        LAMBDA+2*M+JX+2,    M-JX-2);
+			AddTimes(gs,        gs_1+JX+2,   LAMBDA+4*M,         M-JX-2);
+			AddTimes(gs+2,      gs_1+JX,     LAMBDA+4*M+2,       M-JX-2);
+			AddTimes(gs+JX,     gs_1+2,      LAMBDA+2*M+JX,      M-JX-2);
+
+			AddTimes(gs+2*JX+2, gs_1,        LAMBDA+1*M+2*JX+2,  M-2*JX-2);
+			AddTimes(gs,        gs_1+2*JX+2, LAMBDA+5*M,         M-2*JX-2);
+			AddTimes(gs+2,      gs_1+2*JX,   LAMBDA+5*M+2,       M-2*JX-2);
+			AddTimes(gs+2*JX,   gs_1+2,      LAMBDA+1*M+2*JX,    M-2*JX-2);
+
+			AddTimes(gs+3*JX,   gs_1,        LAMBDA+3*JX,      M-3*JX);
+			AddTimes(gs,        gs_1+3*JX,   LAMBDA+6*M,       M-3*JX);
+
+			AddTimes(gs+3*JX,   gs_1+1,      LAMBDA+3*JX,      M-3*JX-1);
+			AddTimes(gs+3*JX+1, gs_1,        LAMBDA+3*JX+1,    M-3*JX-1);
+			AddTimes(gs+1,      gs_1+3*JX,   LAMBDA+6*M+1,     M-3*JX-1);
+			AddTimes(gs,        gs_1+3*JX+1, LAMBDA+6*M,       M-3*JX-1);
+
+			AddTimes(gs+3*JX,   gs_1+2,      LAMBDA+3*JX,      M-3*JX-2);
+			AddTimes(gs+3*JX+2, gs_1,        LAMBDA+3*JX+2,    M-3*JX-2);
+			AddTimes(gs+2,      gs_1+3*JX,   LAMBDA+6*M+2,     M-3*JX-2);
+			AddTimes(gs,        gs_1+3*JX+2, LAMBDA+6*M,       M-3*JX-2);
+
+			Norm(gs,2.0,M);
+
+			AddTimes(gs+3,      gs_1,        LAMBDA+3*M+3,     M-3);
+			AddTimes(gs,        gs_1+3,      LAMBDA+3*M,       M-3);
+
+			AddTimes(gs+JX+3,   gs_1,        LAMBDA+2*M+JX+3,  M-JX-3);
+			AddTimes(gs+JX,     gs_1+3,      LAMBDA+2*M+JX,    M-JX-3);
+			AddTimes(gs,        gs_1+JX+3,   LAMBDA+4*M,       M-JX-3);
+			AddTimes(gs+3,      gs_1+JX,     LAMBDA+4*M+3,     M-JX-3);
+
+			AddTimes(gs+2*JX+3, gs_1,        LAMBDA+1*M+2*JX+3,M-2*JX-3);
+			AddTimes(gs+2*JX,   gs_1+3,      LAMBDA+1*M+2*JX,  M-2*JX-3);
+			AddTimes(gs,        gs_1+2*JX+3, LAMBDA+5*M,       M-2*JX-3);
+			AddTimes(gs+3,      gs_1+2*JX,   LAMBDA+5*M+3,     M-2*JX-3);
+
+
+			AddTimes(gs+3*JX+3, gs_1,        LAMBDA+3*JX+3,    M-3*JX-3);
+			AddTimes(gs,        gs_1+3*JX+3, LAMBDA+6*M,       M-3*JX-3);
+			AddTimes(gs+3*JX,   gs_1+3,      LAMBDA+3*JX,      M-3*JX-3);
+			AddTimes(gs+3,      gs_1+3*JX,   LAMBDA+6*M+3,     M-3*JX-3);
+
+			Norm(gs,1.0/10.0,M);
+			Times(gs,gs,G1,M);
+			break;
+		default:
+			break;
 	}
 }
 
@@ -1068,14 +1224,14 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 			X[(MX+1)*JX+y]=X[BXM*JX+y];
 		}
 		//corners....
-		for (x=0; x<1; x++) {
-			X[x*JX+0] = X[x*JX+BY1];
-			X[x*JX+MY+1]=X[x*JX+BYM];
-		}
-		for (x=MX+1; x<MX+2; x++) {
-			X[x*JX+0] = X[x*JX+BY1];
-			X[x*JX+MY+1]=X[x*JX+BYM];
-		}
+		//for (x=0; x<1; x++) {
+			X[0] = X[BY1];
+			X[MY+1]=X[BYM];
+		//}
+		//for (x=MX+1; x<MX+2; x++) {
+			X[(MX+1)*JX+0] = X[(MX+1)*JX+BY1];
+			X[(MX+1)*JX+MY+1]=X[(MX+1)*JX+BYM];
+		//}
 	} else {
 		for (x=fjc; x<MX+fjc; x++) {
 			for (k=0; k<fjc; k++) {
@@ -1083,11 +1239,21 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 				X[x*JX+MY+fjc+k]=X[x*JX+B_YM[k]];
 			}
 		}
-		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...
+		for (y=fjc; y<MY+fjc; y++) {
 			for (k=0; k<fjc; k++) {
 				X[k*JX+y]=X[B_X1[k]*JX+y];
 				X[(MX+fjc+k)*JX+y]=X[B_XM[k]*JX+y];
 			}
+		}
+		for (int k=0; k<fjc; k++) for (int m=0; m<fjc; m++)  {
+			X[k*JX         +m      ]=X[k*JX+B_Y1[m]];
+			X[(MX+fjc+k)*JX+m      ]=X[(MX+fjc+k)*JX+B_Y1[m]];
+			X[k*JX         +(MY+fjc+m)]=X[k*JX+B_YM[m]];
+			X[(MX+fjc+k)*JX+(MY+fjc+m)]=X[(MX+fjc+k)*JX+B_YM[m]];
+			//X[k*JX         +m      ]=X[B_X1[k]*JX+B_Y1[m]];
+			//X[(MX+fjc+k)*JX+m      ]=X[B_XM[k]*JX+B_Y1[m]];
+			//X[k*JX         +(MY+fjc+m)]=X[B_X1[k]*JX+B_YM[m]];
+			//X[(MX+fjc+k)*JX+(MY+fjc+m)]=X[B_XM[k]*JX+B_YM[m]];
 		}
 	}
 }
@@ -1174,14 +1340,14 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 			X[(MX+1)*JX+y]=X[BXM*JX+y];
 		}
 		//corners
-		for (x=0; x<1; x++) {
-			X[x*JX+0] = X[x*JX+BY1];
-			X[x*JX+MY+1]=X[x*JX+BYM];
-		}
-		for (x=MX+1; x<MX+2; x++) {
-			X[x*JX+0] = X[x*JX+BY1];
-			X[x*JX+MY+1]=X[x*JX+BYM];
-		}
+		//for (x=0; x<1; x++) {
+			X[0] = X[BY1];
+			X[MY+1]=X[BYM];
+		//}
+		//for (x=MX+1; x<MX+2; x++) {
+			X[(MX+1)*JX+0] = X[(MX+1)*JX+BY1];
+			X[(MX+1)*JX+MY+1]=X[(MX+1)*JX+BYM];
+		//}
 	} else {
 		for (x=fjc; x<MX+fjc; x++) {
 			for (k=0; k<fjc; k++) {
@@ -1189,11 +1355,17 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 				X[x*JX+MY+fjc+k]=X[x*JX+B_YM[k]];
 			}
 		}
-		for (y=0; y<MY+2*fjc; y++) { //this will also set the corners...fingers crossed ; this might go wrong when reflecting and periodic b.c. are mixed...
+		for (y=fjc; y<MY+fjc; y++) { //this will also set the corners...fingers crossed ; this might go wrong when reflecting and periodic b.c. are mixed...
 			for (k=0; k<fjc; k++) {
 				X[k*JX+y]=X[B_X1[k]*JX+y];
 				X[(MX+fjc+k)*JX+y]=X[B_XM[k]*JX+y];
 			}
+		}
+		for (int k=0; k<fjc; k++) for (int m=0; m<fjc; m++)  {
+			X[k*JX         +m      ]   =X[B_X1[k]*JX+B_Y1[m]];
+			X[(MX+fjc+k)*JX+m      ]   =X[B_XM[k]*JX+B_Y1[m]];
+			X[k*JX         +(MY+fjc+m)]=X[B_X1[k]*JX+B_YM[m]];
+			X[(MX+fjc+k)*JX+(MY+fjc+m)]=X[B_XM[k]*JX+B_YM[m]];
 		}
 	}
 }

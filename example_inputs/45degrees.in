@@ -1,0 +1,83 @@
+lat : cyl : n_layers_x : 80
+lat : cyl : n_layers_y : 50
+lat : cyl : gradients : 2
+lat : cyl : geometry : cylindrical
+lat : cyl : lattice_type :hexagonal
+lat : cyl : FJC_choices : 5
+lat : cyl : lowerbound_y : surface
+
+mon : S : freedom : frozen
+//mon : S : frozen_range : 1,1;80,3
+mon : S : frozen_range : lowerbound_y
+
+mon : L : freedom : pinned
+//mon : L : pinned_range : 1,2;33,33
+mon : L : pinned_range : 1,1;33,30
+
+
+mon : V : freedom : free
+mon : S : chi_L : -0.53
+mon : S : chi_V : 0
+mon : L : chi_V : 0.9
+
+mol : L : composition : @dend(L,(L)1,4)
+mol : L : freedom : restricted
+mol : L : theta : 200000
+
+mol : V : composition : (V)12
+mol : V : freedom : solvent
+
+newton : isaac : method : DIIS
+newton : isaac : m : 4
+newton : isaac : deltamax : 0.05
+newton : isaac : iterationlimit : 10000
+newton : isaac : i_info : 10
+newton : isaac : tolerance : 1e-2
+
+start
+lat : cyl : FJC_choices : 7
+start
+mon : L : freedom : free
+output : vtk : append : false
+vtk : mon : L : phi
+newton : isaac : deltamax : 0.05
+newton : isaac : iterationlimit : 10000
+newton : isaac : tolerance : 1e-7
+//newton : isaac : method : DIIS
+//newton : isaac : m : 4
+newton : isaac : i_info: 10
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+
+mon : S : chi_L : -0.85
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+start
+
+
+
+
+

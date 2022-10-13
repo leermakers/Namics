@@ -93,7 +93,7 @@ void System:: DeAllocateMemory(void){
   }
 #else
   free(phitot);
-  if (CalculationType=="steady_state") free(B_phitot); 
+  if (CalculationType=="steady_state") free(B_phitot);
   free(TEMP);
   free(KSAM);
   free(FILL);
@@ -555,7 +555,7 @@ bool System::CheckInput(int start_)
 
 			cout <<"The program is compiled for the use of 'long double' while 'overflow_protection' is not requested for;" << endl;
 			cout <<"1. Turn on 'overflow_protection'." << endl;
-			cout <<"2. Compile progrem without the #define 'LongReal' in namics.h. " << endl; 
+			cout <<"2. Compile progrem without the #define 'LongReal' in namics.h. " << endl;
 		}
 #else
 		if (GetValue("overflow_protection").size() > 0) {
@@ -565,8 +565,8 @@ bool System::CheckInput(int start_)
 				cout<<"2. Do not request 'overflow_protection'." << endl;
 			}
 		}
-		
-#endif		
+
+#endif
 
 		GPU = In[0]->Get_bool(GetValue("GPU"), false);
 		if (GPU)
@@ -863,7 +863,7 @@ bool System::CheckInput(int start_)
 							if (sub[1] == Mol[i]->name)
 								DeltaMolList.push_back(i);
 						}
-						if (DeltaMolList.size() !=2) {success = false; 
+						if (DeltaMolList.size() !=2) {success = false;
 						cout << " In delta_molecules, two molecule names were expected but not found " << endl; return 0; }
 						if (DeltaMolList[0] == DeltaMolList[1])
 						{
@@ -1220,7 +1220,7 @@ bool System::IsUnique(int Segnr_, int Statenr_)
 {
 	if (debug)
 		cout << "System::IsUnique: Segnr = " << Segnr_ << " Statenr = " << Statenr_ << endl;
-	if (CalculationType=="steady_state") return true; 
+	if (CalculationType=="steady_state") return true;
 	bool is_unique = true;
 	bool is_equal = true;
 	if (In[0]->MesodynList.size() > 0)
@@ -1581,10 +1581,10 @@ void System::PushOutput()
 		Sprod += Mol[i]->J*Mol[i]->Delta_MU;
 	}
 	push("Sprod",Sprod);
-        
+
 	if (charged)
 	{
-		push("Dpsi",psi[Lat[0]->M-1]-psi[0]); 
+		push("Dpsi",psi[Lat[0]->M-1]-psi[0]);
 		s = "profile;3";
 		push("psi", s);
 		s = "profile;4";
@@ -2176,7 +2176,7 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 	int state_length = In[0]->StateList.size();
 	int itstatelistlength=ItStateList.size();
 
-	if (itstatelistlength>0) cout <<"currently, internal states of segments incompatible with steady state " << endl; 
+	if (itstatelistlength>0) cout <<"currently, internal states of segments incompatible with steady state " << endl;
 //for (int l=0; l<1; l++) {
 	Cp(g,x,iv);
 	ComputePhis(x,iterations==0,residual);
@@ -2222,32 +2222,32 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 		}
 	}
 	for (i=0; i<itmonlistlength; i++) Cp(Seg[ItMonList[i]]->ALPHA,g+i*M,M);
-	
+
 	Zero(g,iv);
 	Real Jtot=0;
 	Segment* Seg0=Seg[ItMonList[0]];
 	g[1]=Seg0->phi[0]/Seg0->phi[1]-1.0;
-	for (int z=2; z<M-2; z++) { 
-		g[z]=1.0/phitot[z]-1.0; 
+	for (int z=2; z<M-2; z++) {
+		g[z]=1.0/phitot[z]-1.0;
 		//Seg0->dphidt[z]=0;
 	}
 	g[M-2]=Seg0->phi[M-1]/Seg0->phi[M-2]-1.0;
-	for (int i =1 ; i<itmonlistlength; i++) { 
+	for (int i =1 ; i<itmonlistlength; i++) {
 		Segment* Segi=Seg[ItMonList[i]];
 		Segi->J=0;
 		for (int k =0; k<itmonlistlength; k++) {
 			Segment* Segk=Seg[ItMonList[k]];
-			if (i !=k) Segi->J += Lat[0]->DphiDt(g+i*M,B_phitot,Segi->phi,Segk->phi,Segi->ALPHA,Segk->ALPHA,Segi->B,Segk->B); 
+			if (i !=k) Segi->J += Lat[0]->DphiDt(g+i*M,B_phitot,Segi->phi,Segk->phi,Segi->ALPHA,Segk->ALPHA,Segi->B,Segk->B);
 		}
 		Jtot +=Segi->J;
-		//if (residual < 0.01) 
+		//if (residual < 0.01)
 		//for (int z=2; z<M-2; z++) {
 		//	Segi->dphidt[z]=g[i*M+z]/2.0;
 		//	Seg0->dphidt[z]-=g[i*M+z]/2.0;
 		//}
 	}
 	Seg[ItMonList[0]]->J=-Jtot;
-	
+
 //
 //
 	//for (i=0; i<itstatelistlength; i++) Add(alpha,g+(itmonlistlength+i)*M,M);
@@ -2634,16 +2634,16 @@ for (int j=0; j<n_mol; j++) {
 			Mol[neutralizer]->phitot[0]=-Qtot0/Mol[neutralizer]->Charge(); PhiTot0 +=Mol[neutralizer]->phitot[0];
 			Mol[neutralizer]->phitot[M-1]=-QtotM/Mol[neutralizer]->Charge(); PhiTotM +=Mol[neutralizer]->phitot[M-1];
 		}
-		
+
 		Mol[solvent]->phitot[0]=1.0-PhiTot0;
 		Mol[solvent]->phitot[M-1]=1.0-PhiTotM;
 
 		for (int i=0; i<n_seg; i++) {
-			
+
 			if (Seg[i]->used_in_mol_nr==solvent) {
 				Seg[i]->phi[0]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[0];
 				Seg[i]->phi[M-1]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[M-1];
-			} //else 
+			} //else
 			if (Seg[i]->used_in_mol_nr==neutralizer) {
 				Seg[i]->phi[0]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[0];
 				Seg[i]->phi[M-1]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[M-1];
@@ -2651,8 +2651,8 @@ for (int j=0; j<n_mol; j++) {
 			//	Seg[i]->phi[0]=Mol[Seg[i]->used_in_mol_nr]->fraction(i)*Mol[Seg[i]->used_in_mol_nr]->phitot[1];
 			//	Seg[i]->phi[M-1]=Mol[Seg[i]->used_in_mol_nr]->fraction(i)*Mol[Seg[i]->used_in_mol_nr]->phitot[M-2];
 			//}
-//cout <<"Seg " << Seg[i]->name << "phi0 = " << Seg[i]->phi[0] << endl; 
-//cout <<"Seg " << Seg[i]->name << "phiM = " << Seg[i]->phi[M-1] << endl; 
+//cout <<"Seg " << Seg[i]->name << "phi0 = " << Seg[i]->phi[0] << endl;
+//cout <<"Seg " << Seg[i]->name << "phiM = " << Seg[i]->phi[M-1] << endl;
 		}
 
 /*
@@ -2664,11 +2664,11 @@ for (int j=0; j<n_mol; j++) {
 		}
 		cout <<"phi in layer 0 is " << PhiTot0 << endl;
 		cout <<"phi in layer M is " << PhiTotM << endl;
-*/		
+*/
 		int it_mon_length=ItMonList.size();
 		Zero(B_phitot,M);
-		for (int i=0; i<it_mon_length; i++)  
-			YplusisCtimesX(B_phitot,Seg[ItMonList[i]]->phi,Seg[ItMonList[i]]->B,M); 
+		for (int i=0; i<it_mon_length; i++)
+			YplusisCtimesX(B_phitot,Seg[ItMonList[i]]->phi,Seg[ItMonList[i]]->B,M);
 		//Times(B_phitot,B_phitot,phitot,M);
 		//Cp(B_phitot,phitot,M);
 	}
@@ -2703,13 +2703,13 @@ bool System::CheckResults(bool e_info_)
 	if (CalculationType=="steady_state") {
 		CreateMu(Lat[0]->M-2); //assuming 1 gradient systems....
 		for (int i=0; i<n_mol; i++) {
-			Mol[i]->Delta_MU=Mol[i]->Mu; 
+			Mol[i]->Delta_MU=Mol[i]->Mu;
 //cout <<"Mol " << Mol[i]->name << " mu M : " << Mol[i]->Mu << endl;
 		}
 		CreateMu(1);
 		for (int i=0; i<n_mol; i++) {
 			Mol[i]->Delta_MU-=Mol[i]->Mu;
-		       	
+
 //cout <<"Mol " << Mol[i]->name << " mu 0 : " << Mol[i]->Mu << " and Dmu : " << Mol[i]->Delta_MU << endl;
 		}
 
@@ -2722,8 +2722,8 @@ bool System::CheckResults(bool e_info_)
 	{
 		cout << "free energy                 = " << FreeEnergy << endl;
 		cout << "grand potential             = " << GrandPotential << endl;
-	} else { 
-		if (CalculationType=="steady_state") 
+	} else {
+		if (CalculationType=="steady_state")
 		cout << "free energy                 = " << FreeEnergy << endl;
 	}
 	Real n_times_mu = 0;
@@ -3265,7 +3265,7 @@ bool System::CreateMu(int pos)
 			constant += phibulkB / NB;
 		}
 		Mu = Mu - NA * constant;
-		if (Mol[solvent]->MolType==water && pos !=M) cout <<"for Moltype==water chemical potential evaluation must be checked in steady state" << endl; 
+		if (Mol[solvent]->MolType==water && pos !=M) cout <<"for Moltype==water chemical potential evaluation must be checked in steady state" << endl;
 		if (Mol[solvent]->MolType==water) Mu+= NA*(Mol[solvent]->phib1/(1-Mol[solvent]->Kw*Mol[solvent]->phib1)-Mol[solvent]->phibulk);
 		//Real theta;
 		Real phibulkA;

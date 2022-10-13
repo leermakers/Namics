@@ -647,7 +647,7 @@ void LGrad2::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	}
 }
 
-void LGrad2::propagate(Real *G, Real *G1, int s_from, int s_to,int M) { //this procedure should function on simple cubic lattice.
+void LGrad2::propagate(Real *G, Real *G1, int s_from, int s_to,int M) {
 if (debug) cout <<" propagate in LGrad2 " << endl;
 	Real *gs = G+M*(s_to), *gs_1 = G+M*(s_from);
 	Zero(gs,M); set_bounds(gs_1);
@@ -695,11 +695,11 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 			AddTimes(gs,     gs_1+JX+1,    LAMBDA+3*M,     M-JX-1);
 			AddTimes(gs+1,   gs_1+JX,      LAMBDA+3*M+1,   M-JX-1);
 
-			AddTimes(gs+2*JX,  gs_1,       LAMBDA+2*JX,    M-2*JX);
+			AddTimes(gs+2*JX,  gs_1,       LAMBDA+  2*JX,  M-2*JX);
 			AddTimes(gs,       gs_1+2*JX,  LAMBDA+4*M,     M-2*JX);
 
-			AddTimes(gs+2*JX,  gs_1+1,     LAMBDA+2*JX,    M-2*JX-1);
-			AddTimes(gs+2*JX+1,gs_1,       LAMBDA+2*JX+1,  M-2*JX-1);
+			AddTimes(gs+2*JX,  gs_1+1,     LAMBDA+  2*JX,  M-2*JX-1);
+			AddTimes(gs+2*JX+1,gs_1,       LAMBDA+  2*JX+1,M-2*JX-1);
 			AddTimes(gs+1,     gs_1+2*JX,  LAMBDA+4*M+1,   M-2*JX-1);
 			AddTimes(gs,       gs_1+2*JX+1,LAMBDA+4*M,     M-2*JX-1);
 
@@ -712,9 +712,9 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 			AddTimes(gs,       gs_1+JX+2,  LAMBDA+3*M,     M-JX-2);
 			AddTimes(gs+2,     gs_1+JX,    LAMBDA+3*M+2,   M-JX-2);
 
-			AddTimes(gs+2*JX+2,gs_1,       LAMBDA+2*JX+2,  M-2*JX-2);
+			AddTimes(gs+2*JX+2,gs_1,       LAMBDA+   2*JX+2,M-2*JX-2);
 			AddTimes(gs,       gs_1+2*JX+2,LAMBDA+4*M,     M-2*JX-2);
-			AddTimes(gs+2*JX,  gs_1+2,     LAMBDA+2*JX,    M-2*JX-2);
+			AddTimes(gs+2*JX,  gs_1+2,     LAMBDA+   2*JX, M-2*JX-2);
 			AddTimes(gs+2,     gs_1+2*JX,  LAMBDA+4*M+2,   M-2*JX-2);
 			Norm(gs,1.0/8.0,M);
 			Times(gs,gs,G1,M);
@@ -753,16 +753,16 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 			AddTimes(gs+2,      gs_1+2*JX,   LAMBDA+5*M+2,       M-2*JX-2);
 			AddTimes(gs+2*JX,   gs_1+2,      LAMBDA+1*M+2*JX,    M-2*JX-2);
 
-			AddTimes(gs+3*JX,   gs_1,        LAMBDA+3*JX,      M-3*JX);
+			AddTimes(gs+3*JX,   gs_1,        LAMBDA+   3*JX,   M-3*JX);
 			AddTimes(gs,        gs_1+3*JX,   LAMBDA+6*M,       M-3*JX);
 
-			AddTimes(gs+3*JX,   gs_1+1,      LAMBDA+3*JX,      M-3*JX-1);
-			AddTimes(gs+3*JX+1, gs_1,        LAMBDA+3*JX+1,    M-3*JX-1);
+			AddTimes(gs+3*JX,   gs_1+1,      LAMBDA+   3*JX,   M-3*JX-1);
+			AddTimes(gs+3*JX+1, gs_1,        LAMBDA+   3*JX+1, M-3*JX-1);
 			AddTimes(gs+1,      gs_1+3*JX,   LAMBDA+6*M+1,     M-3*JX-1);
 			AddTimes(gs,        gs_1+3*JX+1, LAMBDA+6*M,       M-3*JX-1);
 
-			AddTimes(gs+3*JX,   gs_1+2,      LAMBDA+3*JX,      M-3*JX-2);
-			AddTimes(gs+3*JX+2, gs_1,        LAMBDA+3*JX+2,    M-3*JX-2);
+			AddTimes(gs+3*JX,   gs_1+2,      LAMBDA+   3*JX,   M-3*JX-2);
+			AddTimes(gs+3*JX+2, gs_1,        LAMBDA+   3*JX+2, M-3*JX-2);
 			AddTimes(gs+2,      gs_1+3*JX,   LAMBDA+6*M+2,     M-3*JX-2);
 			AddTimes(gs,        gs_1+3*JX+2, LAMBDA+6*M,       M-3*JX-2);
 
@@ -781,10 +781,9 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 			AddTimes(gs,        gs_1+2*JX+3, LAMBDA+5*M,       M-2*JX-3);
 			AddTimes(gs+3,      gs_1+2*JX,   LAMBDA+5*M+3,     M-2*JX-3);
 
-
-			AddTimes(gs+3*JX+3, gs_1,        LAMBDA+3*JX+3,    M-3*JX-3);
+			AddTimes(gs+3*JX+3, gs_1,        LAMBDA+   3*JX+3, M-3*JX-3);
 			AddTimes(gs,        gs_1+3*JX+3, LAMBDA+6*M,       M-3*JX-3);
-			AddTimes(gs+3*JX,   gs_1+3,      LAMBDA+3*JX,      M-3*JX-3);
+			AddTimes(gs+3*JX,   gs_1+3,      LAMBDA+   3*JX,   M-3*JX-3);
 			AddTimes(gs+3,      gs_1+3*JX,   LAMBDA+6*M+3,     M-3*JX-3);
 
 			Norm(gs,1.0/10.0,M);

@@ -554,19 +554,19 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			}
 		}
 		if (GetValue("frozen_range").size()==0 && Lat[0]->geometry == "cylindrical" && Lat[0]->gradients == 2) {
-			//this case we can have a particle at the axis 
+			//this case we can have a particle at the axis
 			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
 
-				success=false; 
+				success=false;
 				cout <<"For seg " << name << endl;
 				cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the particle at the axis of cylindrical coordonate system " << endl;
-				cout<< "More specifically we expect n : 1 ; size < n_layers_x and size < n_layers_y; pos : (0,y) " << endl;  	
+				cout<< "More specifically we expect n : 1 ; size < n_layers_x and size < n_layers_y; pos : (0,y) " << endl;
 			}
 			n=In[0]->Get_int(GetValue("n"),-1); if (n!=1) {success = false; cout <<"expect value for 'n' to be unity, that is, 'n : 1' in this case"<< endl; }
 			R=In[0]->Get_int(GetValue("size"),-1); if (R<0) {success = false ; cout <<"expecting positive integer for 'size' " << endl; }
 			if (GetValue("pos")=="?") {success = false; cout <<" expect (0,y) coordinate in this case" << endl; }
 			if (success) {
-				px.clear(); py.clear(); pz.clear(); 
+				px.clear(); py.clear(); pz.clear();
 				vector<int>open;
 				vector<int>close;
 				vector<string>sub;
@@ -702,7 +702,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			HMaskDone=true;
 			if (success) {
 				//H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
-				if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl; 
+				if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl;
 			}
 
 		}
@@ -1753,11 +1753,11 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	Real theta_exc=0;
 	Real RMS=0;
 	if (freedom == "frozen" && n==1 && Lat[0]->geometry=="cylindrical") {
-		string s=GetValue("pos"); 
+		string s=GetValue("pos");
 		int length = s.size();
 		if (length>3) push("pos",s.substr(3,length-4));
-		push("size",R); 
-	        	
+		push("size",R);
+
 	}
 
 	if (freedom == "frozen" || freedom == "pinned") {

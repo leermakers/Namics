@@ -148,7 +148,7 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 				}
 			}
 			if (BC[4]=="surface") {
-				if (fjc==1) BYM=MY+1; else {
+				if (fjc==1) BYM=MY+1; else { cout <<"surface ub" << endl;
 					for (int k=0; k<fjc; k++) B_YM[k]=MY+fjc+k;
 				}
 			}
@@ -441,7 +441,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 				options.clear();
 				options.push_back("mirror");
-				//options.push_back("surface");
+				options.push_back("surface"); //turned on...let's hope it works
 				if (geometry=="planar")
 					options.push_back("periodic");
 				if (GetValue("lowerbound_z").size()>0) {
@@ -454,16 +454,16 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				}
 
 				if (GetValue("lowerbound_x").size()==0) BC[0]="mirror";
-				else if (!In[0]->Get_string(GetValue("lowerbound_x"),BC[0],options,"for 'lowerbound_x' boundary condition not recognized. Put 'mirror' or 'periodic' and put 'surface' inside system. ")) success=false;
+				else if (!In[0]->Get_string(GetValue("lowerbound_x"),BC[0],options,"for 'lowerbound_x' boundary condition not recognized.  ")) success=false;
 
 				if (GetValue("upperbound_x").size()==0) BC[3]="mirror";
-				else if (!In[0]->Get_string(GetValue("upperbound_x"),BC[3],options,"for 'upperbound_x' boundary condition not recognized. Put 'mirror' or 'periodic' and put 'surface' inside system.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound_x"),BC[3],options,"for 'upperbound_x' boundary condition not recognized. ")) success = false;
 
 				if (GetValue("lowerbound_y").size()==0) BC[1]="mirror";
-				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound_y' boundary condition not recognized. Put 'mirror' or 'periodic' and put 'surface' inside system.")) success=false;
+				else if (!In[0]->Get_string(GetValue("lowerbound_y"),BC[1],options,"for 'lowerbound_y' boundary condition not recognized. ")) success=false;
 
 				if (GetValue("upperbound_y").size()==0) BC[4]="mirror";
-				else if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound_Y' boundary condition not recognized. Put 'mirror' or 'periodic' and put 'surface' inside system.")) success = false;
+				else if (!In[0]->Get_string(GetValue("upperbound_y"),BC[4],options,"for 'upperbound_Y' boundary condition not recognized. ")) success = false;
 
 
 				if (BC[0]=="periodic" || BC[3]=="periodic") {

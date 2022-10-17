@@ -1507,7 +1507,16 @@ void System::PushOutput()
 	push("free_energy", FreeEnergy);
 	push("grand_potential", GrandPotential);
 	push("start",start);
-	push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->fjc]);
+	if (Lat[0]->gradients==1) {
+		push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->fjc]);
+	}
+	if (Lat[0]->gradients==2) {
+		if (Lat[0]->BC[4]=="surface") {
+			push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->P(Lat[0]->fjc,(Lat[0]->MY+Lat[0]->fjc)/2)]);
+		} else {
+			push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->P(Lat[0]->fjc,Lat[0]->MY+Lat[0]->fjc)]);
+		}
+	}
 	if (GetValue("delta_range").size()>0) push("delta_range",GetValue("delta_range"));
 	if (GetValue("phi_ratio").size()>0) push("phi_ratio",phi_ratio);
 	int n_seg=In[0]->MonList.size();
@@ -1515,10 +1524,10 @@ void System::PushOutput()
 	for (int j=0; j<n_seg; j++){
 		push("chi_"+Seg[i]->name+"_"+Seg[j]->name,CHI[i * n_seg + j]);
 	}
-	if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar") {
-		push("KJ0", -Lat[0]->Moment(GrandPotentialDensity,0, 1));
-		push("Kbar", Lat[0]->Moment(GrandPotentialDensity,0, 2));
-	}
+	//if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar") {
+	//	push("KJ0", -Lat[0]->Moment(GrandPotentialDensity,0, 1));
+	//	push("Kbar", Lat[0]->Moment(GrandPotentialDensity,0, 2));
+	//}
 	Real X = 0;
 	if (Xn_1.size() > 0 || XmolList.size() > 0)
 	{

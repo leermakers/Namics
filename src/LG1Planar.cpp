@@ -84,17 +84,19 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 	if (fjc==1) {
 		if (lattice_type ==hexagonal) {
 			YplusisCtimesX(gx0+1,gz0,P[0],M-1);
-			YplusisCtimesX(gx0+1,gz1,2*P[1],M);
+			YplusisCtimesX(gx0+1,gz1,2*P[1],M-1);
+
 			YplusisCtimesX(gx1,gz0,P[1],M);
 			YplusisCtimesX(gx1,gz1,P[0],M);
 			YplusisCtimesX(gx1,gz2,P[1],M);
+
 			YplusisCtimesX(gx2,gz1+1,2*P[1],M-1);
 			YplusisCtimesX(gx2,gz2+1,P[0],M-1);
 			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);
 
 		} else { //simple cubic
 			YplusisCtimesX(gx0+1,gz0,P[0],M-1);
-			YplusisCtimesX(gx0+1,gz1,4*P[1],M);
+			YplusisCtimesX(gx0+1,gz1,4*P[1],M-1);
 
 			YplusisCtimesX(gx1,gz0,P[1],M);
 			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
@@ -138,9 +140,11 @@ if (debug) cout <<" propagateB in LG1Planar " << endl;
 		if (lattice_type ==hexagonal) {
 			YplusisCtimesX(gx0,gz0+1,P[0],M-1);
 			YplusisCtimesX(gx0,gz1,2*P[1],M);
+
 			YplusisCtimesX(gx1,gz0+1,P[1],M-1);
 			YplusisCtimesX(gx1,gz1,P[0],M);
 			YplusisCtimesX(gx1+1,gz2,P[1],M-1);
+
 			YplusisCtimesX(gx2+1,gz2,P[0],M-1);
 			YplusisCtimesX(gx2,gz1,2*P[1],M);
 			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);

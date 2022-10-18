@@ -291,7 +291,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				success=false;
 			}
 
-			fjc=(FJC-3)/2+1;
+			fjc=(FJC-1)/2;
 		}
 
 		if (success && GetValue("b/l").length()>0) {
@@ -315,7 +315,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				}
 			}
 			fjc=fjc_new;
-			FJC=3+(fjc-1)*2;
+			FJC=2*fjc+1; //3+(fjc-1)*2;
 		}
 
 		bond_length=0;

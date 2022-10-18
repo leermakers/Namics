@@ -817,29 +817,28 @@ Real LGrad1::ComputeGN(Real* G,int Markov, int M){
 	return GN;
 }
 
-void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){//Adopt for fjc>1!!!!
-	Real one=1.0;
+void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
-			YplusisCtimesAtimesB(phi,Gf,Gb,0.25*one,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5*one,M);
-			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25*one,M);
+			YplusisCtimesAtimesB(phi,Gf,Gb,(0.25/fjc),M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5/fjc,M);
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25/fjc,M);
 		} else {
-			YplusisCtimesAtimesB(phi,Gf,Gb,1.0/6.0*one,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,4.0/6.0*one,M);
-			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,1.0/6.0*one,M);
+			YplusisCtimesAtimesB(phi,Gf,Gb,1.0/6.0,M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,4.0/6.0,M);
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,1.0/6.0,M);
 		}
 	} else {
 		AddTimes(phi,Gf,Gb,M);
 	}
 }
 
-void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real degeneracy, int Markov, int M){//Adopt for fjc>1!!!!
+void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real degeneracy, int Markov, int M){
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
-			YplusisCtimesAtimesB(phi,Gf,Gb,0.25*degeneracy,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5*degeneracy,M);
-			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25*degeneracy,M);
+			YplusisCtimesAtimesB(phi,Gf,Gb,0.25*degeneracy/fjc,M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5*degeneracy/fjc,M);
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25*degeneracy/fjc,M);
 		} else {
 			YplusisCtimesAtimesB(phi,Gf,Gb,degeneracy/6.0,M);
 			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy*4.0/6.0,M);

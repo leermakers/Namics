@@ -505,8 +505,8 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 					B=In[0]->Get_Real(GetValue("B"),B);
 					if (B<1e-9) {
 						cout <<"for Mol" + name + " mobility B should have a posititve value. Default value B=1 is chosen. " << endl;
-						B=1;  
-					}	
+						B=1;
+					}
 				}
 
 				if (freedom == "gradient") { //for the time being only in one-gradient systems; this is tested in system.
@@ -2049,7 +2049,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 
 	int molmonlength=MolMonList.size();
 	for (int i=0; i<molmonlength; i++) {
-		J+=Seg[MolMonList[i]]->J;	
+		J+=Seg[MolMonList[i]]->J;
 	}
 	push("J",J/chainlength);
 	push("DeltaMu",Delta_MU);
@@ -2638,6 +2638,5 @@ if (debug) cout <<"fraction for mol_test " + name << endl; //default for monomer
 	}
 	return 1.0*Nseg/chainlength;
 }
-
 
 

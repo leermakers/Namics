@@ -1512,9 +1512,9 @@ void System::PushOutput()
 	}
 	if (Lat[0]->gradients==2) {
 		if (Lat[0]->BC[4]=="surface") {
-			push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->P(Lat[0]->fjc,(Lat[0]->MY+Lat[0]->fjc)/2)]);
+			push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->P(2*Lat[0]->fjc,(Lat[0]->MY+Lat[0]->fjc)/2)]);
 		} else {
-			push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->P(Lat[0]->fjc,Lat[0]->MY+Lat[0]->fjc)]);
+			push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->P(2*Lat[0]->fjc,Lat[0]->MY)]);
 		}
 	}
 	if (GetValue("delta_range").size()>0) push("delta_range",GetValue("delta_range"));

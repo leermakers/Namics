@@ -369,6 +369,8 @@ if (debug) cout << "GetValue (long) in output " << endl;
 
 void Output::WriteOutput(int subl) {
 if (debug) cout << "WriteOutput in output " + name << endl;
+	Lat[0]->subl=subl;
+	//cout <<"subl : " << subl << endl;
 	if (!write) return;
 	int length;
 	int Size=0;
@@ -405,7 +407,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		if (n_starts==1 && subl < 1) filename=sub[0].append(".").append(name);
 		if (n_starts==1 && subl >0) filename = sub[0].append("_").append(numc).append(".").append(name);
 		if (n_starts>1  && subl < 1) filename = sub[0].append("_").append(numcc).append(".").append(name);
-		if (n_starts>1 && subl >0)  filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(name);
+		if (n_starts>1 && subl >0)  filename=sub[0].append("_").append(numcc).append("_").append(numc).append(".").append(name);
 	}
 
 	filename = In[0]->output_info.getOutputPath() + filename;

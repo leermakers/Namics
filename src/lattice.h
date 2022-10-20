@@ -41,6 +41,7 @@ virtual ~Lattice();
 	bool fcc_sites;
 	bool stencil_full;
 	int sub_box_on;
+	int subl; 
 	Real volume;
 	Real Accesible_volume;
 	int Markov;

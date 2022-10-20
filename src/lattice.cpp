@@ -32,6 +32,7 @@ if (debug) cout <<"Lattice constructor" << endl;
 	MX=MY=MZ=0;
 	offset_first_layer=0;
 	Markov=1;
+	subl=0;
 }
 
 void Lattice::DeAllocateMemory(void) {
@@ -965,14 +966,22 @@ if (debug) cout <<"StoreGuess in output" << endl;
 		outfilename=In[0]->name;
 		In[0]->split(outfilename,'.',sub);
 		char numc[2];
-       	sprintf(numc,"%d",start);
-		filename=sub[0].append("_").append(numc).append(".").append("outiv");
+        sprintf(numc,"%d",start);
+		char numcc[3];
+		sprintf(numcc,"%d",subl);
+		if (subl>0)
+			filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append("outiv");
+		else	filename=sub[0].append("_").append(numc).append(".").append("outiv");
 	} else {
 		outfilename = Filename;
 		In[0]->split(outfilename,'.',sub);
 		char numc[2];
        	sprintf(numc,"%d",start);
-		filename=sub[0].append("_").append(numc).append(".").append(sub[1]);
+		char numcc[3];
+		sprintf(numcc,"%d",subl);
+		if (subl>0)
+			filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(sub[1]);
+		else 	filename=sub[0].append("_").append(numc).append(".").append(sub[1]);
 	}
 	FILE *fp;
 	fp=fopen(filename.c_str(),"w");

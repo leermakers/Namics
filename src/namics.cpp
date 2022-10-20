@@ -578,6 +578,24 @@ int main(int argc, char *argv[])
 				{
 					Out[ii]->WriteOutput(subloop);
 				}
+		if (Sys[0]->final_guess == "file")
+		{
+			MONLIST.clear();
+			STATELIST.clear();
+			int mon_length = Sys[0]->ItMonList.size();
+			int state_length = Sys[0]->ItStateList.size();
+			for (int i = 0; i < mon_length; i++)
+			{
+				MONLIST.push_back(Seg[Sys[0]->ItMonList[i]]->name);
+			}
+			for (int i = 0; i < state_length; i++)
+			{
+				STATELIST.push_back(Sta[Sys[0]->ItStateList[i]]->name);
+			}
+			Lat[0]->StoreGuess(Sys[0]->guess_outputfile, New[0]->xx, New[0]->SCF_method, MONLIST, STATELIST, Sys[0]->charged, start);
+		}
+
+
 				subloop++;
 			}
 

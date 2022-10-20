@@ -1468,6 +1468,7 @@ void LGrad2::Terminate(Real* Gz,Real* G,int Markov, int M){
 
 bool LGrad2:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
 if (debug) cout <<"PutMask in LGrad2 " << endl;
+	R*=fjc;
 	bool success=true;
 	int length =px.size();
 	int X,Y;
@@ -1477,7 +1478,7 @@ if (debug) cout <<"PutMask in LGrad2 " << endl;
 	}
 	for (int i =0; i<length; i++) {
 		int xx,yy;
-		xx=px[i]; yy=py[i];
+		xx=px[i]*fjc; yy=py[i]*fjc+fjc-1;
 		if (xx !=0) {
 			cout <<"In two gradients system, we expect the particle at the central axis" << endl;
 			return false;

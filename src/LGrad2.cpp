@@ -1487,7 +1487,7 @@ if (debug) cout <<"PutMask in LGrad2 " << endl;
 		for (int y=yy-R; y<yy+R+1; y++){
 			if ((xx-x)*(xx-x)+(yy-y)*(yy-y) <=R*R) {
 				X=x; Y=y;
-				if (y<1) {cout << "particle too close to y=0 boundary " << endl;
+				if (y<fjc) {cout << "particle too close to y=0 boundary " << endl;
 					return false;
 				}
 				if (x>MX) {

@@ -554,6 +554,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			}
 		}
 		if (GetValue("frozen_range").size()==0 && Lat[0]->geometry == "cylindrical" && Lat[0]->gradients == 2) {
+			int fjc=Lat[0]->fjc;
 			//this case we can have a particle at the axis
 			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
 
@@ -564,8 +565,10 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			}
 			n=In[0]->Get_int(GetValue("n"),-1); if (n!=1) {success = false; cout <<"expect value for 'n' to be unity, that is, 'n : 1' in this case"<< endl; }
 			R=In[0]->Get_int(GetValue("size"),-1); if (R<0) {success = false ; cout <<"expecting positive integer for 'size' " << endl; }
-			if (GetValue("pos")=="?") {success = false; cout <<" expect (0,y) coordinate in this case" << endl; }
+			R*=fjc; //R is expressed in grit-units
+			if (GetValue("pos")=="?") {success = false; cout <<" expect (0,y) coordinate in this case, in segment size units" << endl; }
 			if (success) {
+				int fjc=Lat[0]->fjc;
 				px.clear(); py.clear(); pz.clear();
 				vector<int>open;
 				vector<int>close;
@@ -584,8 +587,8 @@ if (debug) cout <<"ParseFreedoms " << endl;
 							success=false;
 							cout <<"pos does not contain expected (x,y) set. Problem occurred for for particle nr " << i << "We found: " +tt << endl;
 						} else {
-							px.push_back(In[0]->Get_int(sub[0],-1));
-							py.push_back(In[0]->Get_int(sub[1],-1));
+							px.push_back(In[0]->Get_int(sub[0],-1));px[i]*=fjc; //px in grit units
+							py.push_back(In[0]->Get_int(sub[1],-1));py[i]*=fjc; //py in grit units
 							if (px[i] !=0) {success=false; cout << "pos x for particle " << i << " is expected to be 0; we found " << px[i] << endl; }
 							if (py[i] <0 || py[i]>Lat[0]->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
 							pz.push_back(0);
@@ -597,12 +600,14 @@ if (debug) cout <<"ParseFreedoms " << endl;
 		}
 		if (n_pos<1 && Lat[0]->gradients==3 && px.size()==0 && !block) {
 			n=0; R=0; px.clear(); py.clear(); pz.clear();
+			int fjc=Lat[0]->fjc;
 			bool found=false;
 			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
 				success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the set of spherical particles in the system. " << endl;
 			} else {
 				n=In[0]->Get_int(GetValue("n"),-1); if (n<0) {success=false; cout <<" expecting positive integer for 'n'" << endl;}
 				R=In[0]->Get_int(GetValue("size"),-1); if (R<0) {success =false ; cout <<" expecting positive integer for 'size' "<<endl; }
+				R*=fjc;  //here I alrady express R in grit units not segment units.
 				//if (GetValue("pos")=="random") {
 				//	found=true; srand(1);
 				//	for (int i=0; i<n; i++) {
@@ -620,7 +625,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 					int MX=Lat[0]->MX;
 					int MY=Lat[0]->MY;
 					int MZ=Lat[0]->MZ;
-					int V=MX*MY*MZ;
+ 					int V=MX*MY*MZ;
 					int a = pow(V/n,1.0/3.0);
 					if (a<2*R) {
 						cout << "Warning: overlap can not be avoided " << endl;
@@ -628,11 +633,11 @@ if (debug) cout <<"ParseFreedoms " << endl;
 					int n_placed=0;
 					if (a>2*R+1) a--;
 
-					for (int i=1; i<MX-a+2; i+=a)
-					for (int j=1; j<MY-a+2; j+=a)
-					for (int k=1; k<MZ-a+2; k+=a) {
+					for (int i=1; i<MX-2*R+2; i+=a)
+					for (int j=1; j<MY-2*R+2; j+=a)
+					for (int k=1; k<MZ-2*R+2; k+=a) {
 						if (n_placed < n) {
-							px.push_back(i); py.push_back(j); pz.push_back(k);
+							px.push_back(i); py.push_back(j); pz.push_back(k);//px py and pz are already in grit units.
 							n_placed++;
 							//cout <<"x,y,z= " << i << "," << j << "," << k << endl;
 						}
@@ -640,9 +645,6 @@ if (debug) cout <<"ParseFreedoms " << endl;
 					}
 					if (n_placed < n) { cout <<"Problem: could not place all n particles in volume. Placed only  "<< n_placed << " partictles " << endl; }
 					//cout <<"In frozen_range regular positions for particles not implemented " <<endl;
-				} else {
-					cout <<"pos should be 'regular' or 'random' " << endl; success = false;
-
 				}
 
 				if (GetValue("pos")=="random" && success) {
@@ -652,9 +654,9 @@ if (debug) cout <<"ParseFreedoms " << endl;
 					int X;
 					int Y;
 					int Z;
-					int MX=Lat[0]->MX;
-					int MY=Lat[0]->MY;
-					int MZ=Lat[0]->MZ;
+					int MX=Lat[0]->MX; //grit units
+					int MY=Lat[0]->MY; //grit units
+					int MZ=Lat[0]->MZ; //grit unicts
 					for (int i=0; i<num_of_moves; i++) { //randomise...
 						I=rand()%n;
 						X=px[I]; Y=py[I]; Z=pz[I];
@@ -685,9 +687,9 @@ if (debug) cout <<"ParseFreedoms " << endl;
 								cout <<"Format error: 'pos' did not contain the keywords 'regular' nor 'random'," << endl;
 								cout <<"nor did 'pos'  contain expected (x,y,z) sets. Problem occurred for for particle nr " << i << "We found: " +tt << endl;
 							} else {
-								px.push_back(In[0]->Get_int(sub[0],-1));
-								py.push_back(In[0]->Get_int(sub[1],-1));
-								pz.push_back(In[0]->Get_int(sub[2],-1));
+								px.push_back(In[0]->Get_int(sub[0],-1)); px[i]*=fjc;
+								py.push_back(In[0]->Get_int(sub[1],-1)); py[i]*=fjc;
+								pz.push_back(In[0]->Get_int(sub[2],-1)); pz[i]*=fjc;
 								if (px[i] <0 || px[i]>Lat[0]->MX) {success=false; cout << "pos x for particle " << i << " out of bounds or not an integer: " << px[i] << endl; }
 								if (py[i] <0 || py[i]>Lat[0]->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
 								if (pz[i] <0 || pz[i]>Lat[0]->MZ) {success=false; cout << "pos z for particle " << i << " out of bounds or not an integer: " << pz[i] << endl; }

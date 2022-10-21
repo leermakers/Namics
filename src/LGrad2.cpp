@@ -1468,7 +1468,7 @@ void LGrad2::Terminate(Real* Gz,Real* G,int Markov, int M){
 
 bool LGrad2:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
 if (debug) cout <<"PutMask in LGrad2 " << endl;
-	R*=fjc;
+	//R*=fjc; //is already done in segment
 	bool success=true;
 	int length =px.size();
 	int X,Y;
@@ -1478,7 +1478,7 @@ if (debug) cout <<"PutMask in LGrad2 " << endl;
 	}
 	for (int i =0; i<length; i++) {
 		int xx,yy;
-		xx=px[i]*fjc; yy=py[i]*fjc+fjc-1;
+		xx=px[i]; yy=py[i];
 		if (xx !=0) {
 			cout <<"In two gradients system, we expect the particle at the central axis" << endl;
 			return false;
@@ -1490,11 +1490,11 @@ if (debug) cout <<"PutMask in LGrad2 " << endl;
 				if (y<fjc) {cout << "particle too close to y=0 boundary " << endl;
 					return false;
 				}
-				if (x>MX) {
+				if (x>MX+fjc-1) {
 					cout <<"in two gradient system, particle should be smaller than size of system in radial direction" << endl;
 					return false;
 				}
-				if (y>MY) { cout <<"particle too close to y upperbound " << endl;
+				if (y>MY+fjc-1) { cout <<"particle too close to y upperbound " << endl;
 					return false;
 				}
 				MASK[P(X,Y)]++;

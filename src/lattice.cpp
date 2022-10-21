@@ -984,7 +984,8 @@ if (debug) cout <<"StoreGuess in output" << endl;
 		else 	filename=sub[0].append("_").append(numc).append(".").append(sub[1]);
 	}
 	FILE *fp;
-	fp=fopen(filename.c_str(),"w");
+	filename=In[0]->output_info.getOutputPath()+filename;
+	fp=fopen(filename.c_str(),"a");//w
 	fprintf(fp,"%s\n",method.c_str());
 	fprintf(fp," %i\t%i\t%i\t%i\n" ,MX,MY,MZ, fjc);
 	if (charged) fprintf(fp,"%s\n" ,"true"); else  fprintf(fp,"%s\n" ,"false");

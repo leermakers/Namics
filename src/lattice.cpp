@@ -61,10 +61,15 @@ if (debug) cout <<"DeAllocateMemory in lat " << endl;
 			#endif
 		}
 		if (Markov==2) {
-			free(l1);
-			free(l11);
-			free(l_1);
-			free(l_11);
+			if (fjc==1) {
+				free(l1);
+				free(l11);
+				free(l_1);
+				free(l_11);
+			} else {
+				free(LABDA);
+				free(LABDA_1);
+			}
 			free(H);
 		}
 	}
@@ -207,10 +212,15 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 		LAMBDA =(Real*)malloc(FJC*M*sizeof(Real)); Zero(LAMBDA,FJC*M);
 	}
 	if (Markov==2) {
-		l1=(Real*)malloc(M*sizeof(Real)); Zero(l1,M);
-		l_1=(Real*)malloc(M*sizeof(Real));  Zero(l_1,M);
-		l11=(Real*)malloc(M*sizeof(Real)); Zero(l11,M);
-		l_11=(Real*)malloc(M*sizeof(Real)); Zero(l_11,M);
+		if (fjc==1) {
+			l1=(Real*)malloc(M*sizeof(Real)); Zero(l1,M);
+			l_1=(Real*)malloc(M*sizeof(Real));  Zero(l_1,M);
+			l11=(Real*)malloc(M*sizeof(Real)); Zero(l11,M);
+			l_11=(Real*)malloc(M*sizeof(Real)); Zero(l_11,M);
+		} else {
+			LABDA =(Real*)malloc(FJC*M*sizeof(Real)); Zero(LABDA,FJC*M);
+			LABDA_1 =(Real*)malloc(FJC*M*sizeof(Real)); Zero(LABDA_1,FJC*M);
+		}
 		H=(Real*)malloc(M*sizeof(Real));
 	}
 

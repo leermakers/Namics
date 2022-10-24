@@ -161,6 +161,18 @@ if (debug) cout <<"LGrad1 computeLambda's " << endl;
 				LAMBDA[i+(FJC/2)*M] += 1.0-LS;
 			}
 		}
+		if (fjc==2) {
+			for (int i = fjc; i < M - fjc; i++) {
+				LABDA[i]=LAMBDA[i]*(FJC-1.0)*2;
+				LABDA_1[i]=1.0-LABDA[i];
+				for (int j=1; j<FJC-1; j++) {
+					LABDA[i+j*M]=LAMBDA[i+j*M]*(FJC-1.0);
+					LABDA_1[i+j*M]=1.0-LABDA[i+j*M];
+				}
+				LABDA[i+(FJC-1)*M]=LAMBDA[i+(FJC-1)*M]*(FJC-1.0)*2;
+				LABDA_1[i+(FJC-1)*M]=1.0-LABDA[i+(FJC-1)*M];
+			}
+		}
 	}
 }
 
@@ -269,26 +281,15 @@ if (debug) cout <<" Side in LGrad1 " << endl;
 	}
 }
 
-//void LGrad1::LReflect(Real *Pout, Real *Pin, int pos) {
-//	Times(Pout,l_1+1,Pin,M-1);
-//	AddTimes(Pout,l_11+1,Pin+(1-pos)*2*M+1,M-1);
+//void LGrad1::LReflect(Real *H, Real *P, Real *Q) {
+//	Times   (H,   l_1 +1,  P,    M-1);
+//	AddTimes(H,   l_11+1,  Q+1,  M-1);
 //}
 
-//void LGrad1::UReflect(Real *Pout, Real *Pin, int pos) {
-//	Times (Pout+1,l1,Pin+1,M-1);
-//	AddTimes(Pout+1,l11,Pin+(1-pos)*2*M,M-1);
+//void LGrad1::UReflect(Real *H, Real *P, Real* Q) {
+//	Times   (H+1, l1,      P+1,  M-1);
+//	AddTimes(H+1, l11,     Q,    M-1);
 //}
-
-void LGrad1::LReflect(Real *H, Real *P, Real *Q) {
-	Times(H,l_1+1,P,M-1);
-	AddTimes(H,l_11+1,Q+1,M-1);
-}
-
-void LGrad1::UReflect(Real *H, Real *P, Real* Q) {
-	Times (H+1,l1,P+1,M-1);
-	AddTimes(H+1,l11,Q,M-1);
-}
-
 
 void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
 	Real *gs=G+3*M*(s_to);
@@ -296,43 +297,148 @@ void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	Real *gz0=gs_1;
 	Real *gz1=gs_1+M;
 	Real *gz2=gs_1+2*M;
+	Real *gz3=gs_1+3*M;
+	Real *gz4=gs_1+4*M;
 	Real *gx0=gs;
 	Real *gx1=gs+M;
 	Real *gx2=gs+2*M;
+	Real *gx3=gs+3*M;
+	Real *gx4=gs+4*M;
 	Real *g =G1;
 	Zero (gs,M*FJC);
 	for (int k=0; k<(FJC-1)/2; k++) set_bounds(gs_1+k*M,gs_1+(FJC-k-1)*M);
 	set_bounds(gs_1+(FJC-1)/2*M);
 
-	if (fjc==1) {
-		if (lattice_type==hexagonal) { cout <<"Lgrad1 propagateF for hexagonal lattice_type not implemented yet " << endl;
+	switch (fjc) {
+		case 1:
+			if (lattice_type==hexagonal) {
+				//LReflect(H,gz0,gz2);
+				Times   (H,   l_1 +1,  gz0,    M-1);
+				AddTimes(H,   l_11+1,  gz2+1,  M-1);
+				YplusisCtimesX(gx0+1,H,P[0],M-1);
+				//LReflect(H,gz1,gz1);
+				Times   (H,   l_1 +1,  gz1,    M-1);
+				AddTimes(H,   l_11+1,  gz1+1,  M-1);
+				YplusisCtimesX(gx0+1,H,2*P[1],M-1);
 
-		} else { //simple cubic 6point stencil.
-			//LReflect(H,gz0,0); YplusisCtimesX(gx0+1,H,P[0],M-1);
-			//LReflect(H,gz1,1); YplusisCtimesX(gx0+1,H,4*P[1],M-1);
+				YplusisCtimesX(gx1,gz0,P[1],M);
+				YplusisCtimesX(gx1,gz1,P[0],M);
+				YplusisCtimesX(gx1,gz2,P[1],M);
 
-			//YplusisCtimesX(gx1,gz0,P[1],M);
-			//YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
-			//YplusisCtimesX(gx1,gz2,P[1],M);
+				//UReflect(H,gz1,gz1);
+				Times   (H+1, l1,      gz1+1,  M-1);
+				AddTimes(H+1, l11,     gz1,    M-1);
+				YplusisCtimesX(gx2,H+1,2*P[1],M-1);
+				//UReflect(H,gz2,gz0);
+				Times   (H+1, l1,      gz2+1,  M-1);
+				AddTimes(H+1, l11,     gz0,    M-1);
+				YplusisCtimesX(gx2,H+1,P[0],M-1);
 
-			//UReflect(H,gz1,1); YplusisCtimesX(gx2,H+1,4*P[1],M-1);
-			//UReflect(H,gz2,2); YplusisCtimesX(gx2,H+1,P[0],M-1);
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 
-			LReflect(H,gz0,gz2); YplusisCtimesX(gx0+1,H,P[0],M-1);
-			LReflect(H,gz1,gz1); YplusisCtimesX(gx0+1,H,4*P[1],M-1);
+			} else {
+				//LReflect(H,gz0,gz2);
+				Times   (H,   l_1 +1,  gz0,    M-1);
+				AddTimes(H,   l_11+1,  gz2+1,  M-1);
+				YplusisCtimesX(gx0+1,H,P[0],M-1);
 
-			YplusisCtimesX(gx1,gz0,P[1],M);
-			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
-			YplusisCtimesX(gx1,gz2,P[1],M);
+				//LReflect(H,gz1,gz1);
+				Times   (H,   l_1 +1,  gz1,    M-1);
+				AddTimes(H,   l_11+1,  gz1+1,  M-1);
+				YplusisCtimesX(gx0+1,H,4*P[1],M-1);
 
-			UReflect(H,gz1,gz1); YplusisCtimesX(gx2,H+1,4*P[1],M-1);
-			UReflect(H,gz2,gz0); YplusisCtimesX(gx2,H+1,P[0],M-1);
+				YplusisCtimesX(gx1,gz0,P[1],M);
+				YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
+				YplusisCtimesX(gx1,gz2,P[1],M);
 
+				//UReflect(H,gz1,gz1);
+				Times   (H+1, l1,      gz1+1,  M-1);
+				AddTimes(H+1, l11,     gz1,    M-1);
+				YplusisCtimesX(gx2,H+1,4*P[1],M-1);
+				//UReflect(H,gz2,gz0);
+				Times   (H+1, l1,      gz2+1,  M-1);
+				AddTimes(H+1, l11,     gz0,    M-1);
+				YplusisCtimesX(gx2,H+1,P[0],M-1);
 
-			for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
-		}
-	} else {
-		cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl;
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+			}
+			break;
+		case 2:
+			//cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl;
+			cout <<"not tested implementation" << endl;
+			if (lattice_type==hexagonal) {
+				Times   (H,   LABDA+0*M+2,    gz0,    M-2);
+				AddTimes(H,   LABDA_1+0*M+2,  gz4+2,  M-2);
+				YplusisCtimesX(gx0+2,H,P[0],     M-2);
+				Times   (H,   LABDA+0*M+2,    gz1,    M-2);
+				AddTimes(H,   LABDA_1+0*M+2,  gz3+2,  M-2);
+				YplusisCtimesX(gx0+2,H,2*P[1],   M-2);
+				Times   (H,   LABDA+0*M+2,    gz2,    M-2);
+				AddTimes(H,   LABDA_1+0*M+2,  gz2+2,  M-2);
+				YplusisCtimesX(gx0+2,H,2*P[2],   M-2);
+				Times   (H,   LABDA+0*M+2,    gz3,    M-2);
+				AddTimes(H,   LABDA_1+0*M+2,  gz1+2,  M-2);
+				YplusisCtimesX(gx0+2,H,2*P[3],   M-2);
+
+				Times   (H,   LABDA+1*M+1,    gz0,    M-1);
+				AddTimes(H,   LABDA_1+1*M+1,  gz4+1,  M-1);
+				YplusisCtimesX(gx1+1,H,P[1],     M-1);
+				Times   (H,   LABDA+1*M+1,    gz1,    M-1);
+				AddTimes(H,   LABDA_1+1*M+1,  gz3+1,  M-1);
+				YplusisCtimesX(gx1+1,H,P[0]+P[2],M-1);
+				Times   (H,   LABDA+1*M+1,    gz2,    M-1);
+				AddTimes(H,   LABDA_1+1*M+1,  gz2+1,  M-1);
+				YplusisCtimesX(gx1+1,H,P[1]+P[3],M-1);
+				Times   (H,   LABDA+1*M+1,    gz3,    M-1);
+				AddTimes(H,   LABDA_1+1*M+1,  gz1+1,  M-1);
+				YplusisCtimesX(gx1+1,H,P[2],     M-1);
+				Times   (H,   LABDA+1*M+1,    gz4,    M-1);
+				AddTimes(H,   LABDA_1+1*M+1,  gz0+1,  M-1);
+				YplusisCtimesX(gx1+1,H,P[3],     M-1);
+
+				YplusisCtimesX(gx2,  gz0,P[2],     M);
+				YplusisCtimesX(gx2,  gz1,P[1]+P[3],M);
+				YplusisCtimesX(gx2,  gz2,P[0],     M);
+				YplusisCtimesX(gx2,  gz3,P[1]+P[3],M);
+				YplusisCtimesX(gx2,  gz4,P[2],     M);
+
+				Times   (H+1, LABDA+3*M,      gz0+1,  M-1);
+				AddTimes(H+1, LABDA_1+3*M,    gz4,    M-1);
+				YplusisCtimesX(gx3,H+1,P[3],     M-1);
+				Times   (H+1, LABDA+3*M,      gz1+1,  M-1);
+				AddTimes(H+1, LABDA_1+3*M,    gz3,    M-1);
+				YplusisCtimesX(gx3,H+1,P[2],     M-1);
+				Times   (H+1, LABDA+3*M,      gz2+1,  M-1);
+				AddTimes(H+1, LABDA_1+3*M,    gz2,    M-1);
+				YplusisCtimesX(gx3,H+1,P[1]+P[3],M-1);
+				Times   (H+1, LABDA+3*M,      gz3+1,  M-1);
+				AddTimes(H+1, LABDA_1+3*M,    gz1,    M-1);
+				YplusisCtimesX(gx3,H+1,P[0]+P[2],M-1);
+				Times   (H+1, LABDA+3*M,      gz4+1,  M-1);
+				AddTimes(H+1, LABDA_1+3*M,    gz0,    M-1);
+				YplusisCtimesX(gx3,H+1,P[1],     M-1);
+
+				Times   (H+2, LABDA+4*M,      gz1+2,  M-2);
+				AddTimes(H+2, LABDA_1+4*M,    gz3,    M-2);
+				YplusisCtimesX(gx4,H+2,2*P[3],   M-2);
+				Times   (H+2, LABDA+4*M,      gz2+2,  M-2);
+				AddTimes(H+2, LABDA_1+4*M,    gz2,    M-2);
+				YplusisCtimesX(gx4,H+2,2*P[2],   M-2);
+				Times   (H+2, LABDA+4*M,      gz3+2,  M-2);
+				AddTimes(H+2, LABDA_1+4*M,    gz1,    M-2);
+				YplusisCtimesX(gx4,H+2,2*P[1],   M-2);
+				Times   (H+2, LABDA+4*M,      gz4+2,  M-2);
+				AddTimes(H+2, LABDA_1+4*M,    gz0,    M-2);
+				YplusisCtimesX(gx4,H+2,P[0],     M-2);
+
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+			} else {
+				cout <<"cubic lattice and fjc=2 Markov 2 not implemented " << endl;
+			}
+			break;
+		default:
+			cout <<"Error, FJC_choices > 5 not implemented " << endl;
+			break;
 	}
 }
 
@@ -342,35 +448,105 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	Real *gz0=gs_1;
 	Real *gz1=gs_1+M;
 	Real *gz2=gs_1+2*M;
+	Real *gz3=gs_1+3*M;
+	Real *gz4=gs_1+4*M;
+
 	Real *gx0=gs;
 	Real *gx1=gs+M;
 	Real *gx2=gs+2*M;
+	Real *gx3=gs+3*M;
+	Real *gx4=gs+4*M;
 	Real *g =G1;
 	Zero (gs,M*FJC);
 	for (int k=0; k<(FJC-1)/2; k++) set_bounds(gs_1+k*M,gs_1+(FJC-k-1)*M);
 	set_bounds(gs_1+(FJC-1)/2*M);
-	if (fjc==1) {
-		if (lattice_type==hexagonal) { cout <<"Lgrad1 propagateB for hexagonal lattice_type not implemented yet " << endl;
+	switch (fjc) {
+		case 1:
+			if (lattice_type==hexagonal) {
+				//LReflect(H,gz2,gz0);
+				Times   (H,   l_1 +1,  gz2,    M-1);
+				AddTimes(H,   l_11+1,  gz0+1,  M-1);
+				YplusisCtimesX(gx1+1,H,P[1],M-1);
+				YplusisCtimesX(gx2+1,H,P[0],M-1);
 
-		} else {
-			//LReflect(H,gz2,2);
-			LReflect(H,gz2,gz0);
-			YplusisCtimesX(gx1+1,H,P[1],M);
-			YplusisCtimesX(gx2+1,H,P[0],M-1);
+				YplusisCtimesX(gx0,gz1,2*P[1],M);
+				YplusisCtimesX(gx1,gz1,P[0],M);
+				YplusisCtimesX(gx2,gz1,2*P[1],M);
 
-			YplusisCtimesX(gx0,gz1,4*P[1],M);
-			YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
-			YplusisCtimesX(gx2,gz1,4*P[1],M);
+				//UReflect(H,gz0,gz2);
+				Times   (H+1, l1,      gz0+1,  M-1);
+				AddTimes(H+1, l11,     gz2,    M-1);
+				YplusisCtimesX(gx0,H+1,P[0],M-1);
+				YplusisCtimesX(gx1,H+1,P[1],M-1);
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+			} else {
+				//LReflect(H,gz2,gz0);
+				Times   (H,   l_1 +1,  gz2,    M-1);
+				AddTimes(H,   l_11+1,  gz0+1,  M-1);
+				YplusisCtimesX(gx1+1,H,P[1],M-1);
+				YplusisCtimesX(gx2+1,H,P[0],M-1);
 
+				YplusisCtimesX(gx0,gz1,4*P[1],M);
+				YplusisCtimesX(gx1,gz1,2*P[1]+P[0],M);
+				YplusisCtimesX(gx2,gz1,4*P[1],M);
 
-			//UReflect(H,gz0,0);
-			UReflect(H,gz0,gz2);
-			YplusisCtimesX(gx0,H+1,P[0],M-1);
-			YplusisCtimesX(gx1,H+1,P[1],M-1);
-			for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
-		}
-	} else {
-		cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl;
+				//UReflect(H,gz0,gz2);
+				Times   (H+1, l1,      gz0+1,  M-1);
+				AddTimes(H+1, l11,     gz2,    M-1);
+				YplusisCtimesX(gx0,H+1,P[0],M-1);
+				YplusisCtimesX(gx1,H+1,P[1],M-1);
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+			}
+			break;
+		case 2:
+			cout <<"Markov==2 not yet implemented for fjc>1 in non-planar geometry " << endl;
+           cout <<"not tested yet"<<endl;
+           if (lattice_type ==hexagonal) {
+				Times   (H,   LABDA+0*M+2,    gz4,    M-2);
+				AddTimes(H,   LABDA_1+0*M+2,  gz0+2,  M-2);
+				YplusisCtimesX(gx1+2,H,   P[3],     M-2);
+				YplusisCtimesX(gx2+2,H,   P[2],     M-2);
+				YplusisCtimesX(gx3+2,H,   P[1],     M-2);
+				YplusisCtimesX(gx4+2,H,   P[0],     M-2);
+
+				Times   (H,   LABDA+1*M+1,    gz3,    M-1);
+				AddTimes(H,   LABDA_1+1*M+1,  gz1+1,  M-1);
+				YplusisCtimesX(gx0+1,H,   2*P[3],   M-1);
+				YplusisCtimesX(gx1+1,H,   P[2],     M-1);
+				YplusisCtimesX(gx2+1,H,   P[1]+P[3],M-1);
+				YplusisCtimesX(gx3+1,H,   P[0]+P[2],M-1);
+				YplusisCtimesX(gx4+1,H,   2*P[1],   M-1);
+
+				YplusisCtimesX(gx0,  gz2,   2*P[2],   M);
+				YplusisCtimesX(gx1,  gz2,   P[1]+P[3],M);
+				YplusisCtimesX(gx2,  gz2,   P[0],     M);
+				YplusisCtimesX(gx3,  gz2,   P[1]+P[3],M);
+				YplusisCtimesX(gx4,  gz2,   2*P[2],   M);
+
+				Times   (H+1, LABDA+3*M,      gz1+1,  M-1);
+				AddTimes(H+1, LABDA_1+3*M,    gz3,    M-1);
+				YplusisCtimesX(gx0,  H+1, 2*P[1],   M-1);
+				YplusisCtimesX(gx1,  H+1, P[0]+P[2],M-1);
+				YplusisCtimesX(gx2,  H+1, P[1]+P[3],M-1);
+				YplusisCtimesX(gx3,  H+1, P[2],     M-1);
+				YplusisCtimesX(gx4,  H+1, 2*P[3],   M-1);
+
+				Times   (H+2, LABDA+4*M,      gz0+2,  M-2);
+				AddTimes(H+2, LABDA_1+4*M,    gz4,    M-2);
+				YplusisCtimesX(gx0,  H+2, P[0],     M-2);
+				YplusisCtimesX(gx1,  H+2, P[1],     M-2);
+				YplusisCtimesX(gx2,  H+2, P[2],     M-2);
+				YplusisCtimesX(gx3,  H+2, P[3],     M-2);
+
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+			} else {
+				cout <<" cubic lattice, fjc=2, Markov=2 not implemented " << endl;
+			}
+			break;
+		default:
+			cout <<" fjc > 2 not implemented " << endl;
+			break;
+
 	}
 }
 
@@ -818,15 +994,24 @@ Real LGrad1::ComputeGN(Real* G,int Markov, int M){
 }
 
 void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){
+	if (debug) cout <<"AddPhiS_markov " << endl;
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
-			YplusisCtimesAtimesB(phi,Gf,Gb,(0.25/fjc),M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5/fjc,M);
-			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25/fjc,M);
-		} else {
-			YplusisCtimesAtimesB(phi,Gf,Gb,1.0/6.0,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,4.0/6.0,M);
-			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,1.0/6.0,M);
+			if (fjc==1) {
+				YplusisCtimesAtimesB(phi,Gf,    Gb,    1.0/4.0,M);
+				YplusisCtimesAtimesB(phi,Gf+1*M,Gb+1*M,2.0/4.0,M);
+				YplusisCtimesAtimesB(phi,Gf+2*M,Gb+2*M,1.0/4.0,M);
+			} else { //fjc==2
+				YplusisCtimesAtimesB(phi,Gf,    Gb,    1.0/4.0,M);
+				YplusisCtimesAtimesB(phi,Gf+1*M,Gb+1*M,2.0/4.0,M);
+				YplusisCtimesAtimesB(phi,Gf+2*M,Gb+2*M,2.0/4.0,M);
+				YplusisCtimesAtimesB(phi,Gf+3*M,Gb+3*M,2.0/4.0,M);
+				YplusisCtimesAtimesB(phi,Gf+4*M,Gb+4*M,1.0/4.0,M);
+			}
+		} else { //markov=2 cubic fjc=1
+			YplusisCtimesAtimesB(phi,Gf,    Gb,    1.0/6.0,M);
+			YplusisCtimesAtimesB(phi,Gf+1*M,Gb+1*M,4.0/6.0,M);
+			YplusisCtimesAtimesB(phi,Gf+2*M,Gb+2*M,1.0/6.0,M);
 		}
 	} else {
 		AddTimes(phi,Gf,Gb,M);
@@ -834,15 +1019,16 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){
 }
 
 void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real degeneracy, int Markov, int M){
+if (debug) cout <<"AddPhiS_degeneracy markov " << endl;
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
-			YplusisCtimesAtimesB(phi,Gf,Gb,0.25*degeneracy/fjc,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,0.5*degeneracy/fjc,M);
-			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.25*degeneracy/fjc,M);
+			YplusisCtimesAtimesB(phi,Gf,Gb,0.5*degeneracy/(FJC-1.0),M);
+			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy*1.0/(FJC-1.0),M);
+			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.5*degeneracy/(FJC-1.0),M);
 		} else {
 			YplusisCtimesAtimesB(phi,Gf,Gb,degeneracy/6.0,M);
-			for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,degeneracy*4.0/6.0,M);
-			YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,degeneracy/6.0,M);
+			YplusisCtimesAtimesB(phi,Gf+1*M,Gb+1*M,degeneracy*4.0/6.0,M);
+			YplusisCtimesAtimesB(phi,Gf+2*M,Gb+2*M,degeneracy/6.0,M);
 		}
 	} else {
 		YplusisCtimesAtimesB(phi,Gf,Gb,degeneracy,M);
@@ -850,16 +1036,18 @@ void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb, Real degeneracy, int Markov, i
 }
 
 
-void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real* G1, Real norm, int Markov, int M){//Adopt for fjc>1!!!!
+void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,Real* G1, Real norm, int Markov, int M){
+if (!debug) cout <<"AddPhiS_norm_markov " << endl;
 	if (Markov==2) {
 		if (lattice_type ==hexagonal) {
-			Composition (phi,Gf,Gb,G1,norm*0.25,M);
-			for (int k=1; k<FJC-1; k++) Composition (phi,Gf+k*M,Gb+k*M,G1,norm*0.5,M);
-			Composition (phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,G1,norm*0.25,M);
+			Composition (phi,Gf,Gb,G1,norm*0.5/(FJC-1.0),M);
+			for (int k=1; k<FJC-1; k++) Composition (phi,Gf+k*M,Gb+k*M,G1,norm/(FJC-1.0),M);
+			Composition (phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,G1,norm*0.5/(FJC-1.0),M);
 		} else {
+			//if (fjc>1) cout<<"AddPhiS in cubic lattice, Markov=2 FJC_choice >3 not implemented" << endl;
 			Composition (phi,Gf,Gb,G1,norm/6.0,M);
-			for (int k=1; k<FJC-1; k++) Composition (phi,Gf+k*M,Gb+k*M,G1,norm*4.0/6.0,M);
-			Composition (phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,G1,norm/6.0,M);
+			Composition (phi,Gf+1*M,Gb+1*M,G1,norm*4.0/6.0,M);
+			Composition (phi,Gf+2*M,Gb+2*M,G1,norm/6.0,M);
 		}
 	} else {
 		Composition (phi,Gf,Gb,G1,norm,M);

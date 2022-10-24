@@ -132,20 +132,25 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	DeAllocateMemory();
 	int M=Lat[0]->M;
 	int m=0;
-	if (Markov==2 && Lat[0]->lattice_type == simple_cubic) {
+	if (Markov==2){// && Lat[0]->lattice_type == simple_cubic) {
 		int FJC = Lat[0]->FJC;
 		P = (Real*) malloc(FJC*sizeof(Real));
 		Real Q=0;
 		KStiff=k_stiff;
 		for (int k=0; k<FJC-1; k++) {
-			P[k]=exp(-0.5*KStiff*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); Q+= P[k]; //alternative is to use u_bend = Kstiff(1-cos(theta)), persistence length is l_p = b/ln <cos (theta)>
+			P[k]=exp(-0.5*KStiff*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) );
+			if (k>0) {
+				if (Lat[0]->lattice_type==hexagonal) Q+= 2*P[k]; else Q+= 4*P[k]; //alternative is to use u_bend = Kstiff(1-cos(theta)), persistence length is l_p = b/ln <cos (theta)>
+			} else Q=P[k];
 		}
-		P[FJC-1]=0; if (Lat[0]->lattice_type==hexagonal) Q=2*Q-P[0]; else Q=4*Q-3*P[0];
-		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
-		//cout << "P["<<k<<"] = " << P[k] << endl;
+		P[FJC-1]=0; //Q+=P[FJC-1];
+		//if (Lat[0]->lattice_type==hexagonal) Q=2*Q-P[0]; else Q=4*Q-3*P[0];
+		for (int k=0; k<FJC; k++) { P[k]/=Q;
+			cout << "P["<<k<<"] = " << P[k] << endl;
 		}
 	}
 
+/*
 	if (Markov==2 && Lat[0]->lattice_type == hexagonal) {
 		int FJC = Lat[0]->FJC;
 		P = (Real*) malloc(2*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
@@ -158,7 +163,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 			cout << "P["<<k<<"] = " << P[k] << endl;
 		}
 	}
-
+*/
 
 	if (freedom=="clamped") {
 		m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
@@ -634,9 +639,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			cout <<" You may interpret 'k_stiff' as the molecular 'persistence length' " << endl;
 			cout <<" k_stiff is a 'default value'. Use molecular specific values to overrule the default when appropriate (future implementation....) " << endl;
 		}
-		if (Lat[0]->fjc>1 ) {
+		if (Lat[0]->fjc>2 ) {
 			success=false;
-			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 5 " << endl;
+			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 7 " << endl;
 		}
 	}
 	if (Markov ==2) {

@@ -60,7 +60,7 @@ if (debug) cout <<" Side in LG1Planar " << endl;
 
 void LG1Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
 if (debug) cout <<" propagateF in LG1Planar " << endl;
-	//int size=fjc*2+1;
+
 	Real *gs = G+M*FJC*(s_to), *gs_1 = G+M*FJC*(s_from);
 	Real *gz0 = gs_1;
 	Real *gz1 = gs_1+M;
@@ -109,7 +109,8 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 			}
 			break;
 		case 2:
-			if (lattice_type ==hexagonal) {
+			if (lattice_type==hexagonal) {
+
 				YplusisCtimesX(gx0+2,gz0,P[0],     M-2);
 				YplusisCtimesX(gx0+2,gz1,2*P[1],   M-2);
 				YplusisCtimesX(gx0+2,gz2,2*P[2],   M-2);
@@ -140,7 +141,7 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 			} else {
-
+				cout <<"cubic lattice and fjc=2 Markov 2 not implemented " << endl;
 			}
 			break;
 		default:
@@ -152,7 +153,7 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 
 void LG1Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
 if (debug) cout <<" propagateB in LG1Planar " << endl;
-	//int size=fjc*2+1;
+
 	Real *gs = G+M*FJC*(s_to), *gs_1 = G+M*FJC*(s_from);
 	Real *gz0 = gs_1;
 	Real *gz1 = gs_1+M;
@@ -201,6 +202,7 @@ if (debug) cout <<" propagateB in LG1Planar " << endl;
 			break;
 		case 2:
 			if (lattice_type ==hexagonal) {
+
 				YplusisCtimesX(gx0,  gz0+2, P[0],     M-2);
 				YplusisCtimesX(gx0,  gz1+1, 2*P[1],   M-1);
 				YplusisCtimesX(gx0,  gz2,   2*P[2],   M);
@@ -228,6 +230,7 @@ if (debug) cout <<" propagateB in LG1Planar " << endl;
 				YplusisCtimesX(gx4,  gz2,   2*P[2],   M);
 				YplusisCtimesX(gx4+1,gz3,   2*P[1],   M-1);
 				YplusisCtimesX(gx4+2,gz4,   P[0],     M-2);
+
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 			} else {
 				cout <<"cubic lattice type in FJC_choices>3 not inplemented " << endl;

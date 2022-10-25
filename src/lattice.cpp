@@ -604,19 +604,19 @@ bool Lattice::PutVarInfo(string Var_type_, string Var_target_, Real Var_target_v
 	Var_type=Var_type_;
 	if (Var_type !="scan") {success=false; cout <<"Var type is not 'scan' and therefore var info rejected " << endl; }
 	if (Var_target_=="n_layers") {
-		Var_target=0;VarInitValue=MX;
+		Var_target=0;VarInitValue=MX/fjc;
 		if (gradients>1) {success=false; cout <<"Var target 'n_layers' rejected because the number of gradients >1 " << endl; }
 	}
 	if (Var_target_=="n_layers_x") {
-		Var_target=1; VarInitValue=MX;
+		Var_target=1; VarInitValue=MX/fjc;
 		if (gradients==0) {success=false; cout <<"Var target 'n_layers_x' rejected because the number of gradients =1 " << endl; }
 	}
 	if (Var_target_=="n_layers_y") {
-		Var_target=2; VarInitValue=MY;
+		Var_target=2; VarInitValue=MY/fjc;
 		if (gradients==0) {success=false; cout <<"Var target 'n_layers_y' rejected because the number of gradients =1 " << endl; }
 	}
 	if (Var_target_=="n_layers_z") {
-		Var_target=3; VarInitValue=MZ;
+		Var_target=3; VarInitValue=MZ/fjc;
 		if (gradients==0) {success=false; cout <<"Var target 'n_layers_z' rejected because the number of gradients =1 " << endl; }
 	}
 	if (Var_target_=="offset_firstlayer") {
@@ -636,16 +636,16 @@ bool Lattice::UpdateVarInfo(int step_nr) {
 	bool success=true;
 	switch(Var_target) {
 		case 0:
-			MX=VarInitValue+step_nr*Var_step;
+			MX=(VarInitValue+step_nr*Var_step)*fjc;
 			break;
 		case 1:
-			MX=VarInitValue+step_nr*Var_step;
+			MX=(VarInitValue+step_nr*Var_step)*fjc;
 			break;
 		case 2:
-			MY=VarInitValue+step_nr*Var_step;
+			MY=(VarInitValue+step_nr*Var_step)*fjc;
 			break;
 		case 3:
-			MZ=VarInitValue+step_nr*Var_step;
+			MZ=(VarInitValue+step_nr*Var_step)*fjc;
 			break;
 		case 4:
 			offset_first_layer=VarInitValue+step_nr*Var_step;
@@ -661,8 +661,9 @@ bool Lattice::UpdateVarInfo(int step_nr) {
 }
 
 int Lattice::PutVarScan(int step, int end_value) {
+
 	int num_of_steps=-1;
-	Var_step=step; if (step==0) cout <<"In var scan : of lattice variable, the value of step can not be negative" << endl;
+	Var_step=step; if (step>0) cout <<"In var scan : of lattice variable, the value of step can not be positive" << endl;
 	Var_end_value=end_value;
 	if (Var_end_value <0) cout <<"In var: scan : of lattice variable, it is impossible to have a negative value for the end_value" << endl;
 	if (step!=0) {
@@ -838,7 +839,7 @@ if (debug) cout <<"PushOutput in lat " << endl;
 
 	switch (gradients) {
 		case 3:
-			push("n_layers_z",MZ);
+			push("n_layers_z",MZ/fjc);
 			//if (BZ1==1) push("lowerbound_z",mirror); //should be fixed for fjc>1
 			//if (BZM==MZ-1) push("upperbound_z",mirror);
 
@@ -850,12 +851,12 @@ if (debug) cout <<"PushOutput in lat " << endl;
 			//if (BZM==1) push("upperbound_z",periodic);
 			// Fall through
 		case 2:
-			push("n_layers_y",MY);
+			push("n_layers_y",MY/fjc);
 			//if (BY1==1) push("lowerbound_x",mirror);
 			//if (BYM==MY-1) push("upperbound_x",mirror);
 			// Fall through
 		case 1:
-			push("n_layers",MX);
+			push("n_layers",MX/fjc);
 			//if (BX1==1) push("lowerbound",mirror);
 			//if (BXM==MX-1) push("upperbound",mirror);
 			break;

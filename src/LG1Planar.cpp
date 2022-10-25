@@ -202,36 +202,41 @@ if (debug) cout <<" propagateB in LG1Planar " << endl;
 			break;
 		case 2:
 			if (lattice_type ==hexagonal) {
-
-				YplusisCtimesX(gx0,  gz0+2, P[0],     M-2);
-				YplusisCtimesX(gx0,  gz1+1, 2*P[1],   M-1);
-				YplusisCtimesX(gx0,  gz2,   2*P[2],   M);
-				YplusisCtimesX(gx0+1,gz3,   2*P[3],   M-1);
-
-				YplusisCtimesX(gx1,  gz0+2, P[1],     M-2);
-				YplusisCtimesX(gx1,  gz1+1, P[0]+P[2],M-1);
-				YplusisCtimesX(gx1,  gz2,   P[1]+P[3],M);
-				YplusisCtimesX(gx1+1,gz3,   P[2],     M-1);
 				YplusisCtimesX(gx1+2,gz4,   P[3],     M-2);
-
-				YplusisCtimesX(gx2,  gz0+2, P[2],     M-2);
-				YplusisCtimesX(gx2,  gz1+1, P[1]+P[3],M-1);
-				YplusisCtimesX(gx2,  gz2,   P[0],     M);
-				YplusisCtimesX(gx2+1,gz3,   P[1]+P[3],M-1);
 				YplusisCtimesX(gx2+2,gz4,   P[2],     M-2);
-
-				YplusisCtimesX(gx3,  gz0+2, P[3],     M-2);
-				YplusisCtimesX(gx3,  gz1+1, P[2],     M-1);
-				YplusisCtimesX(gx3,  gz2,   P[1]+P[3],M);
-				YplusisCtimesX(gx3+1,gz3,   P[0]+P[2],M-1);
 				YplusisCtimesX(gx3+2,gz4,   P[1],     M-2);
-
-				YplusisCtimesX(gx4,  gz1+1, 2*P[3],   M-1);
-				YplusisCtimesX(gx4,  gz2,   2*P[2],   M);
-				YplusisCtimesX(gx4+1,gz3,   2*P[1],   M-1);
 				YplusisCtimesX(gx4+2,gz4,   P[0],     M-2);
 
+				YplusisCtimesX(gx0+1,gz3,   2*P[3],   M-1);
+				YplusisCtimesX(gx1+1,gz3,   P[2],     M-1);
+				YplusisCtimesX(gx2+1,gz3,   P[1]+P[3],M-1);
+				YplusisCtimesX(gx3+1,gz3,   P[0]+P[2],M-1);
+				YplusisCtimesX(gx4+1,gz3,   2*P[1],   M-1);
+
+				YplusisCtimesX(gx0,  gz2,   2*P[2],   M);
+				YplusisCtimesX(gx1,  gz2,   P[1]+P[3],M);
+				YplusisCtimesX(gx2,  gz2,   P[0],     M);
+				YplusisCtimesX(gx3,  gz2,   P[1]+P[3],M);
+				YplusisCtimesX(gx4,  gz2,   2*P[2],   M);
+
+				YplusisCtimesX(gx0,  gz1+1, 2*P[1],   M-1);
+				YplusisCtimesX(gx1,  gz1+1, P[0]+P[2],M-1);
+				YplusisCtimesX(gx2,  gz1+1, P[1]+P[3],M-1);
+				YplusisCtimesX(gx3,  gz1+1, P[2],     M-1);
+				YplusisCtimesX(gx4,  gz1+1, 2*P[3],   M-1);
+
+				YplusisCtimesX(gx0,  gz0+2, P[0],     M-2);
+				YplusisCtimesX(gx1,  gz0+2, P[1],     M-2);
+				YplusisCtimesX(gx2,  gz0+2, P[2],     M-2);
+				YplusisCtimesX(gx3,  gz0+2, P[3],     M-2);
+
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+				Real result;
+				for (int k=0; k<FJC; k++) {
+					result =0; remove_bounds(gs+k*M);
+					Sum(result,gs+k*M,M);
+					cout << "k " << k << "result " << result << endl;
+				}
 			} else {
 				cout <<"cubic lattice type in FJC_choices>3 not inplemented " << endl;
 			}

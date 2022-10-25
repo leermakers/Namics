@@ -163,7 +163,6 @@ if (debug) cout <<"LGrad1 computeLambda's " << endl;
 		}
 		if (Markov==2) { //planar gemaakt voor debugging....
 			for (int i = fjc; i < M - fjc; i++) {
-				L[i]=1.0/fjc;
 				LABDA[i]=LAMBDA[i]*8.0;
 				LABDA_1[i]=1.0-LABDA[i];
 				for (int j=1; j<FJC-1; j++) {

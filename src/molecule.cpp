@@ -639,9 +639,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			cout <<" You may interpret 'k_stiff' as the molecular 'persistence length' " << endl;
 			cout <<" k_stiff is a 'default value'. Use molecular specific values to overrule the default when appropriate (future implementation....) " << endl;
 		}
-		if (Lat[0]->fjc>2 ) {
+		if ((Lat[0]->fjc>3 && Lat[0]->gradients==1) || (Lat[0]->fjc>1 && Lat[0]->gradients>1)) {
 			success=false;
-			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 7 " << endl;
+			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for FJC_choices < 9 (one gradient) and  FJC_choices = 3 (two and three gradients) " << endl;
 		}
 	}
 	if (Markov ==2) {

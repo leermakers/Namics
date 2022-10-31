@@ -306,6 +306,29 @@ void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	switch (fjc) {
 		case 1:
 			if (lattice_type==hexagonal) {
+
+				int a,b; Real c;
+				for (int p=0; p<FJC; p++){
+					a=p-fjc; if (a<0) {b=0; a=-a; } else {b=a; a=0;}
+					for (int q=0; q<FJC; q++) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (a>0) {
+							Times   (H+b,   l_1+a,   gs_1+q*M+b,            M-a-b);
+				  			AddTimes(H+b,   l_11+a,  gs_1+(FJC-1-q)*M+a,    M-a-b);
+						}
+						if (b>0) {
+							Times   (H+b,   l1+a,   gs_1+q*M+b,            M-a-b);
+				  			AddTimes(H+b,   l11+a,  gs_1+(FJC-1-q)*M+a,    M-a-b);
+						}
+						if (a+b>0){
+				  			if (c!=0) YplusisCtimesX(gs+p*M+a,H+b,c,M-a-b);
+						} else {
+							if (c!=0) YplusisCtimesX(gs+p*M,gs_1+q*M,c,M);
+						}
+					}
+				}
+/*
 				//LReflect(H,gz0,gz2);
 				Times   (H,   l_1 +1,  gz0,    M-1);
 				AddTimes(H,   l_11+1,  gz2+1,  M-1);
@@ -327,7 +350,7 @@ void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 				Times   (H+1, l1,      gz2+1,  M-1);
 				AddTimes(H+1, l11,     gz0,    M-1);
 				YplusisCtimesX(gx2,H+1,P[0],M-1);
-
+*/
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 
 			} else {
@@ -368,8 +391,21 @@ void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 			}
 			break;
+/*
 		case 2:
 			if (lattice_type==hexagonal) {
+				int a,b; Real c;
+				for (int p=0; p<FJC; p++){
+					a=p-fjc; if (a<0) {b=0; a=-a; } else {b=a; a=0;}
+					for (int q=0; q<FJC; q++) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						Times   (H+b,   LABDA+p*M+a,    gs_1+q*M+b,            M-a-b);
+				  		AddTimes(H+b,   LABDA_1+p*M+a,  gs_1+(FJC-1-q)*M+a,    M-a-b);
+						if (c!=0) YplusisCtimesX(gs+p*M+a,H+b,c,M-a-b);
+					}
+				}
+
 				Real *gx3=gs+3*M,   *gx4=gs+4*M;
 				Real *gz3=gs_1+3*M, *gz4=gs_1+4*M;
 				  Times   (H,   LABDA+0*M+2,    gz0,    M-2);
@@ -444,8 +480,19 @@ void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 			break;
 		case 3:
 			if (lattice_type==hexagonal) {
-				Real *gx3 = gs+3*M,   *gx4 = gs+4*M,   *gx5 = gs+5*M,   *gx6 = gs+6*M;
-				Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M, *gz5 = gs_1+5*M, *gz6 = gs_1+6*M;
+				//Real *gx3 = gs+3*M,   *gx4 = gs+4*M,   *gx5 = gs+5*M,   *gx6 = gs+6*M;
+				//Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M, *gz5 = gs_1+5*M, *gz6 = gs_1+6*M;
+				int a,b; Real c;
+				for (int p=0; p<FJC; p++){
+					a=p-fjc; if (a<0) {b=0; a=-a; } else {b=a; a=0;}
+					for (int q=0; q<FJC; q++) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						Times   (H+b,   LABDA+p*M+a,    gs_1+q*M+b,            M-a-b);
+				  		AddTimes(H+b,   LABDA_1+p*M+a,  gs_1+(FJC-1-q)*M+a,    M-a-b);
+						if (c!=0) YplusisCtimesX(gs+p*M+a,H+b,c,M-a-b);
+					}
+				}
 				  Times   (H,   LABDA+0*M+3,    gz0,    M-3);
 				  AddTimes(H,   LABDA_1+0*M+3,  gz6+3,  M-3);
 				YplusisCtimesX(gx0+3,H,P[0],     M-3);
@@ -585,8 +632,24 @@ void LGrad1::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 				cout <<"cubic lattice and FJC_choices=3 Markov 2 not implemented " << endl;
 			}
 			break;
+*/
 		default:
-			cout <<"Error, FJC_choices > 5 not implemented " << endl;
+			if (lattice_type==hexagonal) {
+				int a,b; Real c;
+				for (int p=0; p<FJC; p++){
+					a=p-fjc; if (a<0) {b=0; a=-a; } else {b=a; a=0;}
+					for (int q=0; q<FJC; q++) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						Times   (H+b,   LABDA+p*M+a,    gs_1+q*M+b,            M-a-b);
+				  		AddTimes(H+b,   LABDA_1+p*M+a,  gs_1+(FJC-1-q)*M+a,    M-a-b);
+						if (c!=0) YplusisCtimesX(gs+p*M+a,H+b,c,M-a-b);
+					}
+				}
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+			} else {
+				cout <<"cubic lattice and FJC_choices=3 Markov 2 not implemented " << endl;
+			}
 			break;
 	}
 }
@@ -605,6 +668,30 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	switch (fjc) {
 		case 1:
 			if (lattice_type==hexagonal) {
+
+				int a,b; Real c;
+
+				for (int q=FJC-1; q>-1; q--){
+					a=q-fjc; if (a>0) {b=0;} else {b=-a; a=0;}
+					if (a>0) {
+						Times   (H+b,   l_1+a,   gs_1+q*M+b,        M-a-b);
+						AddTimes(H+b,   l_11+a,  gs_1+(FJC-1-q)*M+a,M-a-b);
+					}
+					if (b>0) {
+						Times   (H+b,   l1+a,   gs_1+q*M+b,        M-a-b);
+						AddTimes(H+b,   l11+a,  gs_1+(FJC-1-q)*M+a,M-a-b);
+					}
+					for (int p=FJC-1; p>-1; p--) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (a+b>0) {
+							if (c!=0) YplusisCtimesX(gs+p*M+a,H+b,c,M-a-b);
+						} else {
+							if (c!=0) YplusisCtimesX(gs+p*M,gs_1+q*M,c,M);
+						}
+					}
+				}
+/*
 				//LReflect(H,gz2,gz0);
 				  Times   (H,   l_1 +1,  gz2,    M-1);
 				  AddTimes(H,   l_11+1,  gz0+1,  M-1);
@@ -620,6 +707,7 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 				  AddTimes(H+1, l11,     gz2,    M-1);
 				YplusisCtimesX(gx0,H+1,P[0],M-1);
 				YplusisCtimesX(gx1,H+1,P[1],M-1);
+*/
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 			} else {
 				//LReflect(H,gz2,gz0);
@@ -656,10 +744,25 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 			}
 			break;
+/*
 		case 2:
            if (lattice_type ==hexagonal) {
-			   	Real *gz3=gs_1+3*M, *gz4=gs_1+4*M;
-			   	Real *gx3=gs+3*M,   *gx4=gs+4*M;
+			   	//Real *gz3=gs_1+3*M, *gz4=gs_1+4*M;
+			   	//Real *gx3=gs+3*M,   *gx4=gs+4*M;
+
+				int a,b; Real c;
+
+				for (int q=FJC-1; q>-1; q--){
+					a=q-fjc; if (a>0) {b=0;} else {b=-a; a=0;}
+					Times   (H+b,   LABDA+(FJC-1-q)*M+a,    gs_1+q*M+b,        M-a-b);
+					AddTimes(H+b,   LABDA_1+(FJC-1-q)*M+a,  gs_1+(FJC-1-q)*M+a,M-a-b);
+					for (int p=FJC-1; p>-1; p--) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,H+b,c,M-a-b);
+					}
+				}
+
 				  Times   (H,   LABDA+0*M+2,    gz4,    M-2);
 				  AddTimes(H,   LABDA_1+0*M+2,  gz0+2,  M-2);
 				YplusisCtimesX(gx1+2,H,   P[3],     M-2);
@@ -704,8 +807,21 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 			break;
 		case 3:
 			if (lattice_type ==hexagonal) {
-				Real *gx3 = gs+3*M,   *gx4 = gs+4*M,  *gx5 = gs+5*M,  *gx6 = gs+6*M;
-				Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M,*gz5 = gs_1+5*M,*gz6 = gs_1+6*M;
+				//Real *gx3 = gs+3*M,   *gx4 = gs+4*M,  *gx5 = gs+5*M,  *gx6 = gs+6*M;
+				//Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M,*gz5 = gs_1+5*M,*gz6 = gs_1+6*M;
+
+				int a,b; Real c;
+
+				for (int q=FJC-1; q>-1; q--){
+					a=q-fjc; if (a>0) {b=0;} else {b=-a; a=0;}
+					Times   (H+b,   LABDA+(FJC-1-q)*M+a,    gs_1+q*M+b,        M-a-b);
+					AddTimes(H+b,   LABDA_1+(FJC-1-q)*M+a,  gs_1+(FJC-1-q)*M+a,M-a-b);
+					for (int p=FJC-1; p>-1; p--) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,H+b,c,M-a-b);
+					}
+				}
 
 				  Times   (H,   LABDA+0*M+3,    gz6,    M-3);
 				  AddTimes(H,   LABDA_1+0*M+3,  gz0+3,  M-3);
@@ -778,8 +894,26 @@ void LGrad1::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 				cout <<"cubic lattice type in FJC_choices>3 not inplemented " << endl;
 			}
 			break;
+*/
 		default:
-			cout <<" fjc > 2 not implemented " << endl;
+			if (lattice_type ==hexagonal) {
+				int a,b; Real c;
+
+				for (int q=FJC-1; q>-1; q--){
+					a=q-fjc; if (a>0) {b=0;} else {b=-a; a=0;}
+					Times   (H+b,   LABDA+(FJC-1-q)*M+a,    gs_1+q*M+b,        M-a-b);
+					AddTimes(H+b,   LABDA_1+(FJC-1-q)*M+a,  gs_1+(FJC-1-q)*M+a,M-a-b);
+					for (int p=FJC-1; p>-1; p--) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,H+b,c,M-a-b);
+					}
+				}
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+			} else {
+				cout <<"cubic lattice type in FJC_choices>3 not inplemented " << endl;
+			}
+
 			break;
 
 	}

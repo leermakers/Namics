@@ -154,7 +154,7 @@ if (debug) cout <<"AllocateMemory in lat " << endl;
 				}
 			}
 			if (BC[4]=="surface") {
-				if (fjc==1) BYM=MY+1; else { cout <<"surface ub" << endl;
+				if (fjc==1) BYM=MY+1; else { //cout <<"surface ub" << endl;
 					for (int k=0; k<fjc; k++) B_YM[k]=MY+fjc+k;
 				}
 			}
@@ -996,7 +996,7 @@ if (debug) cout <<"StoreGuess in output" << endl;
 	}
 	FILE *fp;
 	filename=In[0]->output_info.getOutputPath()+filename;
-	fp=fopen(filename.c_str(),"a");//w
+	fp=fopen(filename.c_str(),"w");//:a"
 	fprintf(fp,"%s\n",method.c_str());
 	fprintf(fp," %i\t%i\t%i\t%i\n" ,MX,MY,MZ, fjc);
 	if (charged) fprintf(fp,"%s\n" ,"true"); else  fprintf(fp,"%s\n" ,"false");

@@ -74,6 +74,16 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 		case 1:
 			if (lattice_type ==hexagonal) {
 
+				int a,b; Real c;
+				for (int p=0; p<FJC; p++){
+					a=p-fjc; if (a<0) {b=0; a=-a; } else {b=a; a=0;}
+					for (int q=0; q<FJC; q++) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,gs_1+q*M+b,c,M-a-b);
+					}
+				}
+/*
 				YplusisCtimesX(gx0+1,gz0,P[0],  M-1);
 				YplusisCtimesX(gx0+1,gz1,2*P[1],M-1);
 
@@ -83,9 +93,11 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 
 				YplusisCtimesX(gx2,gz1+1,2*P[1],M-1);
 				YplusisCtimesX(gx2,gz2+1,P[0],  M-1);
+*/
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 
 			} else { //simple cubic
+
 				YplusisCtimesX(gx0+1,gz0,P[0],     M-1);
 				YplusisCtimesX(gx0+1,gz1,4*P[1],   M-1);
 
@@ -99,10 +111,22 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 			}
 			break;
+/*
 		case 2:
 			if (lattice_type==hexagonal) {
-				Real *gx3 = gs+3*M,   *gx4 = gs+4*M;
-				Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M;
+				//Real *gx3 = gs+3*M,   *gx4 = gs+4*M;
+				//Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M;
+
+				int a,b; Real c;
+				for (int p=0; p<FJC; p++){
+					a=p-fjc; if (a<0) {b=0; a=-a; } else {b=a; a=0;}
+					for (int q=0; q<FJC; q++) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,gs_1+q*M+b,c,M-a-b);
+					}
+				}
+
 				YplusisCtimesX(gx0+2,gz0,P[0],     M-2);
 				YplusisCtimesX(gx0+2,gz1,2*P[1],   M-2);
 				YplusisCtimesX(gx0+2,gz2,2*P[2],   M-2);
@@ -138,8 +162,21 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 			break;
 		case 3:
 			if (lattice_type==hexagonal) {
-				Real *gx3 = gs+3*M,   *gx4 = gs+4*M,   *gx5 = gs+5*M,   *gx6 = gs+6*M;
-				Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M, *gz5 = gs_1+5*M, *gz6 = gs_1+6*M;
+				//Real *gx3 = gs+3*M,   *gx4 = gs+4*M,   *gx5 = gs+5*M,   *gx6 = gs+6*M;
+				//Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M, *gz5 = gs_1+5*M, *gz6 = gs_1+6*M;
+
+				int a,b; Real c;
+
+				for (int p=0; p<FJC; p++){
+					a=p-fjc; if (a<0) {b=0; a=-a; } else {b=a; a=0;}
+					for (int q=0; q<FJC; q++) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,gs_1+q*M+b,c,M-a-b);
+						//cout <<"p " << p << " q " << q << " a " << a << " b " << b << "abs(-p+q) " << abs(-p+q) << " FJC-1-abs(FJC-1-p-q) " << FJC-1-abs(FJC-1-p-q) << endl;
+					}
+				}
+
 				YplusisCtimesX(gx0+3,gz0,P[0],     M-3);
 				YplusisCtimesX(gx0+3,gz1,2*P[1],   M-3);
 				YplusisCtimesX(gx0+3,gz2,2*P[2],   M-3);
@@ -199,8 +236,24 @@ if (debug) cout <<" propagateF in LG1Planar " << endl;
 				cout <<"cubic lattice and FJC_choices=3 Markov 2 not implemented " << endl;
 			}
 			break;
+*/
 		default:
-			cout <<"Error, FJC_choices >5 not implemented " << endl;
+			if (lattice_type==hexagonal) {
+				int a,b; Real c;
+
+				for (int p=0; p<FJC; p++){
+					a=p-fjc; if (a<0) {b=0; a=-a; } else {b=a; a=0;}
+					for (int q=0; q<FJC; q++) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,gs_1+q*M+b,c,M-a-b);
+					}
+				}
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+			} else {
+				cout <<"cubic lattice and FJC_choices=3 Markov 2 not implemented " << endl;
+			}
+
 			break;
 	}
 }
@@ -220,6 +273,17 @@ if (debug) cout <<" propagateB in LG1Planar " << endl;
 	switch (fjc) {
 		case 1:
 			if (lattice_type ==hexagonal) {
+				int a,b; Real c;
+
+				for (int q=FJC-1; q>-1; q--){
+					a=q-fjc; if (a>0) {b=0;} else {b=-a; a=0;}
+					for (int p=FJC-1; p>-1; p--) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,gs_1+q*M+b,c,M-a-b);
+					}
+				}
+/*
 				YplusisCtimesX(gx0,  gz0+1,P[0],  M-1);
 				YplusisCtimesX(gx0,  gz1,  2*P[1],M);
 
@@ -229,7 +293,7 @@ if (debug) cout <<" propagateB in LG1Planar " << endl;
 
 				YplusisCtimesX(gx2,  gz1,  2*P[1],M);
 				YplusisCtimesX(gx2+1,gz2,  P[0],  M-1);
-
+*/
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 
 			} else { //simple cubic
@@ -246,10 +310,21 @@ if (debug) cout <<" propagateB in LG1Planar " << endl;
 				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
 			}
 			break;
+/*
 		case 2:
 			if (lattice_type ==hexagonal) {
-				Real *gx3 = gs+3*M,   *gx4 = gs+4*M;
-				Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M;
+				//Real *gx3 = gs+3*M,   *gx4 = gs+4*M;
+				//Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M;
+				int a,b; Real c;
+
+				for (int q=FJC-1; q>-1; q--){
+					a=q-fjc; if (a>0) {b=0;} else {b=-a; a=0;}
+					for (int p=FJC-1; p>-1; p--) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,gs_1+q*M+b,c,M-a-b);
+					}
+				}
 
 				YplusisCtimesX(gx1+2,gz4,   P[3],     M-2);
 				YplusisCtimesX(gx2+2,gz4,   P[2],     M-2);
@@ -286,8 +361,20 @@ if (debug) cout <<" propagateB in LG1Planar " << endl;
 			break;
 		case 3:
 			if (lattice_type ==hexagonal) {
-				Real *gx3 = gs+3*M,   *gx4 = gs+4*M,  *gx5 = gs+5*M,  *gx6 = gs+6*M;
-				Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M,*gz5 = gs_1+5*M,*gz6 = gs_1+6*M;
+				//Real *gx3 = gs+3*M,   *gx4 = gs+4*M,  *gx5 = gs+5*M,  *gx6 = gs+6*M;
+				//Real *gz3 = gs_1+3*M, *gz4 = gs_1+4*M,*gz5 = gs_1+5*M,*gz6 = gs_1+6*M;
+
+				int a,b; Real c;
+
+				for (int q=FJC-1; q>-1; q--){
+					a=q-fjc; if (a>0) {b=0;} else {b=-a; a=0;}
+					for (int p=FJC-1; p>-1; p--) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,gs_1+q*M+b,c,M-a-b);
+						//cout <<"p " << p << " q " << q << " a " << a << " b " << b << "abs(-p+q) " << abs(-p+q) << " FJC-1-abs(FJC-1-p-q) " << FJC-1-abs(FJC-1-p-q) << endl;
+					}
+				}
 
 				YplusisCtimesX(gx6+3,gz6,   P[0],     M-3);
 				YplusisCtimesX(gx5+3,gz6,   P[1],     M-3);
@@ -348,8 +435,23 @@ if (debug) cout <<" propagateB in LG1Planar " << endl;
 				cout <<"cubic lattice type in FJC_choices>3 not inplemented " << endl;
 			}
 			break;
+*/
 		default:
-				cout <<"propagator for Markov=2 and FJC_choices combination not implemented " <<endl;
+			if (lattice_type ==hexagonal) {
+				int a,b; Real c;
+
+				for (int q=FJC-1; q>-1; q--){
+					a=q-fjc; if (a>0) {b=0;} else {b=-a; a=0;}
+					for (int p=FJC-1; p>-1; p--) {
+						c=P[abs(-p+q)];
+						if (q>0 && q<FJC-1) c+= P[FJC-1-abs(FJC-1-p-q)];
+						if (c!=0) YplusisCtimesX(gs+p*M+a,gs_1+q*M+b,c,M-a-b);
+					}
+				}
+				for (int k=0; k<FJC; k++) Times(gs+k*M,gs+k*M,g,M);
+			} else {
+				cout <<"cubic lattice type in FJC_choices>3 not inplemented " << endl;
+			}
 			break;
 	}
 }

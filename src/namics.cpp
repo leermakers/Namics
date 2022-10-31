@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 	int n_starts = 0;
 	bool kal_append=false;
 
-	string initial_guess;
+	//string initial_guess;
 	string final_guess;
 	string METHOD = "";
 	Real *X = NULL;
@@ -539,7 +539,8 @@ int main(int argc, char *argv[])
 				{
 					//bool print=true;
 					New[0]->Solve(true);
-					if (Sys[0]->initial_guess == "previous_result") {
+
+					if (Sys[0]->initial_guess == "previous_result" || Sys[0]->initial_guess == "file") {
 						if (New[0]->iv == IV_new) {
 							Cp(X,New[0]->xx,IV_new);
 						} else {
@@ -656,7 +657,7 @@ int main(int argc, char *argv[])
 
 		if (scan_nr > -1)
 			Var[scan_nr]->ResetScanValue();
-		if (Sys[0]->initial_guess == "previous_result")
+		if (Sys[0]->initial_guess == "previous_result"|| Sys[0]->initial_guess == "file")
 		{
 			METHOD = New[0]->SCF_method; //check this..
 			MX = Lat[0]->MX;

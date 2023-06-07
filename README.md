@@ -49,9 +49,9 @@ Set the ccbin value in the NVCC flags in the makefile to the correct g++ version
 	- [ ] Dynamics  
 - [ ] Teng (with MC) is underway by Ram  
 	- [ ] Dynamics  
-- [ ] Steady states  
+- [x] Steady states in fjc=1 and 1 gradient case  
 
-Funtionalities SCF module summer 2021. 
+Funtionalities SCF module summer 2022. 
 Gradients: 	
 	one, (classical)
 	two  (cylindrical and spherical geometry)
@@ -61,6 +61,7 @@ Geometries: planar (in 1, 2, 3 gradients)
 	    spherical (in 1 gradient only).
 Markov chains: first order (direct backfolding allowed; Freely jointed chains)
 	       second order (semi flexible chains @ branch points chains are usually freely jointed)
+	       second order in one-gradient systems works for all grit refinement values.
 Chain architecture
 	linear chains 'including ' ring.
 	branched chains (composition rules: parts in [ ] are side chains)
@@ -80,11 +81,12 @@ Constraints
 	Clamping (constrained at both ends)
 	beta constraint (extra constraint to e.g. fix the position of an interface). 
 Boundery conditions
-	In 1 gradient calculations the surface bc is implemented
-	In 2 and 3 gradient systems the surface is to be placed inside the box. 
+	In 1 and 2 gradient calculations the surface bc is implemented
+	In  3 gradient systems the surface is to be placed inside the box. 
 		The idea is that this will fix the 'image'-charges problem. 
 		Gradients of electrostatic potential inside solid phase can be studies by using a sufficiently thick solid phase in the system.
-	Freedom of molecule can be set to 'fill-range' (when it is pinned to surface layer) to prevent the solvent to penetrate the surface layer.
+	Freedom of molecule can be set to 'fill-range' (when it is pinned to surface layer)
+	       second order in one-gradient systems works for all grit refinement values to prevent the solvent to penetrate the surface layer.
 Output	
 	Density profiles
 	Free energy 
@@ -97,8 +99,8 @@ Lattice type
 Lattice discretisation
 	FJC-choices 3: segment size equal to lattice side (classical)
 	In one-gradient calculations the FJC value can be increased to 5, 7, 9, etc (lattice refinement, quasi lattice-free)
-	In two-gradient calculations FJC = 5 can be set.
-	When Markov =2, FJC must be FJC =3. 
+	In two-gradient calculations FJC <9 can be set.
+	When Markov =2 and one-gradient will work for all FJC_choices, but for 2 and 3 gradients Markov =2 works only for FJC_choices==3. 
 
 Newton iterations
 	Quasi Newton with storage of (large) Jacobian (Hessian) matrix
@@ -107,6 +109,6 @@ Newton iterations
 	
 Computatial tricks
 	memory saving (only part of the end-point distributions is stored, when needed others are recomuted...)
-	local solutions (in 3d box to find solutions)
+	local solutions solutions)
 		
 	

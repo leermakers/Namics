@@ -138,13 +138,14 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 		Real Q=0;
 		KStiff=k_stiff;
 		for (int k=0; k<FJC-1; k++) {
-			P[k]=exp(-0.5*KStiff*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) );
+			P[k]=exp(-0.5*KStiff*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); //alternative to put U(theta)=-k(1-cos(theta))
 			if (k>0) {
 				if (Lat[0]->lattice_type==hexagonal) Q+= 2*P[k]; else Q+= 4*P[k]; //alternative is to use u_bend = Kstiff(1-cos(theta)), persistence length is l_p = b/ln <cos (theta)>
 			} else Q=P[k];
 		}
 		P[FJC-1]=0; //Q+=P[FJC-1];
 		//if (Lat[0]->lattice_type==hexagonal) Q=2*Q-P[0]; else Q=4*Q-3*P[0];
+		if (Lat[0]->lattice_type==hexagonal&& !Lat[0]->stencil_full) Q*=2.0;
 		for (int k=0; k<FJC; k++) { P[k]/=Q;
 			cout << "P["<<k<<"] = " << P[k] << endl;
 		}
@@ -644,16 +645,21 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			cout <<" Work in progress.... Currently, Markov == 2 is implemented in gradients>1 for FJC_choices = 3 " << endl;
 		}
 	}
+	size=0;
 	if (Markov ==2) {
 		if (Lat[0]->gradients==1) size = Lat[0]->FJC;
-		if (Lat[0]->gradients==2) {
-			if (Lat[0]->lattice_type==hexagonal) size = 7; else size = 5;
+		if (Lat[0]->gradients==2) { //assume fjc=1...
+			if (Lat[0]->lattice_type==hexagonal && !Lat[0]->stencil_full) size = 7;
+			if (Lat[0]->lattice_type==hexagonal && Lat[0]->stencil_full) size = 12; //2*FJC-1
+			if (Lat[0]->lattice_type==simple_cubic && Lat[0]->stencil_full) size = 2*Lat[0]->FJC-1;
 		}
 		if (Lat[0]->gradients==3) {
-			if (Lat[0]->lattice_type==hexagonal) size = 12; else size = 6;
+			if (Lat[0]->lattice_type==hexagonal && !Lat[0]->stencil_full) size = 12;
+			if (Lat[0]->lattice_type==simple_cubic && Lat[0]->stencil_full) size = 6;
 		}
-		       //cout <<"size = " << size << endl;
+	    cout <<"size = " << size << endl;
 	} else size = 1;
+	if (size==0) {success=false; cout <<"Attention: size in molecule is not set; combination gradients (1,2,3),  Markov=2, stencil_full (true,false), lattice_type (hexagonal, simple_cubic) not implemented" << endl;}
 
 	return success;
 }
@@ -1991,6 +1997,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	Real thetaexc=theta-Lat[0]->volume*phibulk;
 	push("theta_exc",thetaexc);
 	push("thetaexc",thetaexc);
+	push("theta_Gibbs",theta_Gibbs);
+	if (R_Gibbs>0) push("R_Gibbs",R_Gibbs);
 	push("n",n);
 	push("chainlength",chainlength);
 	push("phibulk",phibulk);
@@ -2164,7 +2172,28 @@ if (debug) cout <<"GetValue (long) for Mol " + name << endl;
 	return 0;
 }
 
+Real Molecule::ComputeGibbs(Real R_gibbs) {
+if (debug) cout <<"ComputeGibbs for Mol " + name << endl;
+	int fjc=Lat[0]->fjc;
+	int M=Lat[0]->M;
+	int gradients=Lat[0]->gradients;
+	if (gradients>1) {cout <<"Error in ComputeGibbs; gadients not equal to 1 " << endl; return 0.0;}
+	Real phi_low =phitot[fjc];
+	Real phi_high=phitot[M-fjc-1];
+	Real theta_exc=theta-(M-2*fjc)*phibulk/fjc;
+	if (freedom=="solvent") {
+		theta_Gibbs=0;
+		R_Gibbs=theta_exc/(phi_low-phi_high);
+		return  R_Gibbs;
+	} else {
+		R_Gibbs=R_gibbs;
+		theta_Gibbs=theta_exc-(phi_low-phi_high)*R_gibbs;
+		return theta_Gibbs;
+	}
+}
+
 bool Molecule::ComputeWidth() {
+if (debug) cout <<"ComputeWidth for Mol " + name << endl;
 	bool success=true;
 	int M=Lat[0]->M;
 	if (Lat[0]->gradients>1) {success=false; cout <<" Compute width of interface only in system with 'one-gradient'" << endl; return success; }

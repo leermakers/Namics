@@ -901,9 +901,14 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 				if (sub.size() !=1) {
 					success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info in 1d, such as: x"<<endl;
 				}
-				labda=MX;
-				cout <<"putting u_ext" << endl;
-				for (int x=1; x<MX; x++) u_ext[x]+=Amplitude*(sin(2.0*PIE*x/labda));
+				if (sub[0]=="x") {
+					labda=MX;
+					cout <<"putting u_ext" << endl;
+					for (int x=1; x<MX; x++) u_ext[x]+=Amplitude*(sin(2.0*PIE*x/labda));
+				} else {
+					int x=In[0]->Get_int(sub[0],MX/2);
+					u_ext[x]=Amplitude;
+				}
 				break;
 			case 2:
 				s = GetValue("fluctuation_potentials");
@@ -1123,7 +1128,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 					cout <<"fluctuation wavelength should be an integer 2^x, with x = 1..10" << endl;
 				}
 		}
-		if (Lat[0]->gradients==2 || Lat[0]->gradients==1) {
+		if (Lat[0]->gradients==2) {
 			labda = Lat[0]->MY;
 			labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),labda);
 			if (labda !=Lat[0]->MY) {

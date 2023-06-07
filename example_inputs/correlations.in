@@ -1,0 +1,29 @@
+lat : flat : n_layers : 4001
+lat : flat : lattice_type : hexagonal
+//lat : flat : lattice_type : simple_cubic
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+lat : flat : FJC_choices : 3
+
+
+mon : A : freedom : free
+mon : B : freedom : free
+mon : A : chi_B : 1.99999
+mon : A : fluctuation_potentials : 2001
+mon : A : fluctuation_amplitude : 1
+
+mol : A : composition :  (A)1
+mol : A : freedom : free
+mol : A : phibulk : 0.5
+
+mol : B : composition : (B)1
+mol : B : freedom : solvent
+
+output : pro : append : false
+pro : mol : A : phi
+pro : mol : B : phi
+
+newton : isaac : method : pseudohessian
+newton : isaac : iterationlimit : 10000
+newton : isaac : i_info : 100
+

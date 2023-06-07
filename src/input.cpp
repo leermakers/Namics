@@ -24,6 +24,7 @@ Input::Input(string name_) {
 		int line_nr=0;
 		bool add=true;
 		std:: string In_line;
+		std:: string last;
 		while (in_file) {
 			line_nr++;
 			std::getline(in_file,In_line);
@@ -33,11 +34,11 @@ Input::Input(string name_) {
 			if (In_line.length()>2) {if (In_line.substr(0,2) == "//") add = false;}
 			if (In_line.length()>7) {if (In_line.substr(0,7) == "include") {
 				add = false;
-				string filename_inc; 
+				string filename_inc;
 				string s=In_line.substr(8,In_line.size()-1);
-				int length=s.length(); 
-				if (s.substr(length-2,length-1)=="::") 
-					filename_inc=s.substr(0,length-2); 
+				int length=s.length();
+				if (s.substr(length-2,length-1)=="::")
+					filename_inc=s.substr(0,length-2);
 				else filename_inc=s;
 				inc_file.open(filename_inc);
 				if (inc_file.is_open()) {
@@ -59,8 +60,15 @@ Input::Input(string name_) {
 				}
 
 			}}
-			if (add) elems.push_back(std::to_string(line_nr).append(":").append(In_line)); else add=true;
+			if (add) {
+				elems.push_back(std::to_string(line_nr).append(":").append(In_line));
+				last=In_line;
+			} else add=true;
 		}
+		if (last != "start") {
+		   elems.push_back(std::to_string(line_nr++).append(":").append("start"));
+	   }
+
 		in_file.close();
 		parseOutputInfo();
 		if (!CheckInput()) Input_error=true;
@@ -303,7 +311,10 @@ int Input:: GetNumStarts() {
 		vector<std::string> set;
 		split(elems[i],':',set);
 		if (set[1] == "start") number++;
-		if ( (i==length-1)&& ( set[1].substr(0,5)!="start") ) number++;
+		if ( (i==length-1)&& ( set[1].substr(0,5)!="start") ) {
+			number++;
+			//elems.push_back("start");
+		}
 	}
 	return number;
 }

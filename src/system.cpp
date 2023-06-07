@@ -14,7 +14,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	prepared = false;
 	if (debug)
 		cout << "Constructor for system " << endl;
-  KEYS.push_back("calculation_type");
+  	KEYS.push_back("calculation_type");
 	KEYS.push_back("constraint");
 	KEYS.push_back("delta_range");
 	KEYS.push_back("delta_range_units");
@@ -30,6 +30,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("find_local_solution");
 	KEYS.push_back("split");
 	KEYS.push_back("X");
+	KEYS.push_back("compute_Gibbs_excess");
 
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++)
@@ -2776,6 +2777,16 @@ bool System::CheckResults(bool e_info_)
 		//if (e_info) cout << endl;
 	}
 	first_pass=false;
+
+	if (GetValue("compute_Gibbs_excess").size()>0){
+		Real Rgibbs=Mol[solvent]->ComputeGibbs(0);
+		Real excess=0;
+		for (int i=0; i<n_mol; i++) {
+			if (i !=solvent) excess+=Mol[i]->ComputeGibbs(Rgibbs);
+		}
+		if (excess<-1e-5 || excess > 1e-5) cout <<"total excess is not close to zero: " << excess << endl;
+	}
+
 	return success;
 }
 

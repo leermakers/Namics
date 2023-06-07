@@ -272,24 +272,24 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 
 	success = In[0]->CheckParameters("lat",name,start,KEYS,PARAMETERS,VALUES);
 	if (!success) return success;
-	vector<string> options;
-	if (checking) {
-		gradients=1;
-		gradients=In[0]->Get_int(GetValue("gradients"),1);
-		if (gradients<0||gradients>3) {cout << "value of gradients out of bounds 1..3; default value '1' is used instead " << endl; gradients=1;}
-		options.clear();
-		options.push_back("spherical");
-		options.push_back("cylindrical");
-		options.push_back("flat");options.push_back("planar");
+		vector<string> options;
+		if (checking) {
+			gradients=1;
+			gradients=In[0]->Get_int(GetValue("gradients"),1);
+			if (gradients<0||gradients>3) {cout << "value of gradients out of bounds 1..3; default value '1' is used instead " << endl; gradients=1;}
+			options.clear();
+			options.push_back("spherical");
+			options.push_back("cylindrical");
+			options.push_back("flat");options.push_back("planar");
 
-		if (GetValue("geometry").size()>0) {
-			if (!In[0]->Get_string(GetValue("geometry"),geometry,options,"In lattice input for 'geometry' not recognized."))
-				success=false;
-		} else geometry = "planar";
-		if (geometry=="flat") geometry="planar";
+			if (GetValue("geometry").size()>0) {
+				if (!In[0]->Get_string(GetValue("geometry"),geometry,options,"In lattice input for 'geometry' not recognized."))
+					success=false;
+			} else geometry = "planar";
+			if (geometry=="flat") geometry="planar";
 
-		return success;
-	}
+			return success;
+		}
 
 
 
@@ -388,6 +388,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 				options.clear();
 				options.push_back("mirror");
 				options.push_back("surface");
+				options.push_back("periodic");
 				if (GetValue("lowerbound_x").size()>0) {success=false; cout << "lowerbound_x is not allowed in 1-gradient calculations" << endl;}
 				if (GetValue("lowerbound_y").size()>0) {success=false; cout << "lowerbound_y is not allowed in 1-gradient calculations" << endl;}
 				if (GetValue("lowerbound_z").size()>0) {success=false; cout << "lowerbound_z is not allowed in 1-gradient calculations" << endl;}
@@ -562,10 +563,10 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		if (fcc_sites&&ignore_sites) {
 			cout <<"can't combine 'fcc_site_fraction' with 'ignore_site_fraction'" <<endl; success=false;
 		}
-
+		stencil_full=true;
 		if (GetValue("stencil_full").length()>0) {
-			stencil_full=In[0]->Get_bool(GetValue("stencil_full"),false);
-			if (gradients<3 && !stencil_full) cout << "In calculations with 'gradients' less than 3, stencil_full is set to true. " << endl;
+			stencil_full=In[0]->Get_bool(GetValue("stencil_full"),true);
+			if (gradients<3 && !stencil_full) cout << "untested territory for not 'stencil_full' " << endl;
 		}
 		//Initialize system size and indexing
 		PutM();
@@ -719,7 +720,7 @@ if (debug) cout << "GetValue in lattice " << endl;
 	return "" ;
 }
 
-Real Lattice::GetValue(Real* X,string s){ //need a check to find out if s contains 3 integers separated by ','
+Real Lattice::GetValue(Real* X,string s){
 if (debug) cout << "GetValue in lattice " << endl;
 if (X==NULL) cout << "pointer X is zero" << endl;
 	int x=0,y=0,z=0;
@@ -729,6 +730,7 @@ if (X==NULL) cout << "pointer X is zero" << endl;
 		case 1:
 			if (sub.size()==1) {
 				x=In[0]->Get_int(sub[0],x);
+				if (x==-1) x=MX; //trick to get the value of lastlayer; currently only in 1gradient case....
 				if (x<0||x>MX+1) {
 					cout <<"Requested postition in 'kal' output out of bounds." << endl;
 					return 0;

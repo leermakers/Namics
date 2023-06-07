@@ -1991,7 +1991,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	//  }
 	//}
 
-
+	push("Rg",pow((Lat[0]->Moment(phitot,0.0,2)/chainlength),0.5));
 	push("theta",theta);
         //cout <<"theta " << name << " = " << theta << endl;
 	Real thetaexc=theta-Lat[0]->volume*phibulk;

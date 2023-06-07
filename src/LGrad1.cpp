@@ -939,7 +939,7 @@ void LGrad1::Initiate(Real* G,Real* Gz,int Markov, int M){
 }
 
 void LGrad1::Terminate(Real* Gz ,Real* G, int Markov, int M){
-if (!debug) cout <<"LGrad1::Terminite " << endl;
+if (debug) cout <<"LGrad1::Terminate " << endl;
 	Real one=1.0;
 	if (Markov==2) {
 		Zero(Gz,M);

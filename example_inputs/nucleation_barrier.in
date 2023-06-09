@@ -3,15 +3,16 @@ lat : sphere : gradients : 1
 lat : sphere : n_layers : 200
 lat : sphere : lattice_type : hexagonal
 lat : sphere : FJC_choices : 5
+sys: noname : delta_range_units  : bondlength
 
 mon : A : freedom : pinned
-mon : A : pinned_range : 1;150
+mon : A : pinned_range : 1;100
 
 mon : B : freedom : free
 
 mol : A : composition : (A)4
 mol : A : freedom : restricted
-mol : A : theta : 700000
+mol : A : theta : 5600000
 mol : A : compute_width_interface : true
 
 mol : B : composition : (B)4
@@ -35,57 +36,15 @@ kal : mol : A : theta
 newton : isaac : i_info : 1000
 sys : noname : constraint : delta
 sys : noname : delta_molecules : A;B
-sys : noname : delta_range : (121)
+sys : noname : delta_range : (100)
 sys : noname : phi_ratio : 1
-//ratio should be preferably sqrt(N_A/N_B) which is the ratio between the two critical densities.
+//ratio should be preferably sqrt(N_B/N_A) which is the ratio between the two critical densities.
 mol : A : freedom : free
 mol : A : phibulk : 5.74596414792e-2
 //normalising by phibulk possible because of beta-constraint which fixes the position of the interface. 
 start
 output : pro : write : false
 output : kal : append : true
-sys : noname : delta_range : (120)
-start
-sys : noname : delta_range : (119)
-start
-sys : noname : delta_range : (118)
-start
-sys : noname : delta_range : (117)
-start
-sys : noname : delta_range : (116)
-start
-sys : noname : delta_range : (115)
-start
-sys : noname : delta_range : (114)
-start
-sys : noname : delta_range : (113)
-start
-sys : noname : delta_range : (112)
-start
-sys : noname : delta_range : (111)
-start
-sys : noname : delta_range : (110)
-start
-sys : noname : delta_range : (109)
-start
-sys : noname : delta_range : (108)
-start
-sys : noname : delta_range : (107)
-start
-sys : noname : delta_range : (106)
-start
-sys : noname : delta_range : (105)
-start
-sys : noname : delta_range : (104)
-start
-sys : noname : delta_range : (103)
-start
-sys : noname : delta_range : (102)
-start
-sys : noname : delta_range : (101)
-start
-sys : noname : delta_range : (100)
-start
 sys : noname : delta_range : (99)
 start
 sys : noname : delta_range : (98)

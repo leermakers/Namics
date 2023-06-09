@@ -1,4 +1,4 @@
-lat : sphere : geometry : spherical
+lat : sphere : geometry : spherical 
 lat : sphere : gradients : 1
 lat : sphere : n_layers : 200
 lat : sphere : lattice_type : hexagonal

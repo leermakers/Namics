@@ -1,4 +1,4 @@
-lat : flat : gradients : 3
+lat : flat : gradients : 3 
 lat : flat : n_layers_x : 20
 lat : flat : n_layers_y : 20
 lat : flat : n_layers_z : 20

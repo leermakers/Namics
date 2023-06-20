@@ -95,8 +95,8 @@ void LGrad2:: ComputeLambdas() {
 			}
 		}
 	}
-	for (int k=0; k<FJC; k++) for (int y=1-fjc; y<MY+fjc; y++) for (int x=MX+1; x< MX+fjc; x++)
-		LAMBDA[P(x,y)+k*M]=LAMBDA[P(2*MX-x+1,y)+(FJC-k-1)*M];
+	//for (int k=0; k<FJC; k++) for (int y=1-fjc; y<MY+fjc; y++) for (int x=MX+1; x< MX+fjc; x++)
+		//LAMBDA[P(x,y)+k*M]=LAMBDA[P(2*MX-x+1,y)+(FJC-k-1)*M];
 }
 
 bool LGrad2::PutM() {
@@ -1138,32 +1138,34 @@ if (debug) cout <<"set_bounds in LGrad2 " << endl;
 			X[MY+1]=X[BYM];
 		//}
 		//for (x=MX+1; x<MX+2; x++) {
-			X[(MX+1)*JX+0] = X[(MX+1)*JX+BY1];
-			X[(MX+1)*JX+MY+1]=X[(MX+1)*JX+BYM];
+			X[(MX+1)*JX+      0] = X[(MX+1)*JX+BY1];
+			X[(MX+1)*JX+   MY+1]  =X[(MX+1)*JX+BYM];
 		//}
 	} else {
 		for (x=fjc; x<MX+fjc; x++) {
 			for (k=0; k<fjc; k++) {
-				X[x*JX+k]=X[x*JX+B_Y1[k]];
-				X[x*JX+MY+fjc+k]=X[x*JX+B_YM[k]];
+				X[x*JX+           k]=X[x*JX+B_Y1[k]];
+				X[x*JX+    MY+fjc+k]=X[x*JX+B_YM[k]];
 			}
 		}
-		for (y=fjc; y<MY+fjc; y++) {
+		//for (y=fjc; y<MY+fjc; y++) {
+		for (y=0; y<MY+2*fjc; y++) {
 			for (k=0; k<fjc; k++) {
-				X[k*JX+y]=X[B_X1[k]*JX+y];
-				X[(MX+fjc+k)*JX+y]=X[B_XM[k]*JX+y];
+				X[k*JX+           y]=X[B_X1[k]*JX+     y];
+				X[(MX+fjc+k)*JX  +y]=X[B_XM[k]*JX+     y];
 			}
 		}
-		for (int k=0; k<fjc; k++) for (int m=0; m<fjc; m++)  {
-			X[k*JX         +m      ]=X[k*JX+B_Y1[m]];
-			X[(MX+fjc+k)*JX+m      ]=X[(MX+fjc+k)*JX+B_Y1[m]];
-			X[k*JX         +(MY+fjc+m)]=X[k*JX+B_YM[m]];
-			X[(MX+fjc+k)*JX+(MY+fjc+m)]=X[(MX+fjc+k)*JX+B_YM[m]];
+		//for (int k=0; k<fjc; k++) for (int m=0; m<fjc; m++)  {
+			//X[k*JX         +m      ]=X[k*JX            +B_Y1[m]];
+			//X[(MX+fjc+k)*JX+m      ]=X[(MX+fjc+k)*JX   +B_Y1[m]];
+			//X[k*JX         +(MY+fjc+m)]=X[k*JX         +B_YM[m]];
+			//X[(MX+fjc+k)*JX+(MY+fjc+m)]=X[(MX+fjc+k)*JX+B_YM[m]];
+
 			//X[k*JX         +m      ]=X[B_X1[k]*JX+B_Y1[m]];
 			//X[(MX+fjc+k)*JX+m      ]=X[B_XM[k]*JX+B_Y1[m]];
 			//X[k*JX         +(MY+fjc+m)]=X[B_X1[k]*JX+B_YM[m]];
 			//X[(MX+fjc+k)*JX+(MY+fjc+m)]=X[B_XM[k]*JX+B_YM[m]];
-		}
+		//}
 	}
 }
 

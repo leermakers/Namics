@@ -380,13 +380,14 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 			n_start++;
 			int k=0;
 			int k_length=Input.size();
-			while (k<k_length) { //remove doubles and keep last value
+			while (k<k_length) { //remove doubles and keep last value; erase duplicates
 				int l=k+1;
 				int l_length=Input.size();
 				while (l<l_length) {
 					if (Input[k]==Input[l]) {
 						Input_values[k]=Input_values[l];
 						Input.erase(Input.begin()+l);
+						cout <<"Warning: " << Input[k] << " found twice.... " << Input_values[k] << " is used!" << endl;
 						Input_values.erase(Input_values.begin()+l);
 						l_length--;
 						k_length--;

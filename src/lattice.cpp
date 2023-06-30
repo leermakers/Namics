@@ -382,6 +382,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 						cout <<"value of 'offset_first_layer' can not be negative. Value ignored. " << endl;
 						offset_first_layer=0;
 					}
+					volume = MX/fjc;
 				}
 				offset_first_layer *=fjc;
 

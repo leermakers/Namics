@@ -1992,6 +1992,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	//}
 
 	push("Rg",pow((Lat[0]->Moment(phitot,0.0,2)/chainlength),0.5));
+	Lat[0]->remove_bounds(phitot);
+	theta=Lat[0]->WeightedSum(phitot);
 	push("theta",theta);
         //cout <<"theta " << name << " = " << theta << endl;
 	Real thetaexc=theta-Lat[0]->volume*phibulk;
@@ -2178,16 +2180,25 @@ if (debug) cout <<"ComputeGibbs for Mol " + name << endl;
 	int M=Lat[0]->M;
 	int gradients=Lat[0]->gradients;
 	if (gradients>1) {cout <<"Error in ComputeGibbs; gadients not equal to 1 " << endl; return 0.0;}
-	Real phi_low =phitot[fjc];
-	Real phi_high=phitot[M-fjc-1];
-	Real theta_exc=theta-(M-2*fjc)*phibulk/fjc;
+	Lat[0]->remove_bounds(phitot);
+	Real phi_low =phitot[fjc+1];
+	Real phi_high=phitot[M-2*fjc-1];
+	theta=Lat[0]->WeightedSum(phitot);
+	Real theta_exc=theta-Lat[0]->volume*phibulk;
+	//cout <<"for mol : " << name << " theta " << theta << " theta_exc " << theta_exc << endl;
+	//cout <<"volume " <<Lat[0]->volume << endl;
+	//cout <<"phibulk " << phibulk << endl;
 	if (freedom=="solvent") {
 		theta_Gibbs=0;
 		R_Gibbs=theta_exc/(phi_low-phi_high);
+		//cout <<"R_gibbs " << R_Gibbs << endl;
 		return  R_Gibbs;
 	} else {
 		R_Gibbs=R_gibbs;
 		theta_Gibbs=theta_exc-(phi_low-phi_high)*R_gibbs;
+		//cout <<" philow = " << phi_low << endl;
+		//cout <<" phihigh = " << phi_high << endl;
+		//cout <<" theta_Gibbs " << theta_Gibbs << endl;
 		return theta_Gibbs;
 	}
 }

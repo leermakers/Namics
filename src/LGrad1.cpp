@@ -180,9 +180,9 @@ bool LGrad1::PutM() {
 if (debug) cout << "PutM in LGrad1 " << endl;
 	bool success=true;
 	JX=1; JY=0; JZ=0; M=MX+2*fjc;
-	if (geometry=="planar") {volume = MX; }
-	if (geometry=="spherical") {volume = 4/3*PIE*(pow(MX+offset_first_layer,3)-pow(offset_first_layer,3));}
-	if (geometry=="cylindrical") {volume = PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2));}
+	if (geometry=="planar") {volume = MX/fjc; }
+	if (geometry=="spherical") {volume = 4/3*PIE*(pow(MX+offset_first_layer,3)-pow(offset_first_layer,3))/fjc/fjc/fjc;}
+	if (geometry=="cylindrical") {volume = PIE*(pow(MX+offset_first_layer,2)-pow(offset_first_layer,2))/fjc/fjc;}
 
 	Accesible_volume=volume;
 	return success;

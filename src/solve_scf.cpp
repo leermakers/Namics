@@ -7,6 +7,7 @@ Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> S
 if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("gradient_type");
 	KEYS.push_back("method");
+	KEYS.push_back("x_info");
 	KEYS.push_back("e_info"); KEYS.push_back("s_info");KEYS.push_back("i_info");KEYS.push_back("t_info");KEYS.push_back("hs_info");
 	KEYS.push_back("iterationlimit" ); KEYS.push_back("tolerance");
 	KEYS.push_back("stop_criterion");
@@ -879,7 +880,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 				Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
 				Lat[0]->remove_bounds(g+sysmon_length*M);
 			}
-			Real one=1.0; 
+			Real one=1.0;
 			YisAplusC(g+jump*M,Sys[0]->phitot,-1.0*one,M);
 			for (i=0; i<sysmon_length; i++) {
 				Cp(g+i*M,xx+i*M,M);
@@ -899,7 +900,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 		}
 		default:
 			if (debug) cout <<"Residuals in scf mode in Solve_scf " << endl;
-			if (Sys[0]->CalculationType=="steady_state") 
+			if (Sys[0]->CalculationType=="steady_state")
 				Sys[0]->Steady_residual(x,g,residual,iterations, iv);
 			else Sys[0]->Classical_residual(x,g,residual,iterations, iv);
 		break;
@@ -963,7 +964,7 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 			if (smallAlphaCount == maxNumSmallAlpha) {
 				smallAlphaCount = 0;
 				//if (!reverseDirection) {reverseDirection=new Real[reverseDirectionRange];H_Zero(reverseDirection,reverseDirectionRange); }
-				if (!s_info) {
+				if (s_info) {
 					cout << "too many small alphas: newton reset" << endl;
 				}
 				resethessian(h,g,x,nvar);
@@ -992,8 +993,8 @@ if(debug) cout <<"inneriteration in Solve_scf " << endl;
 				numIterationsSinceHessian = 0;
 			} else if ((numIterationsSinceHessian >= n_iterations_for_hessian &&
 						iterations > 0 && accuracy < minAccuracyForHessian && minimum < minAccuracyForHessian)) {
-				if (s_info && e_info) 
-					cout << "Still no solution, computing full hessian..." << endl; 
+				if (s_info && e_info)
+					cout << "Still no solution, computing full hessian..." << endl;
 				else cout <<"*";
 				pseudohessian = false; reset_pseudohessian =true;
 				numIterationsSinceHessian = 0;

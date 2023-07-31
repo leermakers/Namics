@@ -106,7 +106,8 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 		Cp(X_side,X,M); return;
 	}
 	Zero(X_side,M);//set_bounds(X);
-
+	Real Two=2.0;
+	Real Four=4.0;
 	if (!stencil_full) {
 		Add(X_side+JX,X   ,M-JX);
 		Add(X_side   ,X+JX,M-JX);
@@ -116,9 +117,9 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 		Add(X_side   ,X+1 ,M-1);
 
 		if (lattice_type == simple_cubic) {
-			Norm(X_side,4.0,M);
+			Norm(X_side,Four,M);
 		} else {
-			Norm(X_side,2.0,M);
+			Norm(X_side,Two,M);
 		}
 		Add(X_side+JX+JY, X,       M-JX-JY);
 		Add(X_side,       X+JX+JY, M-JX-JY);
@@ -133,9 +134,9 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 		Add(X_side+JY,    X+1,     M-JY);
 		Add(X_side+1,     X+JY,    M-JY);
 		if (lattice_type == simple_cubic) {
-			Norm(X_side,4.0,M);
+			Norm(X_side,Four,M);
 		} else {
-			Norm(X_side,2.0,M);
+			Norm(X_side,Two,M);
 		}
 		Add(X_side+JX+JY+1,  X,	    M-JX-JY-1);
 		Add(X_side,          X+JX+JY+1, M-JX-JY-1);
@@ -146,29 +147,34 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 		Add(X_side+JY+1,     X+JX,      M-JX-JY-1);
 		Add(X_side+JX,       X+JY+1,    M-JX-JY-1);
 		if (lattice_type == simple_cubic) {
-			Norm(X_side,1.0/152.0,M);
+			Real C=1.0/152.0;
+			Norm(X_side,C,M);
 		} else {
-			Norm(X_side,1.0/56.0,M);
+			Real C=1.0/56.0;
+			Norm(X_side,C,M);
 		}
 	} else {
 		if (lattice_type==simple_cubic) {
+			Real C=1.0/6.0;
 			Add(X_side+JX,X   ,M-JX);
 			Add(X_side   ,X+JX,M-JX);
 			Add(X_side+JY,X   ,M-JY);
 			Add(X_side   ,X+JY,M-JY);
 			Add(X_side+JZ,X   ,M-JZ);
 			Add(X_side   ,X+JZ,M-JZ);
-	 		Norm(X_side,1.0/6.0,M);
+	 		Norm(X_side,C,M);
 		} else { //hexagonal
 			if (fjc==1) {
-				YplusisCtimesX(X_side,X,2.0,M);
+				Real Two=2.0;
+				Real C=1.0/40.0;
+				YplusisCtimesX(X_side,X,Two,M);
 				Add(X_side+JX,X,   M-JX);
 				Add(X_side,   X+JX,M-JX);
 				Add(X_side+JY,X,   M-JY);
 				Add(X_side,   X+JY,M-JY);
 				Add(X_side+1, X,   M-1);
 				Add(X_side,   X+1, M-1);
-				Norm(X_side,2,M);
+				Norm(X_side,Two,M);
 
 				Add(X_side+JX+JY,   X,      M-JX-JY);
 				Add(X_side,         X+JX+JY,M-JX-JY);
@@ -182,7 +188,7 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 				Add(X_side,         X+JX+1,  M-JX-1);
 				Add(X_side+JY,      X+1,     M-JY-1);
 				Add(X_side,         X+JY+1,  M-JY-1);
-				Norm(X_side,2,M);
+				Norm(X_side,Two,M);
 
 				Add(X_side+JX+JY+1,X,        M-JX-JY-1);
 				Add(X_side,        X+JX+JY+1,M-JX-JY-1);
@@ -193,7 +199,7 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 				Add(X_side+JY+1,   X+JX,     M-JX-JY-1);
 				Add(X_side+JX,     X+JY+1,   M-JX-JY-1);
 
-				Norm(X_side,1.0/40.0,M);
+				Norm(X_side,C,M);
 
 /*
 				Add(X_side+JX ,X,    M-JX);
@@ -212,6 +218,8 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 */
 			} else { //fjc==2
 				for (int block=0; block<4; block++){
+					Real Two=2.0;
+					Real C=1.0/8.0/((FJC-2)*(FJC-2)*(FJC-2)+3*(FJC-2)*(FJC-2)+3*(FJC-2)+1);
 					int bk;
 					int a,b;
 					for (int x=-fjc; x<fjc+1; x++) for (int y=-fjc; y<fjc+1; y++) for (int z=-fjc; z<fjc+1; z++){
@@ -226,7 +234,7 @@ if (debug) cout <<" Side in LGrad3 " << endl;
 							Add(X_side+a,X+b,M-a-b);
 						}
 					}
-					if (block !=3) Norm(X_side,2.0,M); else Norm(X_side,1.0/8.0/((FJC-2)*(FJC-2)*(FJC-2)+3*(FJC-2)*(FJC-2)+3*(FJC-2)+1),M);
+					if (block !=3) Norm(X_side,Two,M); else Norm(X_side,C,M);
 
 				}
 			}
@@ -731,14 +739,16 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 #endif
 		} else { //hexagonal
 			if (fjc==1) {
-				YplusisCtimesX(gs,gs_1,2.0,M);
+				Real Two=2.0;
+				Real C=1.0/40.0;
+				YplusisCtimesX(gs,gs_1,Two,M);
 				Add(gs+JX,gs_1,   M-JX);
 				Add(gs,   gs_1+JX,M-JX);
 				Add(gs+JY,gs_1,   M-JY);
 				Add(gs,   gs_1+JY,M-JY);
 				Add(gs+1, gs_1,   M-1);
 				Add(gs,   gs_1+1, M-1);
-				Norm(gs,2,M);
+				Norm(gs,Two,M);
 
 				Add(gs+JX+JY,   gs_1,      M-JX-JY);
 				Add(gs,         gs_1+JX+JY,M-JX-JY);
@@ -752,7 +762,7 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 				Add(gs,         gs_1+JX+1,  M-JX-1);
 				Add(gs+JY,      gs_1+1,     M-JY-1);
 				Add(gs,         gs_1+JY+1,  M-JY-1);
-				Norm(gs,2,M);
+				Norm(gs,Two,M);
 
 				Add(gs+JX+JY+1,gs_1,        M-JX-JY-1);
 				Add(gs,        gs_1+JX+JY+1,M-JX-JY-1);
@@ -763,7 +773,7 @@ if (debug) cout <<" propagate in LGrad3 " << endl;
 				Add(gs+JY+1,   gs_1+JX,     M-JX-JY-1);
 				Add(gs+JX,     gs_1+JY+1,   M-JX-JY-1);
 
-				Norm(gs,1.0/40.0,M);
+				Norm(gs,C,M);
 				Times(gs,gs,G1,M);
 /* Johan's method
 				Add(gs+JX_,gs_1,    M-JX_);

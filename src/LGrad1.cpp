@@ -672,8 +672,10 @@ void LGrad1::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 			r++;
 			epsXmin=epsXplus;
 			epsXplus=r*(eps[x]+eps[x+1]);
-			a=b; b=c; c=psi[x+1];
-			X[x]=(epsXmin*a + C*q[x]*L[x] + epsXplus*c)/(epsXmin+epsXplus);
+			//a=b; b=c; c=psi[x+1];
+			//X[x]=(epsXmin*a + C*q[x]*L[x] + epsXplus*c)/(epsXmin+epsXplus);
+			if (x==fjc) a=psi[fjc-1]; else a=X[x-1]; //upwind
+			X[x]=(epsXmin*a  +C*q[x] + epsXplus*psi[x+1])/(epsXmin+epsXplus);
 		 }
 	}
 	if (geometry=="spherical") {
@@ -874,20 +876,28 @@ Real LGrad1::ComputeGN(Real* G,int Markov, int M){
 void LGrad1::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){
 	if (debug) cout <<"AddPhiS_markov " << endl;
 	if (Markov==2) {
+
+
 		if (lattice_type ==hexagonal) {
 			if (fjc==1) {
-				YplusisCtimesAtimesB(phi,Gf,    Gb,    1.0/4.0,M);
-				YplusisCtimesAtimesB(phi,Gf+1*M,Gb+1*M,2.0/4.0,M);
-				YplusisCtimesAtimesB(phi,Gf+2*M,Gb+2*M,1.0/4.0,M);
+				Real C1=1.0/4.0;
+				Real C2=2.0/4.0;
+				YplusisCtimesAtimesB(phi,Gf,    Gb,    C1,M);
+				YplusisCtimesAtimesB(phi,Gf+1*M,Gb+1*M,C2,M);
+				YplusisCtimesAtimesB(phi,Gf+2*M,Gb+2*M,C1,M);
 			} else {
-				YplusisCtimesAtimesB(phi,Gf,    Gb,    0.5/(FJC-1.0),M);
-				for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/(FJC-1.0),M);
-				YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,0.5/(FJC-1.0),M);
+				Real C1=0.5/(FJC-1.0);
+				Real C2=1.0/(FJC-1.0);
+				YplusisCtimesAtimesB(phi,Gf,    Gb,   C1,M);
+				for (int k=1; k<FJC-1; k++) YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,C2,M);
+				YplusisCtimesAtimesB(phi,Gf+(FJC-1)*M,Gb+(FJC-1)*M,C1,M);
 			}
 		} else { //markov=2 cubic fjc=1
-			YplusisCtimesAtimesB(phi,Gf,    Gb,    1.0/6.0,M);
-			YplusisCtimesAtimesB(phi,Gf+1*M,Gb+1*M,4.0/6.0,M);
-			YplusisCtimesAtimesB(phi,Gf+2*M,Gb+2*M,1.0/6.0,M);
+			Real C1=1.0/6.0;
+			Real C2=4.0/6.0;
+			YplusisCtimesAtimesB(phi,Gf,    Gb,    C1,M);
+			YplusisCtimesAtimesB(phi,Gf+1*M,Gb+1*M,C2,M);
+			YplusisCtimesAtimesB(phi,Gf+2*M,Gb+2*M,C1,M);
 		}
 	} else {
 		AddTimes(phi,Gf,Gb,M);

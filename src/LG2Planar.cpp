@@ -81,31 +81,36 @@ if (debug) cout <<" Side in LG2Planar " << endl;
 			} else {
 				if (lattice_type==simple_cubic) {  //9punts stencil, voorheen 6pnts
 					//cout <<"not fully tested" << endl;
-					YplusisCtimesX(X_side,X,    16.0/36.0,M);
-					YplusisCtimesX(X_side+1,X,   4.0/36.0,M-1);
-					YplusisCtimesX(X_side,X+1,   4.0/36.0,M-1);
-					YplusisCtimesX(X_side+JX,X,  4.0/36.0,M-JX);
-					YplusisCtimesX(X_side,X+JX,  4.0/36.0,M-JX);
-					YplusisCtimesX(X_side+JX+1,X,1.0/36.0,M-JX-1);
-					YplusisCtimesX(X_side+JX,X+1,1.0/36.0,M-JX);
-					YplusisCtimesX(X_side+1,X+JX,1.0/36.0,M-JX);
-					YplusisCtimesX(X_side,X+JX+1,1.0/36.0,M-JX-1);
+					Real C1=16.0/36.0;
+					Real C2=4.0/36.0;
+					Real C3=1.0/36.0;
+					YplusisCtimesX(X_side,X,    C1,M);
+					YplusisCtimesX(X_side+1,X,   C2,M-1);
+					YplusisCtimesX(X_side,X+1,   C2,M-1);
+					YplusisCtimesX(X_side+JX,X,  C2,M-JX);
+					YplusisCtimesX(X_side,X+JX,  C2,M-JX);
+					YplusisCtimesX(X_side+JX+1,X,C3,M-JX-1);
+					YplusisCtimesX(X_side+JX,X+1,C3,M-JX);
+					YplusisCtimesX(X_side+1,X+JX,C3,M-JX);
+					YplusisCtimesX(X_side,X+JX+1,C3,M-JX-1);
 
 				} else {
 						//hexagonal //9 point stencil
 						//Add(gs,gs_1,M);
-					YplusisCtimesX(X_side,X,2.0,M);
+					Real Two=2.0;
+					Real C=1.0/16.0;
+					YplusisCtimesX(X_side,X,Two,M);
 					Add(X_side+JX,X,   M-JX);
 					Add(X_side,   X+JX,M-JX);
 					Add(X_side+JY,X,   M-JY);
 					Add(X_side,   X+JY,M-JY);
-					Norm(X_side,2,M);
+					Norm(X_side,Two,M);
 					Add(X_side+JX+JY,X,      M-JX-JY);
 					Add(X_side,      X+JX+JY,M-JX-JY);
 					Add(X_side+JX,   X+JY,   M-JX-JY);
 					Add(X_side+JY,   X+JX,   M-JX-JY);
 
-					Norm(X_side,1.0/16.0,M);
+					Norm(X_side,C,M);
 				}
 			}
 
@@ -613,36 +618,42 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 				}
 		} else {
 			if (lattice_type==simple_cubic) {
-				YplusisCtimesX(gs,gs_1,    16.0/36.0,M);
-				YplusisCtimesX(gs+1,gs_1,   4.0/36.0,M-1);
-				YplusisCtimesX(gs,gs_1+1,   4.0/36.0,M-1);
-				YplusisCtimesX(gs+JX,gs_1,  4.0/36.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX,  4.0/36.0,M-JX);
-				YplusisCtimesX(gs+JX+1,gs_1,1.0/36.0,M-JX-1);
-				YplusisCtimesX(gs+JX,gs_1+1,1.0/36.0,M-JX);
-				YplusisCtimesX(gs+1,gs_1+JX,1.0/36.0,M-JX);
-				YplusisCtimesX(gs,gs_1+JX+1,1.0/36.0,M-JX-1);
+				Real C1=16.0/36.0;
+				Real C2=4.0/36.0;
+				Real C3=1.0/36.0;
+				YplusisCtimesX(gs,gs_1,    C1,M);
+				YplusisCtimesX(gs+1,gs_1,   C2,M-1);
+				YplusisCtimesX(gs,gs_1+1,   C2,M-1);
+				YplusisCtimesX(gs+JX,gs_1,  C2,M-JX);
+				YplusisCtimesX(gs,gs_1+JX,  C2,M-JX);
+				YplusisCtimesX(gs+JX+1,gs_1,C3,M-JX-1);
+				YplusisCtimesX(gs+JX,gs_1+1,C3,M-JX);
+				YplusisCtimesX(gs+1,gs_1+JX,C3,M-JX);
+				YplusisCtimesX(gs,gs_1+JX+1,C3,M-JX-1);
 				Times(gs,gs,G1,M);
 			} else { //hexagonal //9 point stencil
 
 				//Add(gs,gs_1,M);
-				YplusisCtimesX(gs,gs_1,2.0,M);
+				Real Two=2.0;
+				Real C=1.0/16.0;
+				YplusisCtimesX(gs,gs_1,Two,M);
 				Add(gs+JX,gs_1,   M-JX);
 				Add(gs,   gs_1+JX,M-JX);
 				Add(gs+JY,gs_1,   M-JY);
 				Add(gs,   gs_1+JY,M-JY);
-				Norm(gs,2.0,M);
+				Norm(gs,Two,M);
 				Add(gs+JX+JY,gs_1,      M-JX-JY);
 				Add(gs,      gs_1+JX+JY,M-JX-JY);
 				Add(gs+JX,   gs_1+JY,   M-JX-JY);
 				Add(gs+JY,   gs_1+JX,   M-JX-JY);
 
-				Norm(gs,1.0/16.0,M);
+				Norm(gs,C,M);
 				Times(gs,gs,G1,M);
 			}
 		}
 	} else {
 		for (int block=0; block<3; block++){
+			Real Two=2.0;
 			int bk;
 			int a,b;
 			for (int x=-fjc; x<fjc+1; x++) for (int y=-fjc; y<fjc+1; y++) {
@@ -655,7 +666,7 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 					Add(gs+a,gs_1+b,M-a-b);
 				}
 			}
-			if (block !=2) Norm(gs,2.0,M); else Norm(gs,1.0/(4.0*(FJC-2)*FJC+1),M);
+			if (block !=2) Norm(gs,Two,M); else Norm(gs,1.0/(4.0*(FJC-2)*FJC+1),M);
 		}
 		Times(gs,gs,G1,M);
 	}

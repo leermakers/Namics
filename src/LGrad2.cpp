@@ -212,48 +212,56 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 	Zero(X_side,M);//set_bounds(X);
 
 	if (fcc_sites) {
-		YplusisCtimesX(X_side,X,1.0/3.0,M);
+		Real C1=1.0/3.0;
+		YplusisCtimesX(X_side,X,C1,M);
 		AddTimes(X_side+JX,X,fcc_lambda_1+JX,M-JX);
 		AddTimes(X_side,X+JX,fcc_lambda1,    M-JX);
-		YplusisCtimesX(X_side+1,X,1.0/3.0,M-1);
-		YplusisCtimesX(X_side,X+1,1.0/3.0,M-1);
+		YplusisCtimesX(X_side+1,X,C1,M-1);
+		YplusisCtimesX(X_side,X+1,C1,M-1);
 		AddTimes(X_side+JX+1,X,fcc_lambda_1+JX+1,M-JX-1);
 		AddTimes(X_side+JX,X+1,fcc_lambda_1+JX,  M-JX-1);
 		AddTimes(X_side+1,X+JX,fcc_lambda1+1,M-JX-1);
 		AddTimes(X_side,X+JX+1,fcc_lambda1,  M-JX-1);
-		Norm(X_side,1.0/3.0,M);
+		Norm(X_side,C1,M);
 
 	} else {
 		if (fjc==1) {
 			if (lattice_type ==simple_cubic) {
-				YplusisCtimesX(X_side,X,4.0/6.0,M);
+				Real C1=4.0/6.0;
+				Real C2=1.0/6.0;
+				Real C3=4.0;
+				YplusisCtimesX(X_side,X,C1,M);
 				AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
 				AddTimes(X_side,X+JX,lambda1,    M-JX);
-				YplusisCtimesX(X_side+1,X,1.0/6.0,M-1);
-				YplusisCtimesX(X_side,X+1,1.0/6.0,M-1);
-				Norm(X_side,4.0,M);
+				YplusisCtimesX(X_side+1,X,C2,M-1);
+				YplusisCtimesX(X_side,X+1,C2,M-1);
+				Norm(X_side,C3,M);
 				AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
 				AddTimes(X_side+JX,X+1,lambda_1+JX,  M-JX-1);
 				AddTimes(X_side+1,X+JX,lambda1+1,M-JX-1);
 				AddTimes(X_side,X+JX+1,lambda1,  M-JX-1);
-				Norm(X_side,1.0/6.0,M);
+				Norm(X_side,C2,M);
 			} else {
-				YplusisCtimesX(X_side,X,2.0/4.0,M);
+				Real C1=2.0/4.0;
+				Real C2=1.0/4.0;
+				Real C3=2.0;
+				YplusisCtimesX(X_side,X,C1,M);
 				AddTimes(X_side+JX,X,lambda_1+JX,M-JX);
 				AddTimes(X_side,X+JX,lambda1,    M-JX);
-				YplusisCtimesX(X_side+1,X,1.0/4.0,M-1);
-				YplusisCtimesX(X_side,X+1,1.0/4.0,M-1);
-				Norm(X_side,2.0,M);
+				YplusisCtimesX(X_side+1,X,C2,M-1);
+				YplusisCtimesX(X_side,X+1,C2,M-1);
+				Norm(X_side,C3,M);
 				AddTimes(X_side+JX+1,X,lambda_1+JX+1,M-JX-1);
 				AddTimes(X_side+JX,X+1,lambda_1+JX,  M-JX-1);
 				AddTimes(X_side+1,X+JX,lambda1+1,    M-JX-1);
 				AddTimes(X_side,X+JX+1,lambda1,      M-JX-1);
-				Norm(X_side,3.0/12.0,M);
+				Norm(X_side,C2,M);
 			}
 		} else { //fjc>1
 			for (int block=0; block<2; block++) {
 				int a,b;
 				int bk;
+				Real C=1.0/(2*(fjc+2));
 				for (int x=-fjc; x<fjc+1; x++) for (int y=-fjc; y<fjc+1; y++) {
 					bk=0; a=0; b=0;
 					if (y==-fjc || y==fjc) bk++;
@@ -263,7 +271,7 @@ if (debug) cout <<" Side in LGrad2 " << endl;
 						AddTimes(X_side+a,X+b,LAMBDA+(fjc+x)*M+a, M-a-b);
 					}
 				}
-				if (block !=1) Norm(X_side,2.0,M); else Norm(X_side,1.0/(2*(fjc+2)),M);
+				if (block !=1) Norm(X_side,2.0,M); else Norm(X_side,C,M);
 			}
 		}
 	}
@@ -532,37 +540,43 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 	Zero(gs,M); set_bounds(gs_1);
 	if (fjc==1) {
 		if (lattice_type==simple_cubic) {
-			YplusisCtimesX(gs,gs_1,4.0/6.0,M);
+			Real C1=4.0/6.0;
+			Real C2=1.0/6.0;
+			Real C3=4.0;
+			YplusisCtimesX(gs,gs_1,C1,M);
 			AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
 			AddTimes(gs,gs_1+JX,lambda1,    M-JX);
-			YplusisCtimesX(gs+1,gs_1,1.0/6.0,M-1);
-			YplusisCtimesX(gs,gs_1+1,1.0/6.0,M-1);
-			Norm(gs,4.0,M);
+			YplusisCtimesX(gs+1,gs_1,C2,M-1);
+			YplusisCtimesX(gs,gs_1+1,C2,M-1);
+			Norm(gs,C3,M);
 			AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
 			AddTimes(gs+JX,gs_1+1,lambda_1+JX,  M-JX-1);
 			AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX-1);
 			AddTimes(gs,gs_1+JX+1,lambda1,  M-JX-1);
-			Norm(gs,1.0/6.0,M);
+			Norm(gs,C2,M);
 			Times(gs,gs,G1,M);
 		} else { //9 point stencil; hexagonal
-
-			YplusisCtimesX(gs,gs_1,0.5,M);
+			Real C1=0.5;
+			Real C2=0.25;
+			Real C3=2.0;
+			YplusisCtimesX(gs,gs_1,C1,M);
 			AddTimes(gs+JX,gs_1,lambda_1+JX,M-JX);
 			AddTimes(gs,gs_1+JX,lambda1,    M-JX);
-			YplusisCtimesX(gs+1,gs_1,0.25,M-1);
-			YplusisCtimesX(gs,gs_1+1,0.25,M-1);
-			Norm(gs,2.0,M);
+			YplusisCtimesX(gs+1,gs_1,C2,M-1);
+			YplusisCtimesX(gs,gs_1+1,C2,M-1);
+			Norm(gs,C3,M);
 			AddTimes(gs+JX+1,gs_1,lambda_1+JX+1,M-JX-1);
 			AddTimes(gs+JX,gs_1+1,lambda_1+JX,	M-JX-1);
 			AddTimes(gs+1,gs_1+JX,lambda1+1,M-JX-1);
 			AddTimes(gs,gs_1+JX+1,lambda1,  M-JX-1);
-			Norm(gs,0.25,M);
+			Norm(gs,C2,M);
 			Times(gs,gs,G1,M);
 		}
 	} else { //fjc>1
 		for (int block=0; block<2; block++) {
 			int a,b;
 			int bk;
+			Real C= 1.0/(2*(fjc+2));
 			for (int x=-fjc; x<fjc+1; x++) for (int y=-fjc; y<fjc+1; y++) {
 				bk=0; a=0; b=0;
 				if (y==-fjc || y==fjc) bk++;
@@ -572,7 +586,7 @@ if (debug) cout <<" propagate in LGrad2 " << endl;
 					AddTimes(gs+a,gs_1+b,LAMBDA+(fjc+x)*M+a, M-a-b);
 				}
 			}
-			if (block !=1) Norm(gs,2.0,M); else Norm(gs,1.0/(2*(fjc+2)),M);
+			if (block !=1) Norm(gs,2.0,M); else Norm(gs,C,M);
 		}
 		Times(gs,gs,G1,M);
 
@@ -1314,25 +1328,30 @@ Real LGrad2::ComputeGN(Real* G,int Markov, int M){
 }
 void LGrad2::AddPhiS(Real* phi,Real* Gf,Real* Gb,int Markov, int M){
 	if (Markov==2) {
+		Real C1=1.0/12.0;
+		Real C2=1.0/6.0;
 		if (lattice_type == hexagonal&& !stencil_full) {
 			for (int k=0; k<7; k++) {
 				if (k==1 || k==5)
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/12.0,M);
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,C1,M);
 				else
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,C2,M);
 			}
 
 		} else {
 			if (lattice_type==simple_cubic) {
+				Real C1=1.0/3.0;
+				Real C2=1.0/6.0;
 				for (int k=0; k<5; k++) {
 					if (k==2)
-						YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/3.0,M);
+						YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,C1,M);
 					else
-						YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/6.0,M);
+						YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,C2,M);
 				}
 			} else { //hexagonal
+				Real C=1.0/12.0;
 				for (int k=0; k<12; k++) {
-					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,1.0/12.0,M);
+					YplusisCtimesAtimesB(phi,Gf+k*M,Gb+k*M,C,M);
 				}
 			}
 		}
@@ -1388,15 +1407,18 @@ void LGrad2::Terminate(Real* Gz,Real* G,int Markov, int M){
 if (debug) cout << "LGrad2:: terminate " << endl;
 	if (Markov==2) {
 		Zero(Gz,M);
+		Real Two=2.0;
+		Real C=1.0/12.0;
 		if (lattice_type == hexagonal&& !stencil_full) {
 			Add(Gz,G,M); Add(Gz,G+2*M,M); Add(Gz,G+3*M,M); Add(Gz,G+4*M,M); Add(Gz,G+6*M,M);
-			Norm(Gz,2.0,M);
+			Norm(Gz,Two,M);
 			Add(Gz,G+M,M); Add(Gz,G+5*M,M);//ik vraag me af of dit wel goed is....
-			Norm(Gz,1.0/12.0,M);
+			Norm(Gz,C,M);
 		} else {
+			Real C=1.0/6.0;
 			if (lattice_type==simple_cubic) {
 				for (int k=0; k<5; k++) Add(Gz,G+k*M,M);
-				Norm(Gz,1.0/6.0,M);  //dit is in ieder geval ook niet goed.
+				Norm(Gz,C,M);  //dit is in ieder geval ook niet goed.
 			} else {
 				for (int k=0; k<12; k++) Add(Gz,G+k*M,M);
 			}

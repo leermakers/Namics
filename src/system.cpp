@@ -2383,6 +2383,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 			{
 				norm = 0;
 				cout << "GN for molecule " << i << " is not larger than zero..." << endl;
+				cout << "Consider to turn on the overflow_protection (go to namics.h and #define LongReal, recompile using 'make'.)" << endl;
 				throw - 1;
 			}
 		}

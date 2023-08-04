@@ -567,7 +567,7 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 		stencil_full=true;
 		if (GetValue("stencil_full").length()>0) {
 			stencil_full=In[0]->Get_bool(GetValue("stencil_full"),true);
-			if (gradients<3 && !stencil_full) cout << "untested territory for not 'stencil_full' " << endl;
+			if (gradients<3 && stencil_full) cout << "untested territory for 'stencil_full' " << endl;
 		}
 		//Initialize system size and indexing
 		PutM();

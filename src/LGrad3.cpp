@@ -395,10 +395,6 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 
 			for (int k=0; k<12; k++) Times(gs+k*M,gs+k*M,g,M);
 		} else {
-			cout <<"programming error" << endl;
-		}
-	} else {
-		if (lattice_type ==simple_cubic) {
 			Real *gs=G+M*6*s_to;
 			Real *gs_1=G+M*6*s_from;
 
@@ -447,8 +443,12 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 			YplusisCtimesX(gx5,gz5+JX,P[0],M-JX);
 
 			for (int k=0; k<6; k++) Times(gs+k*M,gs+k*M,g,M);
+		}
+	} else {
+		if (lattice_type ==simple_cubic) {
+			cout <<"Markov 2, simple cubic, geometry 3, stencil_full not implemented" << endl;
 		} else {
-			cout <<"programming error " << endl;
+			cout <<"Markov 2, hexagonal, geometry 3, stencil_full not implemented" << endl;
 		}
 	}
 }
@@ -605,10 +605,6 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 
 			for (int k=0; k<12; k++) Times(gs+k*M,gs+k*M,g,M);
 		} else {
-			cout <<"programming error " << endl;
-		}
-	} else {
-		if (lattice_type==simple_cubic) {
 			Real *gs=G+M*6*s_to;
 			Real *gs_1=G+M*6*s_from;
 			Real *gz0=gs_1, *gz1=gs_1+M, *gz2=gs_1+2*M, *gz3=gs_1+3*M, *gz4=gs_1+4*M, *gz5=gs_1+5*M;
@@ -659,8 +655,12 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 			YplusisCtimesX(gx4,gz0+JX,P[1],M-JX);
 
 			for (int k=0; k<6; k++) Times(gs+k*M,gs+k*M,g,M);
+		}
+	} else {
+		if (lattice_type==simple_cubic) {
+			cout<<"Markov 2, geometry 3, simple_cubic , stencil_full, not implemented" << endl;
 		} else {
-			cout<<"programmming error " << endl;
+			cout<<"Markov 2, geometry 3, hexagonal, stencil_full, not implemented" << endl;
 		}
 	}
 }

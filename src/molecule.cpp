@@ -649,15 +649,24 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 	if (Markov ==2) {
 		if (Lat[0]->gradients==1) size = Lat[0]->FJC;
 		if (Lat[0]->gradients==2) { //assume fjc=1...
-			if (Lat[0]->lattice_type==hexagonal && !Lat[0]->stencil_full) size = 7;
-			if (Lat[0]->lattice_type==hexagonal && Lat[0]->stencil_full) size = 12; //2*FJC-1
-			if (Lat[0]->lattice_type==simple_cubic && Lat[0]->stencil_full) size = 2*Lat[0]->FJC-1;
+		    if (Lat[0]->stencil_full) {
+				Lat[0]->stencil_full=false; cout <<"Warning: stencil_full is set to false" << endl;
+			}
+			if (Lat[0]->lattice_type==hexagonal ) size =  12;
+			if (Lat[0]->lattice_type==simple_cubic ) size = 2*Lat[0]->FJC-1;
+			if (Lat[0]->lattice_type==hexagonal) cout <<"Warning: Markov = 2 & gradients=2 lattice_type = hexagonal...under development. Caution recommended..." << endl;
 		}
 		if (Lat[0]->gradients==3) {
-			if (Lat[0]->lattice_type==hexagonal && !Lat[0]->stencil_full) size = 12;
-			if (Lat[0]->lattice_type==simple_cubic && Lat[0]->stencil_full) size = 6;
+		    if (Lat[0]->stencil_full) {
+				Lat[0]->stencil_full=false; cout <<"Warning: stencil_full is set to false" << endl;
+			}
+
+			if (Lat[0]->lattice_type==hexagonal) size=12;
+			if (Lat[0]->lattice_type==simple_cubic) size = 6;
+			if (Lat[0]->lattice_type==hexagonal) cout <<"Warning: Markov = 2 & gradients=3 lattice_type = hexagonal...under development. Caution recommended..." << endl;
+
 		}
-	    cout <<"size = " << size << endl;
+	    //cout <<"size = " << size << endl;
 	} else size = 1;
 	if (size==0) {success=false; cout <<"Attention: size in molecule is not set; combination gradients (1,2,3),  Markov=2, stencil_full (true,false), lattice_type (hexagonal, simple_cubic) not implemented" << endl;}
 

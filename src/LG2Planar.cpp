@@ -137,85 +137,162 @@ if (debug) cout <<" Side in LG2Planar " << endl;
 void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
 	if (!stencil_full) {
 		if (lattice_type==hexagonal) {
-/*
-			int size=8;
-			Real *gs=G+M*size*s_to;
-			Real *gs_1=G+M*size*s_from;
+			Real *gs=G+M*12*s_to;
+			Real *gs_1=G+M*12*s_from;
 
-			Real *gz0=gs_1, *gz1=gs_1+M, *gz2=gs_1+2*M, *gz3=gs_1+3*M, *gz4=gs_1+4*M, *gz5=gs_1+5*M, *gz6=gs_1+6*M, *gz7=gs_1+7*M;
-			Real *gx0=gs,   *gx1=gs+M, *gx2=gs+2*M, *gx3=gs+3*M, *gx4=gs+4*M, *gx5=gs+5*M, *gx6=gs+6*M, *gx7=gs+7*M;
+			Real *gz0=gs_1, *gz1=gs_1+M, *gz2=gs_1+2*M, *gz3=gs_1+3*M, *gz4=gs_1+4*M, *gz5=gs_1+5*M, *gz6=gs_1+6*M, *gz7=gs_1+7*M, *gz8=gs_1+8*M, *gz9=gs_1+9*M, *gz10=gs_1+10*M, *gz11=gs_1+11*M;
+			Real *gx0=gs,   *gx1=gs+M, *gx2=gs+2*M, *gx3=gs+3*M, *gx4=gs+4*M, *gx5=gs+5*M, *gx6=gs+6*M, *gx7=gs+7*M, *gx8=gs+8*M, *gx9=gs+9*M, *gx10=gs+10*M, *gx11=gs+11*M;
 			Real *g=G1;
 
-			Zero(gs,size*M);
-			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);
-			set_bounds_x(gz0,gz7,0); set_bounds_x(gz1,gz6,0);set_bounds_x(gz2,gz5,0); set_bounds_x(gz3,gz4,0);
+			Zero(gs,12*M);
+			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
+			//set_bounds_x(gz0,gz11,0,0); set_bounds_x(gz1,gz10,0,0);set_bounds_x(gz2,gz9,0,0); set_bounds_x(gz3,gz8,0,0); set_bounds_x(gz4,gz7,0,0); set_bounds_x(gz5,gz6,0,0);
+			set_bounds_x(gz0,gz11,0); set_bounds_x(gz1,gz10,0);set_bounds_x(gz2,gz9,0); set_bounds_x(gz3,gz8,0); set_bounds_x(gz4,gz7,0); set_bounds_x(gz5,gz6,0);
 
-			YplusisCtimesX(gx0+JX,gz0,2*P[0],M-JX); //0 and 1 are equivalent //also 10 and 11 are equivalent
-			YplusisCtimesX(gx0+JX,gz1,P[0],M-JX); //3 and 4 equivalent
-			YplusisCtimesX(gx0+JX,gz2,2*P[1],M-JX); //7 and 8
+			YplusisCtimesX(gx0+JX,gz0,P[0],M-JX);
+			YplusisCtimesX(gx0+JX,gz1,P[0],M-JX);
+			YplusisCtimesX(gx0+JX,gz2,P[0],M-JX);
 			YplusisCtimesX(gx0+JX,gz3,P[1],M-JX);
 			YplusisCtimesX(gx0+JX,gz4,P[1],M-JX);
-			YplusisCtimesX(gx0+JX,gz5,2*P[1],M-JX);
+			YplusisCtimesX(gx0+JX,gz5,P[1],M-JX);
+			YplusisCtimesX(gx0+JX,gz6,P[1],M-JX);
+			YplusisCtimesX(gx0+JX,gz7,P[1],M-JX);
+			YplusisCtimesX(gx0+JX,gz8,P[1],M-JX);
 
-			YplusisCtimesX(gx7,gz2+JX,2*P[1],M-JX);
-			YplusisCtimesX(gx7,gz3+JX,P[1],M-JX);
-			YplusisCtimesX(gx7,gz4+JX,P[1],M-JX);
-			YplusisCtimesX(gx7,gz5+JX,2*P[1],M-JX);
-			YplusisCtimesX(gx7,gz6+JX,P[0],M-JX);
-			YplusisCtimesX(gx7,gz7+JX,2*P[0],M-JX);
+			YplusisCtimesX(gx11,gz3+JX,P[1],M-JX);
+			YplusisCtimesX(gx11,gz4+JX,P[1],M-JX);
+			YplusisCtimesX(gx11,gz5+JX,P[1],M-JX);
+			YplusisCtimesX(gx11,gz6+JX,P[1],M-JX);
+			YplusisCtimesX(gx11,gz7+JX,P[1],M-JX);
+			YplusisCtimesX(gx11,gz8+JX,P[1],M-JX);
+			YplusisCtimesX(gx11,gz9+JX,P[0],M-JX);
+			YplusisCtimesX(gx11,gz10+JX,P[0],M-JX);
+			YplusisCtimesX(gx11,gz11+JX,P[0],M-JX);
 
-			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);
-			set_bounds_y(gz2,gz5,0); set_bounds_y(gz3,gz4,0); set_bounds_y(gz0,gz7,0); set_bounds_y(gz1,gz6,0);
+			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
+			//set_bounds_y(gz2,gz9,0,0);  set_bounds_y(gz3,gz8,0,0); set_bounds_y(gz4,gz7,0,0); set_bounds_y(gz0,gz11,0,0); set_bounds_y(gz1,gz10,0,0); set_bounds_y(gz5,gz6,0,0);
+			//set_bounds_z(gz2,gz9,0);  set_bounds_z(gz3,gz8,0); set_bounds_z(gz4,gz7,0); set_bounds_z(gz0,gz11,0); set_bounds_z(gz1,gz10,0); set_bounds_z(gz5,gz6,0,0);
 
-			YplusisCtimesX(gx2+JY,gz0,2*P[1],M-JY);
-			YplusisCtimesX(gx2+JY,gz1,P[1],M-JY);
-			YplusisCtimesX(gx2+JY,gz2,2*P[0],M-JY);
-			YplusisCtimesX(gx2+JY,gz3,P[0],M-JY);
-			YplusisCtimesX(gx2+JY,gz6,P[1],M-JY);
-			YplusisCtimesX(gx2+JY,gz7,2*P[1],M-JY);
-
-			YplusisCtimesX(gx5,gz0+JY,2*P[1],M-JY);
-			YplusisCtimesX(gx5,gz1+JY,P[1],M-JY);
-			YplusisCtimesX(gx5,gz4+JY,P[0],M-JY);
-			YplusisCtimesX(gx5,gz5+JY,2*P[0],M-JY);
-			YplusisCtimesX(gx5,gz6+JY,P[1],M-JY);
-			YplusisCtimesX(gx5,gz7+JY,2*P[1],M-JY);
-
-			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);
-
-			YplusisCtimesX(gx3,gz0,2*P[1],M);
+			YplusisCtimesX(gx3,gz0,P[1],M);
 			YplusisCtimesX(gx3,gz1,P[1],M);
-			YplusisCtimesX(gx3,gz2,2*P[0],M);
+			YplusisCtimesX(gx3,gz2,P[1],M);
 			YplusisCtimesX(gx3,gz3,P[0],M);
-			YplusisCtimesX(gx3,gz6,P[1],M);
-			YplusisCtimesX(gx3,gz7,2*P[1],M);
+			YplusisCtimesX(gx3,gz4,P[0],M);
+			YplusisCtimesX(gx3,gz5,P[0],M);
+			YplusisCtimesX(gx3,gz9,P[1],M);
+			YplusisCtimesX(gx3,gz10,P[1],M);
+			YplusisCtimesX(gx3,gz11,P[1],M);
 
-			YplusisCtimesX(gx4,gz0,2*P[1],M);
-			YplusisCtimesX(gx4,gz1,P[1],M);
-			YplusisCtimesX(gx4,gz4,P[0],M);
-			YplusisCtimesX(gx4,gz5,2*P[0],M);
-			YplusisCtimesX(gx4,gz6,P[1],M);
-			YplusisCtimesX(gx4,gz7,2*P[1],M);
+			YplusisCtimesX(gx8,gz0,P[1],M);
+			YplusisCtimesX(gx8,gz1,P[1],M);
+			YplusisCtimesX(gx8,gz2,P[1],M);
+			YplusisCtimesX(gx8,gz6,P[0],M);
+			YplusisCtimesX(gx8,gz7,P[0],M);
+			YplusisCtimesX(gx8,gz8,P[0],M);
+			YplusisCtimesX(gx8,gz9,P[1],M);
+			YplusisCtimesX(gx8,gz10,P[1],M);
+			YplusisCtimesX(gx8,gz11,P[1],M);
 
-			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);
-			set_bounds_y(gz2,gz5,-1);  set_bounds_y(gz3,gz4,-1); set_bounds_y(gz0,gz7,-1); set_bounds_y(gz1,gz6,-1);
+			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
+			//set_bounds_z(gz1,gz10,0,0); set_bounds_z(gz4,gz7,0,0); set_bounds_z(gz5,gz6,0,0); set_bounds_z(gz0,gz11,0,0); set_bounds_z(gz2,gz9,0,0); set_bounds_z(gz3,gz8,0,0);
+			set_bounds_y(gz1,gz10,0); set_bounds_y(gz4,gz7,0); set_bounds_y(gz5,gz6,0); set_bounds_y(gz0,gz11,0); set_bounds_y(gz2,gz9,0); set_bounds_y(gz3,gz8,0);
 
-			YplusisCtimesX(gx1+JX,gz0+JY,2*P[0],M-JX-JY);
+			YplusisCtimesX(gx5+JY,gz0,P[1],M-JY);
+			YplusisCtimesX(gx5+JY,gz1,P[1],M-JY);
+			YplusisCtimesX(gx5+JY,gz2,P[1],M-JY);
+			YplusisCtimesX(gx5+JY,gz3,P[0],M-JY);
+			YplusisCtimesX(gx5+JY,gz4,P[0],M-JY);
+			YplusisCtimesX(gx5+JY,gz5,P[0],M-JY);
+			YplusisCtimesX(gx5+JY,gz9,P[1],M-JY);
+			YplusisCtimesX(gx5+JY,gz10,P[1],M-JY);
+			YplusisCtimesX(gx5+JY,gz11,P[1],M-JY);
+
+			YplusisCtimesX(gx6,gz0+JY,P[1],M-JY);
+			YplusisCtimesX(gx6,gz1+JY,P[1],M-JY);
+			YplusisCtimesX(gx6,gz2+JY,P[1],M-JY);
+			YplusisCtimesX(gx6,gz6+JY,P[0],M-JY);
+			YplusisCtimesX(gx6,gz7+JY,P[0],M-JY);
+			YplusisCtimesX(gx6,gz8+JY,P[0],M-JY);
+			YplusisCtimesX(gx6,gz9+JY,P[1],M-JY);
+			YplusisCtimesX(gx6,gz10+JY,P[1],M-JY);
+			YplusisCtimesX(gx6,gz11+JY,P[1],M-JY);
+
+			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
+			//set_bounds_x(gz0,gz11,0,-1); set_bounds_x(gz1,gz10,0,-1);set_bounds_x(gz2,gz9,0,-1); set_bounds_x(gz3,gz8,0,-1); set_bounds_x(gz4,gz7,0,-1); set_bounds_x(gz5,gz6,0,-1);
+			set_bounds_x(gz0,gz11,-1); set_bounds_x(gz1,gz10,-1);set_bounds_x(gz2,gz9,-1); set_bounds_x(gz3,gz8,-1); set_bounds_x(gz4,gz7,-1); set_bounds_x(gz5,gz6,-1);
+
+			YplusisCtimesX(gx1+JX,gz0+JY,P[0],M-JX-JY);
 			YplusisCtimesX(gx1+JX,gz1+JY,P[0],M-JX-JY);
-			YplusisCtimesX(gx1+JX,gz2+JY,2*P[1],M-JX-JY);
+			YplusisCtimesX(gx1+JX,gz2+JY,P[0],M-JX-JY);
 			YplusisCtimesX(gx1+JX,gz3+JY,P[1],M-JX-JY);
 			YplusisCtimesX(gx1+JX,gz4+JY,P[1],M-JX-JY);
-			YplusisCtimesX(gx1+JX,gz5+JY,2*P[1],M-JX-JY);
+			YplusisCtimesX(gx1+JX,gz5+JY,P[1],M-JX-JY);
+			YplusisCtimesX(gx1+JX,gz6+JY,P[1],M-JX-JY);
+			YplusisCtimesX(gx1+JX,gz7+JY,P[1],M-JX-JY);
+			YplusisCtimesX(gx1+JX,gz8+JY,P[1],M-JX-JY);
 
-			YplusisCtimesX(gx6+JY,gz2+JX,2*P[1],M-JX-JY);
-			YplusisCtimesX(gx6+JY,gz3+JX,P[1],M-JX-JY);
-			YplusisCtimesX(gx6+JY,gz4+JX,P[1],M-JX-JY);
-			YplusisCtimesX(gx6+JY,gz5+JX,2*P[1],M-JX-JY);
-			YplusisCtimesX(gx6+JY,gz6+JX,P[0],M-JX-JY);
-			YplusisCtimesX(gx6+JY,gz7+JX,2*P[0],M-JX-JY);
+			YplusisCtimesX(gx10+JY,gz3+JX,P[1],M-JX-JY);
+			YplusisCtimesX(gx10+JY,gz4+JX,P[1],M-JX-JY);
+			YplusisCtimesX(gx10+JY,gz5+JX,P[1],M-JX-JY);
+			YplusisCtimesX(gx10+JY,gz6+JX,P[1],M-JX-JY);
+			YplusisCtimesX(gx10+JY,gz7+JX,P[1],M-JX-JY);
+			YplusisCtimesX(gx10+JY,gz8+JX,P[1],M-JX-JY);
+			YplusisCtimesX(gx10+JY,gz9+JX,P[0],M-JX-JY);
+			YplusisCtimesX(gx10+JY,gz10+JX,P[0],M-JX-JY);
+			YplusisCtimesX(gx10+JY,gz11+JX,P[0],M-JX-JY);
 
-			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);
-*/
+			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
+			//set_bounds_y(gz2,gz9,-1,0);  set_bounds_y(gz3,gz8,-1,0); set_bounds_y(gz4,gz7,-1,0); set_bounds_y(gz0,gz11,-1,0); set_bounds_y(gz1,gz10,-1,0); set_bounds_y(gz5,gz6,-1,0);
+			//set_bounds_z(gz2,gz9,-1);  set_bounds_z(gz3,gz8,-1); set_bounds_z(gz4,gz7,-1); set_bounds_z(gz0,gz11,-1); set_bounds_z(gz1,gz10,-1); set_bounds_z(gz5,gz6,-1);
+			set_bounds_x(gz0,gz11,0); set_bounds_x(gz1,gz10,0);set_bounds_x(gz2,gz9,0); set_bounds_x(gz3,gz8,0); set_bounds_x(gz4,gz7,0); set_bounds_x(gz5,gz6,0);
+
+			YplusisCtimesX(gx2+JX,gz0,P[0],M-JX);
+			YplusisCtimesX(gx2+JX,gz1,P[0],M-JX);
+			YplusisCtimesX(gx2+JX,gz2,P[0],M-JX);
+			YplusisCtimesX(gx2+JX,gz3,P[1],M-JX);
+			YplusisCtimesX(gx2+JX,gz4,P[1],M-JX);
+			YplusisCtimesX(gx2+JX,gz5,P[1],M-JX);
+			YplusisCtimesX(gx2+JX,gz6,P[1],M-JX);
+			YplusisCtimesX(gx2+JX,gz7,P[1],M-JX);
+			YplusisCtimesX(gx2+JX,gz8,P[1],M-JX);
+
+			YplusisCtimesX(gx9,gz3+JX,P[1],M-JX);
+			YplusisCtimesX(gx9,gz4+JX,P[1],M-JX);
+			YplusisCtimesX(gx9,gz5+JX,P[1],M-JX);
+			YplusisCtimesX(gx9,gz6+JX,P[1],M-JX);
+			YplusisCtimesX(gx9,gz7+JX,P[1],M-JX);
+			YplusisCtimesX(gx9,gz8+JX,P[1],M-JX);
+			YplusisCtimesX(gx9,gz9+JX,P[0],M-JX);
+			YplusisCtimesX(gx9,gz10+JX,P[0],M-JX);
+			YplusisCtimesX(gx9,gz11+JX,P[0],M-JX);
+
+			remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
+			//set_bounds_z(gz1,gz10,0,-1); set_bounds_z(gz4,gz7,0,-1); set_bounds_z(gz5,gz6,0,-1); set_bounds_z(gz0,gz11,0,-1); set_bounds_z(gz2,gz9,0,-1); set_bounds_z(gz3,gz8,0,-1);
+			set_bounds_y(gz1,gz10,0); set_bounds_y(gz4,gz7,0); set_bounds_y(gz5,gz6,0); set_bounds_y(gz0,gz11,0); set_bounds_y(gz2,gz9,0); set_bounds_y(gz3,gz8,0);
+
+			YplusisCtimesX(gx4,gz0+JY,P[1],M-JY);
+			YplusisCtimesX(gx4,gz1+JY,P[1],M-JY);
+			YplusisCtimesX(gx4,gz2+JY,P[1],M-JY);
+			YplusisCtimesX(gx4,gz3+JY,P[0],M-JY);
+			YplusisCtimesX(gx4,gz4+JY,P[0],M-JY);
+			YplusisCtimesX(gx4,gz5+JY,P[0],M-JY);
+			YplusisCtimesX(gx4,gz9+JY,P[1],M-JY);
+			YplusisCtimesX(gx4,gz10+JY,P[1],M-JY);
+			YplusisCtimesX(gx4,gz11+JY,P[1],M-JY);
+
+			YplusisCtimesX(gx7+JY,gz0,P[1],M-JY);
+			YplusisCtimesX(gx7+JY,gz1,P[1],M-JY);
+			YplusisCtimesX(gx7+JY,gz2,P[1],M-JY);
+			YplusisCtimesX(gx7+JY,gz6,P[0],M-JY);
+			YplusisCtimesX(gx7+JY,gz7,P[0],M-JY);
+			YplusisCtimesX(gx7+JY,gz8,P[0],M-JY);
+			YplusisCtimesX(gx7+JY,gz9,P[1],M-JY);
+			YplusisCtimesX(gx7+JY,gz10,P[1],M-JY);
+			YplusisCtimesX(gx7+JY,gz11,P[1],M-JY);
+
+			for (int k=0; k<12; k++) Times(gs+k*M,gs+k*M,g,M);
+
+/*
 			Real *gs=G+M*12*s_to;
 			Real *gs_1=G+M*12*s_from;
 
@@ -363,6 +440,7 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 			YplusisCtimesX(gx7,gz11+JY,P[1],M-JY);
 
 			for (int k=0; k<12; k++) Times(gs+k*M,gs+k*M,g,M);
+*/
 
 		} else { //simple_cubic
 			Real *gs=G+M*5*s_to;
@@ -554,88 +632,157 @@ void LG2Planar::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 void LG2Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
 	if (!stencil_full) {
 		if (lattice_type==hexagonal) {
-/*
-			int size=8;
-			Real *gs=G+M*size*s_to;
-			Real *gs_1=G+M*size*s_from;
+			Real *gs=G+M*12*s_to;
+			Real *gs_1=G+M*12*s_from;
 
-			Real *gz0=gs_1, *gz1=gs_1+M, *gz2=gs_1+2*M, *gz3=gs_1+3*M, *gz4=gs_1+4*M, *gz5=gs_1+5*M, *gz6=gs_1+6*M, *gz7=gs_1+7*M;
-			Real *gx0=gs, *gx1=gs+M, *gx2=gs+2*M, *gx3=gs+3*M, *gx4=gs+4*M, *gx5=gs+5*M, *gx6=gs+6*M, *gx7=gs+7*M;
+			Real *gz0=gs_1, *gz1=gs_1+M, *gz2=gs_1+2*M, *gz3=gs_1+3*M, *gz4=gs_1+4*M, *gz5=gs_1+5*M, *gz6=gs_1+6*M, *gz7=gs_1+7*M, *gz8=gs_1+8*M, *gz9=gs_1+9*M, *gz10=gs_1+10*M, *gz11=gs_1+11*M;
+			Real *gx0=gs, *gx1=gs+M, *gx2=gs+2*M, *gx3=gs+3*M, *gx4=gs+4*M, *gx5=gs+5*M, *gx6=gs+6*M, *gx7=gs+7*M, *gx8=gs+8*M, *gx9=gs+9*M, *gx10=gs+10*M, *gx11=gs+11*M;
 			Real *g=G1;
 
-			Zero(gs,size*M);
-			for (int k=0; k<size; k++) remove_bounds(gs_1+k*M);
+			Zero(gs,12*M);
+			for (int k=0; k<12; k++) remove_bounds(gs_1+k*M);
+			//remove_bounds(gz0);remove_bounds(gz1);remove_bounds(gz2);remove_bounds(gz3);remove_bounds(gz4);
+			//remove_bounds(gz5);remove_bounds(gz6);remove_bounds(gz7);remove_bounds(gz8);remove_bounds(gz9);remove_bounds(gz10);remove_bounds(gz11);
+			set_bounds_x(gz0,gz11,0);
 
-			set_bounds_x(gz0,gz7,0);
+			YplusisCtimesX(gx3+JX,gz11,P[1],M-JX);
+			YplusisCtimesX(gx4+JX,gz11,P[1],M-JX);
+			YplusisCtimesX(gx5+JX,gz11,P[1],M-JX);
+			YplusisCtimesX(gx6+JX,gz11,P[1],M-JX);
+			YplusisCtimesX(gx7+JX,gz11,P[1],M-JX);
+			YplusisCtimesX(gx8+JX,gz11,P[1],M-JX);
+			YplusisCtimesX(gx9+JX,gz11,P[0],M-JX);
+			YplusisCtimesX(gx10+JX,gz11,P[0],M-JX);
+			YplusisCtimesX(gx11+JX,gz11,P[0],M-JX);
 
-			YplusisCtimesX(gx2+JX,gz7,2*P[1],M-JX);
-			YplusisCtimesX(gx3+JX,gz7,P[1],M-JX);
-			YplusisCtimesX(gx4+JX,gz7,P[1],M-JX);
-			YplusisCtimesX(gx5+JX,gz7,2*P[1],M-JX);
-			YplusisCtimesX(gx6+JX,gz7,P[0],M-JX);
-			YplusisCtimesX(gx7+JX,gz7,2*P[0],M-JX);
-
-			YplusisCtimesX(gx0,gz0+JX,2*P[0],M-JX);
+			YplusisCtimesX(gx0,gz0+JX,P[0],M-JX);
 			YplusisCtimesX(gx1,gz0+JX,P[0],M-JX);
-			YplusisCtimesX(gx2,gz0+JX,2*P[1],M-JX);
+			YplusisCtimesX(gx2,gz0+JX,P[0],M-JX);
 			YplusisCtimesX(gx3,gz0+JX,P[1],M-JX);
 			YplusisCtimesX(gx4,gz0+JX,P[1],M-JX);
-			YplusisCtimesX(gx5,gz0+JX,2*P[1],M-JX);
+			YplusisCtimesX(gx5,gz0+JX,P[1],M-JX);
+			YplusisCtimesX(gx6,gz0+JX,P[1],M-JX);
+			YplusisCtimesX(gx7,gz0+JX,P[1],M-JX);
+			YplusisCtimesX(gx8,gz0+JX,P[1],M-JX);
 
-			remove_bounds(gz0);remove_bounds(gz7);
-			set_bounds_y(gz2,gz5,0);
+			remove_bounds(gz0);remove_bounds(gz11);
+			//set_bounds_z(gz3,gz8,0);
 
-			YplusisCtimesX(gx0+JY,gz5,2*P[1],M-JY);
-			YplusisCtimesX(gx1+JY,gz5,P[1],M-JY);
-			YplusisCtimesX(gx4+JY,gz5,P[0],M-JY);
-			YplusisCtimesX(gx5+JY,gz5,2*P[0],M-JY);
-			YplusisCtimesX(gx6+JY,gz5,P[1],M-JY);
-			YplusisCtimesX(gx7+JY,gz5,2*P[1],M-JY);
+			YplusisCtimesX(gx0,gz8,P[1],M);
+			YplusisCtimesX(gx1,gz8,P[1],M);
+			YplusisCtimesX(gx2,gz8,P[1],M);
+			YplusisCtimesX(gx6,gz8,P[0],M);
+			YplusisCtimesX(gx7,gz8,P[0],M);
+			YplusisCtimesX(gx8,gz8,P[0],M);
+			YplusisCtimesX(gx9,gz8,P[1],M);
+			YplusisCtimesX(gx10,gz8,P[1],M);
+			YplusisCtimesX(gx11,gz8,P[1],M);
 
-			YplusisCtimesX(gx0,gz2+JY,2*P[1],M-JY);
-			YplusisCtimesX(gx1,gz2+JY,P[1],M-JY);
-			YplusisCtimesX(gx2,gz2+JY,2*P[0],M-JY);
-			YplusisCtimesX(gx3,gz2+JY,P[0],M-JY);
-			YplusisCtimesX(gx6,gz2+JY,P[1],M-JY);
-			YplusisCtimesX(gx7,gz2+JY,2*P[1],M-JY);
-
-			remove_bounds(gz2);remove_bounds(gz5);
-
-			YplusisCtimesX(gx0,gz4,2*P[1],M);
-			YplusisCtimesX(gx1,gz4,P[1],M);
-			YplusisCtimesX(gx4,gz4,P[0],M);
-			YplusisCtimesX(gx5,gz4,2*P[0],M);
-			YplusisCtimesX(gx6,gz4,P[1],M);
-			YplusisCtimesX(gx7,gz4,2*P[1],M);
-
-			YplusisCtimesX(gx0,gz3,2*P[1],M);
+			YplusisCtimesX(gx0,gz3,P[1],M);
 			YplusisCtimesX(gx1,gz3,P[1],M);
-			YplusisCtimesX(gx2,gz3,2*P[0],M);
+			YplusisCtimesX(gx2,gz3,P[1],M);
 			YplusisCtimesX(gx3,gz3,P[0],M);
-			YplusisCtimesX(gx6,gz3,P[1],M);
-			YplusisCtimesX(gx7,gz3,2*P[1],M);
+			YplusisCtimesX(gx4,gz3,P[0],M);
+			YplusisCtimesX(gx5,gz3,P[0],M);
+			YplusisCtimesX(gx9,gz3,P[1],M);
+			YplusisCtimesX(gx10,gz3,P[1],M);
+			YplusisCtimesX(gx11,gz3,P[1],M);
 
-			remove_bounds(gz3); remove_bounds(gz4);
-			remove_bounds(gz0);remove_bounds(gz7);
-			set_bounds_y(gz1,gz6,-1);
+			remove_bounds(gz3);remove_bounds(gz8);
+			set_bounds_y(gz5,gz6,0);
 
-			YplusisCtimesX(gx2+JX,gz6+JY,2*P[1],M-JX-JY);
-			YplusisCtimesX(gx3+JX,gz6+JY,P[1],M-JX-JY);
-			YplusisCtimesX(gx4+JX,gz6+JY,P[1],M-JX-JY);
-			YplusisCtimesX(gx5+JX,gz6+JY,2*P[1],M-JX-JY);
-			YplusisCtimesX(gx6+JX,gz6+JY,P[0],M-JX-JY);
-			YplusisCtimesX(gx7+JX,gz6+JY,2*P[0],M-JX-JY);
+			YplusisCtimesX(gx0+JY,gz6,P[1],M-JY);
+			YplusisCtimesX(gx1+JY,gz6,P[1],M-JY);
+			YplusisCtimesX(gx2+JY,gz6,P[1],M-JY);
+			YplusisCtimesX(gx6+JY,gz6,P[0],M-JY);
+			YplusisCtimesX(gx7+JY,gz6,P[0],M-JY);
+			YplusisCtimesX(gx8+JY,gz6,P[0],M-JY);
+			YplusisCtimesX(gx9+JY,gz6,P[1],M-JY);
+			YplusisCtimesX(gx10+JY,gz6,P[1],M-JY);
+			YplusisCtimesX(gx11+JY,gz6,P[1],M-JY);
 
-			YplusisCtimesX(gx0+JY,gz1+JX,2*P[0],M-JY-JX);
+			YplusisCtimesX(gx0,gz5+JY,P[1],M-JY);
+			YplusisCtimesX(gx1,gz5+JY,P[1],M-JY);
+			YplusisCtimesX(gx2,gz5+JY,P[1],M-JY);
+			YplusisCtimesX(gx3,gz5+JY,P[0],M-JY);
+			YplusisCtimesX(gx4,gz5+JY,P[0],M-JY);
+			YplusisCtimesX(gx5,gz5+JY,P[0],M-JY);
+			YplusisCtimesX(gx9,gz5+JY,P[1],M-JY);
+			YplusisCtimesX(gx10,gz5+JY,P[1],M-JY);
+			YplusisCtimesX(gx11,gz5+JY,P[1],M-JY);
+
+			remove_bounds(gz5); remove_bounds(gz6);
+			set_bounds_x(gz1,gz10,-1);
+
+			YplusisCtimesX(gx3+JX,gz10+JY,P[1],M-JX-JY);
+			YplusisCtimesX(gx4+JX,gz10+JY,P[1],M-JX-JY);
+			YplusisCtimesX(gx5+JX,gz10+JY,P[1],M-JX-JY);
+			YplusisCtimesX(gx6+JX,gz10+JY,P[1],M-JX-JY);
+			YplusisCtimesX(gx7+JX,gz10+JY,P[1],M-JX-JY);
+			YplusisCtimesX(gx8+JX,gz10+JY,P[1],M-JX-JY);
+			YplusisCtimesX(gx9+JX,gz10+JY,P[0],M-JX-JY);
+			YplusisCtimesX(gx10+JX,gz10+JY,P[0],M-JX-JY);
+			YplusisCtimesX(gx11+JX,gz10+JY,P[0],M-JX-JY);
+
+			YplusisCtimesX(gx0+JY,gz1+JX,P[0],M-JY-JX);
 			YplusisCtimesX(gx1+JY,gz1+JX,P[0],M-JY-JX);
-			YplusisCtimesX(gx2+JY,gz1+JX,2*P[1],M-JY-JX);
+			YplusisCtimesX(gx2+JY,gz1+JX,P[0],M-JY-JX);
 			YplusisCtimesX(gx3+JY,gz1+JX,P[1],M-JY-JX);
 			YplusisCtimesX(gx4+JY,gz1+JX,P[1],M-JY-JX);
-			YplusisCtimesX(gx5+JY,gz1+JX,2*P[1],M-JY-JX);
+			YplusisCtimesX(gx5+JY,gz1+JX,P[1],M-JY-JX);
+			YplusisCtimesX(gx6+JY,gz1+JX,P[1],M-JY-JX);
+			YplusisCtimesX(gx7+JY,gz1+JX,P[1],M-JY-JX);
+			YplusisCtimesX(gx8+JY,gz1+JX,P[1],M-JY-JX);
 
+			remove_bounds(gz1);remove_bounds(gz10);
+			set_bounds_x(gz2,gz9,0);
 
-			for (int k=0; k<size; k++) Times(gs+k*M,gs+k*M,g,M);
-*/
+			YplusisCtimesX(gx3+JX,gz9,P[1],M-JX);
+			YplusisCtimesX(gx4+JX,gz9,P[1],M-JX);
+			YplusisCtimesX(gx5+JX,gz9,P[1],M-JX);
+			YplusisCtimesX(gx6+JX,gz9,P[1],M-JX);
+			YplusisCtimesX(gx7+JX,gz9,P[1],M-JX);
+			YplusisCtimesX(gx8+JX,gz9,P[1],M-JX);
+			YplusisCtimesX(gx9+JX,gz9,P[0],M-JX);
+			YplusisCtimesX(gx10+JX,gz9,P[0],M-JX);
+			YplusisCtimesX(gx11+JX,gz9,P[0],M-JX);
+
+			YplusisCtimesX(gx0,gz2+JX,P[0],M-JX);
+			YplusisCtimesX(gx1,gz2+JX,P[0],M-JX);
+			YplusisCtimesX(gx2,gz2+JX,P[0],M-JX);
+			YplusisCtimesX(gx3,gz2+JX,P[1],M-JX);
+			YplusisCtimesX(gx4,gz2+JX,P[1],M-JX);
+			YplusisCtimesX(gx5,gz2+JX,P[1],M-JX);
+			YplusisCtimesX(gx6,gz2+JX,P[1],M-JX);
+			YplusisCtimesX(gx7,gz2+JX,P[1],M-JX);
+			YplusisCtimesX(gx8,gz2+JX,P[1],M-JX);
+
+			remove_bounds(gz2);remove_bounds(gz9);
+			set_bounds_y(gz4,gz7,0);
+
+			YplusisCtimesX(gx0,gz7+JY,P[1],M-JY);
+			YplusisCtimesX(gx1,gz7+JY,P[1],M-JY);
+			YplusisCtimesX(gx2,gz7+JY,P[1],M-JY);
+			YplusisCtimesX(gx6,gz7+JY,P[0],M-JY);
+			YplusisCtimesX(gx7,gz7+JY,P[0],M-JY);
+			YplusisCtimesX(gx8,gz7+JY,P[0],M-JY);
+			YplusisCtimesX(gx9,gz7+JY,P[1],M-JY);
+			YplusisCtimesX(gx10,gz7+JY,P[1],M-JY);
+			YplusisCtimesX(gx11,gz7+JY,P[1],M-JY);
+
+			YplusisCtimesX(gx0+JY,gz4,P[1],M-JY);
+			YplusisCtimesX(gx1+JY,gz4,P[1],M-JY);
+			YplusisCtimesX(gx2+JY,gz4,P[1],M-JY);
+			YplusisCtimesX(gx3+JY,gz4,P[0],M-JY);
+			YplusisCtimesX(gx4+JY,gz4,P[0],M-JY);
+			YplusisCtimesX(gx5+JY,gz4,P[0],M-JY);
+			YplusisCtimesX(gx9+JY,gz4,P[1],M-JY);
+			YplusisCtimesX(gx10+JY,gz4,P[1],M-JY);
+			YplusisCtimesX(gx11+JY,gz4,P[1],M-JY);
+
+			for (int k=0; k<12; k++) Times(gs+k*M,gs+k*M,g,M);
+
+/*
 			Real *gs=G+M*12*s_to;
 			Real *gs_1=G+M*12*s_from;
 
@@ -782,7 +929,7 @@ void LG2Planar::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int 
 			YplusisCtimesX(gx11,gz4+JY,P[1],M-JY);
 
 			for (int k=0; k<12; k++) Times(gs+k*M,gs+k*M,g,M);
-
+*/
 		} else {
 			Real *gs=G+M*5*s_to;
 			Real *gs_1=G+M*5*s_from;

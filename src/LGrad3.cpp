@@ -246,6 +246,8 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 	if (!stencil_full) {
 
 		if (lattice_type == hexagonal ) {
+
+
 			Real *gs=G+M*12*s_to;
 			Real *gs_1=G+M*12*s_from;
 
@@ -455,6 +457,8 @@ void LGrad3::propagateF(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) {
 	if (!stencil_full) {
 		if (lattice_type == hexagonal) {
+
+
 			Real *gs=G+M*12*s_to;
 			Real *gs_1=G+M*12*s_from;
 
@@ -604,6 +608,7 @@ void LGrad3::propagateB(Real *G, Real *G1, Real* P, int s_from, int s_to,int M) 
 			YplusisCtimesX(gx11+JZ,gz4+JY,P[1],M-JY-JZ);
 
 			for (int k=0; k<12; k++) Times(gs+k*M,gs+k*M,g,M);
+
 		} else {
 			Real *gs=G+M*6*s_to;
 			Real *gs_1=G+M*6*s_from;

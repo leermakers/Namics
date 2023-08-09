@@ -654,7 +654,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			}
 			if (Lat[0]->lattice_type==hexagonal ) size =  12;
 			if (Lat[0]->lattice_type==simple_cubic ) size = 2*Lat[0]->FJC-1;
-			if (Lat[0]->lattice_type==hexagonal) cout <<"Warning: Markov = 2 & gradients=2 lattice_type = hexagonal...under development. Caution recommended..." << endl;
+			if (Lat[0]->lattice_type==hexagonal) { success=false;
+				cout <<"Warning: Markov = 2 & gradients=2 lattice_type = hexagonal...not certified. Caution recommended, even without obvious error messages..." << endl;
+			}
 		}
 		if (Lat[0]->gradients==3) {
 		    if (Lat[0]->stencil_full) {
@@ -663,8 +665,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 
 			if (Lat[0]->lattice_type==hexagonal) size=12;
 			if (Lat[0]->lattice_type==simple_cubic) size = 6;
-			if (Lat[0]->lattice_type==hexagonal) cout <<"Warning: Markov = 2 & gradients=3 lattice_type = hexagonal...under development. Caution recommended..." << endl;
-
+			if (Lat[0]->lattice_type==hexagonal) { success=false;
+				cout <<"Warning: Markov = 2 & gradients=3 lattice_type = hexagonal...not certified!!!. Caution recommended, even without obvious error messages...." << endl;
+			}
 		}
 	    //cout <<"size = " << size << endl;
 	} else size = 1;

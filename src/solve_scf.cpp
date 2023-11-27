@@ -17,7 +17,7 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("max_accuracy_for_hessian_scaling");
 	KEYS.push_back("n_iterations_for_hessian");
 	KEYS.push_back("small_alpha");
-	KEYS.push_back("target_function");
+	//KEYS.push_back("target_function");
 	KEYS.push_back("max_n_small_alpha");
 	KEYS.push_back("min_accuracy_for_hessian");
 	KEYS.push_back("max_fr_reverse_direction");
@@ -180,10 +180,10 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 		if (GetValue("method").size()==0) {SCF_method="pseudohessian";} else {
 			vector<string>method_options;
 			method_options.push_back("DIIS");
-			method_options.push_back("Picard"); //can be included again when adjusted for charges and guess
+			//method_options.push_back("Picard"); //can be included again when adjusted for charges and guess
 			method_options.push_back("pseudohessian");
 			method_options.push_back("hessian");
-			method_options.push_back("conjugate_gradient");
+			//method_options.push_back("conjugate_gradient");
 			method_options.push_back("LBFGS");
 			method_options.push_back("BRR");
 			if (!In[0]->Get_string(GetValue("method"),SCF_method,method_options,"In 'solve_scf' the entry for 'method' not recognized: choose from:")) success=false;
@@ -258,7 +258,7 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 			vector<string>gradient_options;
 			gradient_options.push_back("classical");
 			gradient_options.push_back("mesodyn");
-			gradient_options.push_back("Picard");
+			//gradient_options.push_back("Picard");
 			if (!In[0]->Get_string(GetValue("gradient_type"),gradients,gradient_options,"In 'solve_scf' the entry for 'gradient_type' not recognized: choose from:")) success=false;
 			if (gradients=="classical") gradient=classical;
 			if (gradients=="mesodyn") {gradient = MESODYN; mesodyn=true;}

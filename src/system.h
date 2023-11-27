@@ -106,6 +106,7 @@ public:
 	Real old_residual;
 	int progress;
 
+
 	bool prepared;
 	bool Filling;
 

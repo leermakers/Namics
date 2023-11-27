@@ -414,7 +414,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 							if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*Lat[0]->volume);theta=n*chainlength;}
 							if (GetValue("theta").size()>0) {theta = In[0]->Get_Real(GetValue("theta"),10*Lat[0]->volume);n=theta/chainlength;}
 							if (theta < 0 || theta > Lat[0]->volume) {
-								cout << "In mol " + name + ", the value of 'n' or 'theta' is out of range 0 .. 'volume', cq 'volume'/N." << endl; success=false;
+								cout << "In mol " + name + ", the value of 'n' or 'theta' " << theta << "  is out of range 0 .. 'volume'/N, cq 'volume' "<< Lat[0]->volume << endl; success=false;
 							}
 						}
 					}
@@ -463,7 +463,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 					free_list.push_back("solvent");
 					free_list.push_back("neutralizer");
 					free_list.push_back("range_restricted");
-					free_list.push_back("gradient");
+					//free_list.push_back("gradient");
 				}
 				free_list.push_back("restricted");
 				if (!In[0]->Get_string(GetValue("freedom"),freedom,free_list,"In mol " + name + " the value for 'freedom' is not recognised ")) success=false;

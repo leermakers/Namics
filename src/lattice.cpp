@@ -21,7 +21,7 @@ if (debug) cout <<"Lattice constructor" << endl;
 	KEYS.push_back("FJC_choices");
 	KEYS.push_back("b/l");
 	//KEYS.push_back("Markov");
-	KEYS.push_back("k_stiff");
+	//KEYS.push_back("k_stiff");
 	sub_box_on = 0;
 	all_lattice = false;
 	ignore_sites=false;
@@ -581,21 +581,21 @@ if (debug) cout <<"CheckInput in lattice " << endl;
 	//if (Markov<1 || Markov>2) {
 	//	cout <<" Integer value for 'Markov' is by default 1 and may be set to 2 for some mol_types and fjc-choices only. Markov value out of bounds. Proceed with caution. " << endl; success = false;
 	//}
-	k_stiff=0; //default value if in mol there is no k_stiff
-	if (GetValue("k_stiff").size()>0) {
-		k_stiff=In[0]->Get_Real(GetValue("k_stiff"),0);
-		if (k_stiff<0 || k_stiff>10) {
-			success =false;
-			cout <<" Real value for 'k_stiff' out of bounds (0 < k_stiff < 10). " << endl;
-			cout <<" For Markov == 2: u_bend (theta) = 0.5 k_stiff theta^2, where 'theta' is angle for bond direction deviating from the straight direction. " <<endl;
-			cout <<" You may interpret 'k_stiff' as the molecular 'persistence length' " << endl;
-			cout <<" k_stiff is a 'default value'. Use molecular specific values to overrule the default when appropriate (future implementation....) " << endl;
-		}
-		if (fjc>1 ) {
-			success=false;
-			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 5 " << endl;
-		}
-	}
+	//k_stiff=0; //default value if in mol there is no k_stiff
+	//if (GetValue("k_stiff").size()>0) {
+	//	k_stiff=In[0]->Get_Real(GetValue("k_stiff"),0);
+	//	if (k_stiff<0 || k_stiff>10) {
+	//		success =false;
+	//		cout <<" Real value for 'k_stiff' out of bounds (0 < k_stiff < 10). " << endl;
+	//		cout <<" For Markov == 2: u_bend (theta) = 0.5 k_stiff theta^2, where 'theta' is angle for bond direction deviating from the straight direction. " <<endl;
+	//		cout <<" You may interpret 'k_stiff' as the molecular 'persistence length' " << endl;
+	//		cout <<" k_stiff is a 'default value'. Use molecular specific values to overrule the default when appropriate (future implementation....) " << endl;
+	//	}
+//		if (fjc>1 ) {
+//			success=false;
+//			cout <<" Work in progress.... Currently, Markov == 2 is only expected to work for fjc_choices < 5 " << endl;
+//		}
+//	}
 
 	return success;
 }

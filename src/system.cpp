@@ -31,10 +31,11 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("split");
 	KEYS.push_back("X");
 	KEYS.push_back("compute_Gibbs_excess");
+	KEYS.push_back("compute_kJ0");
 
-	int length = In[0]->MonList.size();
-	for (int i=0; i<length; i++)
-	  KEYS.push_back("guess-" + In[0]->MonList[i]);
+	//int length = In[0]->MonList.size();
+	//for (int i=0; i<length; i++)
+	//  KEYS.push_back("guess-" + In[0]->MonList[i]);
 	charged=false;
 	constraintfields=false;
   	boundaryless_volume=0;
@@ -1524,6 +1525,20 @@ void System::PushOutput()
 	for (int i=0; i<n_seg; i++)
 	for (int j=0; j<n_seg; j++){
 		push("chi_"+Seg[i]->name+"_"+Seg[j]->name,CHI[i * n_seg + j]);
+	}
+	if (GetValue("compute_kJ0").size()>0){
+		int M=Lat[0]->M;
+		int fjc=Lat[0]->fjc;
+		Real result=0;
+		int pos;
+		if (px.size()>0 && Lat[0]->gradients==1 && Lat[0]->geometry=="planar") {
+			pos=px[0];
+			//cout <<"coordinate for kJ0:" << pos << endl;
+			for (int z=fjc; z<M-2*fjc; z++) result -= 1.0*(z-pos-(fjc-1))/fjc*GrandPotentialDensity[z];
+			push("kJ0",result);
+		} else {
+			cout <<" 'compute_kJ0' requested but 'compute_kJ0' rejected because either geomety is not planar, or gradients = 1 or 'delta_range' not found " << endl;
+		}
 	}
 	//if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar") {
 	//	push("KJ0", -Lat[0]->Moment(GrandPotentialDensity,0, 1));

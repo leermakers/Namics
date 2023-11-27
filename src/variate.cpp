@@ -57,10 +57,10 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 	targeting =-1;
 	searching=-1;
 	num_of_cals=0;
-	int length=In[0]->MonList.size();
-	for (int i=0; i<length; i++) KEYS.push_back("chi_"+In[0]->MonList[i]);
-	length=In[0]->StateList.size();
-	for (int i=0; i<length; i++) KEYS.push_back("chi_"+In[0]->StateList[i]);
+	//int length=In[0]->MonList.size();
+	//for (int i=0; i<length; i++) KEYS.push_back("chi_"+In[0]->MonList[i]);
+	//length=In[0]->StateList.size();
+	//for (int i=0; i<length; i++) KEYS.push_back("chi_"+In[0]->StateList[i]);
 	success= In[0]->CheckParameters("var",name,start,KEYS,PARAMETERS,VALUES);
 	if (success && name != "noname") {
 		vector<string>sub;
@@ -72,7 +72,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 		int pos=0;
 		Real R_target= -123.0;
 		bool dubbel=false;
-		int choice=4;
+		int choice=-1;
 
 		eq_to_solvating=-1;
 		balance_membraning = -1;

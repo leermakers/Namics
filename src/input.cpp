@@ -65,7 +65,8 @@ Input::Input(string name_) {
 				last=In_line;
 			} else add=true;
 		}
-		if (last != "start") {
+
+		if (last.substr(0,5) != "start") {
 		   elems.push_back(std::to_string(line_nr++).append(":").append("start"));
 	   }
 

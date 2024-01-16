@@ -181,7 +181,8 @@ int* Output::GetPointerInt(string key, string name, string prop, int &Size) {
 if (debug) cout << "GetPointerInt in output " << endl;
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
-	//int aliaslistlength;
+	//int aliaslistlength=In[0]->AliasList.size();
+	//cout << key << " " << name << " " << prop << " " << Size << endl;
 	int listlength;
 	int choice;
 	int i,j;
@@ -326,14 +327,16 @@ int Output::GetValue(string key, string name, string prop, int &int_result, Real
 if (debug) cout << "GetValue (long) in output " << endl;
 	int monlistlength=In[0]->MonList.size();
 	int mollistlength=In[0]->MolList.size();
-	int choice;
-	int i;
+	int allistlength; 
+	int choice=0;
+	int i,j;
 	if  (key=="sys") choice=1;
 	if  (key=="mol") choice=2;
 	if  (key=="mon") choice=3;
 	if  (key=="newton") choice=4;
 	if  (key=="lat") choice=5;
 	if  (key=="output") choice=6;
+	if  (key=="alias") choice=7;
 	switch(choice) {
 		case 1:
 			return Sys[0]->GetValue(prop,int_result,Real_result,string_result);
@@ -360,6 +363,18 @@ if (debug) cout << "GetValue (long) in output " << endl;
 			break;
 		case 6:
 			return GetValue(prop,name,int_result,Real_result,string_result);
+			break;
+		case 7: 
+			i=0;
+			while (i<mollistlength) {
+				j=0;
+				allistlength=Mol[i]->MolAlList.size(); 
+				while(j<allistlength) {
+					if (name==Mol[i]->Al[j]->name) return Mol[i]->Al[j]->GetValue(prop,int_result,Real_result,string_result);
+					j++;
+				}
+				i++;
+			}
 			break;
 		default:
 			cout << "Program error: in Output, GetValue reaches default...." << endl;

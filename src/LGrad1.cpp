@@ -981,7 +981,7 @@ Real LGrad1::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alpha
 	Real a,b,c,Ma,Mb,Mc;
 
 
-	//g[1]=phiA[0]/phiA[1]-1.0;
+	g[1]=phiA[0]/phiA[1]-1.0;
 	b=phiA[1]*phiB[1]*B_B/B_phitot[1];
 	c=phiA[2]*phiB[2]*B_B/B_phitot[2];
 	Mb=alphaA[1]-alphaB[1];
@@ -993,7 +993,7 @@ Real LGrad1::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alpha
 
 		AverageJ+=lambda_1[z]*L[z]*(a+b)*(Mb-Ma);
 	}
-	//g[M-2]=phiA[M-1]/phiA[M-2]-1.0;
+	g[M-2]=phiA[M-1]/phiA[M-2]-1.0;
 
 	return -B_A*AverageJ/(2*(M-4)*lambda);
 

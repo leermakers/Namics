@@ -2005,24 +2005,70 @@ Real LGrad2::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alpha
 Real LGrad2::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB,Real B_A, Real B_B) {
 	if (debug) cout <<"LGrad2: DphiDt not implemented yet " << endl;
 	Real AverageJ=0;
-	//Real Jplus,Jmin;
-	Real a,b,c,Ma,Mb,Mc;
+	int x, y;
 
-
-	//g[1]=phiA[0]/phiA[1]-1.0;
-	b=phiA[1]*phiB[1]*B_B/B_phitot[1];
-	c=phiA[2]*phiB[2]*B_B/B_phitot[2];
-	Mb=alphaA[1]-alphaB[1];
-	Mc=alphaA[2]-alphaB[2];
-	for (int z=2; z<M-2; z++) {
-		a=b; b=c; c=phiA[z+1]*phiB[z+1]*B_B/B_phitot[z+1];
-		Ma=Mb; Mb=Mc; Mc=alphaA[z+1]-alphaB[z+1];
-		g[z] = g[z]  + (a+b)*(Mb-Ma)*lambda_1[z]-(b+c)*(Mc-Mb)*lambda1[z];///L[z];
-
-		AverageJ+=lambda_1[z]*L[z]*(a+b)*(Mb-Ma);
+	//apply BC to the edges
+	for (x=1; x<MX+1; x++) {
+		//lower edge = south/current-1
+		g[x*JX+1] = phiA[x*JX+0]/phiA[x*JX+1] - 1.0;
+		//upper edge = north/current-1
+		g[x*JX+MY] = phiA[x*JX+(MY+1)]/phiA[x*JX+MY] - 1.0;
 	}
-	//g[M-2]=phiA[M-1]/phiA[M-2]-1.0;
+	for (y=1; y<MY+1; y++) {
+		//left edge = west/current-1
+		g[1*JX + y] =  phiA[0*JX+y]/phiA[1*JX+y] - 1.0;
+		//right edge = east/current -1
+		g[MX*JX + y] =  phiA[(MX+1)*JX+y]/phiA[MX*JX+y] - 1.0;
+	}
 
-	return -B_A*AverageJ/(2*(M-4)*lambda);
+	//gets indices for the neighbors
+	int north, south, east, west, center;
+	auto get_c = [&](){return x*JX +y;};
+	auto get_w = [&](){return (x-1)*JX +y;};
+	auto get_e = [&](){return (x+1)*JX +y;};
+	auto get_s = [&](){return x*JX +(y-1);};
+	auto get_n = [&](){return x*JX +(y+1);};
+	auto update_neighbors = [&](){
+		center = get_c();
+		north = get_n();
+		south = get_s();
+		east = get_e();
+		west = get_w();
+	};
+
+	//memory efficient, but computationally inefficient 
+	//the flux has to be calculated first 
+	//and only north and east component stored
+	Real a,b,c,Ma,Mb,Mc;	
+	for (y=2; y<MY; y++){
+		for (x=2; x<MX; x++){
+			update_neighbors();
+
+			a = phiA[west]*phiB[west]*B_B/B_phitot[west];
+			b = phiA[center]*phiB[center]*B_B/B_phitot[center];
+			c = phiA[east]*phiB[east]*B_B/B_phitot[east];
+
+			Ma = alphaA[west]-alphaB[west];
+			Mb = alphaA[center]-alphaB[center];
+			Mc = alphaA[east]-alphaB[east];
+
+			//flux divergence x-axis
+			g[x*JX + y] += (a+b)*(Mb - Ma)*lambda_1[center] - (b+c)*(Mc-Mb)*lambda1[center];
+			AverageJ += (a+b)*(Mb - Ma)*lambda_1[center]*L[center];//L[x]?
+
+			a = phiA[south]*phiB[south]*B_B/B_phitot[south];
+			c = phiA[north]*phiB[north]*B_B/B_phitot[north];
+
+			Ma = alphaA[south]-alphaB[south];
+			Mc = alphaA[north]-alphaB[north];
+			
+			//flux_divergence y-axis
+			g[x*JX + y] += (a+b)*(Mb - Ma)*lambda0[center] - (b+c)*(Mc-Mb)*lambda0[center];
+			AverageJ+=(b+c)*(Mc-Mb)*lambda0[center];
+		}
+	}
+	
+
+	return -B_A*AverageJ/(2*(M-MX*2-MY*2)*lambda);
 
 }

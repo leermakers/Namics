@@ -12,6 +12,7 @@ if (debug) cout <<"constructor in Output "<< endl;
 	KEYS.push_back("write");
 	KEYS.push_back("clear");
 	KEYS.push_back("header_separator");
+	KEYS.push_back("filename");
 	input_error=false;
 	bin_folder = "bin"; // folder in Namics where the binary is located
 	use_output_folder = true; // LINUX ONLY, when you remove this, add it as a default to its CheckInputs part.
@@ -102,6 +103,7 @@ if (debug) cout << "CheckInput in output " << endl;
 	bool success=true;
 	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
+
 		if (GetValue("append").size()>0) {
 			if (name=="ana") append=true;
 			append=In[0]->Get_bool(GetValue("append"),append);
@@ -392,7 +394,9 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	string s;
 	string filename;
 	vector<string> sub;
+
 	string infilename = In[0]->name;
+	if (GetValue("filename").size()>0) infilename=GetValue("filename");
 	In[0]->split(infilename,'.',sub);
 	string key;
 

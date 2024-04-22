@@ -118,6 +118,8 @@ When you ask for so-called 'ana' file output, with the statement:
 {\tt output : ana : append : false},  you will, after the calculations have finished, find a file {\tt input-filename.ana} (the {\tt .in} extension is replace by {\tt ana}) where 'input-filename' is the name of your {\tt inputfile} (minus the extension). In this file you find all values that the program can output. It thus also specifies the implicitly assumed default values that are used. If you are interested in some typical quantity that (by accident) has not yet been directed to the output, and you like to have access to this parameter, you can ask Frans to make this quantity available for your disposal. 
 
 \subsection{How to get the output you want}
+You can choose the filename of the output files (that is the part before the extension) but if you do not specify the filename yourself \namics will use the 'input-filename' as the default. You can set your own filename, e.g. when you request output of a particular type: (\tt output : pro : filename : myoutputfilename) 
+
 In general you may only have a guess which keywords to use for getting the wanted output in your outputfiles. Please use the  {\tt ana}-file option mentioned in the previous section to generate an outputfile with name {\tt input-filename.ana}. This file will contain the keywords to be used in your {\tt kal} or {\tt pro} statements. See also section \ref{sec:extras} for the meaning of some of the outputted quantities. 
 
 It is possible to generate multiple output files for one calculation. (see also section \ref{sec:output})  For example a file that can be read in a spreadsheet (a {\tt kal} file), contains columns for various variables.  The rows denote the different calculations that are specified in the input file.  However this file format is not suitable for profiles.  So for profiles it is common to generate another file (a {\tt pro} file).  For three-gradient calculations it is of use to use the {\tt vtk} file format. This file can then be read by Paraview. Note that in a {\tt vtk}-file you can have just a single 'profile' entry.  
@@ -127,7 +129,7 @@ Suppose you want to output in the {\tt kal}-file the quantity $\tt phibulk$ of t
 
 \noindent This makes only sense if you have explicitly asked for such file
  
- {\tt output : kal : append : false}.
+ {\tt output : kal : append : false} or by (\tt output : kal : filename : myoutputfilename)
  
  \noindent In this output statement you tell that you are not going to append previous existing file, but overwrite it with the new file. If the file does not yet exist, it will generate such a file. You will find in your output directory the file {\tt input-filename.kal}
 
@@ -642,6 +644,7 @@ To keep track of the relation between inputfile of the program and potentially s
 output : ana : write : false //'myinput.ana'
 output : kal : write : true    //generates 'myinput.kal'
 output : pro : append : false  //generates 'myinput_xx_yy.pro'
+output : pro : filename : overwritedefaultfilenamewiththisfilename
 output : vtk : write_bounds : false   //generates 'myinput_xx_yy,vtk'
 output : pos : clear : true   //generates 'myinput.pos'
 output : vec : use_output_folder : myfolder //generates 'myinput.vec'

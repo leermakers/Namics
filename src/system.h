@@ -31,6 +31,9 @@ public:
 	vector<int> SysTagList;
 	vector<int> SysClampList;
 	vector<int> FillList;
+	vector<int> EmonList;
+	vector<int> EmonList_1;
+	vector<int> EmonList_2;
 	vector<int> XmolList;
 	vector<int> XstateList_1;
 	vector<int> XstateList_2;
@@ -156,6 +159,7 @@ public:
 
 	void DoElectrostatics(Real*,Real*);
 	bool CheckResults(bool);
+	Real GetE(int,int);
 	Real GetFreeEnergy();
 	Real GetGrandPotential();
 	Real GetSpontaneousCurvature();

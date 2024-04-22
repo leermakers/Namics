@@ -30,6 +30,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	KEYS.push_back("find_local_solution");
 	KEYS.push_back("split");
 	KEYS.push_back("X");
+	KEYS.push_back("E");
 	KEYS.push_back("compute_Gibbs_excess");
 	KEYS.push_back("compute_kJ0");
 
@@ -1086,6 +1087,13 @@ bool System::CheckInput(int start_)
 		}
 	}
 
+	if (GetValue("E").size()>0)
+	{
+		if ( !(GetValue("E")=="chi" || GetValue("E")=="Chi" || GetValue("E")=="CHI") ) {
+			cout <<" Only the FH chi-interactions are implemented. Use 'sys : sysname : E : chi'" << endl;
+			cout <<" Only chi-contributions to E are generated." << endl;
+		}	
+	}
 	if (GetValue("X").size() > 0)
 	{
 		XmolList.clear();
@@ -1521,6 +1529,21 @@ void System::PushOutput()
 			push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->P(2*Lat[0]->fjc,Lat[0]->MY)]);
 		}
 	}
+	if (GetValue("E").size() >0)
+	{	
+		Real sumE=0;
+		int length= In[0]->MonList.size();
+		for (int i=0; i<length; i++)
+		for (int j=i+1; j<length; j++) {
+			Real Eij=GetE(i,j);
+			push("I_"+Seg[i]->name+"_"+Seg[j]->name,Eij);
+			push("I_"+Seg[j]->name+"_"+Seg[i]->name,Eij);
+			sumE+=Eij*Seg[i]->chi[j];
+		}
+		push("E",sumE);
+	}
+
+
 	if (GetValue("delta_range").size()>0) push("delta_range",GetValue("delta_range"));
 	if (GetValue("phi_ratio").size()>0) push("phi_ratio",phi_ratio);
 	int n_seg=In[0]->MonList.size();
@@ -2039,6 +2062,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 					if (valence !=0)
 						YplusisCtimesX(u,psi,valence,M);
 
+				
 				}
 			}
 		}
@@ -2911,6 +2935,16 @@ bool System::CheckResults(bool e_info_)
 	}
 
 	return success;
+}
+
+Real System::GetE(int Seg1, int Seg2)
+{	
+	Real E=0;
+	int M=Lat[0]->M;
+	Real *seg1=Seg[Seg1]->phi;
+	Real *seg2=Seg[Seg2]->phi;
+	if (Seg1!=Seg2) Dot(E,seg1,seg2,M);
+	return E;//only the contacts
 }
 
 Real System::GetFreeEnergy(void)

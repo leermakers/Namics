@@ -2939,11 +2939,12 @@ bool System::CheckResults(bool e_info_)
 
 Real System::GetE(int Seg1, int Seg2)
 {	
+	if (Lat[0]->gradients > 1 || Lat[0]->geometry !="planar" ) cout << "Interactions are counted wrong: In system GetE must be generalized " << endl; 
 	Real E=0;
 	int M=Lat[0]->M;
-	Real *seg1=Seg[Seg1]->phi;
-	Real *seg2=Seg[Seg2]->phi;
-	if (Seg1!=Seg2) Dot(E,seg1,seg2,M);
+	Real *phi=Seg[Seg1]->phi;
+	Real *side=Seg[Seg2]->phi_side;
+	if (Seg1!=Seg2) Dot(E,phi,side,M); //also need L in nonplaner geometries; for this we need new vector and for the time being I did not do this. (need this result only for one-gradient planar..
 	return E;//only the contacts
 }
 

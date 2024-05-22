@@ -675,7 +675,7 @@ void LGrad1::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 			//a=b; b=c; c=psi[x+1];
 			//X[x]=(epsXmin*a + C*q[x]*L[x] + epsXplus*c)/(epsXmin+epsXplus);
 			if (x==fjc) a=psi[fjc-1]; else a=X[x-1]; //upwind
-			X[x]=(epsXmin*a  +C*q[x] + epsXplus*psi[x+1])/(epsXmin+epsXplus);
+			X[x]=(epsXmin*a  +C*q[x]*L[x] + epsXplus*psi[x+1])/(epsXmin+epsXplus);
 		 }
 	}
 	if (geometry=="spherical") {

@@ -417,7 +417,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 					} else {
 							if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*Lat[0]->volume);theta=n*chainlength;}
 							if (GetValue("theta").size()>0) {theta = In[0]->Get_Real(GetValue("theta"),10*Lat[0]->volume);n=theta/chainlength;}
-							if (theta < 0 || theta > Lat[0]->volume) {
+							if (theta < 0 ) {    //|| theta > Lat[0]->volume) {
 								cout << "In mol " + name + ", the value of 'n' or 'theta' " << theta << "  is out of range 0 .. 'volume'/N, cq 'volume' "<< Lat[0]->volume << endl; success=false;
 							}
 						}

@@ -744,6 +744,10 @@ bool System::CheckInput(int start_)
 			};
 			if (ConstraintType == "delta")
 			{
+				if (In[0]->MolList.size()>2) {
+					cout <<"ConstraintType 'delta' not supported (yet) when there are more than 2 molecules in the system " << endl;
+					cout <<"This issue may be resolved though. Send request to support team."<< endl; return(0);
+				}
 				if (GetValue("delta_range").size() > 0)
 				{	int units=1;
 					if (Lat[0]->fjc>1) {
@@ -1092,7 +1096,7 @@ bool System::CheckInput(int start_)
 		if ( !(GetValue("E")=="chi" || GetValue("E")=="Chi" || GetValue("E")=="CHI") ) {
 			cout <<" Only the FH chi-interactions are implemented. Use 'sys : sysname : E : chi'" << endl;
 			cout <<" Only chi-contributions to E are generated." << endl;
-		}	
+		}
 	}
 	if (GetValue("X").size() > 0)
 	{
@@ -1530,7 +1534,7 @@ void System::PushOutput()
 		}
 	}
 	if (GetValue("E").size() >0)
-	{	
+	{
 		Real sumE=0;
 		int length= In[0]->MonList.size();
 		for (int i=0; i<length; i++)
@@ -2062,7 +2066,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 					if (valence !=0)
 						YplusisCtimesX(u,psi,valence,M);
 
-				
+
 				}
 			}
 		}
@@ -2193,7 +2197,8 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 		Lat[0]->remove_bounds(g+itpos);
 		itpos+=M;
 	}
-	if (constraintfields) {
+
+	if (constraintfields) { //only works for two components...
 		Cp(g+itpos,Mol[DeltaMolList[1]]->phitot,M);
 		YisAminB(g+itpos,g+itpos,Mol[DeltaMolList[0]]->phitot,M);
 		Real R = (phi_ratio-1)/(phi_ratio+1);
@@ -2201,6 +2206,17 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 		Times(g+itpos,g+itpos,beta,M);
 		itpos+=M;
 	}
+/*
+	if (constraintfields) { //no success yet....
+			Cp(g+itpos,Mol[DeltaMolList[0]]->phitot,M);
+			Div(g+itpos,Mol[DeltaMolList[1]]->phitot,M);
+			//YisAminB(g+itpos,g+itpos,Mol[DeltaMolList[0]]->phitot,M);
+			//Real R = (phi_ratio-1)/(phi_ratio+1);
+			YisAplusC(g+itpos,g+itpos,-phi_ratio,M);
+			Times(g+itpos,g+itpos,beta,M);
+			itpos+=M;
+	}
+*/
 	if (extra_constraints>0) {
 		int length = In[0]->MonList.size();
 		for (int i = 0; i < length; i++)
@@ -2938,12 +2954,12 @@ bool System::CheckResults(bool e_info_)
 }
 
 Real System::GetE(int Seg1, int Seg2)
-{	
-	//if (Lat[0]->gradients > 1 || Lat[0]->geometry !="planar" ) cout << "Interactions are counted wrong: In system GetE must be generalized " << endl; 
+{
+	//if (Lat[0]->gradients > 1 || Lat[0]->geometry !="planar" ) cout << "Interactions are counted wrong: In system GetE must be generalized " << endl;
 	Real E=0;
 	int M=Lat[0]->M;
         Real *temp = (Real *)malloc(M * sizeof(Real));
-	Real *L=Lat[0]->L; 
+	Real *L=Lat[0]->L;
 	Real *phi=Seg[Seg1]->phi;
 	Real *side=Seg[Seg2]->phi_side;
 	if (Seg1!=Seg2) {
@@ -3018,6 +3034,13 @@ Real System::GetFreeEnergy(void)
 		}
 	}
 	if (Mol[solvent]->MolType==water) Mol[solvent]->AddToF(F);
+
+	if (constraintfields) {//Will not work on GPU
+		for (int i=0; i<M; i++) if (beta[i]>0) {
+			F[i] +=log(BETA[i])*(Mol[DeltaMolList[0]]->phitot[i]-Mol[DeltaMolList[1]]->phitot[i]);
+		}
+ 	}
+
 	Real *phi;
 	Real *phi_side;
 	Real *g;
@@ -3090,6 +3113,8 @@ Real System::GetFreeEnergy(void)
 			}
 		}
 	}
+
+
 
 	//if (false)
 	for (int j = 0; j < n_states; j++)
@@ -3219,15 +3244,13 @@ Real System::GetGrandPotential(void)
 	if (Mol[solvent]->MolType==water) {Mol[solvent]->AddToGP(GP); }
 
 	Add(GP,alpha,M);
-	//if (constraintfields) {
-	//	Real result=0;
-	//	for (int i=0; i<M; i++) if (beta[i]>0) {
-	//		cout <<"i " << i << " beta[i] = " << beta[i] << " BETA[i]= " << log(BETA[i]) << endl;
-	//		result +=log(BETA[i])*Lat[0]->L[i];
-	//	}
-	//	//Sum(result,BETA,M);
-	//	cout <<"Sum Beta = " << result << endl;
- 	//}
+
+
+	if (constraintfields) {//Will not work on GPU
+		for (int i=0; i<M; i++) if (beta[i]>0) {
+			GP[i] -=log(BETA[i])*(Mol[DeltaMolList[0]]->phitot[i]-Mol[DeltaMolList[1]]->phitot[i]);
+		}
+ 	}
 
 	Real phibulkA;
 	Real phibulkB;

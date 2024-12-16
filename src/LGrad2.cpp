@@ -1424,7 +1424,8 @@ void LGrad2::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 	Real epsXplus, epsXmin, epsYplus,epsYmin;
 	//set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
-
+	Real a=0;
+	Real b=0;
 	if (!fixedPsi0) {
 		C=C/2/fjc/fjc;
 		r=offset_first_layer*fjc;
@@ -1436,8 +1437,12 @@ void LGrad2::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 				epsXplus=2*PIE*r*(eps[i]+eps[i+JX])/L[i]*fjc*fjc;
 				epsYmin=eps[i]+eps[i-1];
 				epsYplus=eps[i]+eps[i+1];
-				X[i]= (C*q[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/
+				if (x==fjc) a=psi[i-JX]; else a=X[i-JX];
+				if (y==fjc) b=psi[i-1]; else b=X[i-1];
+				X[i]= (C*q[i]+epsXmin*a+epsXplus*psi[i+JX]+epsYmin*b+epsYplus*psi[i+1])/
 				(epsXmin+epsXplus+epsYmin+epsYplus);
+				//X[i]= (C*q[i]+epsXmin*psi[i-JX]+epsXplus*psi[i+JX]+epsYmin*psi[i-1]+epsYplus*psi[i+1])/
+				//(epsXmin+epsXplus+epsYmin+epsYplus);
 			}
 		}
 		//Cp(psi,X,M);
@@ -1979,17 +1984,17 @@ if (debug) cout <<"PutMask in LGrad2 " << endl;
 		for (int y=yy-R; y<yy+R+1; y++){
 			if ((xx-x)*(xx-x)+(yy-y)*(yy-y) <=R*R) {
 				X=x; Y=y;
-				if (y<fjc) {cout << "particle too close to y=0 boundary " << endl;
-					return false;
-				}
+				//if (y<fjc) {cout << "particle too close to y=0 boundary " << endl;
+				//	return false;
+				//}
 				if (x>MX+fjc-1) {
 					cout <<"in two gradient system, particle should be smaller than size of system in radial direction" << endl;
 					return false;
 				}
-				if (y>MY+fjc-1) { cout <<"particle too close to y upperbound " << endl;
-					return false;
-				}
-				MASK[P(X,Y)]++;
+				//if (y>MY+fjc-1) { cout <<"particle too close to y upperbound " << endl;
+				//	return false;
+				//}
+				if (!(y<fjc || y>MY+fjc-1))  MASK[P(X,Y)]++;
 			}
 		}
 	}
@@ -2036,10 +2041,10 @@ Real LGrad2::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alpha
 		west = get_w();
 	};
 
-	//memory efficient, but computationally inefficient 
-	//the flux has to be calculated first 
+	//memory efficient, but computationally inefficient
+	//the flux has to be calculated first
 	//and only north and east component stored
-	Real a,b,c,Ma,Mb,Mc;	
+	Real a,b,c,Ma,Mb,Mc;
 	for (y=2; y<MY; y++){
 		for (x=2; x<MX; x++){
 			update_neighbors();
@@ -2061,13 +2066,13 @@ Real LGrad2::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alpha
 
 			Ma = alphaA[south]-alphaB[south];
 			Mc = alphaA[north]-alphaB[north];
-			
+
 			//flux_divergence y-axis
 			g[x*JX + y] += (a+b)*(Mb - Ma)*lambda0[center] - (b+c)*(Mc-Mb)*lambda0[center];
 			AverageJ+=(b+c)*(Mc-Mb)*lambda0[center];
 		}
 	}
-	
+
 
 	return -B_A*AverageJ/(2*(M-MX*2-MY*2)*lambda);
 

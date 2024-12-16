@@ -291,7 +291,7 @@ bool System::PrepareForCalculations(bool first_time)
 
 	if (constraintfields)
 	{
-		Boltzmann(BETA, BETA, M);
+		Boltzmann(BETA, BETA, M); // Beta wordt nu exp(-beta)
 		//for(int i=0; i<M; i++) cout << "BETA at i: " << i << " is: " << BETA[i] << endl;
 		//cin.get();
 	}
@@ -558,7 +558,7 @@ bool System::CheckInput(int start_)
 
 			cout <<"The program is compiled for the use of 'long double' while 'overflow_protection' is not requested for;" << endl;
 			cout <<"1. Turn on 'overflow_protection'." << endl;
-			cout <<"2. Compile progrem without the #define 'LongReal' in namics.h. " << endl;
+			cout <<"2. Compile program without the #define 'LongReal' in namics.h. " << endl;
 		}
 #else
 		if (GetValue("overflow_protection").size() > 0) {

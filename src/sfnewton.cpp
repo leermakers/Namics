@@ -1034,7 +1034,7 @@ if(debug) cout <<"Iterate_BBR in SFNewton " << endl; // trying the inverse Broyd
 }
 #endif
 
-bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max) {
+bool SFNewton::iterate_DIIS(Real*x,int nvar_, int m, int iterationlimit,Real tolerance, Real delta_max, int restart_DIIS) {
 if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
 	int nvar=nvar_;
 	bool success;
@@ -1077,6 +1077,10 @@ if(debug) cout <<"Iterate_DIIS in SFNewton " << endl;
 #endif
 		while ( residual > tolerance and iterations < iterationlimit) {
 			iterations++;
+			if (iterations%restart_DIIS==0) {
+				k_diis=0; cout<<"!";
+			}
+
 			Cp(x0,x,nvar);
 			residuals(x,g);
 			k=iterations % m; k_diis++; //plek voor laatste opslag

@@ -58,7 +58,7 @@ public:
 	string ReadFileGuess;
 	string stop_criterion;
 	int iv;
-	int m;
+	int m, restart_DIIS;
 	SolverType SolType;
 	bool all;
 

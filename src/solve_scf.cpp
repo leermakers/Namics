@@ -28,10 +28,12 @@ if(debug) cout <<"Constructor in Solve_scf " << endl;
 	KEYS.push_back("super_tolerance");
 	KEYS.push_back("super_iterationlimit");
 	KEYS.push_back("m");
+	KEYS.push_back("n_restart_DIIS");
 	KEYS.push_back("super_deltamax");
 	max_g = false; // compute g based on max error
 	rescue_status = NONE;
 	all=false;
+	restart_DIIS =0;
 }
 
 Solve_scf::~Solve_scf() {
@@ -233,6 +235,12 @@ if(debug) cout <<"CheckInput in Solve " << endl;
 			solver=diis;
 			m=In[0]->Get_int(GetValue("m"),10);
 			if (m < 0 ||m>100) {m=10;  cout << "Value of 'm' out of range 0..100, value set to default value 10" <<endl; }
+			restart_DIIS=iterationlimit;
+			restart_DIIS=In[0]->Get_int(GetValue("n_restart_DIIS"),iterationlimit);
+			if (restart_DIIS < 0 || restart_DIIS > iterationlimit*10) {
+				restart_DIIS=iterationlimit; cout <<"Value of 'n_restart_DIIS' out of range 0 .. iterationlimit; value set to iterationlimit" << endl;
+			}
+			restart_DIIS -=restart_DIIS%m; cout <<"Restart DIIS set to " << restart_DIIS << endl;
 		}
 		if (SCF_method=="Picard") {
 			solver= PICARD;
@@ -619,7 +627,7 @@ if(debug) cout <<"Solve in  Solve_scf " << endl;
 			success=iterate_Picard(xx,iv,iterationlimit,tolerance,deltamax);
 		break;
 		case diis:
-			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+			success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax,restart_DIIS);
 		break;
 		case BRR:
 			success=iterate_BRR(xx,iv,m,iterationlimit,tolerance,deltamax);
@@ -670,11 +678,11 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 
 				while (success == false) {
 					try {
-						success = iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+						success = iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax,restart_DIIS);
 						if (success == false) {
 							cerr << "Detected failure to converge, zeroing iteration variables and giving it one more try." << endl;
 							Zero(xx,iv);
-							success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax);
+							success=iterate_DIIS(xx,iv,m,iterationlimit,tolerance,deltamax,restart_DIIS);
 							if (success == false)
 								exit(0);
 						}
@@ -742,7 +750,7 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 	    if (ets>-1) success=iterate_RF(x,1,super_iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi Eq-to_solvent search: ");
 	    if (etm>-1) success=iterate_RF(x,1,super_iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi Eq-to_mu search: ");
 	    if (bm>-1) success=iterate_RF(x,1,super_iterationlimit,super_tolerance,super_deltamax,"Regula-Falsi balance-membrane search: ");
-	//    success=iterate_DIIS(x,1,m,iterationlimit,super_tolerance,super_deltamax);
+	//    success=iterate_DIIS(x,1,m,iterationlimit,super_tolerance,super_deltamax,restart_DIIS);
 	//success=iterate(x,1,super_iterationlimit,super_tolerance,super_deltamax,deltamin,false);	//iterate is called with just one iteration variable
 	if (bm>-1) super_tolerance /=10;
 	if(debug) cout <<"My guess for X: " << x[0] << endl;

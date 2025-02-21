@@ -37,6 +37,7 @@ public:
 	bool append;
 	bool write;
 	bool input_error;
+	bool DOS;
 	int first;
 	string output_folder;
 	string bin_folder;

@@ -11,6 +11,7 @@ if (debug) cout <<"constructor in Output "<< endl;
 	KEYS.push_back("use_output_folder");
 	KEYS.push_back("write");
 	KEYS.push_back("clear");
+	KEYS.push_back("DOS");
 	KEYS.push_back("header_separator");
 	KEYS.push_back("filename");
 	input_error=false;
@@ -103,6 +104,10 @@ if (debug) cout << "CheckInput in output " << endl;
 	bool success=true;
 	success=In[0]->CheckParameters("output",name,start,KEYS,PARAMETERS,VALUES);
 	if (success) {
+		DOS=false;
+		if (GetValue("DOS").size()>0) {
+			DOS=In[0]->Get_bool(GetValue("DOS"),DOS);
+		}
 
 		if (GetValue("append").size()>0) {
 			if (name=="ana") append=true;
@@ -448,7 +453,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				for (int j=0; j<length_vec; j++) {
 					if (j<length_vec-1) fprintf(fp,"%i\t",X[j]); else fprintf(fp,"%i",X[j]);
 				}
-				fprintf(fp,"\n");
+				if (DOS) fprintf(fp,"\r\n"); else fprintf(fp,"\n");
 			}
 		}
 		fclose(fp);
@@ -475,7 +480,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 #else
 				for (int j=0; j<length_vec; j++) fprintf(fp,"%e\t",X[j]);
 #endif
-				fprintf(fp,"\n");
+				if (DOS) fprintf(fp,"\r\n"); else fprintf(fp,"\n");
 			}
 		}
 		fclose(fp);
@@ -508,8 +513,8 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				if (i<length-1) fprintf(fp,"%s\t",s.c_str()); else fprintf(fp,"%s",s.c_str());
 			} else {cout << " Error for 'pro' output. It is only possible to output quantities known to be a 'profile'. That is why output quantity " + s + " is rejected. " << endl;}
 		}
-		fprintf(fp,"\n");
-		Lat[0] -> PutProfiles(fp,pointer,write_bounds);
+		if (DOS) fprintf(fp,"\r\n"); else fprintf(fp,"\n");
+		Lat[0] -> PutProfiles(fp,pointer,write_bounds,DOS);
 
 		fclose(fp);
 	}
@@ -526,7 +531,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				string s=key.append(sep).append(OUT_name[i]).append(sep).append(OUT_prop[i]);
 				if (i<length-1) fprintf(fp,"%s\t",s.c_str()); else fprintf(fp,"%s",s.c_str());
 			}
-			fprintf(fp,"\n");
+			if (DOS) fprintf(fp,"\r\n"); else fprintf(fp,"\n");
 		} else fp=fopen(filename.c_str(),"a");
 
 		if (fp == NULL) {
@@ -564,7 +569,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				}
 			}
 		}
-		fprintf(fp,"\n");
+		if (DOS) fprintf(fp,"\r\n"); else fprintf(fp,"\n");
 		fclose(fp);
 	}
 

@@ -127,7 +127,7 @@ virtual ~Lattice();
 	virtual void DivL(Real*) =0;
 	virtual bool PutMask(int* H_MASK,vector<int>px,vector<int>py,vector<int>pz,int R)=0;
 	virtual void vtk(string, Real*,string,bool) =0;
-	virtual void PutProfiles(FILE*,vector<Real*>,bool)=0;
+	virtual void PutProfiles(FILE*,vector<Real*>,bool,bool)=0;
 	virtual bool PutM(void)=0;
 	virtual void propagate(Real*,Real*, int, int,int)=0;
 	virtual void propagateF(Real*,Real*,Real*,int,int,int)=0;

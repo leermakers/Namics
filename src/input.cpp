@@ -389,7 +389,8 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 						Input_values[k]=Input_values[l];
 						Input.erase(Input.begin()+l);
 						if (n_start==1) cout <<"Warning: " << Input[k] << " found twice.... " << Input_values[k] << " is used!" << endl;
-						Input_values.erase(Input_values.begin()+l);
+						if (Input_values.begin()+l != Input_values.end()) Input_values.erase(Input_values.begin()+l);
+						else Input_values.erase(--Input_values.end());
 						l_length--;
 						k_length--;
 						l--;

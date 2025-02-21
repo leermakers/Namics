@@ -78,7 +78,7 @@ if (debug) cout << "vtk in LGrad3 " << endl;
 	fclose(fp);
 }
 
-void LGrad3::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds){
+void LGrad3::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds,bool DOS){
 if (debug) cout <<"PutProfiles in LGrad3 " << endl;
 	Real one=1.0;
 	int x,y,z,i;
@@ -96,7 +96,7 @@ if (debug) cout <<"PutProfiles in LGrad3 " << endl;
 		for (i=0; i<length; i++) fprintf(pf,"%.20e\t",X[i][P(x,y,z)]);
 
 #endif
-		fprintf(pf,"\n");
+		if (DOS) fprintf(pf,"\r\n"); else fprintf(pf,"\n");
 	}
 }
 

@@ -12,7 +12,7 @@ class LGrad2 : public Lattice
 	Real Moment(Real*,Real,int);
 	Real WeightedSum(Real*);
 	void vtk(string, Real*,string,bool);
-	void PutProfiles(FILE*,vector<Real*>,bool);
+	void PutProfiles(FILE*,vector<Real*>,bool,bool);
 	void Side(Real *, Real *, int);
 	void propagate(Real*,Real*, int, int,int);
 	void LReflect(Real*,Real*,Real*);

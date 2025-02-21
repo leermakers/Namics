@@ -296,7 +296,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 				}
 			} else {
 				if (scale=="linear"){
-					if (GetValue("step").size() == 0) {success=false; cout <<"In var: while issueing a 'scan' you need to supply the value for 'step'. "<< endl; }
+					if (GetValue("step").size() == 0) {success=false; cout <<"In var: while issuing a 'scan' you need to supply the value for 'step'. "<< endl; }
 					else {
 						step=In[0]->Get_Real(GetValue("step"),0);
 						if (step==0) {success=false; cout <<"In var: while issuing a 'scan' the value for 'step' is not recognised or equal to zero. " << endl;}

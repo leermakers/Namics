@@ -225,7 +225,7 @@ if (debug) cout << "vtk in LGrad1 " << endl;
 	cout << "for system with one gradient there is no VTK output available " << endl;
 }
 
-void LGrad1::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds){
+void LGrad1::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds,bool DOS){
 if (debug) cout <<"PutProfiles in LGrad1 " << endl;
 	int x,i;
 	int length=X.size();
@@ -238,12 +238,12 @@ if (debug) cout <<"PutProfiles in LGrad1 " << endl;
 		fprintf(pf,"%Le\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc); //g - e
 		for (i=0; i<length; i++)
 		if (i<length-1) fprintf(pf,"%.20Lg\t",X[i][x]); else fprintf(pf,"%.20Lg",X[i][x]);
-		fprintf(pf,"\n");
+		if (DOS) fprintf(pf,"\r\n"); else fprintf(pf,"\n"); 
 #else
 		fprintf(pf,"%e\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc); //g - e
 		for (i=0; i<length; i++)
 		if (i<length-1) fprintf(pf,"%.20g\t",X[i][x]); else fprintf(pf,"%.20g",X[i][x]);
-		fprintf(pf,"\n");
+		if (DOS) fprintf(pf,"\r\n"); else fprintf(pf,"\n");
 #endif
 	}
 }

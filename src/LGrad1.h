@@ -12,7 +12,7 @@ class LGrad1 : public Lattice
 	Real Moment(Real*,Real,int);
 	Real WeightedSum(Real*);
 	void vtk(string, Real*,string,bool);
-	void PutProfiles(FILE*,vector<Real*>,bool);
+	void PutProfiles(FILE*,vector<Real*>,bool,bool);
 	bool ReadRange(int*, int*, int&, bool&, string, int, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
 	bool FillMask(int*, vector<int>, vector<int>, vector<int>, string);

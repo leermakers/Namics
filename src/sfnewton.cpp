@@ -534,7 +534,8 @@ if(debug) cout <<"zero in Newton " << endl;
 		memcpy(x, x0, sizeof(*x)*nvar);
 		COMPUTEG(x,g,nvar,filter);
 		valid = true;
-		timedep = false;
+		//timedep = false;
+		timedep = true; //to turn off the time-dependence warning which usually is a false one....
 		for (int i=0; i<nvar && valid && !timedep; i++) {
 			if ( g[i]!=g0[i] && !timedep) {
 				cout <<"[NEWTON:ERROR?: your functions are time dependent!]"<< endl;

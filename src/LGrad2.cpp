@@ -182,7 +182,7 @@ if (debug) cout << "vtk in LGrad2 " << endl;
 	fclose(fp);
 }
 
-void LGrad2::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds){
+void LGrad2::PutProfiles(FILE* pf,vector<Real*> X,bool writebounds,bool DOS){
 if (debug) cout <<"PutProfiles in LGrad2 " << endl;
 	Real one=1.0;
 	int x,y,i;
@@ -194,11 +194,11 @@ if (debug) cout <<"PutProfiles in LGrad2 " << endl;
 #ifdef LongReal
 		fprintf(pf,"%Le\t%Le\t",offset_first_layer/fjc+one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc);
 		for (i=0; i<length; i++) fprintf(pf,"%.20Le\t",X[i][P(x,y)]);
-		fprintf(pf,"\n");
+		if (DOS) fprintf(pf,"\r\n"); else fprintf(pf,"\n");
 #else
 		fprintf(pf,"%e\t%e\t",offset_first_layer/fjc+one*(x-fjc+1)/fjc-0.5/fjc,one*(y-fjc+1)/fjc-0.5/fjc);
 		for (i=0; i<length; i++) fprintf(pf,"%.20e\t",X[i][P(x,y)]);
-		fprintf(pf,"\n");
+		if (DOS) fprinf(pf("\r\n"); else fprintf(pf,"\n");
 #endif
 	}
 }

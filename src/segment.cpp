@@ -84,7 +84,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	H_u = (Real*) malloc(M*ns*sizeof(Real));
 	H_u_ext = (Real*) malloc(M*sizeof(Real));
 	H_phi = (Real*) malloc(M*sizeof(Real));
-	H_MASK = (int*) malloc(M*sizeof(int));
+	H_MASK = (Real*) malloc(M*sizeof(Real));
 	H_alpha=(Real*) malloc(M*ns*sizeof(Real));
 	H_ALPHA=(Real*) malloc(M*ns*sizeof(Real));
 	H_phi_state = (Real*) malloc(M*ns*sizeof(Real));
@@ -97,7 +97,7 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	G1=(Real*)AllOnDev(M); Zero(G1,M);
 	u=(Real*)AllOnDev(M*ns); Zero(u,M*ns);
 	phi_state=(Real*)AllOnDev(M*ns); Zero(phi_state,M*ns);
-	MASK=(int*)AllIntOnDev(M); Zero(MASK,M);
+	MASK=(Real*)AllOnDev(M); Zero(MASK,M);
 	phi=(Real*)AllOnDev(M); Zero(phi,M);
 	u_ext=(Real*)AllOnDev(M); Zero(u_ext,M);
 	phi_side=(Real*)AllOnDev(ns*M); Zero(phi_side,ns*M);
@@ -705,7 +705,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			HMaskDone=true;
 			if (success) {
 				//H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
-				if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred"<<endl;
+			if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred "<<endl;
 			}
 
 		}
@@ -794,7 +794,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 Real Segment::PinnedVolume() {
 	int M=Lat[0]->M;
 	Real volume=0;
-	int VOLUME=0;
+	Real VOLUME=0;
 	if (freedom !="pinned") return volume;
 	if (Lat[0]->geometry=="planar") {
 		Sum(VOLUME,MASK,M); volume=1.0*VOLUME;
@@ -833,7 +833,7 @@ bool Segment::Overlap(int I, int R) {
 	return false;
 }
 
-bool Segment::PrepareForCalculations(int* KSAM, bool first_time) {
+bool Segment::PrepareForCalculations(Real* KSAM, bool first_time) {
 if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 	int M=Lat[0]->M;
@@ -1226,7 +1226,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 	//valence=In[0]->Get_Real(GetValue("valence"),0);
 	bool HMD=false;
-	H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
+	H_MASK = (Real*) malloc(Lat[0]->M*sizeof(Real));
 	r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
 	if (success) success=ParseFreedoms(HMD);
 	free(H_MASK);
@@ -1250,13 +1250,13 @@ void Segment::Put_beta(int ii, Real BETA) {
 }
 
 Real Segment::Volume_particles() {
-	int volume=0;
+	Real volume=0;
 	if (freedom=="frozen") Sum(volume,H_MASK,Lat[0]->M);
 	//cout <<"volume_particles of type "+name + "= " << volume << endl;
 	return 1.0*volume;
 }
 
-bool Segment::PutAdsorptionGuess(Real chi,int* Mask) {
+bool Segment::PutAdsorptionGuess(Real chi,Real* Mask) {
 if (debug) cout <<"PutAdsorptionGuess" + name << endl;
 	bool success=true;
 	Real lambda;
@@ -1682,7 +1682,7 @@ bool Segment::GetClamp(string filename) {
 	return success;
 }
 
-int* Segment::GetMASK() {
+Real* Segment::GetMASK() {
 if (debug) cout <<"Get Mask for segment" + name << endl;
 	if (MASK==NULL) {cout <<"MASK not yet created. Task to point to MASK in segment is rejected. " << endl; return NULL;}
 	else return MASK;
@@ -1790,7 +1790,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	}
 
 	if (freedom == "frozen" || freedom == "pinned") {
-		int num_of_points;
+		Real num_of_points;
 		Sum(num_of_points,MASK,M);
 		if (num_of_points==1) {
 			int px=0,py=0,pz=0;

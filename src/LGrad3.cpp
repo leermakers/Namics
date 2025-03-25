@@ -1068,7 +1068,7 @@ if (debug) cout <<"ReadRangeFile in LGrad3 " << endl;
 	return success;
 }
 
-bool LGrad3::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, string filename) {
+bool LGrad3::FillMask(Real* Mask, vector<int>px, vector<int>py, vector<int>pz, string filename) {
 	bool success=true;
 	bool readfile=false;
 	int length=0;
@@ -1106,7 +1106,7 @@ bool LGrad3::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, st
 	return success;
 }
 
-bool LGrad3::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {
+bool LGrad3::CreateMASK(Real* H_MASK, int* r, int* H_P, int n_pos, bool block) {
 if (debug) cout <<"CreateMask for LGrad3 " + name << endl;
 	bool success=true;
 	H_Zero(H_MASK,M);
@@ -1152,7 +1152,7 @@ void LGrad3::UpdateEE(Real* EE, Real* psi, Real* E) {
 }
 
 
-void LGrad3::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
+void LGrad3::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, Real* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
 	int x,y;
 #ifndef CUDA
 	int z;
@@ -1311,7 +1311,7 @@ void LGrad3::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 }
 
 
-void LGrad3::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
+void LGrad3::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, Real* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
 	int x,y;
 	#ifndef CUDA
 	int z;
@@ -1948,32 +1948,38 @@ void LGrad3::Terminate(Real* Gz,Real* G,int Markov, int M){
 	} else Cp(Gz,G,M);
 }
 
-bool LGrad3:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+bool LGrad3:: PutMask(Real* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
 	bool success=true;
 	int length =px.size();
 	int X,Y,Z;
+	Zero(MASK,M);
 
 	for (int i =0; i<length; i++) {
 		int xx,yy,zz;
+		//cout << "i " << i << endl;
+		//cout << px[i] << " " << py[i] << " " << pz[i] << " " << R <<endl;
 		xx=px[i]; yy=py[i]; zz=pz[i];
 		for (int x=xx-R; x<xx+R+1; x++)
 		for (int y=yy-R; y<yy+R+1; y++)
 		for (int z=zz-R; z<zz+R+1; z++) {
 			if ((xx-x)*(xx-x)+(yy-y)*(yy-y)+(zz-z)*(zz-z) <=R*R) {
 				X=x; Y=y; Z=z;
-				if (x<1) X+=MX;
-				if (y<1) Y+=MY;
-				if (z<1) Z+=MZ;
-				if (x>MX) X-=MX;
-				if (y>MY) Y-=MY;
-				if (z>MZ) Z-=MZ;
-				MASK[P(X,Y,Z)]++;
+				if (x<1) {if (BX1==1) X=0; else X+=MX;}
+				if (y<1) {if (BY1==1) Y=0; else Y+=MY;}
+				if (z<1) {if (BZ1==1) Z=0; else Z+=MZ;}
+				if (x>MX) {if (BXM==MX) X=MX; else X-=MX;}
+				if (y>MY) {if (BYM==MY) Y=MY; else Y-=MY;}
+				if (z>MZ) {if (BZM==MZ) Z=MZ; else Z-=MZ;}
+				MASK[P(X,Y,Z)]=1;
 			}
 		}
-		for (int x=1; x<MX; x++)
-		for (int y=1; y<MY; y++)
-		for (int z=1; z<MZ; z++)
-		if (MASK[P(x,y,z)]>1) success=false;
+		//for (int x=1; x<MX+1; x++)
+		//for (int y=1; y<MY+1; y++)
+		//for (int z=1; z<MZ+1; z++)
+		//if (MASK[P(x,y,z)]>1) {
+		//	cout << MASK[P(x,y,z)] << endl;
+		//	return false;
+		//}
 	}
 
 	return success;

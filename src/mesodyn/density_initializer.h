@@ -41,7 +41,7 @@ class Homogeneous_system_initializer {
         const std::vector<Molecule*> m_molecules;
         const size_t m_system_volume;
         std::vector<Lattice_object<Real>> m_densities;
-        const int* m_mask;
+        const Real* m_mask;
         const std::vector<Segment*> m_segments;
         std::vector<size_t> m_frozen;
 

@@ -15,8 +15,8 @@ class LGrad1 : public Lattice
 	void PutProfiles(FILE*,vector<Real*>,bool,bool);
 	bool ReadRange(int*, int*, int&, bool&, string, int, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
-	bool FillMask(int*, vector<int>, vector<int>, vector<int>, string);
-	bool CreateMASK(int*, int*, int*, int, bool);
+	bool FillMask(Real*, vector<int>, vector<int>, vector<int>, string);
+	bool CreateMASK(Real*, int*, int*, int, bool);
 	Real ComputeTheta(Real*);
 	void remove_bounds(Real*);
 	void set_bounds(Real*);
@@ -27,8 +27,8 @@ class LGrad1 : public Lattice
 
 	virtual void ComputeLambdas(void);
 	virtual void UpdateEE(Real*, Real*,Real*);
-	virtual void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
-	virtual void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
+	virtual void UpdatePsi(Real*, Real*, Real* , Real*, Real*,bool,bool);
+	virtual void UpdateQ(Real*,Real*,Real*,Real*,Real*,bool);
 	virtual void Side(Real *, Real *, int);
 	//void LReflect(Real*,Real*,Real*);
 	//void UReflect(Real*,Real*,Real*);
@@ -41,7 +41,7 @@ class LGrad1 : public Lattice
 	virtual void AddPhiS(Real*,Real*,Real*,Real,int, int);
 	virtual void Initiate(Real*,Real*,int, int);
 	virtual void Terminate(Real*,Real*,int,int);
-	bool PutMask(int* ,vector<int>,vector<int>,vector<int>,int);
+	bool PutMask(Real* ,vector<int>,vector<int>,vector<int>,int);
 	virtual Real DphiDt(Real*,Real*,Real*,Real*,Real*,Real*,Real,Real);
 };
 #endif

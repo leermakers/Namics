@@ -1333,7 +1333,7 @@ if (debug) cout <<"ReadRangeFile in LGrad2 " << endl;
 	return success;
 }
 
-bool LGrad2::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, string filename) {
+bool LGrad2::FillMask(Real* Mask, vector<int>px, vector<int>py, vector<int>pz, string filename) {
 	bool success=true;
 	bool readfile=false;
 	int length=0;
@@ -1367,7 +1367,7 @@ bool LGrad2::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, st
 	return success;
 }
 
-bool LGrad2::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {
+bool LGrad2::CreateMASK(Real* H_MASK, int* r, int* H_P, int n_pos, bool block) {
 if (debug) cout <<"CreateMask for LGrad2 " + name << endl;
 	bool success=true;
 	H_Zero(H_MASK,M);
@@ -1417,7 +1417,7 @@ void LGrad2::UpdateEE(Real* EE, Real* psi, Real* E) {
 }
 
 
-void LGrad2::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
+void LGrad2::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, Real* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
 	int x,y,i;
 
 	Real r;
@@ -1484,7 +1484,7 @@ void LGrad2::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 }
 
 
-void LGrad2::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
+void LGrad2::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, Real* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
 	int x,y;
 
 	Real C = -e*e/(eps0*k_BT*bond_length);
@@ -1963,12 +1963,14 @@ if (debug) cout << "LGrad2:: terminate " << endl;
 	} else Cp(Gz,G,M);
 }
 
-bool LGrad2:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+bool LGrad2:: PutMask(Real* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
 if (debug) cout <<"PutMask in LGrad2 " << endl;
 	//R*=fjc; //is already done in segment
 	bool success=true;
 	int length =px.size();
 	int X,Y;
+	int dx,dy;
+	Real teller,noemer;
 	if (length > 1) {
 		cout <<"In two gradient system, we can have just one particle: we found " <<length <<"particles. " << endl;
 		return false;
@@ -1980,25 +1982,26 @@ if (debug) cout <<"PutMask in LGrad2 " << endl;
 			cout <<"In two gradients system, we expect the particle at the central axis" << endl;
 			return false;
 		}
-		for (int x=1; x<xx+R+1; x++)
-		for (int y=yy-R; y<yy+R+1; y++){
-			if ((xx-x)*(xx-x)+(yy-y)*(yy-y) <=R*R) {
-				X=x; Y=y;
-				//if (y<fjc) {cout << "particle too close to y=0 boundary " << endl;
-				//	return false;
-				//}
-				if (x>MX+fjc-1) {
-					cout <<"in two gradient system, particle should be smaller than size of system in radial direction" << endl;
-					return false;
-				}
-				//if (y>MY+fjc-1) { cout <<"particle too close to y upperbound " << endl;
-				//	return false;
-				//}
-				if (!(y<fjc || y>MY+fjc-1))  MASK[P(X,Y)]++;
-			}
+		if (R>MX || R>MY) {cout <<" particle should be smaller than size of box in X or Y direction" << endl; return false;}
+		for (int x=1; x<R+2; x++)
+		for (int y=yy-R; y<yy+R+2; y++){
+			X=x; Y=y;
+			if (x*x+(yy-y)*(yy-y) <=(R+1)*(R+1)) {
+				if (x*x+(yy-y)*(yy-y) <=(R-1)*(R-1)) {
+					if (!(y<fjc || y>MY+fjc-1))  MASK[P(X,Y)]++;
+				} else {
+					teller=0; noemer=0;
+					for (dx=0; dx<10; dx++) {
+						for (dy=0; dy<10; dy++) {
+							noemer +=x+dx/10;
+							if ((x+dx)*(x+dx)+(yy-y-dy)*(yy-y-dy) <=R*R) teller +=x+dx/10;
+						}
+					}
+					if (!(y<fjc || y>MY+fjc-1))  MASK[P(X,Y)]=teller/noemer;
+				} //at the edge
+			} //else too large
 		}
 	}
-
 	return success;
 }
 /*

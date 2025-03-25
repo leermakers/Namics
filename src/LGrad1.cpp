@@ -238,7 +238,7 @@ if (debug) cout <<"PutProfiles in LGrad1 " << endl;
 		fprintf(pf,"%Le\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc); //g - e
 		for (i=0; i<length; i++)
 		if (i<length-1) fprintf(pf,"%.20Lg\t",X[i][x]); else fprintf(pf,"%.20Lg",X[i][x]);
-		if (DOS) fprintf(pf,"\r\n"); else fprintf(pf,"\n"); 
+		if (DOS) fprintf(pf,"\r\n"); else fprintf(pf,"\n");
 #else
 		fprintf(pf,"%e\t",offset_first_layer/fjc+1.0*(x-fjc+1)/fjc-0.5/fjc); //g - e
 		for (i=0; i<length; i++)
@@ -536,7 +536,7 @@ if (debug) cout <<"ReadRangeFile in LGrad1 " << endl;
 	return success;
 }
 
-bool LGrad1::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, string filename) {
+bool LGrad1::FillMask(Real* Mask, vector<int>px, vector<int>py, vector<int>pz, string filename) {
 	bool success=true;
 	bool readfile=false;
 	int length=0;
@@ -568,7 +568,7 @@ bool LGrad1::FillMask(int* Mask, vector<int>px, vector<int>py, vector<int>pz, st
 	return success;
 }
 
-bool LGrad1::CreateMASK(int* H_MASK, int* r, int* H_P, int n_pos, bool block) {
+bool LGrad1::CreateMASK(Real* H_MASK, int* r, int* H_P, int n_pos, bool block) {
 if (debug) cout <<"CreateMask for LGrad1 " + name << endl;
 	bool success=true;
 	H_Zero(H_MASK,M);
@@ -654,7 +654,7 @@ void LGrad1::UpdateEE(Real* EE, Real* psi, Real* E) {
 }
 
 
-void LGrad1::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
+void LGrad1::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, Real* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
 	int x;
 	Real a,b,c,a_,b_,c_;
 	Real r;
@@ -731,7 +731,7 @@ void LGrad1::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool g
 }
 
 
-void LGrad1::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
+void LGrad1::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, Real* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
 	int x;
 	Real a,b,c,a_,b_,c_;
 
@@ -968,7 +968,7 @@ if (debug) cout <<"LGrad1::Terminate " << endl;
 	}
 }
 
-bool LGrad1:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+bool LGrad1:: PutMask(Real* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
 	bool success=false;
 	cout <<"PutMask does not make sence in 1 gradient system " << endl;
 	return success;

@@ -1152,7 +1152,7 @@ void LG2Planar::UpdateEE(Real* EE, Real* psi, Real* E) {
 }
 
 
-void LG2Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
+void LG2Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, Real* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
 	int x,y,i;
 
 	Real epsXplus, epsXmin, epsYplus,epsYmin;
@@ -1207,7 +1207,7 @@ void LG2Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, boo
 }
 
 
-void LG2Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
+void LG2Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, Real* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
 	int x,y;
 
 	Real C = -e*e/(eps0*k_BT*bond_length);
@@ -1236,7 +1236,7 @@ void LG2Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool g
 
 }
 
-bool LG2Planar:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+bool LG2Planar:: PutMask(Real* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
 	bool success=false;
 	cout <<"PutMask does not make sence in planar 2 gradient system " << endl;
 	return success;
@@ -1282,10 +1282,10 @@ Real LG2Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* al
 		west = get_w();
 	};
 
-	//memory efficient, but computationally inefficient 
-	//the flux has to be calculated first 
+	//memory efficient, but computationally inefficient
+	//the flux has to be calculated first
 	//and only north and east component stored
-	Real a,b,c,Ma,Mb,Mc;	
+	Real a,b,c,Ma,Mb,Mc;
 	for (y=2; y<MY; y++){
 		for (x=2; x<MX; x++){
 			update_neighbors();
@@ -1307,13 +1307,13 @@ Real LG2Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* al
 
 			Ma = alphaA[south]-alphaB[south];
 			Mc = alphaA[north]-alphaB[north];
-			
+
 			//flux_divergence y-axis
 			g[x*JX + y] += (a+b)*(Mb - Ma) - (b+c)*(Mc-Mb);
 			AverageJ+=(b+c)*(Mc-Mb);
 		}
 	}
-	
+
 
 	return -B_A*AverageJ/(2*(M-MX*2-MY*2));
 }

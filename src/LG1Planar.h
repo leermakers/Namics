@@ -12,9 +12,9 @@ class LG1Planar : public LGrad1
 	void propagateF(Real*,Real*, Real*, int, int,int);
 	void propagateB(Real*,Real*, Real*, int, int,int);
 	void UpdateEE(Real*, Real*,Real*);
-	void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
-	void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
-	bool PutMask(int* ,vector<int>,vector<int>,vector<int>,int);
+	void UpdatePsi(Real*, Real*, Real* , Real*, Real*,bool,bool);
+	void UpdateQ(Real*,Real*,Real*,Real*,Real*,bool);
+	bool PutMask(Real* ,vector<int>,vector<int>,vector<int>,int);
 	Real DphiDt(Real*,Real*,Real*,Real*,Real*,Real*,Real,Real);
 };
 #endif

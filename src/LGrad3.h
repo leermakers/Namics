@@ -19,12 +19,12 @@ class LGrad3 : public Lattice
 	void propagateB(Real*,Real*,Real*, int, int,int);
 	bool ReadRange(int*, int*, int&, bool&, string, int, string, string);
 	bool ReadRangeFile(string,int* H_p,int&, string, string);
-	bool FillMask(int*, vector<int>, vector<int>, vector<int>, string);
-	bool CreateMASK(int*, int*, int*, int, bool);
+	bool FillMask(Real*, vector<int>, vector<int>, vector<int>, string);
+	bool CreateMASK(Real*, int*, int*, int, bool);
 	Real ComputeTheta(Real*);
 	void UpdateEE(Real*, Real*,Real*);
-	void UpdatePsi(Real*, Real*, Real* , Real*, int*,bool,bool);
-	void UpdateQ(Real*,Real*,Real*,Real*,int*,bool);
+	void UpdatePsi(Real*, Real*, Real* , Real*, Real*,bool,bool);
+	void UpdateQ(Real*,Real*,Real*,Real*,Real*,bool);
 	void remove_bounds(Real*);
 	void set_bounds(Real*);
 	void set_M_bounds(Real*);
@@ -43,7 +43,7 @@ class LGrad3 : public Lattice
 	void set_bounds_y(Real*,int,int);
 	void set_bounds_z(Real*,int,int);
 	Real DphiDt(Real*,Real*,Real*,Real*,Real*,Real*,Real,Real);
-	bool PutMask(int* ,vector<int>,vector<int>,vector<int>,int);
+	bool PutMask(Real* ,vector<int>,vector<int>,vector<int>,int);
 };
 #endif
 

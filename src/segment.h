@@ -121,7 +121,7 @@ public:
 	string GetOriginal();
 
 	int* H_P;
-	int* H_MASK;
+	Real* H_MASK;
 	Real* H_u;
 	Real* H_phi;
 	Real* H_u_ext;
@@ -131,7 +131,7 @@ public:
 	Real* H_ALPHA;
 
 	int* P;
-	int* MASK;
+	Real* MASK;
 	Real* G1;
 	Real* phi;
 	Real* phi_state;
@@ -160,13 +160,13 @@ public:
 	bool IsFrozen();
 	bool IsTagged();
 	bool IsClamp();
-	int* GetMASK();
+	Real* GetMASK();
 	Real* GetPhi();
 	void DeAllocateMemory();
 	void AllocateMemory();
-	bool PrepareForCalculations(int*,bool);
+	bool PrepareForCalculations(Real*,bool);
 	bool ParseFreedoms(bool&);
-	bool PutAdsorptionGuess(Real,int*);
+	bool PutAdsorptionGuess(Real,Real*);
 	bool PutTorusPotential(int);
 	bool PutMembranePotential(int);
 	void UpdateValence(Real*,Real*,Real*,Real*,bool);

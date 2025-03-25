@@ -273,7 +273,7 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	all_molecule=true;
 }
 
-bool Molecule:: PrepareForCalculations(int *KSAM) {
+bool Molecule:: PrepareForCalculations(Real *KSAM) {
 if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 int m=0;
 if (freedom=="clamped") m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
@@ -588,7 +588,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						int M=Lat[0]->M;
 						int npos=0;
 						bool block;
-						R_mask=(int*)malloc(M*sizeof(int));
+						R_mask=(Real*)malloc(M*sizeof(Real));
 						string s="restricted_range";
 						int *r=(int*) malloc(6*sizeof(int));
 						success=Lat[0]->ReadRange(r,HP,npos,block,GetValue("restricted_range"),0,name,s);

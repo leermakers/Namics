@@ -178,7 +178,7 @@ void LG1Planar::UpdateEE(Real* EE, Real* psi, Real* E) {
 }
 
 
-void LG1Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
+void LG1Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, Real* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
 	Real a,b,c,a_,b_,c_;
 	Real epsXplus, epsXmin;
 	//set_M_bounds(eps);
@@ -220,7 +220,7 @@ void LG1Planar::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, int* Mask, boo
 }
 
 
-void LG1Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
+void LG1Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, Real* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
 	Real a,b,c,a_,b_,c_;
 
 	Real C = -e*e/(eps0*k_BT*bond_length);
@@ -242,7 +242,7 @@ void LG1Planar::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, int* Mask,bool g
 		g[x]=-q[x];
 	}
 }
-bool LG1Planar:: PutMask(int* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
+bool LG1Planar:: PutMask(Real* MASK,vector<int>px,vector<int>py,vector<int>pz,int R){
 	bool success=true;
 	cout <<"PutMask does not make sence in planar 1 gradient system " << endl;
 	return success;

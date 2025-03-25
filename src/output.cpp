@@ -738,7 +738,7 @@ if (debug) cout << "vtk in output " << endl;
 #else
 		fprintf(fp,"%f \n",X[x*JX+y*JY+z]);
 #endif
-	fclose(fp);
+	fclose(fp); fflush(fp);
 }
 
 void Output::density(){

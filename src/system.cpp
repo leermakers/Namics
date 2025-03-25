@@ -134,7 +134,7 @@ void System::AllocateMemory()
 	}
 	if (constraintfields)
 	{
-		H_beta = (int *)malloc(M * sizeof(int));
+		H_beta = (Real *)malloc(M * sizeof(Real));
 		std::fill(H_beta,H_beta+M,0);
 		H_BETA = (Real *)malloc(M * sizeof(Real)); Zero(H_BETA,M);
 		Lat[0]->FillMask(H_beta, px, py, pz, delta_inputfile);
@@ -147,8 +147,8 @@ void System::AllocateMemory()
 	GrandPotentialDensity = (Real *)AllOnDev(M);
 	FreeEnergyDensity = (Real *)AllOnDev(M);
 	TEMP = (Real *)AllOnDev(M);
-	KSAM = (int *)AllIntOnDev(M);
-	FILL = (int *)AllIntOnDev(M);
+	KSAM = (Real *)AllOnDev(M);
+	FILL = (Real *)AllOnDev(M);
 	Zero(KSAM, M);
   if (charged) {
     psi = (Real*)AllOnDev(M);
@@ -156,7 +156,7 @@ void System::AllocateMemory()
     eps = (Real*)AllOnDev(M);
     EE = (Real*)AllOnDev(M);
      E = (Real*)AllOnDev(M);
-    psiMask = (int*)AllIntOnDev(M);
+    psiMask = (Real*)AllOnDev(M);
   }
   if (constraintfields) {
 	BETA = (Real*)AllOnDev(M);
@@ -172,14 +172,14 @@ void System::AllocateMemory()
     eps = (Real*)malloc(M * sizeof(Real));
     EE = (Real*)malloc(M * sizeof(Real));
      E = (Real*)malloc(M * sizeof(Real));
-    psiMask = (int*)malloc(M * sizeof(int));
+    psiMask = (Real*)malloc(M * sizeof(Real));
   }
   if (constraintfields) {
 	beta=H_beta;
 	BETA=H_BETA;
   }
-  KSAM = (int*)malloc(M * sizeof(int));
-  FILL = (int*)malloc(M * sizeof(int));
+  KSAM = (Real*)malloc(M * sizeof(Real));
+  FILL = (Real*)malloc(M * sizeof(Real));
   FreeEnergyDensity = H_FreeEnergyDensity;
   GrandPotentialDensity = H_GrandPotentialDensity;
   TEMP = (Real*)malloc(M * sizeof(Real));
@@ -311,13 +311,14 @@ bool System::PrepareForCalculations(bool first_time)
 			Real frac_0=0;
 			Real pinned_v=0;
 			int seg_pinned=Mol[i]->GetPinnedSeg();
-			int S1=0,S2=0;
+			Real S1=0.0;
+			Real S2=0.0;
 			Mol[i]->FillRangesList.clear();
 			for (int k=0; k<n_mon; k++) {
-				S1=0;
+				S1=0.0;
 				if (Seg[k]->freedom=="pinned") {
 					for (int j=0; j<M; j++) S1+=Seg[k]->MASK[j]*Seg[seg_pinned]->MASK[j];
-					S2=0; Sum(S2,Seg[k]->MASK,M);
+					S2=0.0; Sum(S2,Seg[k]->MASK,M);
 					if (S1==S2) Mol[i]->FillRangesList.push_back(k);
 				}
 			}

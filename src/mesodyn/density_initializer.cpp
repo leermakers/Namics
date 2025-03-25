@@ -70,7 +70,7 @@ Homogeneous_system_initializer::Homogeneous_system_initializer(System *system)
       m_system_volume{(size_t)system->boundaryless_volume},
       m_mask{system->KSAM},
       m_segments{system->Seg},
-      m_frozen(0)
+      m_frozen(0.0)
 {
     assert(system->boundaryless_volume > 0);
     assert(system->Mol.size() > 1);
@@ -110,14 +110,15 @@ void Homogeneous_system_initializer::build_objects()
             m_densities.push_back(all_densities);
 
   // insert_frozen();
-    
+
     for (size_t i = 0 ; i < m_densities.size() ; ++i)
         /* if (std::find(m_frozen.begin(), m_frozen.end(), i) == m_frozen.end()) */
             mask_density(m_densities[i]);
 }
 
 void Homogeneous_system_initializer::mask_density(Lattice_object<Real>& density) {
-    Times((Real*)density, (Real*)density, const_cast<int*>(m_mask), density.size());
+    //Times((Real*)density, (Real*)density, const_cast<int*>(m_mask), density.size());
+    Times((Real*)density, (Real*)density, (Real*)(m_mask), density.size());
 }
 
 void Homogeneous_system_initializer::insert_frozen() {

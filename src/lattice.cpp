@@ -979,9 +979,9 @@ if (debug) cout <<"StoreGuess in output" << endl;
 	if (Filename == "") {
 		outfilename=In[0]->name;
 		In[0]->split(outfilename,'.',sub);
-		char numc[2];
-        sprintf(numc,"%d",start);
-		char numcc[3];
+		char numc[4];
+        	sprintf(numc,"%d",start);
+		char numcc[4];
 		sprintf(numcc,"%d",subl);
 		if (subl>0)
 			filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append("outiv");
@@ -989,9 +989,9 @@ if (debug) cout <<"StoreGuess in output" << endl;
 	} else {
 		outfilename = Filename;
 		In[0]->split(outfilename,'.',sub);
-		char numc[2];
+		char numc[4];
        	sprintf(numc,"%d",start);
-		char numcc[3];
+		char numcc[4];
 		sprintf(numcc,"%d",subl);
 		if (subl>0)
 			filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(sub[1]);

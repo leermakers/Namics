@@ -32,6 +32,7 @@ public:
 	std::vector<string> MesodynList;
 	std::vector<string> ClengList;
 	std::vector<string> TengList;
+	std::vector<string> MicroList;
 	std::vector<string> VarList;
 	std::vector<std::string> elems;
 	std::vector<string> StateList;

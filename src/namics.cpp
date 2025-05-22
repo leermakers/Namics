@@ -30,6 +30,7 @@
 #include "sfnewton.h"
 #include "solve_scf.h"
 #include "mesodyn.h"
+#include "microemulsion.h"
 
 string version = "2.2.2.2.2.1.1";
 // meaning:
@@ -148,6 +149,7 @@ int main(int argc, char *argv[])
 	vector<Mesodyn *> Mes;
 	vector<Cleng *> Cle; 		//enginge for clampled molecules
 	vector<Teng *> Ten;			//enginge for pinned molecules
+	vector<Microemulsion *> Micro;
 
 	// Create input class instance and handle errors(reference above)
 	In.push_back(new Input(filename.str()));
@@ -309,170 +311,9 @@ int main(int argc, char *argv[])
 		// Create system class instance and check inputs (reference above)
 		Sys.push_back(new System(In, Lat, Seg, Sta, Rea, Mol, In[0]->SysList[0]));
 		Sys[0]->cuda = cuda;
-		if (!Sys[0]->CheckInput(start))
-		{
-			return 0;
-		}
-		if (!Sys[0]->CheckChi_values(n_seg))
-			return 0;
+		if (!Sys[0]->CheckInput(start)) return 0;
+		if (!Sys[0]->CheckChi_values(n_seg))return 0;
 
-		// Prepare variables used in variate class creation
-		int n_var = In[0]->VarList.size();
-		int n_search = 0;
-		int n_scan = 0;
-		int n_ets = 0;
-		int n_bm = 0;
-		int n_etm = 0;
-		int n_target = 0;
-		int search_nr = -1, scan_nr = -1, target_nr = -1, ets_nr = -1, bm_nr = -1, etm_nr = -1;
-
-		// Create variate class instance and check inputs (reference above)
-		for (int k = 0; k < n_var; k++)
-		{
-			Var.push_back(new Variate(In, Lat, Seg, Sta, Rea, Mol, Sys, In[0]->VarList[k]));
-			if (!Var[k]->CheckInput(start))
-			{
-				return 0;
-			}
-
-			if (Var[k]->scanning > -1)
-			{
-				scan_nr = k;
-				n_scan++;
-			}
-			if (Var[k]->searching > -1)
-			{
-				search_nr = k;
-				n_search++;
-			}
-			if (Var[k]->targeting > -1)
-			{
-				target_nr = k;
-				n_target++;
-			}
-			if (Var[k]->eq_to_solvating > -1)
-			{
-				ets_nr = k;
-				n_ets++;
-			}
-			if (Var[k]->balance_membraning > -1)
-			{
-				bm_nr = k;
-				n_bm++;
-			}
-			if (Var[k]->eq_to_mu > -1)
-			{
-				etm_nr = k;
-				n_etm++;
-			}
-		}
-
-		// Error code for faulty variate class creation
-		if (n_etm > 1)
-		{
-			cout << "too many equate_to_mu's in var statements. The limit is 1 " << endl;
-			return 0;
-		}
-		if (n_ets > 1)
-		{
-			cout << "too many equate_to_solvent's in var statements. The limit is 1 " << endl;
-			return 0;
-		}
-		if (n_bm > 1)
-		{
-			cout << "too many balance membrane's in var statements. The limit is 1 " << endl;
-			return 0;
-		}
-		if (n_search > 1)
-		{
-			cout << "too many 'searches' in var statements. The limit is 1 " << endl;
-			return 0;
-		}
-		if (n_scan > 1)
-		{
-			cout << "too many 'scan's in var statements. The limit is 1 " << endl;
-			return 0;
-		}
-		if (n_target > 1)
-		{
-			cout << "too many 'target's in var statements. The limit is 1 " << endl;
-			return 0;
-		}
-		if (n_search > 0 && n_target == 0)
-		{
-			cout << "lonely search. Please specify in 'var' a target function, e.g. 'var : sys-NN : grand_potential : 0'" << endl;
-			return 0;
-		}
-		if (n_target > 0 && n_search == 0)
-		{
-			cout << "lonely target. Please specify in 'var' a search function, e.g. 'var : mol-lipid : search : theta'" << endl;
-			return 0;
-		}
-
-		// Create newton class instance and check inputs (reference above)
-		New.push_back(new Solve_scf(In, Lat, Seg, Sta, Rea, Mol, Sys, Var, In[0]->NewtonList[0]));
-		if (!New[0]->CheckInput(start))
-		{
-			return 0;
-		}
-
-		//Guesses geometry
-		if (Sys[0]->initial_guess == "file")
-		{
-			MONLIST.clear();
-			STATELIST.clear();
-			if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old, 0))
-			{
-				// last argument 0 is to first checkout sizes of system.
-				return 0;
-			}
-			int nummon = MONLIST.size();
-			int numstate = STATELIST.size();
-			int m;
-			if (MY == 0)
-			{
-				m = MX + 2*fjc_old;
-			}
-			else
-			{
-				if (MZ == 0)
-				{
-					m = (MX + 2*fjc_old) * (MY + 2*fjc_old);
-				}
-				else
-				{
-					m = (MX + 2*fjc_old) * (MY + 2*fjc_old) * (MZ + 2*fjc_old);
-				}
-			}
-			int IV = (nummon + numstate) * m;
-
-			if (CHARGED)
-				IV += m;
-			if (start > 0)
-			{
-#ifdef CUDA
-				cudaFree(X);
-				X = (Real *)AllOnDev(IV);
-#else
-				free(X);
-				X = (Real *)malloc(IV * sizeof(Real));
-#endif
-			}
-			MONLIST.clear();
-			STATELIST.clear();
-			Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old, 1);
-			// last argument 1 is to read guess in X.
-		}
-		int IV_new=0;
-		int substart = 0;
-		int subloop = 0;
-		if (scan_nr < 0)
-			substart = 0;
-		else {
-			substart = Var[scan_nr]->num_of_cals;
-		}
-		if (substart < 1)
-			substart = 0; // Default to 1 substar
 
 		EngineType TheEngine;
 		TheEngine = SCF;
@@ -488,14 +329,131 @@ int main(int argc, char *argv[])
 		{
 			TheEngine = TENG;
 		}
+		if (In[0]->MicroList.size() > 0)
+		{
+			TheEngine = MICRO;
+		}
 
+		// Prepare variables used in variate class creation
+		int n_var = In[0]->VarList.size();
+		int n_search = 0;
+		int n_scan = 0;
+		int n_ets = 0;
+		int n_bm = 0;
+		int n_etm = 0;
+		int n_target = 0;
+		int search_nr = -1, scan_nr = -1, target_nr = -1, ets_nr = -1, bm_nr = -1, etm_nr = -1;
+
+		// Create variate class instance and check inputs (reference above)
+		for (int k = 0; k < n_var; k++)
+		{
+			Var.push_back(new Variate(In, Lat, Seg, Sta, Rea, Mol, Sys, In[0]->VarList[k]));
+			if (!Var[k]->CheckInput(start)) return 0;
+
+			if (Var[k]->scanning > -1) {scan_nr = k; n_scan++; }
+			if (Var[k]->searching > -1){search_nr = k; n_search++;}
+			if (Var[k]->targeting > -1){target_nr = k; n_target++;}
+			if (Var[k]->eq_to_solvating > -1){ets_nr = k; n_ets++;}
+			if (Var[k]->balance_membraning > -1){bm_nr = k; n_bm++;}
+			if (Var[k]->eq_to_mu > -1){etm_nr = k; n_etm++;}
+		}
+
+		// Error code for faulty variate class creation
+		if (n_etm > 1){
+			cout << "too many equate_to_mu's in var statements. The limit is 1 " << endl;
+			return 0;
+		}
+		if (n_ets > 1){
+			cout << "too many equate_to_solvent's in var statements. The limit is 1 " << endl;
+			return 0;
+		}
+		if (n_bm > 1){
+			cout << "too many balance membrane's in var statements. The limit is 1 " << endl;
+			return 0;
+		}
+		if (n_search > 1){
+			cout << "too many 'searches' in var statements. The limit is 1 " << endl;
+			return 0;
+		}
+		if (n_scan > 1){
+			cout << "too many 'scan's in var statements. The limit is 1 " << endl;
+			return 0;
+		}
+		if (n_target > 1){
+			cout << "too many 'target's in var statements. The limit is 1 " << endl;
+			return 0;
+		}
+		if (n_search > 0 && n_target == 0){
+			cout << "lonely search. Please specify in 'var' a target function, e.g. 'var : sys-NN : grand_potential : 0'" << endl;
+			return 0;
+		}
+		if (n_target > 0 && n_search == 0){
+			cout << "lonely target. Please specify in 'var' a search function, e.g. 'var : mol-lipid : search : theta'" << endl;
+			return 0;
+		}
+
+
+		// Create newton class instance and check inputs (reference above)
+		New.push_back(new Solve_scf(In, Lat, Seg, Sta, Rea, Mol, Sys, Var, In[0]->NewtonList[0]));
+		if (!New[0]->CheckInput(start)) return 0;
+
+
+
+		//Guesses geometry
+		if (Sys[0]->initial_guess == "file")
+		{
+			MONLIST.clear();
+			STATELIST.clear();
+			if (!Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old, 0))
+			{
+				// last argument 0 is to first checkout sizes of system.
+				return 0;
+			}
+			int nummon = MONLIST.size();
+			int numstate = STATELIST.size();
+			int m;
+			if (MY == 0) m = MX + 2*fjc_old;
+			else {
+				if (MZ == 0) {
+					m = (MX + 2*fjc_old) * (MY + 2*fjc_old);
+				} else {
+					m = (MX + 2*fjc_old) * (MY + 2*fjc_old) * (MZ + 2*fjc_old);
+				}
+			}
+			int IV = (nummon + numstate) * m;
+
+			if (CHARGED)
+				IV += m;
+			if (start > 0) {
+#ifdef CUDA
+				cudaFree(X);
+				X = (Real *)AllOnDev(IV);
+#else
+				free(X);
+				X = (Real *)malloc(IV * sizeof(Real));
+#endif
+			}
+			MONLIST.clear();
+			STATELIST.clear();
+			Lat[0]->ReadGuess(Sys[0]->guess_inputfile, X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old, 1);
+			// last argument 1 is to read guess in X.
+		}
+
+		int IV_new=0;
+		int substart = 0;
+		int subloop = 0;
+		if (scan_nr < 0) substart = 0;
+		else substart = Var[scan_nr]->num_of_cals;
+		if (substart < 1) substart = 0; // Default to 1 substart
 		int ii;
 		int n_out = 0;
 		int mon_length;
 		int state_length;
+
 		switch (TheEngine)
 		{
 		case SCF:
+cout <<"old style" << endl;
 			// Prepare, catch errors for output class creation
 			n_out = In[0]->OutputList.size();
 			if (n_out == 0)
@@ -516,8 +474,6 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
-
-
 
 			while (subloop <= substart)
 			{
@@ -645,6 +601,11 @@ int main(int argc, char *argv[])
 			{
 				return 0;
 			}
+			break;
+		case MICRO:
+				Micro.push_back(new Microemulsion(In,Out, Lat, Seg, Sta, Rea, Mol, Sys, New,Var, In[0]->MicroList[0]));
+				Micro[0]->CheckInput(start);
+				Micro[0]->Doit(X,METHOD,MONLIST,STATELIST,CHARGED,MX,MY,MZ,fjc_old,search_nr,ets_nr,etm_nr,target_nr,bm_nr,subloop);
 			break;
 		default:
 			cout << "TheEngine is unknown. Programming error " << endl;

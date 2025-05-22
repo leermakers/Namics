@@ -1,6 +1,6 @@
 
 #ifndef NAMICSxH
-#define NAMICSxH 
+#define NAMICSxH
 //#define LongReal // if Real should refer to long double then #define LongReal should be chosen, else it should be commented out.
 
 #include <cmath>
@@ -52,7 +52,7 @@ extern bool debug;
 
 enum MoleculeType {monomer, linear, branched, dendrimer, asym_dendrimer, comb, water};
 enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};
-enum EngineType {SCF, CLENG, MESODYN, TENG};
+enum EngineType {SCF, CLENG, MESODYN, TENG, MICRO};
 enum LatticeType {simple_cubic, hexagonal};
 enum SolverType {Pseudohessian,Lbfgs};
 

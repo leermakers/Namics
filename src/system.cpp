@@ -745,10 +745,10 @@ bool System::CheckInput(int start_)
 			};
 			if (ConstraintType == "delta")
 			{
-				if (In[0]->MolList.size()>2) {
-					cout <<"ConstraintType 'delta' not supported (yet) when there are more than 2 molecules in the system " << endl;
-					cout <<"This issue may be resolved though. Send request to support team."<< endl; return(0);
-				}
+				//if (In[0]->MolList.size()>2) {
+				//	cout <<"ConstraintType 'delta' not supported (yet) when there are more than 2 molecules in the system " << endl;
+				//	cout <<"This issue may be resolved though. Send request to support team."<< endl; return(0);
+				//}
 				if (GetValue("delta_range").size() > 0)
 				{	int units=1;
 					if (Lat[0]->fjc>1) {

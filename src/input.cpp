@@ -12,6 +12,7 @@ Input::Input(string name_) {
 	KEYS.push_back("mesodyn");
 	KEYS.push_back("cleng");
 	KEYS.push_back("teng");
+	KEYS.push_back("micro");
 	KEYS.push_back("output");
 	KEYS.push_back("var");
 	KEYS.push_back(OutputInfo::IN_CLASS_NAME);
@@ -716,6 +717,7 @@ bool Input::MakeLists(int start) {
 	MesodynList.clear();
 	ClengList.clear();
 	TengList.clear();
+	MicroList.clear();
 	VarList.clear();
 	StateList.clear();
 	ReactionList.clear();
@@ -738,6 +740,7 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(MesodynList,"mesodyn",0,1,start)) {cout << "There can be no more than 1 'mesodyn' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(ClengList,"cleng",0,1,start)) {cout << "There can be no more than 1 'cleng' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(TengList,"teng",0,1,start)) {cout << "There can be no more than 1 'teng' engine brand name in the input " << endl; success=false;}
+	if (!TestNum(MicroList,"micro",0,1,start)) {cout << "There can be no more than 1 'micro' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(VarList,"var",0,10,start))
 	if (VarList.size()==0) VarList.push_back("NN");
 	return success;

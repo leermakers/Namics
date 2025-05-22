@@ -961,7 +961,7 @@ if (debug) cout <<"ReadGuess in output" << endl;
 		}
 		in_file.close();
 	} else {
-		cout <<"inputfile " << filename << "is not found. Read guess for initial guess failed" << endl;
+		cout <<"inputfile " << filename << " is not found. Read guess for initial guess failed" << endl;
 		success=false;
 	}
 	return success;

@@ -33,6 +33,14 @@ public:
 	std::vector<string> VALUES;
 	int surfactant;
 	int co_solvent;
+	int monA;
+	int monB;
+	Real chi_start;
+	Real chi_step;
+	Real chi_end;
+	int n_steps;
+	Real GuessS;
+	Real GuessC;
 	int start;
 	Real * X;
 	string METHOD;
@@ -53,7 +61,10 @@ public:
 	bool CheckInput(int);
 	bool Doit(Real*,string,vector<string>,vector<string>,bool,int,int,int,int,int,int,int,int,int,int);
 	string GetValue(string);
-	bool FixedPoint();
+	bool FixedPoint(Real, Real);
 	bool WriteResults();
+	Real get_gamma(Real, Real);
+	Real zero_gamma(Real, Real);
+	Real zero_J0(Real,Real);
 };
 #endif

@@ -453,7 +453,6 @@ int main(int argc, char *argv[])
 		switch (TheEngine)
 		{
 		case SCF:
-cout <<"old style" << endl;
 			// Prepare, catch errors for output class creation
 			n_out = In[0]->OutputList.size();
 			if (n_out == 0)

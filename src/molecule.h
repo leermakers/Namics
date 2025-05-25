@@ -146,6 +146,7 @@ virtual ~Molecule();
 	int GetValue(string,int&,Real&,string&);
 	bool PutVarInfo(string,string,Real);
 	int PutVarScan(Real,Real,int,string);
+	void PutTheta(Real);
 
 	bool ResetInitValue();
 	bool UpdateVarInfo(int);

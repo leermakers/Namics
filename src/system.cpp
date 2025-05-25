@@ -1569,11 +1569,11 @@ void System::PushOutput()
 		} else {
 			cout <<" 'compute_kJ0' requested but 'compute_kJ0' rejected because either geomety is not planar, or gradients = 1 or 'delta_range' not found " << endl;
 		}
+
+		if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar") {
+			push("kbar", Lat[0]->Moment(GrandPotentialDensity,0, 2));
+		}
 	}
-	//if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar") {
-	//	push("KJ0", -Lat[0]->Moment(GrandPotentialDensity,0, 1));
-	//	push("Kbar", Lat[0]->Moment(GrandPotentialDensity,0, 2));
-	//}
 	Real X = 0;
 	if (Xn_1.size() > 0 || XmolList.size() > 0)
 	{

@@ -2167,6 +2167,12 @@ if (debug) cout <<"GetPointer for Mol " + name << endl;
 	}
 	return NULL;
 }
+
+void Molecule::PutTheta(Real T){
+	theta=T;
+	n=theta/chainlength;
+}
+
 int* Molecule::GetPointerInt(string s, int &SIZE) {
 if (debug) cout <<"GetPointerInt for Mol " + name << endl;
 	vector<string> sub;

@@ -210,6 +210,11 @@ if (debug) cout << "Moment in LGrad1 " << endl;
 	return Result/fjc;
 }
 
+Real LGrad1::MomentPlanar(Real* X,int n,Real Z0){
+	cout <<"MomentPlanar not implemented; kJ0 or kbar may be wrong. " << endl;
+	return 0;
+}
+
 Real LGrad1::WeightedSum(Real* X){
 if (debug) cout << "weighted sum in LGrad1 " << endl;
 	Real sum{0};

@@ -10,6 +10,7 @@ class LGrad1 : public Lattice
 	void TimesL(Real*);
 	void DivL(Real*);
 	Real Moment(Real*,Real,int);
+	Real MomentPlanar(Real*,int,Real);
 	Real WeightedSum(Real*);
 	void vtk(string, Real*,string,bool);
 	void PutProfiles(FILE*,vector<Real*>,bool,bool);

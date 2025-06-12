@@ -128,7 +128,7 @@ if (debug) cout << "CheckInput in output " << endl;
 			if (name=="kal") append=false;
 			if (name=="pro") append=false;
 			if (name=="vtk") append=false;
-			if (name=="vec") append=true; //do not know why
+			if (name=="vec") append=false;
 		}
 
 		write_bounds = In[0]->Get_bool(GetValue("write_bounds"),false);
@@ -520,7 +520,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 	}
 
 	if (name=="kal") {
-		if (start>first|| subl>0) append=true;
+		if (start>first || subl>0) append=true;
 		ifstream my_file(filename.c_str());
 		FILE *fp;
 		if (!(my_file && append)) {

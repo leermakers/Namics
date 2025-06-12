@@ -123,6 +123,7 @@ virtual ~Lattice();
 	virtual void ComputeLambdas(void)=0;
 	virtual Real WeightedSum(Real*)=0;
 	virtual Real Moment(Real*,Real,int) =0;
+	virtual Real MomentPlanar(Real*,int,Real)=0;
 	virtual void TimesL(Real*) =0;
 	virtual void DivL(Real*) =0;
 	virtual bool PutMask(Real* H_MASK,vector<int>px,vector<int>py,vector<int>pz,int R)=0;

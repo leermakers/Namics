@@ -7,6 +7,7 @@ class LG1Planar : public LGrad1
 	~LG1Planar();
 
 	void ComputeLambdas(void);
+	Real MomentPlanar(Real*,int,Real);
 	void Side(Real *, Real *, int);
 	void propagate(Real*,Real*, int, int,int);
 	void propagateF(Real*,Real*, Real*, int, int,int);

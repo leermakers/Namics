@@ -217,9 +217,9 @@ int main(int argc, char *argv[])
 
 		// Create segment class instance and check inputs (reference above)
 		int n_seg = In[0]->MonList.size();
-		for (int i = 0; i < n_seg; i++)
+		for (int i = 0; i < n_seg; i++) {
 			Seg.push_back(new Segment(In, Lat, In[0]->MonList[i], i, n_seg));
-
+		}
 		//Create state class instance and check inputs
 		int n_stat = In[0]->StateList.size();
 		for (int i = 0; i < n_stat; i++)
@@ -449,7 +449,6 @@ int main(int argc, char *argv[])
 		int n_out = 0;
 		int mon_length;
 		int state_length;
-
 		switch (TheEngine)
 		{
 		case SCF:
@@ -602,9 +601,10 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case MICRO:
+				Micro.clear();
 				Micro.push_back(new Microemulsion(In,Out, Lat, Seg, Sta, Rea, Mol, Sys, New,Var, In[0]->MicroList[0]));
 				Micro[0]->CheckInput(start);
-				Micro[0]->Doit(X,METHOD,MONLIST,STATELIST,CHARGED,MX,MY,MZ,fjc_old,search_nr,ets_nr,etm_nr,target_nr,bm_nr,subloop);
+				Micro[0]->Doit(X,METHOD,MONLIST,STATELIST,CHARGED,MX,MY,MZ,fjc_old,search_nr,ets_nr,etm_nr,target_nr,bm_nr,subloop,kal_append);
 			break;
 		default:
 			cout << "TheEngine is unknown. Programming error " << endl;

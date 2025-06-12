@@ -2080,3 +2080,8 @@ Real LGrad2::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alpha
 	return -B_A*AverageJ/(2*(M-MX*2-MY*2)*lambda);
 
 }
+
+Real LGrad2::MomentPlanar(Real* X,int n,Real Z0){
+	cout <<"MomentPlanar not implemented; kJ0 or kbar may be wrong. " << endl;
+	return 0;
+}

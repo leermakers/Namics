@@ -1990,3 +1990,8 @@ Real LGrad3::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alpha
 	cout <<"Grad3 DphiDt not implemented yet " << endl;
 	return 0;
 }
+
+Real LGrad3::MomentPlanar(Real* X,int n,Real Z0){
+	cout <<"MomentPlanar not implemented; kJ0 or kbar may be wrong. " << endl;
+	return 0;
+}

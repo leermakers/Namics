@@ -44,7 +44,7 @@ C Copyright (1980) (1981-1989) Wageningen Agricultural University, NL.
 
 C++ translation:
 Peter Barneveld, Wageningen Agricultural University, NL.
-Addaptation for using vector calss in namics (filtering with mask):
+Addaptation for using vector class in namics (filtering with mask):
 Frans Leermakers, Wageningen Agricultural University, NL.
 
 C Copyright (2018) Wageningen University, NL.
@@ -1150,7 +1150,10 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 	int k=0,it=0;
 
 	while ((it<iterationlimit) && (abs(res)>tolerance)) {
-		if (it>0) cout <<"restart regular falsi" << endl;
+		if (it>0) {
+			it=0;
+			cout <<"restart regular falsi" << endl;
+		}
 		Real x_start=x[0];
 		residuals(x,g);
 		a=1;
@@ -1166,7 +1169,7 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 		x[0]=c*x_start;
 		residuals(x,g);
 		fc=g[0]; res=fc;
-		it+=k;
+		//it+=k;
 		k=0;
 
 		while((k<iterationlimit/10) && (abs(res)>tolerance)){
@@ -1178,8 +1181,9 @@ if(debug) cout <<"Iterate_RF in SFNewton " << endl;
 			}
 			k++; it++;
 			if(fa==fb) cout << "WARNING: The Denominator in Regula Falsi is zero for finding the closest root."<<endl;
-			if (it==1||it==2||it==4||it==8||it==16||it==32||it>64)
-      cout << "s_it = " << it << " g = " <<	res << endl;
+			if (e_info || it>49) {
+				if (it==1||it==2||it==4||it==8||it==16||it==32 || (it>50 &&it%10==0)) cout << "s_it = " << it << " g = " <<	res << endl;
+			}
 		}
 	}
 

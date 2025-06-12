@@ -67,10 +67,10 @@ public:
 	Real super_deltamin,deltamin;
 
 	int super_iterationlimit,iterationlimit;
-	bool super_e_info, value_e_info;
+	bool value_e_info;
 	bool super_s_info, value_s_info;
 	int super_i_info, value_i_info;
-
+	bool super_e_info;
 	Real* temp_alpha;
 
 	vector<string> ints;

@@ -163,6 +163,7 @@ public:
 	Real GetFreeEnergy();
 	Real GetGrandPotential();
 	Real GetSpontaneousCurvature();
+	Real GetKBar();
 	bool CreateMu(int);
 	bool PutVarInfo(string,string,Real);
 	bool ResetInitValue();

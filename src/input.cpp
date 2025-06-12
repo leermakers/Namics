@@ -12,12 +12,12 @@ Input::Input(string name_) {
 	KEYS.push_back("mesodyn");
 	KEYS.push_back("cleng");
 	KEYS.push_back("teng");
-	KEYS.push_back("micro");
 	KEYS.push_back("output");
 	KEYS.push_back("var");
 	KEYS.push_back(OutputInfo::IN_CLASS_NAME);
 	KEYS.push_back("state");
 	KEYS.push_back("reaction");
+	KEYS.push_back("micro");
 
 	in_file.open(name.c_str()); Input_error=false;
 
@@ -375,6 +375,7 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 	int n_found=0;
 	int i=0;
 	int j;
+
 	while (i<length && n_start<start){
 		vector<std::string> set;
 		split(elems[i],':',set);
@@ -420,7 +421,8 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 					if (prop_found && n_found>1 && n_start==0) {success=false; cout <<n_start<<" "  << start << endl;  cout <<"In line " << set[0] << " " << keyword << " property '" << parameter << "' is already defined. "<< endl; }
 					else {
 						if (prop_found && n_found>1) {success=false; cout <<"After 'start' " << n_start << ", in line " << set[0] << " " << keyword << " property '" << parameter << "' is already defined. "<< endl; }
-						else {Input.push_back(parameter); Input_values.push_back(set[4]);}
+						else {Input.push_back(parameter); Input_values.push_back(set[4]);
+						}
 					}
 				}
 			}
@@ -433,6 +435,9 @@ bool Input:: CheckParameters(string keyword, string name,int start, std::vector<
 
 bool Input:: LoadItems(string template_,std::vector<std::string> &Out_key, std::vector<std::string> &Out_name, std::vector<std::string> &Out_prop) {
 if (debug) cout <<"LoadItems in Input " << endl;
+	Out_key.clear();
+	Out_name.clear();
+	Out_prop.clear();
 	bool success=true;
 	bool wild_monlist=false;
 	bool wild_mollist=false;
@@ -565,6 +570,14 @@ if (debug) cout <<"LoadItems in Input " << endl;
 								k++;
 							}
 
+							break;
+						case 15:
+							name_found=false;
+							k=0; name_length=MicroList.size();
+							while (k<name_length && !name_found) {
+								if (MicroList[k]==set[3]) name_found=true;
+									k++;
+							}
 							break;
 						default:
 							key_found=false;

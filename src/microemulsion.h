@@ -57,9 +57,14 @@ public:
 	int target_nr;
 	int bm_nr;
 	int subloop;
+	bool kal_append;
+	Real g_tolerance;
+	Real j_tolerance;
+	int g_info;
+	int j_info;
 
 	bool CheckInput(int);
-	bool Doit(Real*,string,vector<string>,vector<string>,bool,int,int,int,int,int,int,int,int,int,int);
+	bool Doit(Real*,string,vector<string>,vector<string>,bool,int,int,int,int,int,int,int,int,int,int,bool);
 	string GetValue(string);
 	bool FixedPoint(Real, Real);
 	bool WriteResults();

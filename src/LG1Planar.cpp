@@ -272,6 +272,14 @@ Real LG1Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* al
 	return -B_A*AverageJ/2;// /(2*(M-4));
 }
 
+Real LG1Planar::MomentPlanar(Real* X, int n, Real Z0){
+	Real result=0;
+	for (int z=0; z<M; z++) {
+		result +=X[z]*pow(z-Z0,n);
+	}
+	return result;
+}
+
 
 /* //Forward propagator as is was before the compactation.
 	switch (fjc) {

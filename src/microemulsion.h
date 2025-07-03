@@ -62,14 +62,21 @@ public:
 	Real j_tolerance;
 	int g_info;
 	int j_info;
+	string co_solvent_freedom;
+	Real GS0;
+	Real GC0;
 
 	bool CheckInput(int);
-	bool Doit(Real*,string,vector<string>,vector<string>,bool,int,int,int,int,int,int,int,int,int,int,bool);
+	bool Doit(Real*,string,vector<string>,vector<string>,bool,int,int,int,int,int,int,int,int,int,int,bool&);
 	string GetValue(string);
 	bool FixedPoint(Real, Real);
 	bool WriteResults();
 	Real get_gamma(Real, Real);
 	Real zero_gamma(Real, Real);
 	Real zero_J0(Real,Real);
+	Real ConvertSurfactantXtoT(Real);
+	Real ConvertCoSolventXtoT(Real);
+	Real ConvertSurfactantTtoX(Real);
+	Real ConvertCoSolventTtoX(Real);
 };
 #endif

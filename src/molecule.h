@@ -16,6 +16,7 @@ virtual ~Molecule();
 	vector<Input*> In;
 	vector<Segment*> Seg;
 	vector<Lattice*> Lat;
+	Lattice* lat;
 	vector<Alias*> Al;
 	vector<int> MolMonList;
 	vector<int> FillRangesList;

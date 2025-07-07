@@ -2,6 +2,7 @@
 
 Variate::Variate(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_,vector<System*>Sys_, string name_) {
 	In=In_; name=name_;   Lat=Lat_; Seg=Seg_; Sta=Sta_; Rea=Rea_; Mol=Mol_; Sys=Sys_;
+	lat=Lat[0];
 	KEYS.push_back("scan");
 	KEYS.push_back("search");
 	KEYS.push_back("step");
@@ -138,7 +139,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						success=false; cout <<"in var:" + name + ", the parameter 'scan' is expected. " << endl;
 						if (GetValue("search").size()>0) cout <<"In var:" + name + ", the parameter 'search' is not allowed. " <<endl;
 					} else {
-						if (!Lat[0]->PutVarInfo("scan",GetValue("scan"),0)) {
+						if (!lat->PutVarInfo("scan",GetValue("scan"),0)) {
 							success=false; cout <<"In var:" + name + "scan, the value for 'target' is rejected" << endl;
 						}
 						scanning=1; scan_nr=0;
@@ -314,7 +315,7 @@ if (debug) cout <<"CheckInput in Variate " + name << endl;
 						num_of_cals=Sys[0]->PutVarScan(step,end_value,steps,scale);
 						break;
 					case 1:
-						num_of_cals=Lat[0]->PutVarScan(step,end_value);
+						num_of_cals=lat->PutVarScan(step,end_value);
 						break;
 					case 2:
 						num_of_cals=Mol[scan_nr]->PutVarScan(step,end_value,steps,scale);
@@ -367,7 +368,8 @@ bool Variate::PutVarScan(int cal_nr) {
 			Sys[scan_nr]->UpdateVarInfo(cal_nr);
 			break;
 		case 1:
-			Lat[scan_nr]->UpdateVarInfo(cal_nr);
+			lat->UpdateVarInfo(cal_nr);
+			if (scan_nr>0) cout <<"in PutVarScan in variate scan_nr larger than 0" << endl;
 			break;
 		case 2:
 			Mol[scan_nr]->UpdateVarInfo(cal_nr);
@@ -503,7 +505,8 @@ bool Variate::ResetScanValue(void) {
 			Sys[scan_nr]->ResetInitValue();
 			break;
 		case 1:
-			Lat[scan_nr]->ResetInitValue();
+			lat->ResetInitValue();
+			if (scan_nr>0) cout <<"scan_nr larger zero in ResetScanValue in variate.cpp" << endl;
 			break;
 		case 2:
 			Mol[scan_nr]->ResetInitValue();

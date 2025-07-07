@@ -2,6 +2,7 @@
 
 Alias::Alias(vector<Input*> In_,vector<Lattice*> Lat_, string name_) {
 	In=In_; name=name_;   Lat=Lat_;
+	lat=Lat[0];
 	KEYS.push_back("value");
 }
 Alias::~Alias() {
@@ -23,10 +24,10 @@ if (debug) cout <<"Destructor for alias " + name << endl;
 
 void Alias::AllocateMemory(int Clamp_nr, int n_box) {
 if (debug) cout <<"AllocateMemory in Alias " + name << endl;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	clamp = Clamp_nr>0;
 	int m=0;
-	if (clamp) m=Lat[0]->m[Clamp_nr];
+	if (clamp) m=lat->m[Clamp_nr];
 	H_phi = (Real*) malloc(M*sizeof(Real)); H_Zero(H_phi,M);
 #ifdef CUDA
 	if (clamp) {
@@ -51,7 +52,7 @@ if (debug) cout <<"AllocateMemory in Alias " + name << endl;
 void Alias::PrepareForCalculations() {
 if (debug) cout <<"PrepareForCalculations in Alias " + name << endl;
 
-	int M= Lat[0]->M;
+	int M= lat->M;
 	Zero(phi,M);
 }
 
@@ -128,7 +129,7 @@ if (debug) cout <<"PushOutput in Alias " + name << endl;
 
 	push("value",value);
 #ifdef CUDA
-	TransferDataToHost(H_phi,phi,Lat[0]->M);
+	TransferDataToHost(H_phi,phi,lat->M);
 #endif
 }
 

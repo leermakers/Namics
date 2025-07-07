@@ -829,6 +829,7 @@ if (debug) cout <<"PushOutput in lat " << endl;
 	string mirror="mirror";
 	string periodic="periodic";
 	//string surface="surface";
+	push("geometry",geometry);
 	push("gradients",gradients);
 	if (offset_first_layer>0) push("offset_first_layer",offset_first_layer);
 	push("volume",volume);

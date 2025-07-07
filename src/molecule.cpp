@@ -4,6 +4,7 @@
 Molecule::Molecule(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_, string name_) {
 	In=In_; Seg=Seg_; name=name_;  Lat=Lat_;
 if (debug) cout <<"Constructor for Mol " + name << endl;
+	lat=Lat[0];
 	KEYS.push_back("freedom");
 	KEYS.push_back("composition");
 	KEYS.push_back("ring");
@@ -134,44 +135,44 @@ bool Molecule::DeleteAl() {
 void Molecule:: AllocateMemory() {
 if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 	DeAllocateMemory();
-	int M=Lat[0]->M;
+	int M=lat->M;
 	int m=0;
-	if (Markov==2){// && Lat[0]->lattice_type == simple_cubic) {
-		int FJC = Lat[0]->FJC;
+	if (Markov==2){// && lat->lattice_type == simple_cubic) {
+		int FJC = lat->FJC;
 		P = (Real*) malloc(FJC*sizeof(Real));
 		Real Q=0;
 		KStiff=k_stiff;
 		for (int k=0; k<FJC-1; k++) {
 			P[k]=exp(-0.5*KStiff*(k*PIE/(FJC-1))*(k*PIE/(FJC-1)) ); //alternative to put U(theta)=-k(1-cos(theta))
 			if (k>0) {
-				if (Lat[0]->lattice_type==hexagonal) Q+= 2*P[k]; else Q+= 4*P[k]; //alternative is to use u_bend = Kstiff(1-cos(theta)), persistence length is l_p = b/ln <cos (theta)>
+				if (lat->lattice_type==hexagonal) Q+= 2*P[k]; else Q+= 4*P[k]; //alternative is to use u_bend = Kstiff(1-cos(theta)), persistence length is l_p = b/ln <cos (theta)>
 			} else Q=P[k];
 		}
 		P[FJC-1]=0; //Q+=P[FJC-1];
-		//if (Lat[0]->lattice_type==hexagonal) Q=2*Q-P[0]; else Q=4*Q-3*P[0];
-		if (Lat[0]->lattice_type==hexagonal&& !Lat[0]->stencil_full) Q*=2.0;
+		//if (lat->lattice_type==hexagonal) Q=2*Q-P[0]; else Q=4*Q-3*P[0];
+		if (lat->lattice_type==hexagonal&& !lat->stencil_full) Q*=2.0;
 		for (int k=0; k<FJC; k++) { P[k]/=Q;
 			cout << "P["<<k<<"] = " << P[k] << endl;
 		}
 	}
 
 /*
-	if (Markov==2 && Lat[0]->lattice_type == hexagonal) {
-		int FJC = Lat[0]->FJC;
+	if (Markov==2 && lat->lattice_type == hexagonal) {
+		int FJC = lat->FJC;
 		P = (Real*) malloc(2*sizeof(Real)); //assuming only default k_stiff value for P's so that P array is small.
 		Real Q=0;
 		KStiff=k_stiff;
 		P[0]=exp(-0.5*KStiff*(PIE/3.0)*(PIE/3.0) ); Q+= 3*P[0]; //alternative is to use P[0]=exp(-KStiff*(1-cos(theta))
 		P[1]=exp(-0.5*KStiff*(2.0*PIE/3.0)*(2.0*PIE/3.0) ); Q+= 6*P[1];
 		P[FJC-1]=0;
-		for (int k=0; k<Lat[0]->FJC-1; k++) { P[k]/=Q;
+		for (int k=0; k<lat->FJC-1; k++) { P[k]/=Q;
 			cout << "P["<<k<<"] = " << P[k] << endl;
 		}
 	}
 */
 
 	if (freedom=="clamped") {
-		m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
+		m=lat->m[Seg[mon_nr[0]]->clamp_nr];
 		n_box = Seg[mon_nr[0]]->n_box;
 	}
 
@@ -276,14 +277,14 @@ if (debug) cout <<"AllocateMemory in Mol " + name << endl;
 bool Molecule:: PrepareForCalculations(Real *KSAM) {
 if (debug) cout <<"PrepareForCalculations in Mol " + name << endl;
 int m=0;
-if (freedom=="clamped") m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
-int M=Lat[0]->M;
+if (freedom=="clamped") m=lat->m[Seg[mon_nr[0]]->clamp_nr];
+int M=lat->M;
 	if (freedom=="clamped") {
 		std::fill(H_mask1,H_mask1+n_box*m,0);
 		std::fill(H_mask2,H_mask2+n_box*m,0);
-		int jx=Lat[0]->jx[Seg[mon_nr[0]]->clamp_nr];
-		int jy=Lat[0]->jy[Seg[mon_nr[0]]->clamp_nr];
-		int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
+		int jx=lat->jx[Seg[mon_nr[0]]->clamp_nr];
+		int jy=lat->jy[Seg[mon_nr[0]]->clamp_nr];
+		int m=lat->m[Seg[mon_nr[0]]->clamp_nr];
 		for (int i=0; i<n_box; i++) {
 			H_Bx[i]=Seg[mon_nr[0]]->bx[i];
 			H_By[i]=Seg[mon_nr[0]]->by[i];
@@ -323,18 +324,18 @@ int M=Lat[0]->M;
 	//while (i<length) {
 
 		//if (Seg[MolMonList[i]]->freedom=="tagged" || Seg[MolMonList[i]]->freedom=="clamp" ) Zero(u+i*M,M);
-		//Lat[0]->set_bounds(u+i*M);
+		//lat->set_bounds(u+i*M);
 		//Boltzmann(G1+i*M , u+i*M, M); */
 
 		//if (Seg[MolMonList[i]]->freedom=="tagged" || Seg[MolMonList[i]]->freedom=="clamp" ) Zero(u+i*M,M);
-		//Lat[0]->set_bounds(u+i*M);
+		//lat->set_bounds(u+i*M);
 		//Cp(G1+i*M,Seg[MolMonList[i]]->G1,M);
 		//Boltzmann(G1+i*M , u+i*M, M);
 
 
 		//if (Seg[MolMonList[i]]->freedom=="pinned") Times(G1+i*M,G1+i*M,Seg[MolMonList[i]]->MASK,M);
 		//if (Seg[MolMonList[i]]->freedom=="tagged") Cp(G1+i*M,Seg[MolMonList[i]]->MASK,M);
-		//Lat[0]->set_bounds(G1+i*M);
+		//lat->set_bounds(G1+i*M);
 		//if (!(Seg[MolMonList[i]]->freedom ==" frozen" || Seg[MolMonList[i]]->freedom =="tagged")) Times(G1+i*M,G1+i*M,KSAM,M);
 		//i++;
 	//}
@@ -415,10 +416,10 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 							if (GetValue("theta").size() >0 && GetValue("n").size()>0) {
 							cout <<"In mol " + name + ", the setting 'freedom = restricted' of 'freedom = range_restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
 					} else {
-							if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*Lat[0]->volume);theta=n*chainlength;}
-							if (GetValue("theta").size()>0) {theta = In[0]->Get_Real(GetValue("theta"),10*Lat[0]->volume);n=theta/chainlength;}
-							if (theta < 0 ) {    //|| theta > Lat[0]->volume) {
-								cout << "In mol " + name + ", the value of 'n' or 'theta' " << theta << "  is out of range 0 .. 'volume'/N, cq 'volume' "<< Lat[0]->volume << endl; success=false;
+							if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*lat->volume);theta=n*chainlength;}
+							if (GetValue("theta").size()>0) {theta = In[0]->Get_Real(GetValue("theta"),10*lat->volume);n=theta/chainlength;}
+							if (theta < 0 ) {    //|| theta > lat->volume) {
+								cout << "In mol " + name + ", the value of 'n' or 'theta' " << theta << "  is out of range 0 .. 'volume'/N, cq 'volume' "<< lat->volume << endl; success=false;
 							}
 						}
 					}
@@ -440,7 +441,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 				success=false;
 			} else {
 				n_box=Seg[mon_nr[0]]->n_box;
-				//int m=Lat[0]->m[Seg[mon_nr[0]]->clamp_nr];
+				//int m=lat->m[Seg[mon_nr[0]]->clamp_nr];
 				if (GetValue("theta").size() >0) {
 					theta=In[0]->Get_Real(GetValue("theta"),n_box*chainlength);
 					if (theta!=n_box*chainlength)
@@ -524,7 +525,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						cout <<"Warning: In mol " + name + ", the setting 'freedom : gradient' should not be combined with a value for 'phibulk' but with values for 'phi_LB_x' and 'phi_UP_x' "<<endl;
 						cout <<"Your inputvalue for phibulk is ignored and replaced by the value given in phi_UB_x (1 gradient) or phi_UB_y (2 gradients) " << endl;
 					}
-					int gradients=Lat[0]->gradients;
+					int gradients=lat->gradients;
 					switch (gradients) {
 						case 1:
 							if (GetValue("phi_LB_x").size()==0 || GetValue("phi_UB_x").size()==0) {
@@ -569,9 +570,9 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 							cout <<"In mol " + name + ", the setting 'freedom = restricted' of 'freedom = range_restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
 							} else {
 
-								if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*Lat[0]->volume);theta=n*chainlength;}
-								if (GetValue("theta").size()>0) {theta = In[0]->Get_Real(GetValue("theta"),10*Lat[0]->volume);n=theta/chainlength;}
-								if (theta < 0 || theta > Lat[0]->volume) {
+								if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*lat->volume);theta=n*chainlength;}
+								if (GetValue("theta").size()>0) {theta = In[0]->Get_Real(GetValue("theta"),10*lat->volume);n=theta/chainlength;}
+								if (theta < 0 || theta > lat->volume) {
 									cout << "In mol " + name + ", the value of 'n' or 'theta' is out of range 0 .. 'volume', cq 'volume'/N." << endl; success=false;
 
 								}
@@ -585,14 +586,14 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 						cout<<"In mol '" + name + "', freedom is set to 'range_restricted'. In this case we expect the setting for 'restricted_range'. This setting was not found. Problem terminated. " << endl;
 					} else { //read range;
 						int *HP=NULL;
-						int M=Lat[0]->M;
+						int M=lat->M;
 						int npos=0;
 						bool block;
 						R_mask=(Real*)malloc(M*sizeof(Real));
 						string s="restricted_range";
 						int *r=(int*) malloc(6*sizeof(int));
-						success=Lat[0]->ReadRange(r,HP,npos,block,GetValue("restricted_range"),0,name,s);
-						Lat[0]->CreateMASK(R_mask,r,HP,npos,block);
+						success=lat->ReadRange(r,HP,npos,block,GetValue("restricted_range"),0,name,s);
+						lat->CreateMASK(R_mask,r,HP,npos,block);
 						theta_range = theta;
 						n_range = theta_range/chainlength;
 						free(r);
@@ -656,8 +657,8 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 	if (Markov<1 || Markov>2) {
 		cout <<" Integer value for 'Markov' is by default 1 and may be set to 2 for some mol_types and fjc-choices only. Markov value out of bounds. Proceed with caution. " << endl; success = false;
 	}
-	if (Markov==2) Lat[0]->Markov=2;
-	k_stiff=Lat[0]->k_stiff; //pick up 'default' value from lattice.
+	if (Markov==2) lat->Markov=2;
+	k_stiff=lat->k_stiff; //pick up 'default' value from lattice.
 	if (GetValue("k_stiff").size()>0) {
 		k_stiff=In[0]->Get_Real(GetValue("k_stiff"),k_stiff);
 		if (k_stiff<0 || k_stiff>10) {
@@ -667,32 +668,32 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 			cout <<" You may interpret 'k_stiff' as the molecular 'persistence length' " << endl;
 			cout <<" k_stiff is a 'default value'. Use molecular specific values to overrule the default when appropriate (future implementation....) " << endl;
 		}
-		if (Lat[0]->fjc>1 && Lat[0]->gradients>1) {
+		if (lat->fjc>1 && lat->gradients>1) {
 			success=false;
 			cout <<" Work in progress.... Currently, Markov == 2 is implemented in gradients>1 for FJC_choices = 3 " << endl;
 		}
 	}
 	size=0;
 	if (Markov ==2) {
-		if (Lat[0]->gradients==1) size = Lat[0]->FJC;
-		if (Lat[0]->gradients==2) { //assume fjc=1...
-		    if (Lat[0]->stencil_full) {
-				Lat[0]->stencil_full=false; cout <<"Warning: stencil_full is set to false" << endl;
+		if (lat->gradients==1) size = lat->FJC;
+		if (lat->gradients==2) { //assume fjc=1...
+		    if (lat->stencil_full) {
+				lat->stencil_full=false; cout <<"Warning: stencil_full is set to false" << endl;
 			}
-			if (Lat[0]->lattice_type==hexagonal ) size =  12;
-			if (Lat[0]->lattice_type==simple_cubic ) size = 2*Lat[0]->FJC-1;
-			if (Lat[0]->lattice_type==hexagonal) { success=false;
+			if (lat->lattice_type==hexagonal ) size =  12;
+			if (lat->lattice_type==simple_cubic ) size = 2*lat->FJC-1;
+			if (lat->lattice_type==hexagonal) { success=false;
 				cout <<"Warning: Markov = 2 & gradients=2 lattice_type = hexagonal...not certified. Caution recommended, even without obvious error messages..." << endl;
 			}
 		}
-		if (Lat[0]->gradients==3) {
-		    if (Lat[0]->stencil_full) {
-				Lat[0]->stencil_full=false; cout <<"Warning: stencil_full is set to false" << endl;
+		if (lat->gradients==3) {
+		    if (lat->stencil_full) {
+				lat->stencil_full=false; cout <<"Warning: stencil_full is set to false" << endl;
 			}
 
-			if (Lat[0]->lattice_type==hexagonal) size=12;
-			if (Lat[0]->lattice_type==simple_cubic) size = 6;
-			if (Lat[0]->lattice_type==hexagonal) { success=false;
+			if (lat->lattice_type==hexagonal) size=12;
+			if (lat->lattice_type==simple_cubic) size = 6;
+			if (lat->lattice_type==hexagonal) { success=false;
 				cout <<"Warning: Markov = 2 & gradients=3 lattice_type = hexagonal...not certified!!!. Caution recommended, even without obvious error messages...." << endl;
 			}
 		}
@@ -779,14 +780,14 @@ if (debug) cout <<"Molecule:: PutVarInfo in mol "+ name << endl;
 		Var_target_value=Var_target_value_;
 		if (Var_target_=="theta") {
 			Var_target=0;
-			if (Var_target_value <0 || Var_target_value>Lat[0]->volume){
+			if (Var_target_value <0 || Var_target_value>lat->volume){
 				cout <<"In var: target value 'theta' out of range" << endl;
 				return false;
 			}
 		}
 		if (Var_target_=="n") {
 			Var_target=1;
-			if (Var_target_value <0 || Var_target_value*chainlength>Lat[0]->volume){
+			if (Var_target_value <0 || Var_target_value*chainlength>lat->volume){
 				cout <<"In var: target value 'n' out of range" << endl;
 				return false;
 			}
@@ -1977,15 +1978,15 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	ints_value.clear();
 	push("composition",GetValue("composition"));
 	if (IsTagged()) {string s="tagged"; push("freedom",s);} else {push("freedom",freedom);}
-	if (freedom=="free") theta = Lat[0]->WeightedSum(phitot);
+	if (freedom=="free") theta = lat->WeightedSum(phitot);
 	push("Markov",Markov);
 	push("k_stiff",k_stiff);
-	if (Lat[0]->gradients==3) {
-		int MZ=Lat[0]->MZ;
-		int MY=Lat[0]->MY;
-		int MX=Lat[0]->MX;
-		int JX=Lat[0]->JX;
-		int JY=Lat[0]->JY;
+	if (lat->gradients==3) {
+		int MZ=lat->MZ;
+		int MY=lat->MY;
+		int MX=lat->MX;
+		int JX=lat->JX;
+		int JY=lat->JY;
 		for (int z=1; z<MZ+1; z++) {
 			Real phiz=0;
 			for (int x=1; x<MX+1; x++) for (int y=1;y<MY+1;y++) {
@@ -2024,18 +2025,18 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		}
 	}
 	//if (theta==0) {
-        //  if (Lat[0]->gradients==3) {
-	//	    Lat[0]->remove_bounds(phitot);
-	//	    Sum(theta,phitot,Lat[0]->M);
+        //  if (lat->gradients==3) {
+	//	    lat->remove_bounds(phitot);
+	//	    Sum(theta,phitot,lat->M);
 	//  }
 	//}
 
-	push("Rg",pow((Lat[0]->Moment(phitot,0.0,2)/chainlength),0.5));
-	Lat[0]->remove_bounds(phitot);
-	theta=Lat[0]->WeightedSum(phitot);
+	push("Rg",pow((lat->Moment(phitot,0.0,2)/chainlength),0.5));
+	lat->remove_bounds(phitot);
+	theta=lat->WeightedSum(phitot);
 	push("theta",theta);
         //cout <<"theta " << name << " = " << theta << endl;
-	Real thetaexc=theta-Lat[0]->volume*phibulk;
+	Real thetaexc=theta-lat->volume*phibulk;
 	push("theta_exc",thetaexc);
 	push("n_exc",thetaexc/chainlength);
 	push("nexc",thetaexc/chainlength);
@@ -2051,8 +2052,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	}
 	push("Mu",Mu);
 	push("mu",Mu); push("MU",Mu);
-	if (Lat[0]->gradients==3) {
-		Real TrueVolume=Lat[0]->MX*Lat[0]->MY*Lat[0]->MZ;
+	if (lat->gradients==3) {
+		Real TrueVolume=lat->MX*lat->MY*lat->MZ;
 		Real Volume_particles=0;
 		int num_of_seg=In[0]->MonList.size();
 		for (int i=0; i<num_of_seg; i++) {
@@ -2066,8 +2067,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		}
 	}
 	push("width",width);
-	push("phi1",phitot[Lat[0]->fjc]);
-	push("phiM",phitot[Lat[0]->M-2*Lat[0]->fjc]);
+	push("phi1",phitot[lat->fjc]);
+	push("phiM",phitot[lat->M-2*lat->fjc]);
 	push("Dphi",phi1-phiM);
 	push("pos_interface",pos_interface);
 	push("phi_average",phi_av);
@@ -2081,7 +2082,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 			}
 		}
 	}
-	int M=Lat[0]->M;
+	int M=lat->M;
 	Real phimax=phitot[M/2];
 	bool maxfound=false;
 	int i=M/2;
@@ -2124,7 +2125,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	}
 	s="vector;0"; push("gn",s);
 #ifdef CUDA
-int M = Lat[0]->M;
+int M = lat->M;
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
 #endif
@@ -2133,13 +2134,13 @@ int M = Lat[0]->M;
 Real* Molecule::GetPointer(string s, int &SIZE) {
 if (debug) cout <<"GetPointer for Mol " + name << endl;
 	vector<string> sub;
-	int M= Lat[0]->M;
+	int M= lat->M;
 	In[0]->split(s,';',sub);
 	if (sub[0]=="profile") {
 		SIZE=M;
 
 		if (sub[1]=="0") {
-			Lat[0]->set_bounds(phitot);
+			lat->set_bounds(phitot);
 			return H_phitot;
 		}
 
@@ -2148,7 +2149,7 @@ if (debug) cout <<"GetPointer for Mol " + name << endl;
 		while (i<length) {
 			stringstream ss; ss<<i+1; string str=ss.str();
 			if (sub[1]==str) {
-				Lat[0]->set_bounds(phi+i*M);
+				lat->set_bounds(phi+i*M);
 				return H_phi+i*M;
 			}
 			i++;
@@ -2158,7 +2159,7 @@ if (debug) cout <<"GetPointer for Mol " + name << endl;
 		while (i<length_al) {
 			stringstream ss; ss<<i+length; string str=ss.str();
 			if (sub[i]==str)  {
-				Lat[0]->set_bounds(Al[i]->H_phi);
+				lat->set_bounds(Al[i]->H_phi);
 				return Al[i]->H_phi;
 			}
 		}
@@ -2224,17 +2225,17 @@ if (debug) cout <<"GetValue (long) for Mol " + name << endl;
 
 Real Molecule::ComputeGibbs(Real R_gibbs) {
 if (debug) cout <<"ComputeGibbs for Mol " + name << endl;
-	int fjc=Lat[0]->fjc;
-	int M=Lat[0]->M;
-	int gradients=Lat[0]->gradients;
+	int fjc=lat->fjc;
+	int M=lat->M;
+	int gradients=lat->gradients;
 	if (gradients>1) {cout <<"Error in ComputeGibbs; gadients not equal to 1 " << endl; return 0.0;}
-	Lat[0]->remove_bounds(phitot);
+	lat->remove_bounds(phitot);
 	Real phi_low =phitot[fjc+1];
 	Real phi_high=phitot[M-2*fjc-1];
-	theta=Lat[0]->WeightedSum(phitot);
-	Real theta_exc=theta-Lat[0]->volume*phibulk;
+	theta=lat->WeightedSum(phitot);
+	Real theta_exc=theta-lat->volume*phibulk;
 	//cout <<"for mol : " << name << " theta " << theta << " theta_exc " << theta_exc << endl;
-	//cout <<"volume " <<Lat[0]->volume << endl;
+	//cout <<"volume " <<lat->volume << endl;
 	//cout <<"phibulk " << phibulk << endl;
 	if (freedom=="solvent") {
 		theta_Gibbs=0;
@@ -2254,12 +2255,12 @@ if (debug) cout <<"ComputeGibbs for Mol " + name << endl;
 bool Molecule::ComputeWidth() {
 if (debug) cout <<"ComputeWidth for Mol " + name << endl;
 	bool success=true;
-	int M=Lat[0]->M;
-	if (Lat[0]->gradients>1) {success=false; cout <<" Compute width of interface only in system with 'one-gradient'" << endl; return success; }
+	int M=lat->M;
+	if (lat->gradients>1) {success=false; cout <<" Compute width of interface only in system with 'one-gradient'" << endl; return success; }
 	if (GetValue("compute_width_interface")!="true") {
 		cout <<"Interfacial width not computed because value for 'compute_width_interface' was not set to 'true'. " << endl; success=false; return success;
 	} else {
-		int fjc=Lat[0]->fjc;
+		int fjc=lat->fjc;
 		width=0;
 		Dphi=0;
 		phi_av=0;
@@ -2269,18 +2270,18 @@ if (debug) cout <<"ComputeWidth for Mol " + name << endl;
 			if ((phitot[x]-phitot[x+1])/Dphi > width) {width = (phitot[x]-phitot[x+1])/Dphi; pos_interface=x+0.5; phi_av=(phitot[x]+phitot[x+1])/2;}
 			}
 	}
-	if (width >0) width = 1.0/width/Lat[0]->fjc;
-	pos_interface = (pos_interface)/Lat[0]->fjc;
+	if (width >0) width = 1.0/width/lat->fjc;
+	pos_interface = (pos_interface)/lat->fjc;
 	return success;
 }
 
 void Molecule::NormPerBlock(int split) {
-	int MX=Lat[0]->MX/split;
-	int MY=Lat[0]->MY/split;
-	int MZ=Lat[0]->MZ/split;
-	int JX=Lat[0]->JX;
-	int JY=Lat[0]->JY;
-	int M = Lat[0]->M;
+	int MX=lat->MX/split;
+	int MY=lat->MY/split;
+	int MZ=lat->MZ/split;
+	int JX=lat->JX;
+	int JY=lat->JY;
+	int M = lat->M;
 	Real theta_block;
 	int blocknr=-1;
 	for(int i=0; i<split; i++)
@@ -2308,11 +2309,11 @@ void Molecule::NormPerBlock(int split) {
 }
 
 void Molecule::SetThetaBlocks(int split) {
-	int MX=Lat[0]->MX/split;
-	int MY=Lat[0]->MY/split;
-	int MZ=Lat[0]->MZ/split;
-	int JX=Lat[0]->JX;
-	int JY=Lat[0]->JY;
+	int MX=lat->MX/split;
+	int MY=lat->MY/split;
+	int MZ=lat->MZ/split;
+	int JX=lat->JX;
+	int JY=lat->JY;
 	Real theta_block;
 	Real theta_tot=0;
 	block.clear();
@@ -2349,10 +2350,10 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		if (s==first_s[generation]) {
 
 			//Cp(Gs+M,G1,M); Cp(Gs,G1,M);
-			Lat[0]->Initiate(Gs+M,G1,Markov,M);
-			Lat[0]->Initiate(Gs,G1,Markov,M); //not sure why this is done....
+			lat->Initiate(Gs+M,G1,Markov,M);
+			lat->Initiate(Gs,G1,Markov,M); //not sure why this is done....
 		} else {
-			Lat[0] ->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
+			lat->propagate(Gs,G1,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
 		}
 		Cp(Gg_f+n0*M,Gs+M,M); last_stored[block]=n0;
 		s++;
@@ -2360,7 +2361,7 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		v0=t0=k0=0;
 		for (k=2; k<=N; k++) {
 			t++; s++;
-			Lat[0]->propagate(Gs,G1,(k-1)%2,k%2,M);
+			lat->propagate(Gs,G1,(k-1)%2,k%2,M);
 			if (t>n) {
 				t0++;
 				if (t0 == n) t0 = ++v0;
@@ -2382,9 +2383,9 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		for (int k=0; k<N; k++) {
 			if (s>first_s[generation]) {
 
-				Lat[0] ->propagate(Gg_f,G1,s-1,s,M);
+				lat->propagate(Gg_f,G1,s-1,s,M);
 			} else {
-				Lat[0]->Initiate(Gg_f+first_s[generation]*M,G1,Markov,M);
+				lat->Initiate(Gg_f+first_s[generation]*M,G1,Markov,M);
 			}
 			 s++;
 		}
@@ -2414,10 +2415,10 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				if (s==chainlength-1) {
 					Cp(Gg_b+(k%2)*M,G1,M);
 				} else {
-					Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
+					lat->propagate(Gg_b,G1,(k+1)%2,k%2,M);
 				}
 			} else {
-				Lat[0]->propagate(Gg_b,G1,(k+1)%2,k%2,M);
+				lat->propagate(Gg_b,G1,(k+1)%2,k%2,M);
 			}
 			t = k - k0;
 
@@ -2433,7 +2434,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				Cp(Gs+(t%2)*M,Gg_f+(n0+t-1)*M,M);
 				for (rk1=k0+t0+2; rk1<=k; rk1++) {
 					t++;
-					Lat[0]->propagate(Gs,G1,(t-1)%2,t%2,M);
+					lat->propagate(Gs,G1,(t-1)%2,t%2,M);
 					if (t == t0+1 || k0+n == k) {
 						Cp(Gg_f+(n0+t-1)*M,Gs+(t%2)*M,M);
 					}
@@ -2444,13 +2445,13 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				}
 				t = n;
 			}
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,Markov,M);
+			lat->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,Markov,M);
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
-						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,Markov,M);
+						lat->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,Markov,M);
 					}
 				}
 			}
@@ -2460,19 +2461,19 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) {
-				Lat[0]->propagate(Gg_b,G1,(s+1)%2,s%2,M);
+				lat->propagate(Gg_b,G1,(s+1)%2,s%2,M);
 			} else {
-				Lat[0]->Initiate(Gg_b+(s%2)*M,G1,Markov,M);
+				lat->Initiate(Gg_b+(s%2)*M,G1,Markov,M);
 			}
 
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M,Markov, M);
+			lat->AddPhiS(rho+molmon_nr[block]*M, Gg_f+(s*M), Gg_b+(s%2)*M,Markov, M);
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
 						//  Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
-						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,Markov,M);
+						lat->AddPhiS(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,Markov,M);
 					}
 				}
 			}
@@ -2493,10 +2494,10 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		int n0=0; if (block>0) n0=memory[block-1];
 		if (s==first_s[generation]) {
 
-			Lat[0]->Initiate(Gs+size*M,G1,Markov,M);
-			//Lat[0]->Initiate(Gs,G1,Markov,M); //not necessary.
+			lat->Initiate(Gs+size*M,G1,Markov,M);
+			//lat->Initiate(Gs,G1,Markov,M); //not necessary.
 		} else {
-			Lat[0] ->propagateF(Gs,G1,P,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
+			lat->propagateF(Gs,G1,P,0,1,M); //assuming Gs contains previous end-point distribution on pos zero;
 
 		}
 		s++;
@@ -2507,7 +2508,7 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		v0=t0=k0=0;
 		for (k=2; k<=N; k++) {
 			t++; s++;
-			Lat[0]->propagateF(Gs,G1,P,(k-1)%2,k%2,M);
+			lat->propagateF(Gs,G1,P,(k-1)%2,k%2,M);
 			if (t>n) {
 				t0++;
 				if (t0 == n) { t0 = ++v0; cout <<"v0 >0 .... save memory may fail!" << endl; }
@@ -2527,10 +2528,10 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s>first_s[generation]) {
-				Lat[0] ->propagateF(Gg_f,G1,P,s-1,s,M);
+				lat->propagateF(Gg_f,G1,P,s-1,s,M);
 			} else {
 				//Cp(Gg_f+first_s[generation]*M,G1,M);
-				Lat[0]->Initiate(Gg_f+first_s[generation]*M*size,G1,Markov,M);
+				lat->Initiate(Gg_f+first_s[generation]*M*size,G1,Markov,M);
 			}
 			 s++;
 		}
@@ -2557,23 +2558,23 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 		for (k=N; k>=1; k--) {
 			if (k==N) {
 				if (s==chainlength-1) {
-					Lat[0]->Initiate(Gg_b+(k%2)*M*size,G1,Markov,M);
+					lat->Initiate(Gg_b+(k%2)*M*size,G1,Markov,M);
 					//Cp(Gg_b+(k%2)*M,G1,M);
 				} else {
 					if (unity==-1) {
 						unity=0;
 						//cout <<"SM unity " << s << endl;
 						Real* GB= (Real*) malloc(2*M*sizeof(Real)); //must be adjusted for cuda
-						Lat[0]->Terminate(GB,Gg_b+((k+1)%2)*M*size,Markov,M);
-						Lat[0]->propagate(GB,G1,0,1,M); //first step is freely joined
-						Lat[0]->Initiate(Gg_b+(k%2)*M*size,GB+M,Markov,M);
+						lat->Terminate(GB,Gg_b+((k+1)%2)*M*size,Markov,M);
+						lat->propagate(GB,G1,0,1,M); //first step is freely joined
+						lat->Initiate(Gg_b+(k%2)*M*size,GB+M,Markov,M);
 						free(GB);
 					} else {
-						Lat[0]->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
+						lat->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
 					}
 				}
 			} else {
-				Lat[0]->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
+				lat->propagateB(Gg_b,G1,P,(k+1)%2,k%2,M); //FL
 			}
 			t = k - k0;
 			if (t == t0) {
@@ -2588,7 +2589,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				Cp(Gs+(t%2)*M*size,Gg_f+(n0+t-1)*M*size,M*size); //FL
 				for (rk1=k0+t0+2; rk1<=k; rk1++) {
 					t++;
-					Lat[0]->propagateF(Gs,G1,P,(t-1)%2,t%2,M);
+					lat->propagateF(Gs,G1,P,(t-1)%2,t%2,M);
 					if (t == t0+1 || k0+n == k) {
 						Cp(Gg_f+(n0+t-1)*M*size,Gs+(t%2)*M*size,M*size); //FL
 					}
@@ -2601,14 +2602,14 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 			}
 
 			//AddTimes(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,M);
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,Markov,M);
+			lat->AddPhiS(rho+molmon_nr[block]*M,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,Markov,M);
 
 			if (compute_phi_alias) {
 				int length = MolAlList.size();
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
 						//Composition(Al[i]->rho,Gg_f+(n0+t-1)*M,Gg_b+(k%2)*M,G1,norm,M);
-						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,G1,norm,Markov,M);
+						lat->AddPhiS(Al[i]->rho,Gg_f+(n0+t-1)*M*size,Gg_b+(k%2)*M*size,G1,norm,Markov,M);
 					}
 				}
 			}
@@ -2622,18 +2623,18 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 					unity=0;
 					//cout <<"unity " << s << endl;
 					Real* GB= (Real*) malloc(2*M*sizeof(Real)); //must be adjusted for cuda
-					Lat[0]->Terminate(GB,Gg_b+((s+1)%2)*M*size,Markov,M);
-					Lat[0]->propagate(GB,G1,0,1,M); //first step is freely joined
-					Lat[0]->Initiate(Gg_b+(s%2)*M*size,GB+M,Markov,M);
+					lat->Terminate(GB,Gg_b+((s+1)%2)*M*size,Markov,M);
+					lat->propagate(GB,G1,0,1,M); //first step is freely joined
+					lat->Initiate(Gg_b+(s%2)*M*size,GB+M,Markov,M);
 					free(GB);
 				} else {
-					Lat[0]->propagateB(Gg_b,G1,P,(s+1)%2,s%2,M); //FL
+					lat->propagateB(Gg_b,G1,P,(s+1)%2,s%2,M); //FL
 				}
 			} else {
-				Lat[0]->Initiate(Gg_b+(s%2)*M*size,G1,Markov,M); //FL
+				lat->Initiate(Gg_b+(s%2)*M*size,G1,Markov,M); //FL
 			}
 
-			Lat[0]->AddPhiS(rho+molmon_nr[block]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size, Markov, M);
+			lat->AddPhiS(rho+molmon_nr[block]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size, Markov, M);
 
 
 			if (compute_phi_alias) {
@@ -2641,7 +2642,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 				for (int i=0; i<length; i++) {
 					if (Al[i]->frag[k]==1) {
 						//Composition(Al[i]->rho,Gg_f+s*M,Gg_b+(s%2)*M,G1,norm,M);
-						Lat[0]->AddPhiS(Al[i]->rho,Gg_f+s*M*size,Gg_b+(s%2)*M*size,G1,norm,Markov, M);
+						lat->AddPhiS(Al[i]->rho,Gg_f+s*M*size,Gg_b+(s%2)*M*size,G1,norm,Markov, M);
 					}
 				}
 			}
@@ -2653,8 +2654,8 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 bool Molecule::ComputePhi(Real* BETA,int id){
 if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	bool success=true;
-	int M=Lat[0]->M;
-	Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
+	int M=lat->M;
+	lat->sub_box_on=0;//selecting 'standard' boundary condition
 	if (id !=0) {
 		int molmonlistlength= MolMonList.size();
 		for (int i=0; i<molmonlistlength; i++)
@@ -2666,10 +2667,10 @@ if (debug) cout <<"ComputePhi for Mol " + name << endl;
 	}
 	if (MolType==water) phib1=0;
 	if (freedom == "clamped") {
-		Lat[0]->sub_box_on=Seg[mon_nr[0]]->clamp_nr; //slecting sub_box boundary conditions.
+		lat->sub_box_on=Seg[mon_nr[0]]->clamp_nr; //slecting sub_box boundary conditions.
 				//success=ComputePhiLin();
 		success=ComputePhi();
-		Lat[0]->sub_box_on=0;//selecting 'standard' boundary condition
+		lat->sub_box_on=0;//selecting 'standard' boundary condition
 	} else {
 		success=ComputePhi();
 	}
@@ -2704,10 +2705,10 @@ void Molecule::AddToF(Real*) {
 
 bool Molecule::ComputePhi(){
 if (debug) cout <<"ComputePhi for Molecule " + name << endl; //default computation for monomer only....
-	int M=Lat[0]->M;
+	int M=lat->M;
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);
-	GN=Lat[0]->WeightedSum(phi);
+	GN=lat->WeightedSum(phi);
 	if (compute_phi_alias)
 		for (auto& alias : Al) //For every alias in the Al vector (same as Al[i])
 			if (alias->frag[0]==1) {

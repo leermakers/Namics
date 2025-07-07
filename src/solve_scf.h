@@ -46,6 +46,7 @@ public:
 	vector<System*> Sys;
 	vector<Segment*> Seg;
 	vector<Lattice*> Lat;
+	Lattice* lat;
 	vector<Molecule*> Mol;
 	vector<Variate*> Var;
 	vector<State*> Sta;

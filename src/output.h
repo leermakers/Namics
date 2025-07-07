@@ -22,6 +22,7 @@ public:
 	string name;
 	vector<Input*> In;
 	vector<Lattice*> Lat;
+	Lattice* lat;
 	vector<Segment*> Seg;
 	vector<State*> Sta;
 	vector<Reaction*> Rea;

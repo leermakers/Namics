@@ -22,6 +22,7 @@ public:
 	vector<Reaction*> Rea;
 	vector<Molecule*> Mol;
 	vector<Lattice*> Lat;
+	Lattice* lat;
 	vector<int> SysMonList;
 	vector<int> ItMonList;
 	vector<int> ItStateList;

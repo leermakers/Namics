@@ -13,6 +13,7 @@ public:
 	string name;
 	vector<Input*> In;
 	vector<Lattice*> Lat;
+	Lattice* lat;
 	vector<int> px1;
 	vector<int> px2;
 	vector<int> py1;

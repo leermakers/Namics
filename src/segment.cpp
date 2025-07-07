@@ -5,6 +5,7 @@
 Segment::Segment(vector<Input*> In_,vector<Lattice*> Lat_, string name_,int segnr,int N_seg) {
 	In=In_; Lat=Lat_; name=name_; n_seg=N_seg; seg_nr=segnr; prepared = 0;
 if (debug) cout <<"Segment constructor" + name << endl;
+	lat=Lat[0];
 	KEYS.push_back("freedom");
 	KEYS.push_back("valence");
 	KEYS.push_back("epsilon");
@@ -78,7 +79,7 @@ if (!all_segment) return;
 void Segment::AllocateMemory() {
 if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 	DeAllocateMemory();
-	int M=Lat[0]->M;
+	int M=lat->M;
 	ns=state_name.size(); if (ns==0) ns=1;
 	r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
 	H_u = (Real*) malloc(M*ns*sizeof(Real));
@@ -126,11 +127,11 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 
 	if (freedom!="free"&& !HMaskDone) {
 		if (freedom=="clamp") {
-			int JX=Lat[0]->JX;
-			int JY=Lat[0]->JY;
-			int MX=Lat[0]->MX;
-			int MY=Lat[0]->MY;
-			int MZ=Lat[0]->MZ;
+			int JX=lat->JX;
+			int JY=lat->JY;
+			int MX=lat->MX;
+			int MY=lat->MY;
+			int MZ=lat->MZ;
 			for (int i=0; i<n_box; i++) {
 				if (bx[i]<1) {bx[i] +=MX; px1[i] +=MX; px2[i] +=MX;}
 				if (by[i]<1) {by[i] +=MY; py1[i] +=MY; py2[i] +=MY;}
@@ -143,9 +144,9 @@ if (debug) cout <<"Allocate Memory in Segment " + name << endl;
 			}
 
 		} else {
-			r[0]*=Lat[0]->fjc; r[1]*=Lat[0]->fjc; r[2]*=Lat[0]->fjc;
-			r[3]=(r[3]+1)*Lat[0]->fjc-1;r[4]=(r[4]+1)*Lat[0]->fjc-1;r[5]=(r[5]+1)*Lat[0]->fjc-1;
-			Lat[0]->CreateMASK(H_MASK,r,H_P,n_pos,block);
+			r[0]*=lat->fjc; r[1]*=lat->fjc; r[2]*=lat->fjc;
+			r[3]=(r[3]+1)*lat->fjc-1;r[4]=(r[4]+1)*lat->fjc-1;r[5]=(r[5]+1)*lat->fjc-1;
+			lat->CreateMASK(H_MASK,r,H_P,n_pos,block);
 		}
 
 	}
@@ -160,7 +161,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 	if (freedom =="clamp" ) {
 		n_box=0; mx=0;
 		int m_x;
-		int MX=Lat[0]->MX;
+		int MX=lat->MX;
 		if (GetValue("sub_box_size").size()>0) {
 			m_x=In[0]->Get_int(GetValue("sub_box_size"),-1);
 			if (m_x <1 || m_x > MX) {success=false; cout <<"Value of sub_box_size is out of bounds: 1 ... " << MX << endl; }
@@ -171,8 +172,8 @@ if (debug) cout <<"ParseFreedoms " << endl;
 				}
 			} else { mx=m_x; my=m_x; mz=m_x; }
 		}
-		Lat[0]->PutSub_box(mx,my,mz,n_box);
-		clamp_nr = Lat[0]->m.size()-1;
+		lat->PutSub_box(mx,my,mz,n_box);
+		clamp_nr = lat->m.size()-1;
 
 		if (GetValue("clamp_filename").size()>0) {
 			if (!GetClamp(GetValue("clamp_filename"))) {
@@ -247,10 +248,10 @@ if (debug) cout <<"ParseFreedoms " << endl;
 	}
 
 	if (freedom == "pinned") {
-		int fjc = Lat[0]->fjc;
-		int n_layers_x=(Lat[0]->MX)/fjc;
-		int n_layers_y=(Lat[0]->MY)/fjc;
-		int n_layers_z=(Lat[0]->MZ)/fjc;
+		int fjc = lat->fjc;
+		int n_layers_x=(lat->MX)/fjc;
+		int n_layers_y=(lat->MY)/fjc;
+		int n_layers_z=(lat->MZ)/fjc;
 
 
 		if (GetValue("pinned_range").size()>0) {
@@ -278,28 +279,28 @@ if (debug) cout <<"ParseFreedoms " << endl;
 				}
 			}
 			if (p_range=="firstlayer_x") {
-				if (Lat[0]->gradients==1) {p_range = "firstlayer;firstlayer"; }
-				if (Lat[0]->gradients==2) {p_range = "firstlayer,1;firstlayer,";p_range.append(to_string(n_layers_y)); }
-				if (Lat[0]->gradients==3) {p_range = "firstlayer,1,1;firstlayer,"; p_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); }
+				if (lat->gradients==1) {p_range = "firstlayer;firstlayer"; }
+				if (lat->gradients==2) {p_range = "firstlayer,1;firstlayer,";p_range.append(to_string(n_layers_y)); }
+				if (lat->gradients==3) {p_range = "firstlayer,1,1;firstlayer,"; p_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); }
 			}
 			if (p_range=="lastlayer_x") {
-				if (Lat[0]->gradients==1) {p_range = "lastlayer;lastlayer";}
-				if (Lat[0]->gradients==2) {p_range = "lastlayer,1;lastlayer,"; p_range.append(to_string(n_layers_y)); }
-				if (Lat[0]->gradients==3) {p_range = "lastlayer,1,1;lastlayer,"; p_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); }
+				if (lat->gradients==1) {p_range = "lastlayer;lastlayer";}
+				if (lat->gradients==2) {p_range = "lastlayer,1;lastlayer,"; p_range.append(to_string(n_layers_y)); }
+				if (lat->gradients==3) {p_range = "lastlayer,1,1;lastlayer,"; p_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); }
 			}
 			if (p_range=="firstlayer_y") {
-				if (Lat[0]->gradients==2) {p_range = "1,firstlayer;";p_range.append(to_string(n_layers_x)).append(",firstlayer"); }
-				if (Lat[0]->gradients==3) {p_range = "1,firstlayer,1;";p_range.append(to_string(n_layers_x)).append(",firstlayer,").append(to_string(n_layers_z)); }
+				if (lat->gradients==2) {p_range = "1,firstlayer;";p_range.append(to_string(n_layers_x)).append(",firstlayer"); }
+				if (lat->gradients==3) {p_range = "1,firstlayer,1;";p_range.append(to_string(n_layers_x)).append(",firstlayer,").append(to_string(n_layers_z)); }
 			}
 			if (p_range=="lastlayer_y") {
-				if (Lat[0]->gradients==2) {p_range = "1,lastlayer;";p_range.append(to_string(n_layers_x)).append(",lastlayer"); }
-				if (Lat[0]->gradients==3) {p_range = "1,lastlayer,1;";p_range.append(to_string(n_layers_x)).append(",lastlayer,").append(to_string(n_layers_z)); }
+				if (lat->gradients==2) {p_range = "1,lastlayer;";p_range.append(to_string(n_layers_x)).append(",lastlayer"); }
+				if (lat->gradients==3) {p_range = "1,lastlayer,1;";p_range.append(to_string(n_layers_x)).append(",lastlayer,").append(to_string(n_layers_z)); }
 			}
 			if (p_range=="firstlayer_z") {
-				if (Lat[0]->gradients==3) {p_range = "1,1,firstlayer;";p_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",firstlayer"); }
+				if (lat->gradients==3) {p_range = "1,1,firstlayer;";p_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",firstlayer"); }
 			}
 			if (p_range=="lastlayer_z") {
-				if (Lat[0]->gradients==3) {p_range = "1,1,lastlayer;";p_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",lastlayer"); }
+				if (lat->gradients==3) {p_range = "1,1,lastlayer;";p_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",lastlayer"); }
 			}
 			phibulk=0;
 			if (GetValue("frozen_range").size()>0 || GetValue("tagged_range").size()>0 || GetValue("frozen_filename").size()>0 || GetValue("tag_filename").size()>0) {
@@ -359,27 +360,27 @@ if (debug) cout <<"ParseFreedoms " << endl;
 //cout <<"p_range = " << p_range << endl;
 
 			n_pos=0;
-			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
+			if (success) success=lat->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
 			if (n_pos>0) {
 				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
+				if (success) success=lat->ReadRange(r, H_P, n_pos, block, p_range,var_pos,name,s_freedom);
 			}
 		}
 		if (GetValue("pinned_filename").size()>0) { s_freedom="pinned";
 			filename=GetValue("pinned_filename");
 			n_pos=0;
-			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+			if (success) success=lat->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 			if (n_pos>0) {
 				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+				if (success) success=lat->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 			}
 		}
 	}
 
 	if (freedom == "frozen") {
-		int n_layers_x=(Lat[0]->MX)/Lat[0]->fjc;
-		int n_layers_y=(Lat[0]->MY)/Lat[0]->fjc;
-		int n_layers_z=(Lat[0]->MZ)/Lat[0]->fjc;
+		int n_layers_x=(lat->MX)/lat->fjc;
+		int n_layers_y=(lat->MY)/lat->fjc;
+		int n_layers_z=(lat->MZ)/lat->fjc;
 
 		frozen_at_bound=-1;
 		phibulk=0;
@@ -418,29 +419,29 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			}
 
 			if (f_range=="lowerbound_x") {
-				if (Lat[0]->gradients==1) {f_range = "lowerbound;lowerbound"; frozen_at_bound=0;}
-				if (Lat[0]->gradients==2) {f_range = "lowerbound,1;lowerbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=0;}
-				if (Lat[0]->gradients==3) {f_range = "lowerbound,1,1;lowerbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=0;}
+				if (lat->gradients==1) {f_range = "lowerbound;lowerbound"; frozen_at_bound=0;}
+				if (lat->gradients==2) {f_range = "lowerbound,1;lowerbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=0;}
+				if (lat->gradients==3) {f_range = "lowerbound,1,1;lowerbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=0;}
 			}
 			if (f_range=="upperbound_x") {
-				if (Lat[0]->gradients==1) {f_range = "upperbound;upperbound";frozen_at_bound=3;}
-				if (Lat[0]->gradients==2) {f_range = "upperbound,1;upperbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=3;}
-				if (Lat[0]->gradients==3) {f_range = "upperbound,1,1;upperbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=3;}
+				if (lat->gradients==1) {f_range = "upperbound;upperbound";frozen_at_bound=3;}
+				if (lat->gradients==2) {f_range = "upperbound,1;upperbound,"; f_range.append(to_string(n_layers_y)); frozen_at_bound=3;}
+				if (lat->gradients==3) {f_range = "upperbound,1,1;upperbound"; f_range.append(to_string(n_layers_y)).append(",").append(to_string(n_layers_z)); frozen_at_bound=3;}
 			}
 			if (f_range=="lowerbound_y") {
-				if (Lat[0]->gradients==2) {f_range = "1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",lowerbound"); frozen_at_bound=1;}
-				if (Lat[0]->gradients==3) {f_range = "1,lowerbound,1;";f_range.append(to_string(n_layers_x)).append(",lowerbound,").append(to_string(n_layers_z)); frozen_at_bound=1;}
+				if (lat->gradients==2) {f_range = "1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",lowerbound"); frozen_at_bound=1;}
+				if (lat->gradients==3) {f_range = "1,lowerbound,1;";f_range.append(to_string(n_layers_x)).append(",lowerbound,").append(to_string(n_layers_z)); frozen_at_bound=1;}
 			}
 			if (f_range=="upperbound_y") {
-				if (Lat[0]->gradients==2) {f_range = "1,upperbound;";f_range.append(to_string(n_layers_x)).append(",upperbound");  frozen_at_bound=4;}
-				if (Lat[0]->gradients==3) {f_range = "1,upperbound,1;";f_range.append(to_string(n_layers_x)).append(",upperbound,").append(to_string(n_layers_z)); frozen_at_bound=4;}
+				if (lat->gradients==2) {f_range = "1,upperbound;";f_range.append(to_string(n_layers_x)).append(",upperbound");  frozen_at_bound=4;}
+				if (lat->gradients==3) {f_range = "1,upperbound,1;";f_range.append(to_string(n_layers_x)).append(",upperbound,").append(to_string(n_layers_z)); frozen_at_bound=4;}
 			}
 
 			if (f_range=="lowerbound_z") {
-				if (Lat[0]->gradients==3) {f_range = "1,1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",lowerbound"); frozen_at_bound=2; }
+				if (lat->gradients==3) {f_range = "1,1,lowerbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",lowerbound"); frozen_at_bound=2; }
 			}
 			if (f_range=="upperbound_z") {
-				if (Lat[0]->gradients==3) {f_range = "1,1,upperbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",upperbound"); frozen_at_bound=5;}
+				if (lat->gradients==3) {f_range = "1,1,upperbound;";f_range.append(to_string(n_layers_x)).append(",").append(to_string(n_layers_y)).append(",upperbound"); frozen_at_bound=5;}
 			}
 
 			sub.clear();
@@ -474,14 +475,14 @@ if (debug) cout <<"ParseFreedoms " << endl;
 					}
 
 					if (xyz[kk]=="lowerbound") {
-						if ( (kk==0 && Lat[0]->BC[0] !="surface") ||(kk==1 && Lat[0]->BC[1] !="surface") ||(kk==2 && Lat[0]->BC[2] !="surface") ) {
+						if ( (kk==0 && lat->BC[0] !="surface") ||(kk==1 && lat->BC[1] !="surface") ||(kk==2 && lat->BC[2] !="surface") ) {
 							cout<<"In lattice you need boundary condition 'surface' in combination with frozen_range containing 'lowerbound' " << endl; success=false;
 							return success;
 						}
 						f_range.append("0");
 					}
 					if (xyz[kk]=="upperbound") {
-						if ( (kk==0 && Lat[0]->BC[3] !="surface") ||(kk==1 && Lat[0]->BC[4] !="surface") ||(kk==2 && Lat[0]->BC[5] !="surface") ) {
+						if ( (kk==0 && lat->BC[3] !="surface") ||(kk==1 && lat->BC[4] !="surface") ||(kk==2 && lat->BC[5] !="surface") ) {
 							cout<<"In lattice you need boundary condition 'surface' in combination with frozen_range containing 'upperbound' " << endl; success=false;
 							return success;
 						}
@@ -505,27 +506,27 @@ if (debug) cout <<"ParseFreedoms " << endl;
 							return success;
 						} else {
 							if (kk==0 && cor ==0 ) {
-								if (Lat[0]->BC[0] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								if (lat->BC[0] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
 								frozen_at_bound=0;
 							}
 							if (kk==0 && cor == n_layers_x+1 ) {
-								if (Lat[0]->BC[3] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								if (lat->BC[3] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
 								frozen_at_bound=3;
 							}
 							if (kk==1 && cor ==0 ) {
-								if (Lat[0]->BC[1] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								if (lat->BC[1] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
 								frozen_at_bound=1;
 							}
 							if (kk==1 && cor == n_layers_y+1 ) {
-								if (Lat[0]->BC[4] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								if (lat->BC[4] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
 								frozen_at_bound=4;
 							}
 							if (kk==2 && cor ==0 ) {
-								if (Lat[0]->BC[2] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								if (lat->BC[2] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
 								frozen_at_bound=2;
 							}
 							if (kk==2 && cor == n_layers_z+1 ) {
-								if (Lat[0]->BC[5] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
+								if (lat->BC[5] !="surface") {cout <<" Frozen segment " + name + " put at boundary, but lattice bc is not set to 'surface'" << endl; success=false; return success;}
 								frozen_at_bound=5;
 							}
 							f_range.append(xyz[kk]);
@@ -539,23 +540,23 @@ if (debug) cout <<"ParseFreedoms " << endl;
 //cout <<"f_range = " << f_range << endl;
 
 			n_pos=0;
-			success=Lat[0]->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
+			success=lat->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
 			if (n_pos>0) {
 				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-				success=Lat[0]->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
+				success=lat->ReadRange(r, H_P, n_pos, block, f_range,var_pos,name,s_freedom);
 			}
 		}
 		if (GetValue("frozen_filename").size()>0) { s_freedom="frozen";
 			filename=GetValue("frozen_filename");
 			n_pos=0;
-			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+			if (success) success=lat->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 			if (n_pos>0) {
 				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+				if (success) success=lat->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 			}
 		}
-		if (GetValue("frozen_range").size()==0 && Lat[0]->geometry == "cylindrical" && Lat[0]->gradients == 2) {
-			int fjc=Lat[0]->fjc;
+		if (GetValue("frozen_range").size()==0 && lat->geometry == "cylindrical" && lat->gradients == 2) {
+			int fjc=lat->fjc;
 			//this case we can have a particle at the axis
 			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
 
@@ -569,7 +570,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			R*=fjc; //R is expressed in grit-units
 			if (GetValue("pos")=="?") {success = false; cout <<" expect (0,y) coordinate in this case, in segment size units" << endl; }
 			if (success) {
-				int fjc=Lat[0]->fjc;
+				int fjc=lat->fjc;
 				px.clear(); py.clear(); pz.clear();
 				vector<int>open;
 				vector<int>close;
@@ -591,7 +592,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 							px.push_back(In[0]->Get_int(sub[0],-1));px[i]*=fjc; //px in grit units
 							py.push_back(In[0]->Get_int(sub[1],-1));py[i]*=fjc; //py in grit units
 							if (px[i] !=0) {success=false; cout << "pos x for particle " << i << " is expected to be 0; we found " << px[i] << endl; }
-							if (py[i] <0 || py[i]>Lat[0]->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
+							if (py[i] <0 || py[i]>lat->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
 							pz.push_back(0);
 						}
 					}
@@ -599,9 +600,9 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			}
 
 		}
-		if (n_pos<1 && Lat[0]->gradients==3 && px.size()==0 && !block) {
+		if (n_pos<1 && lat->gradients==3 && px.size()==0 && !block) {
 			n=0; R=0; px.clear(); py.clear(); pz.clear();
-			int fjc=Lat[0]->fjc;
+			int fjc=lat->fjc;
 			bool found=false;
 			if (GetValue("n").size()==0 || GetValue("pos").size()==0 || GetValue("size").size()==0) {
 				success=false; cout <<"Expecting values for 'n', 'pos' and 'size' for the definition of the set of spherical particles in the system. " << endl;
@@ -612,9 +613,9 @@ if (debug) cout <<"ParseFreedoms " << endl;
 				//if (GetValue("pos")=="random") {
 				//	found=true; srand(1);
 				//	for (int i=0; i<n; i++) {
-				//		px.push_back(1+rand()%Lat[0]->MX);
-				//		py.push_back(1+rand()%Lat[0]->MY);
-				//		pz.push_back(1+rand()%Lat[0]->MZ);
+				//		px.push_back(1+rand()%lat->MX);
+				//		py.push_back(1+rand()%lat->MY);
+				//		pz.push_back(1+rand()%lat->MZ);
 				//	}
 				//}
 				if (GetValue("pos")=="?") {
@@ -623,9 +624,9 @@ if (debug) cout <<"ParseFreedoms " << endl;
 				}
 				if (GetValue("pos")=="regular"||GetValue("pos")=="random") {
 					found=true;
-					int MX=Lat[0]->MX;
-					int MY=Lat[0]->MY;
-					int MZ=Lat[0]->MZ;
+					int MX=lat->MX;
+					int MY=lat->MY;
+					int MZ=lat->MZ;
  					int V=MX*MY*MZ;
 					int a = pow(V/n,1.0/3.0);
 					if (a<2*R) {
@@ -655,9 +656,9 @@ if (debug) cout <<"ParseFreedoms " << endl;
 					int X;
 					int Y;
 					int Z;
-					int MX=Lat[0]->MX; //grit units
-					int MY=Lat[0]->MY; //grit units
-					int MZ=Lat[0]->MZ; //grit unicts
+					int MX=lat->MX; //grit units
+					int MY=lat->MY; //grit units
+					int MZ=lat->MZ; //grit unicts
 					for (int i=0; i<num_of_moves; i++) { //randomise...
 						I=rand()%n;
 						X=px[I]; Y=py[I]; Z=pz[I];
@@ -691,9 +692,9 @@ if (debug) cout <<"ParseFreedoms " << endl;
 								px.push_back(In[0]->Get_int(sub[0],-1)); px[i]*=fjc;
 								py.push_back(In[0]->Get_int(sub[1],-1)); py[i]*=fjc;
 								pz.push_back(In[0]->Get_int(sub[2],-1)); pz[i]*=fjc;
-								if (px[i] <0 || px[i]>Lat[0]->MX) {success=false; cout << "pos x for particle " << i << " out of bounds or not an integer: " << px[i] << endl; }
-								if (py[i] <0 || py[i]>Lat[0]->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
-								if (pz[i] <0 || pz[i]>Lat[0]->MZ) {success=false; cout << "pos z for particle " << i << " out of bounds or not an integer: " << pz[i] << endl; }
+								if (px[i] <0 || px[i]>lat->MX) {success=false; cout << "pos x for particle " << i << " out of bounds or not an integer: " << px[i] << endl; }
+								if (py[i] <0 || py[i]>lat->MY) {success=false; cout << "pos y for particle " << i << " out of bounds or not an integer: " << py[i] << endl; }
+								if (pz[i] <0 || pz[i]>lat->MZ) {success=false; cout << "pos z for particle " << i << " out of bounds or not an integer: " << pz[i] << endl; }
 								//cout <<"px,py,pz =" <<px[i]<<","<<py[i]","<<pz[i] << endl;
 							}
 						}
@@ -704,8 +705,8 @@ if (debug) cout <<"ParseFreedoms " << endl;
 		if (px.size()>0) {
 			HMaskDone=true;
 			if (success) {
-				//H_MASK = (int*) malloc(Lat[0]->M*sizeof(int));
-			if (!Lat[0]->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred "<<endl;
+				//H_MASK = (int*) malloc(lat->M*sizeof(int));
+			if (!lat->PutMask(H_MASK,px,py,pz,R)) cout <<"overlap occurred "<<endl;
 			}
 
 		}
@@ -736,9 +737,9 @@ if (debug) cout <<"ParseFreedoms " << endl;
 				return success;
 			}
 
-			int n_layers_x=(Lat[0]->MX+1)/Lat[0]->fjc;
-			int n_layers_y=(Lat[0]->MY+1)/Lat[0]->fjc;
-			int n_layers_z=(Lat[0]->MZ+1)/Lat[0]->fjc;
+			int n_layers_x=(lat->MX+1)/lat->fjc;
+			int n_layers_y=(lat->MY+1)/lat->fjc;
+			int n_layers_z=(lat->MZ+1)/lat->fjc;
 			for (int k=0; k<Lsub; k++) {
 				xyz.clear();
 				In[0]->split(sub[k],',',xyz);
@@ -771,20 +772,20 @@ if (debug) cout <<"ParseFreedoms " << endl;
 //cout <<"t_range = " << t_range << endl;
 
 			n_pos=0;
-			if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
+			if (success) success=lat->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
 			if (n_pos>0) {
 				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-				if (success) success=Lat[0]->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
+				if (success) success=lat->ReadRange(r, H_P, n_pos, block, t_range,var_pos,name,s_freedom);
 			}
 		}
 		if (GetValue("tagged_filename").size()>0) {
 			s_freedom="tagged";
 			filename=GetValue("tagged_filename");
 			n_pos=0;
-			if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+			if (success) success=lat->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 			if (n_pos>0) {
 				H_P=(int*) malloc(n_pos*sizeof(int)); std::fill(H_P, H_P+n_pos, 0);
-				if (success) success=Lat[0]->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
+				if (success) success=lat->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
 			}
 		}
 	}
@@ -792,17 +793,17 @@ if (debug) cout <<"ParseFreedoms " << endl;
 }
 
 Real Segment::PinnedVolume() {
-	int M=Lat[0]->M;
+	int M=lat->M;
 	Real volume=0;
 	Real VOLUME=0;
 	if (freedom !="pinned") return volume;
-	if (Lat[0]->geometry=="planar") {
+	if (lat->geometry=="planar") {
 		Sum(VOLUME,MASK,M); volume=1.0*VOLUME;
 	} else {
-		for (int i=0;i<M; i++) volume += MASK[i]*Lat[0]->L[i];
-		//Dot(volume,MASK,Lat[0]->L,M);
+		for (int i=0;i<M; i++) volume += MASK[i]*lat->L[i];
+		//Dot(volume,MASK,lat->L,M);
 	}
-	return volume/Lat[0]->fjc;
+	return volume/lat->fjc;
 }
 
 bool Segment::Overlap(int I, int R) {
@@ -812,9 +813,9 @@ bool Segment::Overlap(int I, int R) {
 	int n=px.size();
 	int RR=4*R*R;
 	int dx,dy,dz;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int MZ=Lat[0]->MZ;
+	int MX=lat->MX;
+	int MY=lat->MY;
+	int MZ=lat->MZ;
 
 	for (int i=0; i<n; i++) {
 		if (i != I) {
@@ -836,7 +837,7 @@ bool Segment::Overlap(int I, int R) {
 bool Segment::PrepareForCalculations(Real* KSAM, bool first_time) {
 if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
-	int M=Lat[0]->M;
+	int M=lat->M;
 #ifdef CUDA
 	if (In[0]->MesodynList.empty() or prepared == false) {
 	TransferDataToDevice(H_MASK, MASK, M);
@@ -860,12 +861,12 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	if (freedom=="tagged" || freedom=="clamp" ) Zero(u,M); //no internal states for these segments.
 
 	if (ns==1) {
-		Lat[0]->set_bounds(u);
+		lat->set_bounds(u);
 		Boltzmann(G1,u,M);
 	} else {
 		Zero(G1,M);
 		for (int i=0; i<ns; i++) {
-			Lat[0]->set_bounds(u+M*i);
+			lat->set_bounds(u+M*i);
 			Boltzmann(alpha+M*i,u+M*i,M);
 			Norm(alpha+M*i,state_alphabulk[i],M);
 			Add(G1,alpha+M*i,M);
@@ -884,15 +885,15 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 	if (GetValue("fluctuation_potentials").size()>0&& first_time)
 	{
 		Zero(u_ext,M); srand(seed);
-		int gradients=Lat[0]->gradients;
+		int gradients=lat->gradients;
 		vector<string> sub;
 		string s;
 		int my;
 		int labda_y;
-		int MX=Lat[0]->MX;
-		int JX=Lat[0]->JX;
-		int MY=Lat[0]->MY;
-		int JY=Lat[0]->JY;
+		int MX=lat->MX;
+		int JX=lat->JX;
+		int MY=lat->MY;
+		int JY=lat->JY;
 		Real shift_x,shift_y,shift_z;
 		switch (gradients)
 		{
@@ -916,9 +917,9 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 				In[0]->split(s, ',', sub);
 				if (sub.size() !=2) {success=false; cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  coordinate info in 2d, such as: x,5"<<endl; }
 				my=In[0]->Get_int(sub[1],0);
-				if (my<0 || my>Lat[0]->MY) {success =false; cout << "in fluctuation potentials the y-coordinate is out of bounds."<< endl; }
-				labda_y=Lat[0]->MY;
-				JX=Lat[0]->JX;
+				if (my<0 || my>lat->MY) {success =false; cout << "in fluctuation potentials the y-coordinate is out of bounds."<< endl; }
+				labda_y=lat->MY;
+				JX=lat->JX;
 				for (int x=1; x<MX; x++) u_ext[x*JX+my]+=Amplitude*(sin(2.0*PIE*x/labda_y));
 				break;
 			case 3:
@@ -938,7 +939,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 				if (sub[2] == "z")
 				{
-					int MZ=Lat[0]->MZ;
+					int MZ=lat->MZ;
 					if (!(MZ==2 || MZ==4 || MZ==8 || MZ==16 ||MZ==32 || MZ==64 ||MZ==128 || MZ==256 || MZ==512 || MZ==1024))
 					{
 						success=false;
@@ -957,7 +958,7 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 				} else
 				{
 					int mz=In[0]->Get_int(sub[2],0);
-					if (mz<1 || mz>Lat[0]->MZ)
+					if (mz<1 || mz>lat->MZ)
 					{
 						success=false;
 						cout <<"expecting in 'mon : " + name + " : fluctuation_potentials : '  z-coordinate to be in z-range "<<endl;
@@ -994,15 +995,15 @@ if (debug) cout <<"PrepareForCalcualtions in Segment " +name << endl;
 
 void Segment::PutContraintBC() {
 if (debug) cout <<"PutConstraintBC Segment " + name << endl;
-	int gradients=Lat[0]->gradients;
-	int M=Lat[0]->M;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int JX=Lat[0]->JX;
+	int gradients=lat->gradients;
+	int M=lat->M;
+	int MX=lat->MX;
+	int MY=lat->MY;
+	int JX=lat->JX;
 	switch (gradients) {
 		case 1:
-			//int fjc=Lat[0]->fjc;
-			//int MX=Lat[0]->MX;
+			//int fjc=lat->fjc;
+			//int MX=lat->MX;
 
 			if (phi_LB_X>0) phi[0]=phi_LB_X;
 			if (phi_UB_X>0) phi[M-1]=phi_UB_X;
@@ -1088,9 +1089,9 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			if (epsilon<1 || epsilon > 250) cout <<"For mon " + name + " relative epsilon value out of range 1 .. 250. Default value 80 used instead" << endl;
 		}
 		if (valence !=0) {
-			if (Lat[0]->bond_length <1e-12 || Lat[0]->bond_length > 1e-8) {
+			if (lat->bond_length <1e-12 || lat->bond_length > 1e-8) {
 				success=false;
-				if (Lat[0]->bond_length==0) cout << "When there are charged segments, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-102... 1e-8 m " << endl;
+				if (lat->bond_length==0) cout << "When there are charged segments, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-102... 1e-8 m " << endl;
 				else cout <<"Bond length is out of range: 1e-12..1e-8 m " << endl;
 			}
 		}
@@ -1143,26 +1144,26 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	if (GetValue("fluctuation_potentials").size()>0) {
 		if (GetValue("fluctuation_wavelength").size()>0) {
 				labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),0);
-				if (labda<1 || labda>Lat[0]->MX || labda > Lat[0]->MY || labda > Lat[0]->MZ) {
+				if (labda<1 || labda>lat->MX || labda > lat->MY || labda > lat->MZ) {
 					success = false;cout <<"fluctuation_wavelength must be a positive number smaller or equal to the 'box' size" << endl;
 				}
 				if (!(labda ==2 || labda ==4 || labda ==8 || labda ==16 || labda ==32 || labda ==64 || labda ==128 || labda ==256 || labda ==512 ||labda ==1024)) {
 					cout <<"fluctuation wavelength should be an integer 2^x, with x = 1..10" << endl;
 				}
 		}
-		if (Lat[0]->gradients==2) {
-			labda = Lat[0]->MY;
+		if (lat->gradients==2) {
+			labda = lat->MY;
 			labda=In[0]->Get_int(GetValue("fluctuation_wavelength"),labda);
-			if (labda !=Lat[0]->MY) {
-				labda=Lat[0]->MY; cout <<"fluctuation_wavelength is set to n_layers_y." << endl;
+			if (labda !=lat->MY) {
+				labda=lat->MY; cout <<"fluctuation_wavelength is set to n_layers_y." << endl;
 			}
-			if (Lat[0]->geometry !="planar") {
+			if (lat->geometry !="planar") {
 				success=false; cout <<"fluctuation_potentials in 2 or 1 gradient(s) calculations only for 'planar' case." << endl;
 			}
 		}
-		if (Lat[0]->gradients==3) {
-				int MX=Lat[0]->MX;
-				int MY=Lat[0]->MY;
+		if (lat->gradients==3) {
+				int MX=lat->MX;
+				int MY=lat->MY;
 				if (!(MX==2 || MX==4 || MX==8 || MX==16 ||MX==32 || MX==64 ||MX==128 || MX==256)) {success=false; cout << "Expecting n_layers_x to have a value 2^a with a = 1..8" << endl; }
 				if (!(MY==2 || MY==4 || MY==8 || MY==16 ||MY==32 || MY==64 ||MY==128 || MY==256)) {success=false; cout << "Expecting n_layers_y to have a value 2^a with a = 1..8" << endl; }
 			}
@@ -1181,11 +1182,11 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	if (GetValue("phi").size()>0){
 		constraints=true;
 		string s = GetValue("phi");
-		if (Lat[0]->gradients > 1 ) {success=false; cout <<"Constraints in phi only allowed in one-gradient calculations. (for the time being)" << endl; }
+		if (lat->gradients > 1 ) {success=false; cout <<"Constraints in phi only allowed in one-gradient calculations. (for the time being)" << endl; }
 		if (s=="?") {
 				cout <<"Expect for the argument of 'phi' a sequence of z_values and corresponding volume fractions: " << endl;
 				cout <<"(z_value_1,phi_value_1)(z_value_2,phi_value_2) ....(z_value_last,phi_value_last)" << endl;
-				cout <<"'z_value' should be in range 1 .. " + Lat[0]->MX << endl;
+				cout <<"'z_value' should be in range 1 .. " + lat->MX << endl;
 				cout <<"'phi_value' should be in range 0 .. 1 " << endl;
 			  success=false;
 		}
@@ -1205,7 +1206,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 			In[0]->split(sA,',',sub);
 				int zz=In[0]->Get_int(sub[0],0);
 				Real RHO=In[0]->Get_Real(sub[1],-1);
-				if (zz<1 || zz>Lat[0]->MX) {
+				if (zz<1 || zz>lat->MX) {
 					cout <<"In constraints for segment " + name + "failed to understand '" + sA + "' no valid integer found for first argument. For help use: 'mon : " +name + " : phi : ?' " << endl; success=false;
 				} else constraint_z.push_back(zz);
 				if (RHO<0 ||RHO>1) {
@@ -1226,7 +1227,7 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 
 	//valence=In[0]->Get_Real(GetValue("valence"),0);
 	bool HMD=false;
-	H_MASK = (Real*) malloc(Lat[0]->M*sizeof(Real));
+	H_MASK = (Real*) malloc(lat->M*sizeof(Real));
 	r=(int*) malloc(6*sizeof(int)); std::fill(r,r+6,0);
 	if (success) success=ParseFreedoms(HMD);
 	free(H_MASK);
@@ -1251,7 +1252,7 @@ void Segment::Put_beta(int ii, Real BETA) {
 
 Real Segment::Volume_particles() {
 	Real volume=0;
-	if (freedom=="frozen") Sum(volume,H_MASK,Lat[0]->M);
+	if (freedom=="frozen") Sum(volume,H_MASK,lat->M);
 	//cout <<"volume_particles of type "+name + "= " << volume << endl;
 	return 1.0*volume;
 }
@@ -1260,14 +1261,14 @@ bool Segment::PutAdsorptionGuess(Real chi,Real* Mask) {
 if (debug) cout <<"PutAdsorptionGuess" + name << endl;
 	bool success=true;
 	Real lambda;
-	if (Lat[0]->lattice_type==hexagonal) lambda=0.25; else lambda=1.0/6.0;
-	int gradients=Lat[0]->gradients;
-	int M=Lat[0]->M;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int MZ=Lat[0]->MZ;
-	int JX=Lat[0]->JX;
-	int JY=Lat[0]->JY;
+	if (lat->lattice_type==hexagonal) lambda=0.25; else lambda=1.0/6.0;
+	int gradients=lat->gradients;
+	int M=lat->M;
+	int MX=lat->MX;
+	int MY=lat->MY;
+	int MZ=lat->MZ;
+	int JX=lat->JX;
+	int JY=lat->JY;
 	switch(gradients) {
 		case 1:
 			for (int x=1; x<MX+1; x++)
@@ -1297,11 +1298,11 @@ if (debug) cout <<"PutTorusPotential " + name << endl;
 	Real distance=0;
 	int count=0;
 	Real L=0;
-	int M=Lat[0]->M;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int JX=Lat[0]->JX;
-	int R_offset=Lat[0]->offset_first_layer;
+	int M=lat->M;
+	int MX=lat->MX;
+	int MY=lat->MY;
+	int JX=lat->JX;
+	int R_offset=lat->offset_first_layer;
 	Real R_center = R_offset + MX/2.0;
 	Real R=R_center/sqrt(2.0);
 	if (R<MX/2.0) {
@@ -1321,17 +1322,17 @@ if (debug) cout <<"PutTorusPotential " + name << endl;
 				distance = sqrt((MX/2.0 -x)*(MX/2.0-x) + y*y);
 				if (!neg_found && (distance-R<0)) {
 					xlow = x; ylast=y;
-					neg_found=true; L+=Lat[0]->L[x*JX+y];
+					neg_found=true; L+=lat->L[x*JX+y];
 					//cout <<"x " << x << "y " << y << endl;
 				}
 				if (neg_found && !pos_found && (distance-R)>0) {
 					xhigh=x; ylast=y;
-					pos_found=true; L+=Lat[0]->L[x*JX+y];
+					pos_found=true; L+=lat->L[x*JX+y];
 					//cout <<"x " << x << "y " << y << endl;
 				}
 			}
 		}
-		for (int x=xlow+1; x<xhigh; x++) L+=Lat[0]->L[x*JX+ylast];
+		for (int x=xlow+1; x<xhigh; x++) L+=lat->L[x*JX+ylast];
 		if (sign>0) cout << "Measured area is " << L << endl;
 		cout << "For segment " << name << ", 'torus potentials' set at " << count << "coordinates" << endl;
 		Boltzmann(G1,u,M);
@@ -1344,23 +1345,23 @@ if (debug) cout <<"PutTorusPotential " + name << endl;
 bool Segment::PutMembranePotential(int sign) {
 if (debug) cout <<"PutMembranePotential " + name << endl;
 	bool success=true;
-	int fjc=Lat[0]->fjc;
+	int fjc=lat->fjc;
 	for (int x=1; x<4*fjc; x++) u[x]=-log(1.8)*sign;
-	Boltzmann(G1,u,Lat[0]->M);
+	Boltzmann(G1,u,lat->M);
 	return success;
 }
 
 void Segment::SetPhiSide(){
 if (debug) cout <<"SetPhiSide in Segment " + name << endl;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	if (ns==1) {
-		//if (freedom !="frozen") Lat[0]->set_bounds(phi);
+		//if (freedom !="frozen") lat->set_bounds(phi);
 
-		Lat[0]->Side(phi_side,phi,M);
+		lat->Side(phi_side,phi,M);
 	} else {
 		for (int i=0; i<ns; i++) {
 			Times(phi_state+i*M,alpha+i*M,phi,M);
-			Lat[0]->Side(phi_side+i*M,phi_state+i*M,M);
+			lat->Side(phi_side+i*M,phi_state+i*M,M);
 			state_phibulk[i]=phibulk*state_alphabulk[i];
 		}
 	}
@@ -1690,7 +1691,7 @@ if (debug) cout <<"Get Mask for segment" + name << endl;
 
 Real* Segment::GetPhi() {
 if (debug) cout <<"GetPhi in segment " + name << endl;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	if (freedom=="frozen") Cp(phi,MASK,M);
 	return phi;
 }
@@ -1762,7 +1763,7 @@ if (debug) cout <<"Push in Segment (string) " + name << endl;
 }
 void Segment::PushOutput() {
 if (debug) cout <<"PushOutput for segment " + name << endl;
-	int M = Lat[0]->M;
+	int M = lat->M;
 
 	strings.clear();
 	strings_value.clear();
@@ -1777,11 +1778,11 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	push("B",B);
 	push("J",J);
 	Real theta=0;
-	theta = Lat[0]->WeightedSum(phi);
+	theta = lat->WeightedSum(phi);
 	push("theta",theta);
 	Real theta_exc=0;
 	Real RMS=0;
-	if (freedom == "frozen" && n==1 && Lat[0]->geometry=="cylindrical") {
+	if (freedom == "frozen" && n==1 && lat->geometry=="cylindrical") {
 		string s=GetValue("pos");
 		int length = s.size();
 		if (length>3) push("pos",s.substr(3,length-4));
@@ -1794,10 +1795,10 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 		Sum(num_of_points,MASK,M);
 		if (num_of_points==1) {
 			int px=0,py=0,pz=0;
-			int gradients=Lat[0]->gradients;
+			int gradients=lat->gradients;
 			int point=0;
-			int JX=Lat[0]->JX;
-			int JY=Lat[0]->JY;
+			int JX=lat->JX;
+			int JY=lat->JY;
 			for (int i=0; i<M; i++) if (MASK[i]==1) point =i;
 			switch (gradients)  {
 				case 3 :
@@ -1816,7 +1817,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 		}
 	}
 
-	if (freedom != "frozen" || freedom != "pinned") theta_exc=theta-Lat[0]->volume*phibulk; else theta_exc=theta;
+	if (freedom != "frozen" || freedom != "pinned") theta_exc=theta-lat->volume*phibulk; else theta_exc=theta;
 	push("theta_exc",theta_exc);
 	push("phibulk",phibulk);
 	if (freedom != "frozen" || freedom != "pinned") {
@@ -1826,9 +1827,9 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	}
 	if (freedom=="free") {
 		M1=0;
-		if (theta_exc !=0) M1=Lat[0]->Moment(phi,phibulk,1)/theta_exc;
+		if (theta_exc !=0) M1=lat->Moment(phi,phibulk,1)/theta_exc;
 	 	M2=0;
-		if (theta_exc !=0) M2=Lat[0]->Moment(phi,phibulk,2)/theta_exc;
+		if (theta_exc !=0) M2=lat->Moment(phi,phibulk,2)/theta_exc;
 		if (M2 !=0) RMS=pow(M2,0.5);
 		push("RMS",RMS);
 		push("1st_M_phi_z",M1);
@@ -1847,10 +1848,10 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 			push("alphabulk_"+state_name[i],state_alphabulk[i]);
 			push("valence_"+state_name[i],state_valence[i]);
 			push("phibulk_"+state_name[i],state_phibulk[i]);
-			theta=Lat[0]->WeightedSum(phi_state+i*M);
+			theta=lat->WeightedSum(phi_state+i*M);
 			state_theta.push_back(theta);
 			push("theta_"+state_name[i],theta);
-			push("theta_exc_"+state_name[i],theta-Lat[0]->volume*state_phibulk[i]);
+			push("theta_exc_"+state_name[i],theta-lat->volume*state_phibulk[i]);
 		}
 	}
 	int length=chi_name.size();
@@ -1862,7 +1863,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	string profile="profile;0"; push("phi",profile);
 
 	profile="profile;1"; push("G1",profile);
-	if (Lat[0]->gradients==3) {
+	if (lat->gradients==3) {
 		profile="profile;2"; push("phi[z]",profile);
 
 	}
@@ -1894,24 +1895,24 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 Real* Segment::GetPointer(string s, int &SIZE) {
 if (debug) cout <<"Get Pointer for segment " + name << endl;
 	vector<string> sub;
-	int M=Lat[0]->M;
-	SIZE=Lat[0]->M;
+	int M=lat->M;
+	SIZE=lat->M;
 	In[0]->split(s,';',sub);
 	if (sub[0]=="profile") {
 
 	if (sub[1]=="0") {
 		if (freedom=="frozen") {
 			Cp(phi,MASK,M);
-		} else Lat[0]->set_bounds(phi);
+		} else lat->set_bounds(phi);
 		return phi;
 	}
 	if (sub[1]=="1") return G1;
         if (sub[1]=="2") {
-		int MX=Lat[0]->MX;
-		int MY=Lat[0]->MY;
-		int MZ=Lat[0]->MZ;
-		int JX=Lat[0]->JX;
-		int JY=Lat[0]->JY;
+		int MX=lat->MX;
+		int MY=lat->MY;
+		int MZ=lat->MZ;
+		int JX=lat->JX;
+		int JY=lat->JY;
 		Real Sum;
 		Zero(phi_side,M); //phi_side is reused because this array is no longer needed (hopefully....).
 		for (int z=0; z<MZ; z++) {
@@ -1946,7 +1947,7 @@ if (debug) cout <<"Get Pointer for segment " + name << endl;
 int* Segment::GetPointerInt(string s, int &SIZE) {
 if (debug) cout <<"GetPointerInt for segment " + name << endl;
 	vector<string> sub;
-	SIZE=Lat[0]->M;
+	SIZE=lat->M;
 	In[0]->split(s,';',sub);
 	if (sub[0]=="array") {// set SIZE and return int pointer.
 	}
@@ -1994,11 +1995,11 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 	return 0;
 }
 void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps,bool grad_epsilon) {
-	int M=Lat[0]->M;
+	int M=lat->M;
 	if (fixedPsi0) {
 		OverwriteC(psi,MASK,PSI0,M);
-		Lat[0]->set_M_bounds(psi);
-		Lat[0]->UpdateQ(g,psi,q,eps,MASK,grad_epsilon);
+		lat->set_M_bounds(psi);
+		lat->UpdateQ(g,psi,q,eps,MASK,grad_epsilon);
 	}
 
 }
@@ -2031,8 +2032,8 @@ if (debug) cout <<"AddState " << id_ <<" to seg " << name << endl;
 	}
 
 	if (valence !=0) {
-		if (Lat[0]->bond_length <1e-10 || Lat[0]->bond_length > 1e-8) {
-			if (Lat[0]->bond_length==0) cout << "When there are charged states, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-10 ... 1e-8 m " << endl;
+		if (lat->bond_length <1e-10 || lat->bond_length > 1e-8) {
+			if (lat->bond_length==0) cout << "When there are charged states, you should set the bond_length in lattice to a reasonable value, e.g. between 1e-10 ... 1e-8 m " << endl;
 			else cout <<"Bond length is out of range: 1e-10..1e-8 m " << endl;
 		}
 	}
@@ -2106,13 +2107,13 @@ bool Segment::PutAlpha(Real alpha) { //expected to replace other method with sam
 }
 
 bool Segment::CanBeReached(int x0, int y0, int z0, int Ds) {
-	int gradients=Lat[0]->gradients;
-	int MX = Lat[0]->MX;
-	int MY = Lat[0]->MY;
-	int MZ = Lat[0]->MZ;
-	int JX = Lat[0]->JX;
-	int JY = Lat[0]->JY;
-	int JZ = Lat[0]->JZ;
+	int gradients=lat->gradients;
+	int MX = lat->MX;
+	int MY = lat->MY;
+	int MZ = lat->MZ;
+	int JX = lat->JX;
+	int JY = lat->JY;
+	int JZ = lat->JZ;
 	int x=0,y=0,z=0;
 	switch (gradients) {
 		case 3:

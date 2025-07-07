@@ -13,7 +13,7 @@ mol_water::~mol_water() {
 
 void mol_water::AddToGP(Real* GP) {
 if (debug) cout <<"AddToGP in mol_water " << endl;
- 	int M=Lat[0]->M;
+ 	int M=lat->M;
 	Real* G=Seg[MolMonList[0]]->G1;
 
 	for (int i=0; i<M; i++) {
@@ -23,7 +23,7 @@ if (debug) cout <<"AddToGP in mol_water " << endl;
 
 void mol_water::AddToF(Real* F) {
 if (debug) cout <<"AddToGP in mol_water " << endl;
- 	int M=Lat[0]->M;
+ 	int M=lat->M;
 	Real* G=Seg[MolMonList[0]]->G1;
 
 	for (int i=0; i<M; i++) {
@@ -47,13 +47,13 @@ if (debug) cout <<"GetPhib1 in mol_water " << endl;
 bool mol_water::ComputePhi() {
 if (debug) cout <<"ComputePhi in mol_water " << endl;
 	bool success=true;
-	int M =Lat[0]->M;
+	int M =lat->M;
 	if (phib1>0) {
 		Real* G=Seg[MolMonList[0]]->G1;
 		for (int i=0; i<=M; i++) {
 			rho[i]=phib1*G[i]/pow((1-Kw*phib1*G[i]),2);
 		}
-		GN=Lat[0]->ComputeGN(rho,Markov,M)/phib1;
+		GN=lat->ComputeGN(rho,Markov,M)/phib1;
 	}
 	return success;
 }

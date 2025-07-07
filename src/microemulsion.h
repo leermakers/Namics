@@ -31,8 +31,11 @@ public:
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
+	Real *phi_oil;
 	int surfactant;
 	int co_solvent;
+	int oil;
+	int water;
 	int monA;
 	int monB;
 	Real chi_start;
@@ -62,6 +65,7 @@ public:
 	Real j_tolerance;
 	int g_info;
 	int j_info;
+	bool compute_kappa;
 	string co_solvent_freedom;
 	Real GS0;
 	Real GC0;
@@ -78,5 +82,6 @@ public:
 	Real ConvertCoSolventXtoT(Real);
 	Real ConvertSurfactantTtoX(Real);
 	Real ConvertCoSolventTtoX(Real);
+	bool SlipInSphericalCoordinates();
 };
 #endif

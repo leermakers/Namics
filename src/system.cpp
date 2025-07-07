@@ -11,6 +11,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	name = name_;
 	Sta = Sta_;
 	Rea = Rea_;
+	lat=Lat[0];
 	prepared = false;
 	if (debug)
 		cout << "Constructor for system " << endl;
@@ -119,7 +120,7 @@ void System::AllocateMemory()
 		cout << "AllocateMemory in system " << endl;
 	DeAllocateMemory();
 	progress=0; old_residual=10;
-	int M = Lat[0]->M;
+	int M = lat->M;
 	//H_GN_A =
 	//H_GN_B = new Real[n_box];
 	H_GrandPotentialDensity = (Real *)malloc(M * sizeof(Real));
@@ -137,7 +138,7 @@ void System::AllocateMemory()
 		H_beta = (Real *)malloc(M * sizeof(Real));
 		std::fill(H_beta,H_beta+M,0);
 		H_BETA = (Real *)malloc(M * sizeof(Real)); Zero(H_BETA,M);
-		Lat[0]->FillMask(H_beta, px, py, pz, delta_inputfile);
+		lat->FillMask(H_beta, px, py, pz, delta_inputfile);
 	}
 
 #ifdef CUDA
@@ -192,7 +193,7 @@ void System::AllocateMemory()
     Zero(E,M);
   }
 	n_mol = In[0]->MolList.size();
-	Lat[0]->AllocateMemory();
+	lat->AllocateMemory();
 	int n_mon = In[0]->MonList.size();
 	for (int i = 0; i < n_mon; ++i)
 		Seg[i]->AllocateMemory();
@@ -206,7 +207,7 @@ bool System::generate_mask()
 {
 	if (debug)
 		cout << "generate_mask in system " << endl;
-	int M = Lat[0]->M;
+	int M = lat->M;
 	bool success = true;
 	extra_constraints=0;
 	FrozenList.clear();
@@ -251,11 +252,11 @@ bool System::generate_mask()
 
 	Invert(KSAM, KSAM, M);
 
-	if (Lat[0]->gradients < 3)
+	if (lat->gradients < 3)
 	{
 		for (int i = 0; i < M; i++)
 		{
-			volume += KSAM[i] * Lat[0]->L[i];
+			volume += KSAM[i] * lat->L[i];
 		}
 	}
 	else
@@ -266,9 +267,9 @@ bool System::generate_mask()
 	// Used to initialize densities in mesodyn.
 	// I know it's hideous, but it works for all dimensions.
 	// If you really care about legibility you could do this with a switch or object.
-	this->boundaryless_volume = this->volume - ((2 * Lat[0]->gradients - 4) * Lat[0]->MX * Lat[0]->MY + 2 * Lat[0]->MX * Lat[0]->MZ + 2 * Lat[0]->MY * Lat[0]->MZ + (-2 + 2 * Lat[0]->gradients) * (Lat[0]->MX + Lat[0]->MY + Lat[0]->MZ) + pow(2, Lat[0]->gradients));
+	this->boundaryless_volume = this->volume - ((2 * lat->gradients - 4) * lat->MX * lat->MY + 2 * lat->MX * lat->MZ + 2 * lat->MY * lat->MZ + (-2 + 2 * lat->gradients) * (lat->MX + lat->MY + lat->MZ) + pow(2, lat->gradients));
 
-	Lat[0]->Accesible_volume=volume;
+	lat->Accesible_volume=volume;
 
 	return success;
 }
@@ -279,7 +280,7 @@ bool System::PrepareForCalculations(bool first_time)
 		cout << "PrepareForCalculations in System " << endl;
 
 	bool success = true;
-	int M = Lat[0]->M;
+	int M = lat->M;
 
 
 
@@ -297,7 +298,7 @@ bool System::PrepareForCalculations(bool first_time)
 	}
 
 	n_mol = In[0]->MolList.size();
-	success = Lat[0]->PrepareForCalculations();
+	success = lat->PrepareForCalculations();
 	int n_mon = In[0]->MonList.size();
 
 	Filling=false;
@@ -348,7 +349,7 @@ bool System::PrepareForCalculations(bool first_time)
 			}
 			for (int i=0; i<M; i++) {
 				if (FILL[i]>0) FILL[i]=1;  //Not ready for cuda.
-				Lat[0]->volume-=FILL[i];
+				lat->volume-=FILL[i];
 			}
 
 			Invert(FILL, FILL, M);
@@ -525,15 +526,15 @@ bool System::CheckInput(int start_)
 			split = 2;
 			local_solution=In[0]->Get_bool(GetValue("find_local_solution"),false);
 			if (local_solution) {
-				if (Lat[0]->gradients!=3) {
+				if (lat->gradients!=3) {
 					local_solution =false; cout << "find_local_solution is rejected as it requires 3 gradient system. " << endl;
-					if (!(Lat[0]->MZ==2 || Lat[0]->MZ==4 || Lat[0]->MZ==8 || Lat[0]->MZ==16 ||Lat[0]->MZ==32 || Lat[0]->MZ==64 ||Lat[0]->MZ==128 || Lat[0]->MZ ==256)){
+					if (!(lat->MZ==2 || lat->MZ==4 || lat->MZ==8 || lat->MZ==16 ||lat->MZ==32 || lat->MZ==64 ||lat->MZ==128 || lat->MZ ==256)){
 					      local_solution =false; cout<<"find_local_solution requires system size in z-direction equal to 2^n with n=1..8"<< endl;
 					}
-					if (!(Lat[0]->MY==2 || Lat[0]->MY==4 || Lat[0]->MY==8 || Lat[0]->MY==16 ||Lat[0]->MY==32 || Lat[0]->MY==64 ||Lat[0]->MY==128 || Lat[0]->MY ==256)){
+					if (!(lat->MY==2 || lat->MY==4 || lat->MY==8 || lat->MY==16 ||lat->MY==32 || lat->MY==64 ||lat->MY==128 || lat->MY ==256)){
 					      local_solution =false; cout<<"find_local_solution requires system size in y-direction equal to 2^n with n=1..8"<< endl;
 					}
-					if (!(Lat[0]->MX==2 || Lat[0]->MX==4 || Lat[0]->MX==8 || Lat[0]->MX==16 ||Lat[0]->MX==32 || Lat[0]->MX==64 ||Lat[0]->MX==128 || Lat[0]->MX ==256)){
+					if (!(lat->MX==2 || lat->MX==4 || lat->MX==8 || lat->MX==16 ||lat->MX==32 || lat->MX==64 ||lat->MX==128 || lat->MX ==256)){
 					      local_solution =false; cout<<"find_local_solution requires system size in x-direction equal to 2^n with n=1..8"<< endl;
 					}
 				}
@@ -543,7 +544,7 @@ bool System::CheckInput(int start_)
 						cout <<"Value for split should be 2^n, with n= 1,..,6. used split = 2 instead." << endl;
 						split =2;
 					}
-					if (split > Lat[0]->MX || split > Lat[0]->MY || split > Lat[0]->MZ) {
+					if (split > lat->MX || split > lat->MY || split > lat->MZ) {
 						cout <<"Value for split can not exeed n_layers_x or n_layers_y or n_layers_z, value split=2 is used " << endl;
 						split = 2;
 					}
@@ -579,7 +580,7 @@ bool System::CheckInput(int start_)
 				cout << "You should compile the program using the CUDA=1 flag: GPU calculations are impossible; proceed with CPU computations..." << endl;
 				GPU = false;
 			}
-		if (Lat[0]->gradients < 3)
+		if (lat->gradients < 3)
 		{
 			if (GPU)
 				cout << "GPU support is (for the time being) only available for three-gradient calculations " << endl;
@@ -751,7 +752,7 @@ bool System::CheckInput(int start_)
 				//}
 				if (GetValue("delta_range").size() > 0)
 				{	int units=1;
-					if (Lat[0]->fjc>1) {
+					if (lat->fjc>1) {
 						if (GetValue("delta_range_units").size() == 0) {
 							cout <<"Because you have FJC-choices>3, you also need to specify the 'delta_range_units'. You can select 'bondlength' or 'gritsize'. " << endl;
 							cout <<"Using bondlength units allows delta_range from 0 ... n_layers" << endl;
@@ -762,11 +763,11 @@ bool System::CheckInput(int start_)
 							options.push_back("bondlength");
 							options.push_back("gritsize");
 							bond_range_units = GetValue("delta_range_units");
-							if (bond_range_units=="bondlength") units = Lat[0]->fjc;
+							if (bond_range_units=="bondlength") units = lat->fjc;
 							else if (bond_range_units=="gritsize") units =1;
 							else {
 								cout << "Value for 'delta_range_units' not recognized. Use 'bondlength' or 'gritsize'. Depending on FJC-choices the delta_range can be larger for 'gritsize' than for 'bondlength'."<< endl;
-								success=false; units =Lat[0]->fjc;
+								success=false; units =lat->fjc;
 							}
 						}
 					} else {
@@ -811,7 +812,7 @@ bool System::CheckInput(int start_)
 						{
 							coor.clear();
 							In[0]->split(set[1], ',', coor);
-							int grad = Lat[0]->gradients;
+							int grad = lat->gradients;
 							int corsize = coor.size();
 							if (corsize != grad)
 							{
@@ -827,16 +828,16 @@ bool System::CheckInput(int start_)
 							{
 								int rr;
 								rr=In[0]->Get_int(coor[0], -1)*units;
-								if (rr<0 || rr>Lat[0]->MX) {cout << "Coordinate x for delta_range is out of bonds. " << endl; success=false; }
+								if (rr<0 || rr>lat->MX) {cout << "Coordinate x for delta_range is out of bonds. " << endl; success=false; }
 								else px.push_back(rr);
 								if (grad > 1) {
 									rr=In[0]->Get_int(coor[1], -1)*units;
-									if (rr<0 || rr>Lat[0]->MY) {cout << "Coordinate y for delta_range is out of bonds. " << endl; success=false; }
+									if (rr<0 || rr>lat->MY) {cout << "Coordinate y for delta_range is out of bonds. " << endl; success=false; }
 									else py.push_back(rr);
 								}
 								if (grad > 2){
 									rr=In[0]->Get_int(coor[2], -1)*units;
-									if (rr<0 || rr>Lat[0]->MZ) {cout << "Coordinate z for delta_range is out of bonds. " << endl; success=false; }
+									if (rr<0 || rr>lat->MZ) {cout << "Coordinate z for delta_range is out of bonds. " << endl; success=false; }
 									pz.push_back(rr);
 								}
 							}
@@ -934,15 +935,15 @@ bool System::CheckInput(int start_)
 
 		if (CalculationType=="steady_state") {
 			//Steady state is in development. For the time being this option is quite limited. In time some of these constraints will be lifted.
-			if (Lat[0]->gradients>2) {
+			if (lat->gradients>2) {
 				cout <<"For 'calculation_type : steady_state' is currently limited to 1 gradient and 2 gradients calculations " << endl;
 				return false;
 			}
-			if (Lat[0]->fjc != 1) {
+			if (lat->fjc != 1) {
 				cout <<"For 'calculation_type : steady_state' the value for FJC_choices is limited to 3 " << endl;
 				return false;
 			}
-			if (Lat[0]->BC[0] != "mirror") {
+			if (lat->BC[0] != "mirror") {
 				cout <<"For 'calculation_type : steady_state' the setting for both 'lowerbound' and 'upperbound' must be 'mirror'. " << endl;
 				return false;
 			}
@@ -995,8 +996,8 @@ bool System::CheckInput(int start_)
 				//test here whether or not the system is ready for adsorption, e.g. solids must be defined....
 			}
 			if (start==1 && initial_guess=="membrane_torus"){
-				if (Lat[0]->gradients!=2) {success = false; cout <<" Option 'membrane_torus' is only possible for two gradient coordinate system."<<endl;}
-				if (Lat[0]->geometry!="cylindrical") {success = false; cout <<" Option 'membrane_torus' is only possible for two gradient cylindrical coordinate system."<<endl;}
+				if (lat->gradients!=2) {success = false; cout <<" Option 'membrane_torus' is only possible for two gradient coordinate system."<<endl;}
+				if (lat->geometry!="cylindrical") {success = false; cout <<" Option 'membrane_torus' is only possible for two gradient cylindrical coordinate system."<<endl;}
 				int length = Mol[solvent]->MolMonList.size();
 				if (length>1) {
 					cout <<"solvent does contain more than one segment type. Initial guess membrane_torus will not work" << endl;
@@ -1004,7 +1005,7 @@ bool System::CheckInput(int start_)
 				}
 			}
 			if (start==1 && (initial_guess=="membrane"||initial_guess=="micelle")){
-				if (Lat[0]->gradients>1) {success = false; cout <<" Option 'membrane' is only possible for one-gradient coordinate system."<<endl;}
+				if (lat->gradients>1) {success = false; cout <<" Option 'membrane' is only possible for one-gradient coordinate system."<<endl;}
 				int length = Mol[solvent]->MolMonList.size();
 				if (length>1) {
 					cout <<"solvent does contain more than one segment type. Initial guess membrane_torus will not work" << endl;
@@ -1216,18 +1217,18 @@ bool System::CheckInput(int start_)
 			}
 		}
 	}
-	if (Lat[0]->BC[0]=="surface" && bc[0] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in x" << endl; success=false;}
-	if (Lat[0]->BC[1]=="surface" && bc[1] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in y" << endl; success=false;}
-	if (Lat[0]->BC[2]=="surface" && bc[2] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in z" << endl; success=false;}
-	if (Lat[0]->BC[3]=="surface" && bc[3] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in x" << endl; success=false;}
-	if (Lat[0]->BC[4]=="surface" && bc[4] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in y" << endl; success=false;}
-	if (Lat[0]->BC[5]=="surface" && bc[5] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in z" << endl; success=false;}
-	if (Lat[0]->BC[0]=="surface" && bc[0] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in x" << endl; success=false;}
-	if (Lat[0]->BC[1]=="surface" && bc[1] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in y" << endl; success=false;}
-	if (Lat[0]->BC[2]=="surface" && bc[2] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in z" << endl; success=false;}
-	if (Lat[0]->BC[3]=="surface" && bc[3] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in x" << endl; success=false;}
-	if (Lat[0]->BC[4]=="surface" && bc[4] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in y" << endl; success=false;}
-	if (Lat[0]->BC[5]=="surface" && bc[5] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in z" << endl; success=false;}
+	if (lat->BC[0]=="surface" && bc[0] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in x" << endl; success=false;}
+	if (lat->BC[1]=="surface" && bc[1] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in y" << endl; success=false;}
+	if (lat->BC[2]=="surface" && bc[2] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the lowerboundary in z" << endl; success=false;}
+	if (lat->BC[3]=="surface" && bc[3] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in x" << endl; success=false;}
+	if (lat->BC[4]=="surface" && bc[4] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in y" << endl; success=false;}
+	if (lat->BC[5]=="surface" && bc[5] ==0) {cout <<"Lonely 'surface'. Specify a segment with frozen_range including the upperboundary in z" << endl; success=false;}
+	if (lat->BC[0]=="surface" && bc[0] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in x" << endl; success=false;}
+	if (lat->BC[1]=="surface" && bc[1] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in y" << endl; success=false;}
+	if (lat->BC[2]=="surface" && bc[2] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the lowerboundary in z" << endl; success=false;}
+	if (lat->BC[3]=="surface" && bc[3] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in x" << endl; success=false;}
+	if (lat->BC[4]=="surface" && bc[4] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in y" << endl; success=false;}
+	if (lat->BC[5]=="surface" && bc[5] >1) {cout <<"Overpopulated 'surface'. Specify only one segment with frozen_range including the upperboundary in z" << endl; success=false;}
 	free(bc);
 
 	return success;
@@ -1431,7 +1432,7 @@ Real System::GetError()
 		Error = -1.0 * (GrandPotential - Var_target_value);
 		break;
 	case 2:
-		Error = GrandPotentialDensity[Lat[0]->fjc]+GrandPotentialDensity[Lat[0]->M-2*Lat[0]->fjc]-Var_target_value;
+		Error = GrandPotentialDensity[lat->fjc]+GrandPotentialDensity[lat->M-2*lat->fjc]-Var_target_value;
 		//cpush << " Error " << Error << endl;
 		break;
 	default:
@@ -1524,14 +1525,14 @@ void System::PushOutput()
 	push("free_energy", FreeEnergy);
 	push("grand_potential", GrandPotential);
 	push("start",start);
-	if (Lat[0]->gradients==1) {
-		push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->fjc]);
+	if (lat->gradients==1) {
+		push("Laplace_pressure",-GrandPotentialDensity[lat->fjc]);
 	}
-	if (Lat[0]->gradients==2) {
-		if (Lat[0]->BC[4]=="surface") {
-			push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->P(2*Lat[0]->fjc,(Lat[0]->MY+Lat[0]->fjc)/2)]);
+	if (lat->gradients==2) {
+		if (lat->BC[4]=="surface") {
+			push("Laplace_pressure",-GrandPotentialDensity[lat->P(2*lat->fjc,(lat->MY+lat->fjc)/2)]);
 		} else {
-			push("Laplace_pressure",-GrandPotentialDensity[Lat[0]->P(2*Lat[0]->fjc,Lat[0]->MY)]);
+			push("Laplace_pressure",-GrandPotentialDensity[lat->P(2*lat->fjc,lat->MY)]);
 		}
 	}
 	if (GetValue("E").size() >0)
@@ -1557,22 +1558,22 @@ void System::PushOutput()
 		push("chi_"+Seg[i]->name+"_"+Seg[j]->name,CHI[i * n_seg + j]);
 	}
 	if (GetValue("compute_kJ0").size()>0){
-		int M=Lat[0]->M;
-		//int fjc=Lat[0]->fjc;
+		int M=lat->M;
+		//int fjc=lat->fjc;
 		//Real result=0;
 		//int pos;
-		if (px.size()>0 && Lat[0]->gradients==1 && Lat[0]->geometry=="planar") {
+		if (px.size()>0 && lat->gradients==1 && lat->geometry=="planar") {
 			//pos=px[0];
 			//cout <<"coordinate for kJ0:" << pos << endl;
 			//for (int z=fjc; z<M-2*fjc; z++) result -= 1.0*(z-pos-(fjc-1))/fjc*GrandPotentialDensity[z];
 
-			push("kJ0", Lat[0]->MomentPlanar(GrandPotentialDensity,1,M/2+0.5));
+			push("kJ0", lat->MomentPlanar(GrandPotentialDensity,1,M/2+0.5));
 		} else {
 			cout <<" 'compute_kJ0' requested but 'compute_kJ0' rejected because either geomety is not planar, or gradients = 1 or 'delta_range' not found " << endl;
 		}
 
-		if (Lat[0]->gradients == 1 && Lat[0]->geometry == "planar") {
-			push("kbar", Lat[0]->MomentPlanar(GrandPotentialDensity,2,M/2+0.5));
+		if (lat->gradients == 1 && lat->geometry == "planar") {
+			push("kbar", lat->MomentPlanar(GrandPotentialDensity,2,M/2+0.5));
 		}
 	}
 	Real X = 0;
@@ -1640,7 +1641,7 @@ void System::PushOutput()
 
 	if (charged)
 	{
-		push("Dpsi",psi[Lat[0]->M-1]-psi[0]);
+		push("Dpsi",psi[lat->M-1]-psi[0]);
 		s = "profile;3";
 		push("psi", s);
 		s = "profile;4";
@@ -1649,7 +1650,7 @@ void System::PushOutput()
 		push("eps", s);
 	}
 #ifdef CUDA
-	int M = Lat[0]->M;
+	int M = lat->M;
 	TransferDataToHost(H_alpha, alpha, M);
 	TransferDataToHost(H_GrandPotentialDensity, GrandPotentialDensity, M);
 	TransferDataToHost(H_FreeEnergyDensity, FreeEnergyDensity, M);
@@ -1661,7 +1662,7 @@ Real *System::GetPointer(string s, int &SIZE)
 	if (debug)
 		cout << "GetPointer for system " << endl;
 	vector<string> sub;
-	SIZE = Lat[0]->M;
+	SIZE = lat->M;
 	In[0]->split(s, ';', sub);
 	if (sub[1] == "0")
 		return H_alpha;
@@ -1950,7 +1951,7 @@ bool System::CheckChi_values(int n_seg)
 
 void System::DoElectrostatics(Real *g, Real *x)
 {
-	int M = Lat[0]->M;
+	int M = lat->M;
 	int n_seg = In[0]->MonList.size();
 	Zero(q, M);
 	Zero(eps, M);
@@ -1961,7 +1962,7 @@ void System::DoElectrostatics(Real *g, Real *x)
 //cout <<"Seg: " << Seg[i]->name << " valance : " << Seg[i]->valence << endl;
 			YplusisCtimesX(q, Seg[i]->phi, Seg[i]->valence, M);
 		}
-		Lat[0]->set_bounds(Seg[i]->phi);
+		lat->set_bounds(Seg[i]->phi);
 		YplusisCtimesX(eps, Seg[i]->phi, Seg[i]->epsilon, M);
 	}
 	int statelistlength = In[0]->StateList.size();
@@ -1974,7 +1975,7 @@ void System::DoElectrostatics(Real *g, Real *x)
 	Div(q, phitot, M);
 	Div(eps, phitot, M);
 	Cp(psi,x,M); Cp(g,psi,M);
-	Lat[0]->set_M_bounds(psi);
+	lat->set_M_bounds(psi);
 	if (fixedPsi0) {
 		int length=FrozenList.size();
 		for (int i=0; i<length; i++) {
@@ -2005,7 +2006,7 @@ void System:: ComputePhis(Real* x,bool first_time, Real residual) {
 bool System:: Put_U(Real* xx){
 	if (debug) cout << "Put_U in System" << endl;
 	bool success=true;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	int itmonlistlength=ItMonList.size();
 	for (int i=0; i<itmonlistlength; i++) {
 		int IM=ItMonList[i];
@@ -2017,7 +2018,7 @@ bool System:: Put_U(Real* xx){
 
 bool System:: PutU(Real* xx) {
 if(debug) cout <<"PutU in  Solve " << endl;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	int itmonlistlength=ItMonList.size();
 	int itstatelistlength=ItStateList.size();
 	int monlistlength =In[0]->MonList.size();
@@ -2031,7 +2032,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 
 	if (charged) {
 		Cp(psi,xx+itpos,M);
-		Lat[0]->UpdateEE(EE,psi,E);
+		lat->UpdateEE(EE,psi,E);
 	}
 
 
@@ -2118,7 +2119,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 
 void System::Classical_residual(Real* x,Real*g,Real residual, int iterations, int iv){
 if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	Real chi;
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 	int i,k;
@@ -2179,12 +2180,12 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 	Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);
 	for (i=0; i<itmonlistlength; i++) {
 		AddG(g+i*M,phitot,alpha,M);
-		Lat[0]->remove_bounds(g+i*M);
+		lat->remove_bounds(g+i*M);
 		Times(g+i*M,g+i*M,KSAM,M);
 	}
 	for (i=0; i<itstatelistlength; i++) {
 		AddG(g+(itmonlistlength+i)*M,phitot,alpha,M);
-		Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
+		lat->remove_bounds(g+(itmonlistlength+i)*M);
 		Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,KSAM,M);
 	}
 
@@ -2193,10 +2194,10 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 	if (charged) {
 		Cp(g+itpos,x+itpos,M);
 		DoElectrostatics(g+itpos,x+itpos);
-		Lat[0]->set_M_bounds(psi);
+		lat->set_M_bounds(psi);
 		psi[0]=psi[1]; //TODO:: fix
-		Lat[0]->UpdatePsi(g+itpos,psi,q,eps,psiMask,grad_epsilon,fixedPsi0);
-		Lat[0]->remove_bounds(g+itpos);
+		lat->UpdatePsi(g+itpos,psi,q,eps,psiMask,grad_epsilon,fixedPsi0);
+		lat->remove_bounds(g+itpos);
 		itpos+=M;
 	}
 
@@ -2235,7 +2236,7 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 
 void System::Steady_residual(Real* x,Real*g,Real residual, int iterations, int iv){
 if (debug) cout <<"steady_residuals in scf mode in system " << endl;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	Real chi;
 	int mon_length = In[0]->MonList.size(); //also frozen segments
 	int i,k;
@@ -2307,10 +2308,10 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 				}
 */
 
-	int gradients=Lat[0]->gradients;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int JX=Lat[0]->JX;
+	int gradients=lat->gradients;
+	int MX=lat->MX;
+	int MY=lat->MY;
+	int JX=lat->JX;
 	for (int z=1; z<M-1; z++) g[z]=1.0/phitot[z]-1.0;
 
 	switch (gradients) {
@@ -2337,7 +2338,7 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 		Segi->J=0;
 		for (int k =0; k<itmonlistlength; k++) {
 			Segment* Segk=Seg[ItMonList[k]];
-			if (i !=k) Segi->J += Lat[0]->DphiDt(g+i*M,B_phitot,Segi->phi,Segk->phi,Segi->ALPHA,Segk->ALPHA,Segi->B,Segk->B);
+			if (i !=k) Segi->J += lat->DphiDt(g+i*M,B_phitot,Segi->phi,Segk->phi,Segi->ALPHA,Segk->ALPHA,Segi->B,Segk->B);
 		}
 		Jtot +=Segi->J;
 	}
@@ -2348,12 +2349,12 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 	//Norm(alpha,1.0/(itmonlistlength+itstatelistlength),M);
 	//for (i=0; i<itmonlistlength; i++) {
 	//	AddG(g+i*M,phitot,alpha,M);
-	//	Lat[0]->remove_bounds(g+i*M);
+	//	lat->remove_bounds(g+i*M);
 	//	Times(g+i*M,g+i*M,KSAM,M);
 	//}
 	//for (i=0; i<itstatelistlength; i++) {
 	//	AddG(g+(itmonlistlength+i)*M,phitot,alpha,M);
-	//	Lat[0]->remove_bounds(g+(itmonlistlength+i)*M);
+	//	lat->remove_bounds(g+(itmonlistlength+i)*M);
 	//	Times(g+(itmonlistlength+i)*M,g+(itmonlistlength+i)*M,KSAM,M);
 	//}
 
@@ -2362,10 +2363,10 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 	if (charged) {
 		Cp(g+itpos,x+itpos,M);
 		DoElectrostatics(g+itpos,x+itpos);
-		Lat[0]->set_M_bounds(psi);
+		lat->set_M_bounds(psi);
 		psi[0]=psi[1]; //TODO:: fix
-		Lat[0]->UpdatePsi(g+itpos,psi,q,eps,psiMask,grad_epsilon,fixedPsi0);
-		Lat[0]->remove_bounds(g+itpos);
+		lat->UpdatePsi(g+itpos,psi,q,eps,psiMask,grad_epsilon,fixedPsi0);
+		lat->remove_bounds(g+itpos);
 		itpos+=M;
 	}
 	if (constraintfields) {
@@ -2393,7 +2394,7 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 bool System::ComputePhis(Real residual){
 if(debug) cout <<"ComputePhis in system" << endl;
 	bool prepare_for_blocks=false;
-	int M= Lat[0]->M;
+	int M= lat->M;
 	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi
 	bool success=true;
 	Zero(phitot,M);
@@ -2527,8 +2528,8 @@ if(debug) cout <<"ComputePhis in system" << endl;
 				k++;
 			}
 			OverwriteA(phit, Mol[i]->R_mask, phit, M);
-			//Lat[0]->remove_bounds(phit);
-			Real theta = Lat[0]->ComputeTheta(phit);
+			//lat->remove_bounds(phit);
+			Real theta = lat->ComputeTheta(phit);
 			norm = Mol[i]->theta_range / theta;
 			Mol[i]->norm = norm;
 			Mol[i]->phibulk = Mol[i]->chainlength * norm;
@@ -2546,7 +2547,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 				Norm(phi, norm, M);
 				if (debug)
 				{
-					Real sum = Lat[0]->ComputeTheta(phi);
+					Real sum = lat->ComputeTheta(phi);
 					cout << "Sumphi in mol " << i << " for mon " << Mol[i]->MolMonList[k] << ": " << sum << endl;
 				}
 				k++;
@@ -2598,7 +2599,7 @@ for (int j=0; j<n_mol; j++) {
 			Mol[solvent]->GetPhib1();
 			Mol[solvent]->ComputePhi();
 			Mol[solvent]->chainlength=1;
-			Mol[solvent]->n = Lat[0]->ComputeGN(Mol[solvent]->phi,Mol[solvent]->Markov,M);
+			Mol[solvent]->n = lat->ComputeGN(Mol[solvent]->phi,Mol[solvent]->Markov,M);
 			Mol[solvent]->theta=Mol[solvent]->n;
 			Mol[solvent]->norm=1.0;
 
@@ -2701,7 +2702,7 @@ for (int j=0; j<n_mol; j++) {
 
 
 	for (int i = 0; i < n_seg; i++) {
-		Lat[0]->set_bounds(Seg[i]->phi);
+		lat->set_bounds(Seg[i]->phi);
 	}
 //Real result=0;
 //Sum(result,phitot,M);
@@ -2712,10 +2713,10 @@ for (int j=0; j<n_mol; j++) {
 		Real PhiTotM=0;
 		Real Qtot0=0;
 		Real QtotM=0;
-		int MX=Lat[0]->MX;
-		int MY=Lat[0]->MY;
-		int JX=Lat[0]->JX;
-		int gradients=Lat[0]->gradients;
+		int MX=lat->MX;
+		int MY=lat->MY;
+		int JX=lat->JX;
+		int gradients=lat->gradients;
 
 		for (int i = 0; i < n_seg; i++) Seg[i]->PutContraintBC();
 					//make sure that both bounds have sumphi=1 and are neutral.
@@ -2876,7 +2877,7 @@ bool System::CheckResults(bool e_info_)
 	FreeEnergy = GetFreeEnergy();
 	GrandPotential = GetGrandPotential();
 	if (CalculationType=="steady_state") {
-		CreateMu(Lat[0]->M-2); //assuming 1 gradient systems....
+		CreateMu(lat->M-2); //assuming 1 gradient systems....
 		for (int i=0; i<n_mol; i++) {
 			Mol[i]->Delta_MU=Mol[i]->Mu;
 //cout <<"Mol " << Mol[i]->name << " mu M : " << Mol[i]->Mu << endl;
@@ -2889,7 +2890,7 @@ bool System::CheckResults(bool e_info_)
 		}
 
 	}
-	CreateMu(Lat[0]->M);
+	CreateMu(lat->M);
 
 	//if (e_info)
 	//	cout << endl;
@@ -2924,7 +2925,7 @@ bool System::CheckResults(bool e_info_)
 		//ComputePhis();
 		//}
 		//if (e_info) cout << endl;
-		int M = Lat[0]->M;
+		int M = lat->M;
 		for (int i = 0; i < n_mol; i++)
 		{
 			int n_molmon = Mol[i]->MolMonList.size();
@@ -2934,7 +2935,7 @@ bool System::CheckResults(bool e_info_)
 				Real FRACTION = Mol[i]->fraction(Mol[i]->MolMonList[j]);
 				if (Seg[Mol[i]->MolMonList[j]]->freedom != "clamp")
 				{
-					Real THETA = Lat[0]->WeightedSum(Mol[i]->phi + j * M);
+					Real THETA = lat->WeightedSum(Mol[i]->phi + j * M);
 					cout << "MOL " << Mol[i]->name << " Fraction " << Seg[Mol[i]->MolMonList[j]]->name << ": " << FRACTION << "=?=" << THETA / theta_tot << " or " << THETA << " of " << theta_tot << endl;
 				}
 			}
@@ -2957,11 +2958,11 @@ bool System::CheckResults(bool e_info_)
 
 Real System::GetE(int Seg1, int Seg2)
 {
-	//if (Lat[0]->gradients > 1 || Lat[0]->geometry !="planar" ) cout << "Interactions are counted wrong: In system GetE must be generalized " << endl;
+	//if (lat->gradients > 1 || lat->geometry !="planar" ) cout << "Interactions are counted wrong: In system GetE must be generalized " << endl;
 	Real E=0;
-	int M=Lat[0]->M;
+	int M=lat->M;
         Real *temp = (Real *)malloc(M * sizeof(Real));
-	Real *L=Lat[0]->L;
+	Real *L=lat->L;
 	Real *phi=Seg[Seg1]->phi;
 	Real *side=Seg[Seg2]->phi_side;
 	if (Seg1!=Seg2) {
@@ -2978,7 +2979,7 @@ Real System::GetFreeEnergy(void)
 { //eqn 2.91 of thesis of J.v.Male;
 	if (debug)
 		cout << "GetFreeEnergy for system " << endl;
-	int M = Lat[0]->M;
+	int M = lat->M;
 	Real FreeEnergy = 0;
 	Real *F = FreeEnergyDensity;
 	Real constant = 0;
@@ -2986,18 +2987,18 @@ Real System::GetFreeEnergy(void)
 	int n_mol = In[0]->MolList.size();
 	int n_states = In[0]->StateList.size();
 	for (int i=0; i<n_mol; i++) {
-		Lat[0]->remove_bounds(Mol[i]->phitot);
+		lat->remove_bounds(Mol[i]->phitot);
 	}
 	int n_mon = In[0]->MonList.size();
 	for (int i = 0; i < n_mon; i++)
 	{
 		if (Seg[i]->ns < 2)
-			Lat[0]->remove_bounds(Seg[i]->phi_side);
+			lat->remove_bounds(Seg[i]->phi_side);
 		else
 		{
 			for (int j = 0; j < Seg[i]->ns; j++)
 			{
-				Lat[0]->remove_bounds(Seg[i]->phi_side + j * M);
+				lat->remove_bounds(Seg[i]->phi_side + j * M);
 			}
 		}
 	}
@@ -3190,32 +3191,32 @@ Real System::GetFreeEnergy(void)
 		Norm(TEMP, constant, M);
 		Add(F, TEMP, M);
 	}
-	//Lat[0]->remove_bounds(F);
+	//lat->remove_bounds(F);
 	Times(F, F, KSAM, M); //clean up contributions in frozen and tagged sites.
 
 Zero(TEMP,M);
 	if (charged) {
 		//Times(TEMP,EE,eps,M);
-//cout <<"Sum EE*eps = " << Lat[0]->WeightedSum(TEMP) << endl;
+//cout <<"Sum EE*eps = " << lat->WeightedSum(TEMP) << endl;
 		//Norm(TEMP,-1.0,M);
 		AddTimes(TEMP,q,psi,M);
 		Norm(TEMP,0.5,M);
 		Add(F,TEMP,M);
 	}
-	return FreeEnergy + Lat[0]->WeightedSum(F);
+	return FreeEnergy + lat->WeightedSum(F);
 }
 
 Real System::GetSpontaneousCurvature()
 {
-	int M = Lat[0]->M;
-	if (Lat[0]->gradients ==1 && Lat[0]->geometry=="planar")  return Lat[0]->MomentPlanar(GrandPotentialDensity,1,M/2+0.5);
+	int M = lat->M;
+	if (lat->gradients ==1 && lat->geometry=="planar")  return lat->MomentPlanar(GrandPotentialDensity,1,M/2+0.5);
 	else return 0;
 };
 
 Real System::GetKBar()
 {
-	int M = Lat[0]->M;
-	if (Lat[0]->gradients ==1 && Lat[0]->geometry=="planar")  return Lat[0]->MomentPlanar(GrandPotentialDensity,2,M/2+0.5);
+	int M = lat->M;
+	if (lat->gradients ==1 && lat->geometry=="planar")  return lat->MomentPlanar(GrandPotentialDensity,2,M/2+0.5);
 	else return 0;
 };
 
@@ -3223,7 +3224,7 @@ Real System::GetGrandPotential(void)
 { //Eqn 293
 	if (debug)
 		cout << "GetGrandPotential for system " << endl;
-	int M = Lat[0]->M;
+	int M = lat->M;
 	Real *GP = GrandPotentialDensity;
 	int n_mol = In[0]->MolList.size();
 	//int n_mon=In[0]->MonList.size();
@@ -3274,12 +3275,12 @@ Real System::GetGrandPotential(void)
 	for (int i = 0; i < n_mon; i++) //if this is not done, in 3 gradients we have wrong results...
 	{
 		if (Seg[i]->ns < 2)
-			Lat[0]->remove_bounds(Seg[i]->phi_side);
+			lat->remove_bounds(Seg[i]->phi_side);
 		else
 		{
 			for (int j = 0; j < Seg[i]->ns; j++)
 			{
-				Lat[0]->remove_bounds(Seg[i]->phi_side + j * M);
+				lat->remove_bounds(Seg[i]->phi_side + j * M);
 			}
 		}
 	}
@@ -3406,13 +3407,13 @@ Real System::GetGrandPotential(void)
 	Zero(TEMP,M);
 if (charged) {
 	Times(TEMP,EE,eps,M);
-//cout <<"eps EE/2 " << Lat[0]->WeightedSum(TEMP) << endl;
+//cout <<"eps EE/2 " << lat->WeightedSum(TEMP) << endl;
 	Norm(TEMP,-2.0,M);
 
 	AddTimes(TEMP,q,psi,M);
 	Norm(TEMP,-1.0/2.0,M);
 
-//out <<"el to G " << Lat[0]->WeightedSum(TEMP) << endl; my guess is that I add nothing here....
+//out <<"el to G " << lat->WeightedSum(TEMP) << endl; my guess is that I add nothing here....
 
 	Add(GP,TEMP,M); Times(GP,GP,KSAM,M);
 	Times(TEMP,q,KSAM,M); YisAminB(TEMP,q,TEMP,M); Times(TEMP,TEMP,psi,M); Norm(TEMP,0.5,M);
@@ -3421,7 +3422,7 @@ if (charged) {
 
 	if (!charged) Times(GP,GP,KSAM,M); //necessary to make sure that there are no contribution from solid, tagged or clamped sites in GP.
 
-	return  Lat[0]->WeightedSum(GP);
+	return  lat->WeightedSum(GP);
 
 }
 
@@ -3429,7 +3430,7 @@ bool System::CreateMu(int pos)
 {
 	if (debug)
 		cout << "CreateMu for system " << endl;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	bool success = true;
 	Real constant;
 	Real n;
@@ -3588,7 +3589,7 @@ bool System::CreateMu(int pos)
 		Real *phi;
 		int n_states;
 		Real theta;
-		int M=Lat[0]->M;
+		int M=lat->M;
 
 		for (int j=0; j<n_seg; j++) {
 			phi=Mol[i]->phi+j*M;
@@ -3597,7 +3598,7 @@ bool System::CreateMu(int pos)
 				for (int k=0; k<n_states; k++) {
 					alpha=Seg[Mol[i]->MolMonList[j]]->alpha+k*M;
 					Times(TEMP,phi,alpha,M); Times(TEMP,TEMP,KSAM,M);
-					theta=Lat[0]->WeightedSum(TEMP);
+					theta=lat->WeightedSum(TEMP);
 					Mu+=theta*log(Seg[Mol[i]->MolMonList[j]]->state_alphabulk[k])/n;
 				}
 			}
@@ -3628,7 +3629,7 @@ bool System::CreateMu(int pos)
 			phi=Mol[i]->phi+j*M;
 			n_states=Seg[j]->ns;
 			if (n_states <2) {
-				theta=Lat[0]->WeightedSum(phi)/n;
+				theta=lat->WeightedSum(phi)/n;
 				for (int i=0; i<n_mon; i++) {
 					if (Seg[i]->ns <2) {
 						chi=Seg[j]->chi[i];
@@ -3645,7 +3646,7 @@ bool System::CreateMu(int pos)
 				for (int k=0;k<n_states; k++) {
 					alpha=Seg[j]->alpha+k*M;
 					Times(TEMP,phi,alpha,M);
-					theta=Lat[0]->WeightedSum(TEMP)/n;
+					theta=lat->WeightedSum(TEMP)/n;
 					Mu+=theta*log(Seg[j]->state_alphabulk[k]);
 				}
 			}
@@ -3708,15 +3709,15 @@ bool System::CreateMu(int pos)
 /*Real System::GetFreeEnergyOld(void) {
   if (debug)
     cout << "GetFreeEnergy for system " << endl;
-  int M = Lat[0]->M;
+  int M = lat->M;
   Real FreeEnergy = 0;
   Real* F = FreeEnergyDensity;
   Real constant = 0;
   int n_mol = In[0]->MolList.size();
-  //for (int i=0; i<n_mol; i++) Lat[0]->remove_bounds(Mol[i]->phitot);
+  //for (int i=0; i<n_mol; i++) lat->remove_bounds(Mol[i]->phitot);
   int n_mon = In[0]->MonList.size();
   for (int i = 0; i < n_mon; i++) {
-    Lat[0]->remove_bounds(Seg[i]->phi_side);
+    lat->remove_bounds(Seg[i]->phi_side);
   }
 
   Zero(F, M);
@@ -3813,9 +3814,9 @@ bool System::CreateMu(int pos)
     Add(F, TEMP, M);
   }
 
-  Lat[0]->remove_bounds(F);
+  lat->remove_bounds(F);
   Times(F, F, KSAM, M);
-  return FreeEnergy + Lat[0]->WeightedSum(F);
+  return FreeEnergy + lat->WeightedSum(F);
 }
 
 

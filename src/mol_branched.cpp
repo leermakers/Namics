@@ -15,7 +15,7 @@ if (debug) cout <<"BackwardBra2ndO in mol_branched " << endl;
 	int bN = last_b[generation];
 	vector<int> Br;
 	vector<Real*> Gb;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	Real* GS= (Real*) malloc(3*M*sizeof(Real));
 	Real* GB= (Real*) malloc(2*size*M*sizeof(Real));
 	int ss=0;
@@ -44,7 +44,7 @@ if (debug) cout <<"BackwardBra2ndO in mol_branched " << endl;
 			Real* GX= (Real*) malloc(length*M*sizeof(Real));
 
 			for (int i=0; i<length; i++) {
-				Lat[0]->Terminate(GX+i*M,Gb[i],Markov,M);
+				lat->Terminate(GX+i*M,Gb[i],Markov,M);
 			}
 
 			Cp(GB,Gg_b+((s+1)%2)*M*size,M*size); //Upto the branch point; no sides connected
@@ -55,11 +55,11 @@ if (debug) cout <<"BackwardBra2ndO in mol_branched " << endl;
 					if (i !=j) {
 						if (j==length-1) { //linking main chain
 							Cp(Gg_b,Gb[j],M*size);
-							Lat[0]->propagateF(Gg_b,UNITY,P,0,1,M); //connect main chain including semiflexibility
+							lat->propagateF(Gg_b,UNITY,P,0,1,M); //connect main chain including semiflexibility
 							Times(GB+M*size,GB,Gg_b+M*size,M*size);
 						} else { //linking sides
 							Cp(GS,GX+j*M,M);
-							Lat[0]->propagate(GS,UNITY,0,1,M);
+							lat->propagate(GS,UNITY,0,1,M);
 							Times(GS+2*M,GS+2*M,GS+M,M);
 						}
 					}
@@ -81,15 +81,15 @@ if (debug) cout <<"BackwardBra2ndO in mol_branched " << endl;
 			if (generation==0) {
 				if (ring) {
 					if (k==bN) {
-						Lat[0]->Initiate(Gg_b + (s%2)*M*size,G_start,Markov,M);
-						Lat[0]->AddPhiS(rho+molmon_nr[k]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size,Markov, M);
+						lat->Initiate(Gg_b + (s%2)*M*size,G_start,Markov,M);
+						lat->AddPhiS(rho+molmon_nr[k]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size,Markov, M);
 						s--;
 					} else {
 						if (k==bN-1) {
 							N= n_mon[k];
 							for (int b=0; b<N; b++) {
-								Lat[0]->propagateB(Gg_b,Seg[mon_nr[k]]->G1,P,(s+1)%2,s%2,M);
-								Lat[0]->AddPhiS(rho+molmon_nr[k]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size, Markov,M);
+								lat->propagateB(Gg_b,Seg[mon_nr[k]]->G1,P,(s+1)%2,s%2,M);
+								lat->AddPhiS(rho+molmon_nr[k]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size, Markov,M);
 								s--;
 							}
 						} else
@@ -116,7 +116,7 @@ if (debug) cout <<"ForwardBra2nd0 in mol_branched " << endl;
 	int bN = last_b[generation];
 	vector<int> Br;
 	vector<Real*> Gb;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	Real* GS= (Real*) malloc(3*M*sizeof(Real));
 	Real* GB= (Real*) malloc(2*size*M*sizeof(Real));
 
@@ -135,12 +135,12 @@ if (debug) cout <<"ForwardBra2nd0 in mol_branched " << endl;
 				}
 				int length=Br.size();
 
-				Lat[0]->propagateF(GB,Seg[mon_nr[k]]->G1,P,0,1,M); //propagate main chain to branch point; keep semiflexibility
+				lat->propagateF(GB,Seg[mon_nr[k]]->G1,P,0,1,M); //propagate main chain to branch point; keep semiflexibility
 
 				Cp(GS+2*M,UNITY,M);
 				for (int i=0; i<length; i++) {
-					Lat[0]->Terminate(GS,Gb[i],Markov,M);
-					Lat[0]->propagate(GS,UNITY,0,1,M);
+					lat->Terminate(GS,Gb[i],Markov,M);
+					lat->propagate(GS,UNITY,0,1,M);
 					Times(GS+2*M,GS+2*M,GS+M,M);
 				}
 				for (int t=0; t<size; t++) Times(GB+M*size+t*M,GB+M*size+t*M,GS+2*M,M); //all side freely jointed
@@ -154,7 +154,7 @@ if (debug) cout <<"ForwardBra2nd0 in mol_branched " << endl;
 			}
 		} else {
 			if (k==0 && ring) {
-				Lat[0]->Initiate(Gg_f,G0,Markov,M); s++;
+				lat->Initiate(Gg_f,G0,Markov,M); s++;
 			} else {
 				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,P,generation,M);
 			}
@@ -174,7 +174,7 @@ if (debug) cout <<"BackwardBr in mol_branched " << endl;
 	int bN = last_b[generation];
 	vector<int> Br;
 	vector<Real*> Gb;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	int N;
 	Real* GS= (Real*) malloc(4*M*sizeof(Real));
 	int ss=0;
@@ -207,7 +207,7 @@ if (debug) cout <<"BackwardBr in mol_branched " << endl;
 				for (int j=0; j<length; j++) {
 					if (i !=j) {
 						Cp(GS,GX+j*M,M);
-						Lat[0]->propagate(GS,UNITY,0,1,M);
+						lat->propagate(GS,UNITY,0,1,M);
 						Times(GS+2*M,GS+2*M,GS+M,M);
 					}
 				}
@@ -223,15 +223,15 @@ if (debug) cout <<"BackwardBr in mol_branched " << endl;
 			if (generation==0) {
 				if (ring) {
 					if (k==bN) {
-						Lat[0]->Initiate(Gg_b + (s%2)*M,G_start,Markov,M);
-						Lat[0]->AddPhiS(rho+molmon_nr[k]*M, Gg_f+s*M, Gg_b+(s%2)*M,Markov, M);
+						lat->Initiate(Gg_b + (s%2)*M,G_start,Markov,M);
+						lat->AddPhiS(rho+molmon_nr[k]*M, Gg_f+s*M, Gg_b+(s%2)*M,Markov, M);
 						s--;
 					} else {
 						if (k==bN-1) {
 							N= n_mon[k];
 							for (int b=0; b<N; b++) {
-								Lat[0]->propagate(Gg_b,Seg[mon_nr[k]]->G1,(s+1)%2,s%2,M);
-								Lat[0]->AddPhiS(rho+molmon_nr[k]*M, Gg_f+s*M, Gg_b+(s%2)*M, Markov,M);
+								lat->propagate(Gg_b,Seg[mon_nr[k]]->G1,(s+1)%2,s%2,M);
+								lat->AddPhiS(rho+molmon_nr[k]*M, Gg_f+s*M, Gg_b+(s%2)*M, Markov,M);
 								s--;
 							}
 						} else
@@ -253,7 +253,7 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 	int bN = last_b[generation];
 	vector<int> Br;
 	vector<Real*> Gb;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	Real* GS= (Real*) malloc(3*M*sizeof(Real));
 
 	Real* Glast=NULL;
@@ -270,11 +270,11 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 					k+=(last_b[Gnr[k]]-first_b[Gnr[k]]+1);
 				}
 				int length=Br.size();
-				Lat[0]->propagate(GS,Seg[mon_nr[k]]->G1,0,2,M);
+				lat->propagate(GS,Seg[mon_nr[k]]->G1,0,2,M);
 
 				for (int i=0; i<length; i++) {
 					Cp(GS,Gb[i],M);
-					Lat[0]->propagate(GS,UNITY,0,1,M);
+					lat->propagate(GS,UNITY,0,1,M);
 					Times(GS+2*M,GS+2*M,GS+M,M);
 				}
 				if (save_memory) {
@@ -303,19 +303,19 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 bool mol_branched::ComputePhi() {
 if (debug) cout <<"ComputePhi in mol_branched " << endl;
 
-	int M=Lat[0]->M;
+	int M=lat->M;
 	bool success=true;
 	int generation=0;
 	int unity=0;
 	int s=0;
 
-	int gradients=Lat[0]->gradients;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int MZ=Lat[0]->MZ;
-	int JX=Lat[0]->JX;
-	int JY=Lat[0]->JY;
-	int JZ=Lat[0]->JZ;
+	int gradients=lat->gradients;
+	int MX=lat->MX;
+	int MY=lat->MY;
+	int MZ=lat->MZ;
+	int JX=lat->JX;
+	int JY=lat->JY;
+	int JZ=lat->JZ;
 	int x=0,y=0,z=0,i=0,i_old=0;
 	vector<int> Ds;
 	vector<int> SegPinned;
@@ -366,7 +366,7 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 					doit =true;
 					int pinnedlength=SegPinned.size();
 					for (int j=0; j<pinnedlength; j++) {
-						if (doit) doit=Seg[SegPinned[j]]->CanBeReached(x,y,z,Ds[j]*Lat[0]->fjc); //make sure that the pinned positions can be reached.
+						if (doit) doit=Seg[SegPinned[j]]->CanBeReached(x,y,z,Ds[j]*lat->fjc); //make sure that the pinned positions can be reached.
 					}
 					if (Seg[mon_nr[0]]->G1[i]>0 && doit) {
 						Times(G0,Mask,Seg[mon_nr[0]]->G1,M);
@@ -377,11 +377,11 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 							G=ForwardBra(G0,generation,s);
 						}
 						for (int k=0; k<size; k++) Times(G+k*M,G+k*M,Mask,M); //to make sure GN is computed correctly.
-						GN+=Lat[0]->ComputeGN(G,Markov,M);
+						GN+=lat->ComputeGN(G,Markov,M);
 						s--;
 						if (save_memory) {
-							Lat[0]->Initiate(Gg_b,G0,Markov,M);
-							Lat[0]->Initiate(Gg_b+M*size,G0,Markov,M);
+							lat->Initiate(Gg_b,G0,Markov,M);
+							lat->Initiate(Gg_b+M*size,G0,Markov,M);
 						} //toggle; initialize on both spots the same G1, so that we always get proper start.
 						if (Markov == 2) {
 							BackwardBra2ndO(G0,generation,unity,s);
@@ -399,11 +399,11 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 		} else {
 			G=ForwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
 		}
-		GN=Lat[0]->ComputeGN(G,Markov,M);
+		GN=lat->ComputeGN(G,Markov,M);
 		s--;
 		if (save_memory) {
-			Lat[0]->Initiate(Gg_b,Seg[mon_nr[last_b[0]]]->G1,Markov,M);
-			Lat[0]->Initiate(Gg_b+M*size,Seg[mon_nr[last_b[0]]]->G1,Markov,M);
+			lat->Initiate(Gg_b,Seg[mon_nr[last_b[0]]]->G1,Markov,M);
+			lat->Initiate(Gg_b+M*size,Seg[mon_nr[last_b[0]]]->G1,Markov,M);
 		} //toggle; initialize on both spots the same G1, so that we always get proper start.
 		if (Markov == 2) {
 			BackwardBra2ndO(Seg[mon_nr[last_b[0]]]->G1,generation,unity,s);

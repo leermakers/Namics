@@ -5,6 +5,7 @@ Solve_scf::Solve_scf(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> S
 	name{name_}, In{In_}, Sys{Sys_}, Seg{Seg_}, Lat{Lat_}, Mol{Mol_}, Var{Var_}, Sta{Sta_}, Rea{Rea_}
 {
 if(debug) cout <<"Constructor in Solve_scf " << endl;
+	lat=Lat[0];
 	KEYS.push_back("gradient_type");
 	KEYS.push_back("method");
 	KEYS.push_back("x_info");
@@ -69,7 +70,7 @@ if (debug) cout <<"exit for 'destructor' in Solve " << endl;
 void Solve_scf::AllocateMemory() {
 if(debug) cout <<"AllocateMemeory in Solve " << endl;
 	if (all) DeAllocateMemory();
-	int M=Lat[0]->M;
+	int M=lat->M;
 	if (mesodyn) {
 		iv = Sys[0]->SysMolMonList.size()*M;
 		#ifdef CUDA
@@ -354,7 +355,7 @@ if(debug) cout <<"PushOutput in  Solve " << endl;
 		push("max_n_small_alpha",maxNumSmallAlpha);
 		push("min_accuracy_for_hessian",minAccuracyForHessian);
 	}
-	Lat[0]->PushOutput();
+	lat->PushOutput();
 	int length = In[0]->MonList.size();
 	for (int i=0; i<length; i++) {
 		Seg[i]->PushOutput();
@@ -416,19 +417,19 @@ if(debug) cout <<"GetValue (long) in  Solve " << endl;
 }
 
 void Solve_scf::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
-	int mx=Lat[0]->MX;
-	int my=Lat[0]->MY;
-	int mz=Lat[0]->MZ;
-	int jx=Lat[0]->JX;
-	int jy=Lat[0]->JY;
+	int mx=lat->MX;
+	int my=lat->MY;
+	int mz=lat->MZ;
+	int jx=lat->JX;
+	int jy=lat->JY;
 	int i,j,k;
 	int pos_i,pos_o;
-	int fjc=Lat[0]->fjc;
+	int fjc=lat->fjc;
 	int JX=(MY+2*fjc_old)*(MZ+2*fjc_old);
 	int JY=(MZ+2*fjc_old);
 
 
-	switch (Lat[0]->gradients) {
+	switch (lat->gradients) {
 		case 1:
 			if (fjc==1 and fjc_old==1) {
 				if (MY>0||MZ>0) {
@@ -496,11 +497,11 @@ void Solve_scf::Copy(Real* x, Real* X, int MX, int MY, int MZ, int fjc_old) {
 
 bool Solve_scf::Guess(Real *X, string METHOD, vector<string> MONLIST, vector<string> STATELIST, bool CHARGED, int MX, int MY, int MZ,int fjc_old){
 	if (debug) cout << "Guess in Solve" << endl;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	bool success=true;
 	if (start ==1 && Sys[0]->GuessType != "")  {
 		cout <<"guessing " << endl;
-		Lat[0]->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
+		lat->GenerateGuess(xx,Sys[0]->CalculationType,Sys[0]->GuessType,Seg[Sys[0]->MonA]->guess_u,Seg[Sys[0]->MonB]->guess_u);
 	} else {
 		int m;
 		if (MZ>0) {m=(MX+2)*(MY+2)*(MZ+2); } else { if (MY>0) { m=(MX+2*fjc_old)*(MY+2*fjc_old); } else {  m=(MX+2*fjc_old);}}
@@ -707,7 +708,7 @@ bool Solve_scf::SolveMesodyn(function< void(Real*, size_t) > alpha_callback, fun
 
 	/*if (Sys[0]->charged) {
 		Sys[0]->DoElectrostatics(alpha+sysmon_length*M,xx+sysmon_length*M);
-		Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
+		lat->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->eps);
 	}*/
 
 
@@ -759,7 +760,7 @@ if(debug) cout <<"SuperIteration in  Solve_scf " << endl;
 
 void Solve_scf::residuals(Real* x, Real* g){
  if (debug) cout <<"residuals in Solve_scf " << endl;
-	int M=Lat[0]->M;
+	int M=lat->M;
 	Real chi;
 	//Real valence;
 	int sysmon_length = Sys[0]->SysMonList.size();
@@ -824,7 +825,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 			for (size_t i = 0 ; i < In[0]->MolList.size() ; ++i) {
 				Subtract(g+k*M,Mol[i]->phi,M*Mol[i]->MolMonList.size());
 				for (size_t a = 0 ; a < Mol[i]->MolMonList.size(); ++a) {
-					Lat[0]->remove_bounds(g+k*M);
+					lat->remove_bounds(g+k*M);
 					Times(g+k*M,g+k*M,Sys[0]->KSAM,M);
 					k++;
 				}
@@ -883,10 +884,10 @@ void Solve_scf::residuals(Real* x, Real* g){
 			Sys[0]->ComputePhis(x,iterations==0,residual);
 			if (Sys[0]->charged) {
 				Sys[0]->DoElectrostatics(g+sysmon_length*M,xx+sysmon_length*M);
-				Lat[0]->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
-				Lat[0]->set_bounds(Sys[0]->psi);
-				Lat[0]->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
-				Lat[0]->remove_bounds(g+sysmon_length*M);
+				lat->UpdateEE(Sys[0]->EE,Sys[0]->psi,Sys[0]->E);
+				lat->set_bounds(Sys[0]->psi);
+				lat->UpdatePsi(g+sysmon_length*M,Sys[0]->psi,Sys[0]->q,Sys[0]->eps,Sys[0]->psiMask,Sys[0]->grad_epsilon,Sys[0]->fixedPsi0);
+				lat->remove_bounds(g+sysmon_length*M);
 			}
 			Real one=1.0;
 			YisAplusC(g+jump*M,Sys[0]->phitot,-1.0*one,M);
@@ -901,7 +902,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 					if (Seg[Sys[0]->SysMonList[i]]->valence !=0)
 					YplusisCtimesX(g+i*M,Sys[0]->psi,-1.0*Seg[Sys[0]->SysMonList[i]]->valence,M);
 				}
-				Lat[0]->remove_bounds(g+i*M);
+				lat->remove_bounds(g+i*M);
 				Times(g+i*M,g+i*M,Sys[0]->KSAM,M);
 			}
 		break;

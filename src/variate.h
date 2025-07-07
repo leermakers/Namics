@@ -15,15 +15,16 @@ public:
 ~Variate();
 	void DeAllocateMemory();
 	void AllocateMemory();
-	vector<Input*> In; 
-	vector<Lattice*> Lat; 
+	vector<Input*> In;
+	vector<Lattice*> Lat;
+	Lattice* lat;
 	vector<Segment*> Seg;
 	vector<State*> Sta;
 	vector<Reaction*> Rea;
 	vector<Molecule*> Mol;
 	vector<System*> Sys;
 
-	string name; 
+	string name;
 	int search_nr;
 	int scan_nr;
 	int target_nr;
@@ -64,7 +65,7 @@ public:
 
 	Real* GetPointer(string);
 
-	int GetValue(string,int&,Real&,string&);	
+	int GetValue(string,int&,Real&,string&);
 
 	void PrepareForCalculations();
 
@@ -74,8 +75,8 @@ public:
 
 	bool CheckInput(int);
 
-	void PutParameter(string); 
+	void PutParameter(string);
 
-	string GetValue(string); 
+	string GetValue(string);
 };
 #endif

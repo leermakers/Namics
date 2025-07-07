@@ -9,23 +9,24 @@ mol_linear::~mol_linear() {
 }
 
 
+
 bool mol_linear::ComputePhi() {
 if (debug) cout <<"ComputePhi in mol_linear " << endl;
 	int b0 = first_b[0];
 	int bN = last_b[0];
-	int M=Lat[0]->M;
+	int M=lat->M;
 	bool success=true;
 	int unity=0;
 	int s=0;
 	int N;
 	Real* Mask = new Real[M]; Zero(Mask,M);
-	int gradients=Lat[0]->gradients;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int MZ=Lat[0]->MZ;
-	int JX=Lat[0]->JX;
-	int JY=Lat[0]->JY;
-	int JZ=Lat[0]->JZ;
+	int gradients=lat->gradients;
+	int MX=lat->MX;
+	int MY=lat->MY;
+	int MZ=lat->MZ;
+	int JX=lat->JX;
+	int JY=lat->JY;
+	int JZ=lat->JZ;
 	int x=0,y=0,z=0,i=0,i_old=0;
 	vector<int> Ds;
 	vector<int> SegPinned;
@@ -74,13 +75,13 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 				doit =true;
 				int pinnedlength=SegPinned.size();
 				for (int j=0; j<pinnedlength; j++) {
-					if (doit) doit=Seg[SegPinned[j]]->CanBeReached(x,y,z,Ds[j]*Lat[0]->fjc); //make sure that the pinned positions can be reached.
+					if (doit) doit=Seg[SegPinned[j]]->CanBeReached(x,y,z,Ds[j]*lat->fjc); //make sure that the pinned positions can be reached.
 				}
 				if (Seg[mon_nr[0]]->G1[i]>0 && doit) {
 					//cout <<" x = " << x << endl;
 
 					Times(G0,Mask,Seg[mon_nr[0]]->G1,M);
-					Lat[0]->Initiate(Gg_f,G0,Markov,M); //initialisatie
+					lat->Initiate(Gg_f,G0,Markov,M); //initialisatie
 					s++;
 					if (Markov==2)
 						for (int b = b0+1; b<=bN ; ++b) Glast=propagate_forward(Seg[mon_nr[b]]->G1,s,b,P,0,M);
@@ -88,18 +89,18 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 						for (int b = b0+1; b<=bN ; ++b) Glast=propagate_forward(Seg[mon_nr[b]]->G1,s,b,0,M);
 
 					for (int k=0; k<size; k++) Times(Glast+k*M,Glast+k*M,Mask,M);
-					GN+=Lat[0]->ComputeGN(Glast,Markov,M);
+					GN+=lat->ComputeGN(Glast,Markov,M);
   					s=chainlength;
-					Lat[0]->Initiate(Gg_b+(s%2)*M*size,G0,Markov,M);
-					Lat[0]->AddPhiS(rho+molmon_nr[0]*M,Gg_b+(s%2)*M*size,Gg_f+s*M*size,Markov,M);
+					lat->Initiate(Gg_b+(s%2)*M*size,G0,Markov,M);
+					lat->AddPhiS(rho+molmon_nr[0]*M,Gg_b+(s%2)*M*size,Gg_f+s*M*size,Markov,M);
 					s--;
 					N=n_mon[bN-1];
 					for (int k=0; k<N; k++) { //first block done here because of initialisation in propagate
 						if (Markov==2)
-							Lat[0]->propagateB(Gg_b,Seg[mon_nr[bN-1]]->G1,P,(s+1)%2,s%2,M);
+							lat->propagateB(Gg_b,Seg[mon_nr[bN-1]]->G1,P,(s+1)%2,s%2,M);
 						else
-							Lat[0]->propagate(Gg_b,Seg[mon_nr[bN-1]]->G1,(s+1)%2,s%2,M);
-						Lat[0]->AddPhiS(rho+molmon_nr[bN-1]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size, Markov,M);
+							lat->propagate(Gg_b,Seg[mon_nr[bN-1]]->G1,(s+1)%2,s%2,M);
+						lat->AddPhiS(rho+molmon_nr[bN-1]*M, Gg_f+s*M*size, Gg_b+(s%2)*M*size, Markov,M);
 						s--;
 					}
 					if (Markov==2)
@@ -117,12 +118,12 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 		else
 			for (int b = b0; b<=bN ; ++b) Glast=propagate_forward(Seg[mon_nr[b]]->G1,s,b,0,M);
 
-		GN=Lat[0]->ComputeGN(Glast,Markov,M);
+		GN=lat->ComputeGN(Glast,Markov,M);
 
 		s--;
 		if (save_memory) {
-			Lat[0]->Initiate(Gg_b,Seg[mon_nr[last_b[0]]]->G1,Markov, M);
-			Lat[0]->Initiate(Gg_b+M*size,Seg[mon_nr[last_b[0]]]->G1,Markov,M);
+			lat->Initiate(Gg_b,Seg[mon_nr[last_b[0]]]->G1,Markov, M);
+			lat->Initiate(Gg_b+M*size,Seg[mon_nr[last_b[0]]]->G1,Markov,M);
 		}
 		if (Markov==2)
 			for (int b = bN ; b >= b0 ; b--) propagate_backward(Seg[mon_nr[b]]->G1,s,b,P,unity,M);

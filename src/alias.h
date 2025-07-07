@@ -11,18 +11,19 @@ public:
 ~Alias();
 	void DeAllocateMemory();
 	void AllocateMemory(int,int);
-	vector<Lattice*> Lat; 
+	vector<Lattice*> Lat;
+	Lattice* lat;
 	int value;
 	string composition;
 	bool active;
 	vector<int> frag;
 	Real* H_phi;
 	Real* phi;
-	Real* rho;  
+	Real* rho;
 	bool clamp;
-	
-	string name; 
-	vector<Input*> In; 
+
+	string name;
+	vector<Input*> In;
 
 	vector<string> ints;
 	vector<string> Reals;
@@ -38,14 +39,14 @@ public:
 	void push(string,string);
 	void PushOutput();
 	Real* GetPointer(string);
-	int GetValue(string,int&,Real&,string&);	
+	int GetValue(string,int&,Real&,string&);
 	void PrepareForCalculations();
 
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
 	bool CheckInput(int);
-	void PutParameter(string); 
-	string GetValue(string); 
+	void PutParameter(string);
+	string GetValue(string);
 };
 #endif

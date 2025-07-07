@@ -134,7 +134,8 @@ int main(int argc, char *argv[])
 	// All class instances are stored in the following vectors
 	vector<Input *> In;			// Inputs read from file
 	vector<Output *> Out;		// Outputs written to file
-	vector<Lattice *> Lat;		// Properties of the lattice
+	vector<Lattice *> Lat;
+	// Properties of the lattice
 	//Lat_preview* lat_p;
 	Lattice * lat_p;
 	//mol_preview* mol_p;
@@ -196,6 +197,7 @@ int main(int argc, char *argv[])
 					} else {
 						Lat.push_back(new LGrad1(In,In[0]->LatList[0]));
 					}
+
 					break;
 				case 2:
 					if (geometry=="planar") {
@@ -212,6 +214,7 @@ int main(int argc, char *argv[])
 
 			}
 			success=Lat[0]->CheckInput(start,false);
+
 			if (!success) return 0;
 		}
 
@@ -601,6 +604,10 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case MICRO:
+				Lat.push_back(new LGrad1(In,In[0]->LatList[0])); //dummy added. used in microemulsion.
+				Lat[1]->CheckInput(start,false);
+				Lat[1]->geometry = "spherical";
+				Lat[1]->AllocateMemory();
 				Micro.clear();
 				Micro.push_back(new Microemulsion(In,Out, Lat, Seg, Sta, Rea, Mol, Sys, New,Var, In[0]->MicroList[0]));
 				Micro[0]->CheckInput(start);

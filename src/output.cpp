@@ -6,6 +6,7 @@ Output::Output(vector<Input*> In_,vector<Lattice*> Lat_,vector<Segment*> Seg_,ve
 if (debug) cout <<"constructor in Output "<< endl;
 	In=In_; Lat = Lat_; Seg=Seg_; Sta=Sta_; Rea=Rea_; Mol=Mol_; Sys=Sys_; name=name_; n_output=N_out; output_nr=outnr;  New=New_;
 	//KEYS.push_back("write_output");
+	lat=Lat[0];
 	KEYS.push_back("write_bounds");
 	KEYS.push_back("append");
 	KEYS.push_back("use_output_folder");
@@ -237,10 +238,10 @@ if (debug) cout << "GetPointerInt in output " << endl;
 			}
 			break;
 		case 4:
-			listlength= Lat[0]->strings.size();
+			listlength= lat->strings.size();
 			j=0;
 			while (j<listlength) {
-				if (prop==Lat[0]->strings[j]) return Lat[0]->GetPointerInt(Lat[0]->strings_value[j],Size);
+				if (prop==lat->strings[j]) return lat->GetPointerInt(lat->strings_value[j],Size);
 				j++;
 			}
 			break;
@@ -310,10 +311,10 @@ if (debug) cout << "GetPointer in output " << endl;
 			}
 			break;
 		case 4:
-			listlength= Lat[0]->strings.size();
+			listlength= lat->strings.size();
 			j=0;
 			while (j<listlength) {
-				if (prop==Lat[0]->strings[j]) return Lat[0]->GetPointer(Lat[0]->strings_value[j],Size);
+				if (prop==lat->strings[j]) return lat->GetPointer(lat->strings_value[j],Size);
 				j++;
 			}
 			break;
@@ -366,7 +367,7 @@ if (debug) cout << "GetValue (long) in output " << endl;
 			return New[0]->GetValue(prop,int_result,Real_result,string_result);
 			break;
 		case 5:
-			return Lat[0]->GetValue(prop,int_result,Real_result,string_result);
+			return lat->GetValue(prop,int_result,Real_result,string_result);
 			break;
 		case 6:
 			return GetValue(prop,name,int_result,Real_result,string_result);
@@ -391,7 +392,7 @@ if (debug) cout << "GetValue (long) in output " << endl;
 
 void Output::WriteOutput(int subl) {
 if (debug) cout << "WriteOutput in output " + name << endl;
-	Lat[0]->subl=subl;
+	lat->subl=subl;
 	//cout <<"subl : " << subl << endl;
 	if (!write) return;
 	int length;
@@ -490,7 +491,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		FILE *fp;
 		fp=fopen(filename.c_str(),"w");
 		int length=OUT_key.size();
-		switch(Lat[0]->gradients) {
+		switch(lat->gradients) {
 			case 1:
 				fprintf(fp,"x\t");
 				break;
@@ -562,9 +563,9 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 				} else {
 					Real* X=GetPointer(OUT_key[i],OUT_name[i],sub[0],Size);
 #ifdef LongReal
-					if (i<length-1) fprintf(fp,"%.16Le\t",Lat[0]->GetValue(X,sub[1])); else fprintf(fp,"%.16Le",Lat[0]->GetValue(X,sub[1]));
+					if (i<length-1) fprintf(fp,"%.16Le\t",lat->GetValue(X,sub[1])); else fprintf(fp,"%.16Le",lat->GetValue(X,sub[1]));
 #else
-					if (i<length-1) fprintf(fp,"%.16e\t",Lat[0]->GetValue(X,sub[1])); else fprintf(fp,"%.16e",Lat[0]->GetValue(X,sub[1]));
+					if (i<length-1) fprintf(fp,"%.16e\t",lat->GetValue(X,sub[1])); else fprintf(fp,"%.16e",lat->GetValue(X,sub[1]));
 #endif
 				}
 			}
@@ -581,7 +582,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 			key = OUT_key[0];
 			string s=key.append(sep).append(OUT_name[0]).append(sep).append(OUT_prop[0]);
 			if (!(X==NULL))
-			Lat[0]->vtk(filename,X,s,write_bounds); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
+			lat->vtk(filename,X,s,write_bounds); else {cout << "vtk file was not generated because 'profile' was not found for " << s << endl;}
 		}
 	}
 
@@ -607,7 +608,7 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 #else
 		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Sys[0]->Reals[i].c_str(),Sys[0]->Reals_value[i]);
 #endif
-		length = Lat[0]->bools.size();
+		length = lat->bools.size();
 		for (int i=0; i<length; i++) {
 			if (Sys[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Sys[0]->bools[i].c_str(),"true");
 			else fprintf(fp,"%s %s : %s \n",s.c_str(),Sys[0]->bools[i].c_str(),"false");
@@ -616,23 +617,23 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Sys[0]->strings[i].c_str(),Sys[0]->strings_value[i].c_str());
 
 //Lattice parameters
-		s="lat : " + Lat[0]->name + " :";
-		length = Lat[0]->ints.size();
+		s="lat : " + lat->name + " :";
+		length = lat->ints.size();
 		for (int i=0; i<length; i++)
-			fprintf(fp,"%s %s : %i \n",s.c_str(),Lat[0]->ints[i].c_str(),Lat[0]->ints_value[i]);
-		length = Lat[0]->Reals.size();
+			fprintf(fp,"%s %s : %i \n",s.c_str(),lat->ints[i].c_str(),lat->ints_value[i]);
+		length = lat->Reals.size();
 #ifdef LongReal
-		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %Le \n",s.c_str(),Lat[0]->Reals[i].c_str(),Lat[0]->Reals_value[i]);
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %Le \n",s.c_str(),lat->Reals[i].c_str(),lat->Reals_value[i]);
 #else
-		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),Lat[0]->Reals[i].c_str(),Lat[0]->Reals_value[i]);
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %e \n",s.c_str(),lat->Reals[i].c_str(),lat->Reals_value[i]);
 #endif
-		length = Lat[0]->bools.size();
+		length = lat->bools.size();
 		for (int i=0; i<length; i++) {
-			if (Lat[0]->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),Lat[0]->bools[i].c_str(),"true");
-			else fprintf(fp,"%s %s : %s \n",s.c_str(),Lat[0]->bools[i].c_str(),"false");
+			if (lat->bools_value[i]) fprintf(fp,"%s %s : %s \n",s.c_str(),lat->bools[i].c_str(),"true");
+			else fprintf(fp,"%s %s : %s \n",s.c_str(),lat->bools[i].c_str(),"false");
 		}
-		length = Lat[0]->strings.size();
-		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),Lat[0]->strings[i].c_str(),Lat[0]->strings_value[i].c_str());
+		length = lat->strings.size();
+		for (int i=0; i<length; i++) fprintf(fp,"%s %s : %s \n",s.c_str(),lat->strings[i].c_str(),lat->strings_value[i].c_str());
 
 //Newton parameters
 		s="newton : " + New[0]->name + " :";
@@ -721,11 +722,11 @@ if (debug) cout << "WriteOutput in output " + name << endl;
 
 void Output::vtk(string filename, Real *X){
 if (debug) cout << "vtk in output " << endl;
-	int MX=Lat[0]->MX;
-	int MY=Lat[0]->MY;
-	int MZ=Lat[0]->MZ;
-	int JX=Lat[0]->JX;
-	int JY=Lat[0]->JY;
+	int MX=lat->MX;
+	int MY=lat->MY;
+	int MZ=lat->MZ;
+	int JX=lat->JX;
+	int JY=lat->JY;
 	FILE *fp;
 	fp = fopen(filename.c_str(),"w+");
 	fprintf(fp, "# vtk DataFile Version 7.0 \nvtk output \nASCII \nDATASET STRUCTURED_POINTS \nDIMENSIONS %i %i %i\n",MX,MY,MZ);

@@ -452,6 +452,7 @@ int main(int argc, char *argv[])
 		int n_out = 0;
 		int mon_length;
 		int state_length;
+		bool success = true;
 		switch (TheEngine)
 		{
 		case SCF:
@@ -604,14 +605,15 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case MICRO:
+
 				Lat.push_back(new LGrad1(In,In[0]->LatList[0])); //dummy added. used in microemulsion.
 				Lat[1]->CheckInput(start,false);
 				Lat[1]->geometry = "spherical";
 				Lat[1]->AllocateMemory();
 				Micro.clear();
 				Micro.push_back(new Microemulsion(In,Out, Lat, Seg, Sta, Rea, Mol, Sys, New,Var, In[0]->MicroList[0]));
-				Micro[0]->CheckInput(start);
-				Micro[0]->Doit(X,METHOD,MONLIST,STATELIST,CHARGED,MX,MY,MZ,fjc_old,search_nr,ets_nr,etm_nr,target_nr,bm_nr,subloop,kal_append);
+				success=Micro[0]->CheckInput(start);
+				if (success) Micro[0]->Doit(X,METHOD,MONLIST,STATELIST,CHARGED,MX,MY,MZ,fjc_old,search_nr,ets_nr,etm_nr,target_nr,bm_nr,subloop,kal_append);
 			break;
 		default:
 			cout << "TheEngine is unknown. Programming error " << endl;

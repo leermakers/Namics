@@ -28,6 +28,7 @@ public:
   	const vector<System*> Sys;
  	const vector<Solve_scf*> New;
  	const vector<Variate*> Var;
+ 	CP ControlParameter;
 	std::vector<string> KEYS;
 	std::vector<string> PARAMETERS;
 	std::vector<string> VALUES;
@@ -38,6 +39,8 @@ public:
 	int water;
 	int monA;
 	int monB;
+	int monC;
+	int monD;
 	Real chi_start;
 	Real chi_step;
 	Real chi_end;
@@ -69,15 +72,18 @@ public:
 	string co_solvent_freedom;
 	Real GS0;
 	Real GC0;
+	Real ini_oil, ini_water, ini_surf, ini_chi;
+	bool previous_guess;
 
 	bool CheckInput(int);
 	bool Doit(Real*,string,vector<string>,vector<string>,bool,int,int,int,int,int,int,int,int,int,int,bool&);
 	string GetValue(string);
 	bool FixedPoint(Real, Real);
 	bool WriteResults();
+	bool PutChi(Real);
 	Real get_gamma(Real, Real);
 	Real zero_gamma(Real, Real);
-	Real zero_J0(Real,Real);
+	Real zero_J0(Real,Real,Real);
 	Real ConvertSurfactantXtoT(Real);
 	Real ConvertCoSolventXtoT(Real);
 	Real ConvertSurfactantTtoX(Real);

@@ -55,6 +55,7 @@ enum transfer {to_segment,to_cleng, to_teng, to_bm, reset};
 enum EngineType {SCF, CLENG, MESODYN, TENG, MICRO};
 enum LatticeType {simple_cubic, hexagonal};
 enum SolverType {Pseudohessian,Lbfgs};
+enum CP{co_solvent_theta,co_solvent_phibulk,chi_C_D};
 
 template<typename T>
   auto load_argument_value(vector<string> args, string argument, T t) -> decltype(t) {

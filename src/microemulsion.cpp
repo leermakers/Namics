@@ -5,74 +5,135 @@ Microemulsion::Microemulsion(vector<Input *> In_, vector<Output *> Out_, vector<
 	name{name_}, In{In_}, Out{Out_}, Lat{Lat_}, Mol{Mol_}, Seg{Seg_}, Sta{Sta_}, Rea{Rea_}, Sys{Sys_}, New{New_}, Var{Var_}
 {
 	if (debug)cout << "Constructor for microemulsion " << endl;
-	KEYS.push_back("oil");
-	KEYS.push_back("water");
-  	KEYS.push_back("surfactant");
-	KEYS.push_back("co_solvent");
 	KEYS.push_back("g_tolerance");
 	KEYS.push_back("j_tolerance");
 	KEYS.push_back("g_info");
 	KEYS.push_back("j_info");
 	KEYS.push_back("monA");
 	KEYS.push_back("monB");
+	KEYS.push_back("monC");
+	KEYS.push_back("monD");
 	KEYS.push_back("var_chi_monA_monB");
+	KEYS.push_back("oil");
+	KEYS.push_back("water");
+  	KEYS.push_back("surfactant");
+	KEYS.push_back("co_solvent");
 	KEYS.push_back("compute_kappa");
+	KEYS.push_back("control_parameter");
+	KEYS.push_back("previous_guess");
 }
 Microemulsion::~Microemulsion(){}
 
 bool Microemulsion::CheckInput(int start_){
 	if (debug) cout << "CheckInput for system " << endl;
 	start=start_;
+	previous_guess=true;
 	bool success = true;
+	string control;
 	surfactant=-1;
 	co_solvent=-1;
 	oil = -1;
 	water=-1;
 	string molname;
+	co_solvent_freedom="wrong";
+	control="wrong";
 	//int M=Lat[0]->M;
 	int length = In[0]->MolList.size();
 	success = In[0]->CheckParameters("micro", name, start, KEYS, PARAMETERS, VALUES);
 	if (success) {
+		previous_guess=true;
+		if (GetValue("previous_guess").size()>0) {
+			previous_guess=In[0]->Get_bool(GetValue("previous_guess"),true);
+		}
 		if (GetValue("oil").size()>0) {
 			molname=GetValue("oil");
 			for (int i=0; i<length; i++) {
 				if (In[0]->MolList[i]==molname) oil=i;
 			}
-			if (oil<0) {
-				success=false; cout <<"In microemulsions you need to specify the oil: use : micro : 'name' : oil : 'molname' " << endl;
-			}
 		}
+		if (oil<0) {
+			success=false; cout <<"In microemulsions you need to specify the oil: use : micro : 'name' : oil : 'molname' " << endl;
+		}
+
 		if (GetValue("water").size()>0) {
 			molname=GetValue("water");
 			for (int i=0; i<length; i++) {
 				if (In[0]->MolList[i]==molname) water=i;
 			}
-			if (water<0) {
-				success=false; cout <<"In microemulsions you need to specify the water: use : micro : 'name' : water : 'molname' " << endl;
-			}
-		}  else success=false;
+		}
+		if (water<0) {
+			success=false; cout <<"In microemulsions you need to specify the water: use : micro : 'name' : water : 'molname' " << endl;
+		}
+
 
 		if (GetValue("surfactant").size()>0) {
 			molname=GetValue("surfactant");
 			for (int i=0; i<length; i++) {
 				if (In[0]->MolList[i]==molname) surfactant=i;
 			}
-			if (surfactant<0) {
-				success=false; cout <<"In microemulsions you need to specify the surfactant: use : micro : 'name' : surfactant : 'molname' " << endl;
-			}
-		} else success=false;
+		}
+		if (surfactant<0) {
+			success=false; cout <<"In microemulsions you need to specify the surfactant: use : micro : 'name' : surfactant : 'molname' " << endl;
+		}
+
 		if (GetValue("co_solvent").size()>0) {
 			molname=GetValue("co_solvent");
 			for (int i=0; i<length; i++) {
-				if (In[0]->MolList[i]==molname) co_solvent=i;
+				if (In[0]->MolList[i]==molname) {
+					co_solvent=i;
+					co_solvent_freedom =Mol[co_solvent]->freedom;
+				}
 			}
+		}
 
-			if (co_solvent<0) {
-				success=false; cout <<"In microemulsions you need to specify the co_solvent: use : micro : 'name' : co_solvent : 'molname' " << endl;
-			} else {
-				co_solvent_freedom =Mol[co_solvent]->freedom;
+		if (co_solvent ==surfactant) {
+			success=false; cout <<"In microemulsion, the surfactant and co_solvent can not be the same molecule " << endl;
+		}
+
+		if (GetValue("control_parameter").size()>0) {
+			vector<string> options;
+			options.push_back("co_solvent_theta"); // for linker and/or cosolvent and/or cosurfactant to balance microemulsion interface.
+			options.push_back("co_solvent_phibulk"); //for AOT and the like to tune J0
+			options.push_back("chi_monC_monD"); //for C12E5 mimicking change of temperature to modify J0
+			if (!In[0]->Get_string(GetValue("control_parameter"),control,options,"In microemulsion, the control_parameter has not found proper option. "))
+					success=false;
+			else {
+				monC=-1; monD=-1;
+				if (control=="chi_monC_monD") {
+					if (GetValue("monC").size()>0 && GetValue("monD").size()>0){
+						string MONC=GetValue("monC");
+						string MOND=GetValue("monD");
+						int length =In[0]->MonList.size();
+						monC=-1; monD=-1;
+						for (int i=0; i<length; i++) {
+							if (Seg[i]->name == MONC) monC=i;
+							if (Seg[i]->name == MOND) monD=i;
+						}
+					}
+					if (monC>-1 && monD>-1) {
+						if (monC==monD){
+							success=false; cout <<"monC and monD can not be the same segment type in microemulsion. control parameter is not identified correctly"<<endl;
+						}
+					} else {
+						success=false; cout <<"monC and/or monD not found. unable to identify control_parameter properly in microemulsion" << endl;
+					}
+				} else {
+					if ((co_solvent_freedom=="free" and control=="co_solvent_phibulk") || (co_solvent_freedom=="restricted" and control=="co_solvent_theta")) {
+					} else {success=false; cout<<"In microemulsion, co-solvent freedom '" <<co_solvent_freedom  << "' does not match the chosen control_parameter '" << control <<"'" <<endl;}
+				}
 			}
-		} else success=false;
+		} else {
+			if (co_solvent_freedom=="free") control="co_solvent_phibulk";
+			if (co_solvent_freedom=="restricted") control="co_solvent_theta";
+			if (control == "wrong") {
+				success=false; cout <<"In microemulsion control_parameter is unknown; not certain what to do now. ...Perhaps you forgot to specify the co-solvent?" <<endl;
+			}
+		}
+		if (co_solvent>-1 && control=="chi_monC_monD") {
+			success=false; cout <<"In Microemulsion a co_solvent was defined and the control_parameter was not set to chi_monC_monD. Now not certain what to do..."<< endl;
+		}
+
+
 		g_tolerance = 1e-8;
 		if (GetValue("g_tolerance").size()>0) {
 			g_tolerance=In[0]->Get_Real(GetValue("g_tolerance"),g_tolerance);
@@ -156,7 +217,15 @@ bool Microemulsion::CheckInput(int start_){
 			}
 		}
 	}
-	if (!success) cout <<"check definition of molecules in microemulsion" << endl;
+
+	if ((monA==monC && monB==monD) || (monB==monC && monA==monD)) {
+		if (n_steps>0 && control=="chi_monC_monD") {
+			success = false; cout <<"In microemulsion one can not vary chi("<< Seg[monA]->name <<"," << Seg[monB]->name  << ") and at the same time use chi("<<Seg[monC]->name <<"," << Seg[monD]->name << ") as control parameter " << endl;
+		}
+	}
+	if (control=="chi_monC_monD") ControlParameter=chi_C_D;
+	if (control=="co_solvent_phibulk") ControlParameter=co_solvent_phibulk;
+	if (control=="co_solvent_theta") ControlParameter=co_solvent_theta;
 	return success;
 }
 
@@ -187,12 +256,15 @@ Real Microemulsion::ConvertCoSolventXtoT(Real X) {
 		return (tanh(X)+1)/4; //Max = 0.5
 	}
 }
+
 Real Microemulsion::ConvertSurfactantTtoX(Real T) {
 	Real Max; Max=Lat[0]->M;
 	return atanh(2*T/Max-1);
 }
+
 Real Microemulsion::ConvertCoSolventTtoX(Real T) {
 	Real Max; Max=Lat[0]->M;
+
 	if (co_solvent_freedom == "restricted"){
 		return atanh(2*T/Max-1);
 	} else {
@@ -207,13 +279,12 @@ bool Microemulsion:: FixedPoint(Real Xs, Real Xc) {
 	New[0]->Guess(X, METHOD, MONLIST, STATELIST, CHARGED, MX, MY, MZ, fjc_old);
 
 	Mol[surfactant]->PutTheta(ConvertSurfactantXtoT(Xs));
-//cout <<"mol surfactant set to " << Mol[surfactant]->theta ;
 	if (co_solvent_freedom=="restricted") {
-		Mol[co_solvent]-> PutTheta(ConvertCoSolventXtoT(Xc));
+		if (Xc>0) Mol[co_solvent]-> PutTheta(ConvertCoSolventXtoT(Xc));
 	} else {
-		Mol[co_solvent]-> phibulk = ConvertCoSolventXtoT(Xc);
-//cout << " mol cosolvent set to " << Mol[co_solvent]->phibulk << endl;
+		if(Xc>0) Mol[co_solvent]-> phibulk = ConvertCoSolventXtoT(Xc);
 	}
+
 	if (search_nr < 0 && ets_nr < 0 && etm_nr < 0) {
 		if (debug) cout << "Fixed point to solve " << endl;
 		New[0]->Solve(true);
@@ -229,6 +300,15 @@ Real Microemulsion::get_gamma(Real Xs, Real Xc){
     FixedPoint(Xs,Xc);
     Real gamma=Sys[0]->GetGrandPotential();
     return gamma;
+}
+
+bool Microemulsion::PutChi(Real CHI) {
+	bool success=true;
+	if (ControlParameter==chi_C_D) {
+		Seg[monC]->chi[monD]=CHI;
+		Seg[monD]->chi[monC]=CHI;
+	}
+	return success;
 }
 
 Real Microemulsion::zero_gamma(Real Xs, Real Xc) {
@@ -250,13 +330,9 @@ Real Microemulsion::zero_gamma(Real Xs, Real Xc) {
     Real step=-1.0*fx2/gradient;
     if (ConvertSurfactantXtoT(x2+step)-ConvertSurfactantXtoT(x2)>1) {
 		step= ConvertSurfactantTtoX(ConvertSurfactantXtoT(x2)+1)-x2;
+
 	}
 
-    //Real hessian=(fx1-2*fx2+fx3)/(dx*dx);
-    //if (step>Xs){
-    //    cout << "Warning in zero_gamma? Step is very large... proceeding in careful mode" << endl;
-    //    step=Xs/2;
-	//}
     Real x4=x2+step*9.5/10.0;
     Real fx4=get_gamma(x4,Xc); g_calls++;
     while (fx4>0) {
@@ -266,9 +342,9 @@ Real Microemulsion::zero_gamma(Real Xs, Real Xc) {
             fx4=-1;
         } else {
             fx2=fx4;
-            x4=x4+step/10.0;
+            x4=x4+step/5.0;
             fx4=get_gamma(x4,Xc); g_calls++;
-            //cout <<" T surfactant " << ConvertSurfactantXtoT(x4) << " gamma " << fx4 << endl;
+           // cout <<" T surfactant " << ConvertSurfactantXtoT(x4) << " gamma " << fx4 << endl;
 		}
 	}
     Real xa=x2;
@@ -284,7 +360,8 @@ Real Microemulsion::zero_gamma(Real Xs, Real Xc) {
             xa=xc;
 		}
         xc=(xa*fxb-xb*fxa)/(fxb-fxa);
-        fxc=get_gamma(xc,Xc);g_calls++;
+        fxc=get_gamma(xc,Xc);
+        g_calls++;
         if (fxc>0) {
             sign++;
             if (sign>5) {
@@ -309,60 +386,112 @@ Real Microemulsion::zero_gamma(Real Xs, Real Xc) {
     return xc;
 }
 
-Real Microemulsion::zero_J0(Real guessXs, Real GuessXc) {
+Real Microemulsion::zero_J0(Real guessXs, Real GuessXc, Real GuessChi) {
 	if (debug) cout << "In microemulsion: zero_j0 " << endl;
     Real XS=zero_gamma(guessXs-0.1,GuessXc);
     Real dx=1;
     Real tx=1.1;
+    Real cx=0.01;
     Real xa=GuessXc;
+    if (ControlParameter==chi_C_D) {
+		PutChi(GuessChi);
+		xa=GuessChi;
+	}
+
     int j_calls=0;
     Real fxa=Sys[0]->GetSpontaneousCurvature();
     if (abs(fxa) < j_tolerance){
         return ConvertCoSolventXtoT(GuessXc);
 	}
-    Real xb;
-    if (fxa<0) {
-		if (co_solvent_freedom=="restricted") {
-			xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)-dx);
-			if (ConvertCoSolventXtoT(xa)-dx < 1) {cout <<"covert your problem; no balanced microemulsion found on this side" <<endl; return -1; }
-		} else{
-			xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)*tx);
-			if (ConvertCoSolventXtoT(xa)*tx >0.5) {cout <<"covert your problem; no balanced microemulsion found on this side" <<endl; return -1; }
-		}
-	} else {
-		if (co_solvent_freedom=="restricted")
-			xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)+dx);
-		else {
-			xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)/tx);
-			if (ConvertCoSolventXtoT(xb) > 0.5) {
-				cout <<"cosolvent volume fraction is larger than 0.5....Problems ahead" << endl;
-			}
-		}
-	}
+    Real xb=0;
 
-    XS=zero_gamma(XS-0.1,xb);
+	switch (ControlParameter) {
+		case co_solvent_theta:
+			if (fxa<0) {
+				xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)-dx);
+				if (ConvertCoSolventXtoT(xa)-dx < 1) {cout <<"covert your problem; no balanced microemulsion found on this side" <<endl; return -1; }
+			} else {
+				xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)+dx);
+			}
+			XS=zero_gamma(XS-0.1,xb);
+			break;
+		case co_solvent_phibulk:
+			if (fxa<0) {
+				xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)*tx);
+				if (ConvertCoSolventXtoT(xa)*tx >0.5) {cout <<"covert your problem; no balanced microemulsion found on this side" <<endl; return -1; }
+			} else {
+				xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)/tx);
+				if (ConvertCoSolventXtoT(xb) > 0.5) {
+					cout <<"cosolvent volume fraction is larger than 0.5....Problems ahead" << endl;
+				}
+			}
+			XS=zero_gamma(XS-0.1,xb);
+			break;
+		case chi_C_D:
+			if (fxa<0) {
+				xb=xa+cx;
+			} else {
+				xb=xa-cx;
+			}
+			PutChi(xb);
+			XS=zero_gamma(XS-0.1,GuessXc);
+			break;
+		default:
+			cout<<"program error; report this message. " <<endl;
+			break;
+	}
 
     Real fxb=Sys[0]->GetSpontaneousCurvature();
     while (fxa*fxb>0){
 		j_calls++;
         xa=xb;
         fxa=fxb;
-        if (co_solvent_freedom=="restricted") {
-        	if (fxa<0) xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)-dx); else xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)+dx);
-		} else {
-			if (fxa<0) xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)*tx); else xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)/tx);
-		}
-        XS=zero_gamma(XS-0.1,xb);
-        fxb=Sys[0]->GetSpontaneousCurvature();
-        if (co_solvent_freedom=="restricted") {
-       		if (j_calls%j_info==0) cout << "j_it = " << j_calls << " theta cosolvent  = " << ConvertCoSolventXtoT(xb) <<  " kJ0 = " << fxb << endl;
-		} else {
-			if (j_calls%j_info==0) cout << "j_it = " << j_calls << " phibulk cosolvent  = " << ConvertCoSolventXtoT(xb) <<  " kJ0 = " << fxb << endl;
+        switch(ControlParameter){
+			case co_solvent_theta:
+			    if (fxa<0) xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)-dx); else xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)+dx);
+			    XS=zero_gamma(XS-0.01,xb);
+				break;
+			case co_solvent_phibulk:
+				if (fxa<0) xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)*tx); else xb=ConvertCoSolventTtoX(ConvertCoSolventXtoT(xa)/tx);
+				XS=zero_gamma(XS-0.01,xb);
+				break;
+			case chi_C_D:
+				//cout <<"not implemented yet" << endl;
+				if (fxa<0) xb=xa+cx; else xb=xa-cx;
+				PutChi(xb);
+				XS=zero_gamma(XS-0.01,GuessXc);
+				break;
+			default:
+				break;
 		}
 
+        fxb=Sys[0]->GetSpontaneousCurvature();
+
+        switch(ControlParameter) {
+			case co_solvent_theta:
+				if (j_calls%j_info==0) cout << "j_it = " << j_calls << " theta cosolvent  = " << ConvertCoSolventXtoT(xb) <<  " kJ0 = " << fxb << endl;
+				break;
+			case co_solvent_phibulk:
+				if (j_calls%j_info==0) cout << "j_it = " << j_calls << " phibulk cosolvent  = " << ConvertCoSolventXtoT(xb) <<  " kJ0 = " << fxb << endl;
+				break;
+			case chi_C_D:
+				if (j_calls%j_info==0) cout << "j_it = " << j_calls << " chi_"<<Seg[monC]->name<<"_"<<Seg[monD]->name << " = "  << xb << " kJ0 = " << fxb << endl;
+				break;
+			default:
+				break;
+		}
 	}
 
-    Real xc=(xa*fxb-xb*fxa)/(fxb-fxa); XS=zero_gamma(XS-0.1,xc);
+    Real xc=(xa*fxb-xb*fxa)/(fxb-fxa);
+    switch (ControlParameter) {
+		case chi_C_D:
+			PutChi(xc);
+			XS=zero_gamma(XS-0.01,GuessXc);
+			break;
+		default:
+		    XS=zero_gamma(XS-0.01,xc);
+			break;
+	}
     Real fxc=Sys[0]->GetSpontaneousCurvature();
     j_calls=0;
     while (abs(fxc)>j_tolerance) {
@@ -372,19 +501,54 @@ Real Microemulsion::zero_J0(Real guessXs, Real GuessXc) {
         } else {
             xa=xc;
 		}
-        xc=(xa*fxb-xb*fxa)/(fxb-fxa); XS=zero_gamma(XS-0.1,xc);
-        fxc=Sys[0]->GetSpontaneousCurvature();
-        if (co_solvent_freedom=="restricted") {
-        	if (j_calls%j_info==0 && j_calls>3*j_info) cout << "j_it = " << j_calls << " theta cosolvent = " << ConvertCoSolventXtoT(xc) << " kJ0 = " << fxc << endl;
-		} else {
-			if (j_calls%j_info==0 && j_calls>3*j_info) cout << "j_it = " << j_calls << " phibulk cosolvent = " << ConvertCoSolventXtoT(xc) << " kJ0 = " << fxc << endl;
+        xc=(xa*fxb-xb*fxa)/(fxb-fxa);
+        switch (ControlParameter) {
+			case chi_C_D:
+				PutChi(xc);
+				XS=zero_gamma(XS-0.01,GuessXc);
+				break;
+			default:
+				XS=zero_gamma(XS-0.01,xc);
+				break;
 		}
+
+        fxc=Sys[0]->GetSpontaneousCurvature();
+
+        switch(ControlParameter) {
+			case co_solvent_theta:
+				if (j_calls%j_info==0 && j_calls>3*j_info) cout << "j_it = " << j_calls << " theta cosolvent = " << ConvertCoSolventXtoT(xc) << " kJ0 = " << fxc << endl;
+				break;
+			case co_solvent_phibulk:
+				if (j_calls%j_info==0 && j_calls>3*j_info) cout << "j_it = " << j_calls << " phibulk cosolvent = " << ConvertCoSolventXtoT(xc) << " kJ0 = " << fxc << endl;
+				break;
+			case chi_C_D:
+				if (j_calls%j_info==0 && j_calls>3*j_info) cout << "j_it = " << j_calls << " chi_"<<Seg[monC]->name<<"_"<<Seg[monD]->name << " = "  << xc << " kJ0 = " << fxc << endl;
+				break;
+			default :
+				break;
+		}
+
         if (j_calls%20==0 || j_calls%21==0) {
 			cout <<"Restart J0 iteration" << endl;
-			return zero_J0(XS-0.1, xc);
+			switch (ControlParameter) {
+				case chi_C_D:
+					PutChi(xc);
+					return zero_J0(XS-0.03,GuessXc,xc);
+					break;
+				default:
+					return zero_J0(XS-0.03,xc,0);
+					break;
+			}
 		}
 	}
-    return ConvertCoSolventXtoT(xc);
+	switch(ControlParameter) {
+		case chi_C_D:
+			return xc;
+			break;
+		default:
+		    return ConvertCoSolventXtoT(xc);
+			break;
+	}
 }
 
 bool Microemulsion:: WriteResults() {
@@ -403,11 +567,20 @@ bool Microemulsion:: WriteResults() {
 		}
 	}
 	New[0]->PushOutput();
-	if (co_solvent_freedom=="restricted") {
-		cout <<"theta surfactant = " << Mol[surfactant]->theta << " theta co-solvent = " << Mol[co_solvent]->theta << " kBar = " << Sys[0]->GetKBar() << endl;
-	} else {
-		cout <<"theta surfactant = " << Mol[surfactant]->theta << " phibulk co-solvent = " << Mol[co_solvent]->phibulk << " kBar = " << Sys[0]->GetKBar() << endl;
+	switch(ControlParameter) {
+		case co_solvent_theta:
+			cout <<"theta surfactant = " << Mol[surfactant]->theta << " theta co-solvent = " << Mol[co_solvent]->theta << " kBar = " << Sys[0]->GetKBar() << endl;
+			break;
+		case co_solvent_phibulk:
+			cout <<"theta surfactant = " << Mol[surfactant]->theta << " phibulk co-solvent = " << Mol[co_solvent]->phibulk << " kBar = " << Sys[0]->GetKBar() << endl;
+			break;
+		case chi_C_D:
+			cout <<"theta surfactant = " << Mol[surfactant]->theta << " chi_"<<Seg[monC]->name<<"_"<<Seg[monD]->name << " = " << Seg[monC]->chi[monD] << " kBar = " << Sys[0]->GetKBar() << endl;
+			break;
+		default:
+		break;
 	}
+
 	for (int ii = 0; ii < n_out; ii++){
 		Out[ii]->WriteOutput(subloop);
 	}
@@ -423,8 +596,12 @@ bool Microemulsion::SlipInSphericalCoordinates(){
 	Real theta_oil=Mol[oil]->theta;
 	Real phibulk_surfactant=Mol[surfactant]->phibulk;
 	Real theta_surfactant=Mol[surfactant]->theta;
-	Real phibulk_cosolvent=Mol[co_solvent]->phibulk;
-	Real theta_cosolvent=Mol[co_solvent]->theta;
+	Real phibulk_cosolvent=0;
+	Real theta_cosolvent=0;
+	if (co_solvent>-1) {
+		phibulk_cosolvent=Mol[co_solvent]->phibulk;
+		theta_cosolvent=Mol[co_solvent]->theta;
+	}
 	int M=Lat[0]->M;
 	phi_oil=(Real*)malloc(M*sizeof(Real)); Zero(phi_oil,M);
 	Cp(phi_oil,Mol[oil]->phitot,M);
@@ -489,7 +666,6 @@ bool Microemulsion::Doit(Real* X_,string METHOD_,vector<string> MONLIST_,vector<
 	if (debug) cout <<"In microemulsion: I'll do it " << endl;
 	bool success=true;
 	Real CHI;
-	Real result=10;
 
 	if (n_steps>0) {
 		for (int i=0; i< n_steps; i++) {
@@ -497,25 +673,52 @@ bool Microemulsion::Doit(Real* X_,string METHOD_,vector<string> MONLIST_,vector<
 			Seg[monA]->chi[monB]=CHI;
 			Seg[monB]->chi[monA]=CHI;
 			cout << "Micro-problem " << i+1 << " of " << n_steps << " chi = " << CHI << endl;
-			if (result>0) {
-				if (co_solvent_freedom=="restricted") {
-					result=zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),ConvertCoSolventTtoX(Mol[co_solvent]->theta));
-				} else {
-					result=zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),ConvertCoSolventTtoX(Mol[co_solvent]->phibulk));
-				}
-				//WriteResults();
-				//FixedPoint(ConvertSurfactantTtoX(Mol[surfactant]->theta),ConvertCoSolventTtoX(Mol[co_solvent]->phibulk));
-				WriteResults();
-				cout <<"write results planar case" << endl;
-				if (compute_kappa) success=SlipInSphericalCoordinates();
+
+			switch (ControlParameter) {
+				case co_solvent_theta:
+					zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),ConvertCoSolventTtoX(Mol[co_solvent]->theta),0);
+					break;
+				case co_solvent_phibulk:
+
+					zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),ConvertCoSolventTtoX(Mol[co_solvent]->phibulk),0);
+					break;
+				case chi_C_D:
+					if (i==0){
+						ini_oil=Mol[oil]->theta;
+						ini_surf=Mol[surfactant]->theta;
+						ini_chi=Seg[monC]->chi[monD];
+					} else {
+						if (!previous_guess) {
+							Mol[oil]->theta=ini_oil;
+							Mol[surfactant]->theta=ini_surf;
+							Seg[monC]->chi[monD]=ini_chi;
+							Seg[monD]->chi[monC]=ini_chi;
+						}
+					}
+					zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),-1,Seg[monC]->chi[monD]);
+					break;
+				default:
+					break;
 			}
+			cout <<"write results planar system" << endl;
+			WriteResults();
+			if (compute_kappa) success=SlipInSphericalCoordinates();
 		}
 	} else {
-		if (co_solvent_freedom=="restricted") {
-			zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),ConvertCoSolventTtoX(Mol[co_solvent]->theta));
-		} else {
-			zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),ConvertCoSolventTtoX(Mol[co_solvent]->phibulk));
+		switch (ControlParameter) {
+			case co_solvent_theta:
+				zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),ConvertCoSolventTtoX(Mol[co_solvent]->theta),0);
+				break;
+			case co_solvent_phibulk:
+				zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),ConvertCoSolventTtoX(Mol[co_solvent]->phibulk),0);
+				break;
+			case chi_C_D:
+				zero_J0(ConvertSurfactantTtoX(Mol[surfactant]->theta),-1,Seg[monC]->chi[monD]);
+				break;
+			default:
+				break;
 		}
+
 		WriteResults();
 		if (compute_kappa) success = SlipInSphericalCoordinates();
 	}

@@ -1567,13 +1567,13 @@ void System::PushOutput()
 			//cout <<"coordinate for kJ0:" << pos << endl;
 			//for (int z=fjc; z<M-2*fjc; z++) result -= 1.0*(z-pos-(fjc-1))/fjc*GrandPotentialDensity[z];
 
-			push("kJ0", lat->MomentPlanar(GrandPotentialDensity,1,M/2+0.5));
+			push("kJ0", lat->MomentPlanar(GrandPotentialDensity,1,M/2+0.5)/lat->fjc);
 		} else {
 			cout <<" 'compute_kJ0' requested but 'compute_kJ0' rejected because either geomety is not planar, or gradients = 1 or 'delta_range' not found " << endl;
 		}
 
 		if (lat->gradients == 1 && lat->geometry == "planar") {
-			push("kbar", lat->MomentPlanar(GrandPotentialDensity,2,M/2+0.5));
+			push("kbar", lat->MomentPlanar(GrandPotentialDensity,2,M/2+0.5)/pow(lat->fjc,2));
 		}
 	}
 	Real X = 0;

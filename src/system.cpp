@@ -50,6 +50,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	do_blocks=false;
 	first_pass=true;
 	neutralizer=-1;
+	pos_interface=0.0;
 }
 System::~System()
 {
@@ -1562,12 +1563,13 @@ void System::PushOutput()
 		//int fjc=lat->fjc;
 		//Real result=0;
 		//int pos;
-		if (px.size()>0 && lat->gradients==1 && lat->geometry=="planar") {
+		if (lat->gradients==1 && lat->geometry=="planar") {
 			//pos=px[0];
 			//cout <<"coordinate for kJ0:" << pos << endl;
 			//for (int z=fjc; z<M-2*fjc; z++) result -= 1.0*(z-pos-(fjc-1))/fjc*GrandPotentialDensity[z];
-
-			push("kJ0", lat->MomentPlanar(GrandPotentialDensity,1,M/2+0.5)/lat->fjc);
+			if (pos_interface==0) pos_interface=M/2+0.5;
+			push("kJ0", lat->MomentPlanar(GrandPotentialDensity,1,pos_interface)/lat->fjc);
+			pos_interface=0;
 		} else {
 			cout <<" 'compute_kJ0' requested but 'compute_kJ0' rejected because either geomety is not planar, or gradients = 1 or 'delta_range' not found " << endl;
 		}

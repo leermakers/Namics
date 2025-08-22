@@ -21,6 +21,8 @@ CUDAEXT		:= cu
 DEPEXT      := d
 OBJEXT      := o
 
+#flat DOUBLE
+
 #Flags, Libraries and Includes
 CFLAGS      := -Wall -Ofast -std=c++14 -march=native
 LIB         := -lm -lpthread

@@ -45,6 +45,7 @@ public:
 	vector<int> Xn_1;
 	Real FreeEnergy;
 	Real GrandPotential;
+	Real pos_interface;
 
 	Real KJ0;
 	Real Kbar;

@@ -74,6 +74,9 @@ public:
 	Real GC0;
 	Real ini_oil, ini_water, ini_surf, ini_chi;
 	bool previous_guess;
+	Real caution_factor;
+	Real follow_factor;
+
 
 	bool CheckInput(int);
 	bool Doit(Real*,string,vector<string>,vector<string>,bool,int,int,int,int,int,int,int,int,int,int,bool&);

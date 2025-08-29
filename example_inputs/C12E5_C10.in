@@ -1,0 +1,120 @@
+lat : flat : n_layers : 100
+lat : flat : geometry : planar
+lat : flat : lattice_type : hexagonal
+lat : flat : FJC_choices : 3
+lat : flat : bondlength : 3e-10
+
+mon : C : freedom : pinned
+mon : C : pinned_range : 1;55
+mon : O : freedom : free
+mon : W : freedom : free
+
+mon : C : chi_W : 1.0
+mon : O : chi_W : -1
+mon : O : chi_C : 2
+
+mol : water : composition : @dend(W,(W)1,3) 
+mol : water : freedom : solvent
+
+mol : alkane : composition : (C)10
+mol : alkane : freedom : restricted 
+mol : alkane : theta :48
+
+mol : C12E5 : composition : (C)12((O)1(C)2)5(O)1
+mol : C12E5 : freedom : restricted
+mol : C12E5 : theta : 1
+
+newton : isaac : method : pseudohessian
+newton : isaac : deltamax : 0.05
+newton : isaac : tolerance : 1e-6
+newton : isaac : iterationlimit: 3000
+//newton : isaac : n_iterations_for_hessian : 2000
+newton : isaac : i_info : 100
+//sys : L : initial_guess : file
+//sys : L : guess_inputfile : start.ini
+//sys : L : overflow_protection : true
+
+start
+output : pro : append : false
+output : pro : DOS : true
+pro : sys : L : grand_potential_density
+pro : mol : * : phi
+
+mon : C : freedom : free
+newton : isaac : tolerance : 1e-11
+newton : isaac : iterationlimit : 10000
+
+start
+
+sys : L : initial_guess : previous_result
+mol : alkane : compute_width_interface : true
+
+sys : L : constraint : delta
+sys : L : delta_molecules : alkane;water
+sys : L : delta_range : (50)
+sys : L : phi_ratio : 0.5
+sys : L : delta_range_units : bondlength
+
+sys : L : compute_kJ0 : true
+
+var : mol-alkane : search : theta
+var : sys-L : Laplace_pressure : 0
+
+// micro searches for amount of surfactant to make interfacial tension zero
+// micro searches for amount of cosolvent to make spontaneous curvature of interface zero
+micro : frans : surfactant : C12E5
+micro : frans : monA : C
+micro : frans : monB : W
+micro : frans : var_chi_monA_monB : 1.0;0.025;1.5
+micro : frans : g_info : 1
+micro : frans : j_info : 1
+micro : frans : g_tolerance : 1e-7
+micro : frans : j_tolerance : 1e-5
+micro : frans : compute_kappa : true
+micro : frans : oil : alkane
+micro : frans : water : water
+micro : frans : monC : O
+micro : frans : monD : W
+micro : frans : control_parameter : chi_monC_monD
+micro : frans : previous_guess : true
+micro : frans : caution_factor : 1
+micro : frans : follow_factor : 2
+
+
+newton : isaac : super_deltamax : 0.000001
+newton : isaac : super_tolerance : 1e-11
+newton : isaac : i_info : 10
+newton : isaac : iterationlimit : 10000
+newton : isaac : super_e_info : false
+newton : isaac : e_info : false
+//newton : isaac : n_iterations_for_hessian : 1000
+
+//output : kal : append : true
+output : kal : append : false
+output : kal : DOS : true
+kal : lat : flat : geometry
+kal : mon : C : chi_W
+kal : mon : O : chi_W
+kal : mon : C : chi_O
+kal : sys : L : grand_potential
+kal : sys : L : kJ0 
+kal : sys : L : kbar
+kal : sys : L : Laplace_pressure
+kal : mol : alkane : width
+kal : mol : alkane : pos_interface
+kal : mol : alkane : chainlength
+kal : mol : * : phibulk
+kal : mol : * : theta
+kal : mol : * : theta_exc
+
+output : pro : append : false
+output : pro : DOS : true
+pro : sys : L : grand_potential_density
+pro : mol : * : phi
+start
+//micro : frans : var_chi_monA_monB : 0.5;-0.001;0.487
+//micro : frans : caution_factor : 0.25
+//start
+//micro : frans : var_chi_monA_monB : 0.487;-0.0001;0.477
+//micro : frans : caution_factor : 0.1
+

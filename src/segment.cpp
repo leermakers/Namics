@@ -1997,8 +1997,9 @@ if (debug) cout <<"GetValue long for segment " + name << endl;
 void Segment::UpdateValence(Real*g, Real* psi, Real* q, Real* eps,bool grad_epsilon) {
 	int M=lat->M;
 	if (fixedPsi0) {
+
 		OverwriteC(psi,MASK,PSI0,M);
-		lat->set_M_bounds(psi);
+		//lat->set_M_bounds(psi);
 		lat->UpdateQ(g,psi,q,eps,MASK,grad_epsilon);
 	}
 

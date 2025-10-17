@@ -19,7 +19,7 @@
 	{
 		return a * x + y;
 	}
-}; 
+};
 struct reverse_minus_functor
 {
 	reverse_minus_functor() {}
@@ -513,7 +513,7 @@ void CollectPhi(T* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int MM, 
 
 template<typename T, typename D>
 void OverwriteC(T *P, D *Mask, T C, int M) {
-	for (int i=0; i<M; i++) if (Mask[i]==1) P[i]=C; else P[i]=0;
+	for (int i=0; i<M; i++) if (Mask[i]==1) P[i]=C; //else P[i]=0;
 }
 
 template<typename T, typename D>

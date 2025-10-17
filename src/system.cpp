@@ -1568,7 +1568,7 @@ void System::PushOutput()
 			//cout <<"coordinate for kJ0:" << pos << endl;
 			//for (int z=fjc; z<M-2*fjc; z++) result -= 1.0*(z-pos-(fjc-1))/fjc*GrandPotentialDensity[z];
 			if (pos_interface==0) pos_interface=M/2+0.5;
-			push("kJ0", lat->MomentPlanar(GrandPotentialDensity,1,pos_interface)/lat->fjc);
+			push("kJ0", -lat->MomentPlanar(GrandPotentialDensity,1,pos_interface)/lat->fjc);
 			pos_interface=0;
 		} else {
 			cout <<" 'compute_kJ0' requested but 'compute_kJ0' rejected because either geomety is not planar, or gradients = 1 or 'delta_range' not found " << endl;
@@ -3211,7 +3211,7 @@ Zero(TEMP,M);
 Real System::GetSpontaneousCurvature()
 {
 	int M = lat->M;
-	if (lat->gradients ==1 && lat->geometry=="planar")  return lat->MomentPlanar(GrandPotentialDensity,1,M/2+0.5);
+	if (lat->gradients ==1 && lat->geometry=="planar")  return -1.0*lat->MomentPlanar(GrandPotentialDensity,1,M/2+0.5);
 	else return 0;
 };
 

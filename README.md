@@ -3,7 +3,8 @@
 Hybrid SCF-MD simulation tool. Package under development.
 
 Developers:   
-F.A.M.Leermakers - Self-consistent field caculation modules.   
+F.A.M.Leermakers - Self-consistent field caculation modules.
+F.A.M.Leermakers - Microemulsion.cpp   
 R.Varadharajan - teng.cpp   
 Daniel Emmery - mesodyn.cpp   
 Alexander Kazakov - cleng.cpp   
@@ -24,7 +25,7 @@ GPU Accelleration:
 
 Set the ccbin value in the NVCC flags in the makefile to the correct g++ version and replace the CUDA paths if needed. Also set the nvcc arch flag to the correct compute capability (list can be found [here](https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/))
 
-## TODO 30-9-2021
+## TODO 30-9-2025
 - [x] Fix cuda for 3d : likely problem is with generating arrays in branched propagator  
 - [ ] In solve_scf: target function  
 	- [ ] g(i) = phit-1/phit

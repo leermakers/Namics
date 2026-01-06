@@ -13,7 +13,7 @@
 #include "variate.h"
 #include "sfnewton.h"
 #include <functional>
-#include <Eigen/Core>
+#include "Eigen/Core"
 #include "LBFGS.h"
 
 //using Eigen::VectorXf;

@@ -1,0 +1,60 @@
+lat : vlak : n_layers : 100
+lat : vlak : lattice_type : hexagonal
+lat : vlak : geometry : planar
+lat : vlak : lowerbound : surface
+
+mon : S : freedom : frozen
+mon : S : frozen_range : lowerbound
+
+mon : A : freedom : free
+mon : B : freedom : free
+mon : X : freedom : free
+mon : W : freedom : free
+
+mon : X : chi_S : -6
+mon : A : chi_S : 1
+mon : B : chi_S : 1
+mon : W : chi_S : 0
+
+mon : A : chi_X : 1
+mon : B : chi_X : 1
+mon : W : chi_X : 1
+
+mon : B : chi_A : 1
+mon : W : chi_A : 1.5
+
+mon : B : chi_W : 0
+
+mol : soseki_1 : composition : (X)10(A)20(B)20
+mol : soseki_1 : freedom : restricted
+
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+
+
+output : pro : DOS : true
+pro : mon :  * : phi
+pro : mol : * : phi
+
+mol : soseki_1 : theta : 4
+
+start
+mol : soseki_1 : theta : 0.1
+output : pro : write : false
+
+var : mol-soseki_1 :  scan : theta
+var : mol-soseki_1 : step : 0.1
+var : mol-soseki_1 : end_value : 4
+
+output : kal : DOS : true
+output : kal : append : false
+kal : sys : NN : grand_potential
+kal : mol : soseki_1 : theta
+kal : mol : soseki_1 : theta_exc
+kal : mol : soseki_1 : phibulk
+
+start
+
+
+

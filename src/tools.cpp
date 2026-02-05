@@ -1,6 +1,7 @@
 #include "tools.h"
 #include "namics.h"
 #include "stdio.h"
+#include <limits>
 #ifdef PAR_MESODYN
 	#include <thrust/inner_product.h>
 #endif
@@ -10,6 +11,12 @@
 Real* SUM_RESULT;
 
 #ifdef CUDA
+
+__global__ inline bool safe_mask_compare(const Real& mask_value, const int& query_value) {
+	// if mask_value == query_value, i.e., if they're within the numeric limit
+	return fabs(mask_value - static_cast<Real>(query_value)) < 1e-10;
+}
+
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
 const int block_size = 512;
@@ -366,7 +373,7 @@ __global__ void overwritea(Real* P, int* Mask, Real* A,int M) {
 	if (idx<M) if (Mask[idx]==1) P[idx] = A[idx] ; else P[idx]=0;
 }
 
-__global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
+__global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real C, Real* Mask, int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	Real* Px=psi+jx;
 	Real* P_x=psi-jx;
@@ -381,7 +388,7 @@ __global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real
 	Real* ez=eps+1;
 	Real* e_z=eps-1;
 	Real* e=eps;
-	if (idx<M && Mask[idx]==1)  {
+	if (idx<M && safe_mask_compare(Mask[idx], 1))  {
 		q[idx]=(((e_x[idx]+e[idx])*P_x[idx] + (ex[idx]+e[idx])*Px[idx] +
 			(e_y[idx]+e[idx])*P_y[idx] + (ey[idx]+e[idx])*Py[idx] +
 			(e_z[idx]+e[idx])*P_z[idx] + (ez[idx]+e[idx])*Pz[idx]) -
@@ -580,6 +587,12 @@ __global__ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, i
 	}
 }
 #else
+
+inline bool safe_mask_compare(const Real& mask_value, const int& query_value) {
+	// if mask_value == query_value, i.e., if they're within the numeric limit
+    return std::abs(mask_value - static_cast<Real>(query_value)) < std::numeric_limits<Real>::epsilon();
+}
+
 void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 	int i;
 	int jx_mmx=jx*mmx;
@@ -938,7 +951,7 @@ void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, int* 
 	uppsi<<<n_blocks,block_size>>>(g,psi,X,eps,JX,JY,C,Mask,M);
 }
 
-void UpQ(Real* g, Real* q, Real* psi, Real* eps, int JX, int JY, Real C, int* Mask, int M)  {
+void UpQ(Real* g, Real* q, Real* psi, Real* eps, int JX, int JY, Real C, Real* Mask, int M)  {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	upq<<<n_blocks,block_size>>>(g,q,psi,eps,JX,JY,C,Mask,M);
 }

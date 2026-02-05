@@ -12,7 +12,7 @@ Real* SUM_RESULT;
 
 #ifdef CUDA
 
-__global__ inline bool safe_mask_compare(const Real& mask_value, const int& query_value) {
+__device__ inline bool safe_mask_compare(const Real& mask_value, const int& query_value) {
 	// if mask_value == query_value, i.e., if they're within the numeric limit
 	return fabs(mask_value - static_cast<Real>(query_value)) < 1e-10;
 }

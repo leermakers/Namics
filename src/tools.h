@@ -75,6 +75,7 @@ __global__ void overwritec(Real*, int*, Real, int);
 __global__ void overwritea(Real*, int*, Real*, int);
 __global__ void upq(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
 __global__ void uppsi(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
+__device__ inline bool safe_mask_compare(const Real&, const int&);
 template <typename T>
 void TransferDataToHost(T*, T*, int);
 template <typename T>

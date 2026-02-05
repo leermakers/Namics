@@ -1153,15 +1153,13 @@ void LGrad3::UpdateEE(Real* EE, Real* psi, Real* E) {
 
 
 void LGrad3::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, Real* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
-	int x,y;
 #ifndef CUDA
-	int z;
+	int x,y,z;
 #endif
 
 #ifndef CUDA
-	Real epsZplus, epsZmin;
+	Real epsZplus, epsZmin, epsXplus, epsXmin, epsYplus,epsYmin;
 #endif
-	Real epsXplus, epsXmin, epsYplus,epsYmin;
 	//set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
 

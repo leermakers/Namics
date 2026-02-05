@@ -430,7 +430,7 @@ void Mesodyn::initialize_from_file(vector<Lattice_object<Real>>& densities) {
 
 void Mesodyn::set_filename() {
   filename << In[0]->output_info.getOutputPath() << "mesodyn-";
-  filename << time(time_t());
+  filename << time(nullptr);
 }
 
 void Mesodyn::register_output() {

@@ -32,9 +32,14 @@ std::map<Writable_filetype, Extension> Writable_file::extension_map {
     {Writable_filetype::PRO, "pro"}
 };
 
-Writable_file::Writable_file(const std::string filename_, Writable_filetype filetype_, int identifier_)
+Writable_file::Writable_file(const std::string filename_, Writable_filetype filetype_, int identifier_, int max_identifier)
 : m_identifier{identifier_}, m_filename{filename_}, m_filetype{filetype_}
 {
+    if (max_identifier > 0) {
+        m_padding_width = static_cast<int>(std::floor(std::log10(max_identifier))) + 1;
+    } else {
+        m_padding_width = 1;
+    }
     append_extension();
 }
 
@@ -43,15 +48,26 @@ Writable_file::~Writable_file()
 
 }
 
+std::string Writable_file::padded_identifier() const
+{
+    std::ostringstream oss;
+    oss << std::setw(m_padding_width) << std::setfill('0') << m_identifier;
+    return oss.str();
+}
+
 void Writable_file::increment_identifier()
 {
+    string old_padded = padded_identifier();
+    ++m_identifier;
+    string new_padded = padded_identifier();
+
     string dot = "\\.";
-    string s_regex = "(\\_" + to_string(m_identifier) + dot + Writable_file::extension_map[m_filetype] + ')';
+    string s_regex = "(\\_" + old_padded + dot + Writable_file::extension_map[m_filetype] + ')';
     std::regex ex(s_regex);
 
-    string replacement = "_"+ to_string(++m_identifier) + "." + Writable_file::extension_map[m_filetype];
+    string replacement = "_" + new_padded + "." + Writable_file::extension_map[m_filetype];
 
-    m_filename = regex_replace(m_filename,ex, replacement);
+    m_filename = regex_replace(m_filename, ex, replacement);
 }
 
 Writable_filetype Writable_file::get_filetype()
@@ -66,7 +82,7 @@ string Writable_file::get_filename()
 
 void Writable_file::append_extension()
 {
-    m_filename.append("_" + to_string(m_identifier) + "." + Writable_file::extension_map[m_filetype]);
+    m_filename.append("_" + padded_identifier() + "." + Writable_file::extension_map[m_filetype]);
 }
 
 IProfile_writer::IProfile_writer(Lattice* geometry_, Writable_file file_)

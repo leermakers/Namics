@@ -96,7 +96,8 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
   register_output();
   set_filename();
 
-  Writable_file out_file(filename.str(), output_profile_filetype );
+  int max_saves = static_cast<int>(timesteps / timebetweensaves);
+  Writable_file out_file(filename.str(), output_profile_filetype, 0, max_saves);
   profile_writers.push_back(Profile_writer::Factory::Create(output_profile_filetype, Lat[0], out_file));
   profile_writers[0]->bind_data(output_profiles);
 }

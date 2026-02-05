@@ -50,6 +50,8 @@
 #include <functional>
 #include <iostream>
 #include <regex>
+#include <iomanip>
+#include <cmath>
 
 #define Output_as_metadata IParameter_writer::CATEGORY::METADATA
 #define Output_as_timespan IParameter_writer::CATEGORY::TIMESPAN
@@ -130,18 +132,20 @@ class Output_ptr : public IOutput_ptr
 
 class Writable_file {
     public:
-        Writable_file(const std::string, Writable_filetype, int = 0);
+        Writable_file(const std::string, Writable_filetype, int = 0, int max_identifier = 0);
         virtual ~Writable_file();
         Writable_filetype get_filetype();
         string get_filename();
         void increment_identifier();
-        
+
     protected:
         int m_identifier;
+        int m_padding_width;
         std::string m_filename;
         static std::map<Writable_filetype, std::string> extension_map;
         const Writable_filetype m_filetype;
         void append_extension();
+        std::string padded_identifier() const;
 };
 
 class IProfile_writer

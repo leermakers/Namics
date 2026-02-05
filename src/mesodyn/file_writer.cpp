@@ -61,8 +61,8 @@ void Writable_file::increment_identifier()
     ++m_identifier;
     string new_padded = padded_identifier();
 
-    string dot = "\\.";
-    string s_regex = "(\\_" + old_padded + dot + Writable_file::extension_map[m_filetype] + ')';
+    // Use raw string literal for regex pattern to avoid escaping issues
+    string s_regex = R"((_)" + old_padded + R"(\.)" + Writable_file::extension_map[m_filetype] + R"())";
     std::regex ex(s_regex);
 
     string replacement = "_" + new_padded + "." + Writable_file::extension_map[m_filetype];

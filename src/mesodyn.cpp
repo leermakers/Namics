@@ -380,8 +380,11 @@ int Mesodyn::initial_conditions() {
   return 0; 
 }
 
+// BIG FAT WARNING:
+// THIS ASSUMES MASK ONLY CONTAINS INTEGERS
+// THIS WILL TRUNCATE FLOATING POINT VALUES
 Lattice_object<size_t> Mesodyn::load_mask_from_sys() {
-  Lattice_object<int> t_mask(Lat[0]);
+  Lattice_object<Real> t_mask(Lat[0]);
 
   #if defined(PAR_MESODYN) || ! defined(CUDA)
   stl::copy(Sys[0]->KSAM, Sys[0]->KSAM+system_size, t_mask.begin());

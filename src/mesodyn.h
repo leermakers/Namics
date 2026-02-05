@@ -80,6 +80,7 @@ private:
   const bool grand_cannonical;
   const size_t grand_cannonical_time_average;
   const size_t grand_cannonical_molecule;
+  const bool correlated_noise;
 
     enum init {
     INIT_HOMOGENEOUS,

@@ -35,6 +35,7 @@ class IFlux {
 class ILangevin_flux : public IFlux {
   public:
     ILangevin_flux(Lattice*, Real, shared_ptr<IComponent>, shared_ptr<IComponent>, std::vector<shared_ptr<IPerturbation>>);
+    void set_correlated_noise(bool val) { m_correlated_noise = val; }
 
   protected:
     int onsager_coefficient(Lattice_object<Real>&, Lattice_object<Real>&);
@@ -42,8 +43,10 @@ class ILangevin_flux : public IFlux {
 
     Lattice_object<Real> L;
     Lattice_object<Real> mu;
+    Lattice_object<Real> mu_base;
 
     const Real D;
+    bool m_correlated_noise = false;
     std::vector<shared_ptr<IPerturbation>> perturbation;
 };
 

@@ -8,7 +8,7 @@ IFlux::IFlux(Lattice* lat_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_
     : J(lat_), m_lat{lat_}, component_a{A_}, component_b{B_} { }
 
 ILangevin_flux::ILangevin_flux(Lattice* Lat, Real D_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_, std::vector<shared_ptr<IPerturbation>> perturbation_)
-    : IFlux(Lat, A_, B_), L(Lat), mu(Lat), D{D_}, perturbation(perturbation_) { }
+    : IFlux(Lat, A_, B_), L(Lat), mu(Lat), mu_base(Lat), D{D_}, perturbation(perturbation_) { }
 
 Flux1D::Flux1D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, std::vector<shared_ptr<IPerturbation>> perturbation)
     : ILangevin_flux(Lat, D, A, B, perturbation), J_plus(Lat),  t_L(Lat), t_mu(Lat)
@@ -130,10 +130,22 @@ int ILangevin_flux::potential_difference(Lattice_object<Real>& A, Lattice_object
     throw ERROR_SIZE_INCOMPATIBLE;
   }
 
-  stl::transform(A.begin(), A.end(), B.begin(), mu.begin(), stl::minus<Real>());
+  stl::transform(A.begin(), A.end(), B.begin(), mu_base.begin(), stl::minus<Real>());
+  stl::copy(mu_base.begin(), mu_base.end(), mu.begin());
 
   for (auto& all_perturbations : perturbation)
     all_perturbations->perturb(mu);
+
+  if (m_correlated_noise) {
+    size_t size = mu.size();
+    Real* mu_ptr = (Real*)mu;
+    Real* base_ptr = (Real*)mu_base;
+    Real* L_ptr = (Real*)L;
+    for (size_t i = 0; i < size; ++i) {
+      Real noise = mu_ptr[i] - base_ptr[i];
+      mu_ptr[i] = base_ptr[i] + noise * std::sqrt(L_ptr[i]);
+    }
+  }
 
   m_lat->set_bounds((Real*)mu);
 

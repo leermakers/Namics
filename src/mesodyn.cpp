@@ -35,7 +35,8 @@ vector<string> Mesodyn::KEYS
     "grand_cannonical_molecule",
     "treat_lower_than_as_zero",
     "adaptive_tolerance_modifier",
-    "adaptive_tolerance"
+    "adaptive_tolerance",
+    "correlated_noise"
 };
 
 Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
@@ -69,6 +70,7 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       grand_cannonical                 { initialize<bool>("grand_cannonical", 0)},
       grand_cannonical_time_average    { initialize<size_t>("grand_cannonical_time_average", timesteps > 100 ? 20 : 5 ) },
       grand_cannonical_molecule        { initialize<size_t>("grand_cannonical_molecule", Sys[0]->solvent == 0 ? 1 : 0)},
+      correlated_noise                 { initialize<bool>("correlated_noise", 0)},
 
       //Variables for rho initialization
       initialization_mode              { INIT_HOMOGENEOUS },
@@ -362,6 +364,12 @@ int Mesodyn::initial_conditions() {
       Mesodyn::fluxes.emplace_back(
         Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], perturbations));
     }
+
+  if (correlated_noise) {
+    for (auto& flux : fluxes) {
+      dynamic_cast<ILangevin_flux*>(flux.get())->set_correlated_noise(true);
+    }
+  }
 
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
   Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);

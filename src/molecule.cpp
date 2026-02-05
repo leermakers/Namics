@@ -2125,7 +2125,6 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	}
 	s="vector;0"; push("gn",s);
 #ifdef CUDA
-int M = lat->M;
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
 #endif

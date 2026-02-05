@@ -74,7 +74,7 @@ __global__ void computegn(Real*, Real*, int, int);
 __global__ void overwritec(Real*, int*, Real, int);
 __global__ void overwritea(Real*, int*, Real*, int);
 __global__ void upq(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
-__global__ void uppsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
+__global__ void uppsi(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
 template <typename T>
 void TransferDataToHost(T*, T*, int);
 template <typename T>
@@ -144,7 +144,7 @@ void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, 
 void OverwriteC(Real*, int*, Real, int);
 void OverwriteA(Real*, int*, Real*, int);
 void UpQ(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
-void UpPsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
+void UpPsi(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
 
 Real ComputeResidual(Real*, int);
 struct saxpy_functor

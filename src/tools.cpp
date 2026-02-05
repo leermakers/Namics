@@ -396,7 +396,7 @@ __global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real
 		g[idx] -=q[idx];
 	}
 }
-__global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
+__global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Real C, Real* Mask, int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	Real* Px=X+jx;
 	Real* P_x=X-jx;
@@ -411,7 +411,7 @@ __global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Re
 	Real* ez=eps+1;
 	Real* e_z=eps-1;
 	Real* e=eps;
-	if (idx<M && Mask[idx]==0)  {
+	if (idx<M && safe_mask_compare(Mask[idx], 0))  {
 		psi[idx]=((e_x[idx]+e[idx])*P_x[idx] + (ex[idx]+e[idx])*Px[idx] +
 			(e_y[idx]+e[idx])*P_y[idx] + (ey[idx]+e[idx])*Py[idx] +
 			(e_z[idx]+e[idx])*P_z[idx] + (ez[idx]+e[idx])*Pz[idx] +
@@ -946,7 +946,7 @@ void OverwriteA(Real *P, int *Mask, Real* A, int M)   {
 	overwritea<<<n_blocks,block_size>>>(P,Mask,A,M);
 }
 
-void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, int* Mask, int M)  {
+void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, Real* Mask, int M)  {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	uppsi<<<n_blocks,block_size>>>(g,psi,X,eps,JX,JY,C,Mask,M);
 }

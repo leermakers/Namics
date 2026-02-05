@@ -1310,11 +1310,10 @@ void LGrad3::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, Real* Mask, bool 
 
 
 void LGrad3::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, Real* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
-	int x,y;
 	#ifndef CUDA
-	int z;
-	#endif
+	int z, x, y;
 	Real epsXplus,epsXmin,epsYplus,epsYmin,epsZplus,epsZmin;
+	#endif
 
 	Real C = -e*e/(eps0*k_BT*bond_length);
 #ifdef CUDA

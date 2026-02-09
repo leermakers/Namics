@@ -368,9 +368,9 @@ __global__ void overwritec(Real* P, int* Mask, Real X,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) if (Mask[idx]==1) P[idx] = X ; else P[idx]=0;
 }
-__global__ void overwritea(Real* P, int* Mask, Real* A,int M) {
+__global__ void overwritea(Real* P, Real* Mask, Real* A,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) if (Mask[idx]==1) P[idx] = A[idx] ; else P[idx]=0;
+	if (idx<M) if (safe_mask_compare(Mask[idx], 1)) P[idx] = A[idx] ; else P[idx]=0;
 }
 
 __global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real C, Real* Mask, int M) {
@@ -941,7 +941,7 @@ void OverwriteC(Real *P, int *Mask, Real C, int M)   {
 	overwritec<<<n_blocks,block_size>>>(P,Mask,C,M);
 }
 
-void OverwriteA(Real *P, int *Mask, Real* A, int M)   {
+void OverwriteA(Real *P, Real *Mask, Real* A, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	overwritea<<<n_blocks,block_size>>>(P,Mask,A,M);
 }

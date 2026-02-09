@@ -28,10 +28,13 @@ namespace Boundary {
 
   typedef std::map< std::string, Boundary::Type> Adapter_type;
 
-  inline Boundary::Adapter_type Adapter {
-      {"mirror", Boundary::Type::MIRROR},
-      {"periodic", Boundary::Type::PERIODIC}
-  };
+  inline Boundary::Adapter_type& Adapter() {
+      static Boundary::Adapter_type adapter {
+          {"mirror", Boundary::Type::MIRROR},
+          {"periodic", Boundary::Type::PERIODIC}
+      };
+      return adapter;
+  }
 
   typedef std::map<Dimension, Boundary::Type> Map;
 

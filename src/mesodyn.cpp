@@ -401,9 +401,9 @@ shared_ptr<Boundary1D> Mesodyn::build_boundaries(const Lattice_object<size_t>& m
   Boundary::Map boundary_conditions;
 
   // BC0: bX0, BC1: bXm, etc.
-  boundary_conditions[Dimension::X] = Boundary::Adapter[Lat[0]->BC[0]];
-  boundary_conditions[Dimension::Y] = Boundary::Adapter[Lat[0]->BC[2]];
-  boundary_conditions[Dimension::Z] = Boundary::Adapter[Lat[0]->BC[4]];
+  boundary_conditions[Dimension::X] = Boundary::Adapter()[Lat[0]->BC[0]];
+  boundary_conditions[Dimension::Y] = Boundary::Adapter()[Lat[0]->BC[2]];
+  boundary_conditions[Dimension::Z] = Boundary::Adapter()[Lat[0]->BC[4]];
 
   return Boundary::Factory::Create(dimensionality, mask, boundary_conditions);
 }

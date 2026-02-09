@@ -27,7 +27,11 @@ if (debug) cout <<"BackAndForth2ndO for mol_dend " + name << endl;
 
 	int N;
 	int M=lat->M;
+#ifdef CUDA
+	Real* GS = (Real*)AllOnDev(3*M);
+#else
 	Real* GS = new Real[3*M];
+#endif
 
 	bool success=true;
 	int n_g=first_a.size();
@@ -105,7 +109,11 @@ if (debug) cout <<"BackAndForth2ndO for mol_dend " + name << endl;
 			lat->Initiate(Gg_b+(s%2)*M*size,GS+M,Markov,M);
 		}
 	}
+#ifdef CUDA
+	cudaFree(GS);
+#else
 	delete [] GS;
+#endif
 	return success;
 }
 
@@ -115,7 +123,11 @@ if (debug) cout <<"BackAndForth for mol_dend " + name << endl;
 
 	int N;
 	int M=lat->M;
+#ifdef CUDA
+	Real* GS = (Real*)AllOnDev(3*M);
+#else
 	Real* GS = new Real[3*M];
+#endif
 
 	bool success=true;
 	int n_g=first_a.size();
@@ -179,7 +191,11 @@ if (debug) cout <<"BackAndForth for mol_dend " + name << endl;
 			lat->Initiate(Gg_b+(s%2)*M,GS,Markov,M);
 		}
 	}
+#ifdef CUDA
+	cudaFree(GS);
+#else
 	delete [] GS;
+#endif
 	return success;
 }
 

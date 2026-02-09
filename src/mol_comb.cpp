@@ -25,7 +25,11 @@ if (debug) cout <<"fraction for mol_comb " + name << endl;
 bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 	int N;
 	int M=lat->M;
+#ifdef CUDA
+	Real* GB = (Real*)AllOnDev(2*M); Zero(GB,2*M);
+#else
 	Real* GB = new Real[2*M]; Zero(GB,2*M);
+#endif
 
 	bool success=true;
 	int slast=0,sfirst=0;
@@ -199,7 +203,11 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 		}
 	}
 
+#ifdef CUDA
+	cudaFree(GB);
+#else
 	delete [] GB;
+#endif
 	return success;
 
 }
@@ -207,7 +215,11 @@ bool mol_comb::GoBackAndForth2ndO(Real *Mask,Real* G0) {
 bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 	int N;
 	int M=lat->M;
+#ifdef CUDA
+	Real* GB = (Real*)AllOnDev(2*M); Zero(GB,2*M);
+#else
 	Real* GB = new Real[2*M]; Zero(GB,2*M);
+#endif
 
 	bool success=true;
 	int slast=0,sfirst=0;
@@ -377,7 +389,11 @@ bool mol_comb::GoBackAndForth(Real *Mask,Real* G0) {
 		}
 	}
 
+#ifdef CUDA
+	cudaFree(GB);
+#else
 	delete [] GB;
+#endif
 	return success;
 
 }
@@ -387,8 +403,13 @@ bool mol_comb::ComputePhi() {
 	if (debug) cout <<"ComputePhi for mol_comb " + name << endl;
 	bool success=true;
 	int M=lat->M;
+#ifdef CUDA
+	Real* G0 = (Real*)AllManagedOnDev(M); Zero(G0,M);
+	Real* Mask = (Real*)AllManagedOnDev(M); Zero(Mask,M);
+#else
 	Real* G0 = new Real[M]; Zero(G0,M);
 	Real* Mask = new Real[M]; Zero(Mask,M);
+#endif
 	int gradients=lat->gradients;
 
 	int MX=lat->MX;
@@ -460,7 +481,11 @@ bool mol_comb::ComputePhi() {
 
 	if (Markov==2) success = GoBackAndForth2ndO(Mask,G0); else success = GoBackAndForth(Mask,G0);
 
+#ifdef CUDA
+	cudaFree(G0); cudaFree(Mask);
+#else
 	delete [] G0; delete [] Mask;
+#endif
 
 	return success;
 }

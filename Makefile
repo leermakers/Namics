@@ -57,7 +57,7 @@ endif
 ifdef CUDA
 	LIB        += -L$(CUDA_DIR)/lib64 -lcuda -lcudart -lcurand
 	CFLAGS     += -DCUDA
-	CUDA_ARCH  := native
+	CUDA_ARCH  ?= $(if $(shell nvidia-smi -L),native,sm_86)
 	NVCCFLAGS  := -g -arch=$(CUDA_ARCH) -std=$(CXX_STD) -DCUDA -diag-suppress 20011,20012,20013,20014,20015,2809
 	ifdef PAR_MESODYN_THRUST
 		CFLAGS += -DPAR_MESODYN_THRUST

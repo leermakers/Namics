@@ -5,7 +5,8 @@ else
 CC			:=g++
 endif
 
-NVCC        :=/usr/local/cuda/bin/nvcc
+NVCC        := $(shell which nvcc)
+CUDA_DIR    := $(if $(NVCC),$(realpath $(dir $(NVCC))/..))
 
 #The Target Binary Program
 TARGET      := namics
@@ -26,13 +27,17 @@ OBJEXT      := o
 #Flags, Libraries and Includes
 CFLAGS      := -Wall -Ofast -std=c++14 -march=native
 LIB         := -lm -lpthread
-INC         := -I/usr/local/cuda-9.0/include -I/usr/local/include -I/usr/include -I/usr/include/eigen3
+INC         := -I/usr/local/include -I/usr/include -I/usr/include/eigen3
+ifdef CUDA_DIR
+INC         += -I$(CUDA_DIR)/include
+endif
 # put 'Eigen' directory in /usr/include, or inlude path to Eigen in the line above
 #INCDEP      := -I$(INCDIR)
 ifdef CUDA
-	LIB        += -L/usr/local/cuda/lib64 -lcuda -lcudart -lcurand
+	LIB        += -L$(CUDA_DIR)/lib64 -lcuda -lcudart -lcurand
 	CFLAGS     += -DCUDA
-	NVCCFLAGS  := -g -ccbin gcc-12 -arch=sm_86 -std=c++14 -DCUDA
+	CUDA_ARCH  := $(shell $(NVCC) --list-gpu-arch | tail -1 | sed 's/compute_/sm_/')
+	NVCCFLAGS  := -g -arch=$(CUDA_ARCH) -std=c++14 -DCUDA
 	ifdef PAR_MESODYN
 		CFLAGS += -DPAR_MESODYN
 		NVCCFLAGS += --expt-relaxed-constexpr --expt-extended-lambda -DPAR_MESODYN
@@ -80,6 +85,17 @@ $(TARGET): $(OBJECTS)
 	$(CC) -o $(TARGETDIR)/$(TARGET) $^ $(LIB)
 
 #Compile
+ifdef CUDA
+# use nvcc
+$(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
+	@mkdir -p $(dir $@)
+	$(NVCC) $(NVCCFLAGS) $(INC) -x cu -c -o $@ $<
+
+$(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(CUDAEXT)
+	@mkdir -p $(dir $@)
+	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $@ $<
+else
+# use regular cpp compiler
 $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
@@ -88,11 +104,6 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@sed -e 's|.*:|$(BUILDDIR)/$*.$(OBJEXT):|' < $(BUILDDIR)/$*.$(DEPEXT).tmp > $(BUILDDIR)/$*.$(DEPEXT)
 	@sed -e 's/.*://' -e 's/\\$$//' < $(BUILDDIR)/$*.$(DEPEXT).tmp | fmt -1 | sed -e 's/^ *//' -e 's/$$/:/' >> $(BUILDDIR)/$*.$(DEPEXT)
 	@rm -f $(BUILDDIR)/$*.$(DEPEXT).tmp
-
-ifdef CUDA
-$(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(CUDAEXT)
-	@mkdir -p $(dir $@)
-	$(NVCC) $(NVCCFLAGS) $(INC) -c -o $@ $<
 endif
 
 

@@ -365,10 +365,10 @@ int Mesodyn::initial_conditions() {
         Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], perturbations));
     }
 
-  if (correlated_noise) {
-    for (auto& flux : fluxes) {
+  for (auto& flux : fluxes) {
+    flux->set_boundary(boundary);
+    if (correlated_noise)
       dynamic_cast<ILangevin_flux*>(flux.get())->set_correlated_noise(true);
-    }
   }
 
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);

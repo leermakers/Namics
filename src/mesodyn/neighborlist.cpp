@@ -79,12 +79,13 @@ void Neighborlist::build() {
         // No fluxes will ever be calculated going from the boundary size_to the system
         Offset_map offset = config->get_offset();
 
-        config->m_subsystem_loop([this, offset, temp_mask](const size_t x, const size_t y, const size_t z) mutable {  
+        config->m_subsystem_loop([this, offset, temp_mask](const size_t x, const size_t y, const size_t z) mutable {
           if ( temp_mask[m_mask.index(x, y, z)] == 1) {
-            temp_subject.push_back( m_mask.index(x,y,z) );
-
-            if ( temp_mask[m_mask.index(x + offset[Dimension::X], y + offset[Dimension::Y], z + offset[Dimension::Z])] == 1)
-              temp_neighbors.push_back( m_mask.index(x + offset[Dimension::X], y + offset[Dimension::Y], z + offset[Dimension::Z]) );
+            size_t neighbor_idx = m_mask.index(x + offset[Dimension::X], y + offset[Dimension::Y], z + offset[Dimension::Z]);
+            if ( temp_mask[neighbor_idx] == 1) {
+              temp_subject.push_back( m_mask.index(x,y,z) );
+              temp_neighbors.push_back( neighbor_idx );
+            }
           }
         });
         
@@ -93,6 +94,8 @@ void Neighborlist::build() {
       m_subject.insert(m_subject.end(), temp_subject.begin(), temp_subject.end());
       m_neighbors.insert(m_neighbors.end(), temp_neighbors.begin(), temp_neighbors.end());
 
+      temp_subject.clear();
+      temp_neighbors.clear();
       m_configurations.clear();
   
 }

@@ -40,10 +40,8 @@ int Component::update_density(const Lattice_object<Real>& J1, Real ratio, int si
 }
 
 void Component::update_boundaries() {
-  Lat->set_bounds((Real*)alpha);
-  Lat->set_bounds((Real*)rho);
-  //boundary->update_boundaries( alpha.m_data );
-  //boundary->update_boundaries( rho.m_data );
+  boundary->update_boundaries( alpha.m_data );
+  boundary->update_boundaries( rho.m_data );
 }
 
 Real Component::theta() {

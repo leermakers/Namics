@@ -147,7 +147,7 @@ int ILangevin_flux::potential_difference(Lattice_object<Real>& A, Lattice_object
     }
   }
 
-  m_lat->set_bounds((Real*)mu);
+  m_boundary->update_boundaries(mu.m_data);
 
   return 0;
 }

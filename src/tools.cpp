@@ -2,6 +2,7 @@
 #include "namics.h"
 #include "stdio.h"
 #include <limits>
+#include <cfloat>
 #ifdef PAR_MESODYN_THRUST
 	#include <thrust/inner_product.h>
 #endif
@@ -1053,9 +1054,9 @@ void SetBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	bx<<<dimGridx,dimBlock, 0, CUDA_STREAMS[0]>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
-	by<<<dimGridy,dimBlock, 0, CUDA_STREAMS[1]>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
-	bz<<<dimGridz,dimBlock, 0, CUDA_STREAMS[2]>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+	bx<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
+	by<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
+	bz<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
 }
 
 template void RemoveBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int);

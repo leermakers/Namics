@@ -9,9 +9,9 @@ R.Varadharajan - teng.cpp
 Daniel Emmery - mesodyn implementation
 Alexander Kazakov - cleng.cpp
 
-### Compiling
+## Compiling
 
-## Basic
+### Basic
 
 ```bash
 make                                          # CPU, serial mesodyn
@@ -21,7 +21,7 @@ make CUDA=1 PAR_MESODYN_THRUST=1              # GPU (SCF via CUDA), GPU parallel
 ```
 NOTE: Thrust and STL parallelism are mutually exclusive
 
-## Mesodyn parallelization
+### Mesodyn parallelization
 
     Build flag                       Backend              Requirements
     ---------------------------------------------------------------------------

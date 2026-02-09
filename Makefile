@@ -93,6 +93,7 @@ endif
 # %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@
 
 #Build configuration summary
+ifeq ($(filter clean cleaner,$(MAKECMDGOALS)),)
 $(info )
 $(info Platform:    $(UNAME_S))
 $(info C++ standard: $(CXX_STD))
@@ -121,6 +122,7 @@ $(info Mesodyn:     serial)
 endif
 endif
 $(info )
+endif
 
 #---------------------------------------------------------------------------------
 #DO NOT EDIT BELOW THIS LINE

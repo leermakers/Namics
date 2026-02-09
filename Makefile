@@ -37,7 +37,7 @@ ifdef CUDA
 	LIB        += -L$(CUDA_DIR)/lib64 -lcuda -lcudart -lcurand
 	CFLAGS     += -DCUDA
 	CUDA_ARCH  := $(shell $(NVCC) --list-gpu-arch | tail -1 | sed 's/compute_/sm_/')
-	NVCCFLAGS  := -g -arch=$(CUDA_ARCH) -std=c++14 -DCUDA
+	NVCCFLAGS  := -g -arch=$(CUDA_ARCH) -std=c++14 -DCUDA -diag-suppress 20012,20014
 	ifdef PAR_MESODYN
 		CFLAGS += -DPAR_MESODYN
 		NVCCFLAGS += --expt-relaxed-constexpr --expt-extended-lambda -DPAR_MESODYN

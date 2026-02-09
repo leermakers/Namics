@@ -724,7 +724,6 @@ bool GPU_present(int deviceIndex)    {
 			deviceIndex = 0;
 		}
 		cudaSetDevice(deviceIndex);
-		cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 	}
 	//if (deviceCount>0) {
 	//	stat = cublasCreate(&handle);

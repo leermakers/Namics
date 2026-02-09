@@ -55,7 +55,7 @@ INC         += -I$(CUDA_DIR)/include
 endif
 
 ifdef CUDA
-	LIB        += -L$(CUDA_DIR)/lib64 -lcuda -lcudart -lcurand
+	LIB        += -L$(CUDA_DIR)/lib64 -L$(CUDA_DIR)/lib64/stubs -lcuda -lcudart -lcurand
 	CFLAGS     += -DCUDA
 	CUDA_ARCH  ?= $(if $(shell nvidia-smi -L),native,sm_86)
 	NVCCFLAGS  := -g -arch=$(CUDA_ARCH) -std=$(CXX_STD) -DCUDA -diag-suppress 20011,20012,20013,20014,20015,2809

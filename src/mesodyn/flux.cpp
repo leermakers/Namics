@@ -137,14 +137,11 @@ int ILangevin_flux::potential_difference(Lattice_object<Real>& A, Lattice_object
     all_perturbations->perturb(mu);
 
   if (m_correlated_noise) {
-    size_t size = mu.size();
-    Real* mu_ptr = (Real*)mu;
-    Real* base_ptr = (Real*)mu_base;
-    Real* L_ptr = (Real*)L;
-    for (size_t i = 0; i < size; ++i) {
-      Real noise = mu_ptr[i] - base_ptr[i];
-      mu_ptr[i] = base_ptr[i] + noise * std::sqrt(L_ptr[i]);
-    }
+    // extract perturbation (noise = mu - mu_base), scale by sqrt(L), add base back
+    stl::transform(EXEC_PAR mu.begin(), mu.end(), mu_base.begin(), mu.begin(), stl::minus<Real>());
+    stl::transform(EXEC_PAR mu.begin(), mu.end(), L.begin(), mu.begin(),
+        [] DEVICE_LAMBDA (Real noise, Real l) -> Real { return noise * sqrt(l); });
+    stl::transform(EXEC_PAR mu.begin(), mu.end(), mu_base.begin(), mu.begin(), stl::plus<Real>());
   }
 
   m_boundary->update_boundaries(mu.m_data);

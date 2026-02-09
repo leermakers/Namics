@@ -21,6 +21,8 @@ mol : A : theta : 864
 mol : B : composition : (B)8
 mol : B : freedom : solvent
 
+sys : default : GPU : true
+
 output : kal : append : false
 kal : sys : * : grand_potential
 kal : sys : * : free_energy

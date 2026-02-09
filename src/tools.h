@@ -71,7 +71,7 @@ __global__ void propagate(Real *gs, Real *g_1, int JX, int JY, int JZ, int M);
 __global__ void oneminusphitot(Real*, Real*, int);
 __global__ void addg(Real*, Real*, Real*, int);
 __global__ void computegn(Real*, Real*, int, int);
-__global__ void overwritec(Real*, int*, Real, int);
+__global__ void overwritec(Real*, Real*, Real, int);
 __global__ void overwritea(Real*, Real*, Real*, int);
 __global__ void upq(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
 __global__ void uppsi(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
@@ -142,7 +142,7 @@ namespace tools {
 void DistributeG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 }
-void OverwriteC(Real*, int*, Real, int);
+void OverwriteC(Real*, Real*, Real, int);
 void OverwriteA(Real*, Real*, Real*, int);
 void UpQ(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
 void UpPsi(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);

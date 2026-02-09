@@ -71,6 +71,30 @@ else
 endif
 
 # %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@
+
+#Build configuration summary
+$(info )
+$(info Platform:    $(UNAME_S))
+$(info C++ standard: $(CXX_STD))
+ifdef CUDA
+$(info Compiler:    nvcc ($(NVCC)))
+$(info CUDA dir:    $(CUDA_DIR))
+$(info CUDA arch:   $(CUDA_ARCH))
+ifdef PAR_MESODYN_THRUST
+$(info Mesodyn:     Thrust (GPU parallel))
+else
+$(info Mesodyn:     serial)
+endif
+else
+$(info Compiler:    $(CC))
+ifdef PAR_MESODYN_STL
+$(info Mesodyn:     C++17 parallel STL (Intel TBB))
+else
+$(info Mesodyn:     serial)
+endif
+endif
+$(info )
+
 #---------------------------------------------------------------------------------
 #DO NOT EDIT BELOW THIS LINE
 #---------------------------------------------------------------------------------

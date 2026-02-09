@@ -11,7 +11,7 @@
 #include <map>
 #include <algorithm>
 #include <iostream>
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
   #include <thrust/copy.h>
 #endif
 

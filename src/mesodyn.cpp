@@ -298,7 +298,7 @@ void Mesodyn::prepare_densities_for_callback() {
 
 Real* Mesodyn::device_vector_ptr_to_raw(stl::device_vector<Real>& input_) {
 
-  #ifdef PAR_MESODYN
+  #ifdef PAR_MESODYN_THRUST
     return stl::raw_pointer_cast(input_.data());
   #else
     return input_.data();
@@ -345,7 +345,7 @@ int Mesodyn::initial_conditions() {
   else
     Mesodyn::gaussian = make_shared<Gaussian_noise>(mean, variance, stencil_size);
 
-  Range full_system(Coordinate(0,0,0), Coordinate(MX+2,MY+2,MZ+2));
+  Range full_system(Coordinate(0,0,0), Coordinate(MX+1,MY+1,MZ+1));
   perturbations.emplace_back( make_shared<Gaussian_perturbation>(full_system, gaussian) );
   perturbations.back()->next();
 
@@ -386,7 +386,7 @@ int Mesodyn::initial_conditions() {
 Lattice_object<size_t> Mesodyn::load_mask_from_sys() {
   Lattice_object<Real> t_mask(Lat[0]);
 
-  #if defined(PAR_MESODYN) || ! defined(CUDA)
+  #if defined(PAR_MESODYN_THRUST) || ! defined(CUDA)
   stl::copy(Sys[0]->KSAM, Sys[0]->KSAM+system_size, t_mask.begin());
   #else
   TransferDataToHost(t_mask.data(), Sys[0]->KSAM, system_size);

@@ -32,7 +32,7 @@ Input::Input(string name_) {
 			In_line.erase(std::remove(In_line.begin(), In_line.end(), ' '), In_line.end());
 			In_line.erase(std::remove(In_line.begin(), In_line.end(), '\t'), In_line.end());
 			if (In_line.length()==0) add = false;
-			if (In_line.length()>2) {if (In_line.substr(0,2) == "//") add = false;}
+			if (In_line.length()>=2) {if (In_line.substr(0,2) == "//") add = false;}
 			if (In_line.length()>7) {if (In_line.substr(0,7) == "include") {
 				add = false;
 				string filename_inc;
@@ -51,7 +51,7 @@ Input::Input(string name_) {
 						In_line.erase(std::remove(In_line.begin(), In_line.end(), ' '), In_line.end());
 						In_line.erase(std::remove(In_line.begin(), In_line.end(), '\t'), In_line.end());
 						if (In_line.length()==0) add_also = false;
-						if (In_line.length()>2) {if (In_line.substr(0,2) == "//") add_also = false;}
+						if (In_line.length()>=2) {if (In_line.substr(0,2) == "//") add_also = false;}
 						if (add_also) elems.push_back(std::to_string(line_nr).append("-").append(std::to_string(line_nr_inc)).append(":").append(In_line)); else add_also=true;
 					}
 
@@ -457,8 +457,9 @@ if (debug) cout <<"LoadItems in Input " << endl;
 						case 0:
 							if (set[3]=="*") set[3]=SysList[0];
 							//if (set[1]=="var" || set[1]=="search") name_found=true;
-							if (SysList[0]!=set[3] && !name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-								PrintList(SysList); name_found=false;}
+							name_found = (SysList[0]==set[3]);
+							if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+								PrintList(SysList);}
 							break;
 						case 1:
 							name_found=false;
@@ -502,18 +503,16 @@ if (debug) cout <<"LoadItems in Input " << endl;
 							break;
 						case 4:
 							if (set[3]=="*") set[3]=LatList[0];
-							if (LatList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-
-							//if (LatList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-								PrintList(LatList); name_found=false;
+							name_found = (LatList[0]==set[3]);
+							if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+								PrintList(LatList);
 							}
 							break;
 						case 5:
 							if (set[3]=="*") set[3]=NewtonList[0];
-							if (NewtonList[0]!=set[3]) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-
-							//if (NewtonList[0]!=set[3] && set[1]!="var") {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
-								PrintList(NewtonList); name_found=false;
+							name_found = (NewtonList[0]==set[3]);
+							if (!name_found) {cout << "In line " << set[0] << " name '" << set[3] << "' not recognised. Select from: "<< endl;
+								PrintList(NewtonList);
 							}
 							break;
 						case 6:

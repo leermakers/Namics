@@ -119,7 +119,7 @@ int ILangevin_flux::onsager_coefficient(Lattice_object<Real>& A, Lattice_object<
   if (A.size() != B.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
-  stl::transform(A.begin(), A.end(), B.begin(), L.begin(), stl::multiplies<Real>());
+  stl::transform(EXEC_PAR A.begin(), A.end(), B.begin(), L.begin(), stl::multiplies<Real>());
 
   return 0;
 }
@@ -130,8 +130,8 @@ int ILangevin_flux::potential_difference(Lattice_object<Real>& A, Lattice_object
     throw ERROR_SIZE_INCOMPATIBLE;
   }
 
-  stl::transform(A.begin(), A.end(), B.begin(), mu_base.begin(), stl::minus<Real>());
-  stl::copy(mu_base.begin(), mu_base.end(), mu.begin());
+  stl::transform(EXEC_PAR A.begin(), A.end(), B.begin(), mu_base.begin(), stl::minus<Real>());
+  stl::copy(EXEC_PAR mu_base.begin(), mu_base.end(), mu.begin());
 
   for (auto& all_perturbations : perturbation)
     all_perturbations->perturb(mu);
@@ -164,7 +164,7 @@ void Flux1D::attach_neighborlists(shared_ptr<Neighborlist> neighborlist, const O
 void Flux1D::flux() {
 
   //Zero (with bounds checking) vector J before use
-  stl::fill(J.begin(), J.end(), 0.0);
+  stl::fill(EXEC_PAR J.begin(), J.end(), 0.0);
 
   if (component_a->rho.size() != J.size()) {
     //already checked: A.alpha.size = B.alpha.size and A.rho.size = B.rho.size
@@ -191,7 +191,7 @@ void Flux3D::flux() {
 
 void Flux3D_extended_stencil::flux() {
   //Zero (with bounds checking) vector J before use
-  stl::fill(J.begin(), J.end(), 0.0);
+  stl::fill(EXEC_PAR J.begin(), J.end(), 0.0);
 
   if (component_a->rho.size() != J.size()) {
     //already checked: A.alpha.size = B.alpha.size and A.rho.size = B.rho.size
@@ -209,19 +209,19 @@ void Flux3D_extended_stencil::flux() {
 }
 
 int Flux3D_extended_stencil::langevin_flux_forward(const Offset_map& offset_) {
-  stl::transform(mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
-  stl::transform(L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
-  stl::transform(t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D));
-  stl::transform(J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
+  stl::transform(EXEC_PAR L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D));
+  stl::transform(EXEC_PAR J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::plus<Real>());
 
   return 0;
 }
 
 int Flux3D_extended_stencil::langevin_flux_backward(const Offset_map& offset_) {
-  stl::transform(mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), reverse_minus_functor());
-  stl::transform(L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
-  stl::transform(t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D) );
-  stl::transform(J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::minus<Real>());
+  stl::transform(EXEC_PAR mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), reverse_minus_functor());
+  stl::transform(EXEC_PAR L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D) );
+  stl::transform(EXEC_PAR J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::minus<Real>());
 
   return 0;
 }
@@ -231,14 +231,14 @@ int Flux1D::langevin_flux(const Offset_map& offset_) {
     //J_minus[z] = -J_plus[z - jump] (substituted into equation below)
     //J = J_plus[z] + J_minus[z]
 
-  stl::fill(J_plus.begin(), J_plus.end(), 0.0);
+  stl::fill(EXEC_PAR J_plus.begin(), J_plus.end(), 0.0);
 
-  stl::transform(mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
-  stl::transform(L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
-  stl::transform(t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), binary_norm_functor(-1.0/6.0*D) );
+  stl::transform(EXEC_PAR mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
+  stl::transform(EXEC_PAR L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), binary_norm_functor(-1.0/6.0*D) );
 
-  stl::transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), stl::plus<Real>());
-  stl::transform(J.available_neighbors[offset_]->begin(), J.available_neighbors[offset_]->end(), J_plus.available_sites->begin(), J.available_neighbors[offset_]->begin(), stl::minus<Real>());
+  stl::transform(EXEC_PAR J_plus.begin(), J_plus.end(), J.begin(), J.begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR J.available_neighbors[offset_]->begin(), J.available_neighbors[offset_]->end(), J_plus.available_sites->begin(), J.available_neighbors[offset_]->begin(), stl::minus<Real>());
   
   return 0;
 }

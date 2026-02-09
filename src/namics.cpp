@@ -448,7 +448,6 @@ int main(int argc, char *argv[])
 		if (scan_nr < 0) substart = 0;
 		else substart = Var[scan_nr]->num_of_cals;
 		if (substart < 1) substart = 0; // Default to 1 substart
-		int ii;
 		int n_out = 0;
 		int mon_length;
 		int state_length;
@@ -533,7 +532,7 @@ int main(int argc, char *argv[])
 				}
 				New[0]->PushOutput();
 
-				for (ii = 0; ii < n_out; ii++)
+				for (int ii = 0; ii < n_out; ii++)
 				{
 					Out[ii]->WriteOutput(subloop);
 				}

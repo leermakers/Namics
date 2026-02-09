@@ -815,7 +815,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 
 			RHO = mesodyn_flux();
 
-			#if defined(PAR_MESODYN) || ! defined(CUDA)
+			#if defined(PAR_MESODYN_THRUST) || ! defined(CUDA)
 			Cp(g,RHO,iv);
 			#else
 			TransferDataToDevice(RHO, g, iv);

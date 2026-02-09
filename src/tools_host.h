@@ -196,7 +196,11 @@ inline void Add(T* P, T* A, int M) {
 }
 template <typename T>
 inline void Subtract(T* P, T* A, int M) {
+#if defined(__clang__)
+  #pragma clang loop vectorize(assume_safety)
+#elif defined(__GNUC__)
   #pragma GCC ivdep
+#endif
   for (int i = 0 ; i < M ; ++i)
 	P[i] -= A[i];
   //std::transform(P, P + M, A, P, std::plus<T>());

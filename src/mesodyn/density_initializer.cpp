@@ -124,7 +124,7 @@ void Homogeneous_system_initializer::mask_density(Lattice_object<Real>& density)
 void Homogeneous_system_initializer::insert_frozen() {
     for (auto& segment : m_frozen) {
         m_densities.insert(m_densities.begin() + segment, Lattice_object<Real>(m_densities.back().m_subject_lattice, 1.0));
-        std::transform(m_densities[segment].begin(), m_densities[segment].end(), m_segments[segment]->MASK, m_densities[segment].begin(), stl::multiplies<Real>());
+        stl::transform(EXEC_PAR m_densities[segment].begin(), m_densities[segment].end(), m_segments[segment]->MASK, m_densities[segment].begin(), stl::multiplies<Real>());
     }
 }
 

@@ -25,18 +25,18 @@ void Norm_densities_relative::adjust_theta(size_t molecule_index_, Real theta_ad
 void Norm_densities_relative::execute()
 {
    stl::device_vector<Real> local_adjustment(m_system_size, 0.0);
-  stl::transform( m_components[m_subject_molecule]->rho.begin(), m_components[m_subject_molecule]->rho.end(), local_adjustment.begin(), local_adjustment.begin(), 
+  stl::transform(EXEC_PAR m_components[m_subject_molecule]->rho.begin(), m_components[m_subject_molecule]->rho.end(), local_adjustment.begin(), local_adjustment.begin(), 
   [this] DEVICE_LAMBDA (const Real& x, const Real& y) { return (x / ( 1.0 -x )) * this->m_adjustment; });
 
   for (size_t i = 0 ; i < m_components.size() ; ++i)
   {
     if ( i != m_subject_molecule )
-      stl::transform( m_components[i]->rho.begin(), m_components[i]->rho.end(), local_adjustment.begin(), m_components[i]->rho.begin(),
+      stl::transform(EXEC_PAR m_components[i]->rho.begin(), m_components[i]->rho.end(), local_adjustment.begin(), m_components[i]->rho.begin(),
         [this] DEVICE_LAMBDA (const Real& x, const Real& y) { return x * (1.0 - y); }
       );
   }
 
-  stl::for_each( m_components[m_subject_molecule]->rho.begin(), m_components[m_subject_molecule]->rho.end(),
+  stl::for_each(EXEC_PAR m_components[m_subject_molecule]->rho.begin(), m_components[m_subject_molecule]->rho.end(),
     [this] DEVICE_LAMBDA (Real& x) mutable { x *= (1.0 + this->m_adjustment); }
   ); 
 }
@@ -56,11 +56,11 @@ void Norm_densities::execute()
    for (auto component : m_components)
   {
     Real comp_theta = theta[component] / component->theta();
-    stl::for_each(component->rho.begin(), component->rho.end(), [comp_theta] DEVICE_LAMBDA (Real& a) { a *= comp_theta;} );
+    stl::for_each(EXEC_PAR component->rho.begin(), component->rho.end(), [comp_theta] DEVICE_LAMBDA (Real& a) { a *= comp_theta;} );
     component->update_boundaries();
-    stl::transform(component->rho.begin(), component->rho.end(), residuals.begin(), residuals.begin(), stl::plus<Real>());
+    stl::transform(EXEC_PAR component->rho.begin(), component->rho.end(), residuals.begin(), residuals.begin(), stl::plus<Real>());
   }
-  stl::transform(residuals.begin(), residuals.end(), m_components[m_solvent]->rho.begin(), m_components[m_solvent]->rho.begin(),
+  stl::transform(EXEC_PAR residuals.begin(), residuals.end(), m_components[m_solvent]->rho.begin(), m_components[m_solvent]->rho.begin(),
                  [this] DEVICE_LAMBDA (const double &x, const double &y) { return (y - (x - TOTAL_DENSITY)); });
 }
 
@@ -107,12 +107,12 @@ void Order_parameter::execute()
   for (auto &index_of : m_combinations)
   {
       // Local order parameter: difference[i] = (density_a - density_b)^2
-     stl::transform(m_components[index_of.first]->rho.begin(), m_components[index_of.first]->rho.end(), m_components[index_of.second]->rho.begin(),
+     stl::transform(EXEC_PAR m_components[index_of.first]->rho.begin(), m_components[index_of.first]->rho.end(), m_components[index_of.second]->rho.begin(),
                    difference.begin(),
                    [this] DEVICE_LAMBDA (const Real &a, const Real &b) mutable { return pow(a - b, 2); });
 
     // Sum local order parameters for this component and add to the sum of the previous ones
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
     m_order_parameter = thrust::reduce(difference.begin(), difference.end(), m_order_parameter);
 #else
     m_order_parameter = std::accumulate(difference.begin(), difference.end(), m_order_parameter);
@@ -140,5 +140,5 @@ void Treat_as_zero::execute()
 {
   auto tolerance = this->m_tolerance;
    for (auto& component : m_components)
-    stl::for_each(component->rho.begin(), component->rho.end(), [tolerance] DEVICE_LAMBDA (Real& a) mutable { if (a < tolerance and a != 0.0) a = tolerance; } );
+    stl::for_each(EXEC_PAR component->rho.begin(), component->rho.end(), [tolerance] DEVICE_LAMBDA (Real& a) mutable { if (a < tolerance and a != 0.0) a = tolerance; } );
 }

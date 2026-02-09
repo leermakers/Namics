@@ -5,7 +5,7 @@
 
 extern Real* SUM_RESULT;
 
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
 	#include <thrust/extrema.h>
 	#include <thrust/device_vector.h>
   #include <thrust/device_ptr.h>

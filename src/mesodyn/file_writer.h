@@ -94,7 +94,7 @@ class Output_ptr : public IOutput_ptr
 
         void set_buffer(const size_t size) {
             buffer.resize(size);
-            #ifdef PAR_MESODYN
+            #ifdef PAR_MESODYN_THRUST
             TransferDataToHost(buffer.data(), const_cast<T*>(parameter), const_cast<size_t&>(size));
             #else
             buffer.assign(parameter, parameter+size);
@@ -115,7 +115,7 @@ class Output_ptr : public IOutput_ptr
 
                 const T* data = new T;
 
-            #ifdef PAR_MESODYN
+            #ifdef PAR_MESODYN_THRUST
                 TransferDataToHost(const_cast<T*>(data), const_cast<T*>(parameter+offset), 1);
             #else
                 data = parameter+offset;

@@ -55,7 +55,7 @@ void Step_perturbation::perturb(Lattice_object<Real>& object_)
         Value_index_pair<Real> pair(object_.m_data, m_range.get_indices(object_));
         Real intensity = m_intensity; //workaround for template deduction errors
 
-        stl::for_each(pair.begin(), pair.end(), [intensity] DEVICE_LAMBDA (Real& x) mutable { x += intensity; });
+        stl::for_each(EXEC_PAR pair.begin(), pair.end(), [intensity] DEVICE_LAMBDA (Real& x) mutable { x += intensity; });
     }
 }
 
@@ -77,7 +77,7 @@ void Sine_perturbation::perturb(Lattice_object<Real>& object_)
     {
         Value_index_pair<Real> pair(object_.m_data, m_range.get_indices(object_));
         Real intensity = m_amplitude*sin(2*PIE*(1/m_wavelength)*m_current_step);
-        stl::for_each(pair.begin(), pair.end(), [intensity] DEVICE_LAMBDA (Real& x) mutable { x += intensity; });
+        stl::for_each(EXEC_PAR pair.begin(), pair.end(), [intensity] DEVICE_LAMBDA (Real& x) mutable { x += intensity; });
     }
 }
 
@@ -130,7 +130,7 @@ void Spatial_wave_perturbation::perturb(Lattice_object<Real>& object_)
     if (m_started)
     {
         Value_index_pair<Real> pair(object_.m_data, m_range.get_indices(object_) );
-        stl::transform( m_perturbation.begin(), m_perturbation.end(), pair.begin(), pair.begin(), stl::plus<Real>());
+        stl::transform(EXEC_PAR m_perturbation.begin(), m_perturbation.end(), pair.begin(), pair.begin(), stl::plus<Real>());
     }
 }
 
@@ -152,7 +152,7 @@ void Gaussian_perturbation::perturb(Lattice_object<Real>& object_)
         Value_index_pair<Real> noise_range(m_noise->noise, m_range.get_indices(object_));
         Value_index_pair<Real> target_range(object_.m_data, m_range.get_indices(object_));
 
-        stl::transform(noise_range.begin(), noise_range.end(), target_range.begin(), target_range.begin(), stl::plus<Real>() );
+        stl::transform(EXEC_PAR noise_range.begin(), noise_range.end(), target_range.begin(), target_range.begin(), stl::plus<Real>() );
     }
 }
 

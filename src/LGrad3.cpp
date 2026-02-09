@@ -1780,7 +1780,7 @@ if (!debug) cout <<"set_bounds (int) in LGrad3 " << endl;
 			}
 
 			for (y=0; y<MY+2; y+=MY+1) {
-				for (x=1; x<MX+1; x++){
+				for (int x=1; x<MX+1; x++){
 					X[x*JX        +0] = X[x*JX+BZ1*JZ];
 					X[x*JX+(MZ+1)*JZ] = X[x*JX+BZM*JZ];
 				}

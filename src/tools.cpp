@@ -2,7 +2,7 @@
 #include "namics.h"
 #include "stdio.h"
 #include <limits>
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
 	#include <thrust/inner_product.h>
 #endif
 #define MAX_BLOCK_SZ 512
@@ -996,7 +996,7 @@ void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 	oneminusphitot<<<n_blocks,block_size>>>(g,phitot,M);
 }
 
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
 Real ComputeResidual(Real* array, int size) {
 	Real residual{0};
 

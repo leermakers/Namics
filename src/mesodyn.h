@@ -28,7 +28,7 @@
 #include "mesodyn/collection_procedures.h"
 #include "mesodyn/perturbation.h"
 
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 #include <thrust/copy.h>

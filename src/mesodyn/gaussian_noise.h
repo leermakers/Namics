@@ -6,7 +6,7 @@
 #include <cmath>
 #include "lattice_object.h"
 #include "boundary_conditions.h"
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
   #include <cstdlib>
   #include <thrust/transform.h>
   #include <thrust/device_vector.h>
@@ -33,7 +33,7 @@ public:
   std::minstd_rand  prng;
   std::normal_distribution<Real> dist;
   Real variance;
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
   curandGenerator_t gen;
 #endif
 };

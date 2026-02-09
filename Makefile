@@ -1,12 +1,25 @@
+#Platform detection
+UNAME_S     := $(shell uname -s)
+
 #Compiler and Linker
-ifdef GCC_8
-CC          :=g++-8
+# Using c++17 unlocks parallel algorithms in mesodyn when you:
+#   Windows: MSVC uses its own builtin thread pool (no TBB needed)
+#   Linux:   install TBB (apt install libtbb-dev)
+#   MacOS:   install gcc and tbb via Homebrew (brew install gcc tbb)
+#            Apple clang does not support the <execution> header.
+ifeq ($(UNAME_S),Darwin)
+	# MacOS specific settings
+    BREW_PREFIX := $(shell brew --prefix)
+    GCC_VERSION := $(shell ls $(BREW_PREFIX)/bin/g++-* | sort -t- -k2 -n | tail -1)
+    CC          := $(if $(GCC_VERSION),$(GCC_VERSION),g++)
 else
-CC			:=g++
+    CC          := g++
 endif
 
 NVCC        := $(shell which nvcc)
 CUDA_DIR    := $(if $(NVCC),$(realpath $(dir $(NVCC))/..))
+# c++ 17 is required if you'd like to use the parallel algorithms in mesodyn
+CXX_STD     := c++17
 
 #The Target Binary Program
 TARGET      := namics
@@ -25,23 +38,36 @@ OBJEXT      := o
 #flat DOUBLE
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -Ofast -std=c++14 -march=native
+CFLAGS      := -Wall -O3 -ffast-math -std=$(CXX_STD) -march=native
 LIB         := -lm -lpthread
-INC         := -I/usr/local/include -I/usr/include -I/usr/include/eigen3
+INC         := -I$(SRCDIR) -I/usr/local/include -I/usr/include -I/usr/include/eigen3
+
+# MacOS: add Homebrew paths for headers and libraries
+ifeq ($(UNAME_S),Darwin)
+ifdef BREW_PREFIX
+    INC     += -I$(BREW_PREFIX)/include
+    LIB     += -L$(BREW_PREFIX)/lib
+endif
+endif
+
 ifdef CUDA_DIR
 INC         += -I$(CUDA_DIR)/include
 endif
-# put 'Eigen' directory in /usr/include, or inlude path to Eigen in the line above
-#INCDEP      := -I$(INCDIR)
+
 ifdef CUDA
 	LIB        += -L$(CUDA_DIR)/lib64 -lcuda -lcudart -lcurand
 	CFLAGS     += -DCUDA
 	CUDA_ARCH  := $(shell $(NVCC) --list-gpu-arch | tail -1 | sed 's/compute_/sm_/')
-	NVCCFLAGS  := -g -arch=$(CUDA_ARCH) -std=c++14 -DCUDA -diag-suppress 20011,20012,20014
-	ifdef PAR_MESODYN
-		CFLAGS += -DPAR_MESODYN
-		NVCCFLAGS += --expt-relaxed-constexpr --expt-extended-lambda -DPAR_MESODYN
+	NVCCFLAGS  := -g -arch=$(CUDA_ARCH) -std=$(CXX_STD) -DCUDA -diag-suppress 20011,20012,20014
+	ifdef PAR_MESODYN_THRUST
+		CFLAGS += -DPAR_MESODYN_THRUST
+		NVCCFLAGS += --expt-relaxed-constexpr --expt-extended-lambda -DPAR_MESODYN_THRUST
 	endif
+else
+    ifdef PAR_MESODYN_STL
+		CFLAGS += -DPAR_MESODYN_STL
+		LIB += -ltbb
+    endif
 endif
 
 # %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@
@@ -99,7 +125,7 @@ else
 $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-	@$(CC) $(CFLAGS) $(INCDEP) -MM $(SRCDIR)/$*.$(SRCEXT) > $(BUILDDIR)/$*.$(DEPEXT)
+	@$(CC) $(CFLAGS) $(INC) -MM $(SRCDIR)/$*.$(SRCEXT) > $(BUILDDIR)/$*.$(DEPEXT)
 	@cp -f $(BUILDDIR)/$*.$(DEPEXT) $(BUILDDIR)/$*.$(DEPEXT).tmp
 	@sed -e 's|.*:|$(BUILDDIR)/$*.$(OBJEXT):|' < $(BUILDDIR)/$*.$(DEPEXT).tmp > $(BUILDDIR)/$*.$(DEPEXT)
 	@sed -e 's/.*://' -e 's/\\$$//' < $(BUILDDIR)/$*.$(DEPEXT).tmp | fmt -1 | sed -e 's/^ *//' -e 's/$$/:/' >> $(BUILDDIR)/$*.$(DEPEXT)

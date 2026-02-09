@@ -56,7 +56,7 @@ void Boundary1D::update_boundaries(stl::device_vector<Real>& input) {
         Boundary1D::m_neighborlist.get_neighbors()
     };
 
-    stl::copy(system_edge.begin(), system_edge.end(), boundary.begin());
+    stl::copy(EXEC_PAR system_edge.begin(), system_edge.end(), boundary.begin());
 }
 
 void Boundary1D::zero_boundaries(stl::device_vector<Real>& input) {
@@ -66,7 +66,7 @@ void Boundary1D::zero_boundaries(stl::device_vector<Real>& input) {
         Boundary1D::m_neighborlist.get_subject()
     };
 
-    stl::fill(boundary.begin(), boundary.end(), 0);
+    stl::fill(EXEC_PAR boundary.begin(), boundary.end(), 0);
 }
 
 

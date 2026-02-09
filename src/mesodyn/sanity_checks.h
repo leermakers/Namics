@@ -9,7 +9,7 @@
 #include <limits>
 #include "../tools.h"
 
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
 #include <thrust/device_vector.h>
 #include <thrust/device_ptr.h>
 #include <thrust/copy.h>
@@ -104,14 +104,14 @@ class Check_theta : public Sanity_check
     void check() override
     {
         Real sum{(Real)0.0};
-        #ifdef PAR_MESODYN
+        #ifdef PAR_MESODYN_THRUST
         const thrust::device_ptr<const Real> data = thrust::device_pointer_cast(m_checkable->get_checkable_data());
         #else
         const T* data = m_checkable->get_checkable_data();
         #endif
         const size_t size = m_checkable->get_checkable_size();
         
-        #ifdef PAR_MESODYN
+        #ifdef PAR_MESODYN_THRUST
         sum = thrust::reduce(data, data+size);
         #else
         sum = std::accumulate(data, data+size, sum);
@@ -142,14 +142,14 @@ class Check_between_zero_and_one : public Sanity_check
     void check() override
     {
         size_t errors{0};
-        #ifdef PAR_MESODYN
+        #ifdef PAR_MESODYN_THRUST
         const thrust::device_ptr<const Real> data = thrust::device_pointer_cast(m_checkable->get_checkable_data());
         #else
         const T* data = m_checkable->get_checkable_data();
         #endif
         const size_t size = m_checkable->get_checkable_size();
 
-        errors = stl::count_if(data, data+size, is_negative_functor(std::numeric_limits<T>::epsilon()));
+        errors = stl::count_if(EXEC_PAR data, data+size, is_negative_functor(std::numeric_limits<T>::epsilon()));
 
         if (errors > 0) {
             std::cerr << "Found " << errors << " values < 0 || > 1 in identifier " << m_identifier << std::endl;
@@ -185,15 +185,15 @@ class Check_index_unity : public Sanity_check
         typename stl::device_vector<T> sum(size, 0);
 
         for (auto checkable_data : m_coupled_checkables) {
-          #ifdef PAR_MESODYN
+          #ifdef PAR_MESODYN_THRUST
           const thrust::device_ptr<const Real> data = thrust::device_pointer_cast(checkable_data->get_checkable_data());
           #else
           const T* data = checkable_data->get_checkable_data();
           #endif
-          stl::transform(data, data+size, sum.begin(), sum.begin(), stl::plus<T>());
+          stl::transform(EXEC_PAR data, data+size, sum.begin(), sum.begin(), stl::plus<T>());
         }
 
-        errors = stl::count_if(sum.begin(), sum.end(), is_not_unity_functor(std::numeric_limits<T>::epsilon()));
+        errors = stl::count_if(EXEC_PAR sum.begin(), sum.end(), is_not_unity_functor(std::numeric_limits<T>::epsilon()));
 
         if (errors > 0) {
             std::cerr << "Found " << errors << " indices where sum != 1 in identifier " << m_identifier << std::endl;

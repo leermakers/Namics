@@ -48,7 +48,7 @@ typedef std::map<Offset_map, shared_ptr<Value_index_pair<T>>> Neighborlist_map;
 Neighborlist_map available_neighbors;
 const Lattice* m_subject_lattice;
 
-virtual ~Lattice_object() { }
+virtual ~Lattice_object() noexcept { }
 
 explicit Lattice_object(const Lattice* Lat_, T init=0.0)
 : Lattice_accessor{Lat_}, Checkable<T>{ (T*)this, system_size }, m_data(system_size, init), m_subject_lattice{ Lat_ }

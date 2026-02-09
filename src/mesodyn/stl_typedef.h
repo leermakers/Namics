@@ -10,6 +10,7 @@
   #ifdef PAR_MESODYN
   #define DEVICE_LAMBDA __host__ __device__
     #include <thrust/device_vector.h>
+    #include <thrust/host_vector.h>
     #include <thrust/device_ptr.h>
     namespace stl = thrust;
     //const auto reduce = accumulate;

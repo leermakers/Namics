@@ -47,7 +47,7 @@ void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int J
 __global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
 	int index = blockIdx.x*blockDim.x+threadIdx.x;
 
-	if (index < M-JX) {
+	if (index >= JX && index < M-JX) {
 		Real gs_register = gs[index];
 
 		gs_register += gs_1[index-JZ];
@@ -794,7 +794,7 @@ Real* AllManagedOnDev(int N) {
 }
 
 void Dot(Real &result, Real *x,Real *y, int M)   {
-	cudaMemset((void**)SUM_RESULT, 0, sizeof(Real));
+	cudaMemset((void*)SUM_RESULT, 0, sizeof(Real));
 	//Use a pre-allocated (member) variable! Allocating memory for every call is way too costly
 	//Memcopies can be masked by asynchronous transfer, allocations and frees are blocking.
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
@@ -803,7 +803,7 @@ void Dot(Real &result, Real *x,Real *y, int M)   {
 }
 
 void Sum(Real& result, Real *x, int M)   {
-	cudaMemset((void**)SUM_RESULT, 0, sizeof(Real));
+	cudaMemset((void*)SUM_RESULT, 0, sizeof(Real));
 	//Use a pre-allocated (member) variable! Allocating memory for every call is way too costly
 	//Memcopies can be masked by asynchronous transfer, allocations and frees are blocking.
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
@@ -845,21 +845,16 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 }
 
 void Unity(Real* P, int M)   {
-	cudaMemset((void**)P, 1.0, M*sizeof(Real)); //much faster than a kernel
-//int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-//	unity<<<n_blocks,block_size>>>(P,M);
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	unity<<<n_blocks,block_size>>>(P,M);
 }
 
 void Zero(Real* P, int M)   {
-	cudaMemset((void**)P, 0.0, M*sizeof(Real)); //much faster than a kernel
-/*  int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	zero<<<n_blocks,block_size, 0>>>(P,M); */
+	cudaMemset((void*)P, 0, M*sizeof(Real));
 }
 
 void Zero(int* P, int M)   {
-	cudaMemset((void**)P, 0, M*sizeof(int)); //much faster than a kernel
-/* 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	zero<<<n_blocks,block_size, 0>>>(P,M);  */
+	cudaMemset((void*)P, 0, M*sizeof(int));
 }
 
 void Cp(Real *P,Real *A, int M)   {

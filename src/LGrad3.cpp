@@ -1553,9 +1553,9 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 			SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 	} else {
 		if (fjc==1) {
-
-			//SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-
+#ifdef CUDA
+			SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+#else
 			for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){
 				X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];
 				X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+BZM];
@@ -1611,7 +1611,7 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 			X[0        +(MY+1)*JY+(MZ+1)*JZ]=X[BX1*JX+BYM*JY+BZM*JZ];
 			X[(MX+1)*JX+(MY+1)*JY+(MZ+1)*JZ]=X[BXM*JX+BYM*JY+BZM*JZ];
 
-
+#endif
 		} else {
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = X[x*JX+y*JY+B_Z1[k]];

@@ -117,8 +117,16 @@ void Homogeneous_system_initializer::build_objects()
 }
 
 void Homogeneous_system_initializer::mask_density(Lattice_object<Real>& density) {
-    //Times((Real*)density, (Real*)density, const_cast<int*>(m_mask), density.size());
+#if defined(CUDA) && !defined(PAR_MESODYN_THRUST)
+    // lattice_object data is on host (std::vector), KSAM is on device.
+    // copy mask to host and multiply here.
+    std::vector<Real> h_mask(density.size());
+    TransferDataToHost(h_mask.data(), const_cast<Real*>(m_mask), density.size());
+    for (size_t i = 0; i < density.size(); ++i)
+        density.m_data[i] *= h_mask[i];
+#else
     Times((Real*)density, (Real*)density, (Real*)(m_mask), density.size());
+#endif
 }
 
 void Homogeneous_system_initializer::insert_frozen() {

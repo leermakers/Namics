@@ -1981,6 +1981,9 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	if (freedom=="free") theta = lat->WeightedSum(phitot);
 	push("Markov",Markov);
 	push("k_stiff",k_stiff);
+#ifdef CUDA
+	TransferDataToHost(H_phitot,phitot,lat->M);
+#endif
 	if (lat->gradients==3) {
 		int MZ=lat->MZ;
 		int MY=lat->MY;
@@ -1990,7 +1993,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		for (int z=1; z<MZ+1; z++) {
 			Real phiz=0;
 			for (int x=1; x<MX+1; x++) for (int y=1;y<MY+1;y++) {
-				phiz +=phitot[x*JX+y*JY+z];
+				phiz +=H_phitot[x*JX+y*JY+z];
 			}
 			phiz /= MX*MY;
 			if (z==1) push("phiz[1]",phiz);
@@ -2067,8 +2070,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		}
 	}
 	push("width",width);
-	push("phi1",phitot[lat->fjc]);
-	push("phiM",phitot[lat->M-2*lat->fjc]);
+	push("phi1",H_phitot[lat->fjc]);
+	push("phiM",H_phitot[lat->M-2*lat->fjc]);
 	push("Dphi",phi1-phiM);
 	push("pos_interface",pos_interface);
 	push("phi_average",phi_av);
@@ -2083,18 +2086,18 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		}
 	}
 	int M=lat->M;
-	Real phimax=phitot[M/2];
+	Real phimax=H_phitot[M/2];
 	bool maxfound=false;
 	int i=M/2;
 	while (!maxfound) {
 		i++;
-		if (phitot[i]> phimax ) phimax =phitot[i]; else maxfound=true;
+		if (H_phitot[i]> phimax ) phimax =H_phitot[i]; else maxfound=true;
 	}
 	maxfound=false;
 	i=M/2;
 	while (!maxfound) {
 		i--;
-		if (phitot[i]> phimax ) phimax =phitot[i]; else maxfound=true;
+		if (H_phitot[i]> phimax ) phimax =H_phitot[i]; else maxfound=true;
 	}
 
 	push("phiMax",phimax);

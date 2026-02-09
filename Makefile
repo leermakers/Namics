@@ -19,7 +19,7 @@ endif
 NVCC        := $(shell which nvcc)
 CUDA_DIR    := $(if $(NVCC),$(realpath $(dir $(NVCC))/..))
 # c++ 17 is required if you'd like to use the parallel algorithms in mesodyn
-CXX_STD     := c++17
+CXX_STD     := c++14
 
 #The Target Binary Program
 TARGET      := namics

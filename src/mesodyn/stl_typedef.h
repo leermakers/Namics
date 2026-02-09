@@ -27,6 +27,7 @@
   // C++17 parallel algorithms (CPU parallelism via TBB)
   // enable with: make PAR_MESODYN_STL=1
   #if defined(PAR_MESODYN_STL) && !defined(PAR_MESODYN_THRUST)
+    static_assert(__cplusplus >= 201703L, "PAR_MESODYN_STL requires C++17 or higher. Set CXX_STD := c++17 in the Makefile.");
     #include <execution>
     #define EXEC_PAR std::execution::par,
     #define EXEC_SEQ std::execution::seq,

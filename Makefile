@@ -70,6 +70,26 @@ else
     endif
 endif
 
+# PAR_MESODYN_STL sanity checks
+ifdef PAR_MESODYN_STL
+ifndef CUDA
+HAS_TBB := $(shell pkg-config --exists tbb && echo yes || echo no)
+ifeq ($(filter c++17 c++20 c++23 c++2a c++2b,$(CXX_STD)),)
+    $(error PAR_MESODYN_STL requires C++17 or higher, but CXX_STD is $(CXX_STD). Set CXX_STD := c++17 in the Makefile.)
+endif
+ifeq ($(UNAME_S),Darwin)
+ifneq ($(findstring g++,$(CC)),g++)
+    $(error PAR_MESODYN_STL on macOS requires GCC. Apple clang does not support <execution>. Install GCC via: brew install gcc)
+endif
+endif
+ifneq ($(UNAME_S),Windows_NT)
+ifneq ($(HAS_TBB),yes)
+    $(error PAR_MESODYN_STL requires Intel TBB but it was not found. Install with: apt install libtbb-dev (Linux) or brew install tbb (macOS))
+endif
+endif
+endif
+endif
+
 # %.o: %.cu $(NVCC) $(NVCCFLAGS) -c $< -o $@
 
 #Build configuration summary
@@ -88,7 +108,14 @@ endif
 else
 $(info Compiler:    $(CC))
 ifdef PAR_MESODYN_STL
+ifeq ($(HAS_TBB),yes)
+$(info TBB:         found)
 $(info Mesodyn:     C++17 parallel STL (Intel TBB))
+else ifeq ($(UNAME_S),Windows_NT)
+$(info Mesodyn:     C++17 parallel STL (MSVC thread pool))
+else
+$(info Mesodyn:     PAR_MESODYN_STL requested but TBB NOT found -- install with: apt install libtbb-dev (Linux) or brew install tbb (MacOS))
+endif
 else
 $(info Mesodyn:     serial)
 endif

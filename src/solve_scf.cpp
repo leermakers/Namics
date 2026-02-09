@@ -765,7 +765,7 @@ void Solve_scf::residuals(Real* x, Real* g){
 	//Real valence;
 	int sysmon_length = Sys[0]->SysMonList.size();
 	int mon_length = In[0]->MonList.size(); //also frozen segments
-	int i,k;//xi=0;
+	int k;//xi=0;
 
 	switch(gradient) {
 		case WEAK:
@@ -891,9 +891,9 @@ void Solve_scf::residuals(Real* x, Real* g){
 			}
 			Real one=1.0;
 			YisAplusC(g+jump*M,Sys[0]->phitot,-1.0*one,M);
-			for (i=0; i<sysmon_length; i++) {
+			for (int i=0; i<sysmon_length; i++) {
 				Cp(g+i*M,xx+i*M,M);
-				for (k=0; k<mon_length; k++) {
+				for (int k=0; k<mon_length; k++) {
                        		chi= -1.0*Sys[0]->CHI[Sys[0]->SysMonList[i]*mon_length+k];  //The minus sign here is to change the sign of x! just a trick due to properties of PutAlpha where a minus sing is implemented....
 					if (chi!=0) PutAlpha(g+i*M,Sys[0]->phitot,Seg[k]->phi_side,chi,Seg[k]->phibulk,M);
 				}

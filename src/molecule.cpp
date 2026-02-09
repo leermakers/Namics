@@ -1375,14 +1375,14 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	In[0]->split(s,',',sub);
 	int length=sub.size();
 	int length_open;
-	int i,j,k,a,f,dd;
+	int j,k,a,f,dd;
 	string ss;
 	switch(MolType) {
 		case water:
 
 			break;
 		case dendrimer:
-			for (i=0; i<length; i++) {
+			for (int i=0; i<length; i++) {
 				open.clear(); close.clear();
 				In[0]->EvenBrackets(sub[i],open,close);
 				length_open=open.size();
@@ -1393,7 +1393,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 					}
 				}
 			}
-			for (i=0; i<length; i++) {
+			for (int i=0; i<length; i++) {
 				ss.append(sub[i]);
 				if (i<length-1) ss.append(",");
 			}
@@ -1483,7 +1483,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 
 			//cout <<"n_generations " << n_generations << endl;
 			chainlength=0; N=-1;
-			for (i=0; i<n_generations; i++) {
+			for (int i=0; i<n_generations; i++) {
 				sub.clear();	arms=0;
 				In[0]->split(sub_gen[i],',',sub);
 				int sublength=sub.size();
@@ -1636,7 +1636,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				return success;
 			}
 			chainlength=0; N=-1;
-			i=0;
+			//i=0;
 			//success=Interpret(sub_gen[0],i);
 
 			first_s.push_back(N+1);
@@ -1662,7 +1662,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			}
 
 			chainlength_backbone=chainlength;
-			i=1;
+			//i=1;
 			sub.clear();
 			In[0]->split(sub_gen[1],',',sub);
 			//cout <<"sub_gen[1] " << sub_gen[1] << "size of sub : " << sub.size() << endl;

@@ -437,14 +437,14 @@ void Mesodyn::register_output() {
     if (initialize<bool>("write_density", 1))
       for (size_t i = 0 ; i < components.size() ; ++i)
       {
-        string description = "component:" + to_string(i);
+        string description = Seg[Sys[0]->SysMolMonList[i]]->name;
         register_output_profile(description + ":density", (Real*)components[i]->rho);
       }
 
     if (initialize<bool>("write_alpha", 0))
       for (size_t i = 0 ; i < components.size() ; ++i)
       {
-        string description = "component:" + to_string(i);
+        string description = Seg[Sys[0]->SysMolMonList[i]]->name;
         register_output_profile(description + ":alpha", (Real*)components[i]->alpha);
       }
 

@@ -1554,7 +1554,7 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 	} else {
 		if (fjc==1) {
 #ifdef CUDA
-			SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
+			SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ,stencil_full);
 #else
 			for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){
 				X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];

@@ -483,13 +483,48 @@ void TransferDataToDevice(T *H, T *D, int M)    {
 	cudaMemcpy(D, H, sizeof(T)*M,cudaMemcpyHostToDevice);
 }
 
-__global__ void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+__global__ void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy, int by1, int bz1, bool corner)   {
 	int idx, jx_mmx=jx*mmx, jx_bxm=jx*bxm, bx1_jx=bx1*jx;
+	int jy_by1=jy*by1;
 	int yi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (yi<My && zi<Mz) {
 		idx=jy*yi+zi;
 		P[idx]=P[bx1_jx+idx];
 		P[jx_mmx+idx]=P[jx_bxm+idx];
+		if (corner) {
+			if (yi==0 && zi==0) {
+				P[idx]=P[bx1_jx+idx+jy_by1+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1+bz1];
+			}
+			if (yi==My-1 && zi==0) {
+				P[idx]=P[bx1_jx+idx-jy_by1+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1+bz1];
+			}
+			if (yi==0 && zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx+jy_by1-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1-bz1];
+			}
+			if (yi==My-1 && zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx-jy_by1-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1-bz1];
+			}
+			if (yi==0) {
+				P[idx]=P[bx1_jx+idx+jy_by1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1];
+			}
+			if (yi==My-1) {
+				P[idx]=P[bx1_jx+idx-jy_by1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1];
+			}
+			if (zi==0) {
+				P[idx]=P[bx1_jx+idx+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+bz1];
+			}
+			if (zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-bz1];
+			}
+		}
 	}
 }
 __global__ void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -501,13 +536,23 @@ __global__ void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, 
 		P[jx_mmx+idx]=0;
 	}
 }
-__global__ void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+__global__ void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy, int bz1, bool corner)   {
 	int idx, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	int xi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && zi<Mz) {
 		idx=jx*xi+zi;
 		P[idx]=P[jy_by1+idx];
 		P[jy_mmy+idx]=P[jy_bym+idx];
+		if (corner) {
+			if (zi==0) {
+				P[idx]=P[jy_by1+idx+bz1];
+				P[jy_mmy+idx]=P[jy_bym+idx+bz1];
+			}
+			if (zi==Mz-1) {
+				P[idx]=P[jy_by1+idx-bz1];
+				P[jy_mmy+idx]=P[jy_bym+idx-bz1];
+			}
+		}
 	}
 }
 __global__ void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
@@ -519,12 +564,23 @@ __global__ void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, 
 		P[jy_mmy+idx]=0;
 	}
 }
-__global__ void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+__global__ void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy, int bx1, bool corner)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && yi<My) {
 		idx=jx*xi+jy*yi;
 		P[idx]=P[idx+bz1];
 		P[idx+mmz]=P[idx+bzm];
+		if (corner) {
+			int bx1_jx=bx1*jx;
+			if (xi==0) {
+				P[idx]=P[idx+bz1+bx1_jx];
+				P[idx+mmz]=P[idx+bzm+bx1_jx];
+			}
+			if (xi==Mx-1) {
+				P[idx]=P[idx+bz1-bx1_jx];
+				P[idx+mmz]=P[idx+bzm-bx1_jx];
+			}
+		}
 	}
 }
 __global__ void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
@@ -535,13 +591,48 @@ __global__ void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, 
 		P[idx+mmz]=0;
 	}
 }
-__global__ void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+__global__ void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy, int by1, int bz1, bool corner)   {
 	int idx, jx_mmx=jx*mmx, jx_bxm=jx*bxm, bx1_jx=bx1*jx;
+	int jy_by1=jy*by1;
 	int yi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (yi<My && zi<Mz) {
 		idx=jy*yi+zi;
 		P[idx]=P[bx1_jx+idx];
 		P[jx_mmx+idx]=P[jx_bxm+idx];
+		if (corner) {
+			if (yi==0 && zi==0) {
+				P[idx]=P[bx1_jx+idx+jy_by1+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1+bz1];
+			}
+			if (yi==My-1 && zi==0) {
+				P[idx]=P[bx1_jx+idx-jy_by1+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1+bz1];
+			}
+			if (yi==0 && zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx+jy_by1-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1-bz1];
+			}
+			if (yi==My-1 && zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx-jy_by1-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1-bz1];
+			}
+			if (yi==0) {
+				P[idx]=P[bx1_jx+idx+jy_by1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1];
+			}
+			if (yi==My-1) {
+				P[idx]=P[bx1_jx+idx-jy_by1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1];
+			}
+			if (zi==0) {
+				P[idx]=P[bx1_jx+idx+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+bz1];
+			}
+			if (zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-bz1];
+			}
+		}
 	}
 }
 __global__ void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -553,13 +644,23 @@ __global__ void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, i
 		P[jx_mmx+idx]=0;
 	}
 }
-__global__ void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+__global__ void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy, int bz1, bool corner)   {
 	int idx, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	int xi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && zi<Mz) {
 		idx=jx*xi+zi;
 		P[idx]=P[jy_by1+idx];
 		P[jy_mmy+idx]=P[jy_bym+idx];
+		if (corner) {
+			if (zi==0) {
+				P[idx]=P[jy_by1+idx+bz1];
+				P[jy_mmy+idx]=P[jy_bym+idx+bz1];
+			}
+			if (zi==Mz-1) {
+				P[idx]=P[jy_by1+idx-bz1];
+				P[jy_mmy+idx]=P[jy_bym+idx-bz1];
+			}
+		}
 	}
 }
 __global__ void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
@@ -571,12 +672,23 @@ __global__ void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, i
 		P[jy_mmy+idx]=0;
 	}
 }
-__global__ void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+__global__ void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy, int bx1, bool corner)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && yi<My) {
 		idx=jx*xi+jy*yi;
 		P[idx]=P[idx+bz1];
 		P[idx+mmz]=P[idx+bzm];
+		if (corner) {
+			int bx1_jx=bx1*jx;
+			if (xi==0) {
+				P[idx]=P[idx+bz1+bx1_jx];
+				P[idx+mmz]=P[idx+bzm+bx1_jx];
+			}
+			if (xi==Mx-1) {
+				P[idx]=P[idx+bz1-bx1_jx];
+				P[idx+mmz]=P[idx+bzm-bx1_jx];
+			}
+		}
 	}
 }
 __global__ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
@@ -594,16 +706,51 @@ inline bool safe_mask_compare(const Real& mask_value, const int& query_value) {
     return std::abs(mask_value - static_cast<Real>(query_value)) < std::numeric_limits<Real>::epsilon();
 }
 
-void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy, int by1=0, int bz1=0, bool corner=false)   {
 	int i;
 	int jx_mmx=jx*mmx;
 	int jx_bxm=jx*bxm;
 	int bx1_jx=bx1*jx;
+	int jy_by1=jy*by1;
 	for (int y=0; y<My; y++)
 	for (int z=0; z<Mz; z++){
 		i=jy*y+z;
 		P[i]=P[bx1_jx+i];
 		P[jx_mmx+i]=P[jx_bxm+i];
+		if (corner) {
+			if (y==0 && z==0) {
+				P[i]=P[bx1_jx+i+jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1+bz1];
+			}
+			if (y==My-1 && z==0) {
+				P[i]=P[bx1_jx+i-jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1+bz1];
+			}
+			if (y==0 && z==Mz-1) {
+				P[i]=P[bx1_jx+i+jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1-bz1];
+			}
+			if (y==My-1 && z==Mz-1) {
+				P[i]=P[bx1_jx+i-jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1-bz1];
+			}
+			if (y==0) {
+				P[i]=P[bx1_jx+i+jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1];
+			}
+			if (y==My-1) {
+				P[i]=P[bx1_jx+i-jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1];
+			}
+			if (z==0) {
+				P[i]=P[bx1_jx+i+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+bz1];
+			}
+			if (z==Mz-1) {
+				P[i]=P[bx1_jx+i-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-bz1];
+			}
+		}
 	}
 }
 void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -615,13 +762,23 @@ void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 		P[jx_mmx+i]=0;
 	}
 }
-void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy, int bz1=0, bool corner=false)   {
 	int i, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	for (int x=0; x<Mx; x++)
 	for (int z=0; z<Mz; z++) {
 		i=jx*x+z;
 		P[i]=P[jy_by1+i];
 		P[jy_mmy+i]=P[jy_bym+i];
+		if (corner) {
+			if (z==0) {
+				P[i]=P[jy_by1+i+bz1];
+				P[jy_mmy+i]=P[jy_bym+i+bz1];
+			}
+			if (z==Mz-1) {
+				P[i]=P[jy_by1+i-bz1];
+				P[jy_mmy+i]=P[jy_bym+i-bz1];
+			}
+		}
 	}
 }
 void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
@@ -633,13 +790,24 @@ void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 		P[jy_mmy+i]=0;
 	}
 }
-void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy, int bx1=0, bool corner=false)   {
 	int i;
+	int bx1_jx=bx1*jx;
 	for (int x=0; x<Mx; x++)
 	for (int y=0; y<My; y++) {
 		i=jx*x+jy*y;
 		P[i]=P[i+bz1];
 		P[i+mmz]=P[i+bzm];
+		if (corner) {
+			if (x==0) {
+				P[i]=P[i+bz1+bx1_jx];
+				P[i+mmz]=P[i+bzm+bx1_jx];
+			}
+			if (x==Mx-1) {
+				P[i]=P[i+bz1-bx1_jx];
+				P[i+mmz]=P[i+bzm-bx1_jx];
+			}
+		}
 	}
 }
 void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
@@ -651,16 +819,51 @@ void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 		P[i+mmz]=0;
 	}
 }
-void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy, int by1=0, int bz1=0, bool corner=false)   {
 	int i;
 	int jx_mmx=jx*mmx;
 	int jx_bxm=jx*bxm;
 	int bx1_jx=bx1*jx;
+	int jy_by1=jy*by1;
 	for (int y=0; y<My; y++)
 	for (int z=0; z<Mz; z++){
 		i=jy*y+z;
 		P[i]=P[bx1_jx+i];
 		P[jx_mmx+i]=P[jx_bxm+i];
+		if (corner) {
+			if (y==0 && z==0) {
+				P[i]=P[bx1_jx+i+jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1+bz1];
+			}
+			if (y==My-1 && z==0) {
+				P[i]=P[bx1_jx+i-jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1+bz1];
+			}
+			if (y==0 && z==Mz-1) {
+				P[i]=P[bx1_jx+i+jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1-bz1];
+			}
+			if (y==My-1 && z==Mz-1) {
+				P[i]=P[bx1_jx+i-jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1-bz1];
+			}
+			if (y==0) {
+				P[i]=P[bx1_jx+i+jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1];
+			}
+			if (y==My-1) {
+				P[i]=P[bx1_jx+i-jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1];
+			}
+			if (z==0) {
+				P[i]=P[bx1_jx+i+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+bz1];
+			}
+			if (z==Mz-1) {
+				P[i]=P[bx1_jx+i-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-bz1];
+			}
+		}
 	}
 }
 void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -672,13 +875,23 @@ void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 		P[jx_mmx+i]=0;
 	}
 }
-void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy, int bz1=0, bool corner=false)   {
 	int i, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	for (int x=0; x<Mx; x++)
 	for (int z=0; z<Mz; z++) {
 		i=jx*x+z;
 		P[i]=P[jy_by1+i];
 		P[jy_mmy+i]=P[jy_bym+i];
+		if (corner) {
+			if (z==0) {
+				P[i]=P[jy_by1+i+bz1];
+				P[jy_mmy+i]=P[jy_bym+i+bz1];
+			}
+			if (z==Mz-1) {
+				P[i]=P[jy_by1+i-bz1];
+				P[jy_mmy+i]=P[jy_bym+i-bz1];
+			}
+		}
 	}
 }
 void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
@@ -690,13 +903,24 @@ void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 		P[jy_mmy+i]=0;
 	}
 }
-void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy, int bx1=0, bool corner=false)   {
 	int i;
+	int bx1_jx=bx1*jx;
 	for (int x=0; x<Mx; x++)
 	for (int y=0; y<My; y++) {
 		i=jx*x+jy*y;
 		P[i]=P[i+bz1];
 		P[i+mmz]=P[i+bzm];
+		if (corner) {
+			if (x==0) {
+				P[i]=P[i+bz1+bx1_jx];
+				P[i+mmz]=P[i+bzm+bx1_jx];
+			}
+			if (x==Mx-1) {
+				P[i]=P[i+bz1-bx1_jx];
+				P[i+mmz]=P[i+bzm-bx1_jx];
+			}
+		}
 	}
 }
 void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
@@ -1040,18 +1264,18 @@ void CollectPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int M
 //}
 //#endif
 
-template void SetBoundaries<int>(int*, int, int, int, int, int, int, int, int, int, int, int);
-template void SetBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int);
+template void SetBoundaries<int>(int*, int, int, int, int, int, int, int, int, int, int, int, bool);
+template void SetBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int, bool);
 
 template <typename T>
-void SetBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
+void SetBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz, bool corners)   {
 	dim3 dimBlock(16,16);
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	bx<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
-	by<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
-	bz<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+	bx<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy,by1,bz1,corners);
+	by<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy,bz1,corners);
+	bz<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy,bx1,corners);
 }
 
 template void RemoveBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int);

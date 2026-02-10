@@ -50,7 +50,7 @@ if (debug) cout <<"DeAllocateMemory in Solve " << endl;
 	cudaFree(g);
 	cudaFree(xR);
 	cudaFree(x_x0);
-	cudaFree(temp_alpha);
+	if (mesodyn) cudaFree(temp_alpha);
 #else
 	int niv = In[0]->ReactionList.size();
 	if (niv>0) {

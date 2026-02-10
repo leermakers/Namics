@@ -92,7 +92,6 @@ void Lattice_geometry::set_jumps()
 
 void Lattice_geometry::assert_lattice_compatible(Lattice *Lat)
 {
-
     assert(Lat->gradients == (int)dimensions);
     assert(Lat->MX + BOUNDARIES == (int)MX);
     assert(Lat->MY + BOUNDARIES == (int)MY);
@@ -151,24 +150,44 @@ void Pro_reader::read_dimensions(const std::vector<std::string> &header_tokens)
         throw ERROR_FILE_FORMAT;
 }
 
-void Pro_reader::check_component_name_format(const std::string &header_token)
+bool Pro_reader::check_component_name_format(const std::string &header_token)
 {
 
+    //Try old format first: mol:[molecule]:phi-[monomer]
     std::vector<std::string> component_tokens = tokenize(header_token, ':');
 
-    std::string ERROR = "No headers in the format mol:[molecule]:phi-[monomer].";
+    if (component_tokens.size() == NUM_PRO_HEADER_TOKENS
+        and component_tokens[0] == "mol"
+        and component_tokens[DENSITY_HEADER_TOKEN_INDEX].substr(0, 4) == "phi-")
+            return true;
 
-    if (component_tokens.size() != NUM_PRO_HEADER_TOKENS
-        or component_tokens[0] != "mol"
-        or component_tokens[DENSITY_HEADER_TOKEN_INDEX].substr(0, 4) != "phi-")
-            throw ERROR;
+    //Try new format
+    if (header_token.substr(0, 4) == "mol_")
+    {
+        //mol_[molecule]_phi_[monomer] with monomer suffix: include this column
+        size_t phi_underscore_pos = header_token.find("_phi_");
+        if (phi_underscore_pos != std::string::npos and phi_underscore_pos + 5 < header_token.size())
+            return true;
+
+        //mol_[molecule]_phi without monomer suffix: skip this column
+        size_t phi_pos = header_token.rfind("_phi");
+        if (phi_pos != std::string::npos and phi_pos + 4 == header_token.size())
+            return false;
+    }
+
+    //mon_[monomer]_* columns are monomer-level output, not density profiles: skip
+    if (header_token.substr(0, 4) == "mon_")
+        return false;
+
+    std::string ERROR = "No headers in the format mol:[molecule]:phi-[monomer] or mol_[molecule]_phi_[monomer].";
+    throw ERROR;
 }
 
-std::vector<std::string> Pro_reader::parse_data(const size_t number_of_components, const size_t first_component_column)
+std::vector<std::string> Pro_reader::parse_data(const std::vector<size_t>& component_columns)
 {
 
-    // Prepare vector of vectors for data
-    m_data.resize(number_of_components);
+    //Prepare vector of vectors for data
+    m_data.resize(component_columns.size());
 
     std::vector<std::string> tokens;
     std::string line;
@@ -176,27 +195,38 @@ std::vector<std::string> Pro_reader::parse_data(const size_t number_of_component
         //Read the actual data, one line at a time
     while (getline(m_file, line)) {
         tokens = tokenize(line, '\t');
-        for (size_t i = 0; i < number_of_components; ++i)
+        for (size_t i = 0; i < component_columns.size(); ++i)
             m_data[i].emplace_back(
                 //Convert string to float
-                strtod( tokens[first_component_column + i].c_str() , NULL )
+                strtod( tokens[component_columns[i]].c_str() , NULL )
             );
     }
-    
+
     //Return the last line that has been read.
     return tokens;
 }
 
 void Pro_reader::set_lattice_geometry(const std::vector<std::string> &last_line)
 {
+    //Old format uses integer coordinates including boundary sites: 0, 1, ..., M-1
+    //New format uses cell-center coordinates without boundaries: 0.5, 1.5, ..., N-0.5
     switch (file_lattice.dimensions)
     {
     case 3:
-        file_lattice.MZ = atof(last_line[Z_DIMENSION].c_str()) + SYSTEM_EDGE_OFFSET;
+        if (m_new_format)
+            file_lattice.MZ = (size_t)(atof(last_line[Z_DIMENSION].c_str()) + 0.5) + BOUNDARIES;
+        else
+            file_lattice.MZ = atof(last_line[Z_DIMENSION].c_str()) + SYSTEM_EDGE_OFFSET;
     case 2:
-        file_lattice.MY = atof(last_line[Y_DIMENSION].c_str()) + SYSTEM_EDGE_OFFSET;
+        if (m_new_format)
+            file_lattice.MY = (size_t)(atof(last_line[Y_DIMENSION].c_str()) + 0.5) + BOUNDARIES;
+        else
+            file_lattice.MY = atof(last_line[Y_DIMENSION].c_str()) + SYSTEM_EDGE_OFFSET;
     case 1:
-        file_lattice.MX = atof(last_line[X_DIMENSION].c_str()) + SYSTEM_EDGE_OFFSET;
+        if (m_new_format)
+            file_lattice.MX = (size_t)(atof(last_line[X_DIMENSION].c_str()) + 0.5) + BOUNDARIES;
+        else
+            file_lattice.MX = atof(last_line[X_DIMENSION].c_str()) + SYSTEM_EDGE_OFFSET;
         break;
     }
 
@@ -208,28 +238,43 @@ void Pro_reader::adjust_indexing()
 {
     std::vector<std::vector<Real>> adjusted_data(m_data.size());
 
+    //New format data does not include boundary sites
+    size_t offset = m_new_format ? SYSTEM_EDGE_OFFSET : 0;
+
+    size_t x_start = offset;
+    size_t x_end   = file_lattice.MX - offset;
+    size_t y_start = file_lattice.MY > 0 ? offset : 0;
+    size_t y_end   = file_lattice.MY > 0 ? file_lattice.MY - offset : 0;
+    size_t z_start = file_lattice.MZ > 0 ? offset : 0;
+    size_t z_end   = file_lattice.MZ > 0 ? file_lattice.MZ - offset : 0;
+
+    //Inactive dimensions (M == 0) add factor 1 to the output size
+    size_t output_size = file_lattice.MX
+                       * std::max(file_lattice.MY, (size_t)1)
+                       * std::max(file_lattice.MZ, (size_t)1);
+
     for (vector<Real> &all_components : adjusted_data)
-        all_components.resize(m_data[0].size());
+        all_components.resize(output_size, 0);
 
     size_t n = 0;
-    size_t z = 0;
+    size_t z = z_start;
     do
     {
-        size_t y = 0;
+        size_t y = y_start;
         do
         {
-            size_t x = 0;
+            size_t x = x_start;
             do
             {
                 for (size_t c = 0; c < m_data.size(); ++c)
                     adjusted_data[c][x * file_lattice.JX + y * file_lattice.JY + z * file_lattice.JZ] = m_data[c][n];
                 ++n;
                 ++x;
-            } while (x < file_lattice.MX);
+            } while (x < x_end);
             ++y;
-        } while (y < file_lattice.MY);
+        } while (y < y_end);
         ++z;
-    } while (z < file_lattice.MZ);
+    } while (z < z_end);
 
     m_data = adjusted_data;
 }
@@ -245,37 +290,49 @@ std::vector<std::vector<Real>> Pro_reader::get_file_as_vectors()
     //This depends on the fact that the first mon output is phi
     std::string header_line;
 
-    //Read headers
     getline(m_file, header_line);
 
     check_delimiter(header_line);
 
     std::vector<std::string> headers = tokenize(header_line, '\t');
+    std::vector<size_t> component_columns;
     try
     {
 
         read_dimensions(headers);
 
-        // First component starts after the dimensions indicators x, y, or z. Remember, first index = 0.
+        //Detect new underscore-delimited header format
         for (size_t i = file_lattice.dimensions; i < headers.size(); ++i)
-            check_component_name_format(headers[i]);
+        {
+            if (headers[i].substr(0, 4) == "mol_" or headers[i].substr(0, 4) == "mon_")
+            {
+                m_new_format = true;
+                break;
+            }
+        }
+
+        //First component starts after the dimensions indicators x, y, or z. Remember, first index = 0.
+        //Collect the column indices of density profile headers, we skip mol phi's (mol_[molecule]_phi).
+        for (size_t i = file_lattice.dimensions; i < headers.size(); ++i)
+        {
+            if (check_component_name_format(headers[i]))
+                component_columns.emplace_back(i);
+        }
     }
     catch (std::string ERROR)
     {
 
         cerr << ERROR << endl;
+        exit(1);
     }
-
-    size_t number_of_components = headers.size() - file_lattice.dimensions;
-    size_t first_component_column = IReader::file_lattice.dimensions;
 
     std::vector<std::string> last_line;
 
-    last_line = parse_data(number_of_components, first_component_column);
+    last_line = parse_data(component_columns);
 
     set_lattice_geometry(last_line);
 
-    // Because .pro files are written in x-y-z order, whereas namics uses z-y-x for 3D
+    //Because .pro files are written in x-y-z order, whereas namics uses z-y-x for 3D
     adjust_indexing();
 
     return m_data;

@@ -107,11 +107,12 @@ class IReader {
 class Pro_reader : public IReader {
     private:
        std::vector<std::vector<Real>> m_data;
+       bool m_new_format{false};
 
         void check_delimiter(const std::string& line);
         void read_dimensions(const std::vector<std::string>& header_tokens);
-        void check_component_name_format(const std::string& header_token);
-        std::vector<std::string> parse_data(const size_t number_of_components, const size_t first_component_column);
+        bool check_component_name_format(const std::string& header_token);
+        std::vector<std::string> parse_data(const std::vector<size_t>& component_columns);
         void set_lattice_geometry(const std::vector<std::string>& last_line);
         void adjust_indexing();
 

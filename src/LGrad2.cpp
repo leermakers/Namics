@@ -1371,11 +1371,14 @@ bool LGrad2::CreateMASK(Real* H_MASK, int* r, int* H_P, int n_pos, bool block) {
 if (debug) cout <<"CreateMask for LGrad2 " + name << endl;
 	bool success=true;
 	H_Zero(H_MASK,M);
+	// Build mask from either a block in r=[x1,y1,z1,x2,y2,z2] or list of indices in H_P.
 	if (block) {
+		// mark all (x,y) in [x1, x2] x [y1, y2].
 		for (int x=r[0]; x<r[3]+1; x++)
 		for (int y=r[1]; y<r[4]+1; y++)
 			H_MASK[P(x,y)]=1;
 	} else {
+		// mark n_pos linear indices from H_P.
 		for (int i = 0; i<n_pos; i++) H_MASK[H_P[i]]=1;
 	}
 	return success;

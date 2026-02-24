@@ -36,6 +36,7 @@ vector<string> Mesodyn::KEYS
     "treat_lower_than_as_zero",
     "adaptive_tolerance_modifier",
     "adaptive_tolerance",
+    "correlated_noise",
     "expand_x",
     "expand_y",
     "expand_z"

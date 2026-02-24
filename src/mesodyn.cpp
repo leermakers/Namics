@@ -39,7 +39,8 @@ vector<string> Mesodyn::KEYS
     "expand_x",
     "expand_y",
     "expand_z"
-    
+};
+
 Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : 
       Lattice_accessor(Lat_[0]),
@@ -443,6 +444,9 @@ void Mesodyn::initialize_from_file(vector<Lattice_object<Real>>& densities) {
   Readable_file file(read_filename, Mesodyn::input_data_filetype);
   Reader file_reader;
   file_reader.read_objects_in(file);
+
+  if (!file_reader.get_field_names().empty())
+    file_reader.keep_only(":density");
 
   bool expanding = (expand_x > 1 or expand_y > 1 or expand_z > 1);
 

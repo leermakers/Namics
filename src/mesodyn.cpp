@@ -124,6 +124,8 @@ bool Mesodyn::CheckInput() {
 
     if (input_data_filetype != Readable_filetype::NONE)
       initialization_mode = Mesodyn::INIT_FROMFILE;
+    else if (Sys[0]->initial_guess == "file")
+      initialization_mode = Mesodyn::INIT_FROM_GUESS;
 
     if ( find(PARAMETERS.begin(), PARAMETERS.end(), "grand_cannonical_time_average") != PARAMETERS.end() 
       or find(PARAMETERS.begin(), PARAMETERS.end(), "grand_cannonical_molecule") != PARAMETERS.end()  )
@@ -209,6 +211,7 @@ bool Mesodyn::mesodyn() {
       for (auto& all_fluxes : fluxes) all_fluxes->J.save_state();
       for (auto& all_components : components) all_components->rho.save_state();
 
+      Zero(New.back()->xx, system_size);
       New[0]->SolveMesodyn(loader_callback, solver_callback);
 
       // norm_densities->execute();
@@ -235,8 +238,6 @@ bool Mesodyn::mesodyn() {
         adapt_tolerance();
       }
 
-       Zero(New.back()->xx, system_size);
-    
     }
   } // time loop
 
@@ -348,7 +349,9 @@ int Mesodyn::initial_conditions() {
 
   if (initialization_mode == INIT_FROMFILE)
     initialize_from_file(densities);
-  else //if initialization_mode == INIT_HOMOGENEOUS
+  else if (initialization_mode == INIT_FROM_GUESS)
+    initialize_from_guess(densities);
+  else
     initialize_homogeneous(densities);
 
 
@@ -437,6 +440,12 @@ void Mesodyn::initialize_homogeneous(vector<Lattice_object<Real>>& densities) {
   initializer.build_objects();
   initializer.push_data_to_objects(densities);
 
+}
+
+void Mesodyn::initialize_from_guess(vector<Lattice_object<Real>>& densities) {
+  Sys[0]->ComputePhis(New[0]->xx, true, 1.0);
+  for (size_t i = 0; i < component_no; i++)
+    densities[i].load_array(Seg[Sys[0]->SysMolMonList[i]]->phi, system_size);
 }
 
 void Mesodyn::initialize_from_file(vector<Lattice_object<Real>>& densities) {

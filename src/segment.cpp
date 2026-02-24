@@ -367,6 +367,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			}
 		}
 		if (GetValue("pinned_filename").size()>0) { s_freedom="pinned";
+			block=false;
 			filename=GetValue("pinned_filename");
 			n_pos=0;
 			if (success) success=lat->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
@@ -547,6 +548,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			}
 		}
 		if (GetValue("frozen_filename").size()>0) { s_freedom="frozen";
+			block=false;
 			filename=GetValue("frozen_filename");
 			n_pos=0;
 			if (success) success=lat->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);
@@ -712,8 +714,8 @@ if (debug) cout <<"ParseFreedoms " << endl;
 		}
 	}
 
-	n_pos=-1;
 	if (freedom == "tagged") {
+		n_pos=-1;
 
 		phibulk=0;
 		if (GetValue("pinned_range").size()>0 || GetValue("frozen_range").size()>0 || GetValue("pinned_filename").size()>0 || GetValue("frozen_filename").size()>0) {
@@ -780,6 +782,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 		}
 		if (GetValue("tagged_filename").size()>0) {
 			s_freedom="tagged";
+			block=false;
 			filename=GetValue("tagged_filename");
 			n_pos=0;
 			if (success) success=lat->ReadRangeFile(filename,H_P,n_pos,name,s_freedom);

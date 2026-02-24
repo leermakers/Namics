@@ -217,9 +217,9 @@ size_t z{0};
 size_t y{0};
 
     for ( size_t x = 0 ; x < MX+SYSTEM_EDGE_OFFSET ; ++x ) {
-        y = SYSTEM_EDGE_OFFSET;
+        y = 0; //SYSTEM_EDGE_OFFSET;
         do {
-            z = SYSTEM_EDGE_OFFSET;
+            y = 0;// SYSTEM_EDGE_OFFSET;
             do {
                 function(x, y, z);
                 ++z;

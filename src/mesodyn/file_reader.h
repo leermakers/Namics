@@ -87,6 +87,7 @@ class IReader {
 
         virtual std::vector<std::vector<Real>> get_file_as_vectors() = 0;
         void assert_lattice_compatible(Lattice* Lat);
+        const Lattice_geometry& get_file_geometry() const { return file_lattice; }
 
     protected:
         std::ifstream m_file;
@@ -150,6 +151,8 @@ class Reader {
         size_t read_objects_in(Readable_file file);
         void push_data_to_objects(std::vector< Lattice_object<Real> >& output);
         void assert_lattice_compatible(Lattice* Lat);
+        const Lattice_geometry& get_file_geometry() const;
+        const std::vector<std::vector<Real>>& get_raw_data() const;
 
     private:
         std::vector< std::vector<Real> > m_read_objects;

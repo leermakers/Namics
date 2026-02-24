@@ -36,9 +36,10 @@ vector<string> Mesodyn::KEYS
     "treat_lower_than_as_zero",
     "adaptive_tolerance_modifier",
     "adaptive_tolerance",
-    "correlated_noise"
-};
-
+    "expand_x",
+    "expand_y",
+    "expand_z"
+    
 Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
     : 
       Lattice_accessor(Lat_[0]),
@@ -71,6 +72,9 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       grand_cannonical_time_average    { initialize<size_t>("grand_cannonical_time_average", timesteps > 100 ? 20 : 5 ) },
       grand_cannonical_molecule        { initialize<size_t>("grand_cannonical_molecule", Sys[0]->solvent == 0 ? 1 : 0)},
       correlated_noise                 { initialize<bool>("correlated_noise", 0)},
+      expand_x                         { initialize<size_t>("expand_x", 1)},
+      expand_y                         { initialize<size_t>("expand_y", 1)},
+      expand_z                         { initialize<size_t>("expand_z", 1)},
 
       //Variables for rho initialization
       initialization_mode              { INIT_HOMOGENEOUS },
@@ -128,6 +132,24 @@ bool Mesodyn::CheckInput() {
           throw 1;
         }
 
+    if (expand_x > 1 or expand_y > 1 or expand_z > 1) {
+      if (initialization_mode != Mesodyn::INIT_FROMFILE) {
+        cout << "expand_x/y/z requires a file to be loaded with read_pro or read_vtk!" << endl;
+        throw 1;
+      }
+      if (expand_x < 1 or expand_y < 1 or expand_z < 1) {
+        cout << "expand_x/y/z values must be >= 1!" << endl;
+        throw 1;
+      }
+      if (dimensionality < 2 and expand_y > 1) {
+        cout << "expand_y > 1 requires at least a 2D lattice!" << endl;
+        throw 1;
+      }
+      if (dimensionality < 3 and expand_z > 1) {
+        cout << "expand_z > 1 requires a 3D lattice!" << endl;
+        throw 1;
+      }
+    }
 
   return true;
 }
@@ -421,9 +443,82 @@ void Mesodyn::initialize_from_file(vector<Lattice_object<Real>>& densities) {
   Readable_file file(read_filename, Mesodyn::input_data_filetype);
   Reader file_reader;
   file_reader.read_objects_in(file);
+
+  bool expanding = (expand_x > 1 or expand_y > 1 or expand_z > 1);
+
+  if (expanding) {
+    const Lattice_geometry& file_geom = file_reader.get_file_geometry();
+
+    //File dimensions include boundaries, so subtract 2 to get the inner dimensions
+    size_t file_inner_x = file_geom.MX - 2;
+    size_t file_inner_y = file_geom.MY > 0 ? file_geom.MY - 2 : 0;
+    size_t file_inner_z = file_geom.MZ > 0 ? file_geom.MZ - 2 : 0;
+
+    if ((size_t)Lat[0]->MX != file_inner_x * expand_x) {
+      cerr << "Lattice MX (" << Lat[0]->MX << ") does not match file (" << file_inner_x << ") * expand_x (" << expand_x << ")!" << endl;
+      throw 1;
+    }
+    if (dimensionality >= 2 and (size_t)Lat[0]->MY != file_inner_y * expand_y) {
+      cerr << "Lattice MY (" << Lat[0]->MY << ") does not match file (" << file_inner_y << ") * expand_y (" << expand_y << ")!" << endl;
+      throw 1;
+    }
+    if (dimensionality >= 3 and (size_t)Lat[0]->MZ != file_inner_z * expand_z) {
+      cerr << "Lattice MZ (" << Lat[0]->MZ << ") does not match file (" << file_inner_z << ") * expand_z (" << expand_z << ")!" << endl;
+      throw 1;
+    }
+
+    cout << "Expanding file data by " << expand_x << "x" << expand_y << "x" << expand_z << " into target lattice.." << endl;
+
+    expand_density_data(densities, file_reader.get_raw_data(), file_geom.MX, file_geom.MY, file_geom.MZ);
+  } else {
   file_reader.assert_lattice_compatible(Lat[0]);
   file_reader.push_data_to_objects(densities);
+  }
 
+}
+
+void Mesodyn::expand_density_data(vector<Lattice_object<Real>>& densities,
+                                   const vector<vector<Real>>& file_data,
+                                   size_t file_MX, size_t file_MY, size_t file_MZ) {
+
+  //Inner dimensions of the file (excluding boundary layers)
+  size_t file_inner_x = file_MX - 2;
+  size_t file_inner_y = file_MY > 0 ? file_MY - 2 : 0;
+  size_t file_inner_z = file_MZ > 0 ? file_MZ - 2 : 0;
+
+  //File jump sizes (same convention as Lattice_geometry::set_jumps, dims include boundaries)
+  size_t file_JX{0}, file_JY{0}, file_JZ{0};
+  switch ((int)dimensionality) {
+    case 1: file_JX = 1; break;
+    case 2: file_JX = file_MY; file_JY = 1; break;
+    case 3: file_JX = file_MY * file_MZ; file_JY = file_MZ; file_JZ = 1; break;
+  }
+
+  assert(file_data.size() == densities.size() && "Number of components in file does not match system!");
+
+  //Tile the interior cells of the file data into the target lattice
+  for (size_t c = 0; c < densities.size(); ++c) {
+    std::vector<Real> expanded(system_size, 0.0);
+
+    for (size_t tx = 1; tx < (size_t)MX + 1; ++tx) {
+      size_t sx = ((tx - 1) % file_inner_x) + 1;
+      size_t ty = 1;
+      do {
+        size_t sy = file_inner_y > 0 ? ((ty - 1) % file_inner_y) + 1 : ty;
+        size_t tz = 1;
+        do {
+          size_t sz = file_inner_z > 0 ? ((tz - 1) % file_inner_z) + 1 : tz;
+
+          expanded[index(tx, ty, tz)] = file_data[c][sx * file_JX + sy * file_JY + sz * file_JZ];
+
+          ++tz;
+        } while (tz < (size_t)MZ + 1);
+        ++ty;
+      } while (ty < (size_t)MY + 1);
+    }
+
+    densities[c].m_data = expanded;
+  }
 }
 
 /******* Output generation *******/

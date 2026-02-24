@@ -516,4 +516,14 @@ void Reader::assert_lattice_compatible(Lattice *Lat)
     }
 }
 
+const Lattice_geometry& Reader::get_file_geometry() const
+{
+    return input_reader->get_file_geometry();
+}
+
+const std::vector<std::vector<Real>>& Reader::get_raw_data() const
+{
+    return m_read_objects;
+}
+
 Reader::~Reader() {}

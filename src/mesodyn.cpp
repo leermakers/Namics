@@ -122,6 +122,11 @@ bool Mesodyn::CheckInput() {
       input_data_filetype = Readable_filetype::VTK_STRUCTURED_GRID;
     }
 
+    if (input_data_filetype != Readable_filetype::NONE && Sys[0]->initial_guess == "file") {
+      cout << "Cannot use both mesodyn read_pro/read_vtk and sys initial_guess : file. Choose one." << endl;
+      throw 1;
+    }
+
     if (input_data_filetype != Readable_filetype::NONE)
       initialization_mode = Mesodyn::INIT_FROMFILE;
     else if (Sys[0]->initial_guess == "file")

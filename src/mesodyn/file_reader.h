@@ -86,6 +86,7 @@ class IReader {
         virtual ~IReader();
 
         virtual std::vector<std::vector<Real>> get_file_as_vectors() = 0;
+        virtual std::vector<std::string> get_field_names() const { return {}; }
         void assert_lattice_compatible(Lattice* Lat);
         const Lattice_geometry& get_file_geometry() const { return file_lattice; }
 
@@ -132,14 +133,18 @@ class Vtk_structured_grid_reader : public IReader {
             ERROR
         };
 
+        std::vector<std::string> m_field_names;
+        std::string m_current_field_name;
+
         void set_lattice_geometry(const std::vector<std::string>& tokens);
-        STATUS parse_next_data_block(std::vector<Real>& data);
+        STATUS parse_next_data_block(std::vector<Real>& data, std::string& field_name);
         std::vector<Real> with_bounds(std::vector<Real>& input);
 
     public:
 
         Vtk_structured_grid_reader(Readable_file file);
         std::vector< std::vector<Real> > get_file_as_vectors();
+        std::vector<std::string> get_field_names() const override { return m_field_names; }
 };
 
 class Reader {
@@ -153,9 +158,12 @@ class Reader {
         void assert_lattice_compatible(Lattice* Lat);
         const Lattice_geometry& get_file_geometry() const;
         const std::vector<std::vector<Real>>& get_raw_data() const;
+        const std::vector<std::string>& get_field_names() const;
+        void keep_only(const std::string& suffix);
 
     private:
         std::vector< std::vector<Real> > m_read_objects;
+        std::vector<std::string> m_field_names;
         std::ifstream m_file;
         unique_ptr<IReader> input_reader;
 };

@@ -354,23 +354,41 @@ void Vtk_structured_grid_reader::set_lattice_geometry(const std::vector<std::str
     file_lattice.set_jumps();
 }
 
-Vtk_structured_grid_reader::STATUS Vtk_structured_grid_reader::parse_next_data_block(std::vector<Real> &data)
+Vtk_structured_grid_reader::STATUS Vtk_structured_grid_reader::parse_next_data_block(std::vector<Real> &data, std::string& field_name)
 {
     std::string line;
 
     size_t index{0};
     size_t system_size{ (file_lattice.MX-2)*(file_lattice.MY-2)*(file_lattice.MZ-2) };
 
-    //This should really be regex'ed to include possible whitespace
+    // previous call's data loop already consumed this block's SCALARS line
+    if (!m_current_field_name.empty()) {
+        field_name = m_current_field_name;
+        m_current_field_name.clear();
+    }
+
     while (line.find("LOOKUP_TABLE default") == string::npos)
     {
         getline(m_file, line);
+        if (line.find("SCALARS") != string::npos) {
+            auto tokens = tokenize(line, ' ');
+            if (tokens.size() >= 2)
+                field_name = tokens[1];
+        }
     }
 
     while (getline(m_file, line))
     {
         if (index == system_size and !std::regex_match(line, std::regex(R"(^[\d]+.[\d]+(e-?[\d]+)?$)")))
+        {
+            // this line is the next block's SCALARS header; save it
+            if (line.find("SCALARS") != string::npos) {
+                auto tokens = tokenize(line, ' ');
+                if (tokens.size() >= 2)
+                    m_current_field_name = tokens[1];
+            }
             return STATUS::NEW_BLOCK_FOUND;
+        }
         else if (index < system_size)
             data.emplace_back(atof(line.c_str()));
         else
@@ -440,15 +458,17 @@ std::vector<std::vector<Real>> Vtk_structured_grid_reader::get_file_as_vectors()
     std::vector<std::vector<Real>> output(0);
 
     std::vector<Real> data;
+    std::string field_name;
 
     Vtk_structured_grid_reader::STATUS status = STATUS::NEW_BLOCK_FOUND;
 
     while (status == STATUS::NEW_BLOCK_FOUND)
     {
-        status = parse_next_data_block(data);
+        status = parse_next_data_block(data, field_name);
         //ASSUMPTION: VTK files a written without bounds, so add them
         data = with_bounds(data);
         output.emplace_back(data);
+        m_field_names.emplace_back(field_name);
         data.clear();
     }
 
@@ -490,7 +510,10 @@ size_t Reader::read_objects_in(Readable_file file)
 
     m_read_objects.insert(m_read_objects.end(), t_object.begin(), t_object.end());
 
-    cout << "Done reading " << m_read_objects.size() << " components." << endl;
+    auto names = input_reader->get_field_names();
+    m_field_names.insert(m_field_names.end(), names.begin(), names.end());
+
+    cout << "Done reading " << m_read_objects.size() << " fields." << endl;
 
     return t_object.size();
 }
@@ -524,6 +547,31 @@ const Lattice_geometry& Reader::get_file_geometry() const
 const std::vector<std::vector<Real>>& Reader::get_raw_data() const
 {
     return m_read_objects;
+}
+
+const std::vector<std::string>& Reader::get_field_names() const
+{
+    return m_field_names;
+}
+
+void Reader::keep_only(const std::string& suffix)
+{
+    if (m_field_names.empty()) return;
+
+    std::vector<std::vector<Real>> filtered_objects;
+    std::vector<std::string> filtered_names;
+
+    for (size_t i = 0; i < m_read_objects.size(); ++i) {
+        const auto& name = m_field_names[i];
+        if (name.size() >= suffix.size() &&
+            name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+            filtered_objects.push_back(std::move(m_read_objects[i]));
+            filtered_names.push_back(name);
+        }
+    }
+
+    m_read_objects = std::move(filtered_objects);
+    m_field_names = std::move(filtered_names);
 }
 
 Reader::~Reader() {}

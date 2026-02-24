@@ -448,6 +448,8 @@ void Mesodyn::initialize_from_file(vector<Lattice_object<Real>>& densities) {
   if (!file_reader.get_field_names().empty())
     file_reader.keep_only(":density");
 
+  cout << "Using " << file_reader.get_raw_data().size() << " density components." << endl;
+
   bool expanding = (expand_x > 1 or expand_y > 1 or expand_z > 1);
 
   if (expanding) {

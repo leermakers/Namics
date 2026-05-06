@@ -468,7 +468,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 					free_list.push_back("solvent");
 					free_list.push_back("neutralizer");
 					free_list.push_back("range_restricted");
-					//free_list.push_back("gradient");
+					free_list.push_back("gradient");
 				}
 				free_list.push_back("restricted");
 				if (!In[0]->Get_string(GetValue("freedom"),freedom,free_list,"In mol " + name + " the value for 'freedom' is not recognised ")) success=false;

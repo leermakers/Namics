@@ -50,7 +50,7 @@ System::System(vector<Input *> In_, vector<Lattice *> Lat_, vector<Segment *> Se
 	do_blocks=false;
 	first_pass=true;
 	neutralizer=-1;
-	pos_interface=0.0;
+	pos_interface=-1;
 }
 System::~System()
 {
@@ -1567,15 +1567,21 @@ void System::PushOutput()
 			//pos=px[0];
 			//cout <<"coordinate for kJ0:" << pos << endl;
 			//for (int z=fjc; z<M-2*fjc; z++) result -= 1.0*(z-pos-(fjc-1))/fjc*GrandPotentialDensity[z];
-			if (pos_interface==0) pos_interface=M/2+0.5;
-			push("kJ0", -lat->MomentPlanar(GrandPotentialDensity,1,pos_interface)/lat->fjc);
-			pos_interface=0;
+			if (pos_interface<0) {
+				pos_interface=M/2+0.5;
+				push("kJ0", GetSpontaneousCurvature(pos_interface));
+				pos_interface=-1;
+			} else push("kJ0", GetSpontaneousCurvature(pos_interface));
 		} else {
 			cout <<" 'compute_kJ0' requested but 'compute_kJ0' rejected because either geomety is not planar, or gradients = 1 or 'delta_range' not found " << endl;
 		}
 
 		if (lat->gradients == 1 && lat->geometry == "planar") {
-			push("kbar", lat->MomentPlanar(GrandPotentialDensity,2,M/2+0.5)/pow(lat->fjc,2));
+			if (pos_interface<0) {
+				pos_interface=M/2+0.5;
+				push("kbar", GetKBar(pos_interface));
+				pos_interface=-1;
+			} else push("kbar", GetKBar(pos_interface));
 		}
 	}
 	Real X = 0;
@@ -2901,8 +2907,10 @@ bool System::CheckResults(bool e_info_)
 		cout << "free energy                 = " << FreeEnergy << endl;
 		cout << "grand potential             = " << GrandPotential << endl;
 	} else {
-		if (CalculationType=="steady_state")
-		cout << "free energy                 = " << FreeEnergy << endl;
+		if (CalculationType=="steady_state"){
+			cout << "free energy                 = " << FreeEnergy << endl;
+			cout << "grand potential             = " << GrandPotential << endl;
+		}
 	}
 	Real n_times_mu = 0;
 	for (int i = 0; i < n_mol; i++)
@@ -2913,7 +2921,7 @@ bool System::CheckResults(bool e_info_)
 			n = Mol[i]->n_box;
 		n_times_mu += n * Mu;
 	}
-	if ((e_info && first_pass && CalculationType!="steady_state"))
+	if ((e_info && first_pass)) // && CalculationType!="steady_state"))
 	{
 		cout << "free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
 		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl<<endl;;
@@ -3208,17 +3216,17 @@ Zero(TEMP,M);
 	return FreeEnergy + lat->WeightedSum(F);
 }
 
-Real System::GetSpontaneousCurvature()
+Real System::GetSpontaneousCurvature(Real midpoint)
 {
-	int M = lat->M;
-	if (lat->gradients ==1 && lat->geometry=="planar")  return -1.0*lat->MomentPlanar(GrandPotentialDensity,1,M/2+0.5);
+	pos_interface=midpoint;
+	if (lat->gradients ==1 && lat->geometry=="planar")  return -1.0*lat->MomentPlanar(GrandPotentialDensity,1,midpoint);
 	else return 0;
 };
 
-Real System::GetKBar()
+Real System::GetKBar(Real midpoint)
 {
-	int M = lat->M;
-	if (lat->gradients ==1 && lat->geometry=="planar")  return lat->MomentPlanar(GrandPotentialDensity,2,M/2+0.5);
+	pos_interface=midpoint;
+	if (lat->gradients ==1 && lat->geometry=="planar")  return lat->MomentPlanar(GrandPotentialDensity,2,midpoint);
 	else return 0;
 };
 

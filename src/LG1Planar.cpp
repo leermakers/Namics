@@ -274,8 +274,8 @@ Real LG1Planar::DphiDt(Real *g, Real* B_phitot, Real* phiA, Real* phiB, Real* al
 
 Real LG1Planar::MomentPlanar(Real* X, int n, Real Z0){
 	Real result=0;
-	for (int z=0; z<M; z++) {
-		result +=X[z]*pow(z-Z0,n);
+	for (int z=fjc; z<M-fjc*2; z++) {
+		result +=X[z]*pow(z-Z0,n)/pow(fjc,n+1);
 	}
 	return result;
 }

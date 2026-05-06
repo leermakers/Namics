@@ -1827,7 +1827,7 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	}
 	if (freedom=="free") {
 		M1=0;
-		if (theta_exc !=0) M1=lat->Moment(phi,phibulk,1)/theta_exc;
+		if (theta_exc !=0) M1=lat->Moment(phi,phibulk,1)/theta_exc*Lat[0]->fjc;
 	 	M2=0;
 		if (theta_exc !=0) M2=lat->Moment(phi,phibulk,2)/theta_exc;
 		if (M2 !=0) RMS=pow(M2,0.5);

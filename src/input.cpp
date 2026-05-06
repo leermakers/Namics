@@ -18,6 +18,7 @@ Input::Input(string name_) {
 	KEYS.push_back("state");
 	KEYS.push_back("reaction");
 	KEYS.push_back("micro");
+	KEYS.push_back("bate");
 
 	in_file.open(name.c_str()); Input_error=false;
 
@@ -579,6 +580,14 @@ if (debug) cout <<"LoadItems in Input " << endl;
 									k++;
 							}
 							break;
+						case 16:
+							name_found=false;
+							k=0; name_length=BateList.size();
+							while (k<name_length && !name_found) {
+								if (BateList[k]==set[3]) name_found=true;
+									k++;
+							}
+							break;
 						default:
 							key_found=false;
 						}
@@ -731,6 +740,7 @@ bool Input::MakeLists(int start) {
 	ClengList.clear();
 	TengList.clear();
 	MicroList.clear();
+	BateList.clear();
 	VarList.clear();
 	StateList.clear();
 	ReactionList.clear();
@@ -754,6 +764,7 @@ bool Input::MakeLists(int start) {
 	if (!TestNum(ClengList,"cleng",0,1,start)) {cout << "There can be no more than 1 'cleng' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(TengList,"teng",0,1,start)) {cout << "There can be no more than 1 'teng' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(MicroList,"micro",0,1,start)) {cout << "There can be no more than 1 'micro' engine brand name in the input " << endl; success=false;}
+	if (!TestNum(BateList,"bate",0,1,start)) {cout << "There can be no more than 1 'bate' engine brand name in the input " << endl; success=false;}
 	if (!TestNum(VarList,"var",0,10,start))
 	if (VarList.size()==0) VarList.push_back("NN");
 	return success;

@@ -31,6 +31,7 @@
 #include "solve_scf.h"
 #include "mesodyn.h"
 #include "microemulsion.h"
+#include "bate.h"
 
 string version = "2.2.2.2.2.1.1";
 // meaning:
@@ -151,6 +152,7 @@ int main(int argc, char *argv[])
 	vector<Cleng *> Cle; 		//enginge for clampled molecules
 	vector<Teng *> Ten;			//enginge for pinned molecules
 	vector<Microemulsion *> Micro;
+	vector<Balancedtensionless *> Bate;
 
 	// Create input class instance and handle errors(reference above)
 	In.push_back(new Input(filename.str()));
@@ -335,6 +337,10 @@ int main(int argc, char *argv[])
 		if (In[0]->MicroList.size() > 0)
 		{
 			TheEngine = MICRO;
+		}
+		if (In[0]->BateList.size() > 0)
+		{
+			TheEngine = BATE;
 		}
 
 		// Prepare variables used in variate class creation
@@ -614,6 +620,16 @@ int main(int argc, char *argv[])
 				Micro.push_back(new Microemulsion(In,Out, Lat, Seg, Sta, Rea, Mol, Sys, New,Var, In[0]->MicroList[0]));
 				success=Micro[0]->CheckInput(start);
 				if (success) Micro[0]->Doit(X,METHOD,MONLIST,STATELIST,CHARGED,MX,MY,MZ,fjc_old,search_nr,ets_nr,etm_nr,target_nr,bm_nr,subloop,kal_append);
+			break;
+		case BATE:
+				Lat.push_back(new LGrad1(In,In[0]->LatList[0])); //dummy added. used in balancedtensionless.
+				Lat[1]->CheckInput(start,false);
+				Lat[1]->geometry = "spherical";
+				Lat[1]->AllocateMemory();
+				Bate.clear();
+				Bate.push_back(new Balancedtensionless(In,Out, Lat, Seg, Sta, Rea, Mol, Sys, New,Var, In[0]->BateList[0]));
+				success=Bate[0]->CheckInput(start);
+				if (success) Bate[0]->Doit(X,METHOD,MONLIST,STATELIST,CHARGED,MX,MY,MZ,fjc_old,search_nr,ets_nr,etm_nr,target_nr,bm_nr,subloop,kal_append);
 			break;
 		default:
 			cout << "TheEngine is unknown. Programming error " << endl;

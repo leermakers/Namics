@@ -418,7 +418,7 @@ Real Microemulsion::zero_J0(Real guessXs, Real GuessXc, Real GuessChi) {
 	}
 
     int j_calls=0;
-    Real fxa=Sys[0]->GetSpontaneousCurvature();
+    Real fxa=Sys[0]->GetSpontaneousCurvature(Lat[0]->M+0.5);
     if (abs(fxa) < j_tolerance){
         return ConvertCoSolventXtoT(GuessXc);
 	}
@@ -460,7 +460,7 @@ Real Microemulsion::zero_J0(Real guessXs, Real GuessXc, Real GuessChi) {
 			break;
 	}
 
-    Real fxb=Sys[0]->GetSpontaneousCurvature();
+    Real fxb=Sys[0]->GetSpontaneousCurvature(Lat[0]->M+0.5);
     while (fxa*fxb>0){
 		j_calls++;
         xa=xb;
@@ -484,7 +484,7 @@ Real Microemulsion::zero_J0(Real guessXs, Real GuessXc, Real GuessChi) {
 				break;
 		}
 
-        fxb=Sys[0]->GetSpontaneousCurvature();
+        fxb=Sys[0]->GetSpontaneousCurvature(Lat[0]->M+0.5);
 
         switch(ControlParameter) {
 			case co_solvent_theta:
@@ -511,7 +511,7 @@ Real Microemulsion::zero_J0(Real guessXs, Real GuessXc, Real GuessChi) {
 		    XS=zero_gamma(XS-0.01,xc);
 			break;
 	}
-    Real fxc=Sys[0]->GetSpontaneousCurvature();
+    Real fxc=Sys[0]->GetSpontaneousCurvature(Lat[0]->M+0.5);
     j_calls=0;
     while (abs(fxc)>j_tolerance) {
 		j_calls++;
@@ -531,7 +531,7 @@ Real Microemulsion::zero_J0(Real guessXs, Real GuessXc, Real GuessChi) {
 				break;
 		}
 
-        fxc=Sys[0]->GetSpontaneousCurvature();
+        fxc=Sys[0]->GetSpontaneousCurvature(Lat[0]->M+0.5);
 
         switch(ControlParameter) {
 			case co_solvent_theta:
@@ -589,13 +589,13 @@ bool Microemulsion:: WriteResults() {
 	New[0]->PushOutput();
 	switch(ControlParameter) {
 		case co_solvent_theta:
-			cout <<"theta surfactant = " << Mol[surfactant]->theta << " theta co-solvent = " << Mol[co_solvent]->theta << " kBar = " << Sys[0]->GetKBar() << endl;
+			cout <<"theta surfactant = " << Mol[surfactant]->theta << " theta co-solvent = " << Mol[co_solvent]->theta << " kBar = " << Sys[0]->GetKBar(Lat[0]->M+0.5) << endl;
 			break;
 		case co_solvent_phibulk:
-			cout <<"theta surfactant = " << Mol[surfactant]->theta << " phibulk co-solvent = " << Mol[co_solvent]->phibulk << " kBar = " << Sys[0]->GetKBar() << endl;
+			cout <<"theta surfactant = " << Mol[surfactant]->theta << " phibulk co-solvent = " << Mol[co_solvent]->phibulk << " kBar = " << Sys[0]->GetKBar(Lat[0]->M+0.5) << endl;
 			break;
 		case chi_C_D:
-			cout <<"theta surfactant = " << Mol[surfactant]->theta << " chi_"<<Seg[monC]->name<<"_"<<Seg[monD]->name << " = " << Seg[monC]->chi[monD] << " kBar = " << Sys[0]->GetKBar() << endl;
+			cout <<"theta surfactant = " << Mol[surfactant]->theta << " chi_"<<Seg[monC]->name<<"_"<<Seg[monD]->name << " = " << Seg[monC]->chi[monD] << " kBar = " << Sys[0]->GetKBar(Lat[0]->M+0.5) << endl;
 			break;
 		default:
 		break;

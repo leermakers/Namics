@@ -164,8 +164,8 @@ public:
 	Real GetE(int,int);
 	Real GetFreeEnergy();
 	Real GetGrandPotential();
-	Real GetSpontaneousCurvature();
-	Real GetKBar();
+	Real GetSpontaneousCurvature(Real);
+	Real GetKBar(Real);
 	bool CreateMu(int);
 	bool PutVarInfo(string,string,Real);
 	bool ResetInitValue();

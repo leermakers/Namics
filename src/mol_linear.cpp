@@ -19,7 +19,11 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 	int unity=0;
 	int s=0;
 	int N;
+#ifdef CUDA
+	Real* Mask = (Real*)AllManagedOnDev(M); Zero(Mask,M);
+#else
 	Real* Mask = new Real[M]; Zero(Mask,M);
+#endif
 	int gradients=lat->gradients;
 	int MX=lat->MX;
 	int MY=lat->MY;
@@ -34,7 +38,11 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 	bool doit;
 
 	if (ring) {
+#ifdef CUDA
+		Real* G0 = (Real*)AllManagedOnDev(M); Zero(G0,M);
+#else
 		Real* G0 = new Real[M]; Zero(G0,M);
+#endif
 
 		if (IsPinned()) {
 
@@ -110,7 +118,11 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 				}
 			}
 		}
+#ifdef CUDA
+		cudaFree(G0);
+#else
 		delete [] G0;
+#endif
 	} else {
 
 		if (Markov ==2)
@@ -131,7 +143,11 @@ if (debug) cout <<"ComputePhi in mol_linear " << endl;
 			for (int b = bN ; b >= b0 ; b--) propagate_backward(Seg[mon_nr[b]]->G1,s,b,0,M);
 	}
 
+#ifdef CUDA
+	cudaFree(Mask);
+#else
 	delete [] Mask;
+#endif
 	return success;
 }
 

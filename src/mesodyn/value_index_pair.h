@@ -2,7 +2,7 @@
 #define MASK_H
 
 #include <iterator>
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
   #include <thrust/iterator/permutation_iterator.h>
 #endif
 #include "stl_typedef.h"
@@ -12,7 +12,7 @@
 template <class T>
 struct Value_index_pair
 {
-    #ifdef PAR_MESODYN
+    #ifdef PAR_MESODYN_THRUST
     typedef typename thrust::device_vector<T>::iterator ElementIterator;
     typedef thrust::device_vector<size_t>::const_iterator IndexIterator;
     #endif
@@ -25,15 +25,24 @@ struct Value_index_pair
     { }
 
     // CPU implementation of thrust's permutation_iterator
-    class iterator : public std::iterator<std::random_access_iterator_tag, T> {
+    class iterator {
       private:
         Value_index_pair *mask;
         int position{0};
 
       public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = T*;
+        using reference = T&;
 
         T& operator*() const {
             return mask->values[mask->indices[position]];
+        }
+
+        T& operator[](difference_type n) const {
+            return mask->values[mask->indices[position + n]];
         }
 
         iterator(Value_index_pair* ptr = nullptr){mask = ptr;}
@@ -42,28 +51,25 @@ struct Value_index_pair
 
         iterator& operator=(const iterator& rawIterator) = default;
         iterator& operator=(Value_index_pair* ptr){mask = ptr;return (*this);}
-      
-        iterator& operator++()    /* prefix */              { ++position; return *this;}
-        iterator& operator--()    /* prefix */              { --position; return *this;}
-        iterator& operator+=(const int& change)             { position += change;return (*this);}
-        iterator& operator-=(const int& change)             { position -= change;return (*this);}
-        iterator  operator++(int) /* postfix */             { auto temp(*this);++position;return temp;}
-        iterator  operator--(int) /* postfix */             { auto temp(*this);--position;return temp;}
-        const iterator  operator+(const long int& change)   { auto prev_pos = position;position+=change;auto temp(*this);position = prev_pos;return temp;}
-        iterator  operator+(const iterator& Iterator)       { auto prev_pos = position;position+=Iterator.get_const_pos();auto temp(*this);position = prev_pos;return temp;}
-        iterator  operator-(const long int& change)         { auto prev_pos = position;position-=change;auto temp(*this);position = prev_pos;return temp;}
-        //iterator  operator-(iterator& Iterator)             { auto prev_pos = position;position-=Iterator.get_const_pos();auto temp(*this);position = prev_pos;return temp;}
-        iterator  operator-(const iterator& Iterator)       { auto dif_pos = position-Iterator.get_const_pos();return dif_pos;}
-        long int  operator-(iterator& Iterator)             { auto dif_pos = position-Iterator.get_const_pos();return dif_pos;}
+
+        iterator& operator++()                                { ++position; return *this;}
+        iterator& operator--()                                { --position; return *this;}
+        iterator& operator+=(difference_type change)          { position += change;return (*this);}
+        iterator& operator-=(difference_type change)          { position -= change;return (*this);}
+        iterator  operator++(int)                             { auto temp(*this);++position;return temp;}
+        iterator  operator--(int)                             { auto temp(*this);--position;return temp;}
+        iterator  operator+(difference_type change) const     { iterator temp(*this);temp.position+=change;return temp;}
+        iterator  operator-(difference_type change) const     { iterator temp(*this);temp.position-=change;return temp;}
+        difference_type operator-(const iterator& other) const { return position - other.position;}
+
+        friend iterator operator+(difference_type n, const iterator& it) { return it + n; }
 
         bool      operator==(const iterator& Iterator)const { return ( get_const_pos() == Iterator.get_const_pos() );}
         bool      operator!=(const iterator& Iterator)const { return ( get_const_pos() != Iterator.get_const_pos() );}
         bool      operator>(const iterator& Iterator)const  { return ( get_const_pos() > Iterator.get_const_pos()  );}
-        bool      operator>=(const iterator& Iterator)const  { return ( get_const_pos() >= Iterator.get_const_pos()  );}
-        bool      operator>=(const size_t& position)const  { return ( get_const_pos() >= position  );}
-        bool      operator<=(const iterator& Iterator)const  { return ( get_const_pos() <= Iterator.get_const_pos()  );}
+        bool      operator>=(const iterator& Iterator)const { return ( get_const_pos() >= Iterator.get_const_pos()  );}
+        bool      operator<=(const iterator& Iterator)const { return ( get_const_pos() <= Iterator.get_const_pos()  );}
         bool      operator<(const iterator& Iterator)const  { return ( get_const_pos() < Iterator.get_const_pos()  );}
-        //TODO: other compare operators
 
          int get_const_pos() const {return position;}
 
@@ -71,7 +77,7 @@ struct Value_index_pair
          iterator end() {position=mask->indices.size();return *this;}
     };
 
-    #ifdef PAR_MESODYN
+    #ifdef PAR_MESODYN_THRUST
     thrust::permutation_iterator<ElementIterator,IndexIterator> begin() {
       thrust::permutation_iterator<ElementIterator,IndexIterator> itt(values.begin(), indices.begin());
       return itt;
@@ -83,7 +89,7 @@ struct Value_index_pair
     }
     #endif
 
-    #ifdef PAR_MESODYN  
+    #ifdef PAR_MESODYN_THRUST  
     thrust::permutation_iterator<ElementIterator,IndexIterator> end() {
       thrust::permutation_iterator<ElementIterator,IndexIterator> itt(values.end(), indices.end());
       return itt;

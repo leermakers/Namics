@@ -86,7 +86,9 @@ class IReader {
         virtual ~IReader();
 
         virtual std::vector<std::vector<Real>> get_file_as_vectors() = 0;
+        virtual std::vector<std::string> get_field_names() const { return {}; }
         void assert_lattice_compatible(Lattice* Lat);
+        const Lattice_geometry& get_file_geometry() const { return file_lattice; }
 
     protected:
         std::ifstream m_file;
@@ -107,11 +109,12 @@ class IReader {
 class Pro_reader : public IReader {
     private:
        std::vector<std::vector<Real>> m_data;
+       bool m_new_format{false};
 
         void check_delimiter(const std::string& line);
         void read_dimensions(const std::vector<std::string>& header_tokens);
-        void check_component_name_format(const std::string& header_token);
-        std::vector<std::string> parse_data(const size_t number_of_components, const size_t first_component_column);
+        bool check_component_name_format(const std::string& header_token);
+        std::vector<std::string> parse_data(const std::vector<size_t>& component_columns);
         void set_lattice_geometry(const std::vector<std::string>& last_line);
         void adjust_indexing();
 
@@ -130,14 +133,18 @@ class Vtk_structured_grid_reader : public IReader {
             ERROR
         };
 
+        std::vector<std::string> m_field_names;
+        std::string m_current_field_name;
+
         void set_lattice_geometry(const std::vector<std::string>& tokens);
-        STATUS parse_next_data_block(std::vector<Real>& data);
+        STATUS parse_next_data_block(std::vector<Real>& data, std::string& field_name);
         std::vector<Real> with_bounds(std::vector<Real>& input);
 
     public:
 
         Vtk_structured_grid_reader(Readable_file file);
         std::vector< std::vector<Real> > get_file_as_vectors();
+        std::vector<std::string> get_field_names() const override { return m_field_names; }
 };
 
 class Reader {
@@ -149,9 +156,14 @@ class Reader {
         size_t read_objects_in(Readable_file file);
         void push_data_to_objects(std::vector< Lattice_object<Real> >& output);
         void assert_lattice_compatible(Lattice* Lat);
+        const Lattice_geometry& get_file_geometry() const;
+        const std::vector<std::vector<Real>>& get_raw_data() const;
+        const std::vector<std::string>& get_field_names() const;
+        void keep_only(const std::string& suffix);
 
     private:
         std::vector< std::vector<Real> > m_read_objects;
+        std::vector<std::string> m_field_names;
         std::ifstream m_file;
         unique_ptr<IReader> input_reader;
 };

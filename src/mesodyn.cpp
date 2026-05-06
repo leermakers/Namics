@@ -35,7 +35,11 @@ vector<string> Mesodyn::KEYS
     "grand_cannonical_molecule",
     "treat_lower_than_as_zero",
     "adaptive_tolerance_modifier",
-    "adaptive_tolerance"
+    "adaptive_tolerance",
+    "correlated_noise",
+    "expand_x",
+    "expand_y",
+    "expand_z"
 };
 
 Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Segment*> Seg_, vector<State*> Sta_, vector<Reaction*> Rea_, vector<Molecule*> Mol_, vector<System*> Sys_, vector<Solve_scf*> New_, string name_)
@@ -69,6 +73,10 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
       grand_cannonical                 { initialize<bool>("grand_cannonical", 0)},
       grand_cannonical_time_average    { initialize<size_t>("grand_cannonical_time_average", timesteps > 100 ? 20 : 5 ) },
       grand_cannonical_molecule        { initialize<size_t>("grand_cannonical_molecule", Sys[0]->solvent == 0 ? 1 : 0)},
+      correlated_noise                 { initialize<bool>("correlated_noise", 0)},
+      expand_x                         { initialize<size_t>("expand_x", 1)},
+      expand_y                         { initialize<size_t>("expand_y", 1)},
+      expand_z                         { initialize<size_t>("expand_z", 1)},
 
       //Variables for rho initialization
       initialization_mode              { INIT_HOMOGENEOUS },
@@ -96,7 +104,8 @@ Mesodyn::Mesodyn(int start, vector<Input*> In_, vector<Lattice*> Lat_, vector<Se
   register_output();
   set_filename();
 
-  Writable_file out_file(filename.str(), output_profile_filetype );
+  int max_saves = static_cast<int>(timesteps / timebetweensaves);
+  Writable_file out_file(filename.str(), output_profile_filetype, 0, max_saves);
   profile_writers.push_back(Profile_writer::Factory::Create(output_profile_filetype, Lat[0], out_file));
   profile_writers[0]->bind_data(output_profiles);
 }
@@ -114,8 +123,15 @@ bool Mesodyn::CheckInput() {
       input_data_filetype = Readable_filetype::VTK_STRUCTURED_GRID;
     }
 
+    if (input_data_filetype != Readable_filetype::NONE && Sys[0]->initial_guess == "file") {
+      cout << "Cannot use both mesodyn read_pro/read_vtk and sys initial_guess : file. Choose one." << endl;
+      throw 1;
+    }
+
     if (input_data_filetype != Readable_filetype::NONE)
       initialization_mode = Mesodyn::INIT_FROMFILE;
+    else if (Sys[0]->initial_guess == "file")
+      initialization_mode = Mesodyn::INIT_FROM_GUESS;
 
     if ( find(PARAMETERS.begin(), PARAMETERS.end(), "grand_cannonical_time_average") != PARAMETERS.end() 
       or find(PARAMETERS.begin(), PARAMETERS.end(), "grand_cannonical_molecule") != PARAMETERS.end()  )
@@ -125,6 +141,24 @@ bool Mesodyn::CheckInput() {
           throw 1;
         }
 
+    if (expand_x > 1 or expand_y > 1 or expand_z > 1) {
+      if (initialization_mode != Mesodyn::INIT_FROMFILE) {
+        cout << "expand_x/y/z requires a file to be loaded with read_pro or read_vtk!" << endl;
+        throw 1;
+      }
+      if (expand_x < 1 or expand_y < 1 or expand_z < 1) {
+        cout << "expand_x/y/z values must be >= 1!" << endl;
+        throw 1;
+      }
+      if (dimensionality < 2 and expand_y > 1) {
+        cout << "expand_y > 1 requires at least a 2D lattice!" << endl;
+        throw 1;
+      }
+      if (dimensionality < 3 and expand_z > 1) {
+        cout << "expand_z > 1 requires a 3D lattice!" << endl;
+        throw 1;
+      }
+    }
 
   return true;
 }
@@ -183,6 +217,7 @@ bool Mesodyn::mesodyn() {
       for (auto& all_fluxes : fluxes) all_fluxes->J.save_state();
       for (auto& all_components : components) all_components->rho.save_state();
 
+      Zero(New.back()->xx, system_size);
       New[0]->SolveMesodyn(loader_callback, solver_callback);
 
       // norm_densities->execute();
@@ -209,8 +244,6 @@ bool Mesodyn::mesodyn() {
         adapt_tolerance();
       }
 
-       Zero(New.back()->xx, system_size);
-    
     }
   } // time loop
 
@@ -295,7 +328,7 @@ void Mesodyn::prepare_densities_for_callback() {
 
 Real* Mesodyn::device_vector_ptr_to_raw(stl::device_vector<Real>& input_) {
 
-  #ifdef PAR_MESODYN
+  #ifdef PAR_MESODYN_THRUST
     return stl::raw_pointer_cast(input_.data());
   #else
     return input_.data();
@@ -322,7 +355,9 @@ int Mesodyn::initial_conditions() {
 
   if (initialization_mode == INIT_FROMFILE)
     initialize_from_file(densities);
-  else //if initialization_mode == INIT_HOMOGENEOUS
+  else if (initialization_mode == INIT_FROM_GUESS)
+    initialize_from_guess(densities);
+  else
     initialize_homogeneous(densities);
 
 
@@ -342,7 +377,7 @@ int Mesodyn::initial_conditions() {
   else
     Mesodyn::gaussian = make_shared<Gaussian_noise>(mean, variance, stencil_size);
 
-  Range full_system(Coordinate(0,0,0), Coordinate(MX+2,MY+2,MZ+2));
+  Range full_system(Coordinate(0,0,0), Coordinate(MX+1,MY+1,MZ+1));
   perturbations.emplace_back( make_shared<Gaussian_perturbation>(full_system, gaussian) );
   perturbations.back()->next();
 
@@ -362,6 +397,12 @@ int Mesodyn::initial_conditions() {
         Flux::Factory::Create(dimensionality, Lat[0], D * dt, mask, components[index_of.first], components[index_of.second], perturbations));
     }
 
+  for (auto& flux : fluxes) {
+    flux->set_boundary(boundary);
+    if (correlated_noise)
+      dynamic_cast<ILangevin_flux*>(flux.get())->set_correlated_noise(true);
+  }
+
   Mesodyn::norm_densities = make_unique<Norm_densities>(Mol, components, Sys[0]->solvent);
   Mesodyn::order_parameter = make_unique<Order_parameter>(components, combinations, Sys.front()->boundaryless_volume);
   Mesodyn::enforce_minimum_density = make_unique<Treat_as_zero>(components, treat_lower_than_as_zero);
@@ -371,10 +412,13 @@ int Mesodyn::initial_conditions() {
   return 0; 
 }
 
+// BIG FAT WARNING:
+// THIS ASSUMES MASK ONLY CONTAINS INTEGERS
+// THIS WILL TRUNCATE FLOATING POINT VALUES
 Lattice_object<size_t> Mesodyn::load_mask_from_sys() {
-  Lattice_object<int> t_mask(Lat[0]);
+  Lattice_object<Real> t_mask(Lat[0]);
 
-  #if defined(PAR_MESODYN) || ! defined(CUDA)
+  #if defined(PAR_MESODYN_THRUST) || ! defined(CUDA)
   stl::copy(Sys[0]->KSAM, Sys[0]->KSAM+system_size, t_mask.begin());
   #else
   TransferDataToHost(t_mask.data(), Sys[0]->KSAM, system_size);
@@ -389,9 +433,9 @@ shared_ptr<Boundary1D> Mesodyn::build_boundaries(const Lattice_object<size_t>& m
   Boundary::Map boundary_conditions;
 
   // BC0: bX0, BC1: bXm, etc.
-  boundary_conditions[Dimension::X] = Boundary::Adapter[Lat[0]->BC[0]];
-  boundary_conditions[Dimension::Y] = Boundary::Adapter[Lat[0]->BC[2]];
-  boundary_conditions[Dimension::Z] = Boundary::Adapter[Lat[0]->BC[4]];
+  boundary_conditions[Dimension::X] = Boundary::Adapter()[Lat[0]->BC[0]];
+  boundary_conditions[Dimension::Y] = Boundary::Adapter()[Lat[0]->BC[2]];
+  boundary_conditions[Dimension::Z] = Boundary::Adapter()[Lat[0]->BC[4]];
 
   return Boundary::Factory::Create(dimensionality, mask, boundary_conditions);
 }
@@ -404,35 +448,119 @@ void Mesodyn::initialize_homogeneous(vector<Lattice_object<Real>>& densities) {
 
 }
 
+void Mesodyn::initialize_from_guess(vector<Lattice_object<Real>>& densities) {
+  Sys[0]->ComputePhis(New[0]->xx, true, 1.0);
+  for (size_t i = 0; i < component_no; i++)
+    densities[i].load_array(Seg[Sys[0]->SysMolMonList[i]]->phi, system_size);
+}
+
 void Mesodyn::initialize_from_file(vector<Lattice_object<Real>>& densities) {
 
   Readable_file file(read_filename, Mesodyn::input_data_filetype);
   Reader file_reader;
   file_reader.read_objects_in(file);
+
+  if (!file_reader.get_field_names().empty())
+    file_reader.keep_only(":density");
+
+  cout << "Using " << file_reader.get_raw_data().size() << " density components." << endl;
+
+  bool expanding = (expand_x > 1 or expand_y > 1 or expand_z > 1);
+
+  if (expanding) {
+    const Lattice_geometry& file_geom = file_reader.get_file_geometry();
+
+    //File dimensions include boundaries, so subtract 2 to get the inner dimensions
+    size_t file_inner_x = file_geom.MX - 2;
+    size_t file_inner_y = file_geom.MY > 0 ? file_geom.MY - 2 : 0;
+    size_t file_inner_z = file_geom.MZ > 0 ? file_geom.MZ - 2 : 0;
+
+    if ((size_t)Lat[0]->MX != file_inner_x * expand_x) {
+      cerr << "Lattice MX (" << Lat[0]->MX << ") does not match file (" << file_inner_x << ") * expand_x (" << expand_x << ")!" << endl;
+      throw 1;
+    }
+    if (dimensionality >= 2 and (size_t)Lat[0]->MY != file_inner_y * expand_y) {
+      cerr << "Lattice MY (" << Lat[0]->MY << ") does not match file (" << file_inner_y << ") * expand_y (" << expand_y << ")!" << endl;
+      throw 1;
+    }
+    if (dimensionality >= 3 and (size_t)Lat[0]->MZ != file_inner_z * expand_z) {
+      cerr << "Lattice MZ (" << Lat[0]->MZ << ") does not match file (" << file_inner_z << ") * expand_z (" << expand_z << ")!" << endl;
+      throw 1;
+    }
+
+    cout << "Expanding file data by " << expand_x << "x" << expand_y << "x" << expand_z << " into target lattice.." << endl;
+
+    expand_density_data(densities, file_reader.get_raw_data(), file_geom.MX, file_geom.MY, file_geom.MZ);
+  } else {
   file_reader.assert_lattice_compatible(Lat[0]);
   file_reader.push_data_to_objects(densities);
+  }
 
+}
+
+void Mesodyn::expand_density_data(vector<Lattice_object<Real>>& densities,
+                                   const vector<vector<Real>>& file_data,
+                                   size_t file_MX, size_t file_MY, size_t file_MZ) {
+
+  //Inner dimensions of the file (excluding boundary layers)
+  size_t file_inner_x = file_MX - 2;
+  size_t file_inner_y = file_MY > 0 ? file_MY - 2 : 0;
+  size_t file_inner_z = file_MZ > 0 ? file_MZ - 2 : 0;
+
+  //File jump sizes (same convention as Lattice_geometry::set_jumps, dims include boundaries)
+  size_t file_JX{0}, file_JY{0}, file_JZ{0};
+  switch ((int)dimensionality) {
+    case 1: file_JX = 1; break;
+    case 2: file_JX = file_MY; file_JY = 1; break;
+    case 3: file_JX = file_MY * file_MZ; file_JY = file_MZ; file_JZ = 1; break;
+  }
+
+  assert(file_data.size() == densities.size() && "Number of components in file does not match system!");
+
+  //Tile the interior cells of the file data into the target lattice
+  for (size_t c = 0; c < densities.size(); ++c) {
+    std::vector<Real> expanded(system_size, 0.0);
+
+    for (size_t tx = 1; tx < (size_t)MX + 1; ++tx) {
+      size_t sx = ((tx - 1) % file_inner_x) + 1;
+      size_t ty = 1;
+      do {
+        size_t sy = file_inner_y > 0 ? ((ty - 1) % file_inner_y) + 1 : ty;
+        size_t tz = 1;
+        do {
+          size_t sz = file_inner_z > 0 ? ((tz - 1) % file_inner_z) + 1 : tz;
+
+          expanded[index(tx, ty, tz)] = file_data[c][sx * file_JX + sy * file_JY + sz * file_JZ];
+
+          ++tz;
+        } while (tz < (size_t)MZ + 1);
+        ++ty;
+      } while (ty < (size_t)MY + 1);
+    }
+
+    densities[c].m_data = expanded;
+  }
 }
 
 /******* Output generation *******/
 
 void Mesodyn::set_filename() {
   filename << In[0]->output_info.getOutputPath() << "mesodyn-";
-  filename << time(time_t());
+  filename << time(nullptr);
 }
 
 void Mesodyn::register_output() {
     if (initialize<bool>("write_density", 1))
       for (size_t i = 0 ; i < components.size() ; ++i)
       {
-        string description = "component:" + to_string(i);
+        string description = Seg[Sys[0]->SysMolMonList[i]]->name;
         register_output_profile(description + ":density", (Real*)components[i]->rho);
       }
 
     if (initialize<bool>("write_alpha", 0))
       for (size_t i = 0 ; i < components.size() ; ++i)
       {
-        string description = "component:" + to_string(i);
+        string description = Seg[Sys[0]->SysMolMonList[i]]->name;
         register_output_profile(description + ":alpha", (Real*)components[i]->alpha);
       }
 

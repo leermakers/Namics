@@ -8,7 +8,7 @@ IFlux::IFlux(Lattice* lat_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_
     : J(lat_), m_lat{lat_}, component_a{A_}, component_b{B_} { }
 
 ILangevin_flux::ILangevin_flux(Lattice* Lat, Real D_, shared_ptr<IComponent> A_, shared_ptr<IComponent> B_, std::vector<shared_ptr<IPerturbation>> perturbation_)
-    : IFlux(Lat, A_, B_), L(Lat), mu(Lat), D{D_}, perturbation(perturbation_) { }
+    : IFlux(Lat, A_, B_), L(Lat), mu(Lat), mu_base(Lat), D{D_}, perturbation(perturbation_) { }
 
 Flux1D::Flux1D(Lattice* Lat, Real D, const Lattice_object<size_t>& mask, shared_ptr<IComponent> A, shared_ptr<IComponent> B, std::vector<shared_ptr<IPerturbation>> perturbation)
     : ILangevin_flux(Lat, D, A, B, perturbation), J_plus(Lat),  t_L(Lat), t_mu(Lat)
@@ -119,7 +119,7 @@ int ILangevin_flux::onsager_coefficient(Lattice_object<Real>& A, Lattice_object<
   if (A.size() != B.size()) {
     throw ERROR_SIZE_INCOMPATIBLE;
   }
-  stl::transform(A.begin(), A.end(), B.begin(), L.begin(), stl::multiplies<Real>());
+  stl::transform(EXEC_PAR A.begin(), A.end(), B.begin(), L.begin(), stl::multiplies<Real>());
 
   return 0;
 }
@@ -130,12 +130,21 @@ int ILangevin_flux::potential_difference(Lattice_object<Real>& A, Lattice_object
     throw ERROR_SIZE_INCOMPATIBLE;
   }
 
-  stl::transform(A.begin(), A.end(), B.begin(), mu.begin(), stl::minus<Real>());
+  stl::transform(EXEC_PAR A.begin(), A.end(), B.begin(), mu_base.begin(), stl::minus<Real>());
+  stl::copy(EXEC_PAR mu_base.begin(), mu_base.end(), mu.begin());
 
   for (auto& all_perturbations : perturbation)
     all_perturbations->perturb(mu);
 
-  m_lat->set_bounds((Real*)mu);
+  if (m_correlated_noise) {
+    // extract perturbation (noise = mu - mu_base), scale by sqrt(L), add base back
+    stl::transform(EXEC_PAR mu.begin(), mu.end(), mu_base.begin(), mu.begin(), stl::minus<Real>());
+    stl::transform(EXEC_PAR mu.begin(), mu.end(), L.begin(), mu.begin(),
+        [] DEVICE_LAMBDA (Real noise, Real l) -> Real { return noise * sqrt(l); });
+    stl::transform(EXEC_PAR mu.begin(), mu.end(), mu_base.begin(), mu.begin(), stl::plus<Real>());
+  }
+
+  m_boundary->update_boundaries(mu.m_data);
 
   return 0;
 }
@@ -152,7 +161,7 @@ void Flux1D::attach_neighborlists(shared_ptr<Neighborlist> neighborlist, const O
 void Flux1D::flux() {
 
   //Zero (with bounds checking) vector J before use
-  stl::fill(J.begin(), J.end(), 0.0);
+  stl::fill(EXEC_PAR J.begin(), J.end(), 0.0);
 
   if (component_a->rho.size() != J.size()) {
     //already checked: A.alpha.size = B.alpha.size and A.rho.size = B.rho.size
@@ -179,7 +188,7 @@ void Flux3D::flux() {
 
 void Flux3D_extended_stencil::flux() {
   //Zero (with bounds checking) vector J before use
-  stl::fill(J.begin(), J.end(), 0.0);
+  stl::fill(EXEC_PAR J.begin(), J.end(), 0.0);
 
   if (component_a->rho.size() != J.size()) {
     //already checked: A.alpha.size = B.alpha.size and A.rho.size = B.rho.size
@@ -197,19 +206,19 @@ void Flux3D_extended_stencil::flux() {
 }
 
 int Flux3D_extended_stencil::langevin_flux_forward(const Offset_map& offset_) {
-  stl::transform(mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
-  stl::transform(L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
-  stl::transform(t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D));
-  stl::transform(J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
+  stl::transform(EXEC_PAR L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D));
+  stl::transform(EXEC_PAR J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::plus<Real>());
 
   return 0;
 }
 
 int Flux3D_extended_stencil::langevin_flux_backward(const Offset_map& offset_) {
-  stl::transform(mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), reverse_minus_functor());
-  stl::transform(L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
-  stl::transform(t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D) );
-  stl::transform(J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::minus<Real>());
+  stl::transform(EXEC_PAR mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), reverse_minus_functor());
+  stl::transform(EXEC_PAR L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR t_mu.available_sites->begin(), t_mu.available_sites->end(), t_L.available_sites->begin(), t_J.available_sites->begin(), binary_norm_functor(-1.0/26.0*D) );
+  stl::transform(EXEC_PAR J.available_sites->begin(), J.available_sites->end(), t_J.available_sites->begin(), J.available_sites->begin(), stl::minus<Real>());
 
   return 0;
 }
@@ -219,14 +228,14 @@ int Flux1D::langevin_flux(const Offset_map& offset_) {
     //J_minus[z] = -J_plus[z - jump] (substituted into equation below)
     //J = J_plus[z] + J_minus[z]
 
-  stl::fill(J_plus.begin(), J_plus.end(), 0.0);
+  stl::fill(EXEC_PAR J_plus.begin(), J_plus.end(), 0.0);
 
-  stl::transform(mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
-  stl::transform(L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
-  stl::transform(t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), binary_norm_functor(-1.0/6.0*D) );
+  stl::transform(EXEC_PAR mu.available_neighbors[offset_]->begin(), mu.available_neighbors[offset_]->end(), mu.available_sites->begin(), t_mu.available_sites->begin(), stl::minus<Real>());
+  stl::transform(EXEC_PAR L.available_neighbors[offset_]->begin(), L.available_neighbors[offset_]->end(), L.available_sites->begin(), t_L.available_sites->begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR t_mu.begin(), t_mu.end(), t_L.begin(), J_plus.begin(), binary_norm_functor(-1.0/6.0*D) );
 
-  stl::transform(J_plus.begin(), J_plus.end(), J.begin(), J.begin(), stl::plus<Real>());
-  stl::transform(J.available_neighbors[offset_]->begin(), J.available_neighbors[offset_]->end(), J_plus.available_sites->begin(), J.available_neighbors[offset_]->begin(), stl::minus<Real>());
+  stl::transform(EXEC_PAR J_plus.begin(), J_plus.end(), J.begin(), J.begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR J.available_neighbors[offset_]->begin(), J.available_neighbors[offset_]->end(), J_plus.available_sites->begin(), J.available_neighbors[offset_]->begin(), stl::minus<Real>());
   
   return 0;
 }

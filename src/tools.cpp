@@ -1,7 +1,9 @@
 #include "tools.h"
 #include "namics.h"
 #include "stdio.h"
-#ifdef PAR_MESODYN
+#include <limits>
+#include <cfloat>
+#ifdef PAR_MESODYN_THRUST
 	#include <thrust/inner_product.h>
 #endif
 #define MAX_BLOCK_SZ 512
@@ -10,6 +12,12 @@
 Real* SUM_RESULT;
 
 #ifdef CUDA
+
+__device__ inline bool safe_mask_compare(const Real& mask_value, const int& query_value) {
+	// if mask_value == query_value, i.e., if they're within the numeric limit
+	return fabs(mask_value - static_cast<Real>(query_value)) < 1e-10;
+}
+
 //cublasHandle_t handle;
 //cublasStatus_t stat=cublasCreate(&handle);
 const int block_size = 512;
@@ -39,7 +47,7 @@ void Propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int J
 __global__ void propagate_gs_locality(Real* gs, Real* gs_1, Real* G1, int JX, int JY, int JZ, int M) {
 	int index = blockIdx.x*blockDim.x+threadIdx.x;
 
-	if (index < M-JX) {
+	if (index >= JX && index < M-JX) {
 		Real gs_register = gs[index];
 
 		gs_register += gs_1[index-JZ];
@@ -357,16 +365,16 @@ __global__ void boltzmann(Real *P, Real *A, int M)   {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx<M) P[idx]=exp(-A[idx]);
 }
-__global__ void overwritec(Real* P, int* Mask, Real X,int M) {
+__global__ void overwritec(Real* P, Real* Mask, Real X,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) if (Mask[idx]==1) P[idx] = X ; else P[idx]=0;
+	if (idx<M) if (safe_mask_compare(Mask[idx], 1)) P[idx] = X ; else P[idx]=0;
 }
-__global__ void overwritea(Real* P, int* Mask, Real* A,int M) {
+__global__ void overwritea(Real* P, Real* Mask, Real* A,int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if (idx<M) if (Mask[idx]==1) P[idx] = A[idx] ; else P[idx]=0;
+	if (idx<M) if (safe_mask_compare(Mask[idx], 1)) P[idx] = A[idx] ; else P[idx]=0;
 }
 
-__global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
+__global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real C, Real* Mask, int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	Real* Px=psi+jx;
 	Real* P_x=psi-jx;
@@ -381,7 +389,7 @@ __global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real
 	Real* ez=eps+1;
 	Real* e_z=eps-1;
 	Real* e=eps;
-	if (idx<M && Mask[idx]==1)  {
+	if (idx<M && safe_mask_compare(Mask[idx], 1))  {
 		q[idx]=(((e_x[idx]+e[idx])*P_x[idx] + (ex[idx]+e[idx])*Px[idx] +
 			(e_y[idx]+e[idx])*P_y[idx] + (ey[idx]+e[idx])*Py[idx] +
 			(e_z[idx]+e[idx])*P_z[idx] + (ez[idx]+e[idx])*Pz[idx]) -
@@ -389,7 +397,7 @@ __global__ void upq(Real* g, Real* q, Real* psi, Real* eps, int jx, int jy, Real
 		g[idx] -=q[idx];
 	}
 }
-__global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Real C, int* Mask, int M) {
+__global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Real C, Real* Mask, int M) {
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;
 	Real* Px=X+jx;
 	Real* P_x=X-jx;
@@ -404,7 +412,7 @@ __global__ void uppsi(Real* q, Real* psi, Real* X, Real* eps, int jx, int jy, Re
 	Real* ez=eps+1;
 	Real* e_z=eps-1;
 	Real* e=eps;
-	if (idx<M && Mask[idx]==0)  {
+	if (idx<M && safe_mask_compare(Mask[idx], 0))  {
 		psi[idx]=((e_x[idx]+e[idx])*P_x[idx] + (ex[idx]+e[idx])*Px[idx] +
 			(e_y[idx]+e[idx])*P_y[idx] + (ey[idx]+e[idx])*Py[idx] +
 			(e_z[idx]+e[idx])*P_z[idx] + (ez[idx]+e[idx])*Pz[idx] +
@@ -475,13 +483,48 @@ void TransferDataToDevice(T *H, T *D, int M)    {
 	cudaMemcpy(D, H, sizeof(T)*M,cudaMemcpyHostToDevice);
 }
 
-__global__ void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+__global__ void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy, int by1, int bz1, bool corner)   {
 	int idx, jx_mmx=jx*mmx, jx_bxm=jx*bxm, bx1_jx=bx1*jx;
+	int jy_by1=jy*by1;
 	int yi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (yi<My && zi<Mz) {
 		idx=jy*yi+zi;
 		P[idx]=P[bx1_jx+idx];
 		P[jx_mmx+idx]=P[jx_bxm+idx];
+		if (corner) {
+			if (yi==0 && zi==0) {
+				P[idx]=P[bx1_jx+idx+jy_by1+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1+bz1];
+			}
+			if (yi==My-1 && zi==0) {
+				P[idx]=P[bx1_jx+idx-jy_by1+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1+bz1];
+			}
+			if (yi==0 && zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx+jy_by1-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1-bz1];
+			}
+			if (yi==My-1 && zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx-jy_by1-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1-bz1];
+			}
+			if (yi==0) {
+				P[idx]=P[bx1_jx+idx+jy_by1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1];
+			}
+			if (yi==My-1) {
+				P[idx]=P[bx1_jx+idx-jy_by1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1];
+			}
+			if (zi==0) {
+				P[idx]=P[bx1_jx+idx+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+bz1];
+			}
+			if (zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-bz1];
+			}
+		}
 	}
 }
 __global__ void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -493,13 +536,23 @@ __global__ void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, 
 		P[jx_mmx+idx]=0;
 	}
 }
-__global__ void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+__global__ void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy, int bz1, bool corner)   {
 	int idx, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	int xi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && zi<Mz) {
 		idx=jx*xi+zi;
 		P[idx]=P[jy_by1+idx];
 		P[jy_mmy+idx]=P[jy_bym+idx];
+		if (corner) {
+			if (zi==0) {
+				P[idx]=P[jy_by1+idx+bz1];
+				P[jy_mmy+idx]=P[jy_bym+idx+bz1];
+			}
+			if (zi==Mz-1) {
+				P[idx]=P[jy_by1+idx-bz1];
+				P[jy_mmy+idx]=P[jy_bym+idx-bz1];
+			}
+		}
 	}
 }
 __global__ void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
@@ -511,12 +564,23 @@ __global__ void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, 
 		P[jy_mmy+idx]=0;
 	}
 }
-__global__ void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+__global__ void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy, int bx1, bool corner)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && yi<My) {
 		idx=jx*xi+jy*yi;
 		P[idx]=P[idx+bz1];
 		P[idx+mmz]=P[idx+bzm];
+		if (corner) {
+			int bx1_jx=bx1*jx;
+			if (xi==0) {
+				P[idx]=P[idx+bz1+bx1_jx];
+				P[idx+mmz]=P[idx+bzm+bx1_jx];
+			}
+			if (xi==Mx-1) {
+				P[idx]=P[idx+bz1-bx1_jx];
+				P[idx+mmz]=P[idx+bzm-bx1_jx];
+			}
+		}
 	}
 }
 __global__ void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
@@ -527,13 +591,48 @@ __global__ void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, 
 		P[idx+mmz]=0;
 	}
 }
-__global__ void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+__global__ void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy, int by1, int bz1, bool corner)   {
 	int idx, jx_mmx=jx*mmx, jx_bxm=jx*bxm, bx1_jx=bx1*jx;
+	int jy_by1=jy*by1;
 	int yi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (yi<My && zi<Mz) {
 		idx=jy*yi+zi;
 		P[idx]=P[bx1_jx+idx];
 		P[jx_mmx+idx]=P[jx_bxm+idx];
+		if (corner) {
+			if (yi==0 && zi==0) {
+				P[idx]=P[bx1_jx+idx+jy_by1+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1+bz1];
+			}
+			if (yi==My-1 && zi==0) {
+				P[idx]=P[bx1_jx+idx-jy_by1+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1+bz1];
+			}
+			if (yi==0 && zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx+jy_by1-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1-bz1];
+			}
+			if (yi==My-1 && zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx-jy_by1-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1-bz1];
+			}
+			if (yi==0) {
+				P[idx]=P[bx1_jx+idx+jy_by1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+jy_by1];
+			}
+			if (yi==My-1) {
+				P[idx]=P[bx1_jx+idx-jy_by1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-jy_by1];
+			}
+			if (zi==0) {
+				P[idx]=P[bx1_jx+idx+bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx+bz1];
+			}
+			if (zi==Mz-1) {
+				P[idx]=P[bx1_jx+idx-bz1];
+				P[jx_mmx+idx]=P[jx_bxm+idx-bz1];
+			}
+		}
 	}
 }
 __global__ void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -545,13 +644,23 @@ __global__ void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, i
 		P[jx_mmx+idx]=0;
 	}
 }
-__global__ void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+__global__ void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy, int bz1, bool corner)   {
 	int idx, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	int xi =blockIdx.x*blockDim.x+threadIdx.x, zi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && zi<Mz) {
 		idx=jx*xi+zi;
 		P[idx]=P[jy_by1+idx];
 		P[jy_mmy+idx]=P[jy_bym+idx];
+		if (corner) {
+			if (zi==0) {
+				P[idx]=P[jy_by1+idx+bz1];
+				P[jy_mmy+idx]=P[jy_bym+idx+bz1];
+			}
+			if (zi==Mz-1) {
+				P[idx]=P[jy_by1+idx-bz1];
+				P[jy_mmy+idx]=P[jy_bym+idx-bz1];
+			}
+		}
 	}
 }
 __global__ void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
@@ -563,12 +672,23 @@ __global__ void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, i
 		P[jy_mmy+idx]=0;
 	}
 }
-__global__ void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+__global__ void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy, int bx1, bool corner)   {
 	int idx, xi =blockIdx.x*blockDim.x+threadIdx.x, yi =blockIdx.y*blockDim.y+threadIdx.y;
 	if (xi<Mx && yi<My) {
 		idx=jx*xi+jy*yi;
 		P[idx]=P[idx+bz1];
 		P[idx+mmz]=P[idx+bzm];
+		if (corner) {
+			int bx1_jx=bx1*jx;
+			if (xi==0) {
+				P[idx]=P[idx+bz1+bx1_jx];
+				P[idx+mmz]=P[idx+bzm+bx1_jx];
+			}
+			if (xi==Mx-1) {
+				P[idx]=P[idx+bz1-bx1_jx];
+				P[idx+mmz]=P[idx+bzm-bx1_jx];
+			}
+		}
 	}
 }
 __global__ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
@@ -580,16 +700,57 @@ __global__ void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, i
 	}
 }
 #else
-void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+
+inline bool safe_mask_compare(const Real& mask_value, const int& query_value) {
+	// if mask_value == query_value, i.e., if they're within the numeric limit
+    return std::abs(mask_value - static_cast<Real>(query_value)) < std::numeric_limits<Real>::epsilon();
+}
+
+void bx(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy, int by1=0, int bz1=0, bool corner=false)   {
 	int i;
 	int jx_mmx=jx*mmx;
 	int jx_bxm=jx*bxm;
 	int bx1_jx=bx1*jx;
+	int jy_by1=jy*by1;
 	for (int y=0; y<My; y++)
 	for (int z=0; z<Mz; z++){
 		i=jy*y+z;
 		P[i]=P[bx1_jx+i];
 		P[jx_mmx+i]=P[jx_bxm+i];
+		if (corner) {
+			if (y==0 && z==0) {
+				P[i]=P[bx1_jx+i+jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1+bz1];
+			}
+			if (y==My-1 && z==0) {
+				P[i]=P[bx1_jx+i-jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1+bz1];
+			}
+			if (y==0 && z==Mz-1) {
+				P[i]=P[bx1_jx+i+jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1-bz1];
+			}
+			if (y==My-1 && z==Mz-1) {
+				P[i]=P[bx1_jx+i-jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1-bz1];
+			}
+			if (y==0) {
+				P[i]=P[bx1_jx+i+jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1];
+			}
+			if (y==My-1) {
+				P[i]=P[bx1_jx+i-jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1];
+			}
+			if (z==0) {
+				P[i]=P[bx1_jx+i+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+bz1];
+			}
+			if (z==Mz-1) {
+				P[i]=P[bx1_jx+i-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-bz1];
+			}
+		}
 	}
 }
 void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -601,13 +762,23 @@ void b_x(Real *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 		P[jx_mmx+i]=0;
 	}
 }
-void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+void by(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy, int bz1=0, bool corner=false)   {
 	int i, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	for (int x=0; x<Mx; x++)
 	for (int z=0; z<Mz; z++) {
 		i=jx*x+z;
 		P[i]=P[jy_by1+i];
 		P[jy_mmy+i]=P[jy_bym+i];
+		if (corner) {
+			if (z==0) {
+				P[i]=P[jy_by1+i+bz1];
+				P[jy_mmy+i]=P[jy_bym+i+bz1];
+			}
+			if (z==Mz-1) {
+				P[i]=P[jy_by1+i-bz1];
+				P[jy_mmy+i]=P[jy_bym+i-bz1];
+			}
+		}
 	}
 }
 void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
@@ -619,13 +790,24 @@ void b_y(Real *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 		P[jy_mmy+i]=0;
 	}
 }
-void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+void bz(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy, int bx1=0, bool corner=false)   {
 	int i;
+	int bx1_jx=bx1*jx;
 	for (int x=0; x<Mx; x++)
 	for (int y=0; y<My; y++) {
 		i=jx*x+jy*y;
 		P[i]=P[i+bz1];
 		P[i+mmz]=P[i+bzm];
+		if (corner) {
+			if (x==0) {
+				P[i]=P[i+bz1+bx1_jx];
+				P[i+mmz]=P[i+bzm+bx1_jx];
+			}
+			if (x==Mx-1) {
+				P[i]=P[i+bz1-bx1_jx];
+				P[i+mmz]=P[i+bzm-bx1_jx];
+			}
+		}
 	}
 }
 void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
@@ -637,16 +819,51 @@ void b_z(Real *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
 		P[i+mmz]=0;
 	}
 }
-void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
+void bx(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy, int by1=0, int bz1=0, bool corner=false)   {
 	int i;
 	int jx_mmx=jx*mmx;
 	int jx_bxm=jx*bxm;
 	int bx1_jx=bx1*jx;
+	int jy_by1=jy*by1;
 	for (int y=0; y<My; y++)
 	for (int z=0; z<Mz; z++){
 		i=jy*y+z;
 		P[i]=P[bx1_jx+i];
 		P[jx_mmx+i]=P[jx_bxm+i];
+		if (corner) {
+			if (y==0 && z==0) {
+				P[i]=P[bx1_jx+i+jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1+bz1];
+			}
+			if (y==My-1 && z==0) {
+				P[i]=P[bx1_jx+i-jy_by1+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1+bz1];
+			}
+			if (y==0 && z==Mz-1) {
+				P[i]=P[bx1_jx+i+jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1-bz1];
+			}
+			if (y==My-1 && z==Mz-1) {
+				P[i]=P[bx1_jx+i-jy_by1-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1-bz1];
+			}
+			if (y==0) {
+				P[i]=P[bx1_jx+i+jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i+jy_by1];
+			}
+			if (y==My-1) {
+				P[i]=P[bx1_jx+i-jy_by1];
+				P[jx_mmx+i]=P[jx_bxm+i-jy_by1];
+			}
+			if (z==0) {
+				P[i]=P[bx1_jx+i+bz1];
+				P[jx_mmx+i]=P[jx_bxm+i+bz1];
+			}
+			if (z==Mz-1) {
+				P[i]=P[bx1_jx+i-bz1];
+				P[jx_mmx+i]=P[jx_bxm+i-bz1];
+			}
+		}
 	}
 }
 void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
@@ -658,13 +875,23 @@ void b_x(int *P, int mmx, int My, int Mz, int bx1, int bxm, int jx, int jy)   {
 		P[jx_mmx+i]=0;
 	}
 }
-void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
+void by(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy, int bz1=0, bool corner=false)   {
 	int i, jy_mmy=jy*mmy, jy_bym=jy*bym, jy_by1=jy*by1;
 	for (int x=0; x<Mx; x++)
 	for (int z=0; z<Mz; z++) {
 		i=jx*x+z;
 		P[i]=P[jy_by1+i];
 		P[jy_mmy+i]=P[jy_bym+i];
+		if (corner) {
+			if (z==0) {
+				P[i]=P[jy_by1+i+bz1];
+				P[jy_mmy+i]=P[jy_bym+i+bz1];
+			}
+			if (z==Mz-1) {
+				P[i]=P[jy_by1+i-bz1];
+				P[jy_mmy+i]=P[jy_bym+i-bz1];
+			}
+		}
 	}
 }
 void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
@@ -676,13 +903,24 @@ void b_y(int *P, int Mx, int mmy, int Mz, int by1, int bym, int jx, int jy)   {
 		P[jy_mmy+i]=0;
 	}
 }
-void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
+void bz(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy, int bx1=0, bool corner=false)   {
 	int i;
+	int bx1_jx=bx1*jx;
 	for (int x=0; x<Mx; x++)
 	for (int y=0; y<My; y++) {
 		i=jx*x+jy*y;
 		P[i]=P[i+bz1];
 		P[i+mmz]=P[i+bzm];
+		if (corner) {
+			if (x==0) {
+				P[i]=P[i+bz1+bx1_jx];
+				P[i+mmz]=P[i+bzm+bx1_jx];
+			}
+			if (x==Mx-1) {
+				P[i]=P[i+bz1-bx1_jx];
+				P[i+mmz]=P[i+bzm-bx1_jx];
+			}
+		}
 	}
 }
 void b_z(int *P, int Mx, int My, int mmz, int bz1, int bzm, int jx, int jy)   {
@@ -711,7 +949,9 @@ bool GPU_present(int deviceIndex)    {
 			deviceIndex = 0;
 		}
 		cudaSetDevice(deviceIndex);
+#if CUDART_VERSION < 12000
 		cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
+#endif
 	}
 	//if (deviceCount>0) {
 	//	stat = cublasCreate(&handle);
@@ -778,7 +1018,7 @@ Real* AllManagedOnDev(int N) {
 }
 
 void Dot(Real &result, Real *x,Real *y, int M)   {
-	cudaMemset((void**)SUM_RESULT, 0, sizeof(Real));
+	cudaMemset((void*)SUM_RESULT, 0, sizeof(Real));
 	//Use a pre-allocated (member) variable! Allocating memory for every call is way too costly
 	//Memcopies can be masked by asynchronous transfer, allocations and frees are blocking.
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
@@ -787,7 +1027,7 @@ void Dot(Real &result, Real *x,Real *y, int M)   {
 }
 
 void Sum(Real& result, Real *x, int M)   {
-	cudaMemset((void**)SUM_RESULT, 0, sizeof(Real));
+	cudaMemset((void*)SUM_RESULT, 0, sizeof(Real));
 	//Use a pre-allocated (member) variable! Allocating memory for every call is way too costly
 	//Memcopies can be masked by asynchronous transfer, allocations and frees are blocking.
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
@@ -829,21 +1069,16 @@ int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 }
 
 void Unity(Real* P, int M)   {
-	cudaMemset((void**)P, 1.0, M*sizeof(Real)); //much faster than a kernel
-//int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-//	unity<<<n_blocks,block_size>>>(P,M);
+	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
+	unity<<<n_blocks,block_size>>>(P,M);
 }
 
 void Zero(Real* P, int M)   {
-	cudaMemset((void**)P, 0.0, M*sizeof(Real)); //much faster than a kernel
-/*  int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	zero<<<n_blocks,block_size, 0>>>(P,M); */
+	cudaMemset((void*)P, 0, M*sizeof(Real));
 }
 
 void Zero(int* P, int M)   {
-	cudaMemset((void**)P, 0, M*sizeof(int)); //much faster than a kernel
-/* 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
-	zero<<<n_blocks,block_size, 0>>>(P,M);  */
+	cudaMemset((void*)P, 0, M*sizeof(int));
 }
 
 void Cp(Real *P,Real *A, int M)   {
@@ -923,22 +1158,22 @@ void Boltzmann(Real *P, Real *A, int M)   {
 	boltzmann<<<n_blocks,block_size>>>(P,A,M);
 }
 
-void OverwriteC(Real *P, int *Mask, Real C, int M)   {
+void OverwriteC(Real *P, Real *Mask, Real C, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	overwritec<<<n_blocks,block_size>>>(P,Mask,C,M);
 }
 
-void OverwriteA(Real *P, int *Mask, Real* A, int M)   {
+void OverwriteA(Real *P, Real *Mask, Real* A, int M)   {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	overwritea<<<n_blocks,block_size>>>(P,Mask,A,M);
 }
 
-void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, int* Mask, int M)  {
+void UpPsi(Real* g, Real* psi, Real* X, Real* eps, int JX, int JY, Real C, Real* Mask, int M)  {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	uppsi<<<n_blocks,block_size>>>(g,psi,X,eps,JX,JY,C,Mask,M);
 }
 
-void UpQ(Real* g, Real* q, Real* psi, Real* eps, int JX, int JY, Real C, int* Mask, int M)  {
+void UpQ(Real* g, Real* q, Real* psi, Real* eps, int JX, int JY, Real C, Real* Mask, int M)  {
 	int n_blocks=(M)/block_size + ((M)%block_size == 0 ? 0:1);
 	upq<<<n_blocks,block_size>>>(g,q,psi,eps,JX,JY,C,Mask,M);
 }
@@ -981,7 +1216,7 @@ void OneMinusPhitot(Real *g, Real *phitot, int M)   {
 	oneminusphitot<<<n_blocks,block_size>>>(g,phitot,M);
 }
 
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
 Real ComputeResidual(Real* array, int size) {
 	Real residual{0};
 
@@ -1029,18 +1264,18 @@ void CollectPhi(Real* phi, Real* GN, Real* rho, int* Bx, int* By, int* Bz, int M
 //}
 //#endif
 
-template void SetBoundaries<int>(int*, int, int, int, int, int, int, int, int, int, int, int);
-template void SetBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int);
+template void SetBoundaries<int>(int*, int, int, int, int, int, int, int, int, int, int, int, bool);
+template void SetBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int, bool);
 
 template <typename T>
-void SetBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz)   {
+void SetBoundaries(T *P, int jx, int jy, int bx1, int bxm, int by1, int bym, int bz1, int bzm, int Mx, int My, int Mz, bool corners)   {
 	dim3 dimBlock(16,16);
 	dim3 dimGridz((Mx+dimBlock.x+1)/dimBlock.x,(My+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridy((Mx+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
 	dim3 dimGridx((My+dimBlock.x+1)/dimBlock.x,(Mz+dimBlock.y+1)/dimBlock.y);
-	bx<<<dimGridx,dimBlock, 0, CUDA_STREAMS[0]>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy);
-	by<<<dimGridy,dimBlock, 0, CUDA_STREAMS[1]>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy);
-	bz<<<dimGridz,dimBlock, 0, CUDA_STREAMS[2]>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy);
+	bx<<<dimGridx,dimBlock>>>(P,Mx+1,My+2,Mz+2,bx1,bxm,jx,jy,by1,bz1,corners);
+	by<<<dimGridy,dimBlock>>>(P,Mx+2,My+1,Mz+2,by1,bym,jx,jy,bz1,corners);
+	bz<<<dimGridz,dimBlock>>>(P,Mx+2,My+2,Mz+1,bz1,bzm,jx,jy,bx1,corners);
 }
 
 template void RemoveBoundaries<Real>(Real*, int, int, int, int, int, int, int, int, int, int, int);

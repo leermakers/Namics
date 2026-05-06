@@ -13,7 +13,7 @@
 #include "lattice_accessor.h"
 #include "memento.h"
 
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
 #include <thrust/device_ptr.h>
 #include <thrust/copy.h>
 #endif
@@ -30,7 +30,7 @@ Lattice_object() = delete;
 std::vector<shared_ptr<Neighborlist>> m_neighborlist;
 shared_ptr< Memento<T> > saved_state;
 void set_checkable_data_wrapper() {
-      #ifdef PAR_MESODYN
+      #ifdef PAR_MESODYN_THRUST
       this->set_checkable_data( thrust::raw_pointer_cast(m_data.data()), system_size );
       #else
       this->set_checkable_data( m_data.data(), system_size );
@@ -48,7 +48,7 @@ typedef std::map<Offset_map, shared_ptr<Value_index_pair<T>>> Neighborlist_map;
 Neighborlist_map available_neighbors;
 const Lattice* m_subject_lattice;
 
-virtual ~Lattice_object() { }
+virtual ~Lattice_object() noexcept { }
 
 explicit Lattice_object(const Lattice* Lat_, T init=0.0)
 : Lattice_accessor{Lat_}, Checkable<T>{ (T*)this, system_size }, m_data(system_size, init), m_subject_lattice{ Lat_ }
@@ -72,7 +72,7 @@ Lattice_object(const Lattice_object<OtherT>& copy)
     : Lattice_accessor{copy.m_subject_lattice}, Checkable<T>{ (T*)&copy, copy.system_size },
       m_neighborlist{copy.get_neighborlists()}, m_data(system_size), m_subject_lattice{copy.m_subject_lattice}
     { 
-      stl::copy(copy.begin(), copy.end(), this->begin()); 
+      stl::copy(EXEC_PAR copy.begin(), copy.end(), this->begin()); 
       set_checkable_data_wrapper();
     }
 
@@ -91,7 +91,7 @@ void attach_neighborlist(shared_ptr<Neighborlist> neighborlist, Offset_map offse
 void assert_available_sites_equal(shared_ptr<Neighborlist> neighborlist) {
       auto sites = neighborlist->get_subject();
       if (
-        !stl::equal(sites.begin(), sites.end(), available_sites->indices.begin())
+        !stl::equal(EXEC_PAR sites.begin(), sites.end(), available_sites->indices.begin())
       ) throw "Error, tried to attach incompatible neighborlist";
 }
 
@@ -99,15 +99,15 @@ void assert_available_sites_equal(shared_ptr<Neighborlist> neighborlist) {
 void load_array(T* data, size_t size)
     {
       assert( size == m_data.size() );
-      #if defined(CUDA) && ! defined(PAR_MESODYN)
+      #if defined(CUDA) && ! defined(PAR_MESODYN_THRUST)
         TransferDataToHost( m_data.data(), data, this->size() );
       #else
-        stl::copy(data, data + size, m_data.begin());
+        stl::copy(EXEC_PAR data, data + size, m_data.begin());
       #endif
     }
 
 T& operator()(size_t x, size_t y, size_t z) {
-    #ifdef PAR_MESODYN
+    #ifdef PAR_MESODYN_THRUST
     return m_data[index(x,y,z)];
     #else
     try {
@@ -120,7 +120,7 @@ T& operator()(size_t x, size_t y, size_t z) {
   }
 
 const T operator()(size_t x, size_t y, size_t z) const {
-    #ifdef PAR_MESODYN
+    #ifdef PAR_MESODYN_THRUST
     return m_data[index(x,y,z)];
     #else
     try {
@@ -134,7 +134,7 @@ const T operator()(size_t x, size_t y, size_t z) const {
 
 
 T& operator[](size_t x) {
-      #ifdef PAR_MESODYN
+      #ifdef PAR_MESODYN_THRUST
       return m_data[x];
       #else
       try {
@@ -148,7 +148,7 @@ T& operator[](size_t x) {
 
 
 const T& operator[](size_t x) const {
-      #ifdef PAR_MESODYN
+      #ifdef PAR_MESODYN_THRUST
       return m_data[x];
       #else
       try {
@@ -182,7 +182,7 @@ Lattice_object<T>& operator=(Lattice_object<OtherT>& copy)
   return *this;
 }
 
-#ifdef PAR_Mesodyn
+#ifdef PAR_MESODYN_THRUST
 
 template <class OtherT>
 typename thrust::device_vector<T>& operator=(std::vector<OtherT>& rhs)
@@ -204,7 +204,7 @@ typename thrust::device_vector<T>& operator=(thrust::host_vector<OtherT>& rhs)
 
 
 operator T *() {
-  #ifdef PAR_MESODYN
+  #ifdef PAR_MESODYN_THRUST
     return thrust::raw_pointer_cast(m_data.data());
   #else
     return const_cast<T*>(m_data.data());
@@ -246,7 +246,7 @@ void clear() {
 }
 
 T* data() {
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
   return (T*)m_data;
 #else
   return m_data.data();

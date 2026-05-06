@@ -11,7 +11,7 @@
 #include <map>
 #include <algorithm>
 #include <iostream>
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
   #include <thrust/copy.h>
 #endif
 
@@ -28,7 +28,13 @@ namespace Boundary {
 
   typedef std::map< std::string, Boundary::Type> Adapter_type;
 
-  static Boundary::Adapter_type Adapter;
+  inline Boundary::Adapter_type& Adapter() {
+      static Boundary::Adapter_type adapter {
+          {"mirror", Boundary::Type::MIRROR},
+          {"periodic", Boundary::Type::PERIODIC}
+      };
+      return adapter;
+  }
 
   typedef std::map<Dimension, Boundary::Type> Map;
 
@@ -39,29 +45,33 @@ class Boundary1D {
   public:
     Boundary1D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type ) noexcept;
     virtual ~Boundary1D() { }
-    void update_boundaries(stl::device_vector<Real>&);
-    void zero_boundaries(stl::device_vector<Real>&);
+    virtual void update_boundaries(stl::device_vector<Real>&);
+    virtual void zero_boundaries(stl::device_vector<Real>&);
 
   protected:
 
     const Lattice_object<size_t>& m_mask;
-    Neighborlist m_neighborlist;
+    Neighborlist m_x_neighborlist;
 
     Boundary::Type X_BOUNDARY_TYPE;
-    std::map<Boundary::Type, size_t> OFFSET;
 
     void set_x_neighbors();
+    static void apply_boundary(stl::device_vector<Real>&, Neighborlist&);
+    static void zero_boundary(stl::device_vector<Real>&, Neighborlist&);
 };
 
 class Boundary2D : public Boundary1D {
   public:
     Boundary2D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type_) noexcept;
     virtual ~Boundary2D() { }
+    void update_boundaries(stl::device_vector<Real>&) override;
+    void zero_boundaries(stl::device_vector<Real>&) override;
 
+  protected:
+    Neighborlist m_y_neighborlist;
 
   private:
     Boundary::Type Y_BOUNDARY_TYPE;
-    std::map<Boundary::Type, size_t> OFFSET;
 
     void set_y_neighbors();
 };
@@ -70,11 +80,14 @@ class Boundary3D : public Boundary2D {
   public:
     Boundary3D(const Lattice_object<size_t>& mask, Boundary::Map boundary_type_) noexcept;
     virtual ~Boundary3D() { }
+    void update_boundaries(stl::device_vector<Real>&) override;
+    void zero_boundaries(stl::device_vector<Real>&) override;
 
+  protected:
+    Neighborlist m_z_neighborlist;
 
   private:
     Boundary::Type Z_BOUNDARY_TYPE;
-    std::map<Boundary::Type, size_t> OFFSET;
 
     void set_z_neighbors();
 };

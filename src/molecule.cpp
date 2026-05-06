@@ -1375,14 +1375,14 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 	In[0]->split(s,',',sub);
 	int length=sub.size();
 	int length_open;
-	int i,j,k,a,f,dd;
+	int j,k,a,f,dd;
 	string ss;
 	switch(MolType) {
 		case water:
 
 			break;
 		case dendrimer:
-			for (i=0; i<length; i++) {
+			for (int i=0; i<length; i++) {
 				open.clear(); close.clear();
 				In[0]->EvenBrackets(sub[i],open,close);
 				length_open=open.size();
@@ -1393,7 +1393,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 					}
 				}
 			}
-			for (i=0; i<length; i++) {
+			for (int i=0; i<length; i++) {
 				ss.append(sub[i]);
 				if (i<length-1) ss.append(",");
 			}
@@ -1483,7 +1483,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 
 			//cout <<"n_generations " << n_generations << endl;
 			chainlength=0; N=-1;
-			for (i=0; i<n_generations; i++) {
+			for (int i=0; i<n_generations; i++) {
 				sub.clear();	arms=0;
 				In[0]->split(sub_gen[i],',',sub);
 				int sublength=sub.size();
@@ -1636,7 +1636,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 				return success;
 			}
 			chainlength=0; N=-1;
-			i=0;
+			//i=0;
 			//success=Interpret(sub_gen[0],i);
 
 			first_s.push_back(N+1);
@@ -1662,7 +1662,7 @@ if (debug) cout <<"Decomposition for Mol " + name << endl;
 			}
 
 			chainlength_backbone=chainlength;
-			i=1;
+			//i=1;
 			sub.clear();
 			In[0]->split(sub_gen[1],',',sub);
 			//cout <<"sub_gen[1] " << sub_gen[1] << "size of sub : " << sub.size() << endl;
@@ -1981,6 +1981,9 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	if (freedom=="free") theta = lat->WeightedSum(phitot);
 	push("Markov",Markov);
 	push("k_stiff",k_stiff);
+#ifdef CUDA
+	TransferDataToHost(H_phitot,phitot,lat->M);
+#endif
 	if (lat->gradients==3) {
 		int MZ=lat->MZ;
 		int MY=lat->MY;
@@ -1990,7 +1993,7 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		for (int z=1; z<MZ+1; z++) {
 			Real phiz=0;
 			for (int x=1; x<MX+1; x++) for (int y=1;y<MY+1;y++) {
-				phiz +=phitot[x*JX+y*JY+z];
+				phiz +=H_phitot[x*JX+y*JY+z];
 			}
 			phiz /= MX*MY;
 			if (z==1) push("phiz[1]",phiz);
@@ -2067,8 +2070,8 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		}
 	}
 	push("width",width);
-	push("phi1",phitot[lat->fjc]);
-	push("phiM",phitot[lat->M-2*lat->fjc]);
+	push("phi1",H_phitot[lat->fjc]);
+	push("phiM",H_phitot[lat->M-2*lat->fjc]);
 	push("Dphi",phi1-phiM);
 	push("pos_interface",pos_interface);
 	push("phi_average",phi_av);
@@ -2083,18 +2086,18 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 		}
 	}
 	int M=lat->M;
-	Real phimax=phitot[M/2];
+	Real phimax=H_phitot[M/2];
 	bool maxfound=false;
 	int i=M/2;
 	while (!maxfound) {
 		i++;
-		if (phitot[i]> phimax ) phimax =phitot[i]; else maxfound=true;
+		if (H_phitot[i]> phimax ) phimax =H_phitot[i]; else maxfound=true;
 	}
 	maxfound=false;
 	i=M/2;
 	while (!maxfound) {
 		i--;
-		if (phitot[i]> phimax ) phimax =phitot[i]; else maxfound=true;
+		if (H_phitot[i]> phimax ) phimax =H_phitot[i]; else maxfound=true;
 	}
 
 	push("phiMax",phimax);
@@ -2125,7 +2128,6 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	}
 	s="vector;0"; push("gn",s);
 #ifdef CUDA
-int M = lat->M;
 	TransferDataToHost(H_phitot,phitot,M);
 	TransferDataToHost(H_phi,phi,M*MolMonList.size());
 #endif

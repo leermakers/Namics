@@ -141,17 +141,9 @@ size_t Range::size()
 }
 
 Coordinate Range::as_box() const {
-    size_t x = (m_high[Dimension::X] - m_low[Dimension::X]);
-    if (x == 0)
-        x = 1;
-
-    size_t y = (m_high[Dimension::Y] - m_low[Dimension::Y]);
-    if (y == 0)
-        y = 1;
-
-    size_t z = (m_high[Dimension::Z] - m_low[Dimension::Z]);
-    if (z == 0)
-        z = 1;
+    size_t x = (m_high[Dimension::X] - m_low[Dimension::X]) + 1;
+    size_t y = (m_high[Dimension::Y] - m_low[Dimension::Y]) + 1;
+    size_t z = (m_high[Dimension::Z] - m_low[Dimension::Z]) + 1;
 
     return Coordinate(x, y, z);
 }
@@ -225,9 +217,9 @@ size_t z{0};
 size_t y{0};
 
     for ( size_t x = 0 ; x < MX+SYSTEM_EDGE_OFFSET ; ++x ) {
-        y = SYSTEM_EDGE_OFFSET;
+        y = 0; //SYSTEM_EDGE_OFFSET;
         do {
-            z = SYSTEM_EDGE_OFFSET;
+            y = 0;// SYSTEM_EDGE_OFFSET;
             do {
                 function(x, y, z);
                 ++z;

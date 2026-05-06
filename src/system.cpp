@@ -162,7 +162,7 @@ void System::AllocateMemory()
   }
   if (constraintfields) {
 	BETA = (Real*)AllOnDev(M);
-	beta = (int*)AllIntOnDev(M);
+	beta = (Real*)AllOnDev(M);
   }
 #else
   phitot = (Real*)malloc(M * sizeof(Real));

@@ -50,6 +50,8 @@
 #include <functional>
 #include <iostream>
 #include <regex>
+#include <iomanip>
+#include <cmath>
 
 #define Output_as_metadata IParameter_writer::CATEGORY::METADATA
 #define Output_as_timespan IParameter_writer::CATEGORY::TIMESPAN
@@ -92,7 +94,7 @@ class Output_ptr : public IOutput_ptr
 
         void set_buffer(const size_t size) {
             buffer.resize(size);
-            #ifdef PAR_MESODYN
+            #ifdef PAR_MESODYN_THRUST
             TransferDataToHost(buffer.data(), const_cast<T*>(parameter), const_cast<size_t&>(size));
             #else
             buffer.assign(parameter, parameter+size);
@@ -113,7 +115,7 @@ class Output_ptr : public IOutput_ptr
 
                 const T* data = new T;
 
-            #ifdef PAR_MESODYN
+            #ifdef PAR_MESODYN_THRUST
                 TransferDataToHost(const_cast<T*>(data), const_cast<T*>(parameter+offset), 1);
             #else
                 data = parameter+offset;
@@ -130,18 +132,20 @@ class Output_ptr : public IOutput_ptr
 
 class Writable_file {
     public:
-        Writable_file(const std::string, Writable_filetype, int = 0);
+        Writable_file(const std::string, Writable_filetype, int = 0, int max_identifier = 0);
         virtual ~Writable_file();
         Writable_filetype get_filetype();
         string get_filename();
         void increment_identifier();
-        
+
     protected:
         int m_identifier;
+        int m_padding_width;
         std::string m_filename;
         static std::map<Writable_filetype, std::string> extension_map;
         const Writable_filetype m_filetype;
         void append_extension();
+        std::string padded_identifier() const;
 };
 
 class IProfile_writer

@@ -5,7 +5,7 @@
 
 extern Real* SUM_RESULT;
 
-#ifdef PAR_MESODYN
+#ifdef PAR_MESODYN_THRUST
 	#include <thrust/extrema.h>
 	#include <thrust/device_vector.h>
   #include <thrust/device_ptr.h>
@@ -71,25 +71,26 @@ __global__ void propagate(Real *gs, Real *g_1, int JX, int JY, int JZ, int M);
 __global__ void oneminusphitot(Real*, Real*, int);
 __global__ void addg(Real*, Real*, Real*, int);
 __global__ void computegn(Real*, Real*, int, int);
-__global__ void overwritec(Real*, int*, Real, int);
-__global__ void overwritea(Real*, int*, Real*, int);
-__global__ void upq(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
-__global__ void uppsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
+__global__ void overwritec(Real*, Real*, Real, int);
+__global__ void overwritea(Real*, Real*, Real*, int);
+__global__ void upq(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
+__global__ void uppsi(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
+__device__ inline bool safe_mask_compare(const Real&, const int&);
 template <typename T>
 void TransferDataToHost(T*, T*, int);
 template <typename T>
 void TransferDataToDevice(T*, T*, int);
-__global__ void bx(Real*, int, int, int, int, int, int, int);
+__global__ void bx(Real*, int, int, int, int, int, int, int, int, int, bool);
 __global__ void b_x(Real*, int, int, int, int, int, int, int);
-__global__ void by(Real*, int, int, int, int, int, int, int);
+__global__ void by(Real*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_y(Real*, int, int, int, int, int, int, int);
-__global__ void bz(Real*, int, int, int, int, int, int, int);
+__global__ void bz(Real*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_z(Real*, int, int, int, int, int, int, int);
-__global__ void bx(int*, int, int, int, int, int, int, int);
+__global__ void bx(int*, int, int, int, int, int, int, int, int, int, bool);
 __global__ void b_x(int*, int, int, int, int, int, int, int);
-__global__ void by(int*, int, int, int, int, int, int, int);
+__global__ void by(int*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_y(int*, int, int, int, int, int, int, int);
-__global__ void bz(int*, int, int, int, int, int, int, int);
+__global__ void bz(int*, int, int, int, int, int, int, int, int, bool);
 __global__ void b_z(int*, int, int, int, int, int, int, int);
 void Dot(Real&, Real*, Real*, int);
 void Sum(Real&, Real*, int);
@@ -134,17 +135,17 @@ void AddG(Real*, Real*, Real*, int);
 void OneMinusPhitot(Real*, Real*, int);
 void ComputeGN(Real*, Real*, int, int);
 template <typename T>
-void SetBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
+void SetBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int, bool corners=false);
 template <typename T>
 void RemoveBoundaries(T*, int, int, int, int, int, int, int, int, int, int, int);
 namespace tools {
 void DistributeG1(Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void CollectPhi(Real*, Real*, Real*, int*, int*, int*, int, int, int, int, int, int, int, int, int, int, int, int, int);
 }
-void OverwriteC(Real*, int*, Real, int);
-void OverwriteA(Real*, int*, Real*, int);
-void UpQ(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
-void UpPsi(Real*, Real*, Real*, Real*, int, int, Real, int*, int);
+void OverwriteC(Real*, Real*, Real, int);
+void OverwriteA(Real*, Real*, Real*, int);
+void UpQ(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
+void UpPsi(Real*, Real*, Real*, Real*, int, int, Real, Real*, int);
 
 Real ComputeResidual(Real*, int);
 struct saxpy_functor

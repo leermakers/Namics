@@ -6,24 +6,45 @@ Developers:
 F.A.M.Leermakers - Self-consistent field caculation modules.
 F.A.M.Leermakers - Microemulsion.cpp   
 R.Varadharajan - teng.cpp   
-Daniel Emmery - mesodyn.cpp   
-Alexander Kazakov - cleng.cpp   
+Daniel Emmery - mesodyn implementation
+Alexander Kazakov - cleng.cpp
 
-### Dependencies:
+## Compiling
 
-GPU Accelleration:
-- SCF tested to work on:
-	- CUDA 9.0 & g++5
-	- CUDA 9.1 & g++5
-	- CUDA 9.2 & g++7
-	- CUDA 10.0 & g++7
-	
-- NOT working:
-	- CUDA 10.1 & g++8
-	- CUDA 9.0 & g++ 6
-	- CUDA 9.2 & g++ 5
+### Basic
 
-Set the ccbin value in the NVCC flags in the makefile to the correct g++ version and replace the CUDA paths if needed. Also set the nvcc arch flag to the correct compute capability (list can be found [here](https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/))
+```bash
+make                                          # CPU, serial mesodyn
+make PAR_MESODYN_STL=1                        # CPU, parallel mesodyn (requires Intel TBB on Linux/macOS)
+make CUDA=1                                   # GPU (SCF via CUDA), serial mesodyn
+make CUDA=1 PAR_MESODYN_THRUST=1              # GPU (SCF via CUDA), GPU parallel mesodyn
+```
+NOTE: Thrust and STL parallelism are mutually exclusive
+
+### Mesodyn parallelization
+
+    Build flag                       Backend              Requirements
+    ---------------------------------------------------------------------------
+    (none)                           Serial               Any C++14 compiler
+    PAR_MESODYN_STL=1                C++17 parallel STL   See STL setup below
+    CUDA=1                           CUDA (serial mesodyn)  NVIDIA GPU, CUDA toolkit, nvcc on PATH
+    CUDA=1 PAR_MESODYN_THRUST=1      CUDA + Thrust        Same as CUDA=1
+
+### STL parallelization setup
+
+PAR_MESODYN_STL requires C++17 parallel algorithms (<execution> header).
+Before building, set CXX_STD := c++17 in the Makefile (default is c++14).
+
+    Platform   Compiler          Setup
+    ---------------------------------------------------------------------------
+    Linux      g++               sudo apt install libtbb-dev
+    macOS      GCC via Homebrew  brew install gcc tbb
+                                 (Apple Clang does not support <execution>)
+    Windows    MSVC              No extra dependencies (uses builtin thread pool)
+
+The macOS build assumes Homebrew is installed. The Makefile auto-detects the
+latest g++ version from the Homebrew prefix.
+
 
 ## TODO 30-9-2025
 - [x] Fix cuda for 3d : likely problem is with generating arrays in branched propagator  

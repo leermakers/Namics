@@ -884,7 +884,7 @@ Real SFNewton::computeresidual(Real* array, int size) {
   Real residual = 0;
   // Compute residual based on maximum error value
   if (max_g == true) {
-	#ifdef PAR_MESODYN
+	#ifdef PAR_MESODYN_THRUST
 
 	//in tools:
 	residual = ComputeResidual(array, size);
@@ -910,7 +910,7 @@ Real SFNewton::computeresidual(Real* array, int size) {
 	free(H_array);
 	#endif //CUDA
 
-	#endif //PAR_MESODYN
+	#endif //PAR_MESODYN_THRUST
 
   } else {
     // Compute residual based on sum of errors

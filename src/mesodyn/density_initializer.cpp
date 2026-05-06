@@ -117,14 +117,27 @@ void Homogeneous_system_initializer::build_objects()
 }
 
 void Homogeneous_system_initializer::mask_density(Lattice_object<Real>& density) {
-    //Times((Real*)density, (Real*)density, const_cast<int*>(m_mask), density.size());
+#if defined(CUDA) && !defined(PAR_MESODYN_THRUST)
+    // lattice_object data is on host (std::vector), KSAM is on device.
+    // copy mask to host and multiply here.
+    std::vector<Real> h_mask(density.size());
+    TransferDataToHost(h_mask.data(), const_cast<Real*>(m_mask), density.size());
+    for (size_t i = 0; i < density.size(); ++i)
+        density.m_data[i] *= h_mask[i];
+#else
     Times((Real*)density, (Real*)density, (Real*)(m_mask), density.size());
+#endif
 }
 
 void Homogeneous_system_initializer::insert_frozen() {
     for (auto& segment : m_frozen) {
         m_densities.insert(m_densities.begin() + segment, Lattice_object<Real>(m_densities.back().m_subject_lattice, 1.0));
-        std::transform(m_densities[segment].begin(), m_densities[segment].end(), m_segments[segment]->MASK, m_densities[segment].begin(), stl::multiplies<Real>());
+#ifdef PAR_MESODYN_THRUST
+        auto mask_ptr = thrust::device_pointer_cast(m_segments[segment]->MASK);
+#else
+        auto mask_ptr = m_segments[segment]->MASK;
+#endif
+        stl::transform(EXEC_PAR m_densities[segment].begin(), m_densities[segment].end(), mask_ptr, m_densities[segment].begin(), stl::multiplies<Real>());
     }
 }
 

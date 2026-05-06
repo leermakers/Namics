@@ -1,15 +1,19 @@
 #include <iterator>
 
 template<typename IteratorT>
-class EnumerateIterator : std::iterator<std::forward_iterator_tag,
-        typename std::iterator_traits<IteratorT>::value_type> {
+class EnumerateIterator {
 
 private:
     size_t mCurIdx;
     IteratorT mItr;
 
 public:
+    using iterator_category = std::forward_iterator_tag;
     using ValueT = typename std::iterator_traits<IteratorT>::value_type;
+    using value_type = ValueT;
+    using difference_type = std::ptrdiff_t;
+    using pointer = ValueT*;
+    using reference = ValueT&;
     using IdxValPair = std::pair<size_t, ValueT>;
 
     explicit EnumerateIterator(IteratorT &&iterator)

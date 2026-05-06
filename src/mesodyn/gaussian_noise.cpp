@@ -51,13 +51,13 @@ int Gaussian_noise::generate(size_t system_size) {
 
 int Gaussian_noise::add_noise(stl::device_vector<Real>& target) const{
   assert(noise.size() == target.size());
-  stl::transform(noise.begin(), noise.end(), target.begin(), target.begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR noise.begin(), noise.end(), target.begin(), target.begin(), stl::plus<Real>());
   return 0;
 }
 
 
 int Gaussian_noise::add_noise(Lattice_object<Real>& target) const {
   assert(noise.size() == target.size());
-  stl::transform(noise.begin(), noise.end(), target.begin(), target.begin(), stl::plus<Real>());
+  stl::transform(EXEC_PAR noise.begin(), noise.end(), target.begin(), target.begin(), stl::plus<Real>());
   return 0;
 }

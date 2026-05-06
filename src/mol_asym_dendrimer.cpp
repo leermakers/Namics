@@ -26,7 +26,11 @@ if (debug) cout <<"Forward2ndO for mol_asym_dend " + name << endl;
 
 	int N;
 	int M=lat->M;
+#ifdef CUDA
+	Real* GS = (Real*)AllOnDev(3*M);
+#else
 	Real* GS = new Real[3*M];
+#endif
 
 	int n_g=first_a.size();
 	int slast=0;
@@ -63,7 +67,11 @@ if (debug) cout <<"Forward2ndO for mol_asym_dend " + name << endl;
 		lat->Initiate(Gg_f+s*M*size,GS+2*M,Markov,M);
 		slast = s;
 	}
+#ifdef CUDA
+	cudaFree(GS);
+#else
 	delete [] GS;
+#endif
 	return Gg_f;
 }
 
@@ -72,8 +80,13 @@ if (debug) cout <<"Backward2ndO for mol_asym_dend " + name << endl;
 
 	int M=lat->M;
 	int N;
+#ifdef CUDA
+	Real* GX = (Real*)AllOnDev(M*size);
+	Real* GS = (Real*)AllOnDev(2*M);
+#else
 	Real* GX = new Real[M*size];
 	Real* GS = new Real[2*M];
+#endif
 	int n_g=first_a.size();
 	bool success=true;
 	int s=0;
@@ -119,7 +132,11 @@ if (debug) cout <<"Backward2ndO for mol_asym_dend " + name << endl;
 		if (g<n_g-1) Backward2ndO(g+1,n_arm[a]*n_repeats,s-1);
 	}
 
+#ifdef CUDA
+	cudaFree(GS); cudaFree(GX);
+#else
 	delete [] GS; delete [] GX;
+#endif
 	return success;
 }
 
@@ -130,7 +147,11 @@ if (debug) cout <<"Forward for mol_asym_dend " + name << endl;
 
 	int N;
 	int M=lat->M;
+#ifdef CUDA
+	Real* GS = (Real*)AllOnDev(3*M);
+#else
 	Real* GS = new Real[3*M];
+#endif
 
 	int n_g=first_a.size();
 	int slast=0;
@@ -166,7 +187,11 @@ if (debug) cout <<"Forward for mol_asym_dend " + name << endl;
 		slast = s;
 	}
 
+#ifdef CUDA
+	cudaFree(GS);
+#else
 	delete [] GS;
+#endif
 	return Gg_f;
 }
 
@@ -175,8 +200,13 @@ if (debug) cout <<"Backward for mol_asym_dend " + name << endl;
 
 	int M=lat->M;
 	int N;
+#ifdef CUDA
+	Real* GX = (Real*)AllOnDev(M);
+	Real* GS = (Real*)AllOnDev(2*M);
+#else
 	Real* GX = new Real[M];
 	Real* GS = new Real[2*M];
+#endif
 	int n_g=first_a.size();
 	bool success=true;
 	int s=0;
@@ -214,7 +244,11 @@ if (debug) cout <<"Backward for mol_asym_dend " + name << endl;
 	}
 
 
+#ifdef CUDA
+	cudaFree(GS); cudaFree(GX);
+#else
 	delete [] GS; delete [] GX;
+#endif
 	return success;
 }
 

@@ -1,6 +1,6 @@
 lat : flat : n_layers_x : 12
-lat : flat : n_layers_y : 400
-lat : flat : n_layers_z : 400
+lat : flat : n_layers_y : 12
+lat : flat : n_layers_z : 12
 lat : flat : lowerbound_x : periodic
 lat : flat : upperbound_x : periodic
 lat : flat : lowerbound_y : periodic
@@ -16,14 +16,16 @@ mon : A : chi_B : 1
 
 mol : A : composition : (A)4
 mol : A : freedom : restricted
-mol : A : theta : 960000
+mol : A : theta : 864
 
 mol : B : composition : (B)8
 mol : B : freedom : solvent
 
+sys : default : GPU : true
+
 output : kal : append : false
-kal : sys : noname : grand_potential
-kal : sys : noname : free_energy
+kal : sys : * : grand_potential
+kal : sys : * : free_energy
 kal : mol : A : mu
 kal : mol : A : phibulk
 kal : mol : B : mu
@@ -33,12 +35,16 @@ kal : mol : B : phibulk
 // timesteps, timebetweensaves, delta_t, read_pro, read_vtk, equilibrate, diffusionconstant, seed
 // mean, stddev, cn_ratio ( 1 = only old )
 
-mesodyn : smth : timesteps : 10000
-mesodyn : smth : timebetweensaves : 1000
+mesodyn : smth : timesteps : 1000
 mesodyn : smth : diffusionconstant : 1
 mesodyn : smth : delta_t : 0.1
 mesodyn : smth : seed : 1
 //mesodyn : smth : read_pro : LL_mesodyn_1_0_expanded.pro
+mesodyn : smth : profile_type : vtk_structured_points
+mesodyn : smth : write_density : 1
+mesodyn : smth : write_alpha : 1
+mesodyn : smth : timebetweensaves : 100
+mesodyn : smth : correlated_noise : 1
 
 kal : output : mesodyn : order_parameter
 
@@ -52,7 +58,6 @@ newton : isaac : m : 20
 newton : isaac : deltamax : 0.1
 newton : isaac : tolerance : 1e-4
 newton : isaac : stop_criterion : max_of_element_of_|g|
-start
 
 //read_pro <string>: De inhoud van dit .pro-bestand als initiele dichtheden gebruiken.
 //read_vtk <string>:  De inhoud van dit .vtk-bestand als initiele dichtheden gebruiken.

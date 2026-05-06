@@ -977,26 +977,21 @@ if (debug) cout <<"StoreGuess in output" << endl;
 	string filename;
 	string outfilename;
 	vector<string> sub;
+	string numc = to_string(start);
+	string numcc = to_string(subl);
 	if (Filename == "") {
 		outfilename=In[0]->name;
 		In[0]->split(outfilename,'.',sub);
-		char numc[4];
-        	sprintf(numc,"%d",start);
-		char numcc[4];
-		sprintf(numcc,"%d",subl);
 		if (subl>0)
-			filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append("outiv");
-		else	filename=sub[0].append("_").append(numc).append(".").append("outiv");
+			filename=sub[0] + "_" + numc + "_" + numcc + ".outiv";
+		else	filename=sub[0] + "_" + numc + ".outiv";
 	} else {
 		outfilename = Filename;
 		In[0]->split(outfilename,'.',sub);
-		char numc[4];
-       	sprintf(numc,"%d",start);
-		char numcc[4];
-		sprintf(numcc,"%d",subl);
+		string ext = sub.size() > 1 ? sub[1] : "outiv";
 		if (subl>0)
-			filename=sub[0].append("_").append(numc).append("_").append(numcc).append(".").append(sub[1]);
-		else 	filename=sub[0].append("_").append(numc).append(".").append(sub[1]);
+			filename=sub[0] + "_" + numc + "_" + numcc + "." + ext;
+		else 	filename=sub[0] + "_" + numc + "." + ext;
 	}
 	FILE *fp;
 	filename=In[0]->output_info.getOutputPath()+filename;

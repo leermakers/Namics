@@ -15,11 +15,11 @@ private:
     int width;
 
 public:
-    ClMatrix<T>(int height, int width);
+    ClMatrix(int height, int width);
 
-    explicit ClMatrix<T>(std::vector<std::vector<T> > const &array);
+    explicit ClMatrix(std::vector<std::vector<T> > const &array);
 
-    ClMatrix<T>();
+    ClMatrix();
 
     int getHeight() const;
 

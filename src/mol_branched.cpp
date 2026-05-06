@@ -325,8 +325,13 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 
 	Real* G;
 	if (ring) {
+#ifdef CUDA
+		G0 = (Real*)AllManagedOnDev(M); Zero(G0,M);
+		Mask = (Real*)AllManagedOnDev(M); Zero(Mask,M);
+#else
 		G0 = new Real[M]; Zero(G0,M);
 		Mask = new Real[M]; Zero(Mask,M);
+#endif
 		if (IsPinned()) {
 
 			int length=MolMonList.size();
@@ -392,7 +397,11 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 					}
 				}
 		}
+#ifdef CUDA
+		cudaFree(G0); cudaFree(Mask);
+#else
 		delete [] G0; delete [] Mask;
+#endif
 	} else {
 		if (Markov == 2) {
 			G=ForwardBra2ndO(Seg[mon_nr[last_b[0]]]->G1,generation,s);

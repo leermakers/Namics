@@ -1110,12 +1110,15 @@ bool LGrad3::CreateMASK(Real* H_MASK, int* r, int* H_P, int n_pos, bool block) {
 if (debug) cout <<"CreateMask for LGrad3 " + name << endl;
 	bool success=true;
 	H_Zero(H_MASK,M);
+	// Build mask from either a block in r=[x1,y1,z1,x2,y2,z2] or list of indices in H_P.
 	if (block) {
+		// mark all (x,y,z) in [x1, x2] x [y1, y2] x [z1, z2].
 		for (int x=r[0]; x<r[3]+1; x++)
 		for (int y=r[1]; y<r[4]+1; y++)
 		for (int z=r[2]; z<r[5]+1; z++)
 			H_MASK[P(x,y,z)]=1;
 	} else {
+		// mark n_pos linear indices from H_P.
 		for (int i = 0; i<n_pos; i++) H_MASK[H_P[i]]=1;
 	}
 	return success;
@@ -1153,15 +1156,13 @@ void LGrad3::UpdateEE(Real* EE, Real* psi, Real* E) {
 
 
 void LGrad3::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, Real* Mask, bool grad_epsilon, bool fixedPsi0) { //not only update psi but also g (from newton).
-	int x,y;
 #ifndef CUDA
-	int z;
+	int x, y, z;
 #endif
 
 #ifndef CUDA
-	Real epsZplus, epsZmin;
+	Real epsZplus, epsZmin, epsXplus, epsXmin, epsYplus, epsYmin;
 #endif
-	Real epsXplus, epsXmin, epsYplus,epsYmin;
 	//set_M_bounds(eps);
 	Real C =e*e/(eps0*k_BT*bond_length);
 
@@ -1312,11 +1313,10 @@ void LGrad3::UpdatePsi(Real* g, Real* psi ,Real* q, Real* eps, Real* Mask, bool 
 
 
 void LGrad3::UpdateQ(Real* g, Real* psi, Real* q, Real* eps, Real* Mask,bool grad_epsilon) {//Not only update q (charge), but also g (from newton).
-	int x,y;
 	#ifndef CUDA
-	int z;
-	#endif
+	int z, x, y;
 	Real epsXplus,epsXmin,epsYplus,epsYmin,epsZplus,epsZmin;
+	#endif
 
 	Real C = -e*e/(eps0*k_BT*bond_length);
 #ifdef CUDA
@@ -1556,9 +1556,9 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 			SetBoundaries(X+i*m[k],jx[k],jy[k],1,mx[k],1,my[k],1,mz[k],mx[k],my[k],mz[k]);
 	} else {
 		if (fjc==1) {
-
-			//SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ);
-
+#ifdef CUDA
+			SetBoundaries(X,JX,JY,BX1,BXM,BY1,BYM,BZ1,BZM,MX,MY,MZ,stencil_full);
+#else
 			for (x=1; x<MX+1; x++) for (y=1; y<MY+1; y++){
 				X[x*JX+y*JY+0]     = X[x*JX+y*JY+BZ1];
 				X[x*JX+y*JY+MZ+1]  = X[x*JX+y*JY+BZM];
@@ -1614,7 +1614,7 @@ if (debug) cout <<"set_bounds in LGrad3 " << endl;
 			X[0        +(MY+1)*JY+(MZ+1)*JZ]=X[BX1*JX+BYM*JY+BZM*JZ];
 			X[(MX+1)*JX+(MY+1)*JY+(MZ+1)*JZ]=X[BXM*JX+BYM*JY+BZM*JZ];
 
-
+#endif
 		} else {
 			for (x=fjc; x<MX+fjc; x++) for (y=fjc; y<MY+fjc; y++){
 				for (k=0; k<fjc; k++) X[x*JX+y*JY+k] = X[x*JX+y*JY+B_Z1[k]];
@@ -1783,7 +1783,7 @@ if (!debug) cout <<"set_bounds (int) in LGrad3 " << endl;
 			}
 
 			for (y=0; y<MY+2; y+=MY+1) {
-				for (x=1; x<MX+1; x++){
+				for (int x=1; x<MX+1; x++){
 					X[x*JX        +0] = X[x*JX+BZ1*JZ];
 					X[x*JX+(MZ+1)*JZ] = X[x*JX+BZM*JZ];
 				}

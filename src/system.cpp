@@ -940,10 +940,10 @@ bool System::CheckInput(int start_)
 				cout <<"For 'calculation_type : steady_state' is currently limited to 1 gradient and 2 gradients calculations " << endl;
 				return false;
 			}
-			if (lat->fjc != 1) {
-				cout <<"For 'calculation_type : steady_state' the value for FJC_choices is limited to 3 " << endl;
-				return false;
-			}
+			//if (lat->fjc != 1) {
+			//	cout <<"For 'calculation_type : steady_state' the value for FJC_choices is limited to 3 " << endl;
+			//	return false;
+			//}
 			if (lat->BC[0] != "mirror") {
 				cout <<"For 'calculation_type : steady_state' the setting for both 'lowerbound' and 'upperbound' must be 'mirror'. " << endl;
 				return false;
@@ -2241,7 +2241,6 @@ if (debug) cout <<"Classical_residuals in scf mode in system " << endl;
 	}
 }
 
-
 void System::Steady_residual(Real* x,Real*g,Real residual, int iterations, int iv){
 if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 	int M=lat->M;
@@ -2320,13 +2319,18 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 	int MX=lat->MX;
 	int MY=lat->MY;
 	int JX=lat->JX;
-	for (int z=1; z<M-1; z++) g[z]=1.0/phitot[z]-1.0;
+	int fjc=lat->fjc;
+
+	//for (int z=1; z<M-1; z++) g[z]=1.0/phitot[z]-1.0;
+	for (int z=fjc; z<M-2*fjc+1; z++) g[z]=1.0/phitot[z]-1.0;
 
 	switch (gradients) {
 		case 1:
-			g[1]=Seg0->phi[0]/Seg0->phi[1]-1.0;
+			//g[1]=Seg0->phi[0]/Seg0->phi[1]-1.0;
+			g[fjc]=Seg0->phi[fjc-1]/Seg0->phi[fjc]-1.0;
+
 			//g[M-2]=Seg0->phi[M-1]/Seg0->phi[M-2]-1.0;
-			g[MX]=Seg0->phi[MX+1]/Seg0->phi[MX]-1.0;
+			g[M-2*fjc]=Seg0->phi[M-2*fjc+1]/Seg0->phi[M-2*fjc]-1.0;
 			break;
 		case 2:
 			for (int x=1; x<MX+1; x++) {
@@ -2724,6 +2728,7 @@ for (int j=0; j<n_mol; j++) {
 		int MX=lat->MX;
 		int MY=lat->MY;
 		int JX=lat->JX;
+		int fjc = lat->fjc;
 		int gradients=lat->gradients;
 
 		for (int i = 0; i < n_seg; i++) Seg[i]->PutContraintBC();
@@ -2733,31 +2738,48 @@ for (int j=0; j<n_mol; j++) {
 			case 1:
 				for (int i = 0; i < n_seg; i++) {
 					if (!(Seg[i]->used_in_mol_nr==solvent || Seg[i]->used_in_mol_nr==neutralizer)) {
-						PhiTot0+=Seg[i]->phi[0];
-						Qtot0+=Seg[i]->phi[0]*Seg[i]->valence;
-						PhiTotM+=Seg[i]->phi[M-1];
-						QtotM+=Seg[i]->phi[M-1]*Seg[i]->valence;
+						//PhiTot0+=Seg[i]->phi[0];
+						//Qtot0+=Seg[i]->phi[0]*Seg[i]->valence;
+						//PhiTotM+=Seg[i]->phi[M-1];
+						//QtotM+=Seg[i]->phi[M-1]*Seg[i]->valence;
+
+						PhiTot0+=Seg[i]->phi[fjc-1];
+						Qtot0+=Seg[i]->phi[fjc-1]*Seg[i]->valence;
+						PhiTotM+=Seg[i]->phi[M-2*fjc+1];
+						QtotM+=Seg[i]->phi[M-2*fjc+1]*Seg[i]->valence;
 					}
 				}
 
 				if (Qtot0!=0 && neutralizer==-1) cout <<"Error: neutralizer needed, but was not found. Outcome uncertain" << endl;
 				if (Qtot0!=0) {
-					Mol[neutralizer]->phitot[0]=-Qtot0/Mol[neutralizer]->Charge(); PhiTot0 +=Mol[neutralizer]->phitot[0];
-					Mol[neutralizer]->phitot[M-1]=-QtotM/Mol[neutralizer]->Charge(); PhiTotM +=Mol[neutralizer]->phitot[M-1];
+					//Mol[neutralizer]->phitot[0]=-Qtot0/Mol[neutralizer]->Charge(); PhiTot0 +=Mol[neutralizer]->phitot[0];
+					//Mol[neutralizer]->phitot[M-1]=-QtotM/Mol[neutralizer]->Charge(); PhiTotM +=Mol[neutralizer]->phitot[M-1];
+
+					Mol[neutralizer]->phitot[fjc-1]=-Qtot0/Mol[neutralizer]->Charge(); PhiTot0 +=Mol[neutralizer]->phitot[fjc-1];
+					Mol[neutralizer]->phitot[M-2*fjc+1]=-QtotM/Mol[neutralizer]->Charge(); PhiTotM +=Mol[neutralizer]->phitot[M-2*fjc+1];
 				}
 
-				Mol[solvent]->phitot[0]=1.0-PhiTot0;
-				Mol[solvent]->phitot[M-1]=1.0-PhiTotM;
+				//Mol[solvent]->phitot[0]=1.0-PhiTot0;
+				//Mol[solvent]->phitot[M-1]=1.0-PhiTotM;
+
+				Mol[solvent]->phitot[fjc-1]=1.0-PhiTot0;
+				Mol[solvent]->phitot[M-2*fjc+1]=1.0-PhiTotM;
 
 				for (int i=0; i<n_seg; i++) {
 
 					if (Seg[i]->used_in_mol_nr==solvent) {
-						Seg[i]->phi[0]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[0];
-						Seg[i]->phi[M-1]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[M-1];
+						//Seg[i]->phi[0]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[0];
+						//Seg[i]->phi[M-1]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[M-1];
+
+						Seg[i]->phi[fjc-1]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[fjc-1];
+						Seg[i]->phi[M-2*fjc+1]=Mol[solvent]->fraction(i)*Mol[solvent]->phitot[M-2*fjc+1];
 					}
 					if (Seg[i]->used_in_mol_nr==neutralizer) {
-						Seg[i]->phi[0]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[0];
-						Seg[i]->phi[M-1]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[M-1];
+						//Seg[i]->phi[0]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[0];
+						//Seg[i]->phi[M-1]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[M-1];
+
+						Seg[i]->phi[fjc-1]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[fjc-1];
+						Seg[i]->phi[M-2*fjc+1]=Mol[neutralizer]->fraction(i)*Mol[neutralizer]->phitot[M-2*fjc+1];
 					}
 
 				}
@@ -2884,33 +2906,14 @@ bool System::CheckResults(bool e_info_)
 
 	FreeEnergy = GetFreeEnergy();
 	GrandPotential = GetGrandPotential();
-	if (CalculationType=="steady_state") {
-		CreateMu(lat->M-2); //assuming 1 gradient systems....
-		for (int i=0; i<n_mol; i++) {
-			Mol[i]->Delta_MU=Mol[i]->Mu;
-//cout <<"Mol " << Mol[i]->name << " mu M : " << Mol[i]->Mu << endl;
-		}
-		CreateMu(1);
-		for (int i=0; i<n_mol; i++) {
-			Mol[i]->Delta_MU-=Mol[i]->Mu;
 
-//cout <<"Mol " << Mol[i]->name << " mu 0 : " << Mol[i]->Mu << " and Dmu : " << Mol[i]->Delta_MU << endl;
-		}
-
-	}
-	CreateMu(lat->M);
 
 	//if (e_info)
-	//	cout << endl;
-	if ((e_info&& first_pass && CalculationType!="steady_state"))
+	//	cout << endl
+	if (e_info&& first_pass )
 	{
 		cout << "free energy                 = " << FreeEnergy << endl;
 		cout << "grand potential             = " << GrandPotential << endl;
-	} else {
-		if (CalculationType=="steady_state"){
-			cout << "free energy                 = " << FreeEnergy << endl;
-			cout << "grand potential             = " << GrandPotential << endl;
-		}
 	}
 	Real n_times_mu = 0;
 	for (int i = 0; i < n_mol; i++)
@@ -2921,7 +2924,7 @@ bool System::CheckResults(bool e_info_)
 			n = Mol[i]->n_box;
 		n_times_mu += n * Mu;
 	}
-	if ((e_info && first_pass)) // && CalculationType!="steady_state"))
+	if ((e_info && first_pass))
 	{
 		cout << "free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
 		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl<<endl;;
@@ -3213,6 +3216,10 @@ Zero(TEMP,M);
 		Norm(TEMP,0.5,M);
 		Add(F,TEMP,M);
 	}
+
+
+
+
 	return FreeEnergy + lat->WeightedSum(F);
 }
 
@@ -3263,8 +3270,17 @@ Real System::GetGrandPotential(void)
 
 	if (Mol[solvent]->MolType==water) {Mol[solvent]->AddToGP(GP); }
 
-	Add(GP,alpha,M);
-
+	if (CalculationType=="steady_state") {
+		int n_mon = In[0]->MonList.size();
+		for (int i = 0; i < n_mon; i++){
+			Real *phi=Seg[i]->phi;
+			Real *alpha=Seg[i]->ALPHA;
+			Times(TEMP,phi,alpha,M);
+			Add(GP,TEMP,M);
+		}
+	} else {
+		Add(GP,alpha,M);
+	}
 
 	if (constraintfields) {//Will not work on GPU
 		for (int i=0; i<M; i++) if (beta[i]>0) {
@@ -3414,6 +3430,8 @@ Real System::GetGrandPotential(void)
 
 	Norm(GP,-1.0,M); //correct the sign.
 
+
+
 	Zero(TEMP,M);
 if (charged) {
 	Times(TEMP,EE,eps,M);
@@ -3431,6 +3449,31 @@ if (charged) {
 }
 
 	if (!charged) Times(GP,GP,KSAM,M); //necessary to make sure that there are no contribution from solid, tagged or clamped sites in GP.
+
+/*
+	if (CalculationType=="steady_state") {
+		int fjc=Lat[0]->fjc;
+		CreateMu(lat->M); //assuming 1 gradient systems....
+		for (int i=0; i<n_mol; i++) {
+			Mol[i]->Delta_MU=Mol[i]->Mu;
+		}
+		CreateMu(fjc);
+		//Real *side = (Real *)malloc(M * sizeof(Real));
+		for (int i=0; i<n_mol; i++) {
+			int N=Mol[i]->chainlength;
+			Real *phi=Mol[i]->phitot;
+			//Lat[0]->Side(side,phi,M);
+
+			Mol[i]->Delta_MU-=Mol[i]->Mu;
+			//if (i!=solvent){
+			for (int z=fjc; z<M-fjc+1; z++){
+				GP[z]=GP[z]+0*phi[z]/N*Mol[i]->Delta_MU*(M-z-fjc)/(M-2*fjc);
+			}//}
+		}
+		//free (side);
+		CreateMu(lat->M);
+	}
+*/
 
 	return  lat->WeightedSum(GP);
 
@@ -3537,7 +3580,7 @@ bool System::CreateMu(int pos)
 					}
 				}
 				for (int l = 0; l < statelistlength; l++)
-				{     //adjust for steady_state
+				{
 					phibulkB = Seg[Sta[l]->mon_nr]->state_phibulk[Sta[l]->state_nr];
 					FB = Mol[i]->fraction(Sta[l]->mon_nr) * Seg[Sta[l]->mon_nr]->state_alphabulk[Sta[l]->state_nr];
 					if (Mol[i]->IsTagged())
@@ -3555,7 +3598,7 @@ bool System::CreateMu(int pos)
 			}
 		}
 		for (int j = 0; j < statelistlength; j++)
-		{ //adjust for steady state
+		{
 			phibulkA = Seg[Sta[j]->mon_nr]->state_phibulk[Sta[j]->state_nr];
 			FA = Mol[i]->fraction(Sta[j]->mon_nr) * Seg[Sta[j]->mon_nr]->state_alphabulk[Sta[j]->state_nr];
 			if (Mol[i]->IsTagged())

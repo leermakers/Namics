@@ -982,12 +982,39 @@ bool LGrad1:: PutMask(Real* MASK,vector<int>px,vector<int>py,vector<int>pz,int R
 	return success;
 }
 
+/*
 Real LGrad1::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB,Real B_A, Real B_B) {
 
 	Real AverageJ=0;
 	//Real Jplus,Jmin;
 	Real a,b,c,Ma,Mb,Mc;
 
+
+	g[fjc]=phiA[fjc-1]/phiA[fjc]-1.0;
+	b=phiA[fjc]*phiB[fjc]*B_B/B_phitot[fjc];
+	c=phiA[fjc+1]*phiB[fjc+1]*B_B/B_phitot[fjc+1];
+	Mb=alphaA[fjc]-alphaB[fjc];
+	Mc=alphaA[fjc+1]-alphaB[fjc+1];
+	for (int z=fjc+1; z<M-2*fjc+1; z++) {
+		a=b; b=c; c=phiA[z+1]*phiB[z+1]*B_B/B_phitot[z+1];
+		Ma=Mb; Mb=Mc; Mc=alphaA[z+1]-alphaB[z+1];
+		g[z] = g[z]  + (a+b)*(Mb-Ma)*lambda_1[z]-(b+c)*(Mc-Mb)*lambda1[z];///L[z];
+		//Needs LAMBDA vector....
+		AverageJ+=L[z]*(a+b)*(Mb-Ma)/(FJC-1);
+	}
+	g[M-2*fjc]=phiA[M-2*fjc+1]/phiA[M-2*fjc]-1.0;
+
+	return -B_A*AverageJ/(2*(M-2*fjc-2)*lambda);
+
+}
+*/
+
+Real LGrad1::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alphaA, Real* alphaB,Real B_A, Real B_B) {
+
+	Real AverageJ=0;
+	//Real Jplus,Jmin;
+	Real a,b,c,Ma,Mb,Mc;
+	if (fjc>1) {cout <<"in spherical coordinates DphiDt is not yet working when fjc>1 " << endl; return 0; }
 
 	g[1]=phiA[0]/phiA[1]-1.0;
 	b=phiA[1]*phiB[1]*B_B/B_phitot[1];
@@ -1006,6 +1033,7 @@ Real LGrad1::DphiDt(Real* g, Real* B_phitot, Real* phiA, Real* phiB, Real* alpha
 	return -B_A*AverageJ/(2*(M-4)*lambda);
 
 }
+
 
 /*
 //void LGrad1::LReflect(Real *H, Real *P, Real *Q) {

@@ -1003,13 +1003,17 @@ if (debug) cout <<"PutConstraintBC Segment " + name << endl;
 	int MX=lat->MX;
 	int MY=lat->MY;
 	int JX=lat->JX;
+	int fjc = lat->fjc;
 	switch (gradients) {
 		case 1:
 			//int fjc=lat->fjc;
 			//int MX=lat->MX;
 
-			if (phi_LB_X>0) phi[0]=phi_LB_X;
-			if (phi_UB_X>0) phi[M-1]=phi_UB_X;
+			//if (phi_LB_X>0) phi[0]=phi_LB_X;
+			//if (phi_UB_X>0) phi[M-1]=phi_UB_X;
+
+			if (phi_LB_X>0) phi[fjc-1]=phi_LB_X;
+			if (phi_UB_X>0) phi[M-2*fjc+1]=phi_UB_X;
 			break;
 		case 2:
 				for (int x=1; x<MX+1; x++) {

@@ -1563,6 +1563,7 @@ void System::PushOutput()
 		//int fjc=lat->fjc;
 		//Real result=0;
 		//int pos;
+		int pos_interface=0;
 		if (lat->gradients==1 && lat->geometry=="planar") {
 			//pos=px[0];
 			//cout <<"coordinate for kJ0:" << pos << endl;
@@ -2903,6 +2904,7 @@ bool System::CheckResults(bool e_info_)
 
 	bool e_info = e_info_;
 	bool success = true;
+	int n_mol=In[0]->MolList.size();
 
 	FreeEnergy = GetFreeEnergy();
 	GrandPotential = GetGrandPotential();
@@ -2916,6 +2918,7 @@ bool System::CheckResults(bool e_info_)
 		cout << "grand potential             = " << GrandPotential << endl;
 	}
 	Real n_times_mu = 0;
+	CreateMu(lat->M);
 	for (int i = 0; i < n_mol; i++)
 	{
 		Real Mu = Mol[i]->Mu;
@@ -2927,7 +2930,7 @@ bool System::CheckResults(bool e_info_)
 	if ((e_info && first_pass))
 	{
 		cout << "free energy     (GP + n*mu) = " << GrandPotential + n_times_mu << endl;
-		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl<<endl;;
+		cout << "grand potential (F - n*mu)  = " << FreeEnergy - n_times_mu << endl;
 		//	}
 
 		//for (int i=0; i<n_mol; i++) { //NEED FIX . densities are not yet computed correctly that is why it is turned off.....!!!

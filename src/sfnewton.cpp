@@ -619,13 +619,12 @@ bool SFNewton::Message(bool e_info_, bool s_info_, int it_, int iterationlimit_,
 
   if ((e_info || s_info)) {
 
-
 		if (e_info) {
 			if (it < iterationlimit) cout <<s<<"Problem solved." << endl;
 			if (it < iterationlimit/10) cout <<"That was easy." << endl;
 			if (it > iterationlimit/10 && it < iterationlimit ) cout <<"That will do." << endl;
 			if (it <2 && iterationlimit >1 ) cout <<"You hit the nail on the head." << endl;
-			if (residual > tolerance) { cout << " Iterations failed." << endl;
+			if (residual > tolerance/10 and it > iterationlimit-1) { cout << " Iterations failed." << endl;
 				if (residual < tolerance/10) cout <<"... I almost made it..." << endl;
 			}
 		}

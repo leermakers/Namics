@@ -2337,8 +2337,7 @@ void Molecule::SetThetaBlocks(int split) {
 }
 
 Real* Molecule::propagate_forward(Real* G1, int &s, int block, int generation, int M) {
-if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
-
+if (debug) cout <<"Real: propagate_forward for Mol " + name << endl;
 	int N= n_mon[block];
 
 	if (save_memory) {
@@ -2350,7 +2349,6 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 		v0=t0=k0=0;
 
 		if (s==first_s[generation]) {
-
 			//Cp(Gs+M,G1,M); Cp(Gs,G1,M);
 			lat->Initiate(Gs+M,G1,Markov,M);
 			lat->Initiate(Gs,G1,Markov,M); //not sure why this is done....
@@ -2401,9 +2399,9 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 }
 
 void Molecule::propagate_backward(Real* G1, int &s, int block, int unity, int M) {
-if (debug) cout <<"propagate_backward for Mol " + name << endl;
-
+if (debug) cout <<"void: propagate_backward for Mol " + name << endl;
 	int N= n_mon[block];
+
 	if (save_memory) {
 		int k,k0,t0,v0,t,rk1;
 		int n=memory[block]; if (block>0) n-=memory[block-1];
@@ -2463,6 +2461,7 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 	} else {
 		for (int k=0; k<N; k++) {
 			if (s<chainlength-1) {
+
 				lat->propagate(Gg_b,G1,(s+1)%2,s%2,M);
 			} else {
 				lat->Initiate(Gg_b+(s%2)*M,G1,Markov,M);
@@ -2485,17 +2484,15 @@ if (debug) cout <<"propagate_backward for Mol " + name << endl;
 }
 
 
-
 Real* Molecule::propagate_forward(Real* G1, int &s, int block, Real* P, int generation, int M) {
-if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
-
+if (debug) cout <<"Real: propagate_forward for Mol " + name << endl;
 	int N= n_mon[block];
+
 	if (save_memory) {
 		int k,k0,t0,v0,t;
 		int n=memory[block]; if (block>0) n-=memory[block-1];
 		int n0=0; if (block>0) n0=memory[block-1];
 		if (s==first_s[generation]) {
-
 			lat->Initiate(Gs+size*M,G1,Markov,M);
 			//lat->Initiate(Gs,G1,Markov,M); //not necessary.
 		} else {
@@ -2535,6 +2532,7 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 				//Cp(Gg_f+first_s[generation]*M,G1,M);
 				lat->Initiate(Gg_f+first_s[generation]*M*size,G1,Markov,M);
 			}
+
 			 s++;
 		}
 	}
@@ -2547,7 +2545,7 @@ if (debug) cout <<"1. propagate_forward for Mol " + name << endl;
 }
 
 void Molecule::propagate_backward(Real* G1, int &s, int block, Real* P, int& unity, int M) {
-if (debug) cout <<"propagate_backward for Mol " + name << endl;
+if (debug) cout <<"void: propagate_backward for Mol " + name << endl;
 	int N= n_mon[block];
 	if (save_memory) {
 		int k,k0,t0,v0,t,rk1;
@@ -2706,7 +2704,7 @@ void Molecule::AddToF(Real*) {
 
 
 bool Molecule::ComputePhi(){
-if (debug) cout <<"ComputePhi for Molecule " + name << endl; //default computation for monomer only....
+if (debug) cout <<"Bool: ComputePhi for Molecule " + name << endl; //default computation for monomer only....
 	int M=lat->M;
 	bool success=true;
 	Cp(phi,Seg[mon_nr[0]]->G1,M);

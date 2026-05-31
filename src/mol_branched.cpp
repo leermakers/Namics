@@ -158,7 +158,6 @@ if (debug) cout <<"ForwardBra2nd0 in mol_branched " << endl;
 			} else {
 				Glast=propagate_forward(Seg[mon_nr[k]]->G1,s,k,P,generation,M);
 			}
-
 		}
 	}
 	free(GS); free(GB);
@@ -169,7 +168,6 @@ if (debug) cout <<"ForwardBra2nd0 in mol_branched " << endl;
 
 void mol_branched::BackwardBra(Real* G_start, int generation, int &s){//not yet robust for GPU computations: GS and GX need to be available on GPU
 if (debug) cout <<"BackwardBr in mol_branched " << endl;
-
 	int b0 = first_b[generation];
 	int bN = last_b[generation];
 	vector<int> Br;
@@ -235,12 +233,17 @@ if (debug) cout <<"BackwardBr in mol_branched " << endl;
 								s--;
 							}
 						} else
-						if (k>b0) propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+						if (k>b0) {
+							propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+						}
 					}
-				} else propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+				} else {
+					propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+				}
 
-			} else
+			} else {
 				propagate_backward(Seg[mon_nr[k]]->G1,s,k,generation,M);
+			}
 		}
 
 	}
@@ -278,12 +281,12 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 					Times(GS+2*M,GS+2*M,GS+M,M);
 				}
 				if (save_memory) {
-					Cp(Gs,GS+2*M,M); Cp(Gs+M,GS+2*M,M);
 					Cp(Gg_f+(memory[k]-1)*M,GS+2*M,M); //correct because in this block there is just one segment.
 				} else {
 					Cp(Gg_f+s*M,GS+2*M,M);
 				}
-				s++;
+					s++;
+					Glast=GS+2*M;
 			}
 		} else {
 			if (k==0 && ring) {
@@ -301,7 +304,7 @@ if (debug) cout <<"ForwardBra in mol_branched " << endl;
 
 
 bool mol_branched::ComputePhi() {
-if (debug) cout <<"ComputePhi in mol_branched " << endl;
+if (debug) cout <<"Bool: ComputePhi in mol_branched " << endl;
 
 	int M=lat->M;
 	bool success=true;
@@ -406,7 +409,7 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 		if (Markov == 2) {
 			G=ForwardBra2ndO(Seg[mon_nr[last_b[0]]]->G1,generation,s);
 		} else {
-			G=ForwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
+			G=ForwardBra(Seg[mon_nr[first_b[0]]]->G1,generation,s);
 		}
 		GN=lat->ComputeGN(G,Markov,M);
 		s--;
@@ -417,11 +420,9 @@ if (debug) cout <<"ComputePhi in mol_branched " << endl;
 		if (Markov == 2) {
 			BackwardBra2ndO(Seg[mon_nr[last_b[0]]]->G1,generation,unity,s);
 		} else {
-
 			BackwardBra(Seg[mon_nr[last_b[0]]]->G1,generation,s);
 		}
 	}
-
 
 	return success;
 }

@@ -14,6 +14,7 @@ Microemulsion::Microemulsion(vector<Input *> In_, vector<Output *> Out_, vector<
 	KEYS.push_back("monC");
 	KEYS.push_back("monD");
 	KEYS.push_back("var_chi_monA_monB");
+	KEYS.push_back("chiAB=chiAC");
 	KEYS.push_back("oil");
 	KEYS.push_back("water");
   	KEYS.push_back("surfactant");
@@ -205,6 +206,7 @@ bool Microemulsion::CheckInput(int start_){
 						chi_end=In[0]->Get_Real(sub[2],-123);
 						n_steps=0;
 
+
 						if (chi_start !=-123 && chi_end!=-123) {
 
 							if (chi_start > chi_end) {
@@ -229,6 +231,12 @@ bool Microemulsion::CheckInput(int start_){
 					success=false; cout<<" var_chi_monA_monB input is missing, while monA and monB were specified; expected value: chi_start;chi_step;chi_end " << endl;
 				}
 			}
+		}
+	}
+	HequalW=false;
+	if (Seg[monA]->chi[monB]==Seg[monA]->chi[monC]){
+		if (GetValue("chiAB=chiAC").size()>0) {
+			HequalW=In[0]->Get_bool(GetValue("chiAB=chiAC"),false);
 		}
 	}
 
@@ -475,8 +483,7 @@ Real Microemulsion::zero_J0(Real guessXs, Real GuessXc, Real GuessChi) {
 				XS=zero_gamma(XS-0.01,xb);
 				break;
 			case chi_C_D:
-				//cout <<"not implemented yet" << endl;
-				if (fxa<0) xb=xa+cx; else xb=xa-cx;
+				if (fxa<0) xb=xa-cx; else xb=xa+cx;
 				PutChi(xb);
 				XS=zero_gamma(XS-0.01,GuessXc);
 				break;
@@ -485,7 +492,6 @@ Real Microemulsion::zero_J0(Real guessXs, Real GuessXc, Real GuessChi) {
 		}
 
         fxb=Sys[0]->GetSpontaneousCurvature(Lat[0]->M+0.5);
-
         switch(ControlParameter) {
 			case co_solvent_theta:
 				if (j_calls%j_info==0) cout << "j_it = " << j_calls << " theta cosolvent  = " << ConvertCoSolventXtoT(xb) <<  " kJ0 = " << fxb << endl;
@@ -500,7 +506,6 @@ Real Microemulsion::zero_J0(Real guessXs, Real GuessXc, Real GuessChi) {
 				break;
 		}
 	}
-
     Real xc=(xa*fxb-xb*fxa)/(fxb-fxa);
     switch (ControlParameter) {
 		case chi_C_D:
@@ -700,6 +705,10 @@ bool Microemulsion::Doit(Real* X_,string METHOD_,vector<string> MONLIST_,vector<
 			CHI=chi_start+i*chi_step;
 			Seg[monA]->chi[monB]=CHI;
 			Seg[monB]->chi[monA]=CHI;
+			if (HequalW) {
+				Seg[monA]->chi[monC]=CHI;
+				Seg[monC]->chi[monA]=CHI;
+			}
 			//frans
 			//Seg[monA]->chi[monC]=CHI*follow_factor;
 			//Seg[monC]->chi[monA]=CHI*follow_factor;

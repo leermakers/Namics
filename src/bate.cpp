@@ -15,7 +15,7 @@ Balancedtensionless::Balancedtensionless(vector<Input *> In_, vector<Output *> O
   	KEYS.push_back("surfactant");
   	KEYS.push_back("chiTH=chiTW");
   	KEYS.push_back("kJ0m");
-	KEYS.push_back("control_parameter");
+	//KEYS.push_back("control_parameter");
 	KEYS.push_back("previous_guess");
 	KEYS.push_back("caution_factor");
 
@@ -41,7 +41,7 @@ bool Balancedtensionless::CheckInput(int start_){
 		caution_factor=1.0;
 		if (GetValue("caution_factor").size()>0){
 			caution_factor=In[0]->Get_Real(GetValue("caution_factor"),caution_factor);
-			if (caution_factor < 0) caution_factor=1;
+			//if (caution_factor < 0) caution_factor=1;
 		}
 		J0m=0;
 		if (GetValue("kJ0m").size()>0){
@@ -115,8 +115,8 @@ bool Balancedtensionless::CheckInput(int start_){
 		}
 
 		if (Seg[monT]->chi[monW]==Seg[monT]->chi[monH]){
-			if (GetValue("HequalW").size()>0) {
-				HequalW=In[0]->Get_bool(GetValue("HequalW"),false);
+			if (GetValue("chiTH=chiTW").size()>0) {
+				HequalW=In[0]->Get_bool(GetValue("chiTH=chiTW"),false);
 			}
 		} else {
 			if (GetValue("chiTH=chiTW").size()>0) {
@@ -252,6 +252,8 @@ Real Balancedtensionless:: FixedPoint(Real Xs) { //theta surfactant
 		New[0]->Solve(true);
 	} else {
 		if (debug) cout << "Solve to superiteration " << endl;
+		//cout <<"Seg[monH]->chi[monW]" << Seg[monH]->chi[monW] << endl;
+		//cout <<"Seg[monT]->chi[monW]" << Seg[monT]->chi[monW] << endl;
 		New[0]->SuperIterate(search_nr, target_nr, ets_nr, etm_nr, bm_nr);
 	}
 	return Mol[surfactant]->theta;
@@ -316,7 +318,6 @@ Real Balancedtensionless::zero_J0(Real guessXs, Real GuessChi) {
 		}
 
         fxb=Sys[0]->GetSpontaneousCurvature(0.0)-J0m;
-
         switch(ControlParameter) {
 
 			case chi_C_D:
@@ -358,7 +359,6 @@ Real Balancedtensionless::zero_J0(Real guessXs, Real GuessChi) {
 		}
 
         fxc=Sys[0]->GetSpontaneousCurvature(0.0)-J0m;
-
         switch(ControlParameter) {
 			case chi_C_D:
 				if (j_calls%j_info==0 && j_calls>3*j_info) cout << "j_it = " << j_calls << " chi_"<<Seg[monH]->name<<"_"<<Seg[monW]->name << " = "  << xc << " kJ0 = " << fxc << endl;

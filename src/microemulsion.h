@@ -64,6 +64,7 @@ public:
 	int bm_nr;
 	int subloop;
 	bool kal_append;
+	bool HequalW;
 	Real g_tolerance;
 	Real j_tolerance;
 	int g_info;

@@ -2051,7 +2051,9 @@ if(debug) cout <<"PutU in  Solve " << endl;
 		Cp(u,xx+k*M,M);
 		if (charged){
 			YplusisCtimesX(u,EE,-1.0*Seg[IM]->epsilon,M);
-			valence=Seg[IM]->valence;
+			if (Seg[IM]->SegSizeL) {
+				valence=Seg[IM]->valence/pow(Lat[0]->fjc,3);
+			} else valence=Seg[IM]->valence;
 			if (valence !=0)
 				YplusisCtimesX(u,psi,valence,M);
 		}
@@ -2061,7 +2063,8 @@ if(debug) cout <<"PutU in  Solve " << endl;
 				Cp(u,xx+k*M,M);
 				if (charged){
 					YplusisCtimesX(u,EE,-1.0*Seg[j]->epsilon,M);
-					valence=Seg[j]->valence;
+					if (Seg[j]->SegSizeL) valence=Seg[j]->valence/pow(Lat[0]->fjc,3);
+					else valence=Seg[j]->valence;
 					if (valence !=0)
 						YplusisCtimesX(u,psi,valence,M);
 				}
@@ -2073,6 +2076,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 				u=Seg[Sta[j]->mon_nr]->u+Sta[j]->state_nr*M;
 				Cp(u,xx+k*M,M);
 				if (charged){
+					if (Seg[IM]->SegSizeL) cout <<"Something meight go wrong with segment size = 'l' and internal states are used. Please report this error. " << endl;
 					YplusisCtimesX(u,EE,-1.0*Seg[Sta[j]->mon_nr]->epsilon,M);
 					valence=Sta[j]->valence;
 					if (valence !=0)
@@ -2088,6 +2092,7 @@ if(debug) cout <<"PutU in  Solve " << endl;
 	for (int i=0; i<itstatelistlength; i++) {
 		int IS=ItStateList[i];
 		u=Seg[Sta[IS]->mon_nr]->u+(Sta[IS]->state_nr)*M;
+		if (Seg[Sta[IS]->mon_nr]->SegSizeL) cout <<"Something meight go wrong with segment size = 'l' and internal states are used. Please report this error. " << endl;
 		Cp(u,xx+k*M,M);
 		if (charged){
 			YplusisCtimesX(u,EE,-1.0*Seg[Sta[IS]->mon_nr]->epsilon,M);
@@ -2406,6 +2411,7 @@ if (debug) cout <<"steady_residuals in scf mode in system " << endl;
 
 bool System::ComputePhis(Real residual){
 if(debug) cout <<"ComputePhis in system" << endl;
+	Real scale=pow(Lat[0]->fjc,3);
 	bool prepare_for_blocks=false;
 	int M= lat->M;
 	Real A=0, B=0; //A should contain sum_phi*charge; B should contain sum_phi
@@ -2454,8 +2460,7 @@ if(debug) cout <<"ComputePhis in system" << endl;
 		if (Mol[i]->freedom == "free" || Mol[i]->freedom == "gradient")
 		{
 			norm = Mol[i]->phibulk / Mol[i]->chainlength;
-			Mol[i]->n = norm * Mol[i]->GN;
-
+			if (Mol[i]->SegSizeL)  Mol[i]->n = norm * Mol[i]->GN*scale; else Mol[i]->n = norm * Mol[i]->GN;
 			A += Mol[i]->phibulk * Mol[i]->Charge();
 			B += Mol[i]->phibulk;
 		}
@@ -2472,7 +2477,6 @@ if(debug) cout <<"ComputePhis in system" << endl;
 				else
 				{
 					Mol[i]->phibulk = Mol[i]->chainlength * norm;
-					//cout<<"phibulk = " << Mol[i]->phibulk << endl;
 					A += Mol[i]->phibulk * Mol[i]->Charge();
 					B += Mol[i]->phibulk;
 				}
@@ -2591,10 +2595,10 @@ for (int j=0; j<n_mol; j++) {
 		}
 		B += Mol[neutralizer]->phibulk;
 		Real norm = Mol[neutralizer]->phibulk / Mol[neutralizer]->chainlength;
-		Mol[neutralizer]->n = norm * Mol[neutralizer]->GN;
+		if (Mol[neutralizer]->SegSizeL) Mol[neutralizer]->n = norm * Mol[neutralizer]->GN*scale; else Mol[neutralizer]->n = norm * Mol[neutralizer]->GN;
 		//cout <<"n neutralizer: " << Mol[neutralizer]->n << endl;
 		//cout <<"phibulk neutr: " << Mol[neutralizer]->phibulk << endl;
-		Mol[neutralizer]->theta = Mol[neutralizer]->n * Mol[neutralizer]->chainlength;
+		if (Mol[neutralizer]->SegSizeL) Mol[neutralizer]->theta = Mol[neutralizer]->n * Mol[neutralizer]->chainlength/scale; else Mol[neutralizer]->theta = Mol[neutralizer]->n * Mol[neutralizer]->chainlength;
 		Mol[neutralizer]->norm = norm;
 	}
 
@@ -2619,8 +2623,8 @@ for (int j=0; j<n_mol; j++) {
 		} else {
 
 			Real norm = Mol[solvent]->phibulk / Mol[solvent]->chainlength;
-			Mol[solvent]->n = norm * Mol[solvent]->GN;
-			Mol[solvent]->theta = Mol[solvent]->n * Mol[solvent]->chainlength;
+			if (Mol[solvent]->SegSizeL) Mol[solvent]->n = norm * Mol[solvent]->GN*scale; else Mol[solvent]->n = norm * Mol[solvent]->GN;
+			if (Mol[solvent]->SegSizeL) Mol[solvent]->theta = Mol[solvent]->n * Mol[solvent]->chainlength/scale; else Mol[solvent]->theta = Mol[solvent]->n * Mol[solvent]->chainlength;
 			Mol[solvent]->norm = norm;
 
 			int k = 0;
@@ -2717,9 +2721,6 @@ for (int j=0; j<n_mol; j++) {
 	for (int i = 0; i < n_seg; i++) {
 		lat->set_bounds(Seg[i]->phi);
 	}
-//Real result=0;
-//Sum(result,phitot,M);
-//cout <<"phitot in compute phia " << result << endl;
 
 	if (CalculationType=="steady_state") {
 		Real PhiTot0=0;
@@ -2952,6 +2953,7 @@ bool System::CheckResults(bool e_info_)
 				if (Seg[Mol[i]->MolMonList[j]]->freedom != "clamp")
 				{
 					Real THETA = lat->WeightedSum(Mol[i]->phi + j * M);
+					if (Mol[i]->SegSizeL) THETA=THETA*pow(Lat[0]->fjc,3);
 					cout << "MOL " << Mol[i]->name << " Fraction " << Seg[Mol[i]->MolMonList[j]]->name << ": " << FRACTION << "=?=" << THETA / theta_tot << " or " << THETA << " of " << theta_tot << endl;
 				}
 			}
@@ -2996,6 +2998,7 @@ Real System::GetFreeEnergy(void)
 	if (debug)
 		cout << "GetFreeEnergy for system " << endl;
 	int M = lat->M;
+	Real scale=pow(Lat[0]->fjc,3);
 	Real FreeEnergy = 0;
 	Real *F = FreeEnergyDensity;
 	Real constant = 0;
@@ -3048,7 +3051,7 @@ Real System::GetFreeEnergy(void)
 				N--; //assuming there is just one tagged segment per molecule
 			constant = log(N * n / GN) / N;
 			Cp(TEMP, phi, M);
-			Norm(TEMP, constant, M);
+			if (Mol[i]->SegSizeL) Norm(TEMP,constant*scale,M); else Norm(TEMP, constant, M);
 			Add(F, TEMP, M);
 		}
 	}
@@ -3075,6 +3078,7 @@ Real System::GetFreeEnergy(void)
 			g = Seg[SysMonList[j]]->G1;
 			MinLog(TEMP, g, M);
 			Times(TEMP, phi, TEMP, M);
+			if (Seg[SysMonList[j]]->SegSizeL) Norm(TEMP,-1.0*scale,M); else
 			Norm(TEMP, -1, M);
 			Add(F, TEMP, M);
 		} else {
@@ -3091,7 +3095,6 @@ Real System::GetFreeEnergy(void)
 	for (int j = 0; j < n_seg; j++)
 	{
 		if (Seg[j]->ns < 2)
-		//if (true) //FL fix;
 		{
 			phi = Seg[j]->phi;
 			for (int k = 0; k < n_seg; k++)
@@ -3102,14 +3105,12 @@ Real System::GetFreeEnergy(void)
 						chi = Seg[j]->chi[k];
 					else
 						chi = Seg[j]->chi[k] / 2; //double counted.
-//if (chi!=0) {
-//cout <<" seg " << Seg[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
-//}
-
 					phi_side = Seg[k]->phi_side;
 					if (!(Seg[j]->freedom == "frozen" || Seg[j]->freedom == "clamp" || Seg[j]->freedom == "tagged" || chi == 0))
 					{
 						Times(TEMP, phi, phi_side, M);
+						if (Seg[j]->SegSizeL || Seg[k]->SegSizeL ) chi=chi*scale;
+
 						Norm(TEMP, chi, M);
 						Add(F, TEMP, M);
 					}
@@ -3118,10 +3119,6 @@ Real System::GetFreeEnergy(void)
 			for (int i = 0; i < n_states; i++)
 			{
 				chi = Seg[j]->chi[n_seg + i]/2;
-//if (chi!=0) {
-//cout <<" seg " << Seg[j]->name << " : sta " << Sta[i]->name << " chi = " << chi << endl;
-//}
-
 				phi_side = Seg[Sta[i]->mon_nr]->phi_side + Sta[i]->state_nr * M;
 				if (!(Seg[j]->freedom == "frozen" || Seg[j]->freedom == "clamp" || Seg[j]->freedom == "tagged" || chi == 0))
 				{
@@ -3133,9 +3130,6 @@ Real System::GetFreeEnergy(void)
 		}
 	}
 
-
-
-	//if (false)
 	for (int j = 0; j < n_states; j++)
 	{
 		phi = Seg[Sta[j]->mon_nr]->phi_state + Sta[j]->state_nr * M;
@@ -3144,11 +3138,6 @@ Real System::GetFreeEnergy(void)
 			{
 				chi = Sta[j]->chi[k];
 				if (!(Seg[k]->freedom == "frozen" || Seg[k]->freedom == "clamp" || Seg[k]->freedom == "tagged")) chi = chi / 2;
-//if (chi!=0) {
-//cout <<" sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
-//}
-
-
 				phi_side = Seg[k]->phi_side;
 				if (chi != 0)
 				{
@@ -3160,10 +3149,6 @@ Real System::GetFreeEnergy(void)
 		for (int l = 0; l < n_states; l++)
 		{
 			chi = Sta[j]->chi[n_seg + l] / 2;
-//if (chi!=0) {
-//cout <<" sta " << Sta[j]->name << " : sta " << Sta[l]->name << " chi = " << chi << endl;
-//}
-
 			phi_side = Seg[Sta[j]->mon_nr]->phi_side + Sta[j]->state_nr * M;
 			if (chi != 0)
 			{
@@ -3199,6 +3184,7 @@ Real System::GetFreeEnergy(void)
 						fB = 0;
 					}
 				}
+
 				Real chi = CHI[Mol[i]->MolMonList[j] * n_mon + Mol[i]->MolMonList[k]] / 2;
 				constant -= fA * fB * chi;
 			}
@@ -3213,16 +3199,11 @@ Real System::GetFreeEnergy(void)
 Zero(TEMP,M);
 	if (charged) {
 		//Times(TEMP,EE,eps,M);
-//cout <<"Sum EE*eps = " << lat->WeightedSum(TEMP) << endl;
 		//Norm(TEMP,-1.0,M);
 		AddTimes(TEMP,q,psi,M);
 		Norm(TEMP,0.5,M);
 		Add(F,TEMP,M);
 	}
-
-
-
-
 	return FreeEnergy + lat->WeightedSum(F);
 }
 
@@ -3242,9 +3223,10 @@ Real System::GetKBar(Real midpoint)
 
 Real System::GetGrandPotential(void)
 { //Eqn 293
-	if (debug)
-		cout << "GetGrandPotential for system " << endl;
+
+	if (debug) cout << "GetGrandPotential for system " << endl;
 	int M = lat->M;
+	//Real scale=pow(Lat[0]->fjc,3);
 	Real *GP = GrandPotentialDensity;
 	int n_mol = In[0]->MolList.size();
 	//int n_mon=In[0]->MonList.size();
@@ -3267,6 +3249,7 @@ Real System::GetGrandPotential(void)
 		}
 		Cp(TEMP, phi, M);
 		YisAplusC(TEMP, TEMP, -phibulk, M);
+		//if (Mol[i]->SegSizeL) Norm(TEMP, scale/N,M); else
 		Norm(TEMP, 1.0 / N, M); //GP has wrong sign. will be corrected at end of this routine;
 		Add(GP, TEMP, M);
 	}
@@ -3329,10 +3312,6 @@ Real System::GetGrandPotential(void)
 						if (Seg[k]->ns < 2)
 						{
 							chi = Seg[j]->chi[k] / 2;
-//if (chi!=0) {
-//cout <<" seg " << Seg[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
-//}
-
 							phi_side = Seg[k]->phi_side;
 							phibulkB = Seg[k]->phibulk;
 							if (chi != 0)
@@ -3349,10 +3328,6 @@ Real System::GetGrandPotential(void)
 				for (int k = 0; k < n_states; k++)
 				{
 					chi = Seg[j]->chi[n_seg + k] / 2;
-//if (chi!=0) {
-//cout <<" seg " << Seg[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl;
-//}
-
 					phi_side = Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr * M;
 					phibulkB = Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
 					if (chi != 0)
@@ -3373,7 +3348,6 @@ Real System::GetGrandPotential(void)
 		Subtract(GP,TEMP,M);
 	}
 
-
 	for (int j = 0; j < n_states; j++)
 	{
 		phi = Seg[Sta[j]->mon_nr]->phi_state + Sta[j]->state_nr * M;
@@ -3384,10 +3358,6 @@ Real System::GetGrandPotential(void)
 				if (Seg[k]->ns < 2)
 				{
 					chi = Sta[j]->chi[k] / 2;
-//if (chi!=0) {
-//cout <<" sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
-//}
-
 					phibulkB = Seg[k]->phibulk;
 					phi_side = Seg[k]->phi_side;
 					if (chi != 0)
@@ -3402,9 +3372,6 @@ Real System::GetGrandPotential(void)
 		for (int k = 0; k < n_states; k++)
 		{
 			chi = Sta[j]->chi[n_seg + k] / 2;
-//if (chi!=0) {
-//cout <<" sta " << Sta[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl;
-//}
 
 			phi_side = Seg[Sta[k]->mon_nr]->phi_side + Sta[k]->state_nr * M;
 			phibulkB = Seg[Sta[k]->mon_nr]->state_phibulk[Sta[k]->state_nr];
@@ -3433,12 +3400,9 @@ Real System::GetGrandPotential(void)
 
 	Norm(GP,-1.0,M); //correct the sign.
 
-
-
 	Zero(TEMP,M);
 if (charged) {
 	Times(TEMP,EE,eps,M);
-//cout <<"eps EE/2 " << lat->WeightedSum(TEMP) << endl;
 	Norm(TEMP,-2.0,M);
 
 	AddTimes(TEMP,q,psi,M);
@@ -3453,31 +3417,6 @@ if (charged) {
 
 	if (!charged) Times(GP,GP,KSAM,M); //necessary to make sure that there are no contribution from solid, tagged or clamped sites in GP.
 
-/*
-	if (CalculationType=="steady_state") {
-		int fjc=Lat[0]->fjc;
-		CreateMu(lat->M); //assuming 1 gradient systems....
-		for (int i=0; i<n_mol; i++) {
-			Mol[i]->Delta_MU=Mol[i]->Mu;
-		}
-		CreateMu(fjc);
-		//Real *side = (Real *)malloc(M * sizeof(Real));
-		for (int i=0; i<n_mol; i++) {
-			int N=Mol[i]->chainlength;
-			Real *phi=Mol[i]->phitot;
-			//Lat[0]->Side(side,phi,M);
-
-			Mol[i]->Delta_MU-=Mol[i]->Mu;
-			//if (i!=solvent){
-			for (int z=fjc; z<M-fjc+1; z++){
-				GP[z]=GP[z]+0*phi[z]/N*Mol[i]->Delta_MU*(M-z-fjc)/(M-2*fjc);
-			}//}
-		}
-		//free (side);
-		CreateMu(lat->M);
-	}
-*/
-
 	return  lat->WeightedSum(GP);
 
 }
@@ -3486,6 +3425,7 @@ bool System::CreateMu(int pos)
 {
 	if (debug)
 		cout << "CreateMu for system " << endl;
+	//Real scale = pow(Lat[0]->fjc,3);
 	int M=lat->M;
 	bool success = true;
 	Real constant;
@@ -3523,8 +3463,9 @@ bool System::CreateMu(int pos)
 		{
 			n = Mol[i]->n;
 			GN = Mol[i]->GN;
-			if (pos==M) Mu = log(NA * n / GN) + 1; else {
-				Mu=log(Mol[i]->phitot[pos]) +1;
+			if (pos==M) { Mu = log(NA * n / GN) + 1;
+			} else {
+				Mu=log(Mol[i]->phitot[pos]) +1; //adjust when segsizeL
 			}
 		}
 		constant = 0;
@@ -3537,6 +3478,7 @@ bool System::CreateMu(int pos)
 				NB = NB - 2;
 			Real phibulkB;
 		        if (pos==M) phibulkB=Mol[k]->phibulk; else phibulkB=Mol[k]->phitot[pos];
+			//if (Mol[k]->SegSizeL) constant += phibulkB*scale/NB; else
 			constant += phibulkB / NB;
 		}
 		Mu = Mu - NA * constant;
@@ -3576,9 +3518,6 @@ bool System::CreateMu(int pos)
 						if (Mol[i]->IsClamped())
 							FB *= (NA + 2) / (NA);
 						chi = Seg[j]->chi[k] / 2;
-//if (chi!=0) {
-//cout <<"mol " << Mol[i]->name << " Seg " << Seg[j]->name << " : Seg " << Seg[k]->name << " chi = " << chi << endl;
-//}
 						Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
 					}
 				}
@@ -3591,10 +3530,6 @@ bool System::CreateMu(int pos)
 					if (Mol[i]->IsClamped())
 						FB *= (NA + 2) / (NA);
 					chi = Seg[j]->chi[n_mon + l] / 2;
-//if (chi!=0) {
-//cout <<"mol " << Mol[i]->name << " Seg " << Seg[j]->name << " : sta " << Sta[l]->name << " chi = " << chi << endl;
-//}
-
 					Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
 
 				}
@@ -3618,10 +3553,6 @@ bool System::CreateMu(int pos)
 					if (Mol[i]->IsClamped())
 						FB *= (NA + 2) / (NA);
 					chi = Sta[j]->chi[k] / 2;
-//if (chi!=0) {
-//cout <<"mol " << Mol[i]->name << " Sta " << Sta[j]->name << " : seg " << Seg[k]->name << " chi = " << chi << endl;
-//}
-
 					Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
 				}
 			for (int k = 0; k < statelistlength; k++)
@@ -3633,10 +3564,6 @@ bool System::CreateMu(int pos)
 				if (Mol[i]->IsClamped())
 					FB *= (NA + 2) / (NA);
 				chi = Sta[j]->chi[n_mon + k] / 2;
-//if (chi!=0) {
-//cout <<"mol " << Mol[i]->name << " Sta " << Sta[j]->name << " : sta " << Sta[k]->name << " chi = " << chi << endl;
-//}
-
 				Mu = Mu - NA * chi * (phibulkA - FA) * (phibulkB - FB);
 			}
 		}

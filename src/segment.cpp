@@ -28,6 +28,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	KEYS.push_back("phi");
 	KEYS.push_back("n");
 	KEYS.push_back("size");
+	KEYS.push_back("seg_size");
 	KEYS.push_back("pos");
 	KEYS.push_back("set_equal_to");
 	Amplitude=0; labda=0; seed=1;
@@ -41,6 +42,7 @@ if (debug) cout <<"Segment constructor" + name << endl;
 	phi_LB_X=phi_UB_X=0;
 	phi_LB_Y=phi_UB_Y=0;
 	B=1; J=0;
+	SegSizeL=false;
 }
 Segment::~Segment() {
 if (debug) cout <<"Segment destructor " + name << endl;
@@ -792,6 +794,7 @@ if (debug) cout <<"ParseFreedoms " << endl;
 			}
 		}
 	}
+
 	return success;
 }
 
@@ -1240,6 +1243,22 @@ if (debug) cout <<"CheckInput in Segment " + name << endl;
 	free(H_MASK);
 	if(n_pos>0) free(H_P);
 	free(r);
+
+	if (GetValue("seg_size").size()>0){
+		string SegSize;
+		vector<string> answer;
+		answer.push_back("b");
+		answer.push_back("l");
+		if (!In[0]->Get_string(GetValue("seg_size"),SegSize,answer,"In seg " + name + " 'seg_size' has illegal entry" )) success=false;
+		if (SegSize=="l" && Lat[0]->fjc==1) cout <<"Segment size 'l' is equal to segment size 'b' because FJC_choices = 3. There is no effect... " << endl;
+		if (SegSize=="l" && Lat[0]-> gradients > 1) {cout << "Currently seg_size = 'l' is only implemented for one-gradient systems. " << endl; success = false;}
+		SegSizeL=(SegSize=="l");
+		if (SegSizeL) {
+			valence=valence*pow(Lat[0]->fjc,3);
+			cout << "SegSize ='l' is experimental: proceed carefully " << endl;
+		}
+	}
+
 	return success;
 }
 
@@ -1781,9 +1800,12 @@ if (debug) cout <<"PushOutput for segment " + name << endl;
 	Reals.clear();
 	Reals_value.clear();
 	push("freedom",freedom);
-	push("valence",valence);
+	if (SegSizeL) push("valence",valence/pow(Lat[0]->fjc,3)); else push("valence",valence);
 	push("B",B);
 	push("J",J);
+	string segmentsize;
+	if (SegSizeL) segmentsize="l"; else segmentsize="b";
+	push("seg_size",segmentsize);
 	Real theta=0;
 	theta = lat->WeightedSum(phi);
 	push("theta",theta);

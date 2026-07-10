@@ -127,6 +127,7 @@ virtual ~Molecule();
 	Real J;
 	Real B;
 	Real Delta_MU;
+	bool SegSizeL;
 
 	vector<string> ints;
 	vector<string> Reals;

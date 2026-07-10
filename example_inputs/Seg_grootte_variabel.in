@@ -1,0 +1,53 @@
+lat : flat : n_layers : 100
+lat : flat : lattice_type : hexagonal
+lat : flat : geometry : planar
+lat : flat : gradients : 1
+lat : flat : FJC_choices : 5
+lat : flat : bondlength : 6e-10
+
+mon : Si : freedom : frozen
+mon : Si : frozen_range : 1;1
+mon : Si : valence : -0.1
+mon : W : freedom : free
+mon : W : seg_size : b
+//mon : W : chi_Na : 1
+//mon : W : chi_Cl : 1
+//mon : Na : chi_Cl : 0.5
+mon : Na : freedom : free
+mon : Na : valence : 1
+mon : Na  : seg_size : l
+mon : Cl : freedom : free
+mon : Cl : valence : -1
+mon : Cl : seg_size : l
+
+mol : water : composition : (W)1
+mol : water : freedom : solvent
+mol : Na : composition : (Na)1
+//mol : Na : freedom  :free
+//mol : Na : phibulk : 0.001
+mol : Na : freedom : neutralizer
+
+mol : Cl : composition : (Cl)1
+mol : Cl : freedom : free
+mol : Cl : phibulk : 0.001
+
+output : pro : DOS : true
+pro : sys : NN : psi
+pro : sys : NN : q
+pro : mol : * : phi
+
+output : kal : DOS : true
+output : kal : append : false
+kal : mon : * : seg_size
+kal : mon : * : valence
+kal : mol : * : phibulk
+kal : mol : * : n
+kal : mol : * : theta
+
+
+newton : isaac : deltamax : 0.5
+newton : isaac : method : pseudohessian
+newton : isaac : iterationlimit : 1000
+
+
+start 

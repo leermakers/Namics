@@ -271,6 +271,7 @@ bool Balancedtensionless::PutChi(Real CHI) {
 
 Real Balancedtensionless::zero_J0(Real guessXs, Real GuessChi) {
 	if (debug) cout << "In Bate: zero_j0 " << endl;
+	//cout <<"J tolerance: " << j_tolerance << endl;
     Real XS=FixedPoint(guessXs);
     Real cx=-0.01*caution_factor;
     Real xa=0;
@@ -302,7 +303,7 @@ Real Balancedtensionless::zero_J0(Real guessXs, Real GuessChi) {
 	}
 
     Real fxb=Sys[0]->GetSpontaneousCurvature(0.0)-J0m;
-    while (fxa*fxb>0){
+    while (fxa*fxb>0 && abs(fxb)>j_tolerance){
 		j_calls++;
         xa=xb;
         fxa=fxb;
@@ -452,7 +453,7 @@ bool Balancedtensionless::Doit(Real* X_,string METHOD_,vector<string> MONLIST_,v
 							Seg[monW]->chi[monH]=ini_chi;
 						}
 					}
-					zero_J0(Mol[surfactant]->theta,Seg[monH]->chi[monW]);
+					zero_J0(Mol[surfactant]->theta-0.5,Seg[monH]->chi[monW]);
 					break;
 				default:
 					break;

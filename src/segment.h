@@ -48,6 +48,7 @@ public:
 	Real epsilon;
 	Real valence;
 	Real PSI0;
+	bool SegSizeL;
 	bool fixedPsi0;
 	Real phibulk;
 	string freedom;

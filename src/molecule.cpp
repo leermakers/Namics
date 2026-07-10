@@ -416,7 +416,7 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 							if (GetValue("theta").size() >0 && GetValue("n").size()>0) {
 							cout <<"In mol " + name + ", the setting 'freedom = restricted' of 'freedom = range_restricted' do not specify both 'n' and 'theta' "<<endl; success=false;
 					} else {
-							if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*lat->volume);theta=n*chainlength;}
+							if (GetValue("n").size()>0) {n=In[0]->Get_Real(GetValue("n"),10*lat->volume); theta=n*chainlength;}
 							if (GetValue("theta").size()>0) {theta = In[0]->Get_Real(GetValue("theta"),10*lat->volume);n=theta/chainlength;}
 							if (theta < 0 ) {    //|| theta > lat->volume) {
 								cout << "In mol " + name + ", the value of 'n' or 'theta' " << theta << "  is out of range 0 .. 'volume'/N, cq 'volume' "<< lat->volume << endl; success=false;
@@ -700,6 +700,29 @@ if (debug) cout <<"CheckInput for Mol " + name << endl;
 	    //cout <<"size = " << size << endl;
 	} else size = 1;
 	if (size==0) {success=false; cout <<"Attention: size in molecule is not set; combination gradients (1,2,3),  Markov=2, stencil_full (true,false), lattice_type (hexagonal, simple_cubic) not implemented" << endl;}
+
+	if (chainlength>1){
+		int length=MolMonList.size();
+		int i=0;
+		while (i<length){
+			if (Seg[MolMonList[i]]->SegSizeL) {
+				success=false;
+				cout << "Mol " + name + " contains segment " + Seg[MolMonList[i]]->name + " with size not equal to segment length 'b'. Only monomers can be of lattice size 'l'. " << endl;
+			}
+			i++;
+		}
+		SegSizeL=false;
+	} else {
+		SegSizeL=Seg[MolMonList[0]]->SegSizeL;
+		if (SegSizeL) {
+			if (freedom =="free"  || freedom == "neutralizer" || freedom == "solvent") {
+				//cout <<"proceed carefully. segment size 'l' is in experimental stage " << endl;
+			} else {
+				success=false; cout <<"Currently putting segment size to 'l' is quite restricted. Choose molecular freedom = 'free' or 'neutralizer' " << endl;
+			}
+		}
+	}
+
 
 	return success;
 }
@@ -1966,6 +1989,7 @@ if (debug) cout <<"push (string) for Mol " + name << endl;
 
 void Molecule::PushOutput() {
 if (debug) cout <<"PushOutput for Mol " + name << endl;
+	//Real scale=pow(Lat[0]->fjc,3);
 	int length_al=MolAlList.size();
 	for (int i=0; i<length_al; i++) Al[i]->PushOutput();
 	strings.clear();
@@ -2038,13 +2062,16 @@ if (debug) cout <<"PushOutput for Mol " + name << endl;
 	lat->remove_bounds(phitot);
 	theta=lat->WeightedSum(phitot);
 	push("theta",theta);
-        //cout <<"theta " << name << " = " << theta << endl;
 	Real thetaexc=theta-lat->volume*phibulk;
 	push("theta_exc",thetaexc);
+
 	push("n_exc",thetaexc/chainlength);
 	push("nexc",thetaexc/chainlength);
 	push("thetaexc",thetaexc);
 	push("theta_Gibbs",theta_Gibbs);
+	string segmentsize;
+	if (SegSizeL) segmentsize="l"; else segmentsize="b";
+	push("seg_size",segmentsize);
 	if (R_Gibbs>0) push("R_Gibbs",R_Gibbs);
 	push("n",n);
 	push("chainlength",chainlength);
